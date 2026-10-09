@@ -339,3 +339,20 @@ test('#14 stub Red from a setup call is weak; --expect / --allow-setup-red overr
   stub("() => { throw new Error('not implemented: add'); }", '() => {}');
   assert.doesNotMatch(sdd(d, 'tdd', 'red', 'TEST-CALC-001').out, /\[weak\]/);
 });
+
+test('#15 go/rust: init picks defaults and {IDU}/{idu} map IDs to test-name patterns', () => {
+  const g = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-'));
+  spawnSync('git', ['init', '-q'], { cwd: g });
+  fs.writeFileSync(path.join(g, 'go.mod'), 'module x\n');
+  sdd(g, 'init');
+  const gc = JSON.parse(fs.readFileSync(path.join(g, '.sdd/config.json'), 'utf8'));
+  assert.deepEqual(gc.testCmd, ['go', 'test', './...', '-run', '{IDU}']);
+  const r = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-'));
+  spawnSync('git', ['init', '-q'], { cwd: r });
+  fs.writeFileSync(path.join(r, 'Cargo.toml'), '[package]\nname="x"\n');
+  sdd(r, 'init');
+  assert.deepEqual(JSON.parse(fs.readFileSync(path.join(r, '.sdd/config.json'), 'utf8')).testCmd, ['cargo', 'test', '{idu}']);
+  fs.mkdirSync(path.join(r, 'src'));
+  fs.writeFileSync(path.join(r, 'src/lib.rs'), '// @id CODE-X-001 @implements REQ-CALC-001\npub fn f() {}\n');
+  assert.match(sdd(r, 'status').out, /entities 1/);
+});

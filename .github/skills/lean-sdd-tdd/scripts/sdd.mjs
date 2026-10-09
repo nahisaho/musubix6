@@ -203,7 +203,7 @@ function detectConfig() {
   if (deps.vitest) testCmd = ['npx', 'vitest', 'run', '{file}', '-t', '{id}'];
   else if (deps.jest) testCmd = ['npx', 'jest', '{file}', '-t', '{id}'];
   else if (has('pyproject.toml') || has('pytest.ini') || has('requirements.txt')) testCmd = ['python3', '-m', 'pytest', '-q', '{file}', '-k', '{idu}'];
-  else if (has('go.mod')) testCmd = ['go', 'test', './...', '-run', '{idu}'];
+  else if (has('go.mod')) testCmd = ['go', 'test', './...', '-run', '{IDU}'];
   else if (has('Cargo.toml')) testCmd = ['cargo', 'test', '{idu}'];
   else testCmd = ['node', '--test', '--test-name-pattern', '{id}', '{file}'];
   const checks = [];
@@ -399,7 +399,7 @@ function cmdTdd() {
   if (sub === 'refactor' && !prior.some((e) => e.type === 'green')) { out(`REFUSED: no Green recorded for ${id}`); return 1; }
 
   const cfg = loadConfig();
-  const cmd = cfg.testCmd.map((a) => a.replaceAll('{id}', id).replaceAll('{idu}', id.toLowerCase().replaceAll('-', '_')).replaceAll('{file}', t.path));
+  const cmd = cfg.testCmd.map((a) => a.replaceAll('{id}', id).replaceAll('{idu}', id.toLowerCase().replaceAll('-', '_')).replaceAll('{IDU}', id.toUpperCase().replaceAll('-', '_')).replaceAll('{file}', t.path));
   const res = run(cmd, cfg.timeoutMs ?? 120000);
   const after = fileSha(t.path);
   if (after !== before) { out(`REFUSED: ${t.path} changed while running (formatter/watch?)`); return 1; }
