@@ -202,7 +202,7 @@ test('#7 hub change uses hubFallbackCmd; leaf change uses changedCmd', () => {
   ] }));
   spawnSync('git', ['add', '-A'], { cwd: d });
   spawnSync('git', ['-c', 'user.email=a@b', '-c', 'user.name=n', 'commit', '-qm', 'x'], { cwd: d });
-  fs.appendFileSync(path.join(d, 'hub.mjs'), '// c\n');
+  fs.writeFileSync(path.join(d, 'hub.mjs'), 'export const h = 2;\n');
   assert.match(sdd(d, 'gate', '--changed').out, /hub change/);
   spawnSync('git', ['checkout', 'hub.mjs'], { cwd: d });
   fs.appendFileSync(path.join(d, 'leaf.mjs'), '// c\n');
@@ -218,7 +218,7 @@ test('#7 oversized hub is skipped as INCOMPLETE, not timed out', () => {
   ] }));
   spawnSync('git', ['add', '-A'], { cwd: d });
   spawnSync('git', ['-c', 'user.email=a@b', '-c', 'user.name=n', 'commit', '-qm', 'x'], { cwd: d });
-  fs.appendFileSync(path.join(d, 'hub.mjs'), '// c\n');
+  fs.writeFileSync(path.join(d, 'hub.mjs'), 'export const h = 2;\n');
   assert.match(sdd(d, 'gate', '--changed').out, /hub too large[\s\S]*INCOMPLETE|INCOMPLETE[\s\S]*hub too large/);
 });
 
@@ -236,9 +236,29 @@ test('#11 hub detection follows workspace package names and tsconfig paths', () 
   ] }));
   spawnSync('git', ['add', '-A'], { cwd: d });
   spawnSync('git', ['-c', 'user.email=a@b', '-c', 'user.name=n', 'commit', '-qm', 'x'], { cwd: d });
-  fs.appendFileSync(path.join(d, 'packages/lib/src/index.ts'), '// c\n');
+  fs.writeFileSync(path.join(d, 'packages/lib/src/index.ts'), 'export const h = 2;\n');
   assert.match(sdd(d, 'gate', '--changed').out, /hub change \(3\/4/);
   spawnSync('git', ['checkout', '.'], { cwd: d });
-  fs.appendFileSync(path.join(d, 'app/util.ts'), '// c\n');
+  fs.writeFileSync(path.join(d, 'app/util.ts'), 'export const u = 2;\n');
   assert.match(sdd(d, 'gate', '--changed').out, /hub change \(3\/4/);
+});
+
+test('#12 hub change is scoped by changed symbols; comment-only is skipped', () => {
+  const d = project();
+  fs.writeFileSync(path.join(d, 'hub.mjs'), 'export const h = 1;\nexport const k = 1;\n');
+  fs.writeFileSync(path.join(d, 'a.test.mjs'), "import { h } from './hub.mjs';\n");
+  fs.writeFileSync(path.join(d, 'b.test.mjs'), "import { k } from './hub.mjs';\n");
+  fs.writeFileSync(path.join(d, 'c.test.mjs'), "import { k } from './hub.mjs';\n");
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ checks: [
+    { name: 'k', cmd: ['node', '-e', '0'], changedCmd: ['node', '-e', '0'], hubFallbackCmd: ['node', '-e', '0', '{directTests}'], hubThreshold: 0.1 },
+  ] }));
+  spawnSync('git', ['add', '-A'], { cwd: d });
+  spawnSync('git', ['-c', 'user.email=a@b', '-c', 'user.name=n', 'commit', '-qm', 'x'], { cwd: d });
+  fs.writeFileSync(path.join(d, 'hub.mjs'), 'export const h = 2;\nexport const k = 1;\n');
+  assert.match(sdd(d, 'gate', '--changed').out, /scoped by changed symbols \(h\) → 1 test files/);
+  fs.writeFileSync(path.join(d, 'hub.mjs'), 'export const h = 1;\nexport const k = 1;\n// note\n');
+  assert.match(sdd(d, 'gate', '--changed').out, /symbol-neutral/);
+  fs.writeFileSync(path.join(d, 'hub.mjs'), 'const z = 1;\nexport const h = 1;\nexport const k = 1;\n');
+  assert.match(sdd(d, 'gate', '--changed').out, /hub change \(3\/4/);
+  assert.doesNotMatch(sdd(d, 'gate', '--changed').out, /scoped by/);
 });

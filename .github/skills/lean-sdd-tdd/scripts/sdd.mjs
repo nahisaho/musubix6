@@ -483,6 +483,72 @@ function aliasMap(set) {
   return map.sort((a, b) => b[0].length - a[0].length);
 }
 
+// exported symbols touched by the uncommitted diff of a JS/TS file.
+// -> { neutral: true } comment/blank-only | { symbols: Set } all hunks inside exported declarations | null unknown (be conservative)
+const DECL = /^(export\s+)?(default\s+)?(declare\s+)?(async\s+)?(abstract\s+)?(const|let|var|function\*?|class|interface|type|enum|namespace)\s+([\w$]+)/;
+const COMMENT_OR_BLANK = /^\s*($|\/\/|\/\*|\*)/;
+function changedSymbols(file) {
+  const r = spawnSync('git', ['diff', '-U0', 'HEAD', '--', file], { cwd: ROOT, encoding: 'utf8', maxBuffer: 64e6 });
+  if (r.status !== 0 || !r.stdout.trim()) return null;
+  const lines = fs.readFileSync(path.join(ROOT, file), 'utf8').split('\n');
+  const starts = [];
+  lines.forEach((l, i) => { const m = DECL.exec(l); if (m) starts.push({ i, exported: !!m[1], name: m[7] }); else if (/^export\s+(type\s+)?(\{|\*)/.test(l)) starts.push({ i, exported: true, name: null, reexport: true }); else if (/^export\s+default\b/.test(l)) starts.push({ i, exported: true, name: 'default' }); });
+  const symbols = new Set();
+  let neutral = true;
+  for (const h of r.stdout.matchAll(/^@@ -\d+(?:,(\d+))? \+(\d+)(?:,(\d+))? @@/gm)) {
+    const oldN = h[1] === undefined ? 1 : +h[1];
+    const start = +h[2] - 1;
+    const n = h[3] === undefined ? 1 : +h[3];
+    const hunkText = r.stdout.slice(h.index).split(/\n(?=@@ )/)[0].split('\n').slice(1).filter((l) => /^[+-]/.test(l)).map((l) => l.slice(1));
+    if (hunkText.every((l) => COMMENT_OR_BLANK.test(l))) continue;
+    neutral = false;
+    if (n === 0 || oldN === 0 && n === 0) return null;
+    for (let i = start; i < start + n; i++) {
+      if (COMMENT_OR_BLANK.test(lines[i] ?? '')) continue;
+      let d = null;
+      for (const st of starts) if (st.i <= i) d = st; else break;
+      if (!d || !d.exported) return null;
+      if (d.reexport) {
+        let j = d.i; let txt = lines[j];
+        while (!/\}|\*\s+from|;\s*$/.test(txt) && j < lines.length - 1) txt += ' ' + lines[++j];
+        if (/export\s+(type\s+)?\*/.test(txt) && !/\*\s+as\s+/.test(txt)) return null;
+        const names = /\{([^}]*)\}/.exec(txt)?.[1].split(',').flatMap((x) => x.trim().split(/\s+as\s+/)).filter(Boolean) ?? [];
+        if (!names.length) return null;
+        names.forEach((x) => symbols.add(x.replace(/^type\s+/, '')));
+      } else symbols.add(d.name);
+    }
+  }
+  return neutral ? { neutral: true } : { symbols };
+}
+
+// name-level taint: tests (among dependents) that reach any changed symbol via declarations that mention it
+function symbolReach(symbols, files) {
+  const texts = new Map(files.map((f) => [f, fs.readFileSync(path.join(ROOT, f), 'utf8').split('\n')]));
+  const decls = new Map();
+  for (const [f, ls] of texts) {
+    const st = [];
+    ls.forEach((l, i) => { const m = DECL.exec(l); if (m) st.push({ i, name: m[7] }); });
+    decls.set(f, st);
+  }
+  const tainted = new Set(symbols);
+  const hit = new Set();
+  const esc = (x) => x.replace(/[$]/g, '\\$&');
+  for (let changed = true; changed;) {
+    changed = false;
+    const re = new RegExp(`(?<![\\w$])(${[...tainted].map(esc).join('|')})(?![\\w$])`);
+    for (const [f, ls] of texts) {
+      ls.forEach((l, i) => {
+        if (COMMENT_OR_BLANK.test(l) || !re.test(l)) return;
+        if (TEST_FILE.test(f)) { hit.add(f); return; }
+        let d = null;
+        for (const x of decls.get(f)) if (x.i <= i) d = x; else break;
+        if (d && !tainted.has(d.name)) { tainted.add(d.name); changed = true; }
+      });
+    }
+  }
+  return [...hit];
+}
+
 // transitive dependents (relative imports only) of the changed JS/TS files, to detect hub changes
 function relatedTests(changed) {
   const files = listFiles().filter((f) => /\.[cm]?[jt]sx?$/.test(f));
@@ -518,7 +584,7 @@ function relatedTests(changed) {
   const queue = [...seen];
   while (queue.length) for (const d of rev.get(queue.pop()) ?? []) if (!seen.has(d)) { seen.add(d); queue.push(d); }
   const direct = [...new Set(changed.flatMap((f) => rev.get(f) ?? []))].filter((f) => TEST_FILE.test(f));
-  return { direct, tests: [...seen].filter((f) => TEST_FILE.test(f)), total: files.filter((f) => TEST_FILE.test(f)).length };
+  return { direct, files: [...seen], tests: [...seen].filter((f) => TEST_FILE.test(f)), total: files.filter((f) => TEST_FILE.test(f)).length };
 }
 
 function cmdGate() {
@@ -576,8 +642,17 @@ function cmdGate() {
       const limit = c.hubThreshold ?? cfg.hubThreshold ?? 0.25;
       if (c.hubFallbackCmd && rel2.total && rel2.tests.length / rel2.total > limit) {
         lines.push(`! cmd ${c.name}: hub change (${rel2.tests.length}/${rel2.total} test files depend on it) — using hubFallbackCmd`);
+        const srcChanged = ch.filter((f) => /\.[cm]?[jt]sx?$/.test(f) && !TEST_FILE.test(f));
+        const infos = srcChanged.map(changedSymbols);
+        if (srcChanged.length && infos.every((x) => x?.neutral) && !tests.length) { lines.push(`! cmd ${c.name}: hub change is comment/whitespace-only (symbol-neutral) — skipped`); continue; }
+        if (srcChanged.length && infos.every((x) => x && (x.neutral || x.symbols))) {
+          const syms = [...new Set(infos.flatMap((x) => x.symbols ? [...x.symbols] : []))];
+          rel2.direct = syms.length ? symbolReach(syms, rel2.files) : [];
+          lines.push(`! cmd ${c.name}: scoped by changed symbols (${syms.slice(0, 5).join(', ')}${syms.length > 5 ? ', …' : ''}) → ${rel2.direct.length} test files`);
+        }
         const maxN = c.hubMaxTests ?? cfg.hubMaxTests ?? 30;
         if (new Set([...tests, ...rel2.direct]).size > maxN) { lines.push(`! cmd ${c.name}: hub too large to scope (>${maxN} direct tests) — SKIPPED, run full gate (no --changed) — result is INCOMPLETE`); incomplete = true; continue; }
+        if (!new Set([...tests, ...rel2.direct]).size) { lines.push(`! cmd ${c.name}: scoping selected no tests — SKIPPED, run full gate (no --changed) — result is INCOMPLETE`); incomplete = true; continue; }
         cmd = c.hubFallbackCmd;
       } else cmd = c.changedCmd;
       const subst = { '{changedFiles}': ch, '{changedTests}': tests, '{changedScopes}': scopes, '{directTests}': rel2.direct };
