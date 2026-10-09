@@ -386,3 +386,19 @@ test('#15 go build failure is a load error, not a Red', () => {
   fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ schemaVersion: 1, testCmd: [path.join(bin, 'go'), 'test', '-run', '{IDU}'] }));
   assert.match(sdd(d, 'tdd', 'red', 'TEST-CALC-001').out, /REJECTED.*load\/compile/);
 });
+
+test('#16 regex literals and JSX text do not desync the tokenizer; unterminated state fails open', () => {
+  const d = project();
+  fs.writeFileSync(path.join(d, 'rx.mjs'), [
+    "const a = /['`]/.test(x);",
+    "const b = s.replace(/[`/]/g, '') / 2;",
+    "const c = x / 2 / 3; // `",
+    'const j = <p>don\'t `quote</p>;',
+    '/** @id CODE-RX-001 @implements REQ-CALC-001 */',
+    'export const r = 1;',
+    '',
+  ].join('\n'));
+  assert.match(sdd(d, 'status').out, /entities 2/);
+  fs.writeFileSync(path.join(d, 'bad.mjs'), 'const t = `unterminated\n/** @id CODE-BAD-001 @implements REQ-CALC-001 */\n');
+  assert.match(sdd(d, 'status').out, /entities 3/);
+});

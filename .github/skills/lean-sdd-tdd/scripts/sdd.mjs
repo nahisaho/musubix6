@@ -79,6 +79,27 @@ function listFiles() {
 const ID_RE = /[A-Z][A-Z0-9]+(?:-[A-Z0-9]+)+/g;
 const COMMENT_LEAD = /^\s*(\*|\/\/|#|\/\*|--|;)/;
 // marks lines that start inside a multi-line JS/TS template literal (embedded fixtures)
+const REGEX_KW = /(?:^|[^\w$.])(return|typeof|case|in|of|delete|void|throw|new|else|do|yield|await)$/;
+// a '/' starts a regex literal when the previous token cannot end an expression
+function regexAllowed(l, k) {
+  const before = l.slice(0, k).trimEnd();
+  if (!before) return true;
+  const c = before.at(-1);
+  if (/[(,=:[!&|?{};+\-*%<>~^]/.test(c)) return true;
+  return REGEX_KW.test(before);
+}
+// end index of a single-line regex literal starting at k, or -1 (then treat '/' as division)
+function regexEnd(l, k) {
+  let cls = false;
+  for (let j = k + 1; j < l.length; j++) {
+    const c = l[j];
+    if (c === '\\') j++;
+    else if (c === '[') cls = true;
+    else if (c === ']') cls = false;
+    else if (c === '/' && !cls) return j;
+  }
+  return -1;
+}
 function templateLines(lines, f) {
   const flags = new Array(lines.length).fill(false);
   if (!/\.[cm]?[jt]sx?$/.test(f)) return flags;
@@ -95,7 +116,10 @@ function templateLines(lines, f) {
       if (mode === 'code') {
         if (c === '/' && n === '/') break;
         if (c === '/' && n === '*') { mode = 'block'; k++; }
-        else if (c === "'" || c === '"') {
+        else if (c === '/' && regexAllowed(l, k)) {
+          const e = regexEnd(l, k);
+          if (e > 0) k = e;
+        } else if (c === "'" || c === '"') {
           for (k++; k < l.length && l[k] !== c; k++) if (l[k] === '\\') k++;
         } else if (c === '`') mode = 'tpl';
         else if (c === '{') depth++;
@@ -109,6 +133,8 @@ function templateLines(lines, f) {
       }
     }
   }
+  // desync (unterminated template/comment at EOF): do not hide anything
+  if (mode !== 'code') return new Array(lines.length).fill(false);
   return flags;
 }
 function scanEntities(files) {
