@@ -127,3 +127,14 @@ test('#5 --missing-module accepts a declared missing import as non-weak Red', ()
   assert.equal(r.code, 0, r.out);
   assert.doesNotMatch(r.out, /weak/);
 });
+
+test('#3 --changed uses changedCmd with placeholders and reports TIMEOUT', () => {
+  const d = project();
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ checks: [
+    { name: 'slow', cmd: ['node', '-e', '0'], changedCmd: ['node', '-e', 'setTimeout(()=>{},5000)', '{changedFiles}'], changedTimeoutMs: 300 },
+    { name: 'ok', cmd: ['node', '-e', 'process.exit(1)'], changedCmd: ['node', '-e', 'process.exit(0)', '{changedTests}', '{changedScopes}'] },
+  ] }));
+  const g = sdd(d, 'gate', '--changed');
+  assert.match(g.out, /cmd slow TIMEOUT/);
+  assert.match(g.out, /✓ cmd ok/);
+});

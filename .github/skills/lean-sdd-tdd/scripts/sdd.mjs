@@ -413,14 +413,18 @@ function cmdGate() {
   if (flags['no-run']) { lines.push('! commands: SKIPPED (--no-run) — result is INCOMPLETE'); incomplete = true; }
   else for (const c of cfg.checks ?? []) {
     let cmd = c.cmd;
+    let scoped = false;
     if (flags.changed && c.changedCmd) {
       const ch = [...changedFiles()].filter((f) => !f.startsWith('.sdd/') && fs.existsSync(path.join(ROOT, f)) && fs.statSync(path.join(ROOT, f)).isFile());
       const tests = ch.filter((f) => /\.(test|spec)\.[cm]?[jt]sx?$|(^|\/)test_[^/]*\.py$|_test\.(py|go)$/.test(f));
       if (!ch.length) { lines.push(`! cmd ${c.name}: no changed files — skipped`); continue; }
-      cmd = c.changedCmd.flatMap((a) => a === '{changedFiles}' ? ch : a === '{changedTests}' ? tests : [a]);
+      const scopes = [...new Set(ch.filter((f) => !tests.includes(f)).map((f) => /^(packages|apps|libs)\/[^/]+/.exec(f)?.[0] ?? path.posix.dirname(f)))];
+      const subst = { '{changedFiles}': ch, '{changedTests}': tests, '{changedScopes}': scopes };
+      cmd = c.changedCmd.flatMap((a) => subst[a] ?? [a]);
+      scoped = true;
     }
-    const r = run(cmd, c.timeoutMs ?? cfg.timeoutMs ?? 120000);
-    if (r.timedOut) { add(false, `cmd ${c.name} TIMEOUT after ${(r.ms / 1000).toFixed(0)}s (raise timeoutMs in .sdd/config.json or scope with changedCmd)`); continue; }
+    const r = run(cmd, scoped ? (c.changedTimeoutMs ?? cfg.changedTimeoutMs ?? 60000) : (c.timeoutMs ?? cfg.timeoutMs ?? 120000));
+    if (r.timedOut) { add(false, `cmd ${c.name} TIMEOUT after ${(r.ms / 1000).toFixed(0)}s ${scoped ? '— narrow changedCmd (e.g. {changedTests} {changedScopes}) or raise changedTimeoutMs; run full gate (no --changed) before merge' : '— raise timeoutMs in .sdd/config.json'}`); continue; }
     add(r.exit === 0, `cmd ${c.name} (${(r.ms / 1000).toFixed(1)}s)`, r.exit === 0 ? [] : tail(r.text, 8).split('\n'));
   }
   if (!flags['no-run'] && !(cfg.checks ?? []).length) { lines.push('! commands: none configured — nothing was run'); incomplete = true; }
