@@ -46,7 +46,7 @@ Not enforced (agent discipline): test quality, mutation, security review. Do not
 - Go/Rust: default `testCmd` is `go test ./... -run {IDU}` (e.g. `TEST_CALC_001`, name test funcs `TestTEST_CALC_001_…`) / `cargo test {idu}` (`test_calc_001_…`). Placeholders: `{id}`, `{idu}` (lower_snake), `{IDU}` (UPPER_SNAKE). `tdd stub` supports ts/js/py only; Go and Rust were verified end-to-end (Red/Green/gate). Rust inline `#[cfg(test)]` tests work: when a file also holds `@implements` code, only the test's own `@id` region is hashed. Go `[build failed]` is a load error, not a Red.
 - `prepare: {cmd, outputs?, inputs?, timeoutMs?}` in config (auto-set from the `build` script by `init`): `gate` runs it first and caches by input hash (`.sdd/prepare-cache.json`); skipped when inputs and `outputs` are unchanged.
 - `tdd stub <TEST-ID>` writes throwing stubs for the test's missing relative imports (ts/js/py), so `tdd red` is a real, non-weak Red.
-- If `--review` is a file (e.g. `.sdd/review.md`, lines `id|sev|path:line|state`), it must have zero `Open` findings and contain the first 12 hex chars of the spec sha256; `requireReviewFile: true` in config makes a file mandatory.
+- If `--review` is a file (e.g. `.sdd/review.md`) it must follow the schema from `$S review template <feature>`: header lines `spec: sha256:<hash>` (first 12 hex chars required), `verdict: pass`, `open: <n>`; findings carry an explicit status (table cell, `- [ ]`, `state: open`, `**Open**`). `open:` must equal the Open lines found and be 0. Validate with `$S review check <file> --feature <f>`.
 - `approve record --by ai:<reviewer>` requires `--review <path|summary>`; `ai:self` is refused; gate shows lock kind and review evidence.
 
 ## 4. Review without humans

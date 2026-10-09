@@ -286,6 +286,39 @@ function cmdInit() {
   out('next: write .sdd/specs/<feature>.md (see references/spec-template.md)');
 }
 
+// Review file schema: header lines `spec: sha256:<hash>`, `verdict: pass`, `open: <n>`; findings carry an explicit status.
+const isOpenLine = (l) => /^\s*[-*]\s*\[ \]/.test(l) || /\b(state|status)\s*[:=]\s*open\b/i.test(l) || /\*\*open\*\*/i.test(l) || /^\s*[-*]\s+open\b/i.test(l) || l.split('|').some((c) => /^\s*open\s*$/i.test(c));
+function reviewProblems(text, specHash) {
+  const probs = [];
+  const lines = text.split('\n');
+  const open = lines.filter(isOpenLine);
+  const verdict = /^\s*verdict\s*[:=]\s*(\w+)/im.exec(text)?.[1]?.toLowerCase();
+  const declared = /^\s*open\s*[:=]\s*(\d+)\s*$/im.exec(text)?.[1];
+  if (!verdict) probs.push('missing `verdict: pass|fail` line');
+  else if (verdict !== 'pass') probs.push(`verdict is "${verdict}", not pass`);
+  if (declared === undefined) probs.push('missing `open: <n>` line');
+  else if (Number(declared) !== open.length) probs.push(`open: ${declared} does not match ${open.length} Open finding line(s) found`);
+  if (open.length) { probs.push(`${open.length} Open finding(s):`); open.slice(0, 5).forEach((l) => probs.push(`  ${l.trim()}`)); }
+  if (!text.includes(specHash.slice(0, 12))) probs.push(`must reference the spec hash (spec: sha256:${specHash.slice(0, 12)}…)`);
+  return probs;
+}
+function cmdReview() {
+  const [sub, a] = pos.slice(1);
+  if (sub === 'template') {
+    const spec = loadSpecs().find((x) => x.feature === a);
+    out(`spec: sha256:${spec ? fileSha(spec.path) : '<spec sha256>'}\nverdict: pass\nopen: 0\n\n## Findings\n| ID | Severity | Where | Status |\n|----|----------|-------|--------|\n| F1 | high | file.ts:10 | Closed |`);
+    return 0;
+  }
+  if (sub === 'check' && a && typeof flags.feature === 'string') {
+    const spec = loadSpecs().find((x) => x.feature === flags.feature);
+    if (!spec || !fs.existsSync(path.join(ROOT, a))) { out('usage: review check <file> --feature <feature>'); return 2; }
+    const probs = reviewProblems(fs.readFileSync(path.join(ROOT, a), 'utf8'), fileSha(spec.path));
+    out(probs.length ? `REVIEW INVALID: ${a}\n${probs.map((x) => '  ' + x).join('\n')}` : `REVIEW OK: ${a}`);
+    return probs.length ? 1 : 0;
+  }
+  out('usage: review template <feature> | review check <file> --feature <feature>');
+  return 2;
+}
 function cmdApprove() {
   const sub = pos[1];
   const specs = loadSpecs();
@@ -310,12 +343,8 @@ function cmdApprove() {
     const reviewIsFile = !!review && fs.existsSync(path.join(ROOT, review)) && fs.statSync(path.join(ROOT, review)).isFile();
     if (isAi && !reviewIsFile && loadConfig().requireReviewFile) { out('REFUSED: config requireReviewFile — --review must be a file (e.g. .sdd/review.md)'); return 1; }
     if (isAi && reviewIsFile) {
-      const text = fs.readFileSync(path.join(ROOT, review), 'utf8');
-      const isOpen = (l) => /^\s*[-*]\s*\[ \]/.test(l) || /\b(state|status)\s*[:=]\s*open\b/i.test(l) || l.split('|').some((c) => /^\s*open\s*$/i.test(c));
-      const open = text.split('\n').filter(isOpen);
-      if (open.length) { out(`REFUSED: ${review} has ${open.length} Open finding(s)`); open.slice(0, 5).forEach((l) => out(`  ${l.trim()}`)); return 1; }
-      const specHash = fileSha(spec.path);
-      if (!text.includes(specHash.slice(0, 12))) { out(`REFUSED: ${review} must reference the spec hash (sha256:${specHash.slice(0, 12)}… of ${spec.path})`); return 1; }
+      const probs = reviewProblems(fs.readFileSync(path.join(ROOT, review), 'utf8'), fileSha(spec.path));
+      if (probs.length) { out(`REFUSED: ${review} is not an acceptable review file`); probs.slice(0, 6).forEach((x) => out(`  ${x}`)); out('  see: review template <feature>'); return 1; }
     }
     const all = readJson(APPROVALS, {});
     all[spec.feature] = { by: flags.by, kind: isAi ? 'ai' : 'human', review: review || undefined, reviewSha: review && fs.existsSync(path.join(ROOT, review)) && fs.statSync(path.join(ROOT, review)).isFile() ? fileSha(review) : undefined, at: new Date().toISOString(), artifacts: Object.fromEntries(spec.artifacts.map((p) => [p, fileSha(p)])) };
@@ -794,10 +823,10 @@ function cmdStatus() {
   return 0;
 }
 
-const cmds = { init: cmdInit, approve: cmdApprove, guard: cmdGuard, tdd: cmdTdd, trace: cmdTrace, gate: cmdGate, status: cmdStatus };
+const cmds = { review: cmdReview, init: cmdInit, approve: cmdApprove, guard: cmdGuard, tdd: cmdTdd, trace: cmdTrace, gate: cmdGate, status: cmdStatus };
 const fn = cmds[pos[0]];
 if (!fn) {
-  out('usage: sdd.mjs init | approve prepare|record <feature> | guard | tdd red|green|refactor <TEST-ID> | tdd stub <TEST-ID> | tdd check | trace [--baseline] | gate [--changed] [--no-run] | status   [--root dir]\n  tdd red: tdd red --expect <text> requires that text in the failure; --allow-setup-red accepts a stub-in-setup Red; --missing-module accepts a Red caused by the test own not-yet-created import (non-weak); approve record --by ai:<reviewer> needs --review <path|summary>');
+  out('usage: sdd.mjs init | review template <feature> | review check <file> --feature <f> | approve prepare|record <feature> | guard | tdd red|green|refactor <TEST-ID> | tdd stub <TEST-ID> | tdd check | trace [--baseline] | gate [--changed] [--no-run] | status   [--root dir]\n  tdd red: tdd red --expect <text> requires that text in the failure; --allow-setup-red accepts a stub-in-setup Red; --missing-module accepts a Red caused by the test own not-yet-created import (non-weak); approve record --by ai:<reviewer> needs --review <path|summary>');
   process.exit(2);
 }
 process.exit(fn() ?? 0);

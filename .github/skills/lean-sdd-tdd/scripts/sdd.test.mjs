@@ -143,11 +143,13 @@ test('#4 review file: Open findings and missing spec hash are refused', () => {
   const d = project();
   const rv = path.join(d, '.sdd/review.md');
   const hash = sdd(d, 'approve', 'prepare', 'calc').out.match(/sha256:([0-9a-f]{64})/)[1];
-  fs.writeFileSync(rv, `spec ${hash}\nF1|high|add.mjs:1|Open\n`);
+  fs.writeFileSync(rv, `spec ${hash}\nverdict: pass\nopen: 1\nF1|high|add.mjs:1|Open\n`);
   assert.match(sdd(d, 'approve', 'record', 'calc', '--by', 'ai:duck', '--review', '.sdd/review.md').out, /1 Open/);
-  fs.writeFileSync(rv, 'F1|high|add.mjs:1|Closed\n');
-  assert.match(sdd(d, 'approve', 'record', 'calc', '--by', 'ai:duck', '--review', '.sdd/review.md').out, /spec hash/);
   fs.writeFileSync(rv, `spec ${hash}\nF1|high|add.mjs:1|Closed\n`);
+  assert.match(sdd(d, 'approve', 'record', 'calc', '--by', 'ai:duck', '--review', '.sdd/review.md').out, /missing `verdict/);
+  fs.writeFileSync(rv, 'verdict: pass\nopen: 0\nF1|high|add.mjs:1|Closed\n');
+  assert.match(sdd(d, 'approve', 'record', 'calc', '--by', 'ai:duck', '--review', '.sdd/review.md').out, /spec hash/);
+  fs.writeFileSync(rv, `spec ${hash}\nverdict: pass\nopen: 0\nF1|high|add.mjs:1|Closed\n`);
   assert.equal(sdd(d, 'approve', 'record', 'calc', '--by', 'ai:duck', '--review', '.sdd/review.md').code, 0);
   assert.match(sdd(d, 'gate', '--no-run').out, /\[ai, review file\]/);
   fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ requireReviewFile: true, checks: [] }));
@@ -168,11 +170,11 @@ test('#5 tdd stub creates a throwing stub so Red is real (not weak)', () => {
 test('#4 Open detection covers table, checkbox and state: formats', () => {
   const d = project();
   const hash = sdd(d, 'approve', 'prepare', 'calc').out.match(/sha256:([0-9a-f]{64})/)[1];
-  for (const line of ['| F1 | high | a.mjs:1 | Open |', '- [ ] F1 fix it', 'F1 state: Open', 'F1|high|a.mjs:1|OPEN']) {
-    fs.writeFileSync(path.join(d, '.sdd/review.md'), `spec ${hash}\n${line}\n`);
-    assert.match(sdd(d, 'approve', 'record', 'calc', '--by', 'ai:duck', '--review', '.sdd/review.md').out, /Open finding/, line);
+  for (const line of ['| F1 | high | a.mjs:1 | Open |', '- [ ] F1 fix it', 'F1 state: Open', 'F1|high|a.mjs:1|OPEN', '**Open** F1 fix', '- Open: F1 fix']) {
+    fs.writeFileSync(path.join(d, '.sdd/review.md'), `spec ${hash}\nverdict: pass\nopen: 1\n${line}\n`);
+    assert.match(sdd(d, 'approve', 'record', 'calc', '--by', 'ai:duck', '--review', '.sdd/review.md').out, /1 Open/, line);
   }
-  fs.writeFileSync(path.join(d, '.sdd/review.md'), `spec ${hash}\n| F1 | high | a.mjs:1 | Closed |\n- [x] F2 done\nopen source note\n`);
+  fs.writeFileSync(path.join(d, '.sdd/review.md'), `spec ${hash}\nverdict: pass\nopen: 0\n| F1 | high | a.mjs:1 | Closed |\n- [x] F2 done\nopen source note\n`);
   assert.equal(sdd(d, 'approve', 'record', 'calc', '--by', 'ai:duck', '--review', '.sdd/review.md').code, 0);
 });
 
@@ -401,4 +403,15 @@ test('#16 regex literals and JSX text do not desync the tokenizer; unterminated 
   assert.match(sdd(d, 'status').out, /entities 2/);
   fs.writeFileSync(path.join(d, 'bad.mjs'), 'const t = `unterminated\n/** @id CODE-BAD-001 @implements REQ-CALC-001 */\n');
   assert.match(sdd(d, 'status').out, /entities 3/);
+});
+
+test('#17 review template/check: schema is validated, counts must match', () => {
+  const d = project();
+  const t = sdd(d, 'review', 'template', 'calc').out;
+  fs.writeFileSync(path.join(d, '.sdd/review.md'), t);
+  assert.match(sdd(d, 'review', 'check', '.sdd/review.md', '--feature', 'calc').out, /REVIEW OK/);
+  fs.writeFileSync(path.join(d, '.sdd/review.md'), t.replace('verdict: pass', 'verdict: fail'));
+  assert.equal(sdd(d, 'review', 'check', '.sdd/review.md', '--feature', 'calc').code, 1);
+  fs.writeFileSync(path.join(d, '.sdd/review.md'), t.replace('Closed', 'Open'));
+  assert.match(sdd(d, 'review', 'check', '.sdd/review.md', '--feature', 'calc').out, /does not match 1/);
 });
