@@ -182,3 +182,42 @@ test('#1 @id inside multi-line template literals is ignored', () => {
   fs.writeFileSync(path.join(d, 'fy.test.mjs'), 'const b = `x\n/** @id TEST-EX-001\n * @verifies REQ-CALC-001 */`;\n');
   assert.doesNotMatch(sdd(d, 'trace').out, /TEST-EX-001/);
 });
+
+test('#8 baseline counts multiplicity: an added same-kind error is new', () => {
+  const d = project();
+  fs.writeFileSync(path.join(d, 'o1.mjs'), '/** @id CODE-O-001 @implements REQ-NOPE-1 */\n');
+  sdd(d, 'trace', '--baseline');
+  assert.equal(sdd(d, 'trace').code, 0);
+  fs.writeFileSync(path.join(d, 'o2.mjs'), '/** @id CODE-O-001 @implements REQ-NOPE-1 */\n');
+  assert.equal(sdd(d, 'trace').code, 1);
+});
+
+test('#7 hub change uses hubFallbackCmd; leaf change uses changedCmd', () => {
+  const d = project();
+  fs.writeFileSync(path.join(d, 'hub.mjs'), 'export const h = 1;\n');
+  for (let i = 0; i < 4; i++) fs.writeFileSync(path.join(d, `t${i}.test.mjs`), "import { h } from './hub.mjs';\nexport { h };\n");
+  fs.writeFileSync(path.join(d, 'leaf.mjs'), 'export const l = 1;\n');
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ checks: [
+    { name: 'k', cmd: ['node', '-e', '0'], changedCmd: ['node', '-e', 'console.log("RELATED")'], hubFallbackCmd: ['node', '-e', 'console.log("NARROW")'], hubThreshold: 0.5 },
+  ] }));
+  spawnSync('git', ['add', '-A'], { cwd: d });
+  spawnSync('git', ['-c', 'user.email=a@b', '-c', 'user.name=n', 'commit', '-qm', 'x'], { cwd: d });
+  fs.appendFileSync(path.join(d, 'hub.mjs'), '// c\n');
+  assert.match(sdd(d, 'gate', '--changed').out, /hub change/);
+  spawnSync('git', ['checkout', 'hub.mjs'], { cwd: d });
+  fs.appendFileSync(path.join(d, 'leaf.mjs'), '// c\n');
+  assert.doesNotMatch(sdd(d, 'gate', '--changed').out, /hub change/);
+});
+
+test('#7 oversized hub is skipped as INCOMPLETE, not timed out', () => {
+  const d = project();
+  fs.writeFileSync(path.join(d, 'hub.mjs'), 'export const h = 1;\n');
+  for (let i = 0; i < 4; i++) fs.writeFileSync(path.join(d, `t${i}.test.mjs`), "import { h } from './hub.mjs';\nexport { h };\n");
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ checks: [
+    { name: 'k', cmd: ['node', '-e', '0'], changedCmd: ['node', '-e', '0'], hubFallbackCmd: ['node', '-e', '0'], hubThreshold: 0.5, hubMaxTests: 2 },
+  ] }));
+  spawnSync('git', ['add', '-A'], { cwd: d });
+  spawnSync('git', ['-c', 'user.email=a@b', '-c', 'user.name=n', 'commit', '-qm', 'x'], { cwd: d });
+  fs.appendFileSync(path.join(d, 'hub.mjs'), '// c\n');
+  assert.match(sdd(d, 'gate', '--changed').out, /hub too large[\s\S]*INCOMPLETE|INCOMPLETE[\s\S]*hub too large/);
+});

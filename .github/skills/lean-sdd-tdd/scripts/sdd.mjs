@@ -189,7 +189,7 @@ function detectConfig() {
   const checks = [];
   const pm = has('pnpm-lock.yaml') ? 'pnpm' : has('yarn.lock') ? 'yarn' : 'npm';
   const related = deps.vitest ? ['npx', 'vitest', 'related', '--run', '{changedFiles}'] : deps.jest ? ['npx', 'jest', '--findRelatedTests', '{changedFiles}'] : undefined;
-  for (const s of ['typecheck', 'lint', 'test']) if (pkg?.scripts?.[s]) checks.push({ name: s, cmd: [pm, 'run', s], ...(s === 'test' && related ? { changedCmd: related } : {}) });
+  for (const s of ['typecheck', 'lint', 'test']) if (pkg?.scripts?.[s]) checks.push({ name: s, cmd: [pm, 'run', s], ...(s === 'test' && related ? { changedCmd: related, hubFallbackCmd: ['npx', deps.vitest ? 'vitest' : 'jest', ...(deps.vitest ? ['run'] : []), '{changedTests}', '{directTests}'] } : {}) });
   return { schemaVersion: 1, testCmd, checks, timeoutMs: 120000 };
 }
 const loadConfig = () => readJson(CONFIG, null) ?? detectConfig();
@@ -410,9 +410,14 @@ const errKey = (e) => e.replace(/:\d+/g, '');
 function applyBaseline(t) {
   const base = readJson(BASELINE, null);
   if (!base && !flags.changed) return t;
-  const known = new Set(base?.errors ?? []);
+  const budget = new Map();
+  for (const k of base?.errors ?? []) budget.set(k, (budget.get(k) ?? 0) + 1);
   const ch = flags.changed ? changedFiles() : null;
-  const keep = (e) => !known.has(errKey(e)) && (base || !ch || [...ch].some((f) => e.includes(f)));
+  const keep = (e) => {
+    const k = errKey(e);
+    if (budget.get(k) > 0) { budget.set(k, budget.get(k) - 1); return false; }
+    return base || !ch || [...ch].some((f) => e.includes(f));
+  };
   return { ...t, errors: t.errors.filter(keep) };
 }
 
@@ -435,6 +440,32 @@ function changedFiles() {
   const st = spawnSync('git', ['status', '--porcelain'], { cwd: ROOT, encoding: 'utf8' });
   if (st.status === 0) for (const l of st.stdout.split('\n').filter(Boolean)) set.add(l.slice(3).split(' -> ').pop());
   return set;
+}
+
+const TEST_FILE = /\.(test|spec)\.[cm]?[jt]sx?$|(^|\/)test_[^/]*\.py$|_test\.(py|go)$/;
+// transitive dependents (relative imports only) of the changed JS/TS files, to detect hub changes
+function relatedTests(changed) {
+  const files = listFiles().filter((f) => /\.[cm]?[jt]sx?$/.test(f));
+  const set = new Set(files);
+  const resolve = (from, spec) => {
+    const base = path.posix.normalize(path.posix.join(path.posix.dirname(from), spec));
+    const stem = base.replace(/\.[cm]?[jt]sx?$/, '');
+    for (const c of [base, ...['.ts', '.tsx', '.js', '.mjs', '.cjs', '.jsx', '/index.ts', '/index.js'].map((e) => stem + e)]) if (set.has(c)) return c;
+    return null;
+  };
+  const rev = new Map();
+  for (const f of files) {
+    const src = fs.readFileSync(path.join(ROOT, f), 'utf8');
+    for (const m of src.matchAll(/(?:from\s+|import\s*\(?\s*|require\(\s*)['"](\.{1,2}\/[^'"]+)['"]/g)) {
+      const t = resolve(f, m[1]);
+      if (t) { if (!rev.has(t)) rev.set(t, []); rev.get(t).push(f); }
+    }
+  }
+  const seen = new Set(changed.filter((f) => set.has(f)));
+  const queue = [...seen];
+  while (queue.length) for (const d of rev.get(queue.pop()) ?? []) if (!seen.has(d)) { seen.add(d); queue.push(d); }
+  const direct = [...new Set(changed.flatMap((f) => rev.get(f) ?? []))].filter((f) => TEST_FILE.test(f));
+  return { direct, tests: [...seen].filter((f) => TEST_FILE.test(f)), total: files.filter((f) => TEST_FILE.test(f)).length };
 }
 
 function cmdGate() {
@@ -488,8 +519,16 @@ function cmdGate() {
       const tests = ch.filter((f) => /\.(test|spec)\.[cm]?[jt]sx?$|(^|\/)test_[^/]*\.py$|_test\.(py|go)$/.test(f));
       if (!ch.length) { lines.push(`! cmd ${c.name}: no changed files — skipped`); continue; }
       const scopes = [...new Set(ch.filter((f) => !tests.includes(f)).map((f) => /^(packages|apps|libs)\/[^/]+/.exec(f)?.[0] ?? path.posix.dirname(f)))];
-      const subst = { '{changedFiles}': ch, '{changedTests}': tests, '{changedScopes}': scopes };
-      cmd = c.changedCmd.flatMap((a) => subst[a] ?? [a]);
+      const rel2 = relatedTests(ch);
+      const limit = c.hubThreshold ?? cfg.hubThreshold ?? 0.25;
+      if (c.hubFallbackCmd && rel2.total && rel2.tests.length / rel2.total > limit) {
+        lines.push(`! cmd ${c.name}: hub change (${rel2.tests.length}/${rel2.total} test files depend on it) — using hubFallbackCmd`);
+        const maxN = c.hubMaxTests ?? cfg.hubMaxTests ?? 30;
+        if (new Set([...tests, ...rel2.direct]).size > maxN) { lines.push(`! cmd ${c.name}: hub too large to scope (>${maxN} direct tests) — SKIPPED, run full gate (no --changed) — result is INCOMPLETE`); incomplete = true; continue; }
+        cmd = c.hubFallbackCmd;
+      } else cmd = c.changedCmd;
+      const subst = { '{changedFiles}': ch, '{changedTests}': tests, '{changedScopes}': scopes, '{directTests}': rel2.direct };
+      cmd = cmd.flatMap((a) => subst[a] ?? [a]);
       scoped = true;
     }
     const r = run(cmd, scoped ? (c.changedTimeoutMs ?? cfg.changedTimeoutMs ?? 60000) : (c.timeoutMs ?? cfg.timeoutMs ?? 120000));
