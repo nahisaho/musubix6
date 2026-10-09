@@ -6,7 +6,7 @@ import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 
-const BOOL = new Set(['missing-module', 'baseline', 'weak', 'changed', 'json', 'no-run', 'help']);
+const BOOL = new Set(['allow-setup-red', 'missing-module', 'baseline', 'weak', 'changed', 'json', 'no-run', 'help']);
 function parseArgs(argv) {
   const pos = [];
   const flags = {};
@@ -340,6 +340,27 @@ function stubFor(testPath) {
   return made;
 }
 
+// body of the test annotated with `@id <id>` (up to the next @id), as lines
+function testBody(testPath, id) {
+  const ls = fs.readFileSync(path.join(ROOT, testPath), 'utf8').split('\n');
+  const start = ls.findIndex((l) => new RegExp(`@id\\s+${id}\\b`).test(l));
+  if (start < 0) return [];
+  let end = ls.findIndex((l, i) => i > start && /@id\s/.test(l));
+  if (end < 0) end = ls.length;
+  return ls.slice(start, end);
+}
+const ASSERT_LINE = /(expect\s*\(|\bassert|raises|toThrow|\.should|assertEquals|t\.(Error|Fatal))/;
+// Red caused by a stub called from setup (not from the asserted behaviour) is not evidence for the REQ
+function setupOrigin(line, testPath, id) {
+  const m = /not implemented:?\s*([\w$]+)|NotImplementedError:?\s*([\w$]+)|unimplemented!?\(?\s*"?([\w$]+)/i.exec(line ?? '');
+  const x = m?.[1] ?? m?.[2] ?? m?.[3];
+  if (!x) return null;
+  const asserts = testBody(testPath, id).filter((l) => ASSERT_LINE.test(l));
+  if (!asserts.length) return null;
+  const re = new RegExp(`(?<![\\w$])${x.replace(/[$]/g, '\\$&')}(?![\\w$])`);
+  return asserts.some((l) => re.test(l)) ? null : x;
+}
+
 function cmdTdd() {
   const sub = pos[1];
   const files = listFiles();
@@ -390,6 +411,7 @@ function cmdTdd() {
     if (res.exit === 0) { ok = false; why = 'test passed; Red needs a real failure'; }
     else if (zero) { ok = false; why = 'no test matched the ID (check @id vs test title)'; }
     else if (LOAD_ERR.test(res.text) && !flags.weak && !(flags['missing-module'] && declaredMissingModule(res.text, t.path))) { ok = false; why = 'load/compile error, not an assertion failure. new module? run `tdd stub <ID>` (or `--missing-module`); otherwise fix the load error, or --weak to record as weak Red'; }
+    else if (typeof flags.expect === 'string' && !res.text.includes(flags.expect)) { ok = false; why = `failure output does not contain --expect "${flags.expect}" (Red for the wrong reason?)`; }
     else ok = true;
   } else {
     if (res.exit !== 0) { ok = false; why = 'test failed'; }
@@ -397,10 +419,13 @@ function cmdTdd() {
     else ok = true;
   }
   if (!ok) { out(`${sub.toUpperCase()} REJECTED ${id}: ${why}`); out(tail(res.text, 12)); return 1; }
-  appendLedger({ type: sub, test: id, req, file: t.path, fileSha: after, cmdSha: sha(cmd.join('\u0000')), exit: res.exit, ms: res.ms, weak: sub === 'red' && LOAD_ERR.test(res.text) && !(flags['missing-module'] && declaredMissingModule(res.text, t.path)) ? true : undefined });
-  const rl = res.text.split('\n').map((l) => l.trim());
+  const rl = res.text.replace(/\x1b\[[0-9;]*m/g, '').split('\n').map((l) => l.trim());
   const reason = sub === 'red' ? (rl.find((l) => /^E\s+\S/.test(l))?.replace(/^E\s+/, '') ?? rl.find((l) => /(AssertionError|Error:|assert |FAILED|panicked|expected)/.test(l) && !/^(FAIL|❯)/.test(l)) ?? '').slice(0, 110) : '';
-  out(`${sub.toUpperCase()} ok ${id} (${req}) ${res.ms}ms${reason ? ` — fails with: ${reason}` : ''}${sub === 'red' && LOAD_ERR.test(res.text) && !(flags['missing-module'] && declaredMissingModule(res.text, t.path)) ? ' [weak]' : ''}`);
+  const loadWeak = sub === 'red' && LOAD_ERR.test(res.text) && !(flags['missing-module'] && declaredMissingModule(res.text, t.path));
+  const setupSym = sub === 'red' && !flags['allow-setup-red'] && typeof flags.expect !== 'string' ? setupOrigin(rl.find((l) => /not implemented|NotImplementedError|unimplemented/i.test(l)) ?? reason, t.path, id) : null;
+  const weakRed = loadWeak || !!setupSym;
+  appendLedger({ type: sub, test: id, req, file: t.path, fileSha: after, cmdSha: sha(cmd.join('\0')), exit: res.exit, ms: res.ms, weak: weakRed ? true : undefined, weakWhy: setupSym ? `setup:${setupSym}` : undefined });
+  out(`${sub.toUpperCase()} ok ${id} (${req}) ${res.ms}ms${reason ? ` — fails with: ${reason}` : ''}${weakRed ? ' [weak]' : ''}${setupSym ? ` ⚠ Red comes from setup call "${setupSym}", not the asserted behaviour (use --expect <text> or --allow-setup-red)` : ''}`);
   return 0;
 }
 
@@ -735,7 +760,7 @@ function cmdStatus() {
 const cmds = { init: cmdInit, approve: cmdApprove, guard: cmdGuard, tdd: cmdTdd, trace: cmdTrace, gate: cmdGate, status: cmdStatus };
 const fn = cmds[pos[0]];
 if (!fn) {
-  out('usage: sdd.mjs init | approve prepare|record <feature> | guard | tdd red|green|refactor <TEST-ID> | tdd stub <TEST-ID> | tdd check | trace [--baseline] | gate [--changed] [--no-run] | status   [--root dir]\n  tdd red: tdd red --missing-module accepts a Red caused by the test own not-yet-created import (non-weak); approve record --by ai:<reviewer> needs --review <path|summary>');
+  out('usage: sdd.mjs init | approve prepare|record <feature> | guard | tdd red|green|refactor <TEST-ID> | tdd stub <TEST-ID> | tdd check | trace [--baseline] | gate [--changed] [--no-run] | status   [--root dir]\n  tdd red: tdd red --expect <text> requires that text in the failure; --allow-setup-red accepts a stub-in-setup Red; --missing-module accepts a Red caused by the test own not-yet-created import (non-weak); approve record --by ai:<reviewer> needs --review <path|summary>');
   process.exit(2);
 }
 process.exit(fn() ?? 0);

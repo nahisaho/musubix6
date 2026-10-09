@@ -314,3 +314,28 @@ test('python projects: init uses python3 -m pytest (cwd on sys.path) and a defau
   assert.deepEqual(c.testCmd.slice(0, 3), ['python3', '-m', 'pytest']);
   assert.equal(c.checks[0].name, 'test');
 });
+
+test('#14 stub Red from a setup call is weak; --expect / --allow-setup-red override', () => {
+  const d = project();
+  sdd(d, 'approve', 'record', 'calc', '--by', 'tester');
+  fs.writeFileSync(path.join(d, 'add.test.mjs'), [
+    "import { test } from 'node:test';",
+    "import assert from 'node:assert/strict';",
+    "import { add, reset } from './add.mjs';",
+    '/** @id TEST-CALC-001 @verifies REQ-CALC-001 */',
+    "test('TEST-CALC-001 adds', () => {",
+    '  reset();',
+    '  assert.equal(add(1, 2), 3);',
+    '});',
+    '',
+  ].join('\n'));
+  const stub = (a, r) => fs.writeFileSync(path.join(d, 'add.mjs'), `export const add = ${a};\nexport const reset = ${r};\n`);
+  stub('() => 3', "() => { throw new Error('not implemented: reset'); }");
+  const w = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
+  assert.equal(w.code, 0, w.out);
+  assert.match(w.out, /\[weak\].*setup call "reset"/);
+  assert.match(sdd(d, 'tdd', 'red', 'TEST-CALC-001', '--expect', 'not implemented: add').out, /REJECTED.*--expect/);
+  assert.doesNotMatch(sdd(d, 'tdd', 'red', 'TEST-CALC-001', '--allow-setup-red').out, /\[weak\]/);
+  stub("() => { throw new Error('not implemented: add'); }", '() => {}');
+  assert.doesNotMatch(sdd(d, 'tdd', 'red', 'TEST-CALC-001').out, /\[weak\]/);
+});
