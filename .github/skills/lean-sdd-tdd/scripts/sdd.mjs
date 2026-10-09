@@ -232,9 +232,9 @@ function evidenceStatus(testId, testPath, entries) {
 }
 
 // ---------- config / commands ----------
-function detectConfig() {
-  const pkg = readJson(path.join(ROOT, 'package.json'), null);
-  const has = (f) => fs.existsSync(path.join(ROOT, f));
+function detectConfig(base = ROOT) {
+  const pkg = readJson(path.join(base, 'package.json'), null);
+  const has = (f) => fs.existsSync(path.join(base, f));
   const deps = { ...pkg?.dependencies, ...pkg?.devDependencies };
   let testCmd;
   const gradle = (has('build.gradle') || has('build.gradle.kts') || has('settings.gradle') || has('settings.gradle.kts')) ? (has('gradlew') ? './gradlew' : 'gradle') : null;
@@ -266,10 +266,23 @@ function detectConfig() {
   return { schemaVersion: 1, testCmd, ...(prepare ? { prepare } : {}), checks, timeoutMs: 120000 };
 }
 const loadConfig = () => readJson(CONFIG, null) ?? detectConfig();
+const MANIFESTS = /(^|\/)(package\.json|pyproject\.toml|requirements\.txt|pytest\.ini|go\.mod|Cargo\.toml|pom\.xml|build\.gradle(\.kts)?|settings\.gradle(\.kts)?|CMakeLists\.txt)$/;
+// polyglot monorepo: nested manifests become projects with their own cwd/testCmd/checks
+function detectProjects() {
+  const dirs = new Set();
+  const all = spawnSync('git', ['ls-files', '-co', '--exclude-standard'], { cwd: ROOT, encoding: 'utf8', maxBuffer: 64e6 }).stdout.split('\n');
+  for (const f of all) if (MANIFESTS.test(f) && f.includes('/') && !/(^|\/)(node_modules|vendor|target|build)\//.test(f)) dirs.add(path.posix.dirname(f));
+  const roots = [...dirs].sort().filter((d, i, a) => !a.slice(0, i).some((p) => d.startsWith(p + '/')));
+  return roots.map((root) => { const c = detectConfig(path.join(ROOT, root)); return { root, testCmd: c.testCmd, checks: c.checks.map(({ name, cmd }) => ({ name, cmd })) }; });
+}
+function projectFor(p) {
+  const ps = (loadConfig().projects ?? []).filter((x) => p === x.root || p.startsWith(x.root.replace(/\/$/, '') + '/'));
+  return ps.sort((a, b) => b.root.length - a.root.length)[0] ?? null;
+}
 
-function run(cmd, timeoutMs) {
+function run(cmd, timeoutMs, cwd = '.') {
   const t0 = Date.now();
-  const r = spawnSync(cmd[0], cmd.slice(1), { cwd: ROOT, encoding: 'utf8', timeout: timeoutMs, maxBuffer: 64e6 });
+  const r = spawnSync(cmd[0], cmd.slice(1), { cwd: path.resolve(ROOT, cwd), encoding: 'utf8', timeout: timeoutMs, maxBuffer: 64e6 });
   const text = (r.stdout ?? '') + (r.stderr ?? '') + (r.error ? String(r.error.message) : '');
   return { exit: r.status ?? (r.error ? 127 : 1), text, ms: Date.now() - t0, timedOut: r.error?.code === 'ETIMEDOUT' };
 }
@@ -290,9 +303,12 @@ const ZERO_TESTS = /(no tests? (found|ran|collected)|# tests 0\b|ran 0 tests|col
 // ---------- commands ----------
 function cmdInit() {
   const cfg = detectConfig();
+  const rootHasManifest = fs.readdirSync(ROOT).some((f) => MANIFESTS.test(f));
+  if (!rootHasManifest) { const projects = detectProjects(); if (projects.length) { cfg.projects = projects; cfg.checks = []; } }
   if (!fs.existsSync(CONFIG)) writeJson(CONFIG, cfg);
   fs.mkdirSync(SPECS, { recursive: true });
-  if (cfg.testCmd[0] === 'node' && !fs.existsSync(path.join(ROOT, 'package.json'))) out('WARNING: stack not recognised (no package.json/pytest/go.mod/Cargo.toml/pom.xml/gradle/CMakeLists.txt) — testCmd is a Node fallback. Set testCmd in .sdd/config.json to a runner that filters by test name, e.g. ["sh","run_tests.sh","{idu}"] (see SKILL.md "Other stacks").');
+  if (cfg.projects?.length) out(`projects: ${cfg.projects.map((p) => `${p.root} (${p.testCmd.slice(0, 2).join(' ')})`).join(', ')} — each test runs in its project directory`);
+  else if (cfg.testCmd[0] === 'node' && !fs.existsSync(path.join(ROOT, 'package.json'))) out('WARNING: stack not recognised (no package.json/pytest/go.mod/Cargo.toml/pom.xml/gradle/CMakeLists.txt) — testCmd is a Node fallback. Set testCmd in .sdd/config.json to a runner that filters by test name, e.g. ["sh","run_tests.sh","{idu}"] (see SKILL.md "Other stacks").');
   out(`init ok: ${rel(CONFIG)} (testCmd: ${cfg.testCmd.join(' ')}; checks: ${cfg.checks.map((c) => c.name).join(',') || 'none'})`);
   out('next: write .sdd/specs/<feature>.md (see references/spec-template.md)');
 }
@@ -476,8 +492,10 @@ function cmdTdd() {
   if (sub === 'refactor' && !prior.some((e) => e.type === 'green')) { out(`REFUSED: no Green recorded for ${id}`); return 1; }
 
   const cfg = loadConfig();
-  const cmd = cfg.testCmd.map((a) => a.replaceAll('{id}', id).replaceAll('{idu}', id.toLowerCase().replaceAll('-', '_')).replaceAll('{IDU}', id.toUpperCase().replaceAll('-', '_')).replaceAll('{file}', t.path));
-  const res = run(cmd, cfg.timeoutMs ?? 120000);
+  const proj = projectFor(t.path);
+  const fileArg = proj ? path.posix.relative(proj.root, t.path) : t.path;
+  const cmd = (proj?.testCmd ?? cfg.testCmd).map((a) => a.replaceAll('{id}', id).replaceAll('{idu}', id.toLowerCase().replaceAll('-', '_')).replaceAll('{IDU}', id.toUpperCase().replaceAll('-', '_')).replaceAll('{file}', fileArg));
+  const res = run(cmd, cfg.timeoutMs ?? 120000, proj?.root);
   const after = testSha(t.path, id);
   if (after !== before) { out(`REFUSED: ${t.path} changed while running (formatter/watch?)`); return 1; }
 
@@ -783,9 +801,11 @@ function cmdGate() {
       else add(false, r.timedOut ? `prepare TIMEOUT after ${(r.ms / 1000).toFixed(0)}s (raise prepare.timeoutMs)` : `prepare failed (${(r.ms / 1000).toFixed(1)}s)`, r.timedOut ? [] : tail(r.text, 8).split('\n'));
     }
   }
+  const allChecks = [...(cfg.checks ?? []), ...(cfg.projects ?? []).flatMap((p) => (p.checks ?? []).map((c) => ({ ...c, name: `${p.root}:${c.name}`, cwd: p.root })))];
   if (flags['no-run']) { lines.push('! commands: SKIPPED (--no-run) — result is INCOMPLETE'); incomplete = true; }
-  else for (const c of cfg.checks ?? []) {
+  else for (const c of allChecks) {
     let cmd = c.cmd;
+    if (c.cwd && flags.changed && ![...changedFiles()].some((f) => f.startsWith(c.cwd.replace(/\/$/, '') + '/'))) { lines.push(`! cmd ${c.name}: no changed files in ${c.cwd} — skipped`); continue; }
     let scoped = false;
     if (flags.changed && c.changedCmd) {
       const ch = [...changedFiles()].filter((f) => !f.startsWith('.sdd/') && fs.existsSync(path.join(ROOT, f)) && fs.statSync(path.join(ROOT, f)).isFile());
@@ -813,11 +833,11 @@ function cmdGate() {
       cmd = cmd.flatMap((a) => subst[a] ?? [a]);
       scoped = true;
     }
-    const r = run(cmd, scoped ? (c.changedTimeoutMs ?? cfg.changedTimeoutMs ?? 60000) : (c.timeoutMs ?? cfg.timeoutMs ?? 120000));
+    const r = run(cmd, scoped ? (c.changedTimeoutMs ?? cfg.changedTimeoutMs ?? 60000) : (c.timeoutMs ?? cfg.timeoutMs ?? 120000), c.cwd);
     if (r.timedOut) { add(false, `cmd ${c.name} TIMEOUT after ${(r.ms / 1000).toFixed(0)}s ${scoped ? '— narrow changedCmd (e.g. {changedTests} {changedScopes}) or raise changedTimeoutMs; run full gate (no --changed) before merge' : '— raise timeoutMs in .sdd/config.json'}`); continue; }
     add(r.exit === 0, `cmd ${c.name} (${(r.ms / 1000).toFixed(1)}s)`, r.exit === 0 ? [] : tail(r.text, 8).split('\n'));
   }
-  if (!flags['no-run'] && !(cfg.checks ?? []).length) { lines.push('! commands: none configured — nothing was run'); incomplete = true; }
+  if (!flags['no-run'] && !allChecks.length) { lines.push('! commands: none configured — nothing was run'); incomplete = true; }
 
   const verdict = fail ? 'FAIL' : incomplete ? 'INCOMPLETE' : 'PASS';
   if (flags.json) out(JSON.stringify({ verdict, lines }));

@@ -462,3 +462,28 @@ test('#24 init detects Maven / Gradle / CMake and zero-match is reported before 
   fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ schemaVersion: 1, testCmd: ['sh', '-c', 'echo "Tests run: 0, Failures: 0"; exit 0'] }));
   assert.match(sdd(d, 'tdd', 'red', 'TEST-CALC-001').out, /no test matched/);
 });
+
+test('#30 polyglot monorepo: nested manifests become projects run in their own cwd', () => {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-'));
+  spawnSync('git', ['init', '-q'], { cwd: d });
+  fs.mkdirSync(path.join(d, 'services/py'), { recursive: true });
+  fs.mkdirSync(path.join(d, 'services/go'), { recursive: true });
+  fs.mkdirSync(path.join(d, '.sdd/specs'), { recursive: true });
+  fs.writeFileSync(path.join(d, 'services/py/pyproject.toml'), '');
+  fs.writeFileSync(path.join(d, 'services/go/go.mod'), 'module x\n');
+  fs.writeFileSync(path.join(d, '.sdd/specs/g.md'), '---\nfeature: g\ntier: T1\n---\n| REQ-GO-001 | When x, the system shall y. | TEST-GO-001 |\n');
+  fs.writeFileSync(path.join(d, 'services/go/x_test.go'), '// @id TEST-GO-001 @verifies REQ-GO-001\nfunc TestX() {}\n');
+  assert.match(sdd(d, 'init').out, /projects: services\/go.*services\/py/);
+  const c = JSON.parse(fs.readFileSync(path.join(d, '.sdd/config.json'), 'utf8'));
+  assert.deepEqual(c.projects.map((p) => p.root), ['services/go', 'services/py']);
+  assert.deepEqual(c.projects[0].testCmd.slice(0, 2), ['go', 'test']);
+  c.projects[0].testCmd = ['sh', '-c', 'echo "cwd=$(pwd) file=$0"; echo "FAIL x"; exit 1', '{file}'];
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify(c));
+  const r = sdd(d, 'tdd', 'red', 'TEST-GO-001');
+  assert.equal(r.code, 0, r.out);
+  const ledger = fs.readFileSync(path.join(d, '.sdd/tdd.jsonl'), 'utf8');
+  assert.match(ledger, /services\/go\/x_test\.go/);
+  c.projects[0].checks = [{ name: 'test', cmd: ['sh', '-c', 'exit 0'] }];
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify(c));
+  assert.match(sdd(d, 'gate').out, /cmd services\/go:test/);
+});
