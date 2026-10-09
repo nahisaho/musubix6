@@ -202,13 +202,18 @@ function detectConfig() {
   let testCmd;
   if (deps.vitest) testCmd = ['npx', 'vitest', 'run', '{file}', '-t', '{id}'];
   else if (deps.jest) testCmd = ['npx', 'jest', '{file}', '-t', '{id}'];
-  else if (has('pyproject.toml') || has('pytest.ini') || has('requirements.txt')) testCmd = ['pytest', '-q', '{file}', '-k', '{idu}'];
+  else if (has('pyproject.toml') || has('pytest.ini') || has('requirements.txt')) testCmd = ['python3', '-m', 'pytest', '-q', '{file}', '-k', '{idu}'];
   else if (has('go.mod')) testCmd = ['go', 'test', './...', '-run', '{idu}'];
   else if (has('Cargo.toml')) testCmd = ['cargo', 'test', '{idu}'];
   else testCmd = ['node', '--test', '--test-name-pattern', '{id}', '{file}'];
   const checks = [];
   const pm = has('pnpm-lock.yaml') ? 'pnpm' : has('yarn.lock') ? 'yarn' : 'npm';
   const related = deps.vitest ? ['npx', 'vitest', 'related', '--run', '{changedFiles}'] : deps.jest ? ['npx', 'jest', '--findRelatedTests', '{changedFiles}'] : undefined;
+  if (!pkg) {
+    if (testCmd[0] === 'python3') checks.push({ name: 'test', cmd: ['python3', '-m', 'pytest', '-q'] });
+    else if (has('go.mod')) checks.push({ name: 'test', cmd: ['go', 'test', './...'] });
+    else if (has('Cargo.toml')) checks.push({ name: 'test', cmd: ['cargo', 'test'] });
+  }
   for (const s of ['typecheck', 'lint', 'test']) if (pkg?.scripts?.[s]) checks.push({ name: s, cmd: [pm, 'run', s], ...(s === 'test' && related ? { changedCmd: related, hubFallbackCmd: ['npx', deps.vitest ? 'vitest' : 'jest', ...(deps.vitest ? ['run'] : []), '{changedTests}', '{directTests}'] } : {}) });
   const prepare = pkg?.scripts?.build ? { cmd: [pm, 'run', 'build'], outputs: has('dist') ? ['dist'] : [], timeoutMs: 600000 } : undefined;
   return { schemaVersion: 1, testCmd, ...(prepare ? { prepare } : {}), checks, timeoutMs: 120000 };
@@ -256,7 +261,7 @@ function cmdApprove() {
     out(`requirements: ${spec.reqs.map((r) => r.id).join(', ')}`);
     out(spec.approval === 'human'
       ? 'approval: human — show these exact paths/hashes/residual risks to the human, then: approve record <feature> --by <name>'
-      : 'approval: auto — after independent AI review passes: approve record <feature> --by ai:<reviewer> [--review "<summary>"] (no human needed)');
+      : 'approval: auto — after independent AI review passes: approve record <feature> --by ai:<reviewer> --review <.sdd/review.md|summary> (no human needed; review file must have 0 Open findings and cite the spec sha256 prefix)');
     return 0;
   }
   if (sub === 'record') {
@@ -384,7 +389,7 @@ function cmdTdd() {
   if (sub === 'red') {
     if (res.exit === 0) { ok = false; why = 'test passed; Red needs a real failure'; }
     else if (zero) { ok = false; why = 'no test matched the ID (check @id vs test title)'; }
-    else if (LOAD_ERR.test(res.text) && !flags.weak && !(flags['missing-module'] && declaredMissingModule(res.text, t.path))) { ok = false; why = 'load/compile error, not an assertion failure. add a failing stub, or --weak to record as weak Red'; }
+    else if (LOAD_ERR.test(res.text) && !flags.weak && !(flags['missing-module'] && declaredMissingModule(res.text, t.path))) { ok = false; why = 'load/compile error, not an assertion failure. new module? run `tdd stub <ID>` (or `--missing-module`); otherwise fix the load error, or --weak to record as weak Red'; }
     else ok = true;
   } else {
     if (res.exit !== 0) { ok = false; why = 'test failed'; }
@@ -393,7 +398,9 @@ function cmdTdd() {
   }
   if (!ok) { out(`${sub.toUpperCase()} REJECTED ${id}: ${why}`); out(tail(res.text, 12)); return 1; }
   appendLedger({ type: sub, test: id, req, file: t.path, fileSha: after, cmdSha: sha(cmd.join('\u0000')), exit: res.exit, ms: res.ms, weak: sub === 'red' && LOAD_ERR.test(res.text) && !(flags['missing-module'] && declaredMissingModule(res.text, t.path)) ? true : undefined });
-  out(`${sub.toUpperCase()} ok ${id} (${req}) ${res.ms}ms${sub === 'red' && LOAD_ERR.test(res.text) && !(flags['missing-module'] && declaredMissingModule(res.text, t.path)) ? ' [weak]' : ''}`);
+  const rl = res.text.split('\n').map((l) => l.trim());
+  const reason = sub === 'red' ? (rl.find((l) => /^E\s+\S/.test(l))?.replace(/^E\s+/, '') ?? rl.find((l) => /(AssertionError|Error:|assert |FAILED|panicked|expected)/.test(l) && !/^(FAIL|❯)/.test(l)) ?? '').slice(0, 110) : '';
+  out(`${sub.toUpperCase()} ok ${id} (${req}) ${res.ms}ms${reason ? ` — fails with: ${reason}` : ''}${sub === 'red' && LOAD_ERR.test(res.text) && !(flags['missing-module'] && declaredMissingModule(res.text, t.path)) ? ' [weak]' : ''}`);
   return 0;
 }
 
@@ -685,7 +692,7 @@ function cmdGate() {
       const scopes = [...new Set(ch.filter((f) => !tests.includes(f)).map((f) => /^(packages|apps|libs)\/[^/]+/.exec(f)?.[0] ?? path.posix.dirname(f)))];
       const rel2 = relatedTests(ch);
       const limit = c.hubThreshold ?? cfg.hubThreshold ?? 0.25;
-      if (c.hubFallbackCmd && rel2.total && rel2.tests.length / rel2.total > limit) {
+      if (c.hubFallbackCmd && rel2.total >= (c.minHubTests ?? cfg.minHubTests ?? 10) && rel2.tests.length / rel2.total > limit) {
         lines.push(`! cmd ${c.name}: hub change (${rel2.tests.length}/${rel2.total} test files depend on it) — using hubFallbackCmd`);
         const srcChanged = ch.filter((f) => /\.[cm]?[jt]sx?$/.test(f) && !TEST_FILE.test(f));
         const infos = srcChanged.map(changedSymbols);

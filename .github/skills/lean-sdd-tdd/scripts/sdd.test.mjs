@@ -198,7 +198,7 @@ test('#7 hub change uses hubFallbackCmd; leaf change uses changedCmd', () => {
   for (let i = 0; i < 4; i++) fs.writeFileSync(path.join(d, `t${i}.test.mjs`), "import { h } from './hub.mjs';\nexport { h };\n");
   fs.writeFileSync(path.join(d, 'leaf.mjs'), 'export const l = 1;\n');
   fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ checks: [
-    { name: 'k', cmd: ['node', '-e', '0'], changedCmd: ['node', '-e', 'console.log("RELATED")'], hubFallbackCmd: ['node', '-e', 'console.log("NARROW")'], hubThreshold: 0.5 },
+    { name: 'k', cmd: ['node', '-e', '0'], changedCmd: ['node', '-e', 'console.log("RELATED")'], hubFallbackCmd: ['node', '-e', 'console.log("NARROW")'], hubThreshold: 0.5, minHubTests: 1 },
   ] }));
   spawnSync('git', ['add', '-A'], { cwd: d });
   spawnSync('git', ['-c', 'user.email=a@b', '-c', 'user.name=n', 'commit', '-qm', 'x'], { cwd: d });
@@ -214,7 +214,7 @@ test('#7 oversized hub is skipped as INCOMPLETE, not timed out', () => {
   fs.writeFileSync(path.join(d, 'hub.mjs'), 'export const h = 1;\n');
   for (let i = 0; i < 4; i++) fs.writeFileSync(path.join(d, `t${i}.test.mjs`), "import { h } from './hub.mjs';\nexport { h };\n");
   fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ checks: [
-    { name: 'k', cmd: ['node', '-e', '0'], changedCmd: ['node', '-e', '0'], hubFallbackCmd: ['node', '-e', '0'], hubThreshold: 0.5, hubMaxTests: 2 },
+    { name: 'k', cmd: ['node', '-e', '0'], changedCmd: ['node', '-e', '0'], hubFallbackCmd: ['node', '-e', '0'], hubThreshold: 0.5, minHubTests: 1, hubMaxTests: 2 },
   ] }));
   spawnSync('git', ['add', '-A'], { cwd: d });
   spawnSync('git', ['-c', 'user.email=a@b', '-c', 'user.name=n', 'commit', '-qm', 'x'], { cwd: d });
@@ -232,7 +232,7 @@ test('#11 hub detection follows workspace package names and tsconfig paths', () 
   fs.writeFileSync(path.join(d, 'app/util.ts'), 'export const u = 1;\n');
   for (let i = 0; i < 3; i++) fs.writeFileSync(path.join(d, `t${i}.test.ts`), "import { h } from '@x/lib';\nimport { u } from '@app/util';\n");
   fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ checks: [
-    { name: 'k', cmd: ['node', '-e', '0'], changedCmd: ['node', '-e', '0'], hubFallbackCmd: ['node', '-e', 'console.log("NARROW")'], hubThreshold: 0.5 },
+    { name: 'k', cmd: ['node', '-e', '0'], changedCmd: ['node', '-e', '0'], hubFallbackCmd: ['node', '-e', 'console.log("NARROW")'], hubThreshold: 0.5, minHubTests: 1 },
   ] }));
   spawnSync('git', ['add', '-A'], { cwd: d });
   spawnSync('git', ['-c', 'user.email=a@b', '-c', 'user.name=n', 'commit', '-qm', 'x'], { cwd: d });
@@ -250,7 +250,7 @@ test('#12 hub change is scoped by changed symbols; comment-only is skipped', () 
   fs.writeFileSync(path.join(d, 'b.test.mjs'), "import { k } from './hub.mjs';\n");
   fs.writeFileSync(path.join(d, 'c.test.mjs'), "import { k } from './hub.mjs';\n");
   fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ checks: [
-    { name: 'k', cmd: ['node', '-e', '0'], changedCmd: ['node', '-e', '0'], hubFallbackCmd: ['node', '-e', '0', '{directTests}'], hubThreshold: 0.1 },
+    { name: 'k', cmd: ['node', '-e', '0'], changedCmd: ['node', '-e', '0'], hubFallbackCmd: ['node', '-e', '0', '{directTests}'], hubThreshold: 0.1, minHubTests: 1 },
   ] }));
   spawnSync('git', ['add', '-A'], { cwd: d });
   spawnSync('git', ['-c', 'user.email=a@b', '-c', 'user.name=n', 'commit', '-qm', 'x'], { cwd: d });
@@ -303,4 +303,14 @@ test('#10 gate without specs is INCOMPLETE with a hint, not FAIL', () => {
   assert.match(g.out, /INCOMPLETE/);
   assert.equal(g.code, 2);
   assert.match(g.out, /T0 changes need no gate/);
+});
+
+test('python projects: init uses python3 -m pytest (cwd on sys.path) and a default test check', () => {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-'));
+  spawnSync('git', ['init', '-q'], { cwd: d });
+  fs.writeFileSync(path.join(d, 'requirements.txt'), '');
+  sdd(d, 'init');
+  const c = JSON.parse(fs.readFileSync(path.join(d, '.sdd/config.json'), 'utf8'));
+  assert.deepEqual(c.testCmd.slice(0, 3), ['python3', '-m', 'pytest']);
+  assert.equal(c.checks[0].name, 'test');
 });
