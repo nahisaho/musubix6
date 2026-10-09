@@ -438,3 +438,27 @@ test('gcc/clang/javac compile diagnostics are load errors, not Red', () => {
     assert.match(sdd(d, 'tdd', 'red', 'TEST-CALC-001').out, /REJECTED.*load\/compile/, diag);
   }
 });
+
+test('#24 init detects Maven / Gradle / CMake and zero-match is reported before "passed"', () => {
+  const cases = [
+    [{ 'pom.xml': '<project/>' }, 'mvn', /-Dtest=\*#\*\{idu\}\*/],
+    [{ 'build.gradle': '' }, 'gradle', /\*\{idu\}\*/],
+    [{ 'build.gradle.kts': '', gradlew: '' }, './gradlew', /\*\{idu\}\*/],
+    [{ 'CMakeLists.txt': '' }, 'sh', /ctest .* -R "\$0"/],
+  ];
+  for (const [files, head, re] of cases) {
+    const d = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-'));
+    spawnSync('git', ['init', '-q'], { cwd: d });
+    for (const [f, c] of Object.entries(files)) fs.writeFileSync(path.join(d, f), c);
+    const out = sdd(d, 'init').out;
+    assert.doesNotMatch(out, /not recognised/);
+    const c = JSON.parse(fs.readFileSync(path.join(d, '.sdd/config.json'), 'utf8'));
+    assert.equal(c.testCmd[0], head);
+    assert.match(c.testCmd.join(' '), re);
+    assert.equal(c.checks[0].name, 'test');
+  }
+  const d = project();
+  sdd(d, 'approve', 'record', 'calc', '--by', 'tester');
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ schemaVersion: 1, testCmd: ['sh', '-c', 'echo "Tests run: 0, Failures: 0"; exit 0'] }));
+  assert.match(sdd(d, 'tdd', 'red', 'TEST-CALC-001').out, /no test matched/);
+});

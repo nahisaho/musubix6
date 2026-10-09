@@ -237,6 +237,8 @@ function detectConfig() {
   const has = (f) => fs.existsSync(path.join(ROOT, f));
   const deps = { ...pkg?.dependencies, ...pkg?.devDependencies };
   let testCmd;
+  const gradle = (has('build.gradle') || has('build.gradle.kts') || has('settings.gradle') || has('settings.gradle.kts')) ? (has('gradlew') ? './gradlew' : 'gradle') : null;
+  const CMAKE_RUN = 'cmake -S . -B build -Wno-dev >/dev/null && cmake --build build && ctest --test-dir build --output-on-failure';
   if (has('node_modules/.bin/vitest')) deps.vitest ??= '*';
   if (has('node_modules/.bin/jest')) deps.jest ??= '*';
   if (deps.vitest) testCmd = ['npx', 'vitest', 'run', '{file}', '-t', '{id}'];
@@ -244,6 +246,9 @@ function detectConfig() {
   else if (has('pyproject.toml') || has('pytest.ini') || has('requirements.txt')) testCmd = ['python3', '-m', 'pytest', '-q', '{file}', '-k', '{idu}'];
   else if (has('go.mod')) testCmd = ['go', 'test', './...', '-run', '{IDU}'];
   else if (has('Cargo.toml')) testCmd = ['cargo', 'test', '{idu}'];
+  else if (has('pom.xml')) testCmd = ['mvn', '-B', '-ntp', 'test', '-Dtest=*#*{idu}*', '-Dsurefire.failIfNoSpecifiedTests=false'];
+  else if (gradle) testCmd = [gradle, 'cleanTest', 'test', '--tests', '*{idu}*', '--console=plain'];
+  else if (has('CMakeLists.txt')) testCmd = ['sh', '-c', CMAKE_RUN + ' -R "$0"', '{idu}'];
   else testCmd = ['node', '--test', '--test-name-pattern', '{id}', '{file}'];
   const checks = [];
   const pm = has('pnpm-lock.yaml') ? 'pnpm' : has('yarn.lock') ? 'yarn' : 'npm';
@@ -252,6 +257,9 @@ function detectConfig() {
     if (testCmd[0] === 'python3') checks.push({ name: 'test', cmd: ['python3', '-m', 'pytest', '-q'] });
     else if (has('go.mod')) checks.push({ name: 'test', cmd: ['go', 'test', './...'] });
     else if (has('Cargo.toml')) checks.push({ name: 'test', cmd: ['cargo', 'test'] });
+    else if (has('pom.xml')) checks.push({ name: 'test', cmd: ['mvn', '-B', '-ntp', 'test'] });
+    else if (gradle) checks.push({ name: 'test', cmd: [gradle, 'cleanTest', 'test', '--console=plain'] });
+    else if (has('CMakeLists.txt')) checks.push({ name: 'test', cmd: ['sh', '-c', CMAKE_RUN] });
   }
   for (const s of ['typecheck', 'lint', 'test']) if (pkg?.scripts?.[s]) checks.push({ name: s, cmd: [pm, 'run', s], ...(s === 'test' && related ? { changedCmd: related, hubFallbackCmd: ['npx', deps.vitest ? 'vitest' : 'jest', ...(deps.vitest ? ['run'] : []), '{changedTests}', '{directTests}'] } : {}) });
   const prepare = pkg?.scripts?.build ? { cmd: [pm, 'run', 'build'], outputs: has('dist') ? ['dist'] : [], timeoutMs: 600000 } : undefined;
@@ -277,14 +285,14 @@ function declaredMissingModule(text, testPath) {
   const bare = spec.replace(/\.[cm]?[jt]sx?$/, '');
   return (src.includes(spec) || src.includes(bare)) && !fs.existsSync(abs);
 }
-const ZERO_TESTS = /(no tests? (found|ran|collected)|# tests 0\b|ran 0 tests|collected 0 items|0 tests? (ran|found|passed)\b|no test files found)/i;
+const ZERO_TESTS = /(no tests? (found|ran|collected)|# tests 0\b|ran 0 tests|collected 0 items|0 tests? (ran|found|passed)\b|no test files found|no tests were found|no tests to run|tests run: 0,)/i;
 
 // ---------- commands ----------
 function cmdInit() {
   const cfg = detectConfig();
   if (!fs.existsSync(CONFIG)) writeJson(CONFIG, cfg);
   fs.mkdirSync(SPECS, { recursive: true });
-  if (cfg.testCmd[0] === 'node' && !fs.existsSync(path.join(ROOT, 'package.json'))) out('WARNING: stack not recognised (no package.json/pytest/go.mod/Cargo.toml) — testCmd is a Node fallback. Set testCmd in .sdd/config.json to a runner that filters by test name, e.g. ["sh","run_tests.sh","{idu}"] (see SKILL.md "Other stacks").');
+  if (cfg.testCmd[0] === 'node' && !fs.existsSync(path.join(ROOT, 'package.json'))) out('WARNING: stack not recognised (no package.json/pytest/go.mod/Cargo.toml/pom.xml/gradle/CMakeLists.txt) — testCmd is a Node fallback. Set testCmd in .sdd/config.json to a runner that filters by test name, e.g. ["sh","run_tests.sh","{idu}"] (see SKILL.md "Other stacks").');
   out(`init ok: ${rel(CONFIG)} (testCmd: ${cfg.testCmd.join(' ')}; checks: ${cfg.checks.map((c) => c.name).join(',') || 'none'})`);
   out('next: write .sdd/specs/<feature>.md (see references/spec-template.md)');
 }
@@ -477,8 +485,8 @@ function cmdTdd() {
   let ok;
   let why = '';
   if (sub === 'red') {
-    if (res.exit === 0) { ok = false; why = 'test passed; Red needs a real failure'; }
-    else if (zero) { ok = false; why = 'no test matched the ID (check @id vs test title)'; }
+    if (zero) { ok = false; why = 'no test matched the ID (check @id vs test title/method name)'; }
+    else if (res.exit === 0) { ok = false; why = 'test passed; Red needs a real failure'; }
     else if (LOAD_ERR.test(res.text) && !flags.weak && !(flags['missing-module'] && declaredMissingModule(res.text, t.path))) { ok = false; why = 'load/compile error, not an assertion failure. new module? run `tdd stub <ID>` (or `--missing-module`); otherwise fix the load error, or --weak to record as weak Red'; }
     else if (typeof flags.expect === 'string' && !res.text.includes(flags.expect)) { ok = false; why = `failure output does not contain --expect "${flags.expect}" (Red for the wrong reason?)`; }
     else ok = true;
@@ -489,7 +497,7 @@ function cmdTdd() {
   }
   if (!ok) { out(`${sub.toUpperCase()} REJECTED ${id}: ${why}`); out(tail(res.text, 12)); return 1; }
   const rl = res.text.replace(/\x1b\[[0-9;]*m/g, '').split('\n').map((l) => l.trim());
-  const reason = sub === 'red' ? (rl.find((l) => /^E\s+\S/.test(l))?.replace(/^E\s+/, '') ?? rl.find((l) => /(--- FAIL|AssertionError|Error:|assert |FAILED|panicked|expected)/.test(l) && !/^(FAIL|❯)/.test(l)) ?? rl.find((l) => /^(FAIL|not ok)\s+\S+$/.test(l)) ?? '').slice(0, 110) : '';
+  const reason = sub === 'red' ? (rl.find((l) => /^E\s+\S/.test(l))?.replace(/^E\s+/, '') ?? rl.find((l) => /(--- FAIL|AssertionError|Error:|assert |FAILED|panicked|expected|\(Failed\))/.test(l) && !/^(FAIL|❯|> Task|The following tests)/.test(l)) ?? rl.find((l) => /^(FAIL|not ok)\s+\S+$/.test(l)) ?? '').slice(0, 110) : '';
   const loadWeak = sub === 'red' && LOAD_ERR.test(res.text) && !(flags['missing-module'] && declaredMissingModule(res.text, t.path));
   const setupSym = sub === 'red' && !flags['allow-setup-red'] && typeof flags.expect !== 'string' ? setupOrigin(rl.find((l) => /not implemented|NotImplementedError|unimplemented/i.test(l)) ?? reason, t.path, id) : null;
   const weakRed = loadWeak || !!setupSym;
