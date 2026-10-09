@@ -414,7 +414,7 @@ function cmdGate() {
   else for (const c of cfg.checks ?? []) {
     let cmd = c.cmd;
     if (flags.changed && c.changedCmd) {
-      const ch = [...changedFiles()].filter((f) => fs.existsSync(path.join(ROOT, f)));
+      const ch = [...changedFiles()].filter((f) => !f.startsWith('.sdd/') && fs.existsSync(path.join(ROOT, f)) && fs.statSync(path.join(ROOT, f)).isFile());
       const tests = ch.filter((f) => /\.(test|spec)\.[cm]?[jt]sx?$|(^|\/)test_[^/]*\.py$|_test\.(py|go)$/.test(f));
       if (!ch.length) { lines.push(`! cmd ${c.name}: no changed files — skipped`); continue; }
       cmd = c.changedCmd.flatMap((a) => a === '{changedFiles}' ? ch : a === '{changedTests}' ? tests : [a]);
