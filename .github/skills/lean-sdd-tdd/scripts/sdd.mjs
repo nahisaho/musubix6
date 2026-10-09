@@ -67,13 +67,27 @@ function listFiles() {
 
 const ID_RE = /[A-Z][A-Z0-9]+(?:-[A-Z0-9]+)+/g;
 const COMMENT_LEAD = /^\s*(\*|\/\/|#|\/\*|--|;)/;
+// marks lines that start inside a multi-line JS/TS template literal (embedded fixtures)
+function templateLines(lines, f) {
+  const flags = new Array(lines.length).fill(false);
+  if (!/\.[cm]?[jt]sx?$/.test(f)) return flags;
+  let open = false;
+  for (let i = 0; i < lines.length; i++) {
+    flags[i] = open;
+    if (!open && COMMENT_LEAD.test(lines[i])) continue;
+    const n = (lines[i].replace(/\\./g, '').match(/`/g) ?? []).length;
+    if (n % 2) open = !open;
+  }
+  return flags;
+}
 function scanEntities(files) {
   const ents = new Map();
   const dups = [];
   for (const f of files) {
     const lines = fs.readFileSync(path.join(ROOT, f), 'utf8').split('\n');
+    const inTpl = templateLines(lines, f);
     for (let i = 0; i < lines.length; i++) {
-      if (!COMMENT_LEAD.test(lines[i])) continue;
+      if (inTpl[i] || !COMMENT_LEAD.test(lines[i])) continue;
       const m = /@id\s+([A-Z][A-Z0-9]+(?:-[A-Z0-9]+)+)/.exec(lines[i]);
       if (!m) continue;
       let block = lines[i];

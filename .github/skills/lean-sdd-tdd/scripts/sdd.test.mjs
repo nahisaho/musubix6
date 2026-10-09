@@ -175,3 +175,10 @@ test('#4 Open detection covers table, checkbox and state: formats', () => {
   fs.writeFileSync(path.join(d, '.sdd/review.md'), `spec ${hash}\n| F1 | high | a.mjs:1 | Closed |\n- [x] F2 done\nopen source note\n`);
   assert.equal(sdd(d, 'approve', 'record', 'calc', '--by', 'ai:duck', '--review', '.sdd/review.md').code, 0);
 });
+
+test('#1 @id inside multi-line template literals is ignored', () => {
+  const d = project();
+  fs.writeFileSync(path.join(d, 'fx.test.mjs'), 'const a = `x\n/** @id TEST-EX-001\n * @verifies REQ-CALC-001 */`;\n');
+  fs.writeFileSync(path.join(d, 'fy.test.mjs'), 'const b = `x\n/** @id TEST-EX-001\n * @verifies REQ-CALC-001 */`;\n');
+  assert.doesNotMatch(sdd(d, 'trace').out, /TEST-EX-001/);
+});
