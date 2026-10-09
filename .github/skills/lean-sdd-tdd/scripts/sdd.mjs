@@ -71,12 +71,32 @@ const COMMENT_LEAD = /^\s*(\*|\/\/|#|\/\*|--|;)/;
 function templateLines(lines, f) {
   const flags = new Array(lines.length).fill(false);
   if (!/\.[cm]?[jt]sx?$/.test(f)) return flags;
-  let open = false;
+  // tiny tokenizer: code / // / /* */ / '..' / ".." / `..${ code }..`
+  let mode = 'code';
+  const tpl = []; // brace depth at which each open ${ started
+  let depth = 0;
   for (let i = 0; i < lines.length; i++) {
-    flags[i] = open;
-    if (!open && COMMENT_LEAD.test(lines[i])) continue;
-    const n = (lines[i].replace(/\\./g, '').match(/`/g) ?? []).length;
-    if (n % 2) open = !open;
+    flags[i] = mode === 'tpl';
+    const l = lines[i];
+    for (let k = 0; k < l.length; k++) {
+      const c = l[k];
+      const n = l[k + 1];
+      if (mode === 'code') {
+        if (c === '/' && n === '/') break;
+        if (c === '/' && n === '*') { mode = 'block'; k++; }
+        else if (c === "'" || c === '"') {
+          for (k++; k < l.length && l[k] !== c; k++) if (l[k] === '\\') k++;
+        } else if (c === '`') mode = 'tpl';
+        else if (c === '{') depth++;
+        else if (c === '}') { if (tpl.length && tpl.at(-1) === depth) { tpl.pop(); mode = 'tpl'; } else depth = Math.max(0, depth - 1); }
+      } else if (mode === 'block') {
+        if (c === '*' && n === '/') { mode = 'code'; k++; }
+      } else if (mode === 'tpl') {
+        if (c === '\\') k++;
+        else if (c === '`') mode = 'code';
+        else if (c === '$' && n === '{') { tpl.push(depth); mode = 'code'; k++; }
+      }
+    }
   }
   return flags;
 }
@@ -608,7 +628,7 @@ function cmdGate() {
 
   const specs = loadSpecs();
   const { ents, dups } = scanEntities(listFiles());
-  if (!specs.length) add(false, 'spec: none in .sdd/specs (T0 changes need no gate)');
+  if (!specs.length) { lines.push('! spec: none in .sdd/specs — T0 changes need no gate; for T1/T2 write .sdd/specs/<feature>.md (result is INCOMPLETE)'); incomplete = true; }
   for (const s of specs.filter((x) => x.tier === 'T2')) { const st = approvalState(s); const ap = readJson(APPROVALS, {})[s.feature]; add(st === 'ok', `lock ${s.feature}: ${st}${ap ? ` [${ap.kind}${ap.kind === 'ai' ? `, review ${ap.review ? (ap.reviewSha ? 'file' : 'summary') : 'none'}` : ''}]` : ''}${s.approval === 'human' ? ' (human required)' : ''}`); }
 
   const t = applyBaseline(traceCheck(ents, dups, specs));

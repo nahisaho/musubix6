@@ -280,3 +280,27 @@ test('#13 prepare runs once, is cached until inputs change, and failure fails th
   const g = sdd(d, 'gate');
   assert.match(g.out, /✗ prepare failed/);
 });
+
+test('#9 tokenizer: backticks in strings/comments/nested templates do not desync', () => {
+  const d = project();
+  fs.writeFileSync(path.join(d, 'real.mjs'), [
+    "const a = 'it`s'; // `",
+    '/* ` */',
+    'const b = `x ${ `y ${1}` } z`;',
+    '/** @id CODE-REAL-001 @implements REQ-CALC-001 */',
+    'export const r = 1;',
+    '',
+  ].join('\n'));
+  fs.writeFileSync(path.join(d, 'fx.mjs'), 'const t = `\n${1}\n/** @id CODE-FX-001 @implements REQ-CALC-001 */\n`;\n');
+  const g = sdd(d, 'status').out;
+  assert.match(g, /entities 2/);
+});
+
+test('#10 gate without specs is INCOMPLETE with a hint, not FAIL', () => {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-'));
+  spawnSync('git', ['init', '-q'], { cwd: d });
+  const g = sdd(d, 'gate', '--no-run');
+  assert.match(g.out, /INCOMPLETE/);
+  assert.equal(g.code, 2);
+  assert.match(g.out, /T0 changes need no gate/);
+});
