@@ -164,3 +164,14 @@ test('#5 tdd stub creates a throwing stub so Red is real (not weak)', () => {
   assert.doesNotMatch(r.out, /weak/);
   assert.match(sdd(d, 'tdd', 'stub', 'TEST-CALC-001').out, /no missing/);
 });
+
+test('#4 Open detection covers table, checkbox and state: formats', () => {
+  const d = project();
+  const hash = sdd(d, 'approve', 'prepare', 'calc').out.match(/sha256:([0-9a-f]{64})/)[1];
+  for (const line of ['| F1 | high | a.mjs:1 | Open |', '- [ ] F1 fix it', 'F1 state: Open', 'F1|high|a.mjs:1|OPEN']) {
+    fs.writeFileSync(path.join(d, '.sdd/review.md'), `spec ${hash}\n${line}\n`);
+    assert.match(sdd(d, 'approve', 'record', 'calc', '--by', 'ai:duck', '--review', '.sdd/review.md').out, /Open finding/, line);
+  }
+  fs.writeFileSync(path.join(d, '.sdd/review.md'), `spec ${hash}\n| F1 | high | a.mjs:1 | Closed |\n- [x] F2 done\nopen source note\n`);
+  assert.equal(sdd(d, 'approve', 'record', 'calc', '--by', 'ai:duck', '--review', '.sdd/review.md').code, 0);
+});

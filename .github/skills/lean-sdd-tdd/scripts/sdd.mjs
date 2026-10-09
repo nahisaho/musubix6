@@ -234,7 +234,8 @@ function cmdApprove() {
     if (isAi && !reviewIsFile && loadConfig().requireReviewFile) { out('REFUSED: config requireReviewFile — --review must be a file (e.g. .sdd/review.md)'); return 1; }
     if (isAi && reviewIsFile) {
       const text = fs.readFileSync(path.join(ROOT, review), 'utf8');
-      const open = text.split('\n').filter((l) => /^[\s>*-]*[^|\n]+\|[^|\n]*\|[^|\n]*\|\s*open\b/i.test(l));
+      const isOpen = (l) => /^\s*[-*]\s*\[ \]/.test(l) || /\b(state|status)\s*[:=]\s*open\b/i.test(l) || l.split('|').some((c) => /^\s*open\s*$/i.test(c));
+      const open = text.split('\n').filter(isOpen);
       if (open.length) { out(`REFUSED: ${review} has ${open.length} Open finding(s)`); open.slice(0, 5).forEach((l) => out(`  ${l.trim()}`)); return 1; }
       const specHash = fileSha(spec.path);
       if (!text.includes(specHash.slice(0, 12))) { out(`REFUSED: ${review} must reference the spec hash (sha256:${specHash.slice(0, 12)}… of ${spec.path})`); return 1; }
