@@ -221,3 +221,24 @@ test('#7 oversized hub is skipped as INCOMPLETE, not timed out', () => {
   fs.appendFileSync(path.join(d, 'hub.mjs'), '// c\n');
   assert.match(sdd(d, 'gate', '--changed').out, /hub too large[\s\S]*INCOMPLETE|INCOMPLETE[\s\S]*hub too large/);
 });
+
+test('#11 hub detection follows workspace package names and tsconfig paths', () => {
+  const d = project();
+  fs.mkdirSync(path.join(d, 'packages/lib/src'), { recursive: true });
+  fs.writeFileSync(path.join(d, 'packages/lib/package.json'), JSON.stringify({ name: '@x/lib', main: 'dist/index.js' }));
+  fs.writeFileSync(path.join(d, 'packages/lib/src/index.ts'), 'export const h = 1;\n');
+  fs.mkdirSync(path.join(d, 'app'));
+  fs.writeFileSync(path.join(d, 'tsconfig.json'), '{ // c\n "compilerOptions": { "baseUrl": ".", "paths": { "@app/*": ["app/*"] } } }');
+  fs.writeFileSync(path.join(d, 'app/util.ts'), 'export const u = 1;\n');
+  for (let i = 0; i < 3; i++) fs.writeFileSync(path.join(d, `t${i}.test.ts`), "import { h } from '@x/lib';\nimport { u } from '@app/util';\n");
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ checks: [
+    { name: 'k', cmd: ['node', '-e', '0'], changedCmd: ['node', '-e', '0'], hubFallbackCmd: ['node', '-e', 'console.log("NARROW")'], hubThreshold: 0.5 },
+  ] }));
+  spawnSync('git', ['add', '-A'], { cwd: d });
+  spawnSync('git', ['-c', 'user.email=a@b', '-c', 'user.name=n', 'commit', '-qm', 'x'], { cwd: d });
+  fs.appendFileSync(path.join(d, 'packages/lib/src/index.ts'), '// c\n');
+  assert.match(sdd(d, 'gate', '--changed').out, /hub change \(3\/4/);
+  spawnSync('git', ['checkout', '.'], { cwd: d });
+  fs.appendFileSync(path.join(d, 'app/util.ts'), '// c\n');
+  assert.match(sdd(d, 'gate', '--changed').out, /hub change \(3\/4/);
+});
