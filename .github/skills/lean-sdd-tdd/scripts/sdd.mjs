@@ -190,7 +190,8 @@ function detectConfig() {
   const pm = has('pnpm-lock.yaml') ? 'pnpm' : has('yarn.lock') ? 'yarn' : 'npm';
   const related = deps.vitest ? ['npx', 'vitest', 'related', '--run', '{changedFiles}'] : deps.jest ? ['npx', 'jest', '--findRelatedTests', '{changedFiles}'] : undefined;
   for (const s of ['typecheck', 'lint', 'test']) if (pkg?.scripts?.[s]) checks.push({ name: s, cmd: [pm, 'run', s], ...(s === 'test' && related ? { changedCmd: related, hubFallbackCmd: ['npx', deps.vitest ? 'vitest' : 'jest', ...(deps.vitest ? ['run'] : []), '{changedTests}', '{directTests}'] } : {}) });
-  return { schemaVersion: 1, testCmd, checks, timeoutMs: 120000 };
+  const prepare = pkg?.scripts?.build ? { cmd: [pm, 'run', 'build'], outputs: has('dist') ? ['dist'] : [], timeoutMs: 600000 } : undefined;
+  return { schemaVersion: 1, testCmd, ...(prepare ? { prepare } : {}), checks, timeoutMs: 120000 };
 }
 const loadConfig = () => readJson(CONFIG, null) ?? detectConfig();
 
@@ -587,6 +588,18 @@ function relatedTests(changed) {
   return { direct, files: [...seen], tests: [...seen].filter((f) => TEST_FILE.test(f)), total: files.filter((f) => TEST_FILE.test(f)).length };
 }
 
+const PREPARE_CACHE = path.join(SDD, 'prepare-cache.json');
+function prepareKey(pc) {
+  const inputs = pc.inputs?.length ? scanless(pc.inputs.map(globRe)) : [...listFiles(), ...gitFiles('*package.json'), ...gitFiles('*tsconfig*.json')];
+  const h = createHash('sha256').update(JSON.stringify(pc.cmd));
+  for (const f of [...new Set(inputs)].sort()) if (fs.existsSync(path.join(ROOT, f))) h.update(f + '\0' + fileSha(f) + '\0');
+  return h.digest('hex');
+}
+function scanless(res) {
+  const r = spawnSync('git', ['ls-files', '-co', '--exclude-standard'], { cwd: ROOT, encoding: 'utf8', maxBuffer: 64e6 });
+  return r.stdout.split('\n').filter((f) => f && res.some((x) => x.test(f)));
+}
+
 function cmdGate() {
   const lines = [];
   let fail = false;
@@ -629,6 +642,18 @@ function cmdGate() {
   add(!problems.length, `tdd evidence${flags.changed ? ' (changed scope)' : ''}: ${covered}/${total} tests Red→Green${weak ? `, ${weak} weak Red` : ''}`, problems.slice(0, 6));
 
   const cfg = loadConfig();
+  if (cfg.prepare && !flags['no-run']) {
+    const pc = cfg.prepare;
+    const cache = readJson(PREPARE_CACHE, {});
+    const key = prepareKey(pc);
+    const outsOk = (pc.outputs ?? []).every((o) => fs.existsSync(path.join(ROOT, o)));
+    if (cache.key === key && outsOk) lines.push('✓ prepare: up to date (cached, inputs unchanged)');
+    else {
+      const r = run(pc.cmd, pc.timeoutMs ?? 600000);
+      if (r.exit === 0) { writeJson(PREPARE_CACHE, { key, at: new Date().toISOString() }); add(true, `prepare (${(r.ms / 1000).toFixed(1)}s)`); }
+      else add(false, r.timedOut ? `prepare TIMEOUT after ${(r.ms / 1000).toFixed(0)}s (raise prepare.timeoutMs)` : `prepare failed (${(r.ms / 1000).toFixed(1)}s)`, r.timedOut ? [] : tail(r.text, 8).split('\n'));
+    }
+  }
   if (flags['no-run']) { lines.push('! commands: SKIPPED (--no-run) — result is INCOMPLETE'); incomplete = true; }
   else for (const c of cfg.checks ?? []) {
     let cmd = c.cmd;

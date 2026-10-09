@@ -262,3 +262,21 @@ test('#12 hub change is scoped by changed symbols; comment-only is skipped', () 
   assert.match(sdd(d, 'gate', '--changed').out, /hub change \(3\/4/);
   assert.doesNotMatch(sdd(d, 'gate', '--changed').out, /scoped by/);
 });
+
+test('#13 prepare runs once, is cached until inputs change, and failure fails the gate', () => {
+  const d = project();
+  const marker = path.join(d, 'built.txt');
+  const cfg = (cmd) => fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ prepare: { cmd, outputs: ['built.txt'] }, checks: [{ name: 'ok', cmd: ['node', '-e', '0'] }] }));
+  cfg(['node', '-e', "require('fs').appendFileSync('built.txt','x')"]);
+  assert.match(sdd(d, 'gate').out, /✓ prepare \(/);
+  assert.match(sdd(d, 'gate').out, /prepare: up to date/);
+  assert.equal(fs.readFileSync(marker, 'utf8'), 'x');
+  fs.appendFileSync(path.join(d, 'add.test.mjs'), '// edit\n');
+  assert.match(sdd(d, 'gate').out, /✓ prepare \(/);
+  assert.equal(fs.readFileSync(marker, 'utf8'), 'xx');
+  fs.rmSync(marker);
+  assert.match(sdd(d, 'gate').out, /✓ prepare \(/);
+  cfg(['node', '-e', 'process.exit(3)']);
+  const g = sdd(d, 'gate');
+  assert.match(g.out, /✗ prepare failed/);
+});
