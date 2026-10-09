@@ -91,3 +91,39 @@ test('auto specs lock without a human; approval: human specs refuse ai approvers
   assert.match(sdd(d, 'approve', 'record', 'calc', '--by', 'ai:rubber-duck').out, /requires a human/);
   assert.equal(sdd(d, 'approve', 'record', 'calc', '--by', 'nahisaho').code, 0);
 });
+
+test('#1 fixture strings are ignored and scan.exclude works', () => {
+  const d = project();
+  fs.writeFileSync(path.join(d, 'fx.mjs'), 'export const s = "/** @id TEST-CALC-001 @verifies REQ-CALC-001 */";\n');
+  fs.mkdirSync(path.join(d, 'fixtures'));
+  fs.writeFileSync(path.join(d, 'fixtures/a.mjs'), '/** @id CODE-X-001 @implements REQ-CALC-001 */\n');
+  fs.writeFileSync(path.join(d, 'fixtures/b.mjs'), '/** @id CODE-X-001 @implements REQ-CALC-001 */\n');
+  assert.match(sdd(d, 'trace').out, /duplicate @id CODE-X-001/);
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ scan: { exclude: ['fixtures/**'] }, checks: [] }));
+  assert.doesNotMatch(sdd(d, 'trace').out, /duplicate/);
+});
+
+test('#2 trace --baseline hides legacy errors but reports new ones', () => {
+  const d = project();
+  fs.writeFileSync(path.join(d, 'old.mjs'), '/** @id CODE-OLD-001 @implements REQ-NOPE-1 */\n');
+  assert.equal(sdd(d, 'trace').code, 1);
+  sdd(d, 'trace', '--baseline');
+  assert.equal(sdd(d, 'trace').code, 0, 'legacy errors are baselined');
+  fs.writeFileSync(path.join(d, 'new.mjs'), '/** @id CODE-NEW-001 @implements REQ-BAD-9 */\n');
+  assert.match(sdd(d, 'trace', '--changed').out, /REQ-BAD-9/);
+});
+
+test('#4 ai approval needs review evidence', () => {
+  const d = project();
+  assert.equal(sdd(d, 'approve', 'record', 'calc', '--by', 'ai:self', '--review', 'x').code, 1);
+  assert.equal(sdd(d, 'approve', 'record', 'calc', '--by', 'ai:duck').code, 1);
+  assert.equal(sdd(d, 'approve', 'record', 'calc', '--by', 'ai:duck', '--review', 'ok').code, 0);
+});
+
+test('#5 --missing-module accepts a declared missing import as non-weak Red', () => {
+  const d = project();
+  sdd(d, 'approve', 'record', 'calc', '--by', 'tester');
+  const r = sdd(d, 'tdd', 'red', 'TEST-CALC-001', '--missing-module');
+  assert.equal(r.code, 0, r.out);
+  assert.doesNotMatch(r.out, /weak/);
+});

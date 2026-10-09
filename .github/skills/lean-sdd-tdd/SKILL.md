@@ -36,6 +36,14 @@ Batch: write all tests for a feature, then red each, implement, green each, **on
 Spec lock (T2) · Red before Green with identical test hash · hash-chained `.sdd/tdd.jsonl` · every REQ has a test, every annotation resolves · skipped checks ⇒ `INCOMPLETE` (exit 2), never PASS.
 Not enforced (agent discipline): test quality, mutation, security review. Do not claim them.
 
+## 3a. Install & config
+- Install per-user (`~/.copilot/skills/lean-sdd-tdd`) when the target repo asserts its skill list (e.g. a test enumerating `.github/skills`); copying into `.github/skills` can break such tests. Run `node <skill>/scripts/sdd.mjs --root <repo> ...`.
+- Build the target first (`npm run build`) if its CLI tests need build artifacts, before `gate`.
+- `.sdd/config.json`: `scan:{include:[],exclude:["fixtures/**"]}` (globs; only comment-leading `@id` lines count); `timeoutMs` globally or per check; check `changedCmd` with `{changedFiles}`/`{changedTests}` used by `gate --changed` (auto: `vitest related`, `jest --findRelatedTests`). Timeouts report `TIMEOUT`, not FAIL.
+- Legacy repos: `trace --baseline` snapshots errors to `.sdd/trace-baseline.json`; later trace/gate report only new errors (`--changed` also limits to changed files).
+- New module tests: `tdd red <ID> --missing-module` accepts a Red caused by the test's own not-yet-created import (not weak).
+- `approve record --by ai:<reviewer>` requires `--review <path|summary>`; `ai:self` is refused; gate shows lock kind and review evidence.
+
 ## 4. Review without humans
 T2 only: parallel sub-agents by risk axis (security · correctness/state · contract · test adequacy), each diff-only, ≤200-word replies, findings to `.sdd/review.md` (one line each: id|sev|path:line|state). Re-review Open items + fix diff only; stop after two clean rounds, then lock/merge.
 

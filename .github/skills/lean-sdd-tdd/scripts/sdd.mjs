@@ -6,7 +6,7 @@ import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 
-const BOOL = new Set(['weak', 'changed', 'json', 'no-run', 'help']);
+const BOOL = new Set(['missing-module', 'baseline', 'weak', 'changed', 'json', 'no-run', 'help']);
 function parseArgs(argv) {
   const pos = [];
   const flags = {};
@@ -40,6 +40,13 @@ const tail = (s, n = 15) => s.trimEnd().split('\n').slice(-n).join('\n');
 // ---------- scanning ----------
 const EXT = /\.(ts|tsx|js|jsx|mjs|cjs|py|go|rs|java|cs|kt|rb|sh)$/;
 const SKIP = /(^|\/)(node_modules|\.git|\.sdd|dist|build|coverage|target|\.venv|venv)\//;
+const globRe = (g) => new RegExp('^' + g.replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*\*$/, '\u0001').replace(/\*\*\/?/g, '\u0000').replace(/\*/g, '[^/]*').replace(/\?/g, '[^/]').replace(/\u0000/g, '(?:.*/)?').replace(/\u0001/g, '.*') + '$');
+function scanFilter(files) {
+  const sc = (readJson(CONFIG, null) ?? {}).scan ?? {};
+  const inc = (sc.include ?? []).map(globRe);
+  const exc = (sc.exclude ?? []).map(globRe);
+  return files.filter((f) => (!inc.length || inc.some((r) => r.test(f))) && !exc.some((r) => r.test(f)));
+}
 function listFiles() {
   const r = spawnSync('git', ['ls-files', '-co', '--exclude-standard'], { cwd: ROOT, encoding: 'utf8', maxBuffer: 64e6 });
   let files;
@@ -55,7 +62,7 @@ function listFiles() {
     };
     walk(ROOT);
   }
-  return files.filter((f) => EXT.test(f) && !SKIP.test(f) && fs.existsSync(path.join(ROOT, f)) && fs.statSync(path.join(ROOT, f)).size < 512 * 1024);
+  return scanFilter(files).filter((f) => EXT.test(f) && !SKIP.test(f) && fs.existsSync(path.join(ROOT, f)) && fs.statSync(path.join(ROOT, f)).size < 512 * 1024);
 }
 
 const ID_RE = /[A-Z][A-Z0-9]+(?:-[A-Z0-9]+)+/g;
@@ -66,6 +73,7 @@ function scanEntities(files) {
   for (const f of files) {
     const lines = fs.readFileSync(path.join(ROOT, f), 'utf8').split('\n');
     for (let i = 0; i < lines.length; i++) {
+      if (!COMMENT_LEAD.test(lines[i])) continue;
       const m = /@id\s+([A-Z][A-Z0-9]+(?:-[A-Z0-9]+)+)/.exec(lines[i]);
       if (!m) continue;
       let block = lines[i];
@@ -166,7 +174,8 @@ function detectConfig() {
   else testCmd = ['node', '--test', '--test-name-pattern', '{id}', '{file}'];
   const checks = [];
   const pm = has('pnpm-lock.yaml') ? 'pnpm' : has('yarn.lock') ? 'yarn' : 'npm';
-  for (const s of ['typecheck', 'lint', 'test']) if (pkg?.scripts?.[s]) checks.push({ name: s, cmd: [pm, 'run', s] });
+  const related = deps.vitest ? ['npx', 'vitest', 'related', '--run', '{changedFiles}'] : deps.jest ? ['npx', 'jest', '--findRelatedTests', '{changedFiles}'] : undefined;
+  for (const s of ['typecheck', 'lint', 'test']) if (pkg?.scripts?.[s]) checks.push({ name: s, cmd: [pm, 'run', s], ...(s === 'test' && related ? { changedCmd: related } : {}) });
   return { schemaVersion: 1, testCmd, checks, timeoutMs: 120000 };
 }
 const loadConfig = () => readJson(CONFIG, null) ?? detectConfig();
@@ -175,9 +184,20 @@ function run(cmd, timeoutMs) {
   const t0 = Date.now();
   const r = spawnSync(cmd[0], cmd.slice(1), { cwd: ROOT, encoding: 'utf8', timeout: timeoutMs, maxBuffer: 64e6 });
   const text = (r.stdout ?? '') + (r.stderr ?? '') + (r.error ? String(r.error.message) : '');
-  return { exit: r.status ?? (r.error ? 127 : 1), text, ms: Date.now() - t0 };
+  return { exit: r.status ?? (r.error ? 127 : 1), text, ms: Date.now() - t0, timedOut: r.error?.code === 'ETIMEDOUT' };
 }
 const LOAD_ERR = /(cannot find (module|package)|modulenotfounderror|importerror|syntaxerror|cannot resolve|no such file|undefined reference|could not compile|error\[e\d+\]|failed to resolve import)/i;
+// a missing *relative* import that the test file itself references = declared new module
+function declaredMissingModule(text, testPath) {
+  const src = fs.readFileSync(path.join(ROOT, testPath), 'utf8');
+  const m = /(?:cannot find (?:module|package)|failed to resolve import|err_module_not_found)[^\n]*?['"`]((?:\.{1,2}\/|\/)[^'"`]+)['"`]/i.exec(text);
+  if (!m) return false;
+  const dir = path.resolve(ROOT, path.dirname(testPath));
+  const abs = path.resolve(dir, m[1]);
+  const spec = m[1].startsWith('.') ? m[1] : './' + path.relative(dir, abs).split(path.sep).join('/');
+  const bare = spec.replace(/\.[cm]?[jt]sx?$/, '');
+  return (src.includes(spec) || src.includes(bare)) && !fs.existsSync(abs);
+}
 const ZERO_TESTS = /(no tests? (found|ran|collected)|# tests 0\b|ran 0 tests|collected 0 items|0 tests? (ran|found|passed)\b|no test files found)/i;
 
 // ---------- commands ----------
@@ -208,8 +228,10 @@ function cmdApprove() {
     if (typeof flags.by !== 'string') { out('--by <name> required (ai:<reviewer> for auto specs, human name for approval: human)'); return 2; }
     const isAi = /^ai:/i.test(flags.by);
     if (spec.approval === 'human' && isAi) { out(`REFUSED: ${spec.feature} requires a human approver (approval: human)`); return 1; }
+    const review = typeof flags.review === 'string' ? flags.review.trim() : '';
+    if (isAi && (/^ai:\s*(self)?$/i.test(flags.by) || !review)) { out('REFUSED: ai approver needs a named reviewer (not ai:self) and --review <path-or-summary>'); return 1; }
     const all = readJson(APPROVALS, {});
-    all[spec.feature] = { by: flags.by, kind: isAi ? 'ai' : 'human', review: typeof flags.review === 'string' ? flags.review : undefined, at: new Date().toISOString(), artifacts: Object.fromEntries(spec.artifacts.map((p) => [p, fileSha(p)])) };
+    all[spec.feature] = { by: flags.by, kind: isAi ? 'ai' : 'human', review: review || undefined, reviewSha: review && fs.existsSync(path.join(ROOT, review)) && fs.statSync(path.join(ROOT, review)).isFile() ? fileSha(review) : undefined, at: new Date().toISOString(), artifacts: Object.fromEntries(spec.artifacts.map((p) => [p, fileSha(p)])) };
     writeJson(APPROVALS, all);
     out(`locked ${spec.feature} by ${flags.by}: ${spec.artifacts.join(', ')}`);
     return 0;
@@ -272,7 +294,7 @@ function cmdTdd() {
   if (sub === 'red') {
     if (res.exit === 0) { ok = false; why = 'test passed; Red needs a real failure'; }
     else if (zero) { ok = false; why = 'no test matched the ID (check @id vs test title)'; }
-    else if (LOAD_ERR.test(res.text) && !flags.weak) { ok = false; why = 'load/compile error, not an assertion failure. add a failing stub, or --weak to record as weak Red'; }
+    else if (LOAD_ERR.test(res.text) && !flags.weak && !(flags['missing-module'] && declaredMissingModule(res.text, t.path))) { ok = false; why = 'load/compile error, not an assertion failure. add a failing stub, or --weak to record as weak Red'; }
     else ok = true;
   } else {
     if (res.exit !== 0) { ok = false; why = 'test failed'; }
@@ -280,8 +302,8 @@ function cmdTdd() {
     else ok = true;
   }
   if (!ok) { out(`${sub.toUpperCase()} REJECTED ${id}: ${why}`); out(tail(res.text, 12)); return 1; }
-  appendLedger({ type: sub, test: id, req, file: t.path, fileSha: after, cmdSha: sha(cmd.join('\0')), exit: res.exit, ms: res.ms, weak: sub === 'red' && LOAD_ERR.test(res.text) ? true : undefined });
-  out(`${sub.toUpperCase()} ok ${id} (${req}) ${res.ms}ms${sub === 'red' && LOAD_ERR.test(res.text) ? ' [weak]' : ''}`);
+  appendLedger({ type: sub, test: id, req, file: t.path, fileSha: after, cmdSha: sha(cmd.join('\u0000')), exit: res.exit, ms: res.ms, weak: sub === 'red' && LOAD_ERR.test(res.text) && !(flags['missing-module'] && declaredMissingModule(res.text, t.path)) ? true : undefined });
+  out(`${sub.toUpperCase()} ok ${id} (${req}) ${res.ms}ms${sub === 'red' && LOAD_ERR.test(res.text) && !(flags['missing-module'] && declaredMissingModule(res.text, t.path)) ? ' [weak]' : ''}`);
   return 0;
 }
 
@@ -290,7 +312,9 @@ function traceCheck(ents, dups, specs) {
   const warnings = [];
   const reqs = new Map();
   for (const s of specs) for (const r of s.reqs) { if (reqs.has(r.id)) errors.push(`duplicate REQ ${r.id}`); else reqs.set(r.id, { ...r, spec: s }); }
-  for (const d of dups) errors.push(`duplicate @id ${d}`);
+  if (!specs.length) return { errors: [], warnings: ['no specs'], reqs, tested: new Set(), noSpecs: true };
+  for (const d of dups.slice(0, 20)) errors.push(`duplicate @id ${d}`);
+  if (dups.length > 20) errors.push(`... and ${dups.length - 20} more duplicate @id`);
   const tested = new Set();
   const implemented = new Set();
   for (const e of ents.values()) {
@@ -312,9 +336,26 @@ function traceCheck(ents, dups, specs) {
   return { errors, warnings, reqs, tested };
 }
 
+const BASELINE = path.join(SDD, 'trace-baseline.json');
+const errKey = (e) => e.replace(/:\d+/g, '');
+function applyBaseline(t) {
+  const base = readJson(BASELINE, null);
+  if (!base && !flags.changed) return t;
+  const known = new Set(base?.errors ?? []);
+  const ch = flags.changed ? changedFiles() : null;
+  const keep = (e) => !known.has(errKey(e)) && (base || !ch || [...ch].some((f) => e.includes(f)));
+  return { ...t, errors: t.errors.filter(keep) };
+}
+
 function cmdTrace() {
   const { ents, dups } = scanEntities(listFiles());
-  const t = traceCheck(ents, dups, loadSpecs());
+  let t = traceCheck(ents, dups, loadSpecs());
+  if (flags.baseline) {
+    writeJson(BASELINE, { at: new Date().toISOString(), errors: t.errors.map(errKey) });
+    out(`baseline written: ${rel(BASELINE)} (${t.errors.length} errors)`);
+    return 0;
+  }
+  t = applyBaseline(t);
   out(`TRACE ${t.errors.length ? 'FAIL' : 'OK'}: ${t.reqs.size} REQ, ${ents.size} annotated entities, ${t.errors.length} errors, ${t.warnings.length} warnings`);
   [...t.errors.slice(0, 10).map((e) => `  ✗ ${e}`), ...t.warnings.slice(0, 5).map((w) => `  ! ${w}`)].forEach((l) => out(l));
   return t.errors.length ? 1 : 0;
@@ -336,9 +377,9 @@ function cmdGate() {
   const specs = loadSpecs();
   const { ents, dups } = scanEntities(listFiles());
   if (!specs.length) add(false, 'spec: none in .sdd/specs (T0 changes need no gate)');
-  for (const s of specs.filter((x) => x.tier === 'T2')) { const st = approvalState(s); add(st === 'ok', `lock ${s.feature}: ${st}${s.approval === 'human' ? ' (human required)' : ''}`); }
+  for (const s of specs.filter((x) => x.tier === 'T2')) { const st = approvalState(s); const ap = readJson(APPROVALS, {})[s.feature]; add(st === 'ok', `lock ${s.feature}: ${st}${ap ? ` [${ap.kind}${ap.kind === 'ai' ? `, review ${ap.review ? (ap.reviewSha ? 'file' : 'summary') : 'none'}` : ''}]` : ''}${s.approval === 'human' ? ' (human required)' : ''}`); }
 
-  const t = traceCheck(ents, dups, specs);
+  const t = applyBaseline(traceCheck(ents, dups, specs));
   add(!t.errors.length, `trace: ${t.reqs.size} REQ, ${t.errors.length} errors${t.warnings.length ? `, ${t.warnings.length} warnings` : ''}`, t.errors.slice(0, 6));
 
   const entries = readLedger();
@@ -371,7 +412,15 @@ function cmdGate() {
   const cfg = loadConfig();
   if (flags['no-run']) { lines.push('! commands: SKIPPED (--no-run) — result is INCOMPLETE'); incomplete = true; }
   else for (const c of cfg.checks ?? []) {
-    const r = run(c.cmd, cfg.timeoutMs ?? 120000);
+    let cmd = c.cmd;
+    if (flags.changed && c.changedCmd) {
+      const ch = [...changedFiles()].filter((f) => fs.existsSync(path.join(ROOT, f)));
+      const tests = ch.filter((f) => /\.(test|spec)\.[cm]?[jt]sx?$|(^|\/)test_[^/]*\.py$|_test\.(py|go)$/.test(f));
+      if (!ch.length) { lines.push(`! cmd ${c.name}: no changed files — skipped`); continue; }
+      cmd = c.changedCmd.flatMap((a) => a === '{changedFiles}' ? ch : a === '{changedTests}' ? tests : [a]);
+    }
+    const r = run(cmd, c.timeoutMs ?? cfg.timeoutMs ?? 120000);
+    if (r.timedOut) { add(false, `cmd ${c.name} TIMEOUT after ${(r.ms / 1000).toFixed(0)}s (raise timeoutMs in .sdd/config.json or scope with changedCmd)`); continue; }
     add(r.exit === 0, `cmd ${c.name} (${(r.ms / 1000).toFixed(1)}s)`, r.exit === 0 ? [] : tail(r.text, 8).split('\n'));
   }
   if (!flags['no-run'] && !(cfg.checks ?? []).length) { lines.push('! commands: none configured — nothing was run'); incomplete = true; }
@@ -394,7 +443,7 @@ function cmdStatus() {
 const cmds = { init: cmdInit, approve: cmdApprove, guard: cmdGuard, tdd: cmdTdd, trace: cmdTrace, gate: cmdGate, status: cmdStatus };
 const fn = cmds[pos[0]];
 if (!fn) {
-  out('usage: sdd.mjs init | approve prepare|record <feature> | guard | tdd red|green|refactor <TEST-ID> | tdd check | trace | gate [--changed] [--no-run] | status   [--root dir]');
+  out('usage: sdd.mjs init | approve prepare|record <feature> | guard | tdd red|green|refactor <TEST-ID> | tdd check | trace [--baseline] | gate [--changed] [--no-run] | status   [--root dir]\n  tdd red: tdd red --missing-module accepts a Red caused by the test own not-yet-created import (non-weak); approve record --by ai:<reviewer> needs --review <path|summary>');
   process.exit(2);
 }
 process.exit(fn() ?? 0);
