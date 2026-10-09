@@ -230,6 +230,15 @@ function cmdApprove() {
     if (spec.approval === 'human' && isAi) { out(`REFUSED: ${spec.feature} requires a human approver (approval: human)`); return 1; }
     const review = typeof flags.review === 'string' ? flags.review.trim() : '';
     if (isAi && (/^ai:\s*(self)?$/i.test(flags.by) || !review)) { out('REFUSED: ai approver needs a named reviewer (not ai:self) and --review <path-or-summary>'); return 1; }
+    const reviewIsFile = !!review && fs.existsSync(path.join(ROOT, review)) && fs.statSync(path.join(ROOT, review)).isFile();
+    if (isAi && !reviewIsFile && loadConfig().requireReviewFile) { out('REFUSED: config requireReviewFile — --review must be a file (e.g. .sdd/review.md)'); return 1; }
+    if (isAi && reviewIsFile) {
+      const text = fs.readFileSync(path.join(ROOT, review), 'utf8');
+      const open = text.split('\n').filter((l) => /^[\s>*-]*[^|\n]+\|[^|\n]*\|[^|\n]*\|\s*open\b/i.test(l));
+      if (open.length) { out(`REFUSED: ${review} has ${open.length} Open finding(s)`); open.slice(0, 5).forEach((l) => out(`  ${l.trim()}`)); return 1; }
+      const specHash = fileSha(spec.path);
+      if (!text.includes(specHash.slice(0, 12))) { out(`REFUSED: ${review} must reference the spec hash (sha256:${specHash.slice(0, 12)}… of ${spec.path})`); return 1; }
+    }
     const all = readJson(APPROVALS, {});
     all[spec.feature] = { by: flags.by, kind: isAi ? 'ai' : 'human', review: review || undefined, reviewSha: review && fs.existsSync(path.join(ROOT, review)) && fs.statSync(path.join(ROOT, review)).isFile() ? fileSha(review) : undefined, at: new Date().toISOString(), artifacts: Object.fromEntries(spec.artifacts.map((p) => [p, fileSha(p)])) };
     writeJson(APPROVALS, all);
@@ -252,6 +261,44 @@ function cmdGuard() {
   return bad ? 1 : 0;
 }
 
+function stubFor(testPath) {
+  const src = fs.readFileSync(path.join(ROOT, testPath), 'utf8');
+  const dir = path.resolve(ROOT, path.dirname(testPath));
+  const made = [];
+  const add = (abs, body) => { if (fs.existsSync(abs)) return; fs.mkdirSync(path.dirname(abs), { recursive: true }); fs.writeFileSync(abs, body); made.push(rel(abs)); };
+  const names = (clause) => {
+    const named = /\{([^}]*)\}/.exec(clause)?.[1].split(',').map((x) => x.trim()).filter((x) => x && !/^type\s/.test(x)).map((x) => x.split(/\s+as\s+/)[0]) ?? [];
+    const def = /^\s*([A-Za-z_$][\w$]*)\s*(,|$)/.exec(clause.replace(/^type\s+/, ''))?.[1];
+    return { named, def };
+  };
+  if (/\.py$/.test(testPath)) {
+    for (const m of src.matchAll(/^\s*from\s+(\.*[\w.]+)\s+import\s+([^\n#]+)/gm)) {
+      const mod = m[1];
+      const base = mod.startsWith('.') ? dir : ROOT;
+      const abs = path.join(base, ...mod.replace(/^\.+/, '').split('.')) + '.py';
+      if (fs.existsSync(abs) || fs.existsSync(abs.replace(/\.py$/, '/__init__.py'))) continue;
+      const ns = m[2].replace(/[()]/g, '').split(',').map((x) => x.trim().split(/\s+as\s+/)[0]).filter(Boolean);
+      add(abs, ns.map((n) => /^[A-Z]/.test(n) ? `class ${n}:\n    def __init__(self, *a, **k):\n        raise NotImplementedError("${n}")\n` : `def ${n}(*a, **k):\n    raise NotImplementedError("${n}")\n`).join('\n\n'));
+    }
+    return made;
+  }
+  const ts = /\.[cm]?tsx?$/.test(testPath);
+  for (const m of src.matchAll(/import\s+([^'"\n;]*?)\s+from\s+['"](\.{1,2}\/[^'"]+)['"]/g)) {
+    const spec = m[2];
+    const abs = path.resolve(dir, spec);
+    const exts = ['', '.ts', '.tsx', '.js', '.mjs', '.cjs', '.jsx', '/index.ts', '/index.js'];
+    const stem = abs.replace(/\.[cm]?[jt]sx?$/, '');
+    if (exts.some((e) => fs.existsSync(abs + e) || fs.existsSync(stem + e))) continue;
+    const target = /\.[cm]?[jt]sx?$/.test(abs) ? (ts ? stem + '.ts' : abs) : abs + (ts ? '.ts' : '.js');
+    const { named, def } = names(m[1].replace(/^\*\s+as\s+\w+$/, ''));
+    const fn = (n) => ts ? `export function ${n}(..._args: any[]): any {\n  throw new Error('not implemented: ${n}');\n}\n` : `export function ${n}() {\n  throw new Error('not implemented: ${n}');\n}\n`;
+    let body = named.map(fn).join('\n');
+    if (def) body += (body ? '\n' : '') + (ts ? `export default function ${def}(..._args: any[]): any {\n  throw new Error('not implemented: ${def}');\n}\n` : `export default function ${def}() {\n  throw new Error('not implemented: ${def}');\n}\n`);
+    add(target, body || 'export {};\n');
+  }
+  return made;
+}
+
 function cmdTdd() {
   const sub = pos[1];
   const files = listFiles();
@@ -262,7 +309,14 @@ function cmdTdd() {
     out(bad ? `LEDGER FAIL: ${bad}` : `LEDGER OK (${entries.length} entries)`);
     return bad ? 1 : 0;
   }
-  if (!['red', 'green', 'refactor'].includes(sub)) { out('usage: tdd red|green|refactor <TEST-ID> [--req REQ] [--weak] | tdd check'); return 2; }
+  if (sub === 'stub') {
+    const t = ents.get(pos[2]);
+    if (!t || t.kind !== 'TEST') { out(`${pos[2]} not found as "@id TEST-..." annotation in source`); return 2; }
+    const made = stubFor(t.path);
+    out(made.length ? `stubbed (throwing, Red-safe): ${made.join(', ')} — now run: tdd red ${t.id}` : `no missing relative imports in ${t.path}`);
+    return 0;
+  }
+  if (!['red', 'green', 'refactor'].includes(sub)) { out('usage: tdd red|green|refactor <TEST-ID> [--req REQ] [--weak] | tdd stub <TEST-ID> | tdd check'); return 2; }
   const id = pos[2];
   const t = ents.get(id);
   if (!t || t.kind !== 'TEST') { out(`${id} not found as "@id TEST-..." annotation in source`); return 2; }
@@ -447,7 +501,7 @@ function cmdStatus() {
 const cmds = { init: cmdInit, approve: cmdApprove, guard: cmdGuard, tdd: cmdTdd, trace: cmdTrace, gate: cmdGate, status: cmdStatus };
 const fn = cmds[pos[0]];
 if (!fn) {
-  out('usage: sdd.mjs init | approve prepare|record <feature> | guard | tdd red|green|refactor <TEST-ID> | tdd check | trace [--baseline] | gate [--changed] [--no-run] | status   [--root dir]\n  tdd red: tdd red --missing-module accepts a Red caused by the test own not-yet-created import (non-weak); approve record --by ai:<reviewer> needs --review <path|summary>');
+  out('usage: sdd.mjs init | approve prepare|record <feature> | guard | tdd red|green|refactor <TEST-ID> | tdd stub <TEST-ID> | tdd check | trace [--baseline] | gate [--changed] [--no-run] | status   [--root dir]\n  tdd red: tdd red --missing-module accepts a Red caused by the test own not-yet-created import (non-weak); approve record --by ai:<reviewer> needs --review <path|summary>');
   process.exit(2);
 }
 process.exit(fn() ?? 0);

@@ -138,3 +138,29 @@ test('#3 --changed uses changedCmd with placeholders and reports TIMEOUT', () =>
   assert.match(g.out, /cmd slow TIMEOUT/);
   assert.match(g.out, /✓ cmd ok/);
 });
+
+test('#4 review file: Open findings and missing spec hash are refused', () => {
+  const d = project();
+  const rv = path.join(d, '.sdd/review.md');
+  const hash = sdd(d, 'approve', 'prepare', 'calc').out.match(/sha256:([0-9a-f]{64})/)[1];
+  fs.writeFileSync(rv, `spec ${hash}\nF1|high|add.mjs:1|Open\n`);
+  assert.match(sdd(d, 'approve', 'record', 'calc', '--by', 'ai:duck', '--review', '.sdd/review.md').out, /1 Open/);
+  fs.writeFileSync(rv, 'F1|high|add.mjs:1|Closed\n');
+  assert.match(sdd(d, 'approve', 'record', 'calc', '--by', 'ai:duck', '--review', '.sdd/review.md').out, /spec hash/);
+  fs.writeFileSync(rv, `spec ${hash}\nF1|high|add.mjs:1|Closed\n`);
+  assert.equal(sdd(d, 'approve', 'record', 'calc', '--by', 'ai:duck', '--review', '.sdd/review.md').code, 0);
+  assert.match(sdd(d, 'gate', '--no-run').out, /\[ai, review file\]/);
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ requireReviewFile: true, checks: [] }));
+  assert.equal(sdd(d, 'approve', 'record', 'calc', '--by', 'ai:duck', '--review', 'looks fine').code, 1);
+});
+
+test('#5 tdd stub creates a throwing stub so Red is real (not weak)', () => {
+  const d = project();
+  sdd(d, 'approve', 'record', 'calc', '--by', 'tester');
+  assert.match(sdd(d, 'tdd', 'stub', 'TEST-CALC-001').out, /add\.mjs/);
+  assert.match(fs.readFileSync(path.join(d, 'add.mjs'), 'utf8'), /export function add/);
+  const r = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
+  assert.equal(r.code, 0, r.out);
+  assert.doesNotMatch(r.out, /weak/);
+  assert.match(sdd(d, 'tdd', 'stub', 'TEST-CALC-001').out, /no missing/);
+});

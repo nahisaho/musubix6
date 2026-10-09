@@ -42,6 +42,8 @@ Not enforced (agent discipline): test quality, mutation, security review. Do not
 - `.sdd/config.json`: `scan:{include:[],exclude:["fixtures/**"]}` (globs; only comment-leading `@id` lines count); `timeoutMs` globally or per check; check `changedCmd` with `{changedFiles}`/`{changedTests}` used by `gate --changed` (auto: `vitest related`, `jest --findRelatedTests`). `gate --changed` uses `changedTimeoutMs` (default 60s) so hub-file changes fail fast with `TIMEOUT`; narrow with `changedCmd` such as `["npx","vitest","run","{changedTests}","{changedScopes}"]` (scopes = package dirs). Always run the full `gate` (no `--changed`) before merge. Timeouts report `TIMEOUT`, not FAIL.
 - Legacy repos: `trace --baseline` snapshots errors to `.sdd/trace-baseline.json`; later trace/gate report only new errors (`--changed` also limits to changed files).
 - New module tests: `tdd red <ID> --missing-module` accepts a Red caused by the test's own not-yet-created import (not weak).
+- `tdd stub <TEST-ID>` writes throwing stubs for the test's missing relative imports (ts/js/py), so `tdd red` is a real, non-weak Red.
+- If `--review` is a file (e.g. `.sdd/review.md`, lines `id|sev|path:line|state`), it must have zero `Open` findings and contain the first 12 hex chars of the spec sha256; `requireReviewFile: true` in config makes a file mandatory.
 - `approve record --by ai:<reviewer>` requires `--review <path|summary>`; `ai:self` is refused; gate shows lock kind and review evidence.
 
 ## 4. Review without humans
