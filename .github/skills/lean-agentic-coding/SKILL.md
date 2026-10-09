@@ -1,6 +1,6 @@
 ---
 name: lean-agentic-coding
-description: "Use for any non-trivial AI coding task to get SDD-grade rigor (approval, TDD evidence, trace, delta review) at minimal token cost via risk tiers, progressive disclosure and compact gate output. 実装・修正・レビュー時に、リスク階層で厳格さを調整しトークンを節約したい場合に使用。"
+description: "Use when implementing features, fixing bugs, refactoring, reviewing code changes or preparing a PR with an AI agent, and when you want to cut token usage while keeping rigor (tests first, approval, trace, delta review) via risk tiers and compact gate output. 機能実装・バグ修正・リファクタリング・コードレビュー・PR 作成、およびトークン節約を求められたときに使用。"
 ---
 # Lean Agentic Coding / 省トークン高信頼開発
 
