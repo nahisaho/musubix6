@@ -34,6 +34,17 @@ const rel = (p) => path.relative(ROOT, p).split(path.sep).join('/');
 const readJson = (p, d) => { try { return JSON.parse(fs.readFileSync(p, 'utf8')); } catch { return d; } };
 const writeJson = (p, v) => { fs.mkdirSync(path.dirname(p), { recursive: true }); fs.writeFileSync(p, JSON.stringify(v, null, 2) + '\n'); };
 const fileSha = (p) => sha(fs.readFileSync(path.join(ROOT, p)));
+// Files mixing implementation and tests (e.g. Rust #[cfg(test)]) hash only the test's own @id region
+const testSha = (p, id) => {
+  const txt = fs.readFileSync(path.join(ROOT, p), 'utf8');
+  if (!/@implements\b/.test(txt)) return sha(txt);
+  const ls = txt.split('\n');
+  const start = ls.findIndex((l) => new RegExp(`@id\\s+${id}\\b`).test(l));
+  if (start < 0) return sha(txt);
+  let end = ls.findIndex((l, i) => i > start && /@id\s/.test(l));
+  if (end < 0) end = ls.length;
+  return sha(ls.slice(start, end).join('\n'));
+};
 const out = (s = '') => process.stdout.write(s + '\n');
 const tail = (s, n = 15) => s.trimEnd().split('\n').slice(-n).join('\n');
 
@@ -190,7 +201,7 @@ function evidenceStatus(testId, testPath, entries) {
   const r = es.filter((e) => e.type === 'red' && e.seq < g.seq && e.fileSha === g.fileSha).at(-1);
   if (!r) return { ok: false, why: 'no Red preceding Green with same test hash' };
   const last = es.filter((e) => e.type === 'green' || e.type === 'refactor').at(-1);
-  if (last.fileSha !== fileSha(testPath)) return { ok: false, why: 'test changed since last Green/Refactor' };
+  if (last.fileSha !== testSha(testPath, testId)) return { ok: false, why: 'test changed since last Green/Refactor' };
   return { ok: true, weak: !!r.weak };
 }
 
@@ -226,7 +237,7 @@ function run(cmd, timeoutMs) {
   const text = (r.stdout ?? '') + (r.stderr ?? '') + (r.error ? String(r.error.message) : '');
   return { exit: r.status ?? (r.error ? 127 : 1), text, ms: Date.now() - t0, timedOut: r.error?.code === 'ETIMEDOUT' };
 }
-const LOAD_ERR = /(cannot find (module|package)|modulenotfounderror|importerror|syntaxerror|cannot resolve|no such file|undefined reference|could not compile|error\[e\d+\]|failed to resolve import)/i;
+const LOAD_ERR = /(cannot find (module|package)|modulenotfounderror|importerror|syntaxerror|cannot resolve|no such file|undefined reference|could not compile|error\[e\d+\]|failed to resolve import|\[build failed\]|\[setup failed\]|^# [^\n]*\n[^\n]*:\d+:\d+: (undefined|cannot|missing))/im;
 // a missing *relative* import that the test file itself references = declared new module
 function declaredMissingModule(text, testPath) {
   const src = fs.readFileSync(path.join(ROOT, testPath), 'utf8');
@@ -389,7 +400,7 @@ function cmdTdd() {
   if (spec.tier === 'T2' && approvalState(spec) !== 'ok') { out(`REFUSED: T2 feature ${spec.feature} approval is ${approvalState(spec)}. run: approve prepare ${spec.feature}`); return 1; }
 
   const entries = readLedger();
-  const before = fileSha(t.path);
+  const before = testSha(t.path, id);
   const prior = entries.filter((e) => e.test === id);
   if (sub === 'green') {
     const r = prior.filter((e) => e.type === 'red').at(-1);
@@ -401,7 +412,7 @@ function cmdTdd() {
   const cfg = loadConfig();
   const cmd = cfg.testCmd.map((a) => a.replaceAll('{id}', id).replaceAll('{idu}', id.toLowerCase().replaceAll('-', '_')).replaceAll('{IDU}', id.toUpperCase().replaceAll('-', '_')).replaceAll('{file}', t.path));
   const res = run(cmd, cfg.timeoutMs ?? 120000);
-  const after = fileSha(t.path);
+  const after = testSha(t.path, id);
   if (after !== before) { out(`REFUSED: ${t.path} changed while running (formatter/watch?)`); return 1; }
 
   const zero = ZERO_TESTS.test(res.text);
@@ -420,7 +431,7 @@ function cmdTdd() {
   }
   if (!ok) { out(`${sub.toUpperCase()} REJECTED ${id}: ${why}`); out(tail(res.text, 12)); return 1; }
   const rl = res.text.replace(/\x1b\[[0-9;]*m/g, '').split('\n').map((l) => l.trim());
-  const reason = sub === 'red' ? (rl.find((l) => /^E\s+\S/.test(l))?.replace(/^E\s+/, '') ?? rl.find((l) => /(AssertionError|Error:|assert |FAILED|panicked|expected)/.test(l) && !/^(FAIL|❯)/.test(l)) ?? '').slice(0, 110) : '';
+  const reason = sub === 'red' ? (rl.find((l) => /^E\s+\S/.test(l))?.replace(/^E\s+/, '') ?? rl.find((l) => /(--- FAIL|AssertionError|Error:|assert |FAILED|panicked|expected)/.test(l) && !/^(FAIL|❯)/.test(l)) ?? '').slice(0, 110) : '';
   const loadWeak = sub === 'red' && LOAD_ERR.test(res.text) && !(flags['missing-module'] && declaredMissingModule(res.text, t.path));
   const setupSym = sub === 'red' && !flags['allow-setup-red'] && typeof flags.expect !== 'string' ? setupOrigin(rl.find((l) => /not implemented|NotImplementedError|unimplemented/i.test(l)) ?? reason, t.path, id) : null;
   const weakRed = loadWeak || !!setupSym;

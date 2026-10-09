@@ -356,3 +356,33 @@ test('#15 go/rust: init picks defaults and {IDU}/{idu} map IDs to test-name patt
   fs.writeFileSync(path.join(r, 'src/lib.rs'), '// @id CODE-X-001 @implements REQ-CALC-001\npub fn f() {}\n');
   assert.match(sdd(r, 'status').out, /entities 1/);
 });
+
+test('#15 impl and test in one file (Rust-style): Green is allowed after implementing; editing the test still blocks', () => {
+  const d = project();
+  sdd(d, 'approve', 'record', 'calc', '--by', 'tester');
+  const w = (body, assertion) => fs.writeFileSync(path.join(d, 'add.test.mjs'), [
+    "import { test } from 'node:test';",
+    "import assert from 'node:assert/strict';",
+    '/** @id CODE-CALC-001 @implements REQ-CALC-001 */',
+    `const add = (a, b) => ${body};`,
+    '/** @id TEST-CALC-001 @verifies REQ-CALC-001 */',
+    `test('TEST-CALC-001 adds', () => assert.equal(${assertion}, 3));`,
+    '',
+  ].join('\n'));
+  w('a - b', 'add(1, 2)');
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-CALC-001').code, 0);
+  w('a + b', 'add(1, 2)');
+  assert.equal(sdd(d, 'tdd', 'green', 'TEST-CALC-001').code, 0);
+  w('a + b', 'add(1, 2) + 0');
+  assert.match(sdd(d, 'gate', '--no-run').out, /test changed since last Green/);
+});
+
+test('#15 go build failure is a load error, not a Red', () => {
+  const d = project();
+  sdd(d, 'approve', 'record', 'calc', '--by', 'tester');
+  const bin = path.join(d, 'bin');
+  fs.mkdirSync(bin);
+  fs.writeFileSync(path.join(bin, 'go'), '#!/bin/sh\necho "# calc [calc.test]"\necho "./calc_test.go:7:5: undefined: Plus"\necho "FAIL\tcalc [build failed]"\nexit 1\n', { mode: 0o755 });
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ schemaVersion: 1, testCmd: [path.join(bin, 'go'), 'test', '-run', '{IDU}'] }));
+  assert.match(sdd(d, 'tdd', 'red', 'TEST-CALC-001').out, /REJECTED.*load\/compile/);
+});
