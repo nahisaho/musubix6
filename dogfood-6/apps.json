@@ -1,0 +1,52 @@
+[
+ [
+  "app01-js-eventstore",
+  "Node.js (ESM, node:test or vitest-free node --test)",
+  "event-sourced inventory/order system with CQRS projections, optimistic concurrency, snapshots, and idempotent command handling (T2: state machine + concurrency)"
+ ],
+ [
+  "app02-py-workflow",
+  "Python 3 + pytest",
+  "DAG workflow engine: topological scheduling, retries with backoff (injected clock), cancellation, cycle detection, persisted state transitions (T2)"
+ ],
+ [
+  "app03-go-ratelimiter",
+  "Go modules (multi-package)",
+  "token-bucket/sliding-window rate limiter + worker-pool job queue with priority, context cancellation and graceful shutdown (T2 concurrency)"
+ ],
+ [
+  "app04-rust-exprlang",
+  "Rust cargo workspace (2+ crates)",
+  "expression language: lexer, Pratt parser, type checker, evaluator with closures and error spans (library crates + dependents)"
+ ],
+ [
+  "app05-java-ledger",
+  "Java 17+ Maven multi-module + JUnit5",
+  "double-entry accounting ledger: accounts, journal posting invariants, currency/rounding with BigDecimal, period close, audit trail (T2 policy/data)"
+ ],
+ [
+  "app06-c-cmake-kvstore",
+  "C11 + CMake/CTest",
+  "in-memory key-value store: hash table with resizing, LRU eviction, TTL via injected clock, binary protocol parser with bounds checking (T2)"
+ ],
+ [
+  "app07-php-rbac",
+  "PHP 8 + Composer PSR-4 + PHPUnit",
+  "RBAC/ABAC policy engine with role hierarchy, deny-overrides, conditions DSL, decision audit log (T2 security policy)"
+ ],
+ [
+  "app08-cs-pricing",
+  "C# .NET (dotnet test, xUnit)",
+  "order pricing engine: discount rules pipeline, tax per jurisdiction, coupon stacking policy, decimal rounding, immutable order state machine"
+ ],
+ [
+  "app09-julia-optim",
+  "Julia package with Project.toml + Test",
+  "numerical toolkit: sparse matrix ops, LU solve, Newton/gradient-descent optimizer with convergence guarantees and error handling"
+ ],
+ [
+  "app10-ts-monorepo",
+  "TypeScript npm workspaces monorepo + vitest (3+ packages with cross-package imports)",
+  "booking platform: shared-domain package, availability/scheduling package (interval overlap, time zones), API-layer package with validation, hub-file change scenarios"
+ ]
+]

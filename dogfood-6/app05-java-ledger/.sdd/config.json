@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "testCmd": [
+    "mvn",
+    "-B",
+    "-ntp",
+    "test",
+    "-Dtest=*#*{idu}*",
+    "-Dsurefire.failIfNoSpecifiedTests=false"
+  ],
+  "checks": [
+    {
+      "name": "test",
+      "cmd": [
+        "mvn",
+        "-B",
+        "-ntp",
+        "test"
+      ],
+      "changedCmd": [
+        "mvn",
+        "-B",
+        "-ntp",
+        "test",
+        "-DfailIfNoTests=false"
+      ]
+    }
+  ],
+  "timeoutMs": 120000
+}

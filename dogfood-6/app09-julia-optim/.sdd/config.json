@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "testCmd": [
+    "julia",
+    "--project=.",
+    "{file}"
+  ],
+  "checks": [
+    {
+      "name": "test",
+      "cmd": [
+        "julia",
+        "--project=.",
+        "test/runtests.jl"
+      ]
+    },
+    {
+      "name": "pkgload",
+      "cmd": [
+        "julia",
+        "--project=.",
+        "-e",
+        "using Optim9"
+      ]
+    }
+  ],
+  "timeoutMs": 120000
+}

@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "testCmd": [
+    "sh",
+    "-c",
+    "[ -f build/CMakeCache.txt ] || cmake -S . -B build -Wno-dev >/dev/null || exit 1; cmake --build build >build/.sdd-build.log 2>&1 || { cat build/.sdd-build.log; exit 1; }; ctest --test-dir build --output-on-failure -R \"$0\"",
+    "{idu}"
+  ],
+  "checks": [
+    {
+      "name": "test",
+      "cmd": [
+        "sh",
+        "-c",
+        "[ -f build/CMakeCache.txt ] || cmake -S . -B build -Wno-dev >/dev/null || exit 1; cmake --build build >build/.sdd-build.log 2>&1 || { cat build/.sdd-build.log; exit 1; }; ctest --test-dir build --output-on-failure"
+      ],
+      "changedCmd": [
+        "sh",
+        "-c",
+        "[ -f build/CMakeCache.txt ] || cmake -S . -B build -Wno-dev >/dev/null || exit 1; cmake --build build >build/.sdd-build.log 2>&1 || { cat build/.sdd-build.log; exit 1; }; ctest --test-dir build --output-on-failure -R \"$0\"",
+        "{changedCtestRegex}"
+      ]
+    }
+  ],
+  "timeoutMs": 120000
+}

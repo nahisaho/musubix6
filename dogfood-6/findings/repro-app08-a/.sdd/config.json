@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "testCmd": [
+    "node",
+    "--test",
+    "--test-name-pattern",
+    "{id}",
+    "{file}"
+  ],
+  "checks": [],
+  "timeoutMs": 120000,
+  "projects": [
+    {
+      "root": "src/Lib",
+      "testCmd": [
+        "dotnet",
+        "test",
+        "--nologo",
+        "--filter",
+        "FullyQualifiedName~{idu}"
+      ],
+      "checks": [
+        {
+          "name": "test",
+          "cmd": [
+            "dotnet",
+            "test",
+            "--nologo"
+          ]
+        }
+      ]
+    },
+    {
+      "root": "tests/T",
+      "testCmd": [
+        "dotnet",
+        "test",
+        "--nologo",
+        "--filter",
+        "FullyQualifiedName~{idu}"
+      ],
+      "checks": [
+        {
+          "name": "test",
+          "cmd": [
+            "dotnet",
+            "test",
+            "--nologo"
+          ]
+        }
+      ]
+    }
+  ]
+}

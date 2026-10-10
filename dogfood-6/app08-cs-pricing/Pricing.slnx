@@ -1,0 +1,13 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Pricing.Coupons/Pricing.Coupons.csproj" />
+    <Project Path="src/Pricing.Discounts/Pricing.Discounts.csproj" />
+    <Project Path="src/Pricing.Engine/Pricing.Engine.csproj" />
+    <Project Path="src/Pricing.Money/Pricing.Money.csproj" />
+    <Project Path="src/Pricing.Orders/Pricing.Orders.csproj" />
+    <Project Path="src/Pricing.Tax/Pricing.Tax.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Pricing.Tests/Pricing.Tests.csproj" />
+  </Folder>
+</Solution>

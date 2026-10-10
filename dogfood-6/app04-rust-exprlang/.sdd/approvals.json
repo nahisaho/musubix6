@@ -1,0 +1,26 @@
+{
+  "type": {
+    "by": "ai:reviewer",
+    "kind": "ai",
+    "review": ".sdd/review-type.md",
+    "reviewSha": "ac8a364f610100a918b52ebec9d496475fd1020b4c4f355a26eb23dba5116b04",
+    "at": "2026-10-10T09:32:25.321Z",
+    "artifacts": {
+      ".sdd/specs/type.md": "2553746f3575dbf61bc5efdae25954ce0f11b95fed09d6c70cde58ed3409574d"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "eval": {
+    "by": "ai:reviewer",
+    "kind": "ai",
+    "review": ".sdd/review-eval.md",
+    "reviewSha": "4c0765ff0ba3ed78df07b1c22f2baeafa71eab19e75bbc2b45c6148d37fb5a66",
+    "at": "2026-10-10T09:35:31.658Z",
+    "artifacts": {
+      ".sdd/specs/eval.md": "5264f364280ac3bb2784d1a7de61f31f89216b2c2a33989838c4ce44ee0a93a2"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  }
+}

@@ -1,0 +1,9 @@
+[package]
+name = "exprlang-driver"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+exprlang-syntax = { path = "../syntax" }
+exprlang-types = { path = "../types" }
+exprlang-eval = { path = "../eval" }

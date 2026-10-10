@@ -542,6 +542,115 @@ test('#25 tdd stub for Java / C / Go / Rust infers arity and return type from th
   assert.match(read(rs, 'src/lib.rs'), /pub fn add<A0, A1>\(_a0: A0, _a1: A1\) -> i64/);
 });
 
+function jsStubProject(files) {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-jsstub-'));
+  spawnSync('git', ['init', '-q'], { cwd: d });
+  fs.mkdirSync(path.join(d, '.sdd/specs'), { recursive: true });
+  fs.writeFileSync(path.join(d, 'package.json'), '{"name":"x","type":"module","scripts":{"test":"true"}}');
+  for (const [f, body] of Object.entries(files)) { fs.mkdirSync(path.dirname(path.join(d, f)), { recursive: true }); fs.writeFileSync(path.join(d, f), body); }
+  sdd(d, 'init');
+  return d;
+}
+
+test('#128 tdd stub never adds methods to an existing class unless the receiver is provably that class', () => {
+  const real = 'export class Store { read() { return []; } }\nexport class Other { go() { return 1; } }\n';
+  const d = jsStubProject({
+    'src/real.js': real,
+    'test/a.test.js': [
+      "import { Store, Other } from '../src/real.js';", "import { Handler } from '../src/handler.js';",
+      'const make = () => new Store();',
+      '/** @id TEST-A-001 @verifies REQ-A-001 */ test(\'TEST-A-001 x\', () => { const store = make(); const h = new Handler({ store });',
+      "  assert.equal(h.run(), 1); assert.equal(store.read('x').length, 0); assert.equal(new Other().go(), 1); });", '',
+    ].join('\n'),
+  });
+  sdd(d, 'tdd', 'stub', 'TEST-A-001');
+  assert.equal(fs.readFileSync(path.join(d, 'src/real.js'), 'utf8'), real);
+  assert.match(fs.readFileSync(path.join(d, 'src/handler.js'), 'utf8'), /class Handler[\s\S]*run\(/);
+  // a provable receiver (`new Other().stop()`) is still stubbed in the real class, append-only
+  fs.writeFileSync(path.join(d, 'test/a.test.js'), fs.readFileSync(path.join(d, 'test/a.test.js'), 'utf8').replace('new Other().go()', 'new Other().stop()'));
+  sdd(d, 'tdd', 'stub', 'TEST-A-001');
+  const after = fs.readFileSync(path.join(d, 'src/real.js'), 'utf8');
+  assert.match(after, /stop\(\.\.\._args\)[\s\S]*not implemented: Other\.stop/);
+  assert.doesNotMatch(after, /Other\.read|Store\.stop/);
+});
+
+test('#128 tdd stub: namespace imports, static methods, value imports and multi-line imports', () => {
+  const d = jsStubProject({
+    'test/n.test.ts': [
+      "import * as util from '../src/util';", "import { Foo, CONFIG } from '../src/foo';",
+      'import {', '  alpha,', '  type Shape,', '  beta,', "} from '../src/multi';",
+      '/** @id TEST-N-001 @verifies REQ-N-001 */ test(\'TEST-N-001 x\', () => {',
+      "  expect(util.slug('A b')).toBe('a-b'); expect(Foo.create(1)).toBeTruthy(); expect(CONFIG.max).toBe(3); expect(alpha(beta(1))).toBe(1); });", '',
+    ].join('\n'),
+  });
+  const r = sdd(d, 'tdd', 'stub', 'TEST-N-001');
+  assert.doesNotMatch(r.out, /no missing/);
+  const rd = (f) => fs.readFileSync(path.join(d, f), 'utf8');
+  assert.match(rd('src/util.ts'), /export function slug\(/);
+  assert.doesNotMatch(rd('src/util.ts'), /^export \{\};/m);
+  assert.match(rd('src/foo.ts'), /export class Foo[\s\S]*static create\(/);
+  assert.match(rd('src/foo.ts'), /export const CONFIG: any = new Proxy[\s\S]*not implemented: CONFIG\./);
+  assert.doesNotMatch(rd('src/foo.ts'), /function CONFIG/);
+  assert.match(rd('src/multi.ts'), /export function alpha\([\s\S]*export function beta\(/);
+  assert.match(rd('src/multi.ts'), /export type Shape = any;/);
+});
+
+test('#128 tdd stub: workspace package imports are stubbed in the package entry; unresolvable packages are reported', () => {
+  const d = jsStubProject({
+    'package.json': '{"name":"root","private":true,"workspaces":["packages/*"],"scripts":{"test":"true"}}',
+    'packages/domain/package.json': '{"name":"@bk/domain","main":"src/index.ts"}',
+    'packages/domain/src/index.ts': 'export const keep = 1;\n',
+    'packages/app/test/d.test.ts': [
+      "import { isTerminal } from '@bk/domain';", "import { ghost } from '@bk/ghost';",
+      '/** @id TEST-D-001 @verifies REQ-D-001 */ test(\'TEST-D-001 x\', () => { expect(isTerminal(1)).toBe(true); ghost(); });', '',
+    ].join('\n'),
+  });
+  const r = sdd(d, 'tdd', 'stub', 'TEST-D-001');
+  const idx = fs.readFileSync(path.join(d, 'packages/domain/src/index.ts'), 'utf8');
+  assert.match(idx, /^export const keep = 1;\n/);
+  assert.match(idx, /export function isTerminal\(/);
+  assert.match(r.out, /not stubbed: @bk\/ghost/);
+});
+
+const GO_OK = spawnSync('which', ['go']).status === 0;
+function goStubProject(files) {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-gostub-'));
+  spawnSync('git', ['init', '-q'], { cwd: d });
+  fs.writeFileSync(path.join(d, 'go.mod'), 'module example.com/r\n\ngo 1.21\n');
+  for (const [f, body] of Object.entries(files)) { fs.mkdirSync(path.dirname(path.join(d, f)), { recursive: true }); fs.writeFileSync(path.join(d, f), body); }
+  return d;
+}
+
+test('#129 Go external test package: Err* become errors.New vars, ctor returns a zero value, stub compiles, path printed once', { skip: !GO_OK }, () => {
+  const d = goStubProject({
+    'calc/calc_test.go': 'package calc_test\n\nimport (\n\t"errors"\n\t"testing"\n\n\t"example.com/r/calc"\n)\n\n// @id TEST-C-001 @verifies REQ-C-001\nfunc TestC(t *testing.T) {\n\tif _, err := calc.New(0, 1, nil); !errors.Is(err, calc.ErrBad) {\n\t\tt.Fatal(err)\n\t}\n\tc, err := calc.New(1, 3, nil)\n\tif err != nil {\n\t\tt.Fatal(err)\n\t}\n\tif c.Allow() != true {\n\t\tt.Fatal("no")\n\t}\n}\n',
+  });
+  const r = sdd(d, 'tdd', 'stub', 'TEST-C-001');
+  const body = fs.readFileSync(path.join(d, 'calc/calc.go'), 'utf8');
+  assert.match(body, /var ErrBad = errors\.New\("ErrBad"\)/);
+  assert.doesNotMatch(body, /const ErrBad/);
+  assert.match(body, /func New\(a0, a1, a2 any\) \(\*Calc, error\) \{\n\treturn &Calc\{\}, nil/);
+  assert.match(body, /func \(\*Calc\) Allow\(\)[\s\S]*not implemented: Calc\.Allow/);
+  assert.doesNotMatch(body, /NewResult|func New\(\) error/);
+  assert.equal((r.out.match(/calc\/calc\.go/g) ?? []).length, 1, r.out);
+  assert.doesNotMatch(r.out, /NOT verified|does not compile/);
+  const vet = spawnSync('go', ['vet', './calc'], { cwd: d, encoding: 'utf8' });
+  assert.equal(vet.status, 0, vet.stdout + vet.stderr);
+});
+
+test('#129 Go in-package constructors return a zero value so only behaviour methods panic', { skip: !GO_OK }, () => {
+  const d = goStubProject({
+    'pq/pq_test.go': 'package pq\n\nimport "testing"\n\n// @id TEST-PQ-001 @verifies REQ-PQ-001\nfunc TestPQ(t *testing.T) {\n\tq := New()\n\tq.Push("low", 1)\n\tgot := q.Pop()\n\tif got != "low" {\n\t\tt.Fatal(got)\n\t}\n}\n',
+  });
+  const r = sdd(d, 'tdd', 'stub', 'TEST-PQ-001');
+  const body = fs.readFileSync(path.join(d, 'pq/pq.go'), 'utf8');
+  assert.match(body, /func New\(\) \*Pq \{\n\treturn &Pq\{\}\n\}/);
+  assert.doesNotMatch(body, /not implemented: New\b/);
+  assert.match(body, /not implemented: Pq\.Push/);
+  assert.doesNotMatch(r.out, /does not compile/);
+  assert.equal(spawnSync('go', ['vet', './pq'], { cwd: d, encoding: 'utf8' }).status, 0);
+});
+
 test('#31 mixed monorepo: root JS + nested go becomes a project, nested js stays with the root', () => {
   const d = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-'));
   spawnSync('git', ['init', '-q'], { cwd: d });
@@ -1938,4 +2047,407 @@ test('#118 tdd refactor warns when the test body changed since Green', () => {
   fs.writeFileSync(f, fs.readFileSync(f, 'utf8').replace(/\)\s*;?\s*\}\);?\s*$/, ') ; void 0; });\n'));
   const r = sdd(d, 'tdd', 'refactor', 'TEST-A-001');
   assert.match(r.out, /test body changed since the last Green/, r.out);
+});
+
+test('#119 Node file-level pass with no ID match is rejected for red --characterization and green', () => {
+  const d = mini(T1SPEC, { 'a.test.mjs': "import { test } from 'node:test';\nimport assert from 'node:assert/strict';\n// @id TEST-A-001 @verifies REQ-A-001\ntest('no id in title', () => { assert.equal(1, 2); });\n" });
+  setCmd(d, ['node', '--test', '--test-name-pattern', '{id}', '{file}']);
+  const r = sdd(d, 'tdd', 'red', 'TEST-A-001', '--characterization', 'x');
+  assert.match(r.out, /REJECTED/, r.out);
+  assert.match(r.out, /no test matched/, r.out);
+});
+
+test('#120 approve record strips zero-width chars before generic-name check', () => {
+  const d = mini('---\nfeature: a\ntier: T2\napproval: human\n---\n## Design\nx\ny\n\n| REQ-A-001 | one shall hold. | TEST-A-001 |\n', { 'a.test.mjs': jsTest() });
+  sddRaw(d, 'approve', 'prepare', 'a');
+  const r = sddRaw(d, 'approve', 'record', 'a', '--by', 'ai\u200b');
+  assert.notEqual(r.code, 0, r.out);
+  assert.match(r.out, /REFUSED/);
+});
+
+test('#121 stale/missing lock hint is approval-specific', () => {
+  const d = mini('---\nfeature: a\ntier: T2\n---\n## Design\nx\ny\n\n| REQ-A-001 | one shall hold. | TEST-A-001 |\n', { 'a.test.mjs': jsTest() }, PASS);
+  const r = sdd(d, 'tdd', 'red', 'TEST-A-001');
+  assert.match(r.out, /approve record a --by ai:<reviewer>/, r.out);
+  assert.doesNotMatch(r.out, /run: approve prepare/);
+});
+
+test('#122 T1 record is not claimed as locked; deleted review file makes AI lock stale', () => {
+  const t1 = mini(T1SPEC, { 'a.test.mjs': jsTest() });
+  assert.match(sdd(t1, 'approve', 'record', 'a', '--by', 'ai:rev', '--review', 'ok').out, /NOT lock-enforced/);
+  const d = mini('---\nfeature: a\ntier: T2\n---\n## Design\nx\ny\n\n| REQ-A-001 | one shall hold. | TEST-A-001 |\n', { 'a.test.mjs': jsTest() }, PASS);
+  const tpl = sddRaw(d, 'review', 'template', 'a').out;
+  fs.writeFileSync(path.join(d, '.sdd/review.md'), tpl.replace(/^[^\n]*\n(?=---)/, ''));
+  const rec = sddRaw(d, 'approve', 'record', 'a', '--by', 'ai:rev', '--review', '.sdd/review.md');
+  if (/^locked/m.test(rec.out)) {
+    fs.rmSync(path.join(d, '.sdd/review.md'));
+    assert.match(sddRaw(d, 'status').out + sddRaw(d, 'gate', '--no-run').out, /stale/);
+  }
+});
+
+test('#123 pytest collection error is a load error (Red rejected)', () => {
+  const d = mini(T1SPEC, { 'a.test.mjs': jsTest() });
+  setCmd(d, ['node', '-e', "console.log('ERROR collecting t.py\\nAttributeError: x\\nInterrupted: 1 error during collection');process.exit(2)"]);
+  assert.match(sdd(d, 'tdd', 'red', 'TEST-A-001').out, /REJECTED.*load\/compile/);
+});
+
+test('#123 Julia top-level LoadError is a load error; sibling-only failure rejected', () => {
+  const d = mini(T1SPEC, { 'a.test.mjs': jsTest() });
+  setCmd(d, ['node', '-e', "console.log('ERROR: LoadError: not implemented: f');process.exit(1)"]);
+  assert.match(sdd(d, 'tdd', 'red', 'TEST-A-001').out, /REJECTED.*load\/compile/);
+  setCmd(d, ['node', '-e', "console.log('Test Summary: | Pass  Fail  Total\\n  TEST-A-001  |    1     0      1\\n  TEST-A-002  |    0     1      1\\nERROR: LoadError: Some tests did not pass');process.exit(1)"]);
+  assert.match(sdd(d, 'tdd', 'red', 'TEST-A-001').out, /REJECTED.*itself passes/);
+});
+
+test('#126 tdd arg validation: no ID is a usage error; multiple IDs all processed', () => {
+  const d = mini(T1SPEC, { 'a.test.mjs': jsTest() }, PASS);
+  const r = sdd(d, 'tdd', 'green');
+  assert.equal(r.code, 2);
+  assert.match(r.out, /usage/);
+  assert.doesNotMatch(r.out, /undefined/);
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-A-001', '--characterization').code, 2);
+  const b = sdd(d, 'tdd', 'red', 'TEST-A-001', 'TEST-A-001', '--characterization', 'x');
+  assert.equal((b.out.match(/RED ok/g) ?? []).length, 2, b.out);
+});
+
+test('#134 tdd red --retest records a weak Red after the test changed', () => {
+  const d = mini(T1SPEC, { 'a.test.mjs': jsTest() }, PASS);
+  assert.match(sdd(d, 'tdd', 'red', 'TEST-A-001', '--retest', 'x').out, /REFUSED.*previous/);
+  sdd(d, 'tdd', 'red', 'TEST-A-001', '--characterization', 'x');
+  assert.match(sdd(d, 'tdd', 'red', 'TEST-A-001', '--retest', 'x').out, /REFUSED.*unchanged/);
+  const f = path.join(d, 'a.test.mjs');
+  fs.writeFileSync(f, fs.readFileSync(f, 'utf8').replace('assert.ok(1)', 'assert.ok(2)'));
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-A-001', '--retest').code, 2);
+  const r = sdd(d, 'tdd', 'red', 'TEST-A-001', '--retest', 'expectation was wrong');
+  assert.match(r.out, /RED ok.*\[weak\]/, r.out);
+  assert.equal(sdd(d, 'tdd', 'green', 'TEST-A-001').code, 0);
+});
+
+const fakeRun = (d, shellScript) => fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ schemaVersion: 1, testCmd: ['sh', '-c', shellScript, 'x'] }));
+const testFile = (d, body) => fs.writeFileSync(path.join(d, 'add.test.mjs'), [
+  "import { test } from 'node:test';",
+  "import assert from 'node:assert/strict';",
+  "import { add } from './add.mjs';",
+  '/** @id TEST-CALC-001 @verifies REQ-CALC-001 */',
+  "test('TEST-CALC-001 adds', () => {",
+  ...body,
+  '});',
+  '',
+].join('\n'));
+
+test('#124 a bare act statement whose side effect is asserted is not a weak Red', () => {
+  const d = project();
+  sdd(d, 'approve', 'record', 'calc', '--by', 'tester');
+  fs.writeFileSync(path.join(d, 'add.mjs'), "export const add = () => { throw new Error('not implemented: add'); };\n");
+  testFile(d, ['  globalThis.n = 0;', '  add(1, 2);', '  assert.equal(globalThis.n, 3);']);
+  const r = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
+  assert.equal(r.code, 0, r.out);
+  assert.doesNotMatch(r.out, /\[weak\]/, r.out);
+});
+
+test('#124 .NET NotImplementedException without a member name is attributed via the stack frame (weak Red from setup)', () => {
+  const d = project();
+  sdd(d, 'approve', 'record', 'calc', '--by', 'tester');
+  testFile(d, ['  const o = TransitionTo(1);', '  assert.equal(other(), 3);']);
+  fakeRun(d, `printf '%s\\n' "System.NotImplementedException : The method or operation is not implemented." "   at Pricing.Order.TransitionTo(Int32 s) in /x/Order.cs:line 3" "   at Pricing.Tests.OrderTests.It() in /x/add.test.mjs:line 6"; exit 1`);
+  const r = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
+  assert.match(r.out, /\[weak\].*setup call "TransitionTo"/, r.out);
+});
+
+test('#124 gate lists weak Red IDs with an actionable hint', () => {
+  const d = project();
+  sdd(d, 'init');
+  sdd(d, 'approve', 'record', 'calc', '--by', 'tester');
+  fs.writeFileSync(path.join(d, 'add.mjs'), "export const add = () => { throw new Error('not implemented: add'); };\n");
+  testFile(d, ['  const seed = add(0, 0);', '  assert.equal(add(1, 2), 3 + seed);']);
+  assert.match(sdd(d, 'tdd', 'red', 'TEST-CALC-001').out, /\[weak\]/);
+  impl(d, '(a, b) => a + b');
+  testFile(d, ['  const seed = add(0, 0);', '  assert.equal(add(1, 2), 3 + seed);']);
+  assert.equal(sdd(d, 'tdd', 'green', 'TEST-CALC-001').code, 0);
+  const g = sdd(d, 'gate', '--no-run').out;
+  assert.match(g, /1 weak Red.*after Green.*TEST-CALC-001/s, g);
+});
+
+test('#125 failure reason shows the assertion (ctest, xUnit, Julia), not summary/stack noise', () => {
+  const cases = [
+    ['1 - test_s_001 (Failed)\\nk.c:9 CHECK failed: s_add(1, 2) == 3', /fails with: .*CHECK failed: s_add/],
+    ['  Assert.Equal() Failure\\n  Expected: 1\\n  Actual:   2', /fails with: Assert\.Equal\(\) Failure/],
+    ['System.ArgumentException : weights must sum to 1', /fails with: System\.ArgumentException : weights/],
+    ['Test Failed at /x/t.jl:3\\n  Expression: f(1) == 2\\nStacktrace:\\n [1] top-level scope', /fails with: Expression: f\(1\) == 2/],
+  ];
+  for (const [txt, re] of cases) {
+    const d = project();
+    sdd(d, 'approve', 'record', 'calc', '--by', 'tester');
+    fakeRun(d, `printf '${txt}\\n'; exit 1`);
+    const r = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
+    assert.match(r.out, re, r.out);
+  }
+});
+
+test('#125 rejected Green shows the assertion before Maven boilerplate', () => {
+  const d = project();
+  sdd(d, 'approve', 'record', 'calc', '--by', 'tester');
+  const noise = Array.from({ length: 14 }, (_, i) => `[INFO] reactor line ${i}`).join('\\n');
+  fakeRun(d, `printf '[ERROR]   MoneyTest.sum:12 expected: <3> but was: <2>\\n${noise}\\n[ERROR] Please refer to surefire\\n'; exit 1`);
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-CALC-001', '--weak').code, 0);
+  const r = sdd(d, 'tdd', 'green', 'TEST-CALC-001');
+  assert.match(r.out, /GREEN REJECTED/);
+  assert.match(r.out, /expected: <3> but was: <2>/, r.out);
+});
+
+test('#132 .slnx is detected as .NET; test-less csproj libraries do not become projects', () => {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-'));
+  spawnSync('git', ['init', '-q'], { cwd: d });
+  fs.writeFileSync(path.join(d, 'R.slnx'), '<Solution />');
+  const r = sddRaw(d, 'init');
+  assert.doesNotMatch(r.out, /WARNING: stack not recognised/);
+  assert.deepEqual(JSON.parse(fs.readFileSync(path.join(d, '.sdd/config.json'), 'utf8')).testCmd.slice(0, 2), ['dotnet', 'test']);
+
+  const m = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-'));
+  spawnSync('git', ['init', '-q'], { cwd: m });
+  fs.mkdirSync(path.join(m, 'src/Lib'), { recursive: true });
+  fs.mkdirSync(path.join(m, 'tests/T'), { recursive: true });
+  fs.writeFileSync(path.join(m, 'src/Lib/Lib.csproj'), '<Project Sdk="Microsoft.NET.Sdk"></Project>');
+  fs.writeFileSync(path.join(m, 'tests/T/T.csproj'), '<Project Sdk="Microsoft.NET.Sdk"><ItemGroup><PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.0.0" /></ItemGroup></Project>');
+  const o = sddRaw(m, 'init');
+  const cfg = JSON.parse(fs.readFileSync(path.join(m, '.sdd/config.json'), 'utf8'));
+  assert.deepEqual((cfg.projects ?? []).map((p) => p.root), ['tests/T']);
+  assert.doesNotMatch(o.out, /testCmd: node/);
+});
+
+test('#132 Julia default check falls back to test/runtests.jl with an INFRA message when Pkg.test cannot resolve offline', () => {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-'));
+  spawnSync('git', ['init', '-q'], { cwd: d });
+  fs.writeFileSync(path.join(d, 'Project.toml'), 'name = "X"\n');
+  fs.mkdirSync(path.join(d, 'test'));
+  fs.writeFileSync(path.join(d, 'test/runtests.jl'), '');
+  sddRaw(d, 'init');
+  const check = JSON.parse(fs.readFileSync(path.join(d, '.sdd/config.json'), 'utf8')).checks[0].cmd;
+  const bin = path.join(d, 'bin');
+  fs.mkdirSync(bin);
+  fs.writeFileSync(path.join(bin, 'julia'), '#!/bin/sh\nif [ "$2" = "-e" ]; then echo "ERROR: expected package `Test` to be registered"; exit 1; fi\necho ran-runtests "$@"\n', { mode: 0o755 });
+  const r = spawnSync(check[0], check.slice(1), { cwd: d, encoding: 'utf8', env: { ...ENV, PATH: `${bin}:${ENV.PATH}` } });
+  assert.equal(r.status, 0, r.stdout + r.stderr);
+  assert.match(r.stdout, /INFRA.*falling back/);
+  assert.match(r.stdout, /ran-runtests --project=\. test\/runtests\.jl/);
+});
+
+function tree(files) {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-'));
+  spawnSync('git', ['init', '-q'], { cwd: d });
+  for (const [f, c] of Object.entries(files)) { fs.mkdirSync(path.dirname(path.join(d, f)), { recursive: true }); fs.writeFileSync(path.join(d, f), c); }
+  return d;
+}
+const reached = (d, target) => JSON.parse(sddRaw(d, 'impact', target, '--json').out).reachedFiles;
+
+test('#127 impact: unannotated file owned by its directory feature is not "other feature"; test file is labelled test', () => {
+  const d = project();
+  impl(d, '(a, b) => a + b');
+  fs.writeFileSync(path.join(d, 'util.mjs'), 'export const u = 1;\n');
+  fs.writeFileSync(path.join(d, 'add.mjs'), fs.readFileSync(path.join(d, 'add.mjs'), 'utf8') + "import { u } from './util.mjs';\nexport const w = u;\n");
+  const r = sddRaw(d, 'impact', 'util.mjs');
+  assert.doesNotMatch(r.out, /other feature/, r.out);
+  const t = sddRaw(d, 'impact', 'add.test.mjs');
+  assert.match(t.out, /^\s*test: add\.test\.mjs/m, t.out);
+  assert.doesNotMatch(t.out, /impl: add\.test/);
+});
+
+test('#127 Rust `use alpha::x` resolves by Cargo package name, not against every crate', () => {
+  const d = tree({
+    'alpha/Cargo.toml': '[package]\nname = "alpha"\n', 'alpha/src/lib.rs': 'pub mod util;\n', 'alpha/src/util.rs': 'pub fn f() {}\n',
+    'beta/Cargo.toml': '[package]\nname = "beta"\n', 'beta/src/lib.rs': 'use alpha::util;\npub fn g() { util::f() }\n',
+    'delta/Cargo.toml': '[package]\nname = "delta"\n', 'delta/src/lib.rs': 'pub fn h() {}\n',
+  });
+  const r = reached(d, 'alpha/src/util.rs');
+  assert.ok(r.includes('beta/src/lib.rs'), r.join());
+  assert.ok(!r.includes('delta/src/lib.rs'), r.join());
+});
+
+test('#127 C includes: quoted relative to includer first, angle includes of project paths, tight .h/.c pairing', () => {
+  const d = tree({
+    'a/x.h': 'int a(void);\n', 'b/x.h': 'int b(void);\n', 'a/main.c': '#include "x.h"\n#include <stdio.h>\n',
+    'include/kv/k.h': 'int k(void);\n', 'src/use.c': '#include <kv/k.h>\n',
+    'p/dup.h': '', 'q/dup.c': '#include "dup.h"\n', 'r/dup.h': '', 's/dup.c': '',
+  });
+  assert.ok(reached(d, 'a/x.h').includes('a/main.c'));
+  assert.ok(!reached(d, 'b/x.h').includes('a/main.c'));
+  assert.ok(reached(d, 'include/kv/k.h').includes('src/use.c'));
+  assert.ok(!reached(d, 'r/dup.h').includes('s/dup.c'), 'ambiguous basenames in different dirs are not paired');
+});
+
+test('#127 C# using/namespace and Julia include/using build an import graph', () => {
+  const d = tree({
+    'src/Lib/Calc.cs': 'namespace Lib;\npublic class Calc { }\n',
+    'tests/T/CalcTests.cs': 'using Lib;\npublic class CalcTests { Calc c = new Calc(); }\n',
+    'src/a.jl': 'module Ops\nf(x) = x\nend\n', 'test/t.jl': 'include("../src/a.jl")\nusing .Ops\n', 'src/b.jl': 'g(x) = x\n', 'test/u.jl': 'include("../src/b.jl")\n',
+  });
+  assert.ok(reached(d, 'src/Lib/Calc.cs').includes('tests/T/CalcTests.cs'));
+  assert.ok(reached(d, 'src/a.jl').includes('test/t.jl'));
+  assert.ok(reached(d, 'src/b.jl').includes('test/u.jl'));
+});
+
+test('#133 gate --changed scopes Go packages in a repo without commits', () => {
+  const d = tree({ 'go.mod': 'module example.com/b\n\ngo 1.20\n', 'q/q.go': 'package q\n\nfunc Q() int { return 1 }\n', 'q/q_test.go': 'package q\n\nimport "testing"\n\nfunc TestQ(t *testing.T) { _ = Q() }\n' });
+  sddRaw(d, 'init');
+  const g = sddRaw(d, 'gate', '--changed').out;
+  assert.match(g, /scoped → go test example\.com\/b\/q/, g);
+  assert.doesNotMatch(g, /cannot scope changes/);
+});
+
+test('#133 Maven scope includes dependents and their upstream modules (diamond), not just -am -amd', () => {
+  const pom = (id, deps = [], mods = []) => `<project><modelVersion>4.0.0</modelVersion><groupId>g</groupId><artifactId>${id}</artifactId><version>1</version>${mods.length ? `<packaging>pom</packaging><modules>${mods.map((m) => `<module>${m}</module>`).join('')}</modules>` : ''}<dependencies>${deps.map((x) => `<dependency><groupId>g</groupId><artifactId>${x}</artifactId><version>1</version></dependency>`).join('')}</dependencies></project>`;
+  const d = tree({
+    'pom.xml': pom('root', [], ['money', 'accounts', 'audit', 'journal']),
+    'money/pom.xml': pom('money'), 'accounts/pom.xml': pom('accounts', ['money']), 'audit/pom.xml': pom('audit'),
+    'journal/pom.xml': pom('journal', ['money', 'accounts', 'audit']),
+    'accounts/src/main/java/A.java': 'class A {}\n',
+  });
+  sddRaw(d, 'init');
+  const cfg = JSON.parse(fs.readFileSync(path.join(d, '.sdd/config.json'), 'utf8'));
+  assert.ok(!cfg.checks[0].changedCmd.includes('-amd'));
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ ...cfg, checks: [{ name: 'test', cmd: ['sh', '-c', 'echo full'], changedCmd: ['echo', 'SCOPE', '{changedModulesCsv}'] }] }));
+  const g = sddRaw(d, 'gate', '--changed').out;
+  assert.match(g, /SCOPE accounts,audit,journal,money/, g);
+});
+
+// ---- dogfood round 6 (#130 Rust/Java/C stubs, #131 PHP/C#/Julia/Python stubs) ----
+const mk130 = (files) => {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-s130-'));
+  spawnSync('git', ['init', '-q'], { cwd: d });
+  for (const [f, body] of Object.entries({ '.sdd/specs/a.md': T1SPEC, ...files })) { fs.mkdirSync(path.dirname(path.join(d, f)), { recursive: true }); fs.writeFileSync(path.join(d, f), body); }
+  return d;
+};
+const rd130 = (d, f) => fs.readFileSync(path.join(d, f), 'utf8');
+const has130 = (c) => spawnSync('which', [c]).status === 0;
+
+test('#130 Rust: inline paths + struct literals are stubbed, only for the requested test, with an honest compile verdict', { skip: !has130('cargo') }, () => {
+  const toml = '[package]\nname = "s130"\nversion = "0.1.0"\nedition = "2021"\n';
+  const one = mk130({ 'Cargo.toml': toml, 'tests/t.rs': '// @id TEST-A-001 @verifies REQ-A-001\n#[test]\nfn t10() {\n    let p = s130::geo::Point { x: 1, y: 2 };\n    assert_eq!(p.x, 1);\n}\n' });
+  const out = sdd(one, 'tdd', 'stub', 'TEST-A-001').out;
+  assert.match(out, /compile-checked/, out);
+  assert.doesNotMatch(out, /Red-safe/);
+  assert.match(rd130(one, 'src/geo.rs'), /pub struct Point \{\n    pub x: i64,\n    pub y: i64,/);
+  assert.match(rd130(one, 'src/lib.rs'), /pub mod geo;/);
+  const two = mk130({ 'Cargo.toml': toml, 'tests/t.rs': 'use s130::util::double;\n// @id TEST-A-001 @verifies REQ-A-001\n#[test]\nfn t9() { assert_eq!(double(2), 4); }\n// @id TEST-A-002 @verifies REQ-A-001\n#[test]\nfn t10() {\n    let p = s130::geo::Point { x: 1, y: 2 };\n    assert_eq!(p.x, 1);\n}\n' });
+  const o2 = sdd(two, 'tdd', 'stub', 'TEST-A-002').out;
+  assert.ok(fs.existsSync(path.join(two, 'src/geo.rs')));
+  assert.ok(!fs.existsSync(path.join(two, 'src/util.rs')), 'other tests symbols are not stubbed');
+  assert.match(o2, /does not compile|could not fully stub/, 'an unverified/failed stub is never "Red-safe"');
+});
+
+test('#130 Java: typed factories, enum returns, overloads, exceptions and chained results compile', { skip: !has130('javac') }, () => {
+  const d = mk130({ 'src/test/java/MoneyTest.java': [
+    'public class MoneyTest {',
+    '  static void assertEquals(Object a, Object b) {}',
+    '  // @id TEST-A-001 @verifies REQ-A-001',
+    '  static void t() {',
+    '    Currency usd = Currency.of("USD");',
+    '    int d = Currency.of("USD").digits();',
+    '    Money a = Money.of(1, usd);',
+    '    Money b = a.add(a);',
+    '    Money z = Money.zero(usd);',
+    '    Account acc = new Account("1000", "Cash", AccountType.ASSET, usd);',
+    '    assertEquals(AccountType.ASSET, acc.type());',
+    '    Chart c = new Chart();',
+    '    String n = c.find("1000").name();',
+    '    try { z.add(a, 1); } catch (CurrencyMismatchException e) { }',
+    '  }',
+    '}',
+    '',
+  ].join('\n') });
+  const out = sdd(d, 'tdd', 'stub', 'TEST-A-001').out;
+  assert.doesNotMatch(out, /Red-safe/);
+  assert.match(out, /compile NOT verified/);
+  assert.match(rd130(d, 'src/main/java/Currency.java'), /public static Currency of\(Object a0\)/);
+  assert.match(rd130(d, 'src/main/java/Money.java'), /public Money add\(Object a0\)[\s\S]*public Money add\(Object a0, Object a1\)/);
+  assert.match(rd130(d, 'src/main/java/CurrencyMismatchException.java'), /extends RuntimeException/);
+  const files = ['src/test/java/MoneyTest.java', ...fs.readdirSync(path.join(d, 'src/main/java')).map((f) => `src/main/java/${f}`)];
+  const r = spawnSync('javac', ['-d', path.join(d, 'out'), ...files.map((f) => path.join(d, f))], { encoding: 'utf8' });
+  assert.equal(r.status, 0, r.stderr);
+});
+
+test('#130 C: pointer args from casts/&x/arrays, complete structs for -> access, compile-checked', { skip: !has130('cc') }, () => {
+  const d = mk130({ 'include/.keep': '', 'tests/test_d.c': [
+    '#include <stdint.h>', '#include <stdio.h>', '#include "d.h"',
+    '// @id TEST-A-001 @verifies REQ-A-001',
+    'int main(void) {',
+    '  uint8_t b[4] = {1, 2, 3, 4};',
+    '  size_t n = 0;',
+    '  ht_t *t = ht_new();',
+    '  ht_entry_t *e = ht_get(t, &n, 1);',
+    '  ht_put(t, (uint8_t *)"k", 1, (const uint8_t *)"val", 3);',
+    '  return d_sum(b, 4) == 10 && e->vlen == 3 ? 0 : 1;',
+    '}', '',
+  ].join('\n') });
+  const out = sdd(d, 'tdd', 'stub', 'TEST-A-001').out;
+  assert.match(out, /compile-checked/, out);
+  const h = rd130(d, 'include/d.h');
+  assert.match(h, /d_sum\(uint8_t \* a0, int a1\)/);
+  assert.match(h, /ht_put\(ht_t \* a0, uint8_t \* a1, int a2, const uint8_t \* a3, int a4\)/);
+  assert.match(h, /typedef struct ht_entry \{\n    long vlen;/);
+  assert.equal(spawnSync('cc', ['-fsyntax-only', '-I', path.join(d, 'include'), path.join(d, 'tests/test_d.c')]).status, 0);
+});
+
+test('#131 PHP: no PHPUnit TestCase stub, catch-only exceptions extend \\Exception, instance methods stubbed', { skip: !has130('php') }, () => {
+  const d = mk130({ 'composer.json': '{"autoload":{"psr-4":{"App\\\\":"src/"}}}', 'tests/RoleTest.php': [
+    '<?php', 'use PHPUnit\\Framework\\TestCase;', 'use App\\Roles\\RoleHierarchy;', 'use App\\ParseException;',
+    'final class RoleTest extends TestCase {',
+    '  // @id TEST-A-001 @verifies REQ-A-001',
+    '  public function test_a_001() {',
+    '    $h = new RoleHierarchy();',
+    '    $h->addRole("x");',
+    '    try { $h->check(); } catch (ParseException $e) { $this->assertTrue(true); }',
+    '  }', '}', '',
+  ].join('\n') });
+  sdd(d, 'tdd', 'stub', 'TEST-A-001');
+  assert.ok(!fs.existsSync(path.join(d, 'src/Framework')), 'PHPUnit classes are never stubbed');
+  assert.match(rd130(d, 'src/Roles/RoleHierarchy.php'), /public function addRole\(/);
+  assert.match(rd130(d, 'src/Roles/RoleHierarchy.php'), /public function check\(/);
+  assert.match(rd130(d, 'src/ParseException.php'), /class ParseException extends \\Exception/);
+  for (const f of ['src/Roles/RoleHierarchy.php', 'src/ParseException.php']) assert.equal(spawnSync('php', ['-l', path.join(d, f)]).status, 0);
+});
+
+test('#131 Julia: module-wrapped stub, exception structs, no test-local or already-included names', () => {
+  const d = mk130({ 'Project.toml': 'name = "X"\n', 'src/b.jl': 'helper(x) = x\n', 'test/a_tests.jl': [
+    'include("../src/b.jl")', 'include("../src/a.jl")', 'using .Ops',
+    'const F2(x) = x + 1',
+    'f, g = pair()',
+    '# @id TEST-A-001 @verifies REQ-A-001',
+    '@testset "TEST-A-001" begin',
+    '  @test_throws SingularError solve(F2, helper(1))',
+    '  @test f(1) == 2',
+    'end', '',
+  ].join('\n') });
+  sdd(d, 'tdd', 'stub', 'TEST-A-001');
+  const s = rd130(d, 'src/a.jl');
+  assert.match(s, /^module Ops\n/);
+  assert.match(s, /export solve, pair, SingularError|export [\w, ]*SingularError/);
+  assert.match(s, /struct SingularError <: Exception end/);
+  assert.match(s, /solve\(args\.\.\.; kwargs\.\.\.\) = error/);
+  assert.doesNotMatch(s, /F2|helper|\bg\(|\bf\(/);
+  assert.match(s, /end # module Ops/);
+});
+
+test('#131 Python: only the SUT variable gets methods; pytest pythonpath = src is honored', () => {
+  const d = mk130({ 'pytest.ini': '[pytest]\npythonpath = src\n', 'tests/test_m.py': [
+    'from wf.eng import Eng', '', 'def make():', '    log = []', '    return Eng(log), log', '',
+    '# @id TEST-A-001', '# @verifies REQ-A-001', 'def test_m():', '    eng, log = make()', '    eng.run()', '    assert log.count("x") == 1', '',
+  ].join('\n') });
+  sdd(d, 'tdd', 'stub', 'TEST-A-001');
+  const s = rd130(d, 'src/wf/eng.py');
+  assert.match(s, /def run\(self/);
+  assert.doesNotMatch(s, /def count/);
+  assert.ok(!fs.existsSync(path.join(d, 'wf/eng.py')), 'stub honors pythonpath');
+});
+
+test('#130/#131 stub messages: no "no missing relative imports" for non-JS languages, no stub/red advice loop', () => {
+  const d = mk130({ 'tests/FooTest.cs': '// @id TEST-A-001 @verifies REQ-A-001\npublic class FooTest { }\n' });
+  const out = sdd(d, 'tdd', 'stub', 'TEST-A-001').out;
+  assert.doesNotMatch(out, /no missing relative imports/);
+  assert.match(out, /nothing to stub/);
+  const m = mini(T1SPEC, { 'a.test.mjs': jsTest() }, PASS);
+  fs.writeFileSync(path.join(m, 'a.test.mjs'), jsTest().replace('assert.ok(1)', 'assert.ok(1)').replace(/^/, "import { x } from './nomod.mjs';\n"));
+  setCmd(m, ['node', '-e', "console.log(\"Cannot find module './nomod.mjs'\");process.exit(1)"]);
+  const r = sdd(m, 'tdd', 'red', 'TEST-A-001');
+  assert.match(r.out, /stub already ran or found nothing/);
 });

@@ -1,0 +1,9 @@
+{
+  "compilerOptions": {
+    "target": "ES2022", "module": "ESNext", "moduleResolution": "Bundler",
+    "strict": true, "noEmit": true, "skipLibCheck": true, "types": [],
+    "baseUrl": ".",
+    "paths": { "@bk/domain": ["packages/domain/src/index.ts"], "@bk/scheduling": ["packages/scheduling/src/index.ts"], "@bk/api": ["packages/api/src/index.ts"] }
+  },
+  "include": ["packages/*/src", "packages/*/test"]
+}

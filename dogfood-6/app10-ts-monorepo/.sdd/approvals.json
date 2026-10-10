@@ -1,0 +1,47 @@
+{
+  "domain": {
+    "by": "ai:reviewer-1",
+    "kind": "ai",
+    "review": "added isTerminal REQ; table-derived",
+    "at": "2026-10-10T09:33:46.611Z",
+    "artifacts": {
+      ".sdd/specs/domain.md": "f4087c97564f670b19a26a8e43ff44cd76870a3275ebaf468f0c4665dbad5634"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "avail": {
+    "by": "ai:reviewer-2",
+    "kind": "ai",
+    "review": "DST gap/ambiguity covered; depends domain+interval",
+    "at": "2026-10-10T09:29:17.285Z",
+    "artifacts": {
+      ".sdd/specs/avail.md": "c7076227af713c742177a9b510a0d95a39797834bdc79c719a7f3dfcc010df88"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "validate": {
+    "by": "ai:reviewer-3",
+    "kind": "ai",
+    "review": "wording-only edit REQ-002",
+    "at": "2026-10-10T09:34:29.283Z",
+    "artifacts": {
+      ".sdd/specs/validate.md": "b903f319c1093f83ef111a355c4d849f55f9a8d9a2113ccf8b5b1e70d3928014"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "booking": {
+    "by": "ai:reviewer-5",
+    "kind": "ai",
+    "review": ".sdd/review.md",
+    "reviewSha": "c4566d77b6aadf2b099fe8a636a0d9c45e8759dc5e99fda14f7c409b25946dbc",
+    "at": "2026-10-10T09:36:47.628Z",
+    "artifacts": {
+      ".sdd/specs/booking.md": "889281d630e8918383048d769c52d3eec22eb9ccec37e1196d98439f7ccdb217"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  }
+}

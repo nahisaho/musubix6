@@ -1,0 +1,58 @@
+{
+  "window": {
+    "by": "ai:spec-reviewer",
+    "kind": "ai",
+    "review": "re-reviewed REQ-007 addition: boundary now explicit, ok",
+    "at": "2026-10-10T09:32:23.245Z",
+    "artifacts": {
+      ".sdd/specs/window.md": "bc9a8da6633db982049149b56304843b55e4610b26b6266b49daa8cd0c267879"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "limiter": {
+    "by": "ai:spec-reviewer",
+    "kind": "ai",
+    "review": "reviewed diff-only: no ambiguity, illegal cases covered, design present",
+    "at": "2026-10-10T09:27:39.326Z",
+    "artifacts": {
+      ".sdd/specs/limiter.md": "594a4f17d53bb88cb68f5cda56a3fbcc8651203185db1f3b40d095eddaa5f9bb"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "pool": {
+    "by": "ai:spec-reviewer",
+    "kind": "ai",
+    "review": "reviewed diff-only: no ambiguity, illegal cases covered, design present",
+    "at": "2026-10-10T09:27:39.367Z",
+    "artifacts": {
+      ".sdd/specs/pool.md": "68fb6db9f12de696b630d3bd6145236e7ebff28c4f6060e618654fb705b1055c"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "pq": {
+    "by": "ai:spec-reviewer",
+    "kind": "ai",
+    "review": "T1 ok",
+    "at": "2026-10-10T09:27:39.410Z",
+    "artifacts": {
+      ".sdd/specs/pq.md": "0a87d23bdf25b7fb3084b803df1cb25819c97227283cdceaba6a74594af5a7c2"
+    },
+    "tier": "T1",
+    "requireHuman": false
+  },
+  "bucket": {
+    "by": "ai:spec-reviewer",
+    "kind": "ai",
+    "review": ".sdd/review-bucket.md",
+    "reviewSha": "8911b8cdb14e6f8d01a1b226892b749a9f7bd80d99c35895357d132898412fac",
+    "at": "2026-10-10T09:27:43.181Z",
+    "artifacts": {
+      ".sdd/specs/bucket.md": "e54e2f477a5ad586ab4ec1f1086d5ad6b2be28ac41ab545e9dcfbe0290b693b0"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  }
+}

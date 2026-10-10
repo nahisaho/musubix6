@@ -1,0 +1,58 @@
+{
+  "orders": {
+    "by": "ai:rubber-duck",
+    "kind": "ai",
+    "review": ".sdd/review-orders.md",
+    "reviewSha": "7ce8faa964878fc33daa64c58b5e80f07396e1183be40e809c41755b96296df1",
+    "at": "2026-10-10T09:31:14.355Z",
+    "artifacts": {
+      ".sdd/specs/orders.md": "9480fe18770c46d7176d828a0c9369b3bbc4a227d3e877a2b1636f080a5b04ab"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "discounts": {
+    "by": "ai:rubber-duck",
+    "kind": "ai",
+    "review": "diff-only spec review: no ambiguity, illegal cases listed, design present",
+    "at": "2026-10-10T09:31:14.403Z",
+    "artifacts": {
+      ".sdd/specs/discounts.md": "b10972952e40c3990f95837899e5ef0cd5157961d1f521f2884517d03f7f5a3f"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "coupons": {
+    "by": "ai:rubber-duck",
+    "kind": "ai",
+    "review": "diff-only spec review: no ambiguity, illegal cases listed, design present",
+    "at": "2026-10-10T09:31:14.451Z",
+    "artifacts": {
+      ".sdd/specs/coupons.md": "866e8559d152b5d0185aa6150928a540dbceffd99adee3fbd0239077d675cdca"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "tax": {
+    "by": "ai:rubber-duck",
+    "kind": "ai",
+    "review": "diff-only spec review: no ambiguity, illegal cases listed, design present",
+    "at": "2026-10-10T09:31:14.497Z",
+    "artifacts": {
+      ".sdd/specs/tax.md": "577d10ac4d093571d49871f76c2ad0d560e3f40f32a13311c70fd972ce11f706"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "engine": {
+    "by": "ai:rubber-duck",
+    "kind": "ai",
+    "review": "added REQ-ENG-006 bug-fix req (zero subtotal); diff-only review ok",
+    "at": "2026-10-10T09:46:22.795Z",
+    "artifacts": {
+      ".sdd/specs/engine.md": "8203565899455dedb5fe7cc390dfa8bb841f7a69337ae7bb72c7150956662eab"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  }
+}

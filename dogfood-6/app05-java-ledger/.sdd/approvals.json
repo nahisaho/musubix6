@@ -1,0 +1,58 @@
+{
+  "money": {
+    "by": "ai:reviewer-a",
+    "kind": "ai",
+    "review": "diff-only AI review: no ambiguity/illegal-case gaps found; findings fixed",
+    "at": "2026-10-10T09:27:56.737Z",
+    "artifacts": {
+      ".sdd/specs/money.md": "eb775409c56a7c9c70112877cfdce91903757112db483d4a4c4bbfa490ce9965"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "accounts": {
+    "by": "ai:reviewer-b",
+    "kind": "ai",
+    "review": "wording-only clarification of REQ-ACCT-005; no open findings",
+    "at": "2026-10-10T09:45:48.975Z",
+    "artifacts": {
+      ".sdd/specs/accounts.md": "f8096d9be79e81b3faf5ac37dbc9ec08ee6cc3da9368c5935d1c2719c155ae8b"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "audit": {
+    "by": "ai:reviewer-c",
+    "kind": "ai",
+    "review": ".sdd/review.md",
+    "reviewSha": "3b01e8bfc3ab1a94a1e3b516d3c26ef95d19745ab0a5cbe971308a8c711d1e32",
+    "at": "2026-10-10T09:46:16.951Z",
+    "artifacts": {
+      ".sdd/specs/audit.md": "66b14acd6dec07c42b1431230827d95d73e740651c7644c92131a26e6d2a6fb8"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "journal": {
+    "by": "ai:reviewer-b",
+    "kind": "ai",
+    "review": "diff-only re-review of added REQ rows (bug-fix reversal dating, period-aware reverse): no open findings",
+    "at": "2026-10-10T09:43:16.872Z",
+    "artifacts": {
+      ".sdd/specs/journal.md": "4e6c4d42c956bca90104894e7c2605db368dc58d7d8287c681fa0be08254736d"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "period": {
+    "by": "ai:reviewer-b",
+    "kind": "ai",
+    "review": "re-review of REQ-PERIOD-009 bug-fix row: no open findings",
+    "at": "2026-10-10T09:44:34.761Z",
+    "artifacts": {
+      ".sdd/specs/period.md": "f4b24b18fd0151de2c01871d30e3dd139e09360c893a59a907304a811b322bb6"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  }
+}

@@ -1,0 +1,3 @@
+[workspace]
+resolver = "2"
+members = ["crates/syntax", "crates/types", "crates/eval", "crates/driver"]
