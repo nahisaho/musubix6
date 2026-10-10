@@ -4,6 +4,7 @@
 import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 
 const BOOL = new Set(['allow-setup-red', 'missing-module', 'baseline', 'weak', 'changed', 'json', 'no-run', 'help']);
@@ -615,6 +616,8 @@ function stubFor(testPath) {
   if (/\.py$/.test(testPath)) {
     for (const m of src.matchAll(/^\s*from\s+(\.*[\w.]+)\s+import\s+([^\n#]+)/gm)) {
       const mod = m[1];
+      // stdlib / installed packages must not be shadowed by a stub (-I: ignore cwd and PYTHON* so project dirs do not count)
+      if (!mod.startsWith('.') && spawnSync('python3', ['-I', '-c', 'import importlib.util,sys;sys.exit(0 if importlib.util.find_spec(sys.argv[1].split(".")[0]) else 1)', mod], { cwd: os.tmpdir() }).status === 0) continue;
       const base = mod.startsWith('.') ? dir : path.resolve(ROOT, projectFor(testPath)?.root ?? '.');
       const abs = path.join(base, ...mod.replace(/^\.+/, '').split('.')) + '.py';
       if (fs.existsSync(abs) || fs.existsSync(abs.replace(/\.py$/, '/__init__.py'))) continue;

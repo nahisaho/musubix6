@@ -657,3 +657,15 @@ test('#37 a check whose runner reports "no tests ran" is INCOMPLETE, a real fail
   cfg(['node', '-e', "console.log('1 failed, 3 passed'); process.exit(1)"]);
   assert.match(sdd(d, 'gate').out, /✗ cmd py/);
 });
+
+test('#41 tdd stub for Python does not shadow stdlib modules but still stubs project modules', () => {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-pystd-'));
+  spawnSync('git', ['init', '-q'], { cwd: d });
+  fs.mkdirSync(path.join(d, '.sdd/specs'), { recursive: true });
+  fs.mkdirSync(path.join(d, 'tests'));
+  fs.writeFileSync(path.join(d, 'tests/test_s.py'), '# @id TEST-S-001\n# @verifies REQ-S-001\nfrom pathlib import Path\nfrom jobx.mod import f\ndef test_s_001():\n    assert f(Path(".")) == 1\n');
+  sdd(d, 'init');
+  sdd(d, 'tdd', 'stub', 'TEST-S-001');
+  assert.ok(!fs.existsSync(path.join(d, 'pathlib.py')));
+  assert.ok(fs.existsSync(path.join(d, 'jobx/mod.py')));
+});
