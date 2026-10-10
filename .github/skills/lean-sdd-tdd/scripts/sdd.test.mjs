@@ -601,3 +601,21 @@ test('#28 init detects Makefile and .NET projects; MSBuild/C# errors are load er
   fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ schemaVersion: 1, testCmd: ['sh', '-c', 'echo "CTest.cs(3,5): error CS0103: The name Calc does not exist"; exit 1'] }));
   assert.match(sdd(d, 'tdd', 'red', 'TEST-C-001').out, /load\/compile error/);
 });
+
+test('#33 gate --changed scopes Go to changed packages plus dependents; go.mod falls back to full', () => {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-go-'));
+  const git = (...a) => spawnSync('git', ['-c', 'user.email=a@b', '-c', 'user.name=t', ...a], { cwd: d });
+  const w = (f, c) => { fs.mkdirSync(path.dirname(path.join(d, f)), { recursive: true }); fs.writeFileSync(path.join(d, f), c); };
+  git('init', '-q');
+  w('go.mod', 'module m\n\ngo 1.21\n');
+  w('a/a.go', 'package a\nfunc A() int { return 1 }\n');
+  w('b/b.go', 'package b\nimport "m/a"\nfunc B() int { return a.A() }\n');
+  w('c/c.go', 'package c\n');
+  sdd(d, 'init');
+  git('add', '-A'); git('commit', '-qm', 'base');
+  w('a/a.go', 'package a\nfunc A() int { return 2 }\n');
+  assert.match(sdd(d, 'gate', '--changed').out, /scoped → go test m\/a m\/b\b/);
+  git('commit', '-qam', 'a');
+  w('go.mod', 'module m\n\ngo 1.22\n');
+  assert.match(sdd(d, 'gate', '--changed').out, /cannot scope changes for \{changedGoPkgs\} — running the full check/);
+});

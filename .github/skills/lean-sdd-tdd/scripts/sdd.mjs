@@ -266,11 +266,11 @@ function detectConfig(base = ROOT) {
   const related = deps.vitest ? ['npx', 'vitest', 'related', '--run', '{changedFiles}'] : deps.jest ? ['npx', 'jest', '--findRelatedTests', '{changedFiles}'] : undefined;
   if (!pkg) {
     if (testCmd[0] === 'python3') checks.push({ name: 'test', cmd: ['python3', '-m', 'pytest', '-q'] });
-    else if (has('go.mod')) checks.push({ name: 'test', cmd: ['go', 'test', './...'] });
-    else if (has('Cargo.toml')) checks.push({ name: 'test', cmd: ['cargo', 'test'] });
+    else if (has('go.mod')) checks.push({ name: 'test', cmd: ['go', 'test', './...'], changedCmd: ['go', 'test', '{changedGoPkgs}'] });
+    else if (has('Cargo.toml')) checks.push({ name: 'test', cmd: ['cargo', 'test'], changedCmd: ['cargo', 'test', '{changedCargoPkgs}'] });
     else if (has('pom.xml')) checks.push({ name: 'test', cmd: ['mvn', '-B', '-ntp', 'test'], changedCmd: ['mvn', '-B', '-ntp', 'test', '-pl', '{changedModulesCsv}', '-amd', '-DfailIfNoTests=false'] });
-    else if (gradle) checks.push({ name: 'test', cmd: [gradle, 'cleanTest', 'test', '--console=plain'] });
-    else if (has('CMakeLists.txt')) checks.push({ name: 'test', cmd: ['sh', '-c', CMAKE_RUN] });
+    else if (gradle) checks.push({ name: 'test', cmd: [gradle, 'cleanTest', 'test', '--console=plain'], changedCmd: [gradle, '--console=plain', '{changedGradleTasks}'] });
+    else if (has('CMakeLists.txt')) checks.push({ name: 'test', cmd: ['sh', '-c', CMAKE_RUN], changedCmd: ['sh', '-c', CMAKE_RUN + ' -R "$0"', '{changedCtestRegex}'] });
     else if (testCmd[0] === phpunit) checks.push({ name: 'test', cmd: [phpunit, '--do-not-cache-result'] });
     else if (dotnet) checks.push({ name: 'test', cmd: ['dotnet', 'test', '--nologo'] });
     else if (has('Makefile')) checks.push({ name: 'test', cmd: ['make', 'test'] });
@@ -305,6 +305,65 @@ function run(cmd, timeoutMs, cwd = '.') {
   const text = (r.stdout ?? '') + (r.stderr ?? '') + (r.error ? String(r.error.message) : '');
   return { exit: r.status ?? (r.error ? 127 : 1), text, ms: Date.now() - t0, timedOut: r.error?.code === 'ETIMEDOUT' };
 }
+// Scope placeholders for changedCmd. An empty result means "cannot scope" and the caller falls back to the full check.
+function cmdOut(cmd, cwd) {
+  const r = spawnSync(cmd[0], cmd.slice(1), { cwd, encoding: 'utf8', timeout: 60000, maxBuffer: 64e6 });
+  return r.status === 0 ? r.stdout : null;
+}
+function nearestDir(abs, rel, marker) {
+  let d = path.posix.dirname(rel);
+  for (;;) {
+    if (marker(path.join(abs, d))) return d;
+    if (d === '.' || d === '') return null;
+    d = path.posix.dirname(d);
+  }
+}
+const SCOPE_TOKENS = {
+  '{changedModulesCsv}': (rel, abs) => [...new Set(rel.map((f) => nearestDir(abs, f, (d) => fs.existsSync(path.join(d, 'pom.xml')))).filter((d) => d && d !== '.'))].join(',') || [],
+  '{changedGoPkgs}': (rel, abs) => {
+    if (rel.some((f) => /(^|\/)go\.(mod|sum|work)$/.test(f))) return [];
+    const goFiles = rel.filter((f) => f.endsWith('.go'));
+    if (!goFiles.length) return [];
+    const out = cmdOut(['go', 'list', '-f', '{{.Dir}}|{{.ImportPath}}|{{join .Deps " "}}', './...'], abs);
+    if (!out) return [];
+    const pkgs = out.trim().split('\n').map((l) => { const [dir, imp, deps] = l.split('|'); return { dir, imp, deps: new Set((deps ?? '').split(' ')) }; });
+    const dirs = new Set(goFiles.map((f) => path.resolve(abs, path.posix.dirname(f))));
+    const changed = pkgs.filter((p) => dirs.has(path.resolve(p.dir)));
+    if (!changed.length) return [];
+    return pkgs.filter((p) => changed.some((c) => c.imp === p.imp || p.deps.has(c.imp))).map((p) => p.imp);
+  },
+  '{changedCargoPkgs}': (rel, abs) => {
+    if (rel.some((f) => /(^|\/)Cargo\.(toml|lock)$/.test(f))) return [];
+    const out = cmdOut(['cargo', 'metadata', '--no-deps', '--format-version', '1', '--offline'], abs);
+    if (!out) return [];
+    const pkgs = JSON.parse(out).packages.map((p) => ({ name: p.name, dir: path.dirname(p.manifest_path), deps: p.dependencies.map((d) => d.name) }));
+    const hit = new Set();
+    for (const f of rel) {
+      const full = path.resolve(abs, f);
+      const owner = pkgs.filter((p) => full.startsWith(p.dir + path.sep)).sort((a, b) => b.dir.length - a.dir.length)[0];
+      if (!owner) return [];
+      hit.add(owner.name);
+    }
+    for (let grew = true; grew;) { grew = false; for (const p of pkgs) if (!hit.has(p.name) && p.deps.some((d) => hit.has(d))) { hit.add(p.name); grew = true; } }
+    return [...hit].flatMap((n) => ['-p', n]);
+  },
+  '{changedGradleTasks}': (rel, abs) => {
+    if (rel.some((f) => /(^|\/)(settings|build)\.gradle(\.kts)?$|(^|\/)gradle\.properties$|(^|\/)libs\.versions\.toml$/.test(f) && !f.includes('/'))) return [];
+    const dirs = new Set();
+    for (const f of rel) {
+      const d = nearestDir(abs, f, (x) => fs.existsSync(path.join(x, 'build.gradle')) || fs.existsSync(path.join(x, 'build.gradle.kts')));
+      if (!d || d === '.') return [];
+      dirs.add(d);
+    }
+    return [...dirs].map((d) => ':' + d.split('/').join(':') + ':buildDependents');
+  },
+  '{changedCtestRegex}': (rel) => {
+    const stems = rel.filter((f) => /(^|\/)(test_?[^/]*|[^/]*_?tests?)\.(c|cc|cpp|cxx)$/i.test(f)).flatMap((f) => { const b = path.posix.basename(f).replace(/\.[^.]+$/, ''); return [b, b.replace(/^test_?|_?tests?$/gi, '')]; }).filter(Boolean);
+    // non-test source changes may affect any test: run them all
+    if (rel.some((f) => /\.(c|cc|cpp|cxx|h|hh|hpp|hxx)$/i.test(f) && !/(^|\/)(test_?[^/]*|[^/]*_?tests?)\.(c|cc|cpp|cxx)$/i.test(f)) || rel.some((f) => /CMakeLists\.txt$|\.cmake$/.test(f))) return [];
+    return stems.length ? [[...new Set(stems)].map((x) => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')] : [];
+  },
+};
 const LOAD_ERR = /(cannot find (module|package)|modulenotfounderror|importerror|syntaxerror|cannot resolve|no such file|undefined reference|could not compile|error\[e\d+\]|failed to resolve import|\[build failed\]|^[^\s:]+:\d+(?::\d+)?: (?:fatal )?error\b|cannot find symbol|ld returned \d+ exit status|\[setup failed\]|failed opening required|class \"[^\"]+\" not found|call to undefined (function|method)|php parse error|could not find function|there is no package called|what went wrong:\s*\n(?!execution failed for task '[^']*test')|error (cs|msb|nu)\d+|non-parseable pom|the build could not read|compilation failure|could not resolve dependencies|dependencies? .{0,80}could not be resolved|cannot open the connection|undefvarerror|loaderror: (systemerror|parseerror)|^# [^\n]*\n[^\n]*:\d+:\d+: (undefined|cannot|missing))/im;
 // a missing *relative* import that the test file itself references = declared new module
 function declaredMissingModule(text, testPath) {
@@ -987,11 +1046,18 @@ function cmdGate() {
       } else cmd = c.changedCmd;
       const rp = (arr) => base ? arr.filter((f) => f.startsWith(base)).map((f) => f.slice(base.length)) : arr;
       let noScope = false;
-      const modules = [...new Set(rp(ch).map((f) => { let d = path.posix.dirname(f); while (d && d !== '.') { if (fs.existsSync(path.join(ROOT, base, d, 'pom.xml'))) return d; d = path.posix.dirname(d); } return ''; }).filter(Boolean))];
-      if (c.changedCmd.includes('{changedModulesCsv}') && !modules.length) { lines.push(`! cmd ${c.name}: changes are outside any Maven module — running the full check`); cmd = c.cmd; noScope = true; }
-      else cmd = cmd.flatMap((a) => a === '{changedModulesCsv}' ? [modules.join(',')] : [a]);
-      const subst = { '{changedFiles}': rp(ch), '{changedTests}': rp(tests), '{changedScopes}': base ? [...new Set(rp(scopes))] : scopes, '{directTests}': rp(rel2.direct) };
+      const absBase = path.resolve(ROOT, c.cwd ?? '.');
+      const scopeVals = {};
+      for (const [tok, fn] of Object.entries(SCOPE_TOKENS)) {
+        if (!c.changedCmd.includes(tok)) continue;
+        const v = fn(rp(ch), absBase);
+        const arr = Array.isArray(v) ? v : [v];
+        if (!arr.length || (arr.length === 1 && !arr[0])) { lines.push(`! cmd ${c.name}: cannot scope changes for ${tok} — running the full check`); cmd = c.cmd; noScope = true; break; }
+        scopeVals[tok] = arr;
+      }
+      const subst = { ...scopeVals, '{changedFiles}': rp(ch), '{changedTests}': rp(tests), '{changedScopes}': base ? [...new Set(rp(scopes))] : scopes, '{directTests}': rp(rel2.direct) };
       if (!noScope) cmd = cmd.flatMap((a) => subst[a] ?? [a]);
+      if (!noScope && Object.keys(scopeVals).length) lines.push(`! cmd ${c.name}: scoped → ${cmd.join(' ').slice(0, 200)}`);
       scoped = !noScope;
     }
     const r = run(cmd, scoped ? (c.changedTimeoutMs ?? cfg.changedTimeoutMs ?? 60000) : (c.timeoutMs ?? cfg.timeoutMs ?? 120000), c.cwd);
