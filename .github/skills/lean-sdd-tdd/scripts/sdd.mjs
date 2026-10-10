@@ -641,9 +641,13 @@ function stubFor(testPath) {
     if (exts.some((e) => fs.existsSync(abs + e) || fs.existsSync(stem + e))) continue;
     const target = /\.[cm]?[jt]sx?$/.test(abs) ? (ts ? stem + '.ts' : abs) : abs + (ts ? '.ts' : '.js');
     const { named, def } = names(m[1].replace(/^\*\s+as\s+\w+$/, ''));
-    const fn = (n) => ts ? `export function ${n}(..._args: any[]): any {\n  throw new Error('not implemented: ${n}');\n}\n` : `export function ${n}() {\n  throw new Error('not implemented: ${n}');\n}\n`;
+    // used with new / extends / instanceof / toThrow(Class) => must be a class, or `new X()` in setup fails every test
+    const isClass = (n) => new RegExp(`\\bnew\\s+${n}\\b|\\bextends\\s+${n}\\b|\\binstanceof\\s+${n}\\b|\\b(toThrow|toThrowError|toBeInstanceOf|rejects\\.toThrow)\\(\\s*${n}\\s*\\)`).test(src);
+    // constructor must not throw: a throwing setup makes every test a weak Red; calling a missing method fails inside the test instead
+    const cls = (n, dflt) => `export ${dflt ? 'default ' : ''}class ${n} {\n  constructor(..._args${ts ? ': any[]' : ''}) {}\n}\n`;
+    const fn = (n) => isClass(n) ? cls(n) : ts ? `export function ${n}(..._args: any[]): any {\n  throw new Error('not implemented: ${n}');\n}\n` : `export function ${n}() {\n  throw new Error('not implemented: ${n}');\n}\n`;
     let body = named.map(fn).join('\n');
-    if (def) body += (body ? '\n' : '') + (ts ? `export default function ${def}(..._args: any[]): any {\n  throw new Error('not implemented: ${def}');\n}\n` : `export default function ${def}() {\n  throw new Error('not implemented: ${def}');\n}\n`);
+    if (def) body += (body ? '\n' : '') + (isClass(def) ? cls(def, true) : ts ? `export default function ${def}(..._args: any[]): any {\n  throw new Error('not implemented: ${def}');\n}\n` : `export default function ${def}() {\n  throw new Error('not implemented: ${def}');\n}\n`);
     add(target, body || 'export {};\n');
   }
   return made;

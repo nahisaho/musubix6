@@ -669,3 +669,22 @@ test('#41 tdd stub for Python does not shadow stdlib modules but still stubs pro
   assert.ok(!fs.existsSync(path.join(d, 'pathlib.py')));
   assert.ok(fs.existsSync(path.join(d, 'jobx/mod.py')));
 });
+
+test('#42 tdd stub for JS/TS generates a class for symbols used with new / extends / toThrow(Class)', () => {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-clsstub-'));
+  spawnSync('git', ['init', '-q'], { cwd: d });
+  fs.mkdirSync(path.join(d, '.sdd/specs'), { recursive: true });
+  fs.writeFileSync(path.join(d, 'package.json'), '{"name":"x","scripts":{"test":"true"}}');
+  fs.writeFileSync(path.join(d, 's.test.ts'), [
+    "import { Sched, Boom, plain } from './s';",
+    '// @id TEST-S-001 @verifies REQ-S-001',
+    "test('TEST-S-001 x', () => { const s = new Sched(); expect(() => plain()).toThrow(Boom); });",
+    '',
+  ].join('\n'));
+  sdd(d, 'init');
+  sdd(d, 'tdd', 'stub', 'TEST-S-001');
+  const body = fs.readFileSync(path.join(d, 's.ts'), 'utf8');
+  assert.match(body, /export class Sched\b/);
+  assert.match(body, /export class Boom\b/);
+  assert.match(body, /export function plain\b/);
+});
