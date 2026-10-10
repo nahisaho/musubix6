@@ -14,6 +14,7 @@ Follow the user's language. One zero-dependency script enforces the rules; the a
 - Blocked or ambiguous → pick the safest reasonable default, record it in the spec "Assumptions", continue. Ask only if the default is irreversible.
 
 ## 0. Tier (1 line, before reading code)
+- No spec yet and the request is vague ("〜を作りたい")? Use the `sdd-spec-interview` skill first: it asks the user one question at a time and writes the spec.
 - **T0** typo/docs/rename, no behavior change: edit → project checks. No spec, no ledger.
 - **T1** behavior change / bug fix: spec (≤15 lines) → Red → Green → gate.
 - **T2** security, policy, public contract, data, state machine, concurrency: T1 + spike + spec lock after AI review + parallel risk review.
