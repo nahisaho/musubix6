@@ -1322,3 +1322,27 @@ test('#81 approve record refuses generic approver names for human approval', () 
   assert.notEqual(sdd(d, 'approve', 'record', 'a', '--by', 'bot').code, 0);
   assert.equal(sdd(d, 'approve', 'record', 'a', '--by', 'alice').code, 0);
 });
+
+test('#76 tdd stub: Java ctor/enum, C header under include/, Rust workspace member crate', () => {
+  const mk = (files) => {
+    const d = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-'));
+    spawnSync('git', ['init', '-q'], { cwd: d });
+    for (const [f, body] of Object.entries(files)) { fs.mkdirSync(path.dirname(path.join(d, f)), { recursive: true }); fs.writeFileSync(path.join(d, f), body); }
+    return d;
+  };
+  const read = (d, f) => fs.readFileSync(path.join(d, f), 'utf8');
+  const j = mk({ 'FooTest.java': 'import org.junit.jupiter.api.Test;\nclass FooTest {\n  // @id TEST-J-001 @verifies REQ-J-001\n  @Test void t() { Account a = new Account("x", 5); Kind k = Kind.DEBIT; Kind m = Kind.CREDIT; }\n}\n' });
+  sdd(j, 'tdd', 'stub', 'TEST-J-001');
+  assert.match(read(j, 'Account.java'), /public Account\(String a0, int a1\)/);
+  assert.match(read(j, 'Kind.java'), /public enum Kind \{\n    DEBIT, CREDIT/);
+  const c = mk({ 'include/.keep': '', 'tests/t.c': '#include "list.h"\n// @id TEST-C-001 @verifies REQ-C-001\nint main(void) { Node *n = list_new(3); return 0; }\n' });
+  sdd(c, 'tdd', 'stub', 'TEST-C-001');
+  assert.ok(fs.existsSync(path.join(c, 'include/list.h')), 'header goes to include/');
+  assert.ok(!fs.existsSync(path.join(c, 'tests/list.h')), 'not shadowing in tests/');
+  assert.match(read(c, 'include/list.h'), /void \* list_new/);
+  const r = mk({ 'Cargo.toml': '[workspace]\nmembers = ["crates/core", "crates/app"]\n', 'crates/core/Cargo.toml': '[package]\nname = "core-lib"\nversion = "0.1.0"\nedition = "2021"\n', 'crates/core/src/lib.rs': '', 'crates/app/Cargo.toml': '[package]\nname = "app"\nversion = "0.1.0"\nedition = "2021"\n', 'crates/app/src/lib.rs': '', 'crates/app/tests/t.rs': 'use core_lib::shapes::{area, Shape};\n// @id TEST-R-001 @verifies REQ-R-001\n#[test]\nfn t() { assert_eq!(area(Shape), 3); }\n' });
+  sdd(r, 'tdd', 'stub', 'TEST-R-001');
+  assert.match(read(r, 'crates/core/src/lib.rs'), /pub mod shapes;/);
+  assert.match(read(r, 'crates/core/src/shapes.rs'), /pub fn area/);
+  assert.equal(read(r, 'crates/app/src/lib.rs'), '');
+});

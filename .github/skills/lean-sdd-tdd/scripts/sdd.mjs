@@ -713,18 +713,24 @@ function stubGo(testPath, src, dir, add, made) {
 function stubRust(testPath, src, dir, made) {
   const root = (() => { let d = dir; while (d !== path.dirname(d)) { if (fs.existsSync(path.join(d, 'Cargo.toml'))) return d; d = path.dirname(d); } return null; })();
   if (!root || !/(^|\/)tests\//.test(testPath)) return made;
-  const lib = path.join(root, 'src/lib.rs');
-  const probeFile = !fs.existsSync(lib);
-  if (probeFile) { fs.mkdirSync(path.dirname(lib), { recursive: true }); fs.writeFileSync(lib, ''); }
+  const ownLib = path.join(root, 'src/lib.rs');
+  const probeFile = !fs.existsSync(ownLib);
+  if (probeFile) { fs.mkdirSync(path.dirname(ownLib), { recursive: true }); fs.writeFileSync(ownLib, ''); }
   const T = { int: 'i64', float: 'f64', str: 'String', bool: 'bool', result: 'Result<i64, String>' };
   // capitalised names are types: `Name::Variant` => enum, otherwise a unit struct (never a function)
   const typeStub = (n) => { const vs = [...new Set([...src.matchAll(new RegExp(`\\b${n}::([A-Z]\\w*)`, 'g'))].map((m) => m[1]))]; return vs.length ? `#[derive(Debug, Clone, Copy, PartialEq, Eq)]\npub enum ${n} {\n${vs.map((v) => `    ${v},\n`).join('')}}\n` : `#[derive(Debug, Clone, Default, PartialEq)]\npub struct ${n};\n`; };
   const itemStub = (n) => { if (/^[A-Z]/.test(n)) return typeStub(n); const c = callInfo(src, n); const g = c.args.map((_, i) => `A${i}`); return `pub fn ${n}${g.length ? `<${g.join(', ')}>` : ''}(${c.args.map((_, i) => `_a${i}: A${i}`).join(', ')}) -> ${T[c.ret] ?? 'i64'} {\n    unimplemented!("${n}")\n}\n`; };
   // `use <crate>::a::b::{X, f};` => missing modules `a`, `a/b` (declared in the parent) holding the imported items (#69). Existing modules are never touched.
-  const crateName = /^\s*name\s*=\s*"([^"]+)"/m.exec(fs.readFileSync(path.join(root, 'Cargo.toml'), 'utf8'))?.[1]?.replace(/-/g, '_');
+  const pkgName = (toml) => /\[package\][^[]*?^\s*name\s*=\s*"([^"]+)"/ms.exec(fs.readFileSync(toml, 'utf8'))?.[1]?.replace(/-/g, '_');
+  // every workspace member crate by name, so `use other_crate::a::X` is stubbed in that crate (#76)
+  const crates = new Map();
+  for (const f of spawnSync('git', ['ls-files', '-co', '--exclude-standard', '--', 'Cargo.toml', '**/Cargo.toml'], { cwd: ROOT, encoding: 'utf8' }).stdout.split('\n').filter(Boolean)) { const n = pkgName(path.join(ROOT, f)); if (n) crates.set(n, path.resolve(ROOT, path.dirname(f))); }
   const modNames = new Set();
   for (const m of src.matchAll(/^\s*use\s+(\w+)((?:::[a-z_]\w*)+)::(\{[^}]*\}|\w+)\s*;/gm)) {
-    if (m[1] !== crateName) continue;
+    const croot = crates.get(m[1]);
+    if (!croot) continue;
+    const lib = path.join(croot, 'src/lib.rs');
+    if (!fs.existsSync(lib)) { fs.mkdirSync(path.dirname(lib), { recursive: true }); fs.writeFileSync(lib, ''); made.push(rel(lib)); }
     const segs = m[2].split('::').filter(Boolean);
     const items = (m[3].startsWith('{') ? m[3].slice(1, -1).split(',') : [m[3]]).map((x) => x.trim().split(/\s+as\s+/)[0]).filter((x) => /^[A-Za-z_]\w*$/.test(x) && x !== 'self');
     segs.forEach((x) => modNames.add(x));
@@ -732,8 +738,8 @@ function stubRust(testPath, src, dir, made) {
     let created = false;
     let last = lib;
     for (let i = 0; i < segs.length; i++) {
-      const f = path.join(root, 'src', ...segs.slice(0, i + 1)) + '.rs';
-      const mf = path.join(root, 'src', ...segs.slice(0, i + 1), 'mod.rs');
+      const f = path.join(croot, 'src', ...segs.slice(0, i + 1)) + '.rs';
+      const mf = path.join(croot, 'src', ...segs.slice(0, i + 1), 'mod.rs');
       created = false;
       if (!fs.existsSync(f) && !fs.existsSync(mf)) {
         fs.mkdirSync(path.dirname(f), { recursive: true });
@@ -750,11 +756,11 @@ function stubRust(testPath, src, dir, made) {
   }
   const out = probe('cargo', ['test', '--no-run', '--offline', '--test', path.basename(testPath, '.rs')], root);
   const names = [...new Set([...out.matchAll(/cannot find function `(\w+)`|unresolved import `[\w:]+::(\w+)`|no `(\w+)` in the root/g)].map((m) => m[1] ?? m[2] ?? m[3]))].filter((n) => !modNames.has(n));
-  if (!names.length) { if (probeFile && !made.length) fs.rmSync(lib); return [...new Set(made)]; }
+  if (!names.length) { if (probeFile && !made.length) fs.rmSync(ownLib); return [...new Set(made)]; }
   const body = names.map(itemStub).join('\n');
-  const prev = fs.readFileSync(lib, 'utf8');
-  fs.writeFileSync(lib, prev + (prev && !prev.endsWith('\n\n') ? '\n' : '') + body);
-  made.push(rel(lib));
+  const prev = fs.readFileSync(ownLib, 'utf8');
+  fs.writeFileSync(ownLib, prev + (prev && !prev.endsWith('\n\n') ? '\n' : '') + body);
+  made.push(rel(ownLib));
   return [...new Set(made)];
 }
 
@@ -779,9 +785,20 @@ function stubJava(testPath, src, dir, add, made) {
   const rootRel = rel(dir);
   const mainDir = /src\/test\/java/.test(rootRel + '/') ? path.resolve(ROOT, rootRel.replace('src/test/java', 'src/main/java')) : /(^|\/)test$/.test(rootRel) ? path.resolve(dir, '../src') : dir;
   const T = { int: 'int', float: 'double', str: 'String', bool: 'boolean' };
+  // `Cls.UPPER` (no call) => enum constant; a class used only that way becomes an enum (#76)
+  const consts = new Map();
+  for (const m of src.matchAll(/(?<![\w.])([A-Z]\w*)\.([A-Z][A-Z0-9_]*)\b(?!\s*\()/g)) {
+    if (imported.has(m[1]) || local.has(m[1]) || known.has(m[1]) || JDK.test(m[1])) continue;
+    consts.set(m[1], [...new Set([...(consts.get(m[1]) ?? []), m[2]])]);
+    if (!byClass.has(m[1])) byClass.set(m[1], []);
+  }
   for (const [cls, ms] of byClass) {
+    if (consts.has(cls) && !ms.length && !ctors.has(cls)) { add(path.join(mainDir, cls + '.java'), `${pkg ? `package ${pkg};\n\n` : ''}public enum ${cls} {\n    ${consts.get(cls).join(', ')}\n}\n`); continue; }
+    const cc = consts.get(cls)?.map((k) => `    public static final int ${k} = 0;\n`).join('') ?? '';
+    const ctorSrc = ctors.has(cls) ? callInfo(src.replace(new RegExp(`\\bnew\\s+${cls}\\s*\\(`, 'g'), `${cls}(`), cls) : null;
+    const ctorDecl = ctorSrc ? `    public ${cls}(${ctorSrc.args.map((t, i) => `${T[t] ?? 'Object'} a${i}`).join(', ')}) {}\n` : '';
     const body = [...new Set(ms)].map((n) => { const c = callInfo(src.replace(new RegExp(`\\b${cls}\\.`, 'g'), ''), n); return `    public static ${T[c.ret] ?? 'int'} ${n}(${c.args.map((_, i) => `Object a${i}`).join(', ')}) {\n        throw new UnsupportedOperationException("not implemented: ${n}");\n    }\n`; }).join('\n');
-    add(path.join(mainDir, cls + '.java'), `${pkg ? `package ${pkg};\n\n` : ''}public class ${cls} {\n${ctors.has(cls) ? `    public ${cls}(Object... args) {}\n${body ? '\n' : ''}` : ''}${body}}\n`);
+    add(path.join(mainDir, cls + '.java'), `${pkg ? `package ${pkg};\n\n` : ''}public class ${cls} {\n${cc}${ctorDecl}${(cc || ctorDecl) && body ? '\n' : ''}${body}}\n`);
   }
   return made;
 }
@@ -795,13 +812,15 @@ function stubC(testPath, src, dir, add, made) {
   const names = [...new Set([...out.matchAll(/implicit declaration of function '(\w+)'|'(\w+)' was not declared in this scope|use of undeclared identifier '(\w+)'|call to undeclared function '(\w+)'/g)].map((m) => m[1] ?? m[2] ?? m[3] ?? m[4]))];
   const T = { int: 'int', float: 'double', str: 'const char *', bool: 'int' };
   const body = names.map((n) => {
-    const c = callInfo(src, n), r = T[c.ret] ?? 'int';
+    const c = callInfo(src, n), pt = new RegExp(`\\b([A-Za-z_]\\w*)\\s*\\*\\s*\\w+\\s*=\\s*${n}\\s*\\(`).exec(src)?.[1], r = pt && !cpp ? 'void *' : T[c.ret] ?? 'int';
     if (cpp) return `template <class... A>\ninline ${r} ${n}(A&&...) {\n    throw std::logic_error("not implemented: ${n}");\n}\n`;
     const ps = c.args.map((t, i) => `${t === 'ptr' ? 'void *' : T[t] ?? 'int'} a${i}`).join(', ') || 'void';
     return `static inline ${r} ${n}(${ps}) {\n    fprintf(stderr, "not implemented: ${n}\\n");\n    abort();\n}\n`;
   }).join('\n');
   const head = cpp ? '#pragma once\n#include <stdexcept>\n\n' : '#pragma once\n#include <stdio.h>\n#include <stdlib.h>\n\n';
-  for (const h of missing) { fs.rmSync(path.resolve(dir, h)); add(path.resolve(dir, h), head + body); }
+  // a missing header belongs next to the production code (include/ or src/), not in tests/ where it would shadow it (#76)
+  const home = ['include', 'src'].map((d) => path.join(ROOT, d)).find((d) => fs.existsSync(d) && !path.resolve(dir).startsWith(d));
+  for (const h of missing) { fs.rmSync(path.resolve(dir, h)); add(home ? path.join(home, h) : path.resolve(dir, h), head + body); }
   return made;
 }
 
