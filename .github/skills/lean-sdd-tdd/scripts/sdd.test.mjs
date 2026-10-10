@@ -528,3 +528,33 @@ test('#25 tdd stub for Java / C / Go / Rust infers arity and return type from th
   assert.match(sdd(rs, 'tdd', 'stub', 'TEST-C-001').out, /src\/lib\.rs/);
   assert.match(read(rs, 'src/lib.rs'), /pub fn add<A0, A1>\(_a0: A0, _a1: A1\) -> i64/);
 });
+
+test('#31 mixed monorepo: root JS + nested go becomes a project, nested js stays with the root', () => {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-'));
+  spawnSync('git', ['init', '-q'], { cwd: d });
+  for (const [f, b] of Object.entries({ 'package.json': '{"scripts":{"test":"echo ok"}}', 'packages/a/package.json': '{}', 'services/go/go.mod': 'module x\n' })) { fs.mkdirSync(path.dirname(path.join(d, f)), { recursive: true }); fs.writeFileSync(path.join(d, f), b); }
+  assert.match(sdd(d, 'init').out, /root \+ projects: services\/go/);
+  const c = JSON.parse(fs.readFileSync(path.join(d, '.sdd/config.json'), 'utf8'));
+  assert.deepEqual(c.projects.map((p) => p.root), ['services/go']);
+  assert.ok(c.checks.some((k) => k.name === 'test'), 'root checks kept');
+  assert.equal(c.testCmd[0], 'node');
+});
+
+test('#32 projects: dependsOn triggers dependents, project changedCmd gets project-relative paths', () => {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-'));
+  const git = (...a) => spawnSync('git', a, { cwd: d });
+  git('init', '-q');
+  for (const f of ['libs/shared/x.txt', 'services/api/a.txt', 'services/web/w.txt', '.sdd/specs/g.md']) { fs.mkdirSync(path.dirname(path.join(d, f)), { recursive: true }); fs.writeFileSync(path.join(d, f), 'x'); }
+  git('add', '-A'); git('-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'i');
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ schemaVersion: 1, testCmd: ['true'], checks: [], projects: [
+    { root: 'services/api', testCmd: ['true'], dependsOn: ['libs/shared'], checks: [{ name: 'test', cmd: ['sh', '-c', 'echo full'], changedCmd: ['sh', '-c', 'echo scoped "$@"', 'x', '{changedFiles}'] }] },
+    { root: 'services/web', testCmd: ['true'], checks: [{ name: 'test', cmd: ['true'] }] },
+  ] }));
+  fs.writeFileSync(path.join(d, 'libs/shared/x.txt'), 'changed');
+  let r = sdd(d, 'gate', '--changed').out;
+  assert.match(r, /cmd services\/api:test/);
+  assert.match(r, /services\/web:test: no changed files/);
+  fs.writeFileSync(path.join(d, 'services/api/a.txt'), 'changed');
+  r = sdd(d, 'gate', '--changed', '--json').out;
+  assert.match(r, /cmd services\/api:test/);
+});

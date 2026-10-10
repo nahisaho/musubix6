@@ -276,12 +276,15 @@ function detectConfig(base = ROOT) {
 const loadConfig = () => readJson(CONFIG, null) ?? detectConfig();
 const MANIFESTS = /(^|\/)(package\.json|pyproject\.toml|requirements\.txt|pytest\.ini|go\.mod|Cargo\.toml|pom\.xml|build\.gradle(\.kts)?|settings\.gradle(\.kts)?|CMakeLists\.txt|composer\.json|phpunit\.xml(\.dist)?|DESCRIPTION|Project\.toml)$/;
 // polyglot monorepo: nested manifests become projects with their own cwd/testCmd/checks
-function detectProjects() {
+const ECO = [[/package\.json$/, 'js'], [/(pyproject\.toml|requirements\.txt|pytest\.ini)$/, 'py'], [/go\.mod$/, 'go'], [/Cargo\.toml$/, 'rust'], [/(pom\.xml|\.gradle(\.kts)?)$/, 'jvm'], [/CMakeLists\.txt$/, 'cpp'], [/(composer\.json|phpunit\.xml(\.dist)?)$/, 'php'], [/DESCRIPTION$/, 'r'], [/Project\.toml$/, 'julia']];
+const ecoOf = (f) => ECO.find(([re]) => re.test(f))?.[1];
+// skipEco: ecosystems already handled by the root manifest; nested projects of those stay with the root (workspaces)
+function detectProjects(skipEco = new Set()) {
   const dirs = new Set();
   const all = spawnSync('git', ['ls-files', '-co', '--exclude-standard'], { cwd: ROOT, encoding: 'utf8', maxBuffer: 64e6 }).stdout.split('\n');
-  for (const f of all) if (MANIFESTS.test(f) && f.includes('/') && !/(^|\/)(node_modules|vendor|target|build)\//.test(f)) dirs.add(path.posix.dirname(f));
+  for (const f of all) if (MANIFESTS.test(f) && f.includes('/') && !skipEco.has(ecoOf(f)) && !/(^|\/)(node_modules|vendor|target|build)\//.test(f)) dirs.add(path.posix.dirname(f));
   const roots = [...dirs].sort().filter((d, i, a) => !a.slice(0, i).some((p) => d.startsWith(p + '/')));
-  return roots.map((root) => { const c = detectConfig(path.join(ROOT, root)); return { root, testCmd: c.testCmd, checks: c.checks.map(({ name, cmd }) => ({ name, cmd })) }; });
+  return roots.map((root) => { const c = detectConfig(path.join(ROOT, root)); return { root, testCmd: c.testCmd, checks: c.checks.map(({ name, cmd, changedCmd, hubFallbackCmd }) => ({ name, cmd, ...(changedCmd ? { changedCmd } : {}), ...(hubFallbackCmd ? { hubFallbackCmd } : {}) })) }; });
 }
 function projectFor(p) {
   const ps = (loadConfig().projects ?? []).filter((x) => p === x.root || p.startsWith(x.root.replace(/\/$/, '') + '/'));
@@ -311,11 +314,12 @@ const ZERO_TESTS = /(no tests? (found|ran|collected)|# tests 0\b|ran 0 tests|col
 // ---------- commands ----------
 function cmdInit() {
   const cfg = detectConfig();
-  const rootHasManifest = fs.readdirSync(ROOT).some((f) => MANIFESTS.test(f));
-  if (!rootHasManifest) { const projects = detectProjects(); if (projects.length) { cfg.projects = projects; cfg.checks = []; } }
+  const rootManifests = fs.readdirSync(ROOT).filter((f) => MANIFESTS.test(f));
+  const projects = detectProjects(new Set(rootManifests.map(ecoOf)));
+  if (projects.length) { cfg.projects = projects; if (!rootManifests.length) cfg.checks = []; }
   if (!fs.existsSync(CONFIG)) writeJson(CONFIG, cfg);
   fs.mkdirSync(SPECS, { recursive: true });
-  if (cfg.projects?.length) out(`projects: ${cfg.projects.map((p) => `${p.root} (${p.testCmd.slice(0, 2).join(' ')})`).join(', ')} — each test runs in its project directory`);
+  if (cfg.projects?.length) out(`${rootManifests.length ? 'root + ' : ''}projects: ${cfg.projects.map((p) => `${p.root} (${p.testCmd.slice(0, 2).join(' ')})`).join(', ')} — each test runs in its project directory`);
   else if (cfg.testCmd[0] === 'node' && !fs.existsSync(path.join(ROOT, 'package.json'))) out('WARNING: stack not recognised (no package.json/pytest/go.mod/Cargo.toml/pom.xml/gradle/CMakeLists.txt) — testCmd is a Node fallback. Set testCmd in .sdd/config.json to a runner that filters by test name, e.g. ["sh","run_tests.sh","{idu}"] (see SKILL.md "Other stacks").');
   out(`init ok: ${rel(CONFIG)} (testCmd: ${cfg.testCmd.join(' ')}; checks: ${cfg.checks.map((c) => c.name).join(',') || 'none'})`);
   out('next: write .sdd/specs/<feature>.md (see references/spec-template.md)');
@@ -924,13 +928,16 @@ function cmdGate() {
       else add(false, r.timedOut ? `prepare TIMEOUT after ${(r.ms / 1000).toFixed(0)}s (raise prepare.timeoutMs)` : `prepare failed (${(r.ms / 1000).toFixed(1)}s)`, r.timedOut ? [] : tail(r.text, 8).split('\n'));
     }
   }
-  const allChecks = [...(cfg.checks ?? []), ...(cfg.projects ?? []).flatMap((p) => (p.checks ?? []).map((c) => ({ ...c, name: `${p.root}:${c.name}`, cwd: p.root })))];
+  const allChecks = [...(cfg.checks ?? []), ...(cfg.projects ?? []).flatMap((p) => (p.checks ?? []).map((c) => ({ ...c, name: `${p.root}:${c.name}`, cwd: p.root, dependsOn: p.dependsOn })))];
   if (flags['no-run']) { lines.push('! commands: SKIPPED (--no-run) — result is INCOMPLETE'); incomplete = true; }
   else for (const c of allChecks) {
     let cmd = c.cmd;
-    if (c.cwd && flags.changed && ![...changedFiles()].some((f) => f.startsWith(c.cwd.replace(/\/$/, '') + '/'))) { lines.push(`! cmd ${c.name}: no changed files in ${c.cwd} — skipped`); continue; }
+    const base = c.cwd ? c.cwd.replace(/\/$/, '') + '/' : '';
+    const roots = c.cwd ? [base, ...(c.dependsOn ?? []).map((r) => r.replace(/\/$/, '') + '/')] : [];
+    if (c.cwd && flags.changed && ![...changedFiles()].some((f) => roots.some((r) => f.startsWith(r)))) { lines.push(`! cmd ${c.name}: no changed files in ${c.cwd}${c.dependsOn?.length ? ` or its dependencies (${c.dependsOn.join(', ')})` : ''} — skipped`); continue; }
+    const ownChanged = !base || [...changedFiles()].some((f) => f.startsWith(base));
     let scoped = false;
-    if (flags.changed && c.changedCmd) {
+    if (flags.changed && c.changedCmd && ownChanged) {
       const ch = [...changedFiles()].filter((f) => !f.startsWith('.sdd/') && fs.existsSync(path.join(ROOT, f)) && fs.statSync(path.join(ROOT, f)).isFile());
       const tests = ch.filter((f) => /\.(test|spec)\.[cm]?[jt]sx?$|(^|\/)test_[^/]*\.py$|_test\.(py|go)$/.test(f));
       if (!ch.length) { lines.push(`! cmd ${c.name}: no changed files — skipped`); continue; }
@@ -952,7 +959,8 @@ function cmdGate() {
         if (!new Set([...tests, ...rel2.direct]).size) { lines.push(`! cmd ${c.name}: scoping selected no tests — SKIPPED, run full gate (no --changed) — result is INCOMPLETE`); incomplete = true; continue; }
         cmd = c.hubFallbackCmd;
       } else cmd = c.changedCmd;
-      const subst = { '{changedFiles}': ch, '{changedTests}': tests, '{changedScopes}': scopes, '{directTests}': rel2.direct };
+      const rp = (arr) => base ? arr.filter((f) => f.startsWith(base)).map((f) => f.slice(base.length)) : arr;
+      const subst = { '{changedFiles}': rp(ch), '{changedTests}': rp(tests), '{changedScopes}': base ? [...new Set(rp(scopes))] : scopes, '{directTests}': rp(rel2.direct) };
       cmd = cmd.flatMap((a) => subst[a] ?? [a]);
       scoped = true;
     }
