@@ -581,6 +581,22 @@ function setupOrigin(line, testPath, id) {
   return asserts.some((l) => re.test(l)) ? null : x;
 }
 
+// name used for {idu}: the lowercase ID when the file contains it, else the name of the test declared right below `@id` (camelCase / @DisplayName styles)
+function testName(testPath, id) {
+  const idu = id.toLowerCase().replaceAll('-', '_');
+  const text = fs.readFileSync(path.join(ROOT, testPath), 'utf8');
+  if (text.toLowerCase().includes(idu)) return idu;
+  const ls = text.split('\n');
+  const at = ls.findIndex((l) => new RegExp(`@id\\s+${id}\\b`).test(l));
+  for (const l of ls.slice(at + 1, at + 8)) {
+    const d = l.replace(/^\s*(@\w+(\([^)]*\))?\s*)+/, '');
+    if (!d.trim() || /^\s*(\/\/|\*|\/\*)/.test(d)) continue;
+    const m = /(\w+)\s*\(/.exec(d);
+    if (m && !/^(if|for|while|switch|return)$/.test(m[1])) return m[1];
+  }
+  return idu;
+}
+
 function cmdTdd() {
   const sub = pos[1];
   const files = listFiles();
@@ -621,7 +637,7 @@ function cmdTdd() {
   const cfg = loadConfig();
   const proj = projectFor(t.path);
   const fileArg = proj ? path.posix.relative(proj.root, t.path) : t.path;
-  const cmd = (proj?.testCmd ?? cfg.testCmd).map((a) => a.replaceAll('{id}', id).replaceAll('{idu}', id.toLowerCase().replaceAll('-', '_')).replaceAll('{IDU}', id.toUpperCase().replaceAll('-', '_')).replaceAll('{file}', fileArg));
+  const cmd = (proj?.testCmd ?? cfg.testCmd).map((a) => a.replaceAll('{id}', id).replaceAll('{idu}', testName(t.path, id)).replaceAll('{IDU}', id.toUpperCase().replaceAll('-', '_')).replaceAll('{file}', fileArg));
   const res = run(cmd, cfg.timeoutMs ?? 120000, proj?.root);
   const after = testSha(t.path, id);
   if (after !== before) { out(`REFUSED: ${t.path} changed while running (formatter/watch?)`); return 1; }

@@ -558,3 +558,14 @@ test('#32 projects: dependsOn triggers dependents, project changedCmd gets proje
   r = sdd(d, 'gate', '--changed', '--json').out;
   assert.match(r, /cmd services\/api:test/);
 });
+
+test('#27 {idu} falls back to the test method declared below @id (camelCase JUnit)', () => {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-'));
+  spawnSync('git', ['init', '-q'], { cwd: d });
+  fs.mkdirSync(path.join(d, '.sdd/specs'), { recursive: true });
+  fs.writeFileSync(path.join(d, '.sdd/specs/c.md'), '---\nfeature: c\ntier: T1\n---\n| REQ-C-001 | When x, the system shall y. | TEST-C-001 |\n');
+  fs.writeFileSync(path.join(d, 'CTest.java'), 'class CTest {\n  // @id TEST-C-001 @verifies REQ-C-001\n  @Test\n  @DisplayName("adds")\n  void addsNumbers() {}\n}\n');
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ schemaVersion: 1, testCmd: ['sh', '-c', 'echo "$0" > filter.txt; echo "FAIL x"; exit 1', '{idu}'] }));
+  assert.match(sdd(d, 'tdd', 'red', 'TEST-C-001').out, /RED ok/);
+  assert.equal(fs.readFileSync(path.join(d, 'filter.txt'), 'utf8').trim(), 'addsNumbers');
+});
