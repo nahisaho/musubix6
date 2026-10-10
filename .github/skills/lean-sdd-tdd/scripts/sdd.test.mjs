@@ -1246,3 +1246,79 @@ test('#69 tdd stub: Rust module paths and Go types/methods/fields', { skip: ['go
   assert.match(g, /func \(\*Order\) Total\(\) int/);
   assert.equal(spawnSync('go', ['vet', './...'], { cwd: go }).status, 0);
 });
+
+// ---- dogfood round 3 (#70-#81) ----
+const T1SPEC = '---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | one shall hold. | TEST-A-001 |\n';
+const T2SPEC = '---\nfeature: a\ntier: T2\napproval: human\n---\n## Design\nx\n\n| REQ-A-001 | one shall hold. | TEST-A-001 |\n';
+const jsTest = (extra = '') => `// @id TEST-A-001 @verifies REQ-A-001\ntest('TEST-A-001 x', () => {\n  assert.ok(1);\n});\n${extra}`;
+const specPath = (d) => path.join(d, '.sdd/specs/a.md');
+
+test('#71 T2 downgrade / dropping approval: human is not silently accepted', () => {
+  const d = mini(T2SPEC, { 'a.test.mjs': jsTest() }, PASS);
+  assert.equal(sdd(d, 'approve', 'record', 'a', '--by', 'alice').code, 0);
+  fs.writeFileSync(specPath(d), T2SPEC.replace('approval: human\n', ''));
+  const g = sdd(d, 'gate', '--no-run');
+  assert.match(g.out, /policy loosened|stale|human/i);
+  assert.notEqual(sdd(d, 'approve', 'record', 'a', '--by', 'ai:reviewer', '--review', 'ok').code, 0, 'AI must not re-lock a loosened spec');
+  fs.rmSync(specPath(d));
+  assert.match(sdd(d, 'gate', '--no-run').out, /spec removed/);
+  assert.equal(sdd(d, 'approve', 'retire', 'a', '--by', 'alice').code, 0);
+  assert.doesNotMatch(sdd(d, 'gate', '--no-run').out, /spec removed/);
+});
+
+test('#72 BOM keeps T2; CRLF conversion does not stale the lock', () => {
+  const d = mini(T2SPEC, { 'a.test.mjs': jsTest() }, PASS);
+  assert.equal(sdd(d, 'approve', 'record', 'a', '--by', 'alice').code, 0);
+  fs.writeFileSync(specPath(d), '\ufeff' + T2SPEC.replace(/\n/g, '\r\n'));
+  const out = sdd(d, 'gate', '--no-run').out;
+  assert.match(out, /lock a: ok/);
+});
+
+test('#73 appending after the last test keeps its evidence', () => {
+  const d = mini(T1SPEC, { 'a.test.mjs': jsTest() }, FAIL);
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-A-001').code, 0);
+  setCmd(d, PASS);
+  assert.equal(sdd(d, 'tdd', 'green', 'TEST-A-001').code, 0);
+  fs.appendFileSync(path.join(d, 'a.test.mjs'), '\n// trailing note\nfunction main() { return 1; }\n');
+  assert.match(sdd(d, 'gate', '--no-run').out, /1\/1 tests Red→Green/);
+});
+
+test('#75 vitest load failure is a load error; missing method is weak; npm noise dropped', () => {
+  const d = mini(T1SPEC, { 'a.test.mjs': jsTest() }, ['node', '-e', 'console.log("Error: Failed to load url ./x (resolved id: ./x)");process.exit(1)']);
+  assert.match(sdd(d, 'tdd', 'red', 'TEST-A-001').out, /REJECTED.*load\/compile/);
+  setCmd(d, ['node', '-e', 'console.log("TypeError: x.run is not a function");process.exit(1)']);
+  assert.match(sdd(d, 'tdd', 'red', 'TEST-A-001').out, /REJECTED|weak/i);
+});
+
+test('#77 plan: removed REQ means the feature is not done', () => {
+  const d = mini(T1SPEC, { 'a.test.mjs': jsTest() }, FAIL);
+  sdd(d, 'tdd', 'red', 'TEST-A-001'); setCmd(d, PASS); sdd(d, 'tdd', 'green', 'TEST-A-001');
+  fs.writeFileSync(specPath(d), '---\nfeature: a\ntier: T1\n---\n| REQ-A-009 | other shall hold. | TEST-A-009 |\n');
+  fs.writeFileSync(path.join(d, '.sdd/plan.md'), '| order | feature | depends | note |\n|---|---|---|---|\n| 1 | a | - | x |\n');
+  assert.doesNotMatch(sdd(d, 'plan').out, /\bdone\b/i);
+});
+
+test('#78 full-width （deferred） and full-width digits in REQ IDs', () => {
+  const d = mini('---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | one shall hold. | TEST-A-001 |\n| REQ-A-００２ | two shall hold. （deferred） | - |\n', { 'a.test.mjs': jsTest() }, PASS);
+  const out = sdd(d, 'trace').out;
+  assert.match(out, /REQ-A-002|\+1 deferred|deferred/);
+});
+
+test('#79 ledger conflict markers give a clean message; merge-ledger repairs', () => {
+  const d = mini(T1SPEC, { 'a.test.mjs': jsTest() }, FAIL);
+  sdd(d, 'tdd', 'red', 'TEST-A-001');
+  const f = path.join(d, '.sdd/tdd.jsonl');
+  const body = fs.readFileSync(f, 'utf8');
+  fs.writeFileSync(f, `<<<<<<< HEAD\n${body}=======\n${body}>>>>>>> other\n`);
+  const r = sdd(d, 'tdd', 'check');
+  assert.match(r.out, /LEDGER CONFLICT/);
+  assert.doesNotMatch(r.out, /SyntaxError/);
+  assert.equal(sdd(d, 'tdd', 'merge-ledger').code, 0);
+  assert.doesNotMatch(sdd(d, 'tdd', 'check').out, /LEDGER (CONFLICT|CORRUPT)/);
+});
+
+test('#81 approve record refuses generic approver names for human approval', () => {
+  const d = mini(T2SPEC, { 'a.test.mjs': jsTest() }, PASS);
+  assert.notEqual(sdd(d, 'approve', 'record', 'a', '--by', 'bot').code, 0);
+  assert.equal(sdd(d, 'approve', 'record', 'a', '--by', 'alice').code, 0);
+});
