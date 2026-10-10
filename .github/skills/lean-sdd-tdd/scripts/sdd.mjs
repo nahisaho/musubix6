@@ -1331,8 +1331,7 @@ function symbolReach(symbols, files) {
 }
 
 // transitive dependents (relative imports only) of the changed JS/TS files, to detect hub changes
-function relatedTests(changed) {
-  const files = listFiles().filter((f) => /\.[cm]?[jt]sx?$/.test(f));
+function jsRev(files) {
   const set = new Set(files);
   const resolve = (from, spec) => {
     const base = path.posix.normalize(path.posix.join(path.posix.dirname(from), spec));
@@ -1361,6 +1360,13 @@ function relatedTests(changed) {
       if (t) { if (!rev.has(t)) rev.set(t, []); rev.get(t).push(f); }
     }
   }
+  return rev;
+}
+
+function relatedTests(changed) {
+  const files = listFiles().filter((f) => /\.[cm]?[jt]sx?$/.test(f));
+  const set = new Set(files);
+  const rev = jsRev(files);
   const seen = new Set(changed.filter((f) => set.has(f)));
   const queue = [...seen];
   while (queue.length) for (const d of rev.get(queue.pop()) ?? []) if (!seen.has(d)) { seen.add(d); queue.push(d); }
@@ -1628,10 +1634,109 @@ function cmdPlan(args) {
   return problems.length ? 1 : 0;
 }
 
-const cmds = { review: cmdReview, init: cmdInit, approve: cmdApprove, guard: cmdGuard, tdd: cmdTdd, trace: cmdTrace, gate: cmdGate, status: cmdStatus, plan: cmdPlan };
+// best-effort reverse import graph (target -> importers) for impact; JS/TS precise, others heuristic (#91)
+function importRev() {
+  const files = listFiles();
+  const set = new Set(files);
+  const rev = jsRev(files.filter((f) => /\.[cm]?[jt]sx?$/.test(f)));
+  const add = (t, f) => { if (t && t !== f && set.has(t)) { if (!rev.has(t)) rev.set(t, []); if (!rev.get(t).includes(f)) rev.get(t).push(f); } };
+  const dir = (f) => path.posix.dirname(f);
+  const byDir = new Map();
+  for (const f of files) { const d = dir(f); if (!byDir.has(d)) byDir.set(d, []); byDir.get(d).push(f); }
+  const endsWith = (suffix) => files.filter((f) => f === suffix || f.endsWith('/' + suffix));
+  for (const f of files) {
+    const src = fs.readFileSync(path.join(ROOT, f), 'utf8');
+    if (/\.py$/.test(f)) {
+      for (const m of src.matchAll(/^\s*(?:from\s+([\w.]+)\s+import|import\s+([\w.]+))/gm)) {
+        const mod = (m[1] ?? m[2]).replace(/^\.+/, '').replace(/\./g, '/');
+        if (mod) for (const c of [mod + '.py', mod + '/__init__.py']) endsWith(c).forEach((t) => add(t, f));
+      }
+    } else if (/\.go$/.test(f)) {
+      for (const m of src.matchAll(/"([\w./-]+)"/g)) {
+        for (const d of byDir.keys()) if (d !== '.' && (m[1] === d || m[1].endsWith('/' + d))) byDir.get(d).filter((x) => /\.go$/.test(x) && !/_test\.go$/.test(x)).forEach((t) => add(t, f));
+      }
+      if (/_test\.go$/.test(f)) (byDir.get(dir(f)) ?? []).filter((x) => /\.go$/.test(x) && !/_test\.go$/.test(x)).forEach((t) => add(t, f));
+    } else if (/\.rs$/.test(f)) {
+      for (const m of src.matchAll(/^\s*(?:pub\s+)?use\s+(\w+)((?:::\w+)*)/gm)) {
+        const segs = m[2].split('::').filter(Boolean);
+        const root = m[1] === 'crate' || m[1] === 'self' || m[1] === 'super' ? dir(f).replace(/\/(src|tests).*$/, '') + '/src' : null;
+        const bases = root ? [root] : files.filter((x) => /(^|\/)src\/lib\.rs$/.test(x) && (x.split('/').slice(-3)[0] === m[1] || x.split('/').length === 2 || x === 'src/lib.rs')).map(dir);
+        for (const b of bases) {
+          add(b + '/lib.rs', f);
+          let cur = b;
+          for (const sg of segs) { const c = [`${cur}/${sg}.rs`, `${cur}/${sg}/mod.rs`].find((x) => set.has(x)); if (!c) break; add(c, f); cur = c.endsWith('/mod.rs') ? dir(c) : c.replace(/\.rs$/, ''); }
+        }
+      }
+      for (const m of src.matchAll(/^\s*(?:pub\s+)?mod\s+(\w+)\s*;/gm)) for (const c of [`${dir(f)}/${m[1]}.rs`, `${dir(f)}/${m[1]}/mod.rs`]) add(c, f);
+    } else if (/\.java$/.test(f)) {
+      for (const m of src.matchAll(/^\s*import\s+(?:static\s+)?([\w.]+?)(?:\.\*)?\s*;/gm)) {
+        const parts = m[1].split('.');
+        for (let n = parts.length; n > 0; n--) { const c = endsWith(parts.slice(0, n).join('/') + '.java'); if (c.length) { c.forEach((t) => add(t, f)); break; } }
+      }
+    } else if (/\.(c|h|cc|cpp|cxx|hpp|hh)$/.test(f)) {
+      for (const m of src.matchAll(/^\s*#\s*include\s+"([^"]+)"/gm)) endsWith(m[1].replace(/^(\.\/|\.\.\/)+/, '')).forEach((t) => add(t, f));
+      if (/\.h(pp|h)?$/.test(f)) for (const x of files) if (/\.(c|cc|cpp|cxx)$/.test(x) && path.posix.basename(x).replace(/\.\w+$/, '') === path.posix.basename(f).replace(/\.\w+$/, '')) add(f, x);
+    } else if (/\.php$/.test(f)) {
+      for (const m of src.matchAll(/(?:require|include)(?:_once)?\s*\(?\s*(?:__DIR__\s*\.\s*)?['"]([^'"]+)['"]/g)) {
+        const p = m[1].replace(/^\//, '');
+        add(path.posix.normalize(path.posix.join(dir(f), p)), f);
+        endsWith(p.replace(/^(\.\.?\/)+/, '')).forEach((t) => add(t, f));
+      }
+    }
+  }
+  return rev;
+}
+
+function cmdImpact() {
+  const target = pos[1];
+  if (!target) { out('usage: impact <REQ-ID|TEST-ID|CODE-ID|file> [--json]'); return 2; }
+  const specs = loadSpecs();
+  const { ents } = scanEntities(listFiles());
+  const reqFeature = new Map();
+  for (const sp of specs) for (const r of sp.reqs) reqFeature.set(r.id, sp.feature);
+  const all = [...ents.values()];
+  let seeds; let reqs;
+  if (/^REQ-/.test(target)) {
+    if (!reqFeature.has(target)) { out(`IMPACT: unknown REQ ${target}`); return 1; }
+    reqs = [target];
+    seeds = [...new Set(all.filter((e) => e.refs.implements.includes(target)).map((e) => e.path))];
+  } else if (ents.has(target)) {
+    const e = ents.get(target);
+    seeds = [e.path];
+    reqs = [...new Set([...e.refs.implements, ...e.refs.verifies])];
+  } else if (fs.existsSync(path.join(ROOT, target))) {
+    seeds = [target.replace(/^\.\//, '')];
+    reqs = [...new Set(all.filter((e) => e.path === seeds[0]).flatMap((e) => [...e.refs.implements, ...e.refs.verifies]))];
+  } else { out(`IMPACT: unknown target ${target}`); return 1; }
+  const rev = importRev();
+  const via = new Map(seeds.map((f) => [f, null]));
+  const queue = [...seeds];
+  while (queue.length) { const f = queue.shift(); for (const d of rev.get(f) ?? []) if (!via.has(d)) { via.set(d, f); queue.push(d); } }
+  const reached = [...via.keys()].filter((f) => !seeds.includes(f));
+  const entsIn = (f) => all.filter((e) => e.path === f);
+  const verifiers = all.filter((e) => e.refs.verifies.some((r) => reqs.includes(r)));
+  const affected = new Map();
+  for (const f of via.keys()) for (const e of entsIn(f)) for (const r of [...e.refs.verifies, ...e.refs.implements]) if (!reqs.includes(r)) { if (!affected.has(r)) affected.set(r, new Set()); affected.get(r).add(e.id + ' (' + f + ')'); }
+  const chain = (f) => { const c = [f]; while (via.get(c[c.length - 1])) c.push(via.get(c[c.length - 1])); return c.reverse().join(' → '); };
+  const result = {
+    target, reqs, impl: seeds, verifiedBy: verifiers.map((e) => e.id), reachedFiles: reached,
+    otherReqs: [...affected].map(([r, v]) => ({ req: r, feature: reqFeature.get(r) ?? null, via: [...v] })),
+    reachedTests: reached.filter((f) => entsIn(f).some((e) => e.refs.verifies.length) || TEST_FILE.test(f)),
+  };
+  if (flags.json) { out(JSON.stringify(result)); return 0; }
+  out(`IMPACT ${target}${reqs.length && target !== reqs[0] ? ` (${reqs.join(', ')})` : ''}`);
+  out(`  impl: ${seeds.join(', ') || '(none)'}`);
+  if (verifiers.length) out(`  verified by: ${verifiers.map((e) => `${e.id}`).join(', ')}`);
+  out(`  reaches ${reached.length} file(s) via imports${result.reachedTests.length ? `; tests: ${result.reachedTests.slice(0, 8).join(', ')}` : ''}`);
+  for (const o of result.otherReqs.slice(0, 8)) out(`  ! other REQ ${o.req}${o.feature ? ` [${o.feature}]` : ''}: ${o.via.slice(0, 3).join(', ')} — chain ${chain(o.via[0].replace(/^.*\((.*)\)$/, '$1'))}`);
+  if (result.otherReqs.length > 8) out(`  … +${result.otherReqs.length - 8} more`);
+  return 0;
+}
+
+const cmds = { review: cmdReview, init: cmdInit, approve: cmdApprove, guard: cmdGuard, tdd: cmdTdd, trace: cmdTrace, gate: cmdGate, status: cmdStatus, plan: cmdPlan, impact: cmdImpact };
 const fn = cmds[pos[0]];
 if (!fn) {
-  out('usage: sdd.mjs init | review template <feature> | review check <file> --feature <f> | approve prepare|record <feature> | guard | tdd red|green|refactor <TEST-ID> | tdd stub <TEST-ID> | tdd check | trace [--baseline] | gate [--changed] [--no-run] | status | plan   [--root dir]\n  tdd red: tdd red --characterization "<reason>" records a data-only/characterization test that cannot fail without implementation (weak Red); --expect <text> requires that text in the failure; --allow-setup-red accepts a stub-in-setup Red; --missing-module accepts a Red caused by the test own not-yet-created import (non-weak); approve record --by ai:<reviewer> needs --review <path|summary>');
+  out('usage: sdd.mjs init | review template <feature> | review check <file> --feature <f> | approve prepare|record <feature> | guard | tdd red|green|refactor <TEST-ID> | tdd stub <TEST-ID> | tdd check | trace [--baseline] | gate [--changed] [--no-run] | status | plan | impact <REQ|TEST|CODE|file> [--json]   [--root dir]\n  tdd red: tdd red --characterization "<reason>" records a data-only/characterization test that cannot fail without implementation (weak Red); --expect <text> requires that text in the failure; --allow-setup-red accepts a stub-in-setup Red; --missing-module accepts a Red caused by the test own not-yet-created import (non-weak); approve record --by ai:<reviewer> needs --review <path|summary>');
   process.exit(2);
 }
 process.exit(fn() ?? 0);

@@ -1418,3 +1418,49 @@ test('#89 init re-run reports the kept config; call inside a multi-line assertio
   assert.equal(r.code, 0, r.out);
   assert.doesNotMatch(r.out, /weak|setup call/i);
 });
+
+test('#91 impact: REQ change lists dependent tests/REQs of other features (JS, Python, Go, C)', () => {
+  const mk = (files) => {
+    const d = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-'));
+    spawnSync('git', ['init', '-q'], { cwd: d });
+    fs.mkdirSync(path.join(d, '.sdd/specs'), { recursive: true });
+    for (const [f, body] of Object.entries(files)) { fs.mkdirSync(path.dirname(path.join(d, f)), { recursive: true }); fs.writeFileSync(path.join(d, f), body); }
+    return d;
+  };
+  const spec = (f, id) => `---\nfeature: ${f}\ntier: T1\n---\n- ${id} x\n`;
+  const js = mk({
+    '.sdd/specs/a.md': spec('a', 'REQ-A-001'), '.sdd/specs/b.md': spec('b', 'REQ-B-001'),
+    'a.mjs': '// @id CODE-A-001 @implements REQ-A-001\nexport const a=1;\n',
+    'b.mjs': '// @id CODE-B-001 @implements REQ-B-001\nimport {a} from "./a.mjs";\nexport const b=a;\n',
+    'b.test.mjs': '// @id TEST-B-001 @verifies REQ-B-001\nimport {b} from "./b.mjs";\n',
+  });
+  const r = sdd(js, 'impact', 'REQ-A-001');
+  assert.equal(r.code, 0, r.out);
+  assert.match(r.out, /impl: a\.mjs/);
+  assert.match(r.out, /other REQ REQ-B-001 \[b\]/);
+  assert.match(r.out, /b\.test\.mjs/);
+  assert.equal(JSON.parse(sdd(js, 'impact', 'a.mjs', '--json').out).otherReqs[0].req, 'REQ-B-001');
+  assert.equal(sdd(js, 'impact', 'REQ-NOPE-1').code, 1);
+
+  const py = mk({
+    '.sdd/specs/a.md': spec('a', 'REQ-A-001'), '.sdd/specs/b.md': spec('b', 'REQ-B-001'),
+    'pkg/core.py': '# @id CODE-A-001 @implements REQ-A-001\ndef f(): return 1\n',
+    'tests/test_b.py': '# @id TEST-B-001 @verifies REQ-B-001\nfrom pkg.core import f\n',
+  });
+  assert.match(sdd(py, 'impact', 'REQ-A-001').out, /other REQ REQ-B-001/);
+
+  const go = mk({
+    '.sdd/specs/a.md': spec('a', 'REQ-A-001'), '.sdd/specs/b.md': spec('b', 'REQ-B-001'),
+    'go.mod': 'module ex.com/m\n',
+    'core/core.go': 'package core\n// @id CODE-A-001 @implements REQ-A-001\nfunc F() int { return 1 }\n',
+    'cli/cli_test.go': 'package cli\nimport "ex.com/m/core"\n// @id TEST-B-001 @verifies REQ-B-001\nfunc TestX() { core.F() }\n',
+  });
+  assert.match(sdd(go, 'impact', 'REQ-A-001').out, /other REQ REQ-B-001/);
+
+  const c = mk({
+    '.sdd/specs/a.md': spec('a', 'REQ-A-001'), '.sdd/specs/b.md': spec('b', 'REQ-B-001'),
+    'include/arena.h': '// @id CODE-A-001 @implements REQ-A-001\nint x;\n',
+    'tests/t.c': '#include "arena.h"\n// @id TEST-B-001 @verifies REQ-B-001\nint main(void){return 0;}\n',
+  });
+  assert.match(sdd(c, 'impact', 'REQ-A-001').out, /other REQ REQ-B-001/);
+});
