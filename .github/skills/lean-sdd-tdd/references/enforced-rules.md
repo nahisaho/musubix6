@@ -21,7 +21,7 @@ If `--review` is a file (e.g. `.sdd/review.md`) it must follow the schema from `
 - Legacy repos: `trace --baseline` snapshots errors to `.sdd/trace-baseline.json`; later trace/gate report only new errors (counted per message, so an added same-kind error is new) (`--changed` also limits to changed files).
 - Human approval order: `approve prepare <feature>` (shows paths/hashes) → human reviews → `approve record <feature> --by <name>`. Record is refused without a prepare matching the current spec; after any spec/design edit, prepare again. The first implementation after approval refreshes the code baseline; later edits to `@implements` files are flagged.
 - `tdd green` accepts a test whose content equals any earlier recorded Red (reverting a wrong test edit); other changes need a new Red. Test-file BOM/CRLF changes do not stale evidence.
-- `impact <id|file>`: same-feature REQs are listed apart from other-feature REQs (`!`). Go is package-granular, JS barrel files over-approximate, Python/Rust/Java/C/PHP resolution is heuristic.
-- Weak Red heuristic (setup vs asserted call) is best-effort: helper bodies and `.unwrap()` idioms can be misjudged; `gate` prints a hint to re-run `tdd red <ID> --expect <text>` for weak Reds. Use `--expect` / `--allow-setup-red` to override.
+- `impact <id|file>`: same-feature REQs are listed apart from other-feature REQs (`!`). Go resolves to files declaring the used symbols (package fallback), JS barrel files over-approximate, Python/Rust/Java/C/PHP resolution is heuristic.
+- Weak Red heuristic (setup vs asserted call) is best-effort: helper functions are scanned, and `step(..).unwrap();` right before the assertions counts as the act; `gate` prints a hint to re-run `tdd red <ID> --expect <text>` for weak Reds. Use `--expect` / `--allow-setup-red` to override.
 - `@id` suffixes must be uppercase; `CODE-X-001b` is reported as an invalid id, not as a duplicate.
-
+- `gate --changed` warns (`!`) when changed files are imported by code/tests of another feature; their evidence is not re-checked, so run a full gate or `impact <file>`.

@@ -1656,3 +1656,89 @@ test('#102 trace +N more, invalid lowercase id suffix, test CRLF does not stale 
   const e = mini('---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | one shall hold. ＜test-only＞ | TEST-A-001 |\n', { 'a.test.mjs': jsTest() }, PASS);
   assert.doesNotMatch(sdd(e, 'trace').out, /REQ-A-001 has no @implements/);
 });
+
+test('#103 Java/Rust stubs generate instance methods called on constructed objects', { skip: ['cargo', 'mvn'].some((c) => spawnSync('which', [c]).status !== 0) }, () => {
+  // Rust
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-rsi-'));
+  spawnSync('git', ['init', '-q'], { cwd: d });
+  fs.mkdirSync(path.join(d, '.sdd/specs'), { recursive: true });
+  fs.mkdirSync(path.join(d, 'tests'));
+  fs.writeFileSync(path.join(d, '.sdd/specs/s.md'), '---\nfeature: s\ntier: T1\n---\n| REQ-S-001 | x | TEST-S-001 |\n');
+  fs.writeFileSync(path.join(d, 'Cargo.toml'), '[package]\nname = "lp"\nversion = "0.1.0"\nedition = "2021"\n');
+  fs.writeFileSync(path.join(d, 'tests/t.rs'), 'use lp::Account;\n\n// @id TEST-S-001 @verifies REQ-S-001\n#[test]\nfn test_s_001() {\n    let mut a = Account::new(5);\n    a.deposit(3);\n    assert_eq!(a.balance(), 8);\n}\n');
+  sdd(d, 'init');
+  assert.equal(sdd(d, 'tdd', 'stub', 'TEST-S-001').code, 0);
+  const lib = fs.readFileSync(path.join(d, 'src/lib.rs'), 'utf8');
+  assert.match(lib, /pub fn new/);
+  assert.match(lib, /pub fn balance\(&self/);
+  assert.match(lib, /pub fn deposit<A0>\(&self/);
+  const r = sdd(d, 'tdd', 'red', 'TEST-S-001');
+  assert.equal(r.code, 0, r.out);
+  assert.match(r.out, /not implemented: Account::balance|not implemented: Account::deposit/);
+  // Java
+  const j = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-jvi-'));
+  spawnSync('git', ['init', '-q'], { cwd: j });
+  fs.mkdirSync(path.join(j, '.sdd/specs'), { recursive: true });
+  fs.mkdirSync(path.join(j, 'src/test/java'), { recursive: true });
+  fs.writeFileSync(path.join(j, '.sdd/specs/s.md'), '---\nfeature: s\ntier: T1\n---\n| REQ-S-001 | x | TEST-S-001 |\n');
+  fs.writeFileSync(path.join(j, 'pom.xml'), '<project/>');
+  fs.writeFileSync(path.join(j, 'src/test/java/AccTest.java'), 'import org.junit.jupiter.api.Test;\nimport static org.junit.jupiter.api.Assertions.*;\nclass AccTest {\n  // @id TEST-S-001 @verifies REQ-S-001\n  @Test void test_s_001() {\n    Account a = new Account(5);\n    a.deposit(3);\n    assertEquals(8, a.balance());\n  }\n}\n');
+  sdd(j, 'init');
+  assert.equal(sdd(j, 'tdd', 'stub', 'TEST-S-001').code, 0);
+  const jv = fs.readFileSync(path.join(j, 'src/main/java/Account.java'), 'utf8');
+  assert.match(jv, /public int balance\(\)/);
+  assert.match(jv, /public \w+ deposit\(Object a0\)/);
+});
+
+test('#104 gate --changed warns when changed files are imported by another feature', () => {
+  const d = mini(T1SPEC, { 'a.test.mjs': jsTest(), 'a.mjs': '/** @id CODE-A-001 @implements REQ-A-001 */\nexport const a = 1;\n' }, PASS);
+  fs.writeFileSync(path.join(d, '.sdd/specs/b.md'), '---\nfeature: b\ntier: T1\n---\n| REQ-B-001 | x | TEST-B-001 |\n');
+  fs.writeFileSync(path.join(d, 'b.mjs'), "import { a } from './a.mjs';\n/** @id CODE-B-001 @implements REQ-B-001 */\nexport const b = a + 1;\n");
+  spawnSync('git', ['add', '-A'], { cwd: d });
+  spawnSync('git', ['-c', 'user.email=t@t', '-c', 'user.name=t', 'commit', '-qm', 'x'], { cwd: d });
+  fs.appendFileSync(path.join(d, 'a.mjs'), '// edit\n');
+  const r = sdd(d, 'gate', '--changed', '--no-run');
+  assert.match(r.out, /imported by other feature\(s\): b \(REQ-B-001\)/);
+});
+
+test('#105 Go impact: an import reaches only the files declaring the used symbols', () => {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-goi-'));
+  const w = (f, b) => { fs.mkdirSync(path.dirname(path.join(d, f)), { recursive: true }); fs.writeFileSync(path.join(d, f), b); };
+  spawnSync('git', ['init', '-q'], { cwd: d });
+  w('go.mod', 'module m\n\ngo 1.21\n');
+  w('.sdd/specs/a.md', '---\nfeature: a\ntier: T1\n---\n- REQ-A-001 x\n');
+  w('.sdd/specs/b.md', '---\nfeature: b\ntier: T1\n---\n- REQ-B-001 x\n');
+  w('util/a.go', 'package util\n\n// @id CODE-A-001 @implements REQ-A-001\nfunc Alpha() int { return 1 }\n');
+  w('util/b.go', 'package util\n\n// @id CODE-A-002 @implements REQ-A-001\nfunc Beta() int { return 2 }\n');
+  w('app/main.go', 'package main\n\nimport "m/util"\n\n// @id CODE-B-001 @implements REQ-B-001\nfunc Run() int { return util.Beta() }\n');
+  sdd(d, 'init');
+  const viaA = JSON.parse(sdd(d, 'impact', 'util/a.go', '--json').out);
+  const viaB = JSON.parse(sdd(d, 'impact', 'util/b.go', '--json').out);
+  assert.ok(!viaA.reachedFiles.includes('app/main.go'), 'Alpha is not used by main.go');
+  assert.ok(viaB.reachedFiles.includes('app/main.go'));
+});
+
+test('#106 weak Red: a setup call inside a helper is weak; `.unwrap()` act before the assertions is not', () => {
+  const mk = (src) => {
+    const d = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-js-'));
+    fs.mkdirSync(path.join(d, '.sdd/specs'), { recursive: true });
+    fs.writeFileSync(path.join(d, 'package.json'), '{}');
+    spawnSync('git', ['init', '-q'], { cwd: d });
+    fs.writeFileSync(path.join(d, '.sdd/specs/a.md'), T1SPEC);
+    fs.writeFileSync(path.join(d, 'a.test.mjs'), src);
+    fs.writeFileSync(path.join(d, 'lib.mjs'), "export function make() { throw new Error('not implemented: make'); }\nexport function step() { throw new Error('not implemented: step'); }\n");
+    sdd(d, 'init');
+    setCmd(d, ['node', '-e', "const e=new Error('not implemented: '+process.env.W);e.stack='Error: '+e.message+'\\n    at x (a.test.mjs:'+process.env.L+':1)';console.log(e.stack);process.exit(1)"]);
+    return d;
+  };
+  // helper case: stub thrown in make() (defined outside the test), the test only calls make() then asserts on other state
+  const helperSrc = "import assert from 'node:assert';\nimport { make, step } from './lib.mjs';\nfunction setup() {\n  return make();\n}\n// @id TEST-A-001 @verifies REQ-A-001\ntest('TEST-A-001', () => {\n  const s = setup();\n  assert.equal(1, 2);\n});\n";
+  const d1 = mk(helperSrc);
+  const r1 = spawnSync('node', [SDD, '--root', d1, 'tdd', 'red', 'TEST-A-001'], { encoding: 'utf8', env: { ...ENV, W: 'make', L: '4' } });
+  assert.match(r1.stdout, /setup call|weak/i, r1.stdout);
+  // act case: `step()` followed by unwrap-like last statement then the assertions
+  const actSrc = "import assert from 'node:assert';\nimport { step } from './lib.mjs';\n// @id TEST-A-001 @verifies REQ-A-001\ntest('TEST-A-001', () => {\n  const t = {};\n  step(t).unwrap();\n  assert.equal(t.n, 1);\n});\n";
+  const d2 = mk(actSrc);
+  const r2 = spawnSync('node', [SDD, '--root', d2, 'tdd', 'red', 'TEST-A-001'], { encoding: 'utf8', env: { ...ENV, W: 'step', L: '6' } });
+  assert.doesNotMatch(r2.stdout, /Red comes from setup/, r2.stdout);
+});
