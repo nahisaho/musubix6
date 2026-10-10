@@ -634,13 +634,24 @@ function stubFor(testPath) {
     // class stubs must construct: a throwing __init__ in a fixture/setup makes every test a weak Red
     for (const m of src.matchAll(/^\s*from\s+(\.*[\w.]+)\s+import\s+([^\n#]+)/gm)) {
       const mod = m[1];
-      // stdlib / installed packages must not be shadowed by a stub (-I: ignore cwd and PYTHON* so project dirs do not count)
-      if (!mod.startsWith('.') && spawnSync('python3', ['-I', '-c', 'import importlib.util,sys;sys.exit(0 if importlib.util.find_spec(sys.argv[1].split(".")[0]) else 1)', mod], { cwd: os.tmpdir() }).status === 0) continue;
+      // stdlib / installed packages must not be shadowed by a stub (probe with cwd removed from sys.path so project dirs do not count; user site and PYTHONPATH do)
+      if (!mod.startsWith('.') && spawnSync('python3', ['-c', 'import importlib.util,sys;sys.path=[p for p in sys.path if p not in ("",".")];sys.exit(0 if importlib.util.find_spec(sys.argv[1].split(".")[0]) else 1)', mod], { cwd: os.tmpdir() }).status === 0) continue;
       const base = mod.startsWith('.') ? dir : path.resolve(ROOT, projectFor(testPath)?.root ?? '.');
       const abs = path.join(base, ...mod.replace(/^\.+/, '').split('.')) + '.py';
-      if (fs.existsSync(abs) || fs.existsSync(abs.replace(/\.py$/, '/__init__.py'))) continue;
       const ns = m[2].replace(/[()]/g, '').split(',').map((x) => x.trim().split(/\s+as\s+/)[0]).filter(Boolean);
-      add(abs, ns.map((n) => /^[A-Z]/.test(n) ? `class ${n}:\n    def __init__(self, *a, **k):\n        pass\n` : `def ${n}(*a, **k):\n    raise NotImplementedError("${n}")\n`).join('\n\n'));
+      // pytest.raises(X) / assertRaises(X) / except X => an Exception subclass, else the Red is "must derive from BaseException"
+      const isExc = (n) => new RegExp(`(raises|assertRaises|assertRaisesRegex)\\(\\s*${n}\\b|\\bexcept\\s+\\(?\\s*${n}\\b`).test(src);
+      const stubOf = (n) => isExc(n) ? `class ${n}(Exception):\n    pass\n` : /^[A-Z]/.test(n) ? `class ${n}:\n    def __init__(self, *a, **k):\n        pass\n` : `def ${n}(*a, **k):\n    raise NotImplementedError("${n}")\n`;
+      const existing = fs.existsSync(abs) ? abs : fs.existsSync(abs.replace(/\.py$/, '/__init__.py')) ? abs.replace(/\.py$/, '/__init__.py') : null;
+      if (existing) {
+        // a module that still holds only stubs gets the newly imported names; real code is never touched
+        const cur = fs.readFileSync(existing, 'utf8');
+        const rest = cur.replace(/^class \w+(\(Exception\))?:\n(?:    def __init__\(self, \*a, \*\*k\):\n        pass\n|    pass\n)/gm, '').replace(/^def \w+\(\*a, \*\*k\):\n    raise NotImplementedError\("\w+"\)\n/gm, '');
+        const missing = ns.filter((n) => !new RegExp(`^(class|def)\\s+${n}\\b|^${n}\\s*=`, 'm').test(cur));
+        if (missing.length && !rest.trim()) { fs.appendFileSync(existing, (cur.endsWith('\n') ? '\n\n' : '\n\n\n') + missing.map(stubOf).join('\n\n')); made.push(rel(existing)); }
+        continue;
+      }
+      add(abs, ns.map(stubOf).join('\n\n'));
     }
     return made;
   }

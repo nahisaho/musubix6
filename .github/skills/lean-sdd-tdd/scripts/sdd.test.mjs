@@ -883,3 +883,37 @@ test('#47 a REQ marked "test-only" is not warned about missing @implements', () 
   assert.doesNotMatch(r, /REQ-S-001 has no @implements/, r);
   assert.match(r, /REQ-S-002 has no @implements/, r);
 });
+
+test('#48 tdd stub for Python does not stub installed third-party packages (user site / PYTHONPATH) or their submodules', () => {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-pysite-'));
+  spawnSync('git', ['init', '-q'], { cwd: d });
+  fs.mkdirSync(path.join(d, '.sdd/specs'), { recursive: true });
+  fs.mkdirSync(path.join(d, 'tests'));
+  const site = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-site-'));
+  fs.mkdirSync(path.join(site, 'thirdpkg_zz'));
+  fs.writeFileSync(path.join(site, 'thirdpkg_zz/__init__.py'), '');
+  fs.writeFileSync(path.join(site, 'thirdpkg_zz/sub.py'), 'X = 1\n');
+  fs.writeFileSync(path.join(d, 'tests/test_s.py'), '# @id TEST-S-001\n# @verifies REQ-S-001\nfrom thirdpkg_zz.sub import X\nfrom jobx.mod import f\ndef test_s_001():\n    assert f(X) == 1\n');
+  sdd(d, 'init');
+  spawnSync('node', [SDD, '--root', d, 'tdd', 'stub', 'TEST-S-001'], { encoding: 'utf8', env: { ...ENV, PYTHONPATH: site } });
+  assert.ok(!fs.existsSync(path.join(d, 'thirdpkg_zz')));
+  assert.ok(fs.existsSync(path.join(d, 'jobx/mod.py')));
+});
+
+test('#49 Python stub: exception classes derive from Exception; stub-only modules get newly imported names', () => {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-pyexc-'));
+  spawnSync('git', ['init', '-q'], { cwd: d });
+  fs.mkdirSync(path.join(d, '.sdd/specs'), { recursive: true });
+  fs.mkdirSync(path.join(d, 'tests'));
+  fs.writeFileSync(path.join(d, 'tests/test_s.py'), '# @id TEST-S-001\n# @verifies REQ-S-001\nimport pytest\nfrom pk.errors import Boom\ndef test_s_001():\n    with pytest.raises(Boom):\n        pass\n\n# @id TEST-S-002\n# @verifies REQ-S-001\ndef test_s_002():\n    from pk.errors import Other\n    assert Other\n');
+  sdd(d, 'init');
+  sdd(d, 'tdd', 'stub', 'TEST-S-001');
+  const f = path.join(d, 'pk/errors.py');
+  assert.match(fs.readFileSync(f, 'utf8'), /class Boom\(Exception\)/);
+  sdd(d, 'tdd', 'stub', 'TEST-S-002');
+  assert.match(fs.readFileSync(f, 'utf8'), /class Boom\(Exception\)[\s\S]*class Other/);
+  fs.appendFileSync(f, '\nREAL = 1\n');
+  fs.writeFileSync(path.join(d, 'tests/test_s.py'), fs.readFileSync(path.join(d, 'tests/test_s.py'), 'utf8') + '\nfrom pk.errors import Third\n');
+  sdd(d, 'tdd', 'stub', 'TEST-S-002');
+  assert.doesNotMatch(fs.readFileSync(f, 'utf8'), /Third/);
+});
