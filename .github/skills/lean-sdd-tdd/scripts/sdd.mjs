@@ -49,7 +49,7 @@ const out = (s = '') => process.stdout.write(s + '\n');
 const tail = (s, n = 15) => s.trimEnd().split('\n').slice(-n).join('\n');
 
 // ---------- scanning ----------
-const EXT = /\.(ts|tsx|js|jsx|mjs|cjs|py|go|rs|java|cs|kt|rb|sh|c|h|cc|cpp|cxx|hpp|hh)$/;
+const EXT = /\.(ts|tsx|js|jsx|mjs|cjs|py|go|rs|java|cs|kt|rb|sh|c|h|cc|cpp|cxx|hpp|hh|R|r|jl|php)$/;
 const SKIP = /(^|\/)(node_modules|\.git|\.sdd|dist|build|coverage|target|\.venv|venv)\//;
 const globRe = (g) => new RegExp('^' + g.replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*\*$/, '\u0001').replace(/\*\*\/?/g, '\u0000').replace(/\*/g, '[^/]*').replace(/\?/g, '[^/]').replace(/\u0000/g, '(?:.*/)?').replace(/\u0001/g, '.*') + '$');
 function scanFilter(files) {
@@ -232,12 +232,14 @@ function evidenceStatus(testId, testPath, entries) {
 }
 
 // ---------- config / commands ----------
+const R_TEST = 'testthat::test_file(commandArgs(TRUE)[1], reporter = "summary", stop_on_failure = TRUE)';
 function detectConfig(base = ROOT) {
   const pkg = readJson(path.join(base, 'package.json'), null);
   const has = (f) => fs.existsSync(path.join(base, f));
   const deps = { ...pkg?.dependencies, ...pkg?.devDependencies };
   let testCmd;
   const gradle = (has('build.gradle') || has('build.gradle.kts') || has('settings.gradle') || has('settings.gradle.kts')) ? (has('gradlew') ? './gradlew' : 'gradle') : null;
+  const phpunit = has('vendor/bin/phpunit') ? 'vendor/bin/phpunit' : 'phpunit';
   const CMAKE_RUN = 'cmake -S . -B build -Wno-dev >/dev/null && cmake --build build && ctest --test-dir build --output-on-failure';
   if (has('node_modules/.bin/vitest')) deps.vitest ??= '*';
   if (has('node_modules/.bin/jest')) deps.jest ??= '*';
@@ -249,6 +251,9 @@ function detectConfig(base = ROOT) {
   else if (has('pom.xml')) testCmd = ['mvn', '-B', '-ntp', 'test', '-Dtest=*#*{idu}*', '-Dsurefire.failIfNoSpecifiedTests=false'];
   else if (gradle) testCmd = [gradle, 'cleanTest', 'test', '--tests', '*{idu}*', '--console=plain'];
   else if (has('CMakeLists.txt')) testCmd = ['sh', '-c', CMAKE_RUN + ' -R "$0"', '{idu}'];
+  else if (has('composer.json') || has('phpunit.xml') || has('phpunit.xml.dist')) testCmd = [phpunit, '--do-not-cache-result', '--filter', '{idu}', '{file}'];
+  else if (has('DESCRIPTION')) testCmd = ['Rscript', '-e', R_TEST, '{file}'];
+  else if (has('Project.toml')) testCmd = ['julia', '--project=.', '{file}'];
   else testCmd = ['node', '--test', '--test-name-pattern', '{id}', '{file}'];
   const checks = [];
   const pm = has('pnpm-lock.yaml') ? 'pnpm' : has('yarn.lock') ? 'yarn' : 'npm';
@@ -260,13 +265,16 @@ function detectConfig(base = ROOT) {
     else if (has('pom.xml')) checks.push({ name: 'test', cmd: ['mvn', '-B', '-ntp', 'test'] });
     else if (gradle) checks.push({ name: 'test', cmd: [gradle, 'cleanTest', 'test', '--console=plain'] });
     else if (has('CMakeLists.txt')) checks.push({ name: 'test', cmd: ['sh', '-c', CMAKE_RUN] });
+    else if (testCmd[0] === phpunit) checks.push({ name: 'test', cmd: [phpunit, '--do-not-cache-result'] });
+    else if (has('DESCRIPTION')) checks.push({ name: 'test', cmd: ['Rscript', '-e', 'testthat::test_dir("tests/testthat", reporter = "summary", stop_on_failure = TRUE)'] });
+    else if (has('Project.toml')) checks.push({ name: 'test', cmd: ['julia', '--project=.', '-e', 'using Pkg; Pkg.test()'] });
   }
   for (const s of ['typecheck', 'lint', 'test']) if (pkg?.scripts?.[s]) checks.push({ name: s, cmd: [pm, 'run', s], ...(s === 'test' && related ? { changedCmd: related, hubFallbackCmd: ['npx', deps.vitest ? 'vitest' : 'jest', ...(deps.vitest ? ['run'] : []), '{changedTests}', '{directTests}'] } : {}) });
   const prepare = pkg?.scripts?.build ? { cmd: [pm, 'run', 'build'], outputs: has('dist') ? ['dist'] : [], timeoutMs: 600000 } : undefined;
   return { schemaVersion: 1, testCmd, ...(prepare ? { prepare } : {}), checks, timeoutMs: 120000 };
 }
 const loadConfig = () => readJson(CONFIG, null) ?? detectConfig();
-const MANIFESTS = /(^|\/)(package\.json|pyproject\.toml|requirements\.txt|pytest\.ini|go\.mod|Cargo\.toml|pom\.xml|build\.gradle(\.kts)?|settings\.gradle(\.kts)?|CMakeLists\.txt)$/;
+const MANIFESTS = /(^|\/)(package\.json|pyproject\.toml|requirements\.txt|pytest\.ini|go\.mod|Cargo\.toml|pom\.xml|build\.gradle(\.kts)?|settings\.gradle(\.kts)?|CMakeLists\.txt|composer\.json|phpunit\.xml(\.dist)?|DESCRIPTION|Project\.toml)$/;
 // polyglot monorepo: nested manifests become projects with their own cwd/testCmd/checks
 function detectProjects() {
   const dirs = new Set();
@@ -286,7 +294,7 @@ function run(cmd, timeoutMs, cwd = '.') {
   const text = (r.stdout ?? '') + (r.stderr ?? '') + (r.error ? String(r.error.message) : '');
   return { exit: r.status ?? (r.error ? 127 : 1), text, ms: Date.now() - t0, timedOut: r.error?.code === 'ETIMEDOUT' };
 }
-const LOAD_ERR = /(cannot find (module|package)|modulenotfounderror|importerror|syntaxerror|cannot resolve|no such file|undefined reference|could not compile|error\[e\d+\]|failed to resolve import|\[build failed\]|^[^\s:]+:\d+(?::\d+)?: (?:fatal )?error\b|cannot find symbol|ld returned \d+ exit status|\[setup failed\]|^# [^\n]*\n[^\n]*:\d+:\d+: (undefined|cannot|missing))/im;
+const LOAD_ERR = /(cannot find (module|package)|modulenotfounderror|importerror|syntaxerror|cannot resolve|no such file|undefined reference|could not compile|error\[e\d+\]|failed to resolve import|\[build failed\]|^[^\s:]+:\d+(?::\d+)?: (?:fatal )?error\b|cannot find symbol|ld returned \d+ exit status|\[setup failed\]|failed opening required|class \"[^\"]+\" not found|call to undefined (function|method)|php parse error|could not find function|there is no package called|undefvarerror|loaderror: (systemerror|parseerror)|^# [^\n]*\n[^\n]*:\d+:\d+: (undefined|cannot|missing))/im;
 // a missing *relative* import that the test file itself references = declared new module
 function declaredMissingModule(text, testPath) {
   const src = fs.readFileSync(path.join(ROOT, testPath), 'utf8');
@@ -298,7 +306,7 @@ function declaredMissingModule(text, testPath) {
   const bare = spec.replace(/\.[cm]?[jt]sx?$/, '');
   return (src.includes(spec) || src.includes(bare)) && !fs.existsSync(abs);
 }
-const ZERO_TESTS = /(no tests? (found|ran|collected)|# tests 0\b|ran 0 tests|collected 0 items|0 tests? (ran|found|passed)\b|no test files found|no tests were found|no tests to run|tests run: 0,)/i;
+const ZERO_TESTS = /(no tests? (found|ran|collected)|# tests 0\b|ran 0 tests|collected 0 items|0 tests? (ran|found|passed)\b|no test files found|no tests were found|no tests to run|tests run: 0,|no tests executed)/i;
 
 // ---------- commands ----------
 function cmdInit() {
@@ -395,6 +403,23 @@ function cmdGuard() {
   return bad ? 1 : 0;
 }
 
+// php / julia / R: stub the file the test loads (require/include/source) with throwing functions for the unknown calls
+function stubScript(lang, src, dir, add, made) {
+  const loadRe = { php: /(?:require|include)(?:_once)?\s*\(?\s*(?:__DIR__\s*\.\s*)?['"]([^'"]+\.php)['"]/g, jl: /\binclude\(\s*"([^"]+\.jl)"/g, r: /\bsource\(\s*"([^"]+\.[Rr])"/g }[lang];
+  const code = src.split('\n').filter((l) => !/^\s*(#|\/\/|\*|\/\*)/.test(l)).join('\n');
+  const defined = new Set([...code.matchAll(/\bfunction\s+&?([A-Za-z_]\w*)|^\s*([A-Za-z_]\w*)\s*<-\s*function|^\s*([A-Za-z_]\w*)\(.*\)\s*=(?!=)/gm)].map((m) => m[1] ?? m[2] ?? m[3]));
+  const called = [...new Set([...code.matchAll(/(?<![\w$@.>:\\])([A-Za-z_]\w*)\s*\(/g)].map((m) => m[1]))].filter((n) => !defined.has(n) && !/^(function|if|for|while|switch|catch|elseif|foreach|array|isset|empty|use|using|test_that|testset|require|require_once|include|include_once|source|library|describe|it|context)$/.test(n) && !/^(expect_|test)/.test(n));
+  const probe = { php: ['php', ['-r', 'foreach (array_slice($argv, 1) as $n) if (!function_exists($n)) echo $n, "\n";', '--', ...called]], jl: ['julia', ['-e', 'for n in ARGS; isdefined(Base, Symbol(n)) || println(n); end', ...called]], r: ['Rscript', ['-e', 'for (n in commandArgs(TRUE)) if (!exists(n)) cat(n, "\n", sep = "")', ...called]] }[lang];
+  let unknown = called;
+  if (called.length) { const r = spawnSync(probe[0], probe[1], { encoding: 'utf8', timeout: 60000 }); if (r.status === 0) unknown = r.stdout.split('\n').filter(Boolean); }
+  const fn = { php: (n) => `if (!function_exists('${n}')) {\n    function ${n}(...$args) {\n        throw new \\LogicException('not implemented: ${n}');\n    }\n}\n`, jl: (n) => `${n}(args...; kwargs...) = error("not implemented: ${n}")\n`, r: (n) => `${n} <- function(...) stop("not implemented: ${n}")\n` }[lang];
+  for (const m of src.matchAll(loadRe)) {
+    const abs = path.resolve(dir, m[1].replace(/^\/+/, ''));
+    if (!fs.existsSync(abs)) add(abs, (lang === 'php' ? '<?php\n\n' : '') + unknown.map(fn).join('\n'));
+  }
+  return made;
+}
+
 function stubFor(testPath) {
   const src = fs.readFileSync(path.join(ROOT, testPath), 'utf8');
   const dir = path.resolve(ROOT, path.dirname(testPath));
@@ -416,6 +441,8 @@ function stubFor(testPath) {
     }
     return made;
   }
+  const lang = /\.php$/.test(testPath) ? 'php' : /\.jl$/.test(testPath) ? 'jl' : /\.[Rr]$/.test(testPath) ? 'r' : null;
+  if (lang) return stubScript(lang, src, dir, add, made);
   const ts = /\.[cm]?tsx?$/.test(testPath);
   for (const m of src.matchAll(/import\s+([^'"\n;]*?)\s+from\s+['"](\.{1,2}\/[^'"]+)['"]/g)) {
     const spec = m[2];
@@ -442,7 +469,7 @@ function testBody(testPath, id) {
   if (end < 0) end = ls.length;
   return ls.slice(start, end);
 }
-const ASSERT_LINE = /(expect\s*\(|\bassert|raises|toThrow|\.should|assertEquals|t\.(Error|Fatal))/;
+const ASSERT_LINE = /(expect\s*\(|\bassert|raises|toThrow|\.should|assertEquals|@test\b|expect_|t\.(Error|Fatal))/;
 // Red caused by a stub called from setup (not from the asserted behaviour) is not evidence for the REQ
 function setupOrigin(line, testPath, id) {
   const m = /not implemented:?\s*([\w$]+)|NotImplementedError:?\s*([\w$]+)|unimplemented!?\(?\s*"?([\w$]+)/i.exec(line ?? '');
@@ -515,7 +542,7 @@ function cmdTdd() {
   }
   if (!ok) { out(`${sub.toUpperCase()} REJECTED ${id}: ${why}`); out(tail(res.text, 12)); return 1; }
   const rl = res.text.replace(/\x1b\[[0-9;]*m/g, '').split('\n').map((l) => l.trim());
-  const reason = sub === 'red' ? (rl.find((l) => /^E\s+\S/.test(l))?.replace(/^E\s+/, '') ?? rl.find((l) => /(--- FAIL|AssertionError|Error:|assert |FAILED|panicked|expected|\(Failed\))/.test(l) && !/^(FAIL|❯|> Task|The following tests)/.test(l)) ?? rl.find((l) => /^(FAIL|not ok)\s+\S+$/.test(l)) ?? '').slice(0, 110) : '';
+  const reason = sub === 'red' ? (rl.find((l) => /^E\s+\S/.test(l) && !/\d+ \/ \d+ \(\d+%\)/.test(l))?.replace(/^E\s+/, '') ?? rl.find((l) => /(--- FAIL|AssertionError|Error:|assert |FAILED|panicked|expected|\(Failed\)|Test Failed|Error During Test|\w*Exception:|── (Failure|Error))/.test(l) && !/^(FAIL|❯|> Task|The following tests)/.test(l)) ?? rl.find((l) => /^(FAIL|not ok)\s+\S+$/.test(l)) ?? '').slice(0, 110) : '';
   const loadWeak = sub === 'red' && LOAD_ERR.test(res.text) && !(flags['missing-module'] && declaredMissingModule(res.text, t.path));
   const setupSym = sub === 'red' && !flags['allow-setup-red'] && typeof flags.expect !== 'string' ? setupOrigin(rl.find((l) => /not implemented|NotImplementedError|unimplemented/i.test(l)) ?? reason, t.path, id) : null;
   const weakRed = loadWeak || !!setupSym;
