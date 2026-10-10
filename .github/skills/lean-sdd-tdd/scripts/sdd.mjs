@@ -142,19 +142,32 @@ function templateLines(lines, f) {
   if (mode !== 'code') return new Array(lines.length).fill(false);
   return flags;
 }
+// true for lines that start a triple-quoted string or sit inside one
+function pyDocLines(lines) {
+  const flags = new Array(lines.length).fill(false);
+  let open = null;
+  lines.forEach((l, i) => {
+    flags[i] = open !== null || /^\s*[rRbBuU]{0,2}("""|''')/.test(l);
+    for (const m of l.matchAll(/"""|'''/g)) open = open === null ? m[0] : open === m[0] ? null : open;
+  });
+  return flags;
+}
 function scanEntities(files) {
   const ents = new Map();
   const dups = [];
   for (const f of files) {
     const lines = fs.readFileSync(path.join(ROOT, f), 'utf8').split('\n');
     const inTpl = templateLines(lines, f);
+    // Python: annotations in docstrings (a line starting a triple-quoted string, or inside one) count as comments
+    const doc = f.endsWith('.py') ? pyDocLines(lines) : null;
+    const lead = (i) => COMMENT_LEAD.test(lines[i]) || !!doc?.[i];
     for (let i = 0; i < lines.length; i++) {
-      if (inTpl[i] || !COMMENT_LEAD.test(lines[i])) continue;
+      if (inTpl[i] || !lead(i)) continue;
       const m = /@id\s+([A-Z][A-Z0-9]+(?:-[A-Z0-9]+)+)/.exec(lines[i]);
       if (!m) continue;
       let block = lines[i];
       for (let j = i + 1; j < Math.min(lines.length, i + 9); j++) {
-        if (!COMMENT_LEAD.test(lines[j]) || /@id\s/.test(lines[j])) break;
+        if (!lead(j) || /@id\s/.test(lines[j])) break;
         block += '\n' + lines[j];
       }
       const refs = { implements: [], verifies: [], design: [] };
@@ -618,6 +631,7 @@ function stubFor(testPath) {
     return { named, def };
   };
   if (/\.py$/.test(testPath)) {
+    // class stubs must construct: a throwing __init__ in a fixture/setup makes every test a weak Red
     for (const m of src.matchAll(/^\s*from\s+(\.*[\w.]+)\s+import\s+([^\n#]+)/gm)) {
       const mod = m[1];
       // stdlib / installed packages must not be shadowed by a stub (-I: ignore cwd and PYTHON* so project dirs do not count)
@@ -626,7 +640,7 @@ function stubFor(testPath) {
       const abs = path.join(base, ...mod.replace(/^\.+/, '').split('.')) + '.py';
       if (fs.existsSync(abs) || fs.existsSync(abs.replace(/\.py$/, '/__init__.py'))) continue;
       const ns = m[2].replace(/[()]/g, '').split(',').map((x) => x.trim().split(/\s+as\s+/)[0]).filter(Boolean);
-      add(abs, ns.map((n) => /^[A-Z]/.test(n) ? `class ${n}:\n    def __init__(self, *a, **k):\n        raise NotImplementedError("${n}")\n` : `def ${n}(*a, **k):\n    raise NotImplementedError("${n}")\n`).join('\n\n'));
+      add(abs, ns.map((n) => /^[A-Z]/.test(n) ? `class ${n}:\n    def __init__(self, *a, **k):\n        pass\n` : `def ${n}(*a, **k):\n    raise NotImplementedError("${n}")\n`).join('\n\n'));
     }
     return made;
   }
@@ -669,9 +683,10 @@ function testBody(testPath, id) {
 const ASSERT_LINE = /(expect\s*\(|\bassert|raises|toThrow|\.should|assertEquals|@test\b|expect_|\bif\b.*[!=]=|t\.(Error|Fatal))/;
 // Red caused by a stub called from setup (not from the asserted behaviour) is not evidence for the REQ
 function setupOrigin(line, testPath, id, text = '') {
-  const m = /not implemented:?\s*([\w$]+)|NotImplementedError:?\s*([\w$]+)|unimplemented!?\(?\s*"?([\w$]+)/i.exec(line ?? '');
+  const m = /not implemented:?\s*([\w$]+)|NotImplementedError:?\s*\(?["']?([\w$]+)|unimplemented!?\(?\s*"?([\w$]+)/i.exec(line ?? '');
   const x = m?.[1] ?? m?.[2] ?? m?.[3];
   if (!x) return null;
+  if (/ERROR at setup of/.test(text)) return x; // pytest fixture failure is always setup
   const re = new RegExp(`(?<![\\w$])${x.replace(/[$]/g, '\\$&')}(?![\\w$])`);
   const all = fs.readFileSync(path.join(ROOT, testPath), 'utf8').split('\n');
   const start = all.findIndex((l) => new RegExp(`@id\\s+${id}\\b`).test(l));
@@ -681,9 +696,17 @@ function setupOrigin(line, testPath, id, text = '') {
   const base = path.basename(testPath).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const sites = [...new Set([...text.matchAll(new RegExp(`${base}:(\\d+)`, 'g')).map((f) => Number(f[1]) - 1)])].filter((i) => i >= start && i < end);
   if (sites.length) {
-    const hit = sites.map((i) => all[i]).filter((l) => re.test(l));
+    const hit = sites.filter((i) => re.test(all[i])).map((i) => ({ l: all[i], i }));
+    // a call inside `with pytest.raises(...)` / assertRaises / assertThrows on the preceding line is the asserted behaviour
+    if (hit.some(({ i }) => /raises|assertRaises|assertThrows|assert_raises/.test(all[i - 1] ?? ''))) return null;
     if (!hit.length) return null; // thrown through a helper: cannot tell setup from the asserted call
-    return hit.some((l) => ASSERT_LINE.test(l)) ? null : x;
+    if (hit.some(({ l }) => ASSERT_LINE.test(l))) return null;
+    // `const r = sut(...)` followed by assertions on r is the act under test, not setup
+    const WRAP = '(?:(?:list|len|sorted|set|tuple|dict|str|int|float|sum|bool|String|Number|JSON\\.stringify|Object\\.\\w+|Array\\.from)\\(\\s*)*';
+    const vars = hit.map(({ l }) => /^\s*(?:(?:const|let|var)\s+)?([A-Za-z_$][\w$]*)\s*(?::[^=]+)?=(?!=)/.exec(l)?.[1]).filter(Boolean);
+    const body = testBody(testPath, id).filter((l) => ASSERT_LINE.test(l));
+    const subject = (v) => new RegExp(`(?:expect\\(\\s*(?:await\\s+)?|assert\\w*(?:\\.\\w+)?\\(\\s*|\\bassert\\s+(?:not\\s+)?)${WRAP}${v.replace(/[$]/g, '\\$&')}(?![\\w$])`);
+    return vars.some((v) => body.some((l) => subject(v).test(l))) ? null : x;
   }
   const asserts = testBody(testPath, id).filter((l) => ASSERT_LINE.test(l));
   if (!asserts.length) return null;
@@ -768,9 +791,9 @@ function cmdTdd() {
   }
   if (!ok) { out(`${sub.toUpperCase()} REJECTED ${id}: ${why}`); out(tail(res.text, 12)); return 1; }
   const rl = res.text.replace(/\x1b\[[0-9;]*m/g, '').split('\n').map((l) => l.trim());
-  const reason = sub === 'red' ? (rl.find((l) => /^E\s+\S/.test(l) && !/\d+ \/ \d+ \(\d+%\)/.test(l))?.replace(/^E\s+/, '') ?? rl.find((l) => /(--- FAIL|AssertionError|Error:|assert |FAILED|panicked|expected|\(Failed\)|not implemented|Test Failed|Error During Test|\w*Exception:|^Error in )/.test(l) && !/^(FAIL|❯|> Task|The following tests)/.test(l)) ?? rl.find((l) => /^(FAIL|not ok)\s+\S+$/.test(l)) ?? '').slice(0, 110) : '';
+  const reason = sub === 'red' ? (rl.find((l) => /^E\s+\S/.test(l) && !/\d+ \/ \d+ \(\d+%\)|^E\s+\[\s*\d+%\]/.test(l))?.replace(/^E\s+/, '') ?? rl.find((l) => /(--- FAIL|AssertionError|Error:|assert |FAILED|panicked|expected|\(Failed\)|not implemented|Test Failed|Error During Test|\w*Exception:|^Error in )/.test(l) && !/^(FAIL|❯|> Task|The following tests)/.test(l)) ?? rl.find((l) => /^(FAIL|not ok)\s+\S+$/.test(l)) ?? '').slice(0, 110) : '';
   const loadWeak = sub === 'red' && LOAD_ERR.test(res.text) && !(flags['missing-module'] && declaredMissingModule(res.text, t.path));
-  const setupSym = sub === 'red' && !flags['allow-setup-red'] && typeof flags.expect !== 'string' ? setupOrigin(rl.find((l) => /not implemented|NotImplementedError|unimplemented/i.test(l)) ?? reason, t.path, id, res.text) : null;
+  const setupSym = sub === 'red' && !flags['allow-setup-red'] && typeof flags.expect !== 'string' ? setupOrigin(rl.find((l) => /^E\s+.*(not implemented|NotImplementedError|unimplemented)/i.test(l)) ?? rl.find((l) => /not implemented|NotImplementedError|unimplemented/i.test(l)) ?? reason, t.path, id, res.text) : null;
   const charac = sub === 'red' && res.exit === 0 ? String(flags.characterization).trim() : '';
   const weakRed = loadWeak || !!setupSym || !!charac;
   appendLedger({ type: sub, test: id, req, file: t.path, fileSha: after, cmdSha: sha(cmd.join('\0')), exit: res.exit, ms: res.ms, weak: weakRed ? true : undefined, weakWhy: setupSym ? `setup:${setupSym}` : charac ? 'characterization' : undefined, characterization: charac || undefined });
@@ -1069,7 +1092,8 @@ function cmdGate() {
       const chg = [...changedFiles()].filter((f) => !f.startsWith('.sdd/'));
       const outside = chg.filter((f) => !pRoots.some((r) => f.startsWith(r)));
       if (chg.length && !outside.length) { lines.push(`! cmd ${c.name}: all changed files are inside nested projects (${pRoots.join(', ')}) — root check skipped`); continue; }
-      if (outside.length && !sharedHinted) { sharedHinted = true; lines.push(`! root-owned changes: ${outside.slice(0, 3).join(', ')}${outside.length > 3 ? ', …' : ''} — if a project reads these, add the path to its \`dependsOn\` in .sdd/config.json so that project's checks run too`); }
+      const dataOnly = outside.filter((f) => !EXT.test(f));
+      if (dataOnly.length && !sharedHinted) { sharedHinted = true; lines.push(`! root-owned data/config changes: ${dataOnly.slice(0, 3).join(', ')}${dataOnly.length > 3 ? ', …' : ''} — if a project reads these, add the path to its \`dependsOn\` in .sdd/config.json so that project's checks run too`); }
     }
     const ownChanged = !base || [...changedFiles()].some((f) => f.startsWith(base));
     let scoped = false;
@@ -1111,7 +1135,13 @@ function cmdGate() {
       if (!noScope && Object.keys(scopeVals).length) lines.push(`! cmd ${c.name}: scoped → ${cmd.join(' ').slice(0, 200)}`);
       scoped = !noScope;
     }
-    const r = run(cmd, scoped ? (c.changedTimeoutMs ?? cfg.changedTimeoutMs ?? 60000) : (c.timeoutMs ?? cfg.timeoutMs ?? 120000), c.cwd);
+    let r = run(cmd, scoped ? (c.changedTimeoutMs ?? cfg.changedTimeoutMs ?? 60000) : (c.timeoutMs ?? cfg.timeoutMs ?? 120000), c.cwd);
+    // a scoped run that executed no tests (e.g. `vitest related data.json`) proves nothing: run the full check instead
+    if (scoped && r.exit === 0 && !r.timedOut && ZERO_TESTS.test(r.text) && !RAN_TESTS.test(r.text)) {
+      lines.push(`! cmd ${c.name}: scoped run matched no tests — running the full check instead`);
+      scoped = false;
+      r = run(c.cmd, c.timeoutMs ?? cfg.timeoutMs ?? 120000, c.cwd);
+    }
     if (r.timedOut) { add(false, `cmd ${c.name} TIMEOUT after ${(r.ms / 1000).toFixed(0)}s ${scoped ? '— narrow changedCmd (e.g. {changedTests} {changedScopes}) or raise changedTimeoutMs; run full gate (no --changed) before merge' : '— raise timeoutMs in .sdd/config.json'}`); continue; }
     if (r.exit !== 0 && ZERO_TESTS.test(r.text) && !RAN_TESTS.test(r.text)) { lines.push(`! cmd ${c.name}: no tests exist yet (runner exit ${r.exit}) — INCOMPLETE, not a failure`); incomplete = true; continue; }
     add(r.exit === 0, `cmd ${c.name} (${(r.ms / 1000).toFixed(1)}s)`, r.exit === 0 ? [] : tail(r.text, 8).split('\n'));

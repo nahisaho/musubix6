@@ -783,3 +783,92 @@ test('#43 a data-only test that passes without implementation needs --characteri
   assert.equal(sdd(d, 'tdd', 'green', 'TEST-CALC-001').code, 0);
   assert.match(sdd(d, 'gate', '--no-run').out, /1 weak Red \(1 characterization/);
 });
+
+test('#44 weak-Red: result assigned from the stub and asserted is the act (not setup); pytest fixture error is weak with a real reason; Python class stubs construct', () => {
+  const d = project();
+  sdd(d, 'approve', 'record', 'calc', '--by', 'tester');
+  fs.writeFileSync(path.join(d, 'add.mjs'), "export const add = () => { throw new Error('not implemented: add'); };\n");
+  const test = (body) => fs.writeFileSync(path.join(d, 'add.test.mjs'), [
+    "import { test } from 'node:test';",
+    "import assert from 'node:assert/strict';",
+    "import { add } from './add.mjs';",
+    '/** @id TEST-CALC-001 @verifies REQ-CALC-001 */',
+    "test('TEST-CALC-001 adds', () => {",
+    ...body,
+    '});',
+    '',
+  ].join('\n'));
+  test(['  const r = add(1, 2);', '  assert.equal(r, 3);']);
+  assert.doesNotMatch(sdd(d, 'tdd', 'red', 'TEST-CALC-001').out, /\[weak\]/);
+  test(['  const r = add(1, 2);', '  assert.equal(String(r), "3");']);
+  assert.doesNotMatch(sdd(d, 'tdd', 'red', 'TEST-CALC-001').out, /\[weak\]/);
+
+  const p = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-pyfix-'));
+  spawnSync('git', ['init', '-q'], { cwd: p });
+  fs.mkdirSync(path.join(p, '.sdd/specs'), { recursive: true });
+  fs.mkdirSync(path.join(p, 'tests'));
+  fs.writeFileSync(path.join(p, '.sdd/specs/s.md'), '---\nfeature: s\ntier: T1\n---\n| REQ-S-001 | When f is called, the system shall return 1. | TEST-S-001 |\n');
+  fs.writeFileSync(path.join(p, 'pyproject.toml'), '[project]\nname="x"\nversion="0"\n');
+  fs.writeFileSync(path.join(p, 'tests/test_s.py'), [
+    'import pytest',
+    'from pkg.mod import Thing, f',
+    '@pytest.fixture',
+    'def thing():',
+    '    return Thing()',
+    '# @id TEST-S-001',
+    '# @verifies REQ-S-001',
+    'def test_s_001(thing):',
+    '    assert f(thing) == 1',
+    '',
+  ].join('\n'));
+  sdd(p, 'init');
+  sdd(p, 'tdd', 'stub', 'TEST-S-001');
+  assert.match(fs.readFileSync(path.join(p, 'pkg/mod.py'), 'utf8'), /class Thing:\n    def __init__\(self, \*a, \*\*k\):\n        pass/);
+  const r = sdd(p, 'tdd', 'red', 'TEST-S-001');
+  assert.doesNotMatch(r.out, /\[weak\]/, r.out);
+  assert.match(r.out, /NotImplementedError: f/);
+  fs.writeFileSync(path.join(p, 'pkg/mod.py'), 'class Thing:\n    def __init__(self):\n        raise NotImplementedError("Thing")\n\ndef f(t):\n    return 0\n');
+  const w = sdd(p, 'tdd', 'red', 'TEST-S-001');
+  assert.match(w.out, /\[weak\].*setup call "Thing"/, w.out);
+  assert.doesNotMatch(w.out, /fails with: \[100%\]/);
+});
+
+test('#44b a stub call inside `with pytest.raises` is the asserted behaviour, not setup', () => {
+  const p = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-pyraises-'));
+  spawnSync('git', ['init', '-q'], { cwd: p });
+  fs.mkdirSync(path.join(p, '.sdd/specs'), { recursive: true });
+  fs.mkdirSync(path.join(p, 'tests'));
+  fs.writeFileSync(path.join(p, '.sdd/specs/s.md'), '---\nfeature: s\ntier: T1\n---\n| REQ-S-001 | If x is negative, then f shall raise ValueError. | TEST-S-001 |\n');
+  fs.writeFileSync(path.join(p, 'pyproject.toml'), '[project]\nname="x"\nversion="0"\n');
+  fs.writeFileSync(path.join(p, 'tests/test_s.py'), 'import pytest\nfrom pkg.mod import f\n# @id TEST-S-001\n# @verifies REQ-S-001\ndef test_s_001():\n    with pytest.raises(ValueError):\n        f(-1)\n');
+  sdd(p, 'init');
+  sdd(p, 'tdd', 'stub', 'TEST-S-001');
+  const r = sdd(p, 'tdd', 'red', 'TEST-S-001');
+  assert.match(r.out, /RED ok/, r.out);
+  assert.doesNotMatch(r.out, /\[weak\]/, r.out);
+});
+
+test('#45 Python docstring annotations (one-line and multi-line triple-quoted) are scanned', () => {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-pydoc-'));
+  spawnSync('git', ['init', '-q'], { cwd: d });
+  fs.mkdirSync(path.join(d, '.sdd/specs'), { recursive: true });
+  fs.writeFileSync(path.join(d, '.sdd/specs/s.md'), '---\nfeature: s\ntier: T1\n---\n| REQ-S-001 | When f is called, the system shall return 1. | TEST-S-001 |\n| REQ-S-002 | When g is called, the system shall return 2. | TEST-S-001 |\n');
+  fs.writeFileSync(path.join(d, 'm.py'), '"""@id CODE-S-001 @implements REQ-S-001"""\n\ndef f():\n    return 1\n\n\ndef g():\n    """\n    @id CODE-S-002\n    @implements REQ-S-002\n    """\n    return 2\n');
+  const r = sdd(d, 'trace');
+  assert.match(r.out, /\b2 annotated entities/, r.out);
+  assert.doesNotMatch(r.out, /REQ-S-00[12] has no @implements/, r.out);
+});
+
+test('#46 gate --changed: a scoped run that matched no tests falls back to the full check (no false PASS)', () => {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-zero-'));
+  const git = (...a) => spawnSync('git', ['-c', 'user.email=a@b', '-c', 'user.name=t', ...a], { cwd: d });
+  git('init', '-q');
+  fs.mkdirSync(path.join(d, '.sdd/specs'), { recursive: true });
+  fs.writeFileSync(path.join(d, 'data.json'), '[1]\n');
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ checks: [{ name: 'test', cmd: ['node', '-e', 'console.log("1 failed"); process.exit(1)'], changedCmd: ['node', '-e', 'console.log("No test files found, exiting with code 0")', '{changedFiles}'] }] }));
+  git('add', '-A'); git('commit', '-qm', 'base');
+  fs.writeFileSync(path.join(d, 'data.json'), '[2]\n');
+  const r = sdd(d, 'gate', '--changed').out;
+  assert.match(r, /scoped run matched no tests — running the full check instead/);
+  assert.match(r, /✗ cmd test/);
+});
