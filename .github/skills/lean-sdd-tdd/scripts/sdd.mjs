@@ -233,7 +233,7 @@ function evidenceStatus(testId, testPath, entries) {
   if (!r) return { ok: false, why: 'no Red preceding Green with same test hash' };
   const last = es.filter((e) => e.type === 'green' || e.type === 'refactor').at(-1);
   if (!shaMatches(last.fileSha, testPath, testId)) return { ok: false, why: 'test changed since last Green/Refactor' };
-  return { ok: true, weak: !!r.weak };
+  return { ok: true, weak: !!r.weak, charac: !!r.characterization };
 }
 
 // ---------- config / commands ----------
@@ -756,7 +756,8 @@ function cmdTdd() {
   let why = '';
   if (sub === 'red') {
     if (zero) { ok = false; why = 'no test matched the ID (check @id vs test title/method name)'; }
-    else if (res.exit === 0) { ok = false; why = 'test passed; Red needs a real failure'; }
+    else if (res.exit === 0 && typeof flags.characterization === 'string' && flags.characterization.trim()) ok = true;
+    else if (res.exit === 0) { ok = false; why = 'test passed; Red needs a real failure (data-only / characterization test? record it explicitly: --characterization "<why no implementation can fail it>")'; }
     else if (LOAD_ERR.test(res.text) && !flags.weak && !(flags['missing-module'] && declaredMissingModule(res.text, t.path))) { ok = false; why = 'load/compile error, not an assertion failure. new module? run `tdd stub <ID>` (or `--missing-module`); otherwise fix the load error, or --weak to record as weak Red'; }
     else if (typeof flags.expect === 'string' && !res.text.includes(flags.expect)) { ok = false; why = `failure output does not contain --expect "${flags.expect}" (Red for the wrong reason?)`; }
     else ok = true;
@@ -770,8 +771,9 @@ function cmdTdd() {
   const reason = sub === 'red' ? (rl.find((l) => /^E\s+\S/.test(l) && !/\d+ \/ \d+ \(\d+%\)/.test(l))?.replace(/^E\s+/, '') ?? rl.find((l) => /(--- FAIL|AssertionError|Error:|assert |FAILED|panicked|expected|\(Failed\)|not implemented|Test Failed|Error During Test|\w*Exception:|^Error in )/.test(l) && !/^(FAIL|❯|> Task|The following tests)/.test(l)) ?? rl.find((l) => /^(FAIL|not ok)\s+\S+$/.test(l)) ?? '').slice(0, 110) : '';
   const loadWeak = sub === 'red' && LOAD_ERR.test(res.text) && !(flags['missing-module'] && declaredMissingModule(res.text, t.path));
   const setupSym = sub === 'red' && !flags['allow-setup-red'] && typeof flags.expect !== 'string' ? setupOrigin(rl.find((l) => /not implemented|NotImplementedError|unimplemented/i.test(l)) ?? reason, t.path, id, res.text) : null;
-  const weakRed = loadWeak || !!setupSym;
-  appendLedger({ type: sub, test: id, req, file: t.path, fileSha: after, cmdSha: sha(cmd.join('\0')), exit: res.exit, ms: res.ms, weak: weakRed ? true : undefined, weakWhy: setupSym ? `setup:${setupSym}` : undefined });
+  const charac = sub === 'red' && res.exit === 0 ? String(flags.characterization).trim() : '';
+  const weakRed = loadWeak || !!setupSym || !!charac;
+  appendLedger({ type: sub, test: id, req, file: t.path, fileSha: after, cmdSha: sha(cmd.join('\0')), exit: res.exit, ms: res.ms, weak: weakRed ? true : undefined, weakWhy: setupSym ? `setup:${setupSym}` : charac ? 'characterization' : undefined, characterization: charac || undefined });
   out(`${sub.toUpperCase()} ok ${id} (${req}) ${res.ms}ms${reason ? ` — fails with: ${reason}` : ''}${weakRed ? ' [weak]' : ''}${setupSym ? ` ⚠ Red comes from setup call "${setupSym}", not the asserted behaviour (use --expect <text> or --allow-setup-red)` : ''}`);
   return 0;
 }
@@ -1027,6 +1029,7 @@ function cmdGate() {
   const problems = [];
   let covered = 0;
   let weak = 0;
+  let charac = 0;
   let total = 0;
   for (const id of relevant) {
     const r = t.reqs.get(id);
@@ -1035,10 +1038,10 @@ function cmdGate() {
       if (e.kind !== 'TEST' || !e.refs.verifies.includes(id)) continue;
       total++;
       const s = evidenceStatus(e.id, e.path, entries);
-      if (s.ok) { covered++; if (s.weak) weak++; } else problems.push(`${e.id} (${id}): ${s.why}`);
+      if (s.ok) { covered++; if (s.weak) weak++; if (s.charac) charac++; } else problems.push(`${e.id} (${id}): ${s.why}`);
     }
   }
-  add(!problems.length, `tdd evidence${flags.changed ? ' (changed scope)' : ''}: ${covered}/${total} tests Red→Green${weak ? `, ${weak} weak Red` : ''}`, problems.slice(0, 6));
+  add(!problems.length, `tdd evidence${flags.changed ? ' (changed scope)' : ''}: ${covered}/${total} tests Red→Green${weak ? `, ${weak} weak Red${charac ? ` (${charac} characterization: passed without a failing Red)` : ''}` : ''}`, problems.slice(0, 6));
 
   const cfg = loadConfig();
   if (cfg.prepare && !flags['no-run']) {
@@ -1133,7 +1136,7 @@ function cmdStatus() {
 const cmds = { review: cmdReview, init: cmdInit, approve: cmdApprove, guard: cmdGuard, tdd: cmdTdd, trace: cmdTrace, gate: cmdGate, status: cmdStatus };
 const fn = cmds[pos[0]];
 if (!fn) {
-  out('usage: sdd.mjs init | review template <feature> | review check <file> --feature <f> | approve prepare|record <feature> | guard | tdd red|green|refactor <TEST-ID> | tdd stub <TEST-ID> | tdd check | trace [--baseline] | gate [--changed] [--no-run] | status   [--root dir]\n  tdd red: tdd red --expect <text> requires that text in the failure; --allow-setup-red accepts a stub-in-setup Red; --missing-module accepts a Red caused by the test own not-yet-created import (non-weak); approve record --by ai:<reviewer> needs --review <path|summary>');
+  out('usage: sdd.mjs init | review template <feature> | review check <file> --feature <f> | approve prepare|record <feature> | guard | tdd red|green|refactor <TEST-ID> | tdd stub <TEST-ID> | tdd check | trace [--baseline] | gate [--changed] [--no-run] | status   [--root dir]\n  tdd red: tdd red --characterization "<reason>" records a data-only/characterization test that cannot fail without implementation (weak Red); --expect <text> requires that text in the failure; --allow-setup-red accepts a stub-in-setup Red; --missing-module accepts a Red caused by the test own not-yet-created import (non-weak); approve record --by ai:<reviewer> needs --review <path|summary>');
   process.exit(2);
 }
 process.exit(fn() ?? 0);

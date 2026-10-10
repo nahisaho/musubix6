@@ -55,6 +55,7 @@ Not enforced (agent discipline): test quality, mutation, security review. Do not
 - `prepare: {cmd, outputs?, inputs?, timeoutMs?}` in config (auto-set from the `build` script by `init`): `gate` runs it first and caches by input hash (`.sdd/prepare-cache.json`); skipped when inputs and `outputs` are unchanged.
 - `tdd stub <TEST-ID>` writes throwing stubs for the test's missing relative imports (ts/js/py), so `tdd red` is a real, non-weak Red.
 - If `--review` is a file (e.g. `.sdd/review.md`) it must follow the schema from `$S review template <feature>`: header lines `spec: sha256:<hash>` (first 12 hex chars required), `verdict: pass` (the template starts as `pending` and is rejected until edited), `open: <n>`; findings carry an explicit status (table cell, `- [ ]`, `state: open`, `**Open**`). `open:` must equal the Open lines found and be 0. Validate with `$S review check <file> --feature <f>`.
+- Data-only / characterization tests (e.g. a contract lock check) pass without any implementation, so `tdd red` rejects them; record them explicitly with `tdd red <ID> --characterization "<why>"` (stored as a weak Red and counted separately in the gate).
 - `approve record --by ai:<reviewer>` requires `--review <path|summary>`; `ai:self` is refused; gate shows lock kind and review evidence.
 
 ## 4. Review without humans

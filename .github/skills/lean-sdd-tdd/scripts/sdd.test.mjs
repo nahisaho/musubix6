@@ -768,3 +768,18 @@ test('#38 editing one test does not invalidate the Red/Green evidence of its sib
   assert.match(g, /TEST-CALC-002.*test changed/);
   assert.doesNotMatch(g, /TEST-CALC-001 \(/);
 });
+
+test('#43 a data-only test that passes without implementation needs --characterization to be recorded; it is counted as weak', () => {
+  const d = project();
+  sdd(d, 'init');
+  sdd(d, 'approve', 'record', 'calc', '--by', 'tester');
+  impl(d, '(a, b) => a + b');
+  const r = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
+  assert.equal(r.code, 1);
+  assert.match(r.out, /--characterization/);
+  const c = sdd(d, 'tdd', 'red', 'TEST-CALC-001', '--characterization', 'checks a data file only');
+  assert.equal(c.code, 0, c.out);
+  assert.match(c.out, /\[weak\]/);
+  assert.equal(sdd(d, 'tdd', 'green', 'TEST-CALC-001').code, 0);
+  assert.match(sdd(d, 'gate', '--no-run').out, /1 weak Red \(1 characterization/);
+});
