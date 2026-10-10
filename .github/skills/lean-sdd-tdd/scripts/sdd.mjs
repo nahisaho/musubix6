@@ -35,17 +35,21 @@ const rel = (p) => path.relative(ROOT, p).split(path.sep).join('/');
 const readJson = (p, d) => { try { return JSON.parse(fs.readFileSync(p, 'utf8')); } catch { return d; } };
 const writeJson = (p, v) => { fs.mkdirSync(path.dirname(p), { recursive: true }); fs.writeFileSync(p, JSON.stringify(v, null, 2) + '\n'); };
 const fileSha = (p) => sha(fs.readFileSync(path.join(ROOT, p)));
-// Files mixing implementation and tests (e.g. Rust #[cfg(test)]) hash only the test's own @id region
+// Evidence is keyed to the test's own @id region (+ the preamble before the first @id: imports/helpers), so editing one test does not invalidate its siblings (#38).
+// Files mixing implementation and tests (e.g. Rust #[cfg(test)]) hash only the region. Entries recorded with the whole-file hash (older ledgers) still match.
 const testSha = (p, id) => {
   const txt = fs.readFileSync(path.join(ROOT, p), 'utf8');
-  if (!/@implements\b/.test(txt)) return sha(txt);
   const ls = txt.split('\n');
   const start = ls.findIndex((l) => new RegExp(`@id\\s+${id}\\b`).test(l));
   if (start < 0) return sha(txt);
   let end = ls.findIndex((l, i) => i > start && /@id\s/.test(l));
   if (end < 0) end = ls.length;
-  return sha(ls.slice(start, end).join('\n'));
+  const region = ls.slice(start, end).join('\n');
+  if (/@implements\b/.test(txt)) return sha(region);
+  const first = ls.findIndex((l) => /@id\s/.test(l));
+  return sha(ls.slice(0, first).join('\n') + '\u0000' + region);
 };
+const shaMatches = (recorded, p, id) => recorded === testSha(p, id) || recorded === sha(fs.readFileSync(path.join(ROOT, p)));
 const out = (s = '') => process.stdout.write(s + '\n');
 const tail = (s, n = 15) => s.trimEnd().split('\n').slice(-n).join('\n');
 
@@ -228,7 +232,7 @@ function evidenceStatus(testId, testPath, entries) {
   const r = es.filter((e) => e.type === 'red' && e.seq < g.seq && e.fileSha === g.fileSha).at(-1);
   if (!r) return { ok: false, why: 'no Red preceding Green with same test hash' };
   const last = es.filter((e) => e.type === 'green' || e.type === 'refactor').at(-1);
-  if (last.fileSha !== testSha(testPath, testId)) return { ok: false, why: 'test changed since last Green/Refactor' };
+  if (!shaMatches(last.fileSha, testPath, testId)) return { ok: false, why: 'test changed since last Green/Refactor' };
   return { ok: true, weak: !!r.weak };
 }
 
@@ -735,7 +739,7 @@ function cmdTdd() {
   if (sub === 'green') {
     const r = prior.filter((e) => e.type === 'red').at(-1);
     if (!r) { out(`REFUSED: no Red recorded for ${id}`); return 1; }
-    if (r.fileSha !== before) { out(`REFUSED: test file changed since Red (${t.path}). revert test edits, or record a new Red`); return 1; }
+    if (!shaMatches(r.fileSha, t.path, id)) { out(`REFUSED: test file changed since Red (${t.path}). revert test edits, or record a new Red`); return 1; }
   }
   if (sub === 'refactor' && !prior.some((e) => e.type === 'green')) { out(`REFUSED: no Green recorded for ${id}`); return 1; }
 

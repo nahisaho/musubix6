@@ -741,3 +741,30 @@ test('#39/#40 gate --changed: root checks skip when only a nested project change
   fs.writeFileSync(cfgPath, JSON.stringify(cfg));
   assert.match(sdd(d, 'gate', '--changed').out, /✓ cmd worker:t/);
 });
+
+test('#38 editing one test does not invalidate the Red/Green evidence of its siblings in the same file', () => {
+  const d = project();
+  fs.writeFileSync(path.join(d, '.sdd/specs/calc.md'), '---\nfeature: calc\ntier: T1\n---\n| REQ-CALC-001 | When add is called, the system shall sum. | TEST-CALC-001 |\n| REQ-CALC-002 | When add gets zero, the system shall return the other. | TEST-CALC-002 |\n');
+  const tf = (second) => fs.writeFileSync(path.join(d, 'add.test.mjs'), [
+    "import { test } from 'node:test';",
+    "import assert from 'node:assert/strict';",
+    "import { add } from './add.mjs';",
+    '/** @id TEST-CALC-001 @verifies REQ-CALC-001 */',
+    "test('TEST-CALC-001 adds', () => assert.equal(add(1, 2), 3));",
+    '/** @id TEST-CALC-002 @verifies REQ-CALC-002 */',
+    `test('TEST-CALC-002 zero', () => assert.equal(add(${second}), 5));`,
+    '',
+  ].join('\n'));
+  sdd(d, 'init');
+  tf('0, 5');
+  fs.writeFileSync(path.join(d, 'add.mjs'), "export const add = () => { throw new Error('not implemented: add'); };\n");
+  for (const id of ['TEST-CALC-001', 'TEST-CALC-002']) assert.equal(sdd(d, 'tdd', 'red', id).code, 0);
+  impl(d, '(a, b) => a + b');
+  for (const id of ['TEST-CALC-001', 'TEST-CALC-002']) assert.equal(sdd(d, 'tdd', 'green', id).code, 0);
+  assert.match(sdd(d, 'gate', '--no-run').out, /2\/2 tests Red→Green/);
+  tf('5, 0');
+  const g = sdd(d, 'gate', '--no-run').out;
+  assert.match(g, /1\/2 tests Red→Green/);
+  assert.match(g, /TEST-CALC-002.*test changed/);
+  assert.doesNotMatch(g, /TEST-CALC-001 \(/);
+});
