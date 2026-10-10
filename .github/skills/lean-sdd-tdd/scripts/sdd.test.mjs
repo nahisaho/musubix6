@@ -1009,3 +1009,39 @@ test('changing a REQ line stales its tests until tdd refactor/red re-verifies; o
   assert.equal(sdd(d, 'tdd', 'refactor', 'TEST-CALC-001').code, 0);
   assert.match(sdd(d, 'gate', '--no-run').out, /1\/1 tests Red→Green/);
 });
+
+test('plan: a feature is not done while a REQ has no test or its T2 lock is stale', () => {
+  const d = project();
+  sdd(d, 'init');
+  fs.writeFileSync(path.join(d, '.sdd/plan.md'), '| order | feature | depends | note |\n|---|---|---|---|\n| 1 | calc | - | x |\n');
+  sdd(d, 'approve', 'record', 'calc', '--by', 'nahisaho');
+  impl(d, '(a, b) => a - b');
+  sdd(d, 'tdd', 'red', 'TEST-CALC-001');
+  impl(d, '(a, b) => a + b');
+  sdd(d, 'tdd', 'green', 'TEST-CALC-001');
+  assert.match(sdd(d, 'plan').out, /next: \(all features done\)/);
+  const sp = path.join(d, '.sdd/specs/calc.md');
+  fs.appendFileSync(sp, '| REQ-CALC-002 | When sub is called, the system shall subtract. | TEST-CALC-002 |\n');
+  const r = sdd(d, 'plan').out;
+  assert.match(r, /next: calc/);
+  assert.match(r, /· 1\. calc \[T2:stale\]/);
+});
+
+test('appending a new test after the last one keeps the previous last test evidence (describe closer is not part of the test)', () => {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-append-'));
+  spawnSync('git', ['init', '-q'], { cwd: d });
+  fs.mkdirSync(path.join(d, '.sdd/specs'), { recursive: true });
+  fs.writeFileSync(path.join(d, '.sdd/specs/c.md'), '---\nfeature: c\ntier: T1\n---\n| REQ-C-001 | f shall return 1. | TEST-C-001 |\n| REQ-C-002 | g shall return 2. | TEST-C-002 |\n');
+  fs.writeFileSync(path.join(d, 'f.mjs'), '// @id CODE-C-001 @implements REQ-C-001 REQ-C-002\nexport const f = () => 1;\nexport const g = () => 2;\n');
+  const head = "import { describe, test } from 'node:test';\nimport assert from 'node:assert/strict';\nimport { f, g } from './f.mjs';\ndescribe('c', () => {\n";
+  const t1 = "  // @id TEST-C-001 @verifies REQ-C-001\n  test('TEST-C-001 f', () => {\n    assert.equal(f(), 1);\n  });\n";
+  const t2 = "\n  // @id TEST-C-002 @verifies REQ-C-002\n  test('TEST-C-002 g', () => {\n    assert.equal(g(), 2);\n  });\n";
+  fs.writeFileSync(path.join(d, 'c.test.mjs'), head + t1 + '});\n');
+  sdd(d, 'init');
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-C-001', '--characterization', 'impl exists').code, 0);
+  assert.equal(sdd(d, 'tdd', 'green', 'TEST-C-001').code, 0);
+  fs.writeFileSync(path.join(d, 'c.test.mjs'), head + t1 + t2 + '});\n');
+  const g = sdd(d, 'gate', '--no-run').out;
+  assert.match(g, /TEST-C-002 \(REQ-C-002\): no Green recorded/);
+  assert.doesNotMatch(g, /TEST-C-001 .*changed/);
+});

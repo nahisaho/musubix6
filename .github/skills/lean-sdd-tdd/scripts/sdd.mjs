@@ -37,19 +37,23 @@ const writeJson = (p, v) => { fs.mkdirSync(path.dirname(p), { recursive: true })
 const fileSha = (p) => sha(fs.readFileSync(path.join(ROOT, p)));
 // Evidence is keyed to the test's own @id region (+ the preamble before the first @id: imports/helpers), so editing one test does not invalidate its siblings (#38).
 // Files mixing implementation and tests (e.g. Rust #[cfg(test)]) hash only the region. Entries recorded with the whole-file hash (older ledgers) still match.
-const testSha = (p, id) => {
+// trim: drop trailing blank/col-0 closer lines (a describe's `});`) so appending a new test after the last one keeps its evidence; trim=false is the legacy hash
+const testShaVariant = (p, id, trim) => {
   const txt = fs.readFileSync(path.join(ROOT, p), 'utf8');
   const ls = txt.split('\n');
   const start = ls.findIndex((l) => new RegExp(`@id\\s+${id}\\b`).test(l));
   if (start < 0) return sha(txt);
   let end = ls.findIndex((l, i) => i > start && /@id\s/.test(l));
   if (end < 0) end = ls.length;
-  const region = ls.slice(start, end).join('\n');
+  let rl = ls.slice(start, end);
+  if (trim) while (rl.length > 1 && /^[})\];,\s]*$/.test(rl.at(-1)) && !/^\s+\S/.test(rl.at(-1))) rl.pop();
+  const region = rl.join('\n');
   if (/@implements\b/.test(txt)) return sha(region);
   const first = ls.findIndex((l) => /@id\s/.test(l));
   return sha(ls.slice(0, first).join('\n') + '\u0000' + region);
 };
-const shaMatches = (recorded, p, id) => recorded === testSha(p, id) || recorded === sha(fs.readFileSync(path.join(ROOT, p)));
+const testSha = (p, id) => testShaVariant(p, id, true);
+const shaMatches = (recorded, p, id) => recorded === testSha(p, id) || recorded === testShaVariant(p, id, false) || recorded === sha(fs.readFileSync(path.join(ROOT, p)));
 const out = (s = '') => process.stdout.write(s + '\n');
 const tail = (s, n = 15) => s.trimEnd().split('\n').slice(-n).join('\n');
 
@@ -1224,14 +1228,18 @@ function cmdPlan(args) {
   const isDone = (feat) => {
     const sp = byFeat.get(feat);
     if (!sp) return false;
+    if (sp.tier === 'T2' && (approvalState(sp) !== 'ok' || designProblem(sp))) return false;
     let n = 0;
     for (const r of sp.reqs) {
       if (r.deferred) continue;
+      let covered = 0;
       for (const e of ents.values()) {
         if (e.kind !== 'TEST' || !e.refs.verifies.includes(r.id)) continue;
-        n++;
+        covered++;
         if (!evidenceStatus(e.id, e.path, entries).ok) return false;
       }
+      if (!covered) return false;
+      n++;
     }
     return n > 0;
   };
