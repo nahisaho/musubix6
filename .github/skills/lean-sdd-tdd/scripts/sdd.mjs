@@ -664,13 +664,25 @@ function testBody(testPath, id) {
 }
 const ASSERT_LINE = /(expect\s*\(|\bassert|raises|toThrow|\.should|assertEquals|@test\b|expect_|\bif\b.*[!=]=|t\.(Error|Fatal))/;
 // Red caused by a stub called from setup (not from the asserted behaviour) is not evidence for the REQ
-function setupOrigin(line, testPath, id) {
+function setupOrigin(line, testPath, id, text = '') {
   const m = /not implemented:?\s*([\w$]+)|NotImplementedError:?\s*([\w$]+)|unimplemented!?\(?\s*"?([\w$]+)/i.exec(line ?? '');
   const x = m?.[1] ?? m?.[2] ?? m?.[3];
   if (!x) return null;
+  const re = new RegExp(`(?<![\\w$])${x.replace(/[$]/g, '\\$&')}(?![\\w$])`);
+  const all = fs.readFileSync(path.join(ROOT, testPath), 'utf8').split('\n');
+  const start = all.findIndex((l) => new RegExp(`@id\\s+${id}\\b`).test(l));
+  let end = all.findIndex((l, i) => i > start && /@id\s/.test(l));
+  if (end < 0) end = all.length;
+  // classify by the call site that actually threw: test-file frames inside this test's body
+  const base = path.basename(testPath).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const sites = [...new Set([...text.matchAll(new RegExp(`${base}:(\\d+)`, 'g')).map((f) => Number(f[1]) - 1)])].filter((i) => i >= start && i < end);
+  if (sites.length) {
+    const hit = sites.map((i) => all[i]).filter((l) => re.test(l));
+    if (!hit.length) return null; // thrown through a helper: cannot tell setup from the asserted call
+    return hit.some((l) => ASSERT_LINE.test(l)) ? null : x;
+  }
   const asserts = testBody(testPath, id).filter((l) => ASSERT_LINE.test(l));
   if (!asserts.length) return null;
-  const re = new RegExp(`(?<![\\w$])${x.replace(/[$]/g, '\\$&')}(?![\\w$])`);
   return asserts.some((l) => re.test(l)) ? null : x;
 }
 
@@ -753,7 +765,7 @@ function cmdTdd() {
   const rl = res.text.replace(/\x1b\[[0-9;]*m/g, '').split('\n').map((l) => l.trim());
   const reason = sub === 'red' ? (rl.find((l) => /^E\s+\S/.test(l) && !/\d+ \/ \d+ \(\d+%\)/.test(l))?.replace(/^E\s+/, '') ?? rl.find((l) => /(--- FAIL|AssertionError|Error:|assert |FAILED|panicked|expected|\(Failed\)|not implemented|Test Failed|Error During Test|\w*Exception:|^Error in )/.test(l) && !/^(FAIL|❯|> Task|The following tests)/.test(l)) ?? rl.find((l) => /^(FAIL|not ok)\s+\S+$/.test(l)) ?? '').slice(0, 110) : '';
   const loadWeak = sub === 'red' && LOAD_ERR.test(res.text) && !(flags['missing-module'] && declaredMissingModule(res.text, t.path));
-  const setupSym = sub === 'red' && !flags['allow-setup-red'] && typeof flags.expect !== 'string' ? setupOrigin(rl.find((l) => /not implemented|NotImplementedError|unimplemented/i.test(l)) ?? reason, t.path, id) : null;
+  const setupSym = sub === 'red' && !flags['allow-setup-red'] && typeof flags.expect !== 'string' ? setupOrigin(rl.find((l) => /not implemented|NotImplementedError|unimplemented/i.test(l)) ?? reason, t.path, id, res.text) : null;
   const weakRed = loadWeak || !!setupSym;
   appendLedger({ type: sub, test: id, req, file: t.path, fileSha: after, cmdSha: sha(cmd.join('\0')), exit: res.exit, ms: res.ms, weak: weakRed ? true : undefined, weakWhy: setupSym ? `setup:${setupSym}` : undefined });
   out(`${sub.toUpperCase()} ok ${id} (${req}) ${res.ms}ms${reason ? ` — fails with: ${reason}` : ''}${weakRed ? ' [weak]' : ''}${setupSym ? ` ⚠ Red comes from setup call "${setupSym}", not the asserted behaviour (use --expect <text> or --allow-setup-red)` : ''}`);

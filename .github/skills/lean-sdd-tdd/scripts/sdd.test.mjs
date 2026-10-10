@@ -688,3 +688,25 @@ test('#42 tdd stub for JS/TS generates a class for symbols used with new / exten
   assert.match(body, /export class Boom\b/);
   assert.match(body, /export function plain\b/);
 });
+
+test('#35 weak-Red classification follows the throwing call site: same symbol in setup and assert, and helper-wrapped calls', () => {
+  const d = project();
+  sdd(d, 'approve', 'record', 'calc', '--by', 'tester');
+  const stub = "export const add = () => { throw new Error('not implemented: add'); };\n";
+  fs.writeFileSync(path.join(d, 'add.mjs'), stub);
+  const test = (body) => fs.writeFileSync(path.join(d, 'add.test.mjs'), [
+    "import { test } from 'node:test';",
+    "import assert from 'node:assert/strict';",
+    "import { add } from './add.mjs';",
+    'const call = (a, b) => add(a, b);',
+    '/** @id TEST-CALC-001 @verifies REQ-CALC-001 */',
+    "test('TEST-CALC-001 adds', () => {",
+    ...body,
+    '});',
+    '',
+  ].join('\n'));
+  test(['  const seed = add(0, 0);', '  assert.equal(add(1, 2), 3 + seed);']);
+  assert.match(sdd(d, 'tdd', 'red', 'TEST-CALC-001').out, /\[weak\].*setup call "add"/);
+  test(['  const r = call(1, 2);', '  assert.equal(r, 3);']);
+  assert.doesNotMatch(sdd(d, 'tdd', 'red', 'TEST-CALC-001').out, /\[weak\]/);
+});
