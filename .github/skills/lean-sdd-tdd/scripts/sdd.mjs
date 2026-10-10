@@ -232,6 +232,8 @@ function evidenceStatus(testId, testPath, entries) {
 }
 
 // ---------- config / commands ----------
+// multi-project: a subproject without a match must not fail the build; print a per-task total so zero-match detection works
+const GRADLE_INIT = 'allprojects { tasks.withType(Test).configureEach { filter.failOnNoMatchingTests = false; afterSuite { d, r -> if (!d.parent) println("Tests run: " + r.testCount + ", Failures: " + r.failedTestCount) } } }';
 const R_TEST = 'testthat::test_file(commandArgs(TRUE)[1], reporter = "summary", stop_on_failure = TRUE)';
 function detectConfig(base = ROOT) {
   const pkg = readJson(path.join(base, 'package.json'), null);
@@ -249,7 +251,7 @@ function detectConfig(base = ROOT) {
   else if (has('go.mod')) testCmd = ['go', 'test', './...', '-run', '{IDU}'];
   else if (has('Cargo.toml')) testCmd = ['cargo', 'test', '{idu}'];
   else if (has('pom.xml')) testCmd = ['mvn', '-B', '-ntp', 'test', '-Dtest=*#*{idu}*', '-Dsurefire.failIfNoSpecifiedTests=false'];
-  else if (gradle) testCmd = [gradle, 'cleanTest', 'test', '--tests', '*{idu}*', '--console=plain'];
+  else if (gradle) testCmd = ['sh', '-c', `f=$(mktemp --suffix=.gradle) && printf '%s\\n' '${GRADLE_INIT}' > "$f" && ${gradle} -I "$f" cleanTest test --tests "*$0*" --console=plain; r=$?; rm -f "$f"; exit $r`, '{idu}'];
   else if (has('CMakeLists.txt')) testCmd = ['sh', '-c', CMAKE_RUN + ' -R "$0"', '{idu}'];
   else if (has('composer.json') || has('phpunit.xml') || has('phpunit.xml.dist')) testCmd = [phpunit, '--do-not-cache-result', '--filter', '{idu}', '{file}'];
   else if (has('DESCRIPTION')) testCmd = ['Rscript', '-e', R_TEST, '{file}'];
@@ -262,7 +264,7 @@ function detectConfig(base = ROOT) {
     if (testCmd[0] === 'python3') checks.push({ name: 'test', cmd: ['python3', '-m', 'pytest', '-q'] });
     else if (has('go.mod')) checks.push({ name: 'test', cmd: ['go', 'test', './...'] });
     else if (has('Cargo.toml')) checks.push({ name: 'test', cmd: ['cargo', 'test'] });
-    else if (has('pom.xml')) checks.push({ name: 'test', cmd: ['mvn', '-B', '-ntp', 'test'] });
+    else if (has('pom.xml')) checks.push({ name: 'test', cmd: ['mvn', '-B', '-ntp', 'test'], changedCmd: ['mvn', '-B', '-ntp', 'test', '-pl', '{changedModulesCsv}', '-amd', '-DfailIfNoTests=false'] });
     else if (gradle) checks.push({ name: 'test', cmd: [gradle, 'cleanTest', 'test', '--console=plain'] });
     else if (has('CMakeLists.txt')) checks.push({ name: 'test', cmd: ['sh', '-c', CMAKE_RUN] });
     else if (testCmd[0] === phpunit) checks.push({ name: 'test', cmd: [phpunit, '--do-not-cache-result'] });
@@ -297,7 +299,7 @@ function run(cmd, timeoutMs, cwd = '.') {
   const text = (r.stdout ?? '') + (r.stderr ?? '') + (r.error ? String(r.error.message) : '');
   return { exit: r.status ?? (r.error ? 127 : 1), text, ms: Date.now() - t0, timedOut: r.error?.code === 'ETIMEDOUT' };
 }
-const LOAD_ERR = /(cannot find (module|package)|modulenotfounderror|importerror|syntaxerror|cannot resolve|no such file|undefined reference|could not compile|error\[e\d+\]|failed to resolve import|\[build failed\]|^[^\s:]+:\d+(?::\d+)?: (?:fatal )?error\b|cannot find symbol|ld returned \d+ exit status|\[setup failed\]|failed opening required|class \"[^\"]+\" not found|call to undefined (function|method)|php parse error|could not find function|there is no package called|cannot open the connection|undefvarerror|loaderror: (systemerror|parseerror)|^# [^\n]*\n[^\n]*:\d+:\d+: (undefined|cannot|missing))/im;
+const LOAD_ERR = /(cannot find (module|package)|modulenotfounderror|importerror|syntaxerror|cannot resolve|no such file|undefined reference|could not compile|error\[e\d+\]|failed to resolve import|\[build failed\]|^[^\s:]+:\d+(?::\d+)?: (?:fatal )?error\b|cannot find symbol|ld returned \d+ exit status|\[setup failed\]|failed opening required|class \"[^\"]+\" not found|call to undefined (function|method)|php parse error|could not find function|there is no package called|what went wrong:\s*\n(?!execution failed for task '[^']*test')|non-parseable pom|the build could not read|compilation failure|could not resolve dependencies|dependencies? .{0,80}could not be resolved|cannot open the connection|undefvarerror|loaderror: (systemerror|parseerror)|^# [^\n]*\n[^\n]*:\d+:\d+: (undefined|cannot|missing))/im;
 // a missing *relative* import that the test file itself references = declared new module
 function declaredMissingModule(text, testPath) {
   const src = fs.readFileSync(path.join(ROOT, testPath), 'utf8');
@@ -309,6 +311,8 @@ function declaredMissingModule(text, testPath) {
   const bare = spec.replace(/\.[cm]?[jt]sx?$/, '');
   return (src.includes(spec) || src.includes(bare)) && !fs.existsSync(abs);
 }
+// multi-module builds print a zero-test line for modules without a match; only all-zero counts
+const RAN_TESTS = /tests run: [1-9]\d*,|ran [1-9]\d* tests?\b|[1-9]\d* tests? (completed|successful|passed)|^ok \d+ /im;
 const ZERO_TESTS = /(no tests? (found|ran|collected)|# tests 0\b|ran 0 tests|collected 0 items|0 tests? (ran|found|passed)\b|no test files found|no tests were found|no tests to run|tests run: 0,|no tests executed)/i;
 
 // ---------- commands ----------
@@ -642,7 +646,7 @@ function cmdTdd() {
   const after = testSha(t.path, id);
   if (after !== before) { out(`REFUSED: ${t.path} changed while running (formatter/watch?)`); return 1; }
 
-  const zero = ZERO_TESTS.test(res.text);
+  const zero = ZERO_TESTS.test(res.text) && !RAN_TESTS.test(res.text);
   let ok;
   let why = '';
   if (sub === 'red') {
@@ -976,9 +980,13 @@ function cmdGate() {
         cmd = c.hubFallbackCmd;
       } else cmd = c.changedCmd;
       const rp = (arr) => base ? arr.filter((f) => f.startsWith(base)).map((f) => f.slice(base.length)) : arr;
+      let noScope = false;
+      const modules = [...new Set(rp(ch).map((f) => { let d = path.posix.dirname(f); while (d && d !== '.') { if (fs.existsSync(path.join(ROOT, base, d, 'pom.xml'))) return d; d = path.posix.dirname(d); } return ''; }).filter(Boolean))];
+      if (c.changedCmd.includes('{changedModulesCsv}') && !modules.length) { lines.push(`! cmd ${c.name}: changes are outside any Maven module — running the full check`); cmd = c.cmd; noScope = true; }
+      else cmd = cmd.flatMap((a) => a === '{changedModulesCsv}' ? [modules.join(',')] : [a]);
       const subst = { '{changedFiles}': rp(ch), '{changedTests}': rp(tests), '{changedScopes}': base ? [...new Set(rp(scopes))] : scopes, '{directTests}': rp(rel2.direct) };
-      cmd = cmd.flatMap((a) => subst[a] ?? [a]);
-      scoped = true;
+      if (!noScope) cmd = cmd.flatMap((a) => subst[a] ?? [a]);
+      scoped = !noScope;
     }
     const r = run(cmd, scoped ? (c.changedTimeoutMs ?? cfg.changedTimeoutMs ?? 60000) : (c.timeoutMs ?? cfg.timeoutMs ?? 120000), c.cwd);
     if (r.timedOut) { add(false, `cmd ${c.name} TIMEOUT after ${(r.ms / 1000).toFixed(0)}s ${scoped ? '— narrow changedCmd (e.g. {changedTests} {changedScopes}) or raise changedTimeoutMs; run full gate (no --changed) before merge' : '— raise timeoutMs in .sdd/config.json'}`); continue; }

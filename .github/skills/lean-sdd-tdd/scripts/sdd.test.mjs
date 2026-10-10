@@ -442,8 +442,8 @@ test('gcc/clang/javac compile diagnostics are load errors, not Red', () => {
 test('#24 init detects Maven / Gradle / CMake and zero-match is reported before "passed"', () => {
   const cases = [
     [{ 'pom.xml': '<project/>' }, 'mvn', /-Dtest=\*#\*\{idu\}\*/],
-    [{ 'build.gradle': '' }, 'gradle', /\*\{idu\}\*/],
-    [{ 'build.gradle.kts': '', gradlew: '' }, './gradlew', /\*\{idu\}\*/],
+    [{ 'build.gradle': '' }, 'sh', / gradle -I .*--tests "\*\$0\*"/],
+    [{ 'build.gradle.kts': '', gradlew: '' }, 'sh', / \.\/gradlew -I .*--tests "\*\$0\*"/],
     [{ 'CMakeLists.txt': '' }, 'sh', /ctest .* -R "\$0"/],
   ];
   for (const [files, head, re] of cases) {
@@ -568,4 +568,18 @@ test('#27 {idu} falls back to the test method declared below @id (camelCase JUni
   fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ schemaVersion: 1, testCmd: ['sh', '-c', 'echo "$0" > filter.txt; echo "FAIL x"; exit 1', '{idu}'] }));
   assert.match(sdd(d, 'tdd', 'red', 'TEST-C-001').out, /RED ok/);
   assert.equal(fs.readFileSync(path.join(d, 'filter.txt'), 'utf8').trim(), 'addsNumbers');
+});
+
+test('#26 multi-module output: a zero-test module does not hide a failing one; build/POM errors are not Red', () => {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-'));
+  spawnSync('git', ['init', '-q'], { cwd: d });
+  fs.mkdirSync(path.join(d, '.sdd/specs'), { recursive: true });
+  fs.writeFileSync(path.join(d, '.sdd/specs/c.md'), '---\nfeature: c\ntier: T1\n---\n| REQ-C-001 | When x, the system shall y. | TEST-C-001 |\n');
+  fs.writeFileSync(path.join(d, 'a_test.py'), '# @id TEST-C-001 @verifies REQ-C-001\ndef test_c_001(): pass\n');
+  const red = (script) => { fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ schemaVersion: 1, testCmd: ['sh', '-c', script] })); return sdd(d, 'tdd', 'red', 'TEST-C-001').out; };
+  assert.match(red('echo "Tests run: 0, Failures: 0"; echo "Tests run: 1, Failures: 1"; echo "FAIL x"; exit 1'), /RED ok/);
+  assert.match(red('echo "Tests run: 0, Failures: 0"; echo "Tests run: 0, Failures: 0"; exit 1'), /no test matched/);
+  assert.match(red('echo "Non-parseable POM /x/pom.xml: Duplicated tag"; exit 1'), /load\/compile error/);
+  assert.match(red('printf "* What went wrong:\\nBUG! exception in phase semantic analysis\\n"; exit 1'), /load\/compile error/);
+  assert.match(red('printf "* What went wrong:\\nExecution failed for task \':core:test\'.\\n> There were failing tests\\n"; echo "FAIL x"; exit 1'), /RED ok/);
 });
