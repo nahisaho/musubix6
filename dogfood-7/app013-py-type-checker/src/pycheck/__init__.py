@@ -1,1 +1,0 @@
-"""Gradual Python subset checker."""

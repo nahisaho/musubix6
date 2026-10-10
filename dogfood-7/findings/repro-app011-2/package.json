@@ -1,1 +1,0 @@
-{"name":"todo-red-green-repro","private":true,"type":"module","scripts":{"test":"node --test probe.test.mjs"}}

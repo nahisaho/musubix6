@@ -1,6 +1,0 @@
-{
-  "schemaVersion": 1,
-  "testCmd": ["node","--test","--test-name-pattern","{id}(?![0-9A-Za-z])","{file}"],
-  "checks": [{"name":"test","cmd":["npm","test"]}],
-  "timeoutMs": 10000
-}

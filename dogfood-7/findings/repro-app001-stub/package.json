@@ -1,1 +1,0 @@
-{ "name": "missing-workspace-stub-repro", "private": true, "type": "module", "workspaces": ["packages/*"] }

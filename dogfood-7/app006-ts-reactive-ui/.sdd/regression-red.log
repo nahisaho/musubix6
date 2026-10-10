@@ -1,5 +1,0 @@
-REFUSED: T2 feature signals approval is stale. run: approve record signals --by ai:<reviewer> --review <.sdd/review.md|summary>
-REFUSED: T2 feature signals approval is stale. run: approve record signals --by ai:<reviewer> --review <.sdd/review.md|summary>
-REFUSED: T2 feature vdom approval is stale. run: approve record vdom --by ai:<reviewer> --review <.sdd/review.md|summary>
-REFUSED: T2 feature ssr approval is stale. run: approve record ssr --by ai:<reviewer> --review <.sdd/review.md|summary>
-REFUSED: T2 feature ssr approval is stale. run: approve record ssr --by ai:<reviewer> --review <.sdd/review.md|summary>

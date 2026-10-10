@@ -40,7 +40,7 @@ const fileSha = (p) => sha(fs.readFileSync(path.join(ROOT, p)));
 // BOM and CRLF are not content: lock hashes ignore them (#72); older locks hold the raw hash, which is still accepted
 const artifactSha = (p) => sha(fs.readFileSync(path.join(ROOT, p), 'utf8').replace(/^\uFEFF/, '').replace(/\r\n/g, '\n'));
 // Evidence is keyed to the test's own @id region (+ the preamble before the first @id: imports/helpers), so editing one test does not invalidate its siblings (#38).
-// Files mixing implementation and tests (e.g. Rust #[cfg(test)]) hash only the region. Entries recorded with the whole-file hash (older ledgers) still match.
+// Brace-language tests also protect shared oracles, excluding annotated implementation; their unsafe legacy hashes no longer match.
 // trim: drop trailing blank/col-0 closer lines (a describe's `});`) so appending a new test after the last one keeps its evidence.
 // norm: hash import statements by module only, so adding a name to an import list does not stale sibling tests (#55). trim=false/norm=false are the legacy hashes.
 const normImports = (t) => t
@@ -78,6 +78,51 @@ function pythonTestSha(txt, id) {
   const shared = ls.filter((_, i) => !ranges.some((r) => i >= r.start && i < r.end)).join('\n').trim();
   return sha(shared + '\u0000' + ls.slice(mine.start, mine.end).join('\n').trim());
 }
+const BRACE_TEST = /\.(rs|java|php|cs|c|cc|cpp|cxx)$/;
+// Protect shared oracles without including sibling tests or annotated implementation (#166/#170).
+function braceTestSha(txt, id, p) {
+  const literals = /\.rs$/.test(p) ? /\/\*[\s\S]*?\*\/|\/\/[^\n]*|"(?:\\[\s\S]|[^"\\])*"|'(?:\\.|[^'\\\n])'/g : /\/\*[\s\S]*?\*\/|\/\/[^\n]*|"(?:\\[\s\S]|[^"\\])*"|'(?:\\[\s\S]|[^'\\])*'/g;
+  const masked = txt.replace(literals, (s) => s.replace(/[^\n]/g, ' '));
+  const ls = txt.split('\n'), offsets = [];
+  let offset = 0;
+  for (const l of ls) { offsets.push(offset); offset += l.length + 1; }
+  const ranges = [];
+  const decl = /^\s*(?:(?:pub(?:\([^)]*\))?|public|private|protected|static|final|async|virtual|override|inline|unsafe|extern|abstract|sealed|partial)\s+)*(?:fn\s+|function\s+|[A-Za-z_][\w:<>\[\],.?*& \t]*\s+)([A-Za-z_]\w*)\s*\([^;{}]*\)\s*(?::\s*[\w\\?]+|->\s*[^{};\n]+|throws\s+[^{};\n]+)?\s*(\{|=>)/gm;
+  for (const m of masked.matchAll(decl)) {
+    const open = m.index + m[0].length - m[2].length;
+    let end = open, depth = 0;
+    if (m[2] === '=>') { end = masked.indexOf(';', open); if (end < 0) return sha(txt); end++; }
+    else {
+      for (; end < masked.length; end++) { if (masked[end] === '{') depth++; else if (masked[end] === '}' && --depth === 0) { end++; break; } }
+      if (depth) return sha(txt);
+    }
+    let line = offsets.findLastIndex((o) => o <= m.index + m[0].search(/\S/));
+    while (line > 0 && (!ls[line - 1].trim() || /^\s*(\/\/|\/\*|\*|#\[|@\w|\[)/.test(ls[line - 1]))) line--;
+    const start = offsets[line];
+    const body = txt.slice(start, end);
+    ranges.push({ start, end, name: m[1], body, test: /@id\s+TEST-|#\[test\]|@Test\b|\[(?:Fact|Theory|Test|TestCase|TestMethod|DataRow)\b/.test(body) || /^test_/.test(m[1]), code: /@id\s+CODE-/.test(body) });
+  }
+  const mine = ranges.find((r) => new RegExp(`@id\\s+${id}\\b`).test(r.body));
+  if (!mine) return sha(txt);
+  const inline = /\.rs$/.test(p) ? txt.indexOf('#[cfg(test)]') : -1;
+  const helpers = ranges.filter((r) => !r.test && !r.code && (inline < 0 || r.start > inline));
+  const selected = new Set();
+  let calls = mine.body;
+  for (;;) {
+    const next = helpers.filter((r) => !selected.has(r) && new RegExp(`\\b${r.name}\\b`).test(calls));
+    if (!next.length) break;
+    for (const r of next) { selected.add(r); calls += '\n' + r.body; }
+  }
+  let shared = '', cursor = inline >= 0 ? inline : 0;
+  for (const r of ranges) {
+    if (r.end <= cursor) continue;
+    shared += txt.slice(cursor, Math.max(cursor, r.start));
+    cursor = r.end;
+  }
+  shared += txt.slice(cursor);
+  shared = shared.split('\n').filter((l) => l.trim()).join('\n').trim();
+  return sha(shared + '\u0000' + mine.body.trim() + '\u0000' + [...selected].map((r) => r.body.trim()).join('\u0000'));
+}
 // legacy=true: pre-#66 behaviour (no Python docstring scoping, whole-file @implements check)
 // cut (any test, not only the last: a helper or a new describe between tests is not part of the previous test, #144): the region stops where its own top-level construct ends (blank line or pure closer, then a non-closer line at the test's indent), so appended tests/comments/main() do not stale it (#73)
 // inl: a Rust file with a #[cfg(test)] module holds code next to its tests, so only the test's region counts even before @implements exists (#80)
@@ -87,6 +132,7 @@ const testShaVariant = (p, id, trim, norm = false, legacy = false, cut = true, i
   const raw = fs.readFileSync(path.join(ROOT, p), 'utf8');
   const txt = eolNorm ? raw.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n') : raw;
   if (/\.py$/.test(p)) return pythonTestSha(txt, id);
+  if (BRACE_TEST.test(p)) return braceTestSha(txt, id, p);
   const ls = txt.split('\n');
   // Python docstring-style `"""@id ..."""`: the `def` line and decorators before the docstring belong to that test (#66)
   const begin = (i) => {
@@ -122,7 +168,7 @@ const testShaVariant = (p, id, trim, norm = false, legacy = false, cut = true, i
   return sha((norm ? normImports(pre) : pre) + '\u0000' + region);
 };
 const testSha = (p, id) => { eolNorm = true; try { return testShaVariant(p, id, true, true); } finally { eolNorm = false; } };
-const shaMatches = (recorded, p, id) => /\.py$/.test(p) ? recorded === testSha(p, id) : shaMatchesRaw(recorded, p, id) || (() => { eolNorm = true; try { return shaMatchesRaw(recorded, p, id); } finally { eolNorm = false; } })();
+const shaMatches = (recorded, p, id) => /\.py$/.test(p) || BRACE_TEST.test(p) ? recorded === testSha(p, id) : shaMatchesRaw(recorded, p, id) || (() => { eolNorm = true; try { return shaMatchesRaw(recorded, p, id); } finally { eolNorm = false; } })();
 const shaMatchesRaw = (recorded, p, id) => [true, false].some((cut) => [true, false].some((inl) => recorded === testShaVariant(p, id, true, true, false, cut, inl) || recorded === testShaVariant(p, id, true, false, false, cut, inl) || recorded === testShaVariant(p, id, false, false, false, cut, inl) || recorded === testShaVariant(p, id, true, true, true, cut, inl) || recorded === testShaVariant(p, id, true, false, true, cut, inl) || recorded === testShaVariant(p, id, false, false, true, cut, inl))) ||
   recorded === testSha(p, id) || recorded === testShaVariant(p, id, true) || recorded === testShaVariant(p, id, false) || recorded === testShaVariant(p, id, true, true, true) || recorded === testShaVariant(p, id, true, false, true) || recorded === testShaVariant(p, id, false, false, true) || recorded === sha(fs.readFileSync(path.join(ROOT, p)));
 const out = (s = '') => process.stdout.write(s + '\n');
@@ -173,8 +219,8 @@ function dotnetOutputFilter(files) {
   if (!pd.size) return files;
   return files.filter((f) => { for (let d = path.posix.dirname(f); ; d = path.posix.dirname(d)) { if (pd.has(d) && /^(bin|obj)\//.test(d === '.' ? f : f.slice(d.length + 1))) return false; if (d === '.' || d === '/') return true; } });
 }
-function listFiles() {
-  const r = spawnSync('git', ['ls-files', '-co', '--exclude-standard'], { cwd: ROOT, encoding: 'utf8', maxBuffer: 64e6 });
+function workspaceFiles(base = ROOT) {
+  const r = spawnSync('git', ['ls-files', '-co', '--exclude-standard'], { cwd: base, encoding: 'utf8', maxBuffer: 64e6 });
   let files;
   if (r.status === 0) files = r.stdout.split('\n').filter(Boolean);
   else {
@@ -182,14 +228,18 @@ function listFiles() {
     const walk = (d) => {
       for (const e of fs.readdirSync(d, { withFileTypes: true })) {
         const p = path.join(d, e.name);
-        if (SKIP.test(rel(p) + '/')) continue;
-        if (e.isDirectory()) walk(p); else files.push(rel(p));
+        const f = path.relative(base, p).split(path.sep).join('/');
+        if (SKIP.test(f + '/') || /(^|\/)vendor\//.test(f + '/')) continue;
+        if (e.isDirectory()) walk(p); else if (e.isFile()) files.push(f);
       }
     };
-    walk(ROOT);
+    walk(base);
   }
   files = [...new Set(files)]; // an unmerged path is listed once per index stage
-  files = dotnetOutputFilter(files);
+  return dotnetOutputFilter(files);
+}
+function listFiles() {
+  const files = workspaceFiles();
   return scanFilter(files).filter((f) => EXT.test(f) && !SKIP.test(f) && fs.existsSync(path.join(ROOT, f)) && fs.statSync(path.join(ROOT, f)).size < 512 * 1024);
 }
 
@@ -433,7 +483,7 @@ function evidenceStatus(testId, testPath, entries) {
 
 // ---------- config / commands ----------
 // multi-project: a subproject without a match must not fail the build; print a per-task total so zero-match detection works
-const GRADLE_INIT = 'allprojects { tasks.withType(Test).configureEach { filter.failOnNoMatchingTests = false; afterSuite { d, r -> if (!d.parent) println("Tests run: " + r.testCount + ", Failures: " + r.failedTestCount) } } }';
+const GRADLE_INIT = 'allprojects { tasks.withType(Test).configureEach { filter.failOnNoMatchingTests = false; afterSuite { d, r -> if (!d.parent) println("Tests run: " + r.testCount + ", Failures: " + r.failedTestCount + ", Skipped: " + r.skippedTestCount) } } }';
 const R_TEST = 'testthat::test_file(commandArgs(TRUE)[1], reporter = "summary", stop_on_failure = TRUE)';
 // Pkg.test() needs a package registry even for stdlib test deps: offline it is an infra error, so fall back to running test/runtests.jl directly (#132)
 const JULIA_TEST = 'out=$(julia --project=. -e "using Pkg; Pkg.test()" 2>&1); r=$?; if [ $r -eq 0 ]; then printf "%s\\n" "$out"; exit 0; fi; if [ -f test/runtests.jl ] && printf "%s" "$out" | grep -qiE "to be registered|registry|could not resolve host|failed to (fetch|clone)|network|offline"; then echo "sdd: INFRA: Pkg.test() failed to resolve packages (no registry/network) — falling back to julia --project=. test/runtests.jl"; julia --project=. test/runtests.jl; exit $?; fi; printf "%s\\n" "$out"; exit $r';
@@ -458,7 +508,7 @@ function detectConfig(base = ROOT) {
   else if (has('go.mod')) testCmd = ['go', 'test', './...', '-run', '{IDU}(_|$)'];
   else if (has('Cargo.toml')) testCmd = ['cargo', 'test', '{idu}'];
   else if (has('pom.xml')) testCmd = ['mvn', '-B', '-ntp', 'test', '-Dtest=*#*{idu}', '-Dsurefire.failIfNoSpecifiedTests=false'];
-  else if (gradle) testCmd = ['sh', '-c', `f=$(mktemp --suffix=.gradle) && printf '%s\\n' '${GRADLE_INIT}' > "$f" && ${gradle} -I "$f" cleanTest test --tests "*$0" --console=plain; r=$?; rm -f "$f"; exit $r`, '{idu}'];
+  else if (gradle) testCmd = ['sh', '-c', `mkdir -p .sdd && f=".sdd/gradle-$$.gradle" && printf '%s\\n' '${GRADLE_INIT}' > "$f" && ${gradle} -I "$f" cleanTest test --tests "*$0" --console=plain; r=$?; rm -f "$f"; exit $r`, '{idu}'];
   else if (has('CMakeLists.txt')) testCmd = ['sh', '-c', CMAKE_RUN + ' -R "$0"', '{idu}'];
   else if (has('composer.json') || has('phpunit.xml') || has('phpunit.xml.dist')) testCmd = [phpunit, '--do-not-cache-result', '--filter', '{idu}', '{file}'];
   else if (has('DESCRIPTION')) testCmd = ['Rscript', '-e', R_TEST, '{file}'];
@@ -474,7 +524,7 @@ function detectConfig(base = ROOT) {
     else if (has('go.mod')) checks.push({ name: 'test', cmd: ['go', 'test', './...'], changedCmd: ['go', 'test', '{changedGoPkgs}'] });
     else if (has('Cargo.toml')) checks.push({ name: 'test', cmd: ['cargo', 'test'], changedCmd: ['cargo', 'test', '{changedCargoPkgs}'] });
     else if (has('pom.xml')) checks.push({ name: 'test', cmd: ['mvn', '-B', '-ntp', 'test'], changedCmd: ['mvn', '-B', '-ntp', 'test', '-pl', '{changedModulesCsv}', '-am', '-DfailIfNoTests=false'] });
-    else if (gradle) checks.push({ name: 'test', cmd: [gradle, 'cleanTest', 'test', '--console=plain'], changedCmd: [gradle, '--console=plain', '{changedGradleTasks}'] });
+    else if (gradle) checks.push({ name: 'test', cmd: ['sh', '-c', `mkdir -p .sdd && f=".sdd/gradle-$$.gradle" && printf '%s\\n' '${GRADLE_INIT}' > "$f" && ${gradle} -I "$f" cleanTest test --console=plain; r=$?; rm -f "$f"; exit $r`], changedCmd: ['sh', '-c', `mkdir -p .sdd && f=".sdd/gradle-$$.gradle" && printf '%s\\n' '${GRADLE_INIT}' > "$f" && ${gradle} -I "$f" --console=plain "$@"; r=$?; rm -f "$f"; exit $r`, 'sdd', '{changedGradleTasks}'] });
     else if (has('CMakeLists.txt')) checks.push({ name: 'test', cmd: ['sh', '-c', CMAKE_RUN], changedCmd: ['sh', '-c', CMAKE_RUN + ' -R "$0"', '{changedCtestRegex}'] });
     else if (testCmd[0] === phpunit) checks.push({ name: 'test', cmd: [phpunit, '--do-not-cache-result'] });
     else if (dotnet) checks.push({ name: 'test', cmd: ['dotnet', 'test', '--nologo'], changedCmd: ['sh', '-c', DOTNET_CHANGED, 'sdd', '{changedTestProjects}'] });
@@ -496,7 +546,7 @@ const isTestCsproj = (f) => { try { return /Microsoft\.NET\.Test\.Sdk|<IsTestPro
 // Go runners cannot cross nested module boundaries, unlike root-managed workspaces.
 function detectProjects(skipEco = new Set()) {
   const dirs = new Set();
-  const all = spawnSync('git', ['ls-files', '-co', '--exclude-standard'], { cwd: ROOT, encoding: 'utf8', maxBuffer: 64e6 }).stdout.split('\n');
+  const all = workspaceFiles();
   for (const f of all) if (MANIFESTS.test(f) && f.includes('/') && (ecoOf(f) === 'go' || !skipEco.has(ecoOf(f))) && !/(^|\/)(node_modules|vendor|target|build)\//.test(f) && !(/\.csproj$/.test(f) && !isTestCsproj(f))) dirs.add(path.posix.dirname(f));
   const roots = [...dirs].sort().filter((d, i, a) => fs.existsSync(path.join(ROOT, d, 'go.mod')) || !a.slice(0, i).some((p) => d.startsWith(p + '/')));
   // Go modules that require/replace a sibling module depend on it: a change there must run the dependent's tests under gate --changed (#74)
@@ -583,9 +633,7 @@ function mavenClosure(abs, base) {
 }
 // .NET project graph: ProjectReference edges (csproj + Directory.Build.props), solution (.sln/.slnx) membership, and which projects can run tests (#135)
 function dotnetGraph(abs) {
-  const r = spawnSync('git', ['ls-files', '-co', '--exclude-standard'], { cwd: abs, encoding: 'utf8', maxBuffer: 64e6 });
-  if (r.status !== 0) return null;
-  const files = dotnetOutputFilter(r.stdout.split('\n').filter(Boolean));
+  const files = workspaceFiles(abs);
   const read = (f) => { try { return fs.readFileSync(path.join(abs, f), 'utf8').replace(/<!--[\s\S]*?-->/g, ''); } catch { return ''; } };
   const norm = (f, p) => path.posix.normalize(path.posix.join(path.posix.dirname(f), p.replace(/\\/g, '/')));
   const refsOf = (f) => [...read(f).matchAll(/<ProjectReference\s[^>]*?\bInclude\s*=\s*"([^"]+)"/gi)].map((m) => norm(f, m[1]));
@@ -1416,7 +1464,8 @@ function stubScript(lang, src, dir, add, made) {
   const called = [...new Set([...code.matchAll(/(?<![\w$@.>:\\])([A-Za-z_]\w*(?:!(?=\())?)\s*\(/g)].map((m) => m[1]))].filter((n) => !defined.has(n) && !/^(function|if|for|while|switch|catch|elseif|foreach|array|isset|empty|use|using|test_that|testset|require|require_once|include|include_once|source|library|describe|it|context|fn|match|list|new|echo|print|return|exit|die|unset|isset|empty|eval|declare|static|function|assert|try|throw)$/.test(n) && !/^(expect_|test|assert)/.test(n));
   // exception types the Julia test expects: `@test_throws X` => `struct X <: Exception end`
   const excNames = lang === 'jl' ? [...new Set([...code.matchAll(/@test_throws\s+(?:\w+\.)?([A-Z]\w*)/g)].map((m) => m[1]))].filter((n) => !defined.has(n)) : [];
-  const probe = { php: ['php', ['-r', 'foreach (array_slice($argv, 1) as $n) if (!function_exists($n)) echo $n, "\n";', '--', ...called]], jl: ['julia', ['-e', 'for n in ARGS; isdefined(Base, Symbol(n)) || println(n); end', ...called, ...excNames]], r: ['Rscript', ['-e', 'for (n in commandArgs(TRUE)) if (!exists(n)) cat(n, "\n", sep = "")', ...called]] }[lang];
+  const juliaImports = code.split('\n').filter((l) => /^\s*(using|import)\s+[^.]/.test(l));
+  const probe = { php: ['php', ['-r', 'foreach (array_slice($argv, 1) as $n) if (!function_exists($n)) echo $n, "\n";', '--', ...called]], jl: ['julia', ['--project=' + ROOT, '-e', `${juliaImports.map((l) => `try; ${l}; catch; end`).join('\n')}\nfor n in ARGS; (isdefined(Main, Symbol(n)) || isdefined(Base, Symbol(n))) || println(n); end`, ...called, ...excNames]], r: ['Rscript', ['-e', 'for (n in commandArgs(TRUE)) if (!exists(n)) cat(n, "\n", sep = "")', ...called]] }[lang];
   let unknown = [...called, ...excNames];
   if (unknown.length) { const r = spawnSync(probe[0], probe[1], { encoding: 'utf8', timeout: 60000 }); if (r.status === 0) unknown = r.stdout.split('\n').filter(Boolean); }
   const fn = { php: (n) => `if (!function_exists('${n}')) {\n    function ${n}(...$args) {\n        throw new \\LogicException('not implemented: ${n}');\n    }\n}\n`, jl: (n) => `${n}(args...; kwargs...) = error("not implemented: ${n}")\n`, r: (n) => `${n} <- function(...) stop("not implemented: ${n}")\n` }[lang];
@@ -1459,7 +1508,26 @@ function stubScript(lang, src, dir, add, made) {
     unknown = unknown.filter((n) => !phpClasses.has(n) && !new RegExp(`\\bnew\\s+${n}\\b`).test(code));
     // `use Ns\\Cls;` classes become PSR-4 files (composer.json autoload mapping, else first namespace segment => src/) with a `namespace` line (#117)
     const psr4 = [];
-    try { const cj = JSON.parse(fs.readFileSync(path.join(ROOT, 'composer.json'), 'utf8')); for (const sec of [cj.autoload, cj['autoload-dev']]) for (const [k, v] of Object.entries(sec?.['psr-4'] ?? {})) psr4.push([k, [].concat(v)[0]]); } catch {}
+    try {
+      const cj = JSON.parse(fs.readFileSync(path.join(ROOT, 'composer.json'), 'utf8'));
+      for (const sec of [cj.autoload, cj['autoload-dev']]) for (const [k, v] of Object.entries(sec?.['psr-4'] ?? {})) psr4.push([k, [].concat(v)[0]]);
+      const paths = Object.values(cj.repositories ?? {}).filter((r) => r.type === 'path' && typeof r.url === 'string').map((r) => path.posix.normalize(r.url.replace(/\\/g, '/')));
+      for (const manifest of workspaceFiles().filter((f) => /\/composer\.json$/.test(f))) {
+        const dir = path.posix.dirname(manifest);
+        if (!paths.some((p) => new RegExp('^' + escapeRe(p).replace(/\\\*/g, '[^/]*').replace(/\\\?/g, '[^/]') + '$').test(dir))) continue;
+        try {
+          const pkg = JSON.parse(fs.readFileSync(path.join(ROOT, manifest), 'utf8'));
+          for (const [k, v] of Object.entries(pkg.autoload?.['psr-4'] ?? {})) {
+            const dest = [].concat(v)[0];
+            if (typeof dest === 'string') psr4.push([k, path.posix.join(dir, dest)]);
+          }
+        } catch {}
+      }
+    } catch {}
+    if (fs.existsSync(path.join(ROOT, 'vendor/autoload.php'))) {
+      const r = spawnSync('php', ['-r', '$loader = require "vendor/autoload.php"; echo json_encode($loader->getPrefixesPsr4());'], { cwd: ROOT, encoding: 'utf8', timeout: 10000 });
+      try { if (r.status === 0) for (const [k, v] of Object.entries(JSON.parse(r.stdout))) if (v[0]) psr4.unshift([k, v[0]]); } catch {}
+    }
     psr4.sort((a, b) => b[0].length - a[0].length);
     for (const m of code.matchAll(/^\s*use\s+([A-Za-z_][\w\\]*\\)([A-Za-z_]\w*)\s*;/gm)) {
       const ns = m[1].replace(/\\$/, ''), cls = m[2];
@@ -1469,7 +1537,12 @@ function stubScript(lang, src, dir, add, made) {
       if (projFq.has(`${ns}\\${cls}`)) continue;
       const hit = psr4.find(([k]) => (ns + '\\').startsWith(k));
       const rest = hit ? (ns + '\\').slice(hit[0].length).split('\\').filter(Boolean) : ns.split('\\').slice(1);
-      const fileAbs = path.join(ROOT, hit ? hit[1] : 'src', ...rest, cls + '.php');
+      let home = hit ? path.resolve(ROOT, hit[1]) : path.join(ROOT, 'src');
+      let existing = home;
+      while (!fs.existsSync(existing) && path.dirname(existing) !== existing) existing = path.dirname(existing);
+      home = path.resolve(fs.realpathSync(existing), path.relative(existing, home));
+      const fileAbs = path.join(home, ...rest, cls + '.php');
+      if (!fileAbs.startsWith(ROOT + path.sep) || /(^|\/)vendor\//.test(rel(fileAbs))) { (made.notes ??= []).push(`${ns}\\${cls}: PSR-4 destination is outside project source — not stubbed`); phpClasses.delete(cls); continue; }
       add(fileAbs, `<?php\n\nnamespace ${ns};\n\n${classBody(cls, phpClasses.get(cls) ?? new Set())}`);
       phpClasses.delete(cls);
       psrDone = true;
@@ -1484,7 +1557,7 @@ function stubScript(lang, src, dir, add, made) {
     const fns = abs === loads[0] ? unknown.filter((n) => !excNames.includes(n)).map(fn) : [];
     if (lang === 'jl') {
       // `using .Mod` / `import .Mod` needs the included file to define `module Mod` exporting the stubs (#131)
-      const usingNames = [...code.matchAll(/^\s*(?:using|import)\s+\.+(\w+)/gm)].map((m) => m[1]);
+      const usingNames = [...code.matchAll(/^\s*(?:using|import)\s+([^\n;]+)/gm)].flatMap((m) => [...m[1].split(':')[0].matchAll(/(?:^|,)\s*\.+(\w+)/g)].map((n) => n[1]));
       const stemOf = (f) => path.basename(f).replace(/\.jl$/, '').toLowerCase();
       const others = new Set([...src.matchAll(loadRe)].map((m) => stemOf(m[1])).filter((s) => s !== stemOf(abs)));
       // the module of a missing include: the `using .X` named like the file, else the Nth `using` that no other include claims (#151)
@@ -1999,7 +2072,7 @@ function testBody(testPath, id) {
   if (end < 0) end = ls.length;
   return ls.slice(start, end);
 }
-const ASSERT_LINE = /(expect\s*\(|\b(?:Assert|CollectionAssert|StringAssert|FileAssert)\.\w+|\.Should\(|\bASSERT\w*\s*\(|\bCHECK\w*\s*\(|\bEXPECT\w*\s*\(|\bassert|raises|toThrow|\.should|assertEquals|@test\b|expect_|\bif\b.*[!=]=|t\.(Error|Fatal))/;
+const ASSERT_LINE = /(expect\s*\(|\b(?:Assert|CollectionAssert|StringAssert|FileAssert)\.\w+|\.Should\(|\bASSERT\w*\s*\(|\bCHECK\w*\s*\(|\bEXPECT\w*\s*\(|\bassert|raises|toThrow|\.should|assertEquals|@test(?:_throws)?\b|expect_|\bif\b.*[!=]=|t\.(Error|Fatal))/;
 // lines that belong to an assertion, including the continuation lines of a multi-line `assert_eq!(` / `expect(` call (#89)
 function markAsserts(lines) {
   const flags = lines.map(() => false);
@@ -2198,6 +2271,11 @@ function testName(testPath, id) {
     const name = /^\s*(?:async\s+)?def\s+(\w+)\s*\(/m.exec(body)?.[1];
     if (name) return name;
   }
+  if (BRACE_TEST.test(testPath)) {
+    const body = testBody(testPath, id).join('\n').replace(/^\s*(?:#\[[^\n]*\]|@\w+(?:\([^\n]*\))?|\[[^\n]*\])\s*/gm, '');
+    const name = /\b(?:fn|function)\s+(\w+)\s*\(|^\s*(?:[\w:<>\[\].?*&]+\s+)+(\w+)\s*\(/m.exec(body);
+    if (name) return name[1] ?? name[2];
+  }
   // keep the case used in the file: NUnit/xUnit FullyQualifiedName~ is case-sensitive (#141)
   const cased = new RegExp(`(?<![0-9A-Za-z_])${idu}(?![0-9A-Za-z_])`, 'i').exec(text)?.[0] ?? new RegExp(idu, 'i').exec(text)?.[0];
   if (cased) return cased;
@@ -2238,20 +2316,79 @@ function mergeLedger() {
 
 // Julia runs the whole file: read the "Test Summary:" table to see whether the target testset itself failed
 function juliaSummaryRows(plain) {
-  const i = plain.indexOf('Test Summary:');
-  if (i < 0) return null;
-  const lines = plain.slice(i).split('\n');
-  const cols = lines[0].split('|')[1]?.trim().split(/\s+/).filter(Boolean) ?? [];
-  return lines.slice(1).map((l) => { const [name, rest] = [l.split('|')[0].trim(), (l.split('|')[1] ?? '').trim().split(/\s+/)]; return { name, bad: cols.some((c, k) => /^(Fail|Error)$/.test(c) && +rest[k] > 0) }; }).filter((r) => r.name);
+  let cols = null;
+  const rows = [];
+  for (const line of plain.split('\n')) {
+    if (/Test Summary:/.test(line)) { cols = [...(line.split('|')[1] ?? '').matchAll(/\b(Pass|Fail|Error|Broken|Total|Time)\b/g)]; continue; }
+    if (!cols || !line.includes('|')) continue;
+    const [name, rest] = line.split('|'), values = rest.trim().split(/\s+/);
+    if (!name.trim() || !/\d/.test(rest)) continue;
+    const counts = {};
+    cols.forEach((m, k) => { counts[m[1]] = values.length === cols.length ? +values[k] || 0 : +rest.slice(k ? cols[k - 1].index + cols[k - 1][0].length : 0, m.index + m[0].length).trim() || 0; });
+    rows.push({ name: name.trim(), bad: (counts.Fail ?? 0) + (counts.Error ?? 0) > 0, executed: (counts.Pass ?? 0) + (counts.Fail ?? 0) + (counts.Error ?? 0), pass: counts.Pass ?? 0 });
+  }
+  return cols ? rows : null;
 }
 const juliaFailedSets = (plain) => (juliaSummaryRows(plain) ?? []).filter((r) => r.bad).map((r) => r.name);
 function juliaSiblingFail(plain, id) {
   const rows = juliaSummaryRows(plain);
   if (!rows) return null;
-  const mine = rows.filter((r) => r.name.toLowerCase().includes(id.toLowerCase()));
+  const mine = rows.filter((r) => new RegExp(`(?<![\\w])${id}(?![\\w])`, 'i').test(r.name));
   // another top-level testset failed first and aborted the file: this testset never ran (#143)
-  if (!mine.length) return rows.some((r) => r.bad) && rows.some((r) => /\bTEST-[\w-]+/i.test(r.name)) ? 'notrun' : null;
+  if (!mine.length) return 'notrun';
+  if (!mine.some((r) => r.executed)) return 'skip';
   return !mine.some((r) => r.bad) && rows.some((r) => r.bad) ? 'sibling' : null;
+}
+const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+function qualifiedTestName(testPath, id, rust = false) {
+  const name = testName(testPath, id);
+  const text = fs.readFileSync(path.join(ROOT, testPath), 'utf8');
+  const at = text.search(new RegExp(`@id\\s+${id}\\b`));
+  const pre = text.slice(0, at).replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*|"(?:\\.|[^"\\])*"/g, '');
+  const stack = [];
+  const re = rust ? /\bmod\s+(\w+)\s*\{|([{}])/g : /\b(namespace|class)\s+([\w.]+)[^{;]*([{;])|([{}])/g;
+  let fileNs = '';
+  for (const m of pre.matchAll(re)) {
+    if (rust) { if (m[1]) stack.push(m[1]); else if (m[2] === '{') stack.push(null); else stack.pop(); }
+    else if (m[1]) { if (m[3] === ';') fileNs = m[2]; else stack.push(m[2]); }
+    else if (m[4] === '{') stack.push(null);
+    else stack.pop();
+  }
+  return [fileNs, ...stack.filter(Boolean), name].filter(Boolean).join(rust ? '::' : '.');
+}
+function targetVerdict(plain, testPath, id) {
+  const name = testName(testPath, id), exact = escapeRe(name);
+  if (/\.rs$/.test(testPath) && /^test \S+ \.\.\. /m.test(plain)) {
+    const full = qualifiedTestName(testPath, id, true);
+    const rows = [...plain.matchAll(/^test (\S+) \.\.\. (ok|FAILED|ignored)/gm)].filter((m) => m[1] === full || (full === name && m[1].endsWith('::' + name)));
+    return !rows.length ? 'notrun' : rows.some((m) => m[2] === 'FAILED') ? 'fail' : rows.some((m) => m[2] === 'ok') ? 'pass' : 'skip';
+  }
+  if (/^\s*\d+\/\d+ Test\s+#\d+:/m.test(plain)) {
+    const rows = [...plain.matchAll(/^\s*\d+\/\d+ Test\s+#\d+:\s+(\S+)\s+.*?(Passed|\*\*\*Failed|\*\*\*Skipped|\*\*\*Not Run|\*\*\*Exception)/gm)].filter((m) => m[1] === name || m[1] === id);
+    return !rows.length ? 'notrun' : rows.some((m) => /Failed|Exception/.test(m[2])) ? 'fail' : rows.some((m) => m[2] === 'Passed') ? 'pass' : 'skip';
+  }
+  if (/\.php$/.test(testPath) && /There w(?:as|ere) \d+ (?:failure|error)s?:/.test(plain)) {
+    return new RegExp(`^\\d+\\) [^\\n]+::${exact}(?=\\s+with data set|\\s*$)`, 'm').test(plain) ? 'fail' : 'pass';
+  }
+  if (/\.cs$/.test(testPath) && /^\s*(Passed|Failed|Skipped)\s+\S+/m.test(plain)) {
+    const full = qualifiedTestName(testPath, id);
+    const rows = [...plain.matchAll(/^\s*(Passed|Failed|Skipped)\s+([^\s(]+)(?:\(|\s)/gm)].filter((m) => m[2] === name || m[2] === full || (full === name && m[2].endsWith('.' + name)));
+    return !rows.length ? 'notrun' : rows.some((m) => m[1] === 'Failed') ? 'fail' : rows.some((m) => m[1] === 'Passed') ? 'pass' : 'skip';
+  }
+  return null;
+}
+function noExecution(plain) {
+  if (ZERO_TESTS.test(plain) && !RAN_TESTS.test(plain)) return true;
+  const junit = [...plain.matchAll(/Tests run:\s*(\d+), Failures:\s*(\d+),(?: Errors:\s*(\d+),)? Skipped:\s*(\d+)/g)];
+  if (junit.length && junit.every((m) => +m[1] === +m[4] && +m[2] === 0 && +(m[3] ?? 0) === 0)) return true;
+  if (!junit.length && /^> Task \S*(?:test|Test)\s+(?:NO-SOURCE|SKIPPED)\b/m.test(plain) && !RAN_TESTS.test(plain)) return true;
+  const ctest = [...plain.matchAll(/^\s*\d+\/\d+ Test\s+#\d+:[^\n]*(Passed|\*\*\*Failed|\*\*\*Exception|\*\*\*Skipped|\*\*\*Not Run)/gm)];
+  if (ctest.length && ctest.every((m) => /Skipped|Not Run/.test(m[1]))) return true;
+  const julia = juliaSummaryRows(plain);
+  if (julia?.length && julia.every((r) => !r.executed)) return true;
+  const php = [...plain.matchAll(/Tests:\s*(\d+), Assertions:\s*(\d+)([^\n]*)/g)];
+  if (php.length && php.every((m) => +m[2] === 0 && !/(Errors|Failures):\s*[1-9]/.test(m[3]))) return true;
+  return /did not perform any assertions|Passed: 0,[^\n]*Skipped: [1-9]/i.test(plain);
 }
 
 function cmdTdd() {
@@ -2328,6 +2465,28 @@ function cmdTdd() {
   const proj = projectFor(t.path);
   const fileArg = proj ? path.posix.relative(proj.root, t.path) : t.path;
   const cmd = (proj?.testCmd ?? cfg.testCmd).map((a) => a.replaceAll('{id}', id).replaceAll('{idu}', testName(t.path, id)).replaceAll('{IDU}', id.toUpperCase().replaceAll('-', '_')).replaceAll('{file}', fileArg));
+  if (/\.rs$/.test(t.path) && cmd[0] === 'cargo' && cmd[1] === 'test') {
+    const name = testName(t.path, id);
+    const i = cmd.indexOf(name);
+    if (i >= 0) { cmd[i] = qualifiedTestName(t.path, id, true); if (!cmd.includes('--')) cmd.push('--'); if (!cmd.includes('--exact')) cmd.push('--exact'); }
+  }
+  if (/ctest/.test(cmd.join(' '))) {
+    const i = cmd.indexOf('-R');
+    if (i >= 0 && cmd[i + 1] === testName(t.path, id)) cmd[i + 1] = '^' + escapeRe(cmd[i + 1]) + '$';
+    for (let i = 0; i < cmd.length; i++) if (cmd[i].includes(' -R "$0"')) { cmd[i] = cmd[i].replace(' -R "$0"', ' -R "^$0$"'); if (cmd[i + 1] === testName(t.path, id)) cmd[i + 1] = escapeRe(cmd[i + 1]); }
+  }
+  if (/\.php$/.test(t.path) && /phpunit/.test(cmd.join(' '))) {
+    const i = cmd.indexOf('--filter');
+    if (i >= 0 && cmd[i + 1] === testName(t.path, id)) cmd[i + 1] = '/::' + escapeRe(cmd[i + 1]) + '(?:\\s+with data set .*)?$/';
+  }
+  if (/\.cs$/.test(t.path) && cmd[0] === 'dotnet' && cmd[1] === 'test') {
+    const i = cmd.indexOf('--filter');
+    if (i >= 0 && cmd[i + 1] === 'FullyQualifiedName~' + testName(t.path, id)) {
+      const full = qualifiedTestName(t.path, id);
+      if (full.includes('.')) cmd[i + 1] = 'FullyQualifiedName=' + full;
+      if (!cmd.includes('--logger')) cmd.push('--logger', 'console;verbosity=normal');
+    }
+  }
   // pytest -k is a substring match: exclude longer test names that extend this one (test_x_007 vs test_x_0071) (#98)
   const ki = cmd.indexOf('-k');
   if (ki >= 0 && /pytest/.test(cmd.join(' ')) && cmd[ki + 1] === testName(t.path, id)) {
@@ -2358,15 +2517,16 @@ function cmdTdd() {
   // Go t.Skip and JUnit @Disabled: every test that ran was skipped (#84)
   const allSkipped = (/--- SKIP:/.test(plain) && !/--- (PASS|FAIL):/.test(plain)) || [...plain.matchAll(/Tests run: (\d+), Failures: 0, Errors: 0, Skipped: (\d+)/g)].some((m) => m[1] === m[2] && +m[1] > 0 && [...plain.matchAll(/Tests run: (\d+), Failures: 0, Errors: 0, Skipped: (\d+)/g)].every((x) => x[1] === x[2]));
   // PHPUnit skipped / no assertions, dotnet Passed: 0 + Skipped: n executed nothing (#140)
-  const noAssert = /Tests: \d+, Assertions: 0\b|OK, but (?:some tests were skipped|incomplete, skipped)|did not perform any assertions|Passed: 0,[^\n]*Skipped: [1-9]/i.test(plain);
+  const noAssert = noExecution(plain);
   // Node >=22 can report a file-level pass: only an executed test result proves the ID matched (#154).
   const nodeNoMatch = res.exit === 0 && /(^|\n)\s*(ℹ tests \d+|# tests \d+)/.test(plain) && !nodeTestRan(plain, id, t.path);
   const goNoMatch = goRunner && !LOAD_ERR.test(plain) && (!goTarget || !goVerdict || goVerdict === 'skip');
-  const zero = (ZERO_TESTS.test(res.text) && !RAN_TESTS.test(res.text)) || NO_PASSED.test(plain) || pytestNoExecution(plain) || allSkipped || noAssert || nodeNoMatch || goNoMatch;
+  const verdict = targetVerdict(plain, t.path, id);
+  const zero = (ZERO_TESTS.test(res.text) && !RAN_TESTS.test(res.text)) || NO_PASSED.test(plain) || pytestNoExecution(plain) || allSkipped || noAssert || nodeNoMatch || goNoMatch || verdict === 'notrun' || verdict === 'skip';
   const siblingFail = juliaSiblingFail(plain, id);
   const timeoutWhy = `the test run timed out after ${(res.ms / 1000).toFixed(0)}s (raise timeoutMs in .sdd/config.json or fix the hang); a timeout is neither Red nor Green`;
   // forked JVM / test host died: the test matched but the runner crashed (#143)
-  const crashed = res.exit !== 0 && (res.signal || /There was an error in the forked process|OutOfMemoryError|The forked VM terminated|Fatal error\. Internal CLR error|Test host process crashed|The active test run was aborted|Fatal Python error:/i.test(plain));
+  const crashed = res.exit !== 0 && (res.signal || /There was an error in the forked process|OutOfMemoryError|The forked VM terminated|Fatal error\. Internal CLR error|Test host process crashed|The active test run was aborted|Fatal Python error:|\*\*\*Exception:|\((?:SEGFAULT|ILLEGAL|NUMERICAL|OTHER_FAULT|INTERRUPT)\)/i.test(plain));
   const crashWhy = `the test runner process crashed (${res.signal ?? 'fatal Python error / forked JVM / test host failure'}), so the test result is unknown; make the failure an assertion or fix the crash`;
   const notRunWhy = `${id} never ran: an earlier top-level testset of the file failed and Julia aborted the file (whole-file runner); fix or Red/Green the earlier tests first`;
   let ok;
@@ -2376,8 +2536,9 @@ function cmdTdd() {
     else if (crashed) { ok = false; why = crashWhy; }
     else if (siblingFail === 'notrun') { ok = false; why = notRunWhy; }
     else if (siblingFail === 'sibling') { ok = false; why = `${id} itself passes; the failure comes from another test of the same file (whole-file runner)`; }
+    else if (verdict === 'pass' && res.exit !== 0) { ok = false; why = `${id} itself passes; the failure comes from another test or suite setup`; }
     else if (goRunner && goVerdict === 'pass' && res.exit !== 0) { ok = false; why = `${id} itself passes; the failure comes from its parent, a sibling or suite setup`; }
-    else if (zero) { ok = false; why = 'no test matched the ID, or the test is skipped/todo (check @id vs test title/method name; skipped tests cannot give Red/Green)'; }
+    else if (zero || siblingFail === 'skip') { ok = false; why = 'no test matched the ID, or the test is skipped/todo (check @id vs test title/method name; skipped tests cannot give Red/Green)'; }
     else if (res.exit === 0 && retest) ok = true;
     else if (res.exit === 0 && typeof flags.characterization === 'string' && flags.characterization.trim()) ok = true;
     else if (res.exit === 0) { ok = false; why = 'test passed; Red needs a real failure (data-only / characterization test? record it explicitly: --characterization "<why no implementation can fail it>")'; }
@@ -2388,8 +2549,8 @@ function cmdTdd() {
     if (res.timedOut) { ok = false; why = timeoutWhy; }
     else if (crashed) { ok = false; why = crashWhy; }
     else if (siblingFail === 'notrun') { ok = false; why = notRunWhy; }
-    else if (res.exit !== 0 && siblingFail !== 'sibling') { ok = false; why = 'test failed'; }
-    else if (zero) { ok = false; why = 'no test matched the ID'; }
+    else if (res.exit !== 0 && siblingFail !== 'sibling' && verdict !== 'pass') { ok = false; why = 'test failed'; }
+    else if (zero || siblingFail === 'skip') { ok = false; why = 'no test matched the ID'; }
     else ok = true;
   }
   if (!ok) { out(`${sub.toUpperCase()} REJECTED ${id}: ${why}`); out(rejectTail(res.text)); return 1; }
@@ -2484,7 +2645,7 @@ function cmdTrace() {
 function changedFiles() {
   const set = new Set();
   const top = spawnSync('git', ['rev-parse', '--show-toplevel'], { cwd: ROOT, encoding: 'utf8' });
-  if (top.status !== 0) return set;
+  if (top.status !== 0) return null;
   const st = spawnSync('git', ['status', '--porcelain', '-z', '-uall'], { cwd: ROOT, encoding: 'utf8' });
   const add = (f) => {
     const p = path.relative(ROOT, path.resolve(top.stdout.trim(), f)).split(path.sep).join('/');
@@ -2498,7 +2659,7 @@ function changedFiles() {
       add(l.slice(3));
       if (/[RC]/.test(l.slice(0, 2)) && entries[i + 1]) add(entries[++i]);
     }
-  }
+  } else return null;
   return set;
 }
 
@@ -2507,7 +2668,8 @@ const TEST_FILE = /\.(test|spec)\.[cm]?[jt]sx?$|(^|\/)test_[^/]*\.py$|_test\.(py
 const normDep = (d) => path.posix.normalize(String(d).replace(/\\/g, '/')).replace(/^\.\//, '').replace(/\/+$/, '');
 function gitFiles(glob) {
   const r = spawnSync('git', ['ls-files', '-co', '--exclude-standard', glob], { cwd: ROOT, encoding: 'utf8' });
-  return r.status === 0 ? r.stdout.split('\n').filter((f) => f && !/(^|\/)node_modules\//.test(f)) : [];
+  const re = new RegExp('^' + glob.replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*').replace(/\?/g, '.') + '$');
+  return (r.status === 0 ? r.stdout.split('\n') : workspaceFiles().filter((f) => re.test(f))).filter((f) => f && !/(^|\/)(node_modules|vendor)\//.test(f));
 }
 const stripJsonc = (t) => t.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:"'])\/\/.*$/gm, '$1').replace(/,(\s*[}\]])/g, '$1');
 // bare-specifier aliases: workspace package names and tsconfig paths -> source file candidates
@@ -2668,12 +2830,15 @@ function prepareKey(pc) {
   return h.digest('hex');
 }
 function scanless(res) {
-  const r = spawnSync('git', ['ls-files', '-co', '--exclude-standard'], { cwd: ROOT, encoding: 'utf8', maxBuffer: 64e6 });
-  return r.stdout.split('\n').filter((f) => f && res.some((x) => x.test(f)));
+  return workspaceFiles().filter((f) => res.some((x) => x.test(f)));
 }
 
 function cmdGate() {
   const lines = [];
+  if (flags.changed && changedFiles() === null) {
+    lines.push('! Git change discovery unavailable — falling back to full evidence and checks');
+    flags.changed = false;
+  }
   let fail = false;
   let incomplete = false;
   const add = (ok, msg, extra = []) => { lines.push(`${ok ? '✓' : '✗'} ${msg}`); extra.forEach((x) => lines.push(`    ${x}`)); if (!ok) fail = true; };
@@ -2773,7 +2938,7 @@ function cmdGate() {
       const outside = chg.filter((f) => !pRoots.some((r) => f.startsWith(r)));
       if (chg.length && !outside.length) { lines.push(`! cmd ${c.name}: all changed files are inside nested projects (${pRoots.join(', ')}) — root check skipped`); continue; }
     }
-    const ownChanged = !base || [...changedFiles()].some((f) => f.startsWith(base));
+    const ownChanged = !flags.changed || !base || [...changedFiles()].some((f) => f.startsWith(base));
     let scoped = false;
     if (flags.changed && c.changedCmd && ownChanged) {
       const ch = [...changedFiles()].filter((f) => !f.startsWith('.sdd/') && fs.existsSync(path.join(ROOT, f)) && fs.statSync(path.join(ROOT, f)).isFile());
@@ -2819,13 +2984,13 @@ function cmdGate() {
     }
     let r = run(cmd, scoped ? (c.changedTimeoutMs ?? cfg.changedTimeoutMs ?? 60000) : (c.timeoutMs ?? cfg.timeoutMs ?? 120000), c.cwd);
     // a scoped run that executed no tests (e.g. `vitest related data.json`) proves nothing: run the full check instead
-    if (scoped && r.exit === 0 && !r.timedOut && ((ZERO_TESTS.test(r.text) && !RAN_TESTS.test(r.text)) || NO_PASSED.test(r.text) || pytestNoExecution(r.text))) {
+    if (scoped && r.exit === 0 && !r.timedOut && ((ZERO_TESTS.test(r.text) && !RAN_TESTS.test(r.text)) || NO_PASSED.test(r.text) || pytestNoExecution(r.text) || noExecution(r.text))) {
       lines.push(`! cmd ${c.name}: scoped run matched no tests — running the full check instead`);
       scoped = false;
       r = run(c.cmd, c.timeoutMs ?? cfg.timeoutMs ?? 120000, c.cwd);
     }
     if (r.timedOut) { add(false, `cmd ${c.name} TIMEOUT after ${(r.ms / 1000).toFixed(0)}s ${scoped ? '— narrow changedCmd (e.g. {changedTests} {changedScopes}) or raise changedTimeoutMs; run full gate (no --changed) before merge' : '— raise timeoutMs in .sdd/config.json'}`); continue; }
-    if (r.exit === 0 && (NO_PASSED.test(r.text) || pytestNoExecution(r.text))) { lines.push(`! cmd ${c.name}: all tests skipped/todo/xfail — INCOMPLETE, no passing assertions`); incomplete = true; continue; }
+    if (r.exit === 0 && (NO_PASSED.test(r.text) || pytestNoExecution(r.text) || noExecution(r.text))) { lines.push(`! cmd ${c.name}: all tests skipped/todo/xfail — INCOMPLETE, no passing assertions`); incomplete = true; continue; }
     if (r.exit !== 0 && ZERO_TESTS.test(r.text) && !RAN_TESTS.test(r.text)) { lines.push(`! cmd ${c.name}: no tests exist yet (runner exit ${r.exit}) — INCOMPLETE, not a failure`); incomplete = true; continue; }
     add(r.exit === 0, `cmd ${c.name} (${(r.ms / 1000).toFixed(1)}s)`, r.exit === 0 ? [] : failTail(r.text, 8).split('\n'));
   }

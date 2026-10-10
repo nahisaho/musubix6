@@ -86,14 +86,6 @@ To install per-user instead of per repository, copy the skill directories to
 node --test .github/skills/lean-sdd-tdd/scripts/sdd.test.mjs
 ```
 
-## Dogfooding
-
-`dogfood-7/` contains real applications (JS/TS, Python, Go,
-Rust, Java, C/C++, PHP, C#, Julia) built with `lean-sdd-tdd` to find defects in
-the skill itself. Findings and minimal reproductions are under
-`dogfood-*/findings/`; each defect is filed as a GitHub issue and fixed with a
-regression test in `sdd.test.mjs`.
-
 ## Repository layout
 
 ```
@@ -104,7 +96,6 @@ regression test in `sdd.test.mjs`.
   tech-writer/          SKILL.md, references/doctypes/, assets/templates/, scripts/lint.py
   japanese-prose/       SKILL.md, references/, scripts/ (GiNZA), NOTICE.md
   wslc-containers/      SKILL.md, scripts/wslc.sh
-dogfood-7/             dogfooding apps and findings
 ```
 
 ## Acknowledgments

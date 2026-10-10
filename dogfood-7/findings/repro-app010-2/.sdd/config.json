@@ -1,4 +1,0 @@
-{
-  "testCmd":["node","--test","--test-name-pattern","{id}","{file}"],
-  "checks":[]
-}

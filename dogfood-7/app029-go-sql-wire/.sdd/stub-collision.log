@@ -1,9 +1,0 @@
-init ok: .sdd/config.json (existing config kept — delete it to re-detect) (testCmd: go test ./... -run {IDU}(_|$); checks: test)
-next: write .sdd/specs/<feature>.md (see references/spec-template.md)
-stubbed (throwing, compile-checked): internal/store/store_stub.go — now run: tdd red TEST-PROBE-001
-BUG: real Keep implementation DELETED by tdd stub
-package store
-
-func Add(a0, a1 any) int {
-	panic("not implemented: Add")
-}

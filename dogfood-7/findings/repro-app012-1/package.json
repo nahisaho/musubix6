@@ -1,1 +1,0 @@
-{"name":"repro-app012-nomatch","private":true,"type":"module","scripts":{"test":"node --test --test-name-pattern \"TEST-NOMATCH-001(?![0-9A-Za-z])\" TEST-NOMATCH-001.test.mjs"}}

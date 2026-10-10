@@ -1,9 +1,0 @@
-{
-  "name": "@app006/signals",
-  "private": true,
-  "type": "module",
-  "exports": "./src/index.ts",
-  "scripts": {
-    "test": "node --test test/*.test.ts"
-  }
-}

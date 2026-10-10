@@ -1,5 +1,0 @@
-{
-  "schemaVersion": 1,
-  "testCmd": ["node", "--test", "--test-name-pattern", "{id}", "{file}"],
-  "scan": { "include": ["src/**/*.js", "tests/**/*.js"] }
-}

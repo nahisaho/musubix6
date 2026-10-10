@@ -47,6 +47,7 @@ Batch: write all tests for a feature, then red each, implement, green each, **on
 - `references/stubs.md`: `tdd stub <TEST-ID>` per-language capabilities and limits.
 - Red variants (`--weak`, `--expect`, `--allow-setup-red`, `--missing-module`, `--characterization`), `trace --baseline`, review-file schema (`$S review template|check`): see `references/enforced-rules.md`.
 - Always run the full `gate` (no `--changed`) before merge.
+- Without Git, `gate --changed` explicitly falls back to full evidence/checks; manifest discovery, impact and C# stubs use filesystem discovery.
 
 ## 4. Review without humans
 T2 only: parallel sub-agents by risk axis (security · correctness/state · contract · test adequacy), each diff-only, ≤200-word replies, findings to `.sdd/review.md` (one line each: id|sev|path:line|state). Re-review Open items + fix diff only; stop after two clean rounds, then lock/merge.

@@ -1,1 +1,0 @@
-{"name":"@crdt/simulation","version":"0.0.0","private":true,"type":"module","exports":"./src/index.ts","dependencies":{"@crdt/sequence":"0.0.0","@crdt/history":"0.0.0","@crdt/cursor":"0.0.0"}}

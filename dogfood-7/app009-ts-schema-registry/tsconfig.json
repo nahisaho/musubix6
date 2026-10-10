@@ -1,8 +1,0 @@
-{
-  "compilerOptions": {
-    "target": "ES2023", "module": "NodeNext", "moduleResolution": "NodeNext",
-    "strict": true, "allowImportingTsExtensions": true, "noEmit": true,
-    "skipLibCheck": true
-  },
-  "include": ["packages/**/*.ts", "demo.ts"]
-}

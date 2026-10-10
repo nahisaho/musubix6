@@ -1,8 +1,0 @@
-{
-  "name": "@app008/saga",
-  "version": "1.0.0",
-  "type": "module",
-  "exports": "./src/index.ts",
-  "dependencies": { "@app008/definitions": "1.0.0", "@app008/timers": "1.0.0" },
-  "scripts": { "test": "node --test test/*.test.ts" }
-}

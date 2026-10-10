@@ -1,1 +1,0 @@
-{"schemaVersion":1,"testCmd":["node","--test","--test-name-pattern","{id}","case.test.mjs"],"checks":[{"name":"test","cmd":["node","--test","case.test.mjs"]}]}

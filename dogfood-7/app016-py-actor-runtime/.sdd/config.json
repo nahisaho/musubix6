@@ -1,7 +1,0 @@
-{
-  "schemaVersion": 1,
-  "testCmd": ["python3", "-m", "pytest", "{file}", "-k", "{idu}"],
-  "checks": [{"name": "pytest", "cmd": ["python3", "-m", "pytest"], "changedCmd": ["python3", "-m", "pytest"]}],
-  "scan": {"exclude": ["spikes/**"]},
-  "timeoutMs": 120000
-}

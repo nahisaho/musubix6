@@ -1,1 +1,0 @@
-{"name":"@flags/control","version":"1.0.0","type":"module","exports":"./src/index.ts","dependencies":{"@flags/rules":"1.0.0","@flags/segments":"1.0.0","@flags/rollout":"1.0.0"}}

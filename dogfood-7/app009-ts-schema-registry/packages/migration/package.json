@@ -1,7 +1,0 @@
-{
-  "name": "@schema/migration",
-  "version": "1.0.0",
-  "type": "module",
-  "exports": "./index.ts",
-  "dependencies": {"@schema/model": "1.0.0", "@schema/compatibility": "1.0.0", "@schema/codec": "1.0.0"}
-}

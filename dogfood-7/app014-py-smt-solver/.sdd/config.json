@@ -1,6 +1,0 @@
-{
-  "schemaVersion": 1,
-  "testCmd": ["python3", "-m", "pytest", "{file}", "-k", "{idu}"],
-  "checks": [{"name": "pytest", "cmd": ["python3", "-m", "pytest"]}],
-  "timeoutMs": 120000
-}

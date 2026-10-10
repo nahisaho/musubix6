@@ -83,13 +83,6 @@ $S --root <app> gate
 node --test .github/skills/lean-sdd-tdd/scripts/sdd.test.mjs
 ```
 
-## ドッグフーディング
-
-`dogfood-7/` には、`lean-sdd-tdd` でスキル自体の不具合を見つけるために作った、
-実アプリケーション(JS/TS、Python、Go、Rust、Java、C/C++、PHP、C#、Julia)があります。
-見つかった指摘と最小の再現例は `dogfood-*/findings/` にあります。不具合は GitHub Issue に登録し、
-`sdd.test.mjs` に回帰テストを追加して修正しています。
-
 ## リポジトリ構成
 
 ```
@@ -100,7 +93,6 @@ node --test .github/skills/lean-sdd-tdd/scripts/sdd.test.mjs
   tech-writer/          SKILL.md、references/doctypes/、assets/templates/、scripts/lint.py
   japanese-prose/       SKILL.md、references/、scripts/(GiNZA)、NOTICE.md
   wslc-containers/      SKILL.md、scripts/wslc.sh
-dogfood-7/             ドッグフーディング用アプリと指摘
 ```
 
 ## 謝辞

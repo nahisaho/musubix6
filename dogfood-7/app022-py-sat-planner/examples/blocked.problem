@@ -1,4 +1,0 @@
-(define (problem trip) (:domain transport)
- (:objects a b c - location)
- (:init (at a) (edge a b))
- (:goal (at c)))

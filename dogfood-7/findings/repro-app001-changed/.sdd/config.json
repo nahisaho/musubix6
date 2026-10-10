@@ -1,5 +1,0 @@
-{
-  "schemaVersion": 1,
-  "testCmd": ["node", "--test", "--test-name-pattern", "{id}", "{file}"],
-  "checks": [{ "name": "test", "cmd": ["node", "--test", "test.test.mjs"] }]
-}

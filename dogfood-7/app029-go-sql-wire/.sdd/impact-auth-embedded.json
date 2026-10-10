@@ -1,1 +1,0 @@
-{"target":"REQ-AUTH-003","reqs":["REQ-AUTH-003"],"impl":["internal/auth/roles.go"],"verifiedBy":["TEST-AUTH-002"],"reachedFiles":["internal/auth/auth_test.go"],"sameFeatureReqs":["REQ-AUTH-001","REQ-AUTH-002","REQ-AUTH-004","REQ-AUTH-005","REQ-AUTH-006","REQ-AUTH-007","REQ-AUTH-008","REQ-AUTH-009","REQ-AUTH-010"],"otherReqs":[],"reachedTests":["internal/auth/auth_test.go"]}
