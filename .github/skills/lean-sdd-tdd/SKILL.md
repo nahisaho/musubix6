@@ -32,7 +32,7 @@ Unsure → higher tier. Escalate on discovery; never downgrade silently.
 5. `$S tdd green TEST-F-001`. Test edited since Red → rejected: revert, or record a new Red.
 6. Optional refactor, then `$S tdd refactor TEST-F-001`.
 7. `$S gate --changed` (trace + evidence for touched REQs + project checks). Fix; stop after 3 identical failures and report.
-Impact: `$S impact <REQ|TEST|CODE|file> [--json]` lists implementing files, verifying tests, and other features' REQs/tests reached through imports (JS/TS precise; Py/Go/Rust/Java/C/PHP/C#/Julia best-effort, name-based — see references/enforced-rules.md). Run before changing a shared REQ.
+Impact: `$S impact <REQ|TEST|CODE|file> [--json]` lists implementing files, verifying tests, and other features' REQs/tests reached through imports (JS/TS precise; Py/Go/Rust/Java/C/PHP/C#/Julia best-effort, name-based — see references/enforced-rules.md). C# follows `ProjectReference` (csproj/`Directory.Build.props`/`.sln`/`.slnx` are graph nodes). Run before changing a shared REQ.
 Batch: write all tests for a feature, then red each, implement, green each, **one** gate at the end.
 
 ## 3. Rules the script enforces (details: `references/enforced-rules.md`)

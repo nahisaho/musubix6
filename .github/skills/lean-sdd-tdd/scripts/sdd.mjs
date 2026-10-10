@@ -124,6 +124,12 @@ function scanFilter(files) {
   const exc = (sc.exclude ?? []).map(globRe);
   return files.filter((f) => (!inc.length || inc.some((r) => r.test(f))) && !exc.some((r) => r.test(f)));
 }
+// bin/ and obj/ next to a .NET project file are build output (generated .cs, copied sources): never scanned, even without a .gitignore (#137)
+function dotnetOutputFilter(files) {
+  const pd = new Set(files.filter((f) => /\.(cs|fs|vb)proj$/.test(f)).map((f) => path.posix.dirname(f)));
+  if (!pd.size) return files;
+  return files.filter((f) => { for (let d = path.posix.dirname(f); ; d = path.posix.dirname(d)) { if (pd.has(d) && /^(bin|obj)\//.test(d === '.' ? f : f.slice(d.length + 1))) return false; if (d === '.' || d === '/') return true; } });
+}
 function listFiles() {
   const r = spawnSync('git', ['ls-files', '-co', '--exclude-standard'], { cwd: ROOT, encoding: 'utf8', maxBuffer: 64e6 });
   let files;
@@ -140,6 +146,7 @@ function listFiles() {
     walk(ROOT);
   }
   files = [...new Set(files)]; // an unmerged path is listed once per index stage
+  files = dotnetOutputFilter(files);
   return scanFilter(files).filter((f) => EXT.test(f) && !SKIP.test(f) && fs.existsSync(path.join(ROOT, f)) && fs.statSync(path.join(ROOT, f)).size < 512 * 1024);
 }
 
@@ -387,6 +394,8 @@ const GRADLE_INIT = 'allprojects { tasks.withType(Test).configureEach { filter.f
 const R_TEST = 'testthat::test_file(commandArgs(TRUE)[1], reporter = "summary", stop_on_failure = TRUE)';
 // Pkg.test() needs a package registry even for stdlib test deps: offline it is an infra error, so fall back to running test/runtests.jl directly (#132)
 const JULIA_TEST = 'out=$(julia --project=. -e "using Pkg; Pkg.test()" 2>&1); r=$?; if [ $r -eq 0 ]; then printf "%s\\n" "$out"; exit 0; fi; if [ -f test/runtests.jl ] && printf "%s" "$out" | grep -qiE "to be registered|registry|could not resolve host|failed to (fetch|clone)|network|offline"; then echo "sdd: INFRA: Pkg.test() failed to resolve packages (no registry/network) — falling back to julia --project=. test/runtests.jl"; julia --project=. test/runtests.jl; exit $?; fi; printf "%s\\n" "$out"; exit $r';
+// `dotnet test` takes one project: run each affected test project in turn and fail if any fails (#135)
+const DOTNET_CHANGED = 'r=0; for p in "$@"; do dotnet test "$p" --nologo || r=1; done; exit $r';
 function detectConfig(base = ROOT) {
   const pkg = readJson(path.join(base, 'package.json'), null);
   const has = (f) => fs.existsSync(path.join(base, f));
@@ -424,7 +433,7 @@ function detectConfig(base = ROOT) {
     else if (gradle) checks.push({ name: 'test', cmd: [gradle, 'cleanTest', 'test', '--console=plain'], changedCmd: [gradle, '--console=plain', '{changedGradleTasks}'] });
     else if (has('CMakeLists.txt')) checks.push({ name: 'test', cmd: ['sh', '-c', CMAKE_RUN], changedCmd: ['sh', '-c', CMAKE_RUN + ' -R "$0"', '{changedCtestRegex}'] });
     else if (testCmd[0] === phpunit) checks.push({ name: 'test', cmd: [phpunit, '--do-not-cache-result'] });
-    else if (dotnet) checks.push({ name: 'test', cmd: ['dotnet', 'test', '--nologo'] });
+    else if (dotnet) checks.push({ name: 'test', cmd: ['dotnet', 'test', '--nologo'], changedCmd: ['sh', '-c', DOTNET_CHANGED, 'sdd', '{changedTestProjects}'] });
     else if (has('Makefile')) checks.push({ name: 'test', cmd: ['make', 'test'] });
     else if (has('DESCRIPTION')) checks.push({ name: 'test', cmd: ['Rscript', '-e', 'testthat::test_dir("tests/testthat", reporter = "summary", stop_on_failure = TRUE)'] });
     else if (has('Project.toml')) checks.push({ name: 'test', cmd: ['sh', '-c', JULIA_TEST] });
@@ -450,14 +459,46 @@ function detectProjects(skipEco = new Set()) {
   const gomod = (r) => { try { return fs.readFileSync(path.join(ROOT, r, 'go.mod'), 'utf8'); } catch { return ''; } };
   const modName = new Map(roots.map((r) => [/^module\s+(\S+)/m.exec(gomod(r))?.[1], r]).filter(([m]) => m));
   const goDeps = (r) => [...new Set([...gomod(r).matchAll(/^\s*(?:require\s+)?([\w.\/-]+)\s+v[\w.+-]+/gm)].map((m) => modName.get(m[1])).concat([...gomod(r).matchAll(/=>\s*(\.[^\s]*)/g)].map((m) => path.posix.normalize(path.posix.join(r, m[1])))).filter((d) => d && d !== r && roots.includes(d)))];
-  return roots.map((root) => { const c = detectConfig(path.join(ROOT, root)); const deps = goDeps(root); return { root, ...(deps.length ? { dependsOn: deps } : {}), testCmd: c.testCmd, checks: c.checks.map(({ name, cmd, changedCmd, hubFallbackCmd }) => ({ name, cmd, ...(changedCmd ? { changedCmd } : {}), ...(hubFallbackCmd ? { hubFallbackCmd } : {}) })) }; });
+  // a test project depends on the projects it references (transitively) and on shared build files above it (#135)
+  const dn = roots.some((r) => dirs.has(r) && all.some((f) => f.startsWith(r + '/') && /\.csproj$/.test(f))) ? dotnetGraph(ROOT) : null;
+  const dnDeps = (root) => {
+    if (!dn) return [];
+    const mine = [...dn.projs.values()].filter((q) => q.dir === root);
+    const refs = [...new Set(mine.flatMap((q) => [...dn.deps(q.file)]).map((f) => dn.projs.get(f).dir))].filter((d) => d !== root && d !== '.' && !d.startsWith(root + '/'));
+    const props = mine.length ? dn.props.filter((x) => path.posix.dirname(x) === '.' || root.startsWith(path.posix.dirname(x) + '/')) : [];
+    return [...refs, ...props];
+  };
+  return roots.map((root) => { const c = detectConfig(path.join(ROOT, root)); const deps = [...new Set([...goDeps(root), ...dnDeps(root)])]; return { root, ...(deps.length ? { dependsOn: deps } : {}), testCmd: c.testCmd, checks: c.checks.map(({ name, cmd, changedCmd, hubFallbackCmd }) => ({ name, cmd, ...(changedCmd ? { changedCmd } : {}), ...(hubFallbackCmd ? { hubFallbackCmd } : {}) })) }; });
 }
 function projectFor(p) {
   const ps = (loadConfig().projects ?? []).filter((x) => p === x.root || p.startsWith(x.root.replace(/\/$/, '') + '/'));
   return ps.sort((a, b) => b.root.length - a.root.length)[0] ?? null;
 }
 
+// `dotnet test` builds on every call. Within one sdd process (batch `tdd red A B C`, several checks) a second call on the same target gets --no-build only when the previous call built cleanly and no tracked file changed since (#137)
+const dotnetBuilt = new Map();
+function dotnetStamp(abs) {
+  const r = spawnSync('git', ['ls-files', '-co', '--exclude-standard'], { cwd: abs, encoding: 'utf8', maxBuffer: 64e6 });
+  if (r.status !== 0) return null;
+  return dotnetOutputFilter(r.stdout.split('\n').filter((f) => f && !f.startsWith('.sdd/'))).map((f) => { try { const st = fs.statSync(path.join(abs, f)); return `${f}:${st.mtimeMs}:${st.size}`; } catch { return f; } }).join('|');
+}
 function run(cmd, timeoutMs, cwd = '.') {
+  const isDotnetTest = cmd[0] === 'dotnet' && cmd[1] === 'test' && !cmd.some((a) => /^--no-(build|restore)$/.test(a));
+  if (!isDotnetTest) return run1(cmd, timeoutMs, cwd);
+  const abs = path.resolve(ROOT, cwd);
+  const fi = cmd.indexOf('--filter');
+  const key = abs + '\0' + (fi < 0 ? cmd : cmd.filter((_, i) => i !== fi && i !== fi + 1)).join('\0');
+  const stamp = dotnetStamp(abs);
+  const prev = dotnetBuilt.get(key);
+  if (stamp && prev === stamp) {
+    const r = run1([cmd[0], cmd[1], '--no-build', ...cmd.slice(2)], timeoutMs, cwd);
+    if (r.exit === 0 || !/was not found|does not exist|NETSDK1004|assets file|not been built/i.test(r.text)) return r;
+  }
+  const r = run1(cmd, timeoutMs, cwd);
+  if (stamp && !/\berror (CS|MSB|NETSDK|NU)\d+|Build FAILED|Restore failed/i.test(r.text) && !r.timedOut) dotnetBuilt.set(key, stamp); else dotnetBuilt.delete(key);
+  return r;
+}
+function run1(cmd, timeoutMs, cwd = '.') {
   const t0 = Date.now();
   const r = spawnSync(cmd[0], cmd.slice(1), { cwd: path.resolve(ROOT, cwd), encoding: 'utf8', timeout: timeoutMs, maxBuffer: 64e6 });
   const text = (r.stdout ?? '') + (r.stderr ?? '') + (r.error ? String(r.error.message) : '');
@@ -496,7 +537,44 @@ function mavenClosure(abs, base) {
   const all = grow([...dependents], (n) => [...(mods.find((m) => m.self === n)?.deps ?? [])].filter((x) => mods.some((m) => m.self === x)));
   return mods.filter((m) => all.has(m.self) && m.dir !== '.').map((m) => m.dir).sort();
 }
+// .NET project graph: ProjectReference edges (csproj + Directory.Build.props), solution (.sln/.slnx) membership, and which projects can run tests (#135)
+function dotnetGraph(abs) {
+  const r = spawnSync('git', ['ls-files', '-co', '--exclude-standard'], { cwd: abs, encoding: 'utf8', maxBuffer: 64e6 });
+  if (r.status !== 0) return null;
+  const files = dotnetOutputFilter(r.stdout.split('\n').filter(Boolean));
+  const read = (f) => { try { return fs.readFileSync(path.join(abs, f), 'utf8').replace(/<!--[\s\S]*?-->/g, ''); } catch { return ''; } };
+  const norm = (f, p) => path.posix.normalize(path.posix.join(path.posix.dirname(f), p.replace(/\\/g, '/')));
+  const refsOf = (f) => [...read(f).matchAll(/<ProjectReference\s[^>]*?\bInclude\s*=\s*"([^"]+)"/gi)].map((m) => norm(f, m[1]));
+  const projs = new Map();
+  for (const f of files.filter((x) => /\.(cs|fs|vb)proj$/.test(x))) projs.set(f, { file: f, dir: path.posix.dirname(f), refs: new Set(refsOf(f)), test: /Microsoft\.NET\.Test\.Sdk|<IsTestProject>\s*true/i.test(read(f)) });
+  const under = (d, f) => d === '.' || f.startsWith(d + '/');
+  const props = files.filter((x) => /(^|\/)Directory\.(Build|Packages)\.(props|targets)$/.test(x));
+  for (const pf of props) for (const q of projs.values()) if (under(path.posix.dirname(pf), q.file)) refsOf(pf).forEach((x) => q.refs.add(x));
+  for (const q of projs.values()) q.refs = new Set([...q.refs].filter((x) => projs.has(x) && x !== q.file));
+  const sols = new Map();
+  for (const f of files.filter((x) => /\.(sln|slnx)$/.test(x))) {
+    const t = read(f);
+    const m = f.endsWith('x') ? [...t.matchAll(/<Project\s[^>]*?\bPath\s*=\s*"([^"]+)"/g)].map((x) => x[1]) : [...t.matchAll(/^Project\([^)]*\)\s*=\s*"[^"]*",\s*"([^"]+)"/gm)].map((x) => x[1]);
+    sols.set(f, new Set(m.map((x) => norm(f, x)).filter((x) => projs.has(x))));
+  }
+  const ownersOf = (f) => { for (let d = path.posix.dirname(f); ; d = path.posix.dirname(d)) { const o = [...projs.values()].filter((q) => q.dir === d); if (o.length) return o; if (d === '.' || d === '/') return []; } };
+  const closure = (start, next) => { const seen = new Set(start); const q = [...start]; while (q.length) for (const n of next(q.shift())) if (!seen.has(n)) { seen.add(n); q.push(n); } return seen; };
+  const deps = (file) => closure([file], (x) => projs.get(x)?.refs ?? []);
+  const dependents = (starts) => closure(starts, (x) => [...projs.values()].filter((q) => q.refs.has(x)).map((q) => q.file));
+  return { files, projs, props, sols, ownersOf, deps, dependents };
+}
+const DOTNET_GLOBAL = /(^|\/)(Directory\.(Build|Packages)\.(props|targets)|global\.json|nuget\.config)$|\.(sln|slnx)$/i;
 const SCOPE_TOKENS = {
+  // changed test projects + test projects that (transitively) reference a changed project; solution/shared build files cannot be scoped (#135)
+  '{changedTestProjects}': (rel, abs) => {
+    if (rel.some((f) => DOTNET_GLOBAL.test(f))) return [];
+    const g = dotnetGraph(abs);
+    if (!g) return [];
+    const base = new Set();
+    for (const f of rel) { if (g.projs.has(f)) base.add(f); else g.ownersOf(f).forEach((o) => base.add(o.file)); }
+    if (!base.size) return [];
+    return [...g.dependents([...base])].filter((x) => g.projs.get(x)?.test).sort();
+  },
   '{changedModulesCsv}': (rel, abs) => {
     const base = [...new Set(rel.map((f) => nearestDir(abs, f, (d) => fs.existsSync(path.join(d, 'pom.xml')))).filter((d) => d && d !== '.'))];
     if (!base.length) return [];
@@ -1277,6 +1355,191 @@ function methodsOf(src, cls, strict = false) {
   return [...out].filter((n) => !skip.test(n));
 }
 
+// C#: `dotnet build` diagnostics (CS0246/CS0103/CS0234/CS0117/CS1061) in the requested test are the source of truth; throwing stubs are added until nothing in scope fails to compile (#136)
+const CS_MARK = '// sdd-stub: throwing stub generated by `tdd stub` — replace with the real implementation';
+function stubCs(testPath, src, id, made) {
+  const abs = path.resolve(ROOT, testPath);
+  const g = dotnetGraph(ROOT);
+  const testProj = g?.ownersOf(testPath)?.[0];
+  if (!g || !testProj) return made;
+  if (spawnSync('dotnet', ['--version'], { stdio: 'ignore' }).status !== 0) { (made.notes ??= []).push('dotnet SDK not found: nothing was generated or compile-checked'); return made; }
+  const lines = src.split('\n');
+  const ids = lines.map((l, i) => (/@id\s/.test(l) ? i : -1)).filter((i) => i >= 0);
+  const start = ids.find((i) => new RegExp(`@id\\s+${id}\\b`).test(lines[i])) ?? -1;
+  const first = ids[0] ?? lines.length;
+  const next = ids.find((i) => i > start) ?? lines.length;
+  const inScope = (i) => start < 0 || i < first || (i >= start && i < next);
+  const text = start < 0 ? src : lines.filter((_, i) => inScope(i)).join('\n');
+  const ENV2 = { ...process.env, DOTNET_CLI_UI_LANGUAGE: 'en', VSLANG: '1033', DOTNET_NOLOGO: '1', DOTNET_CLI_TELEMETRY_OPTOUT: '1' };
+  const build = () => {
+    const r = spawnSync('dotnet', ['build', path.join(ROOT, testProj.file), '--nologo', '-v', 'q', '-clp:NoSummary'], { cwd: ROOT, encoding: 'utf8', timeout: 300000, maxBuffer: 64e6, env: ENV2 });
+    const outp = (r.stdout ?? '') + (r.stderr ?? '') + (r.error ? String(r.error.message) : '');
+    const diags = new Map();
+    for (const m of outp.matchAll(/^(.+?)\((\d+),(\d+)(?:,\d+,\d+)?\):\s+error\s+([A-Z]+\d+):\s*(.*?)(?:\s+\[[^\]]+\])?\s*$/gm)) {
+      const d = { file: rel(path.resolve(ROOT, m[1])), line: +m[2], col: +m[3], code: m[4], msg: m[5] };
+      diags.set(`${d.file}:${d.line}:${d.col}:${d.code}`, d);
+    }
+    const infra = /error (NU\d+|NETSDK\d+)|Unable to load the service index|could not be resolved|dotnet: command not found/i.test(outp);
+    return { ok: r.status === 0, diags: [...diags.values()], infra, raw: outp };
+  };
+  const q = (m) => [...m.matchAll(/'([^']+)'/g)].map((x) => x[1]);
+  const usingNs = (l) => /^\s*(?:global\s+)?using\s+(?:static\s+)?([\w.]+)\s*;/.exec(l)?.[1];
+  const ownNs = /^\s*namespace\s+([\w.]+)/m.exec(src)?.[1];
+  const usings = [...src.matchAll(/^\s*using\s+(?:static\s+)?([\w.]+)\s*;/gm)].map((m) => m[1]);
+  const refProjs = [...g.deps(testProj.file)].filter((f) => f !== testProj.file).map((f) => g.projs.get(f)).filter((p) => !p.test);
+  const pname = (p) => path.posix.basename(p.file).replace(/\.\w+proj$/, '');
+  const ours = new Set();
+  const typeFile = new Map();
+  const findType = (n) => {
+    if (typeFile.has(n)) return typeFile.get(n);
+    for (const f of gitFiles('*.cs')) { try { const c = fs.readFileSync(path.join(ROOT, f), 'utf8'); if (new RegExp(`\\b(?:class|record|struct|interface|enum)\\s+${n}\\b`).test(c)) { const r = { file: f, marked: c.includes(CS_MARK) }; typeFile.set(n, r); return r; } } catch {}
+    }
+    return null;
+  };
+  const esc = (n) => n.replace(/[$]/g, '\\$&');
+  const FACTORY = /^(Of|Create|From\w*|Parse|TryParse|New\w*|Zero|One|Empty|Default|Make\w*|Unit)$/;
+  const lit = (a) => { a = a.trim(); return /^-?\d+$/.test(a) ? 'int' : /^-?\d*\.\d+m$|^-?\d+m$/i.test(a) ? 'decimal' : /^-?\d*\.\d+d?$/.test(a) ? 'double' : /^"(?:[^"\\]|\\.)*"$/.test(a) ? 'string' : /^(true|false)$/.test(a) ? 'bool' : 'dynamic'; };
+  const callArgs = (t, n) => { const m = new RegExp(`\\bnew\\s+${esc(n)}\\s*\\(`).exec(t); if (!m) return null; let d = 1, k = m.index + m[0].length, cur = '', parts = []; for (; k < t.length && d; k++) { const ch = t[k]; if (ch === '(' || ch === '[' || ch === '{') d++; else if (ch === ')' || ch === ']' || ch === '}') { d--; if (!d) break; } if (ch === ',' && d === 1) { parts.push(cur); cur = ''; } else cur += ch; } if (cur.trim()) parts.push(cur); return parts; };
+  const thr = (n) => `throw new System.NotImplementedException("${n}")`;
+  const memberOf = (T, kind, name, o) => {
+    const ret = o.ret ?? (/Async$/.test(name) ? 'System.Threading.Tasks.Task<dynamic>' : 'dynamic');
+    if (kind === 'interface') return o.method ? `    ${ret} ${name}(params dynamic[] _args);` : `    ${ret} ${name} { get; set; }`;
+    if (o.method) return `    public ${o.stat ? 'static ' : ''}${ret} ${name}(params dynamic[] _args) => ${thr(`${T}.${name}`)};`;
+    return `    public ${o.stat ? 'static ' : ''}${ret} ${name} ${o.set ? `{ get => ${thr(`${T}.${name}`)}; set { } }` : `=> ${thr(`${T}.${name}`)};`}`;
+  };
+  const decl = (n, kind, body, extra) => kind === 'enum' ? `public enum ${n}\n{\n${body}\n}\n` : kind === 'exception' ? `public class ${n} : System.Exception\n{\n    public ${n}() { }\n    public ${n}(string message) : base(message) { }\n    public ${n}(string message, System.Exception inner) : base(message, inner) { }\n}\n` : kind === 'record' ? `public record ${n}(${extra});\n` : kind === 'static' ? `public static class ${n}\n{\n${body}\n}\n` : kind === 'interface' ? `public interface ${n}\n{\n${body}\n}\n` : `public class ${n}\n{\n    public ${n}(params dynamic[] _args) { }\n${body}\n}\n`;
+  const projFor = (ns, n) => {
+    const hit = refProjs.filter((p) => ns && (ns === pname(p) || ns.startsWith(pname(p) + '.'))).sort((a, b) => pname(b).length - pname(a).length)[0];
+    if (hit) return hit;
+    if (refProjs.length === 1) return refProjs[0];
+    const rel1 = refProjs.find((p) => { const l = pname(p).split('.').pop(); return l && (n.includes(l) || l.includes(n)); });
+    if (rel1) return rel1;
+    (made.notes ??= []).push(`${n}: no referenced project matches namespace ${ns ?? '(none)'} — placed in the test project ${testProj.file}, move it to the project that should own it`);
+    return testProj;
+  };
+  const unresolved = new Set();
+  const pickNs = (n, cand) => {
+    const l = (s) => s.split('.').pop();
+    return cand.find((c) => n.includes(l(c)) || l(c).includes(n)) ?? cand[0] ?? usings.find((u) => refProjs.some((p) => u === pname(p) || u.startsWith(pname(p) + '.'))) ?? ownNs;
+  };
+  const classify = (n) => {
+    if (/Exception$/.test(n) || new RegExp(`(?:Throws|ThrowsAsync|ThrowsException|ThrowsExceptionAsync|Catch)\\s*<\\s*${esc(n)}\\b|catch\\s*\\(\\s*${esc(n)}\\b`).test(text)) return 'exception';
+    if (/^I[A-Z]/.test(n)) return 'interface';
+    const calls = [...text.matchAll(new RegExp(`(?<![\\w.])${esc(n)}\\.([A-Z]\\w*)\\s*\\(`, 'g'))].map((m) => m[1]);
+    const props = [...text.matchAll(new RegExp(`(?<![\\w.])${esc(n)}\\.([A-Z]\\w*)\\b(?!\\s*[(<])`, 'g'))].map((m) => m[1]);
+    const inst = new RegExp(`\\bnew\\s+${esc(n)}\\b|\\b${esc(n)}\\s+[a-z_]\\w*\\s*[=;,)]|<\\s*${esc(n)}\\s*>|:\\s*${esc(n)}\\b`).test(text);
+    if (!inst && !calls.length && props.length) return 'enum';
+    const named = callArgs(text, n)?.map((a) => /^\s*([A-Za-z_]\w*)\s*:/.exec(a)?.[1]);
+    if (named?.length && named.every(Boolean)) return 'record';
+    return inst ? 'class' : 'static';
+  };
+  const statics = (n, kind) => {
+    const out = [];
+    const seen = new Set();
+    for (const m of text.matchAll(new RegExp(`(?<![\\w.])${esc(n)}\\.([A-Z]\\w*)\\s*(\\()?`, 'g'))) {
+      if (seen.has(m[1])) continue; seen.add(m[1]);
+      if (kind === 'enum') { out.push(`    ${m[1]},`); continue; }
+      const own = FACTORY.test(m[1]) && kind !== 'static' ? n : undefined;
+      out.push(memberOf(n, kind, m[1], { stat: true, method: !!m[2], ret: own }));
+    }
+    return out.join('\n');
+  };
+  const createType = (n, nsCand) => {
+    const kind = classify(n);
+    const ns = pickNs(n, nsCand);
+    const proj = projFor(ns, n);
+    const extra = kind === 'record' ? callArgs(text, n).map((a) => { const m = /^\s*([A-Za-z_]\w*)\s*:\s*([\s\S]*)$/.exec(a); return `${lit(m[2])} ${m[1][0].toUpperCase() + m[1].slice(1)}`; }).join(', ') : '';
+    const body = statics(n, kind === 'record' ? 'class' : kind);
+    const file = path.join(ROOT, proj.dir, `${n}.cs`);
+    if (fs.existsSync(file)) return false;
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(file, `${CS_MARK}\n${ns ? `namespace ${ns};\n\n` : ''}${decl(n, kind, body, extra)}`);
+    made.push(rel(file)); ours.add(rel(file)); typeFile.set(n, { file: rel(file), marked: true });
+    return true;
+  };
+  const addMember = (n, member, o) => {
+    const t = findType(n);
+    if (!t) return false;
+    const f = path.join(ROOT, t.file);
+    let c = fs.readFileSync(f, 'utf8');
+    if (!c.includes(CS_MARK)) { (made.realMissing ??= []).push(`${n}.${member} in ${t.file}`); return false; }
+    if (o.op ? c.includes(member) : new RegExp(`\\b${esc(member)}\\b`).test(c.replace(CS_MARK, ''))) return false;
+    const kind = /\binterface\s/.test(c) ? 'interface' : /\benum\s/.test(c) ? 'enum' : /\bclass\s+\w+\s*:\s*System\.Exception|\brecord\s/.test(c) ? null : 'class';
+    if (!kind) { (made.realMissing ??= []).push(`${n}.${member} in ${t.file} (exception/record stubs are fixed)`); return false; }
+    const line = kind === 'enum' ? `    ${member},` : o.op ? `    public static ${n} ${member}(${n} a, ${n} b) => ${thr(`${n}.${member}`)};` : memberOf(n, kind, member, o);
+    c = c.replace(/\n}\s*$/, `\n${line}\n}\n`);
+    fs.writeFileSync(f, c);
+    if (!made.includes(t.file)) made.push(t.file);
+    return true;
+  };
+  let res = build();
+  const pre = res.diags.length;
+  const handled = new Set();
+  for (let round = 0; round < 8 && !res.ok; round++) {
+    if (res.infra && !res.diags.some((d) => /^CS/.test(d.code))) { (made.notes ??= []).push(`dotnet build could not run (restore/infra): ${(res.raw.split('\n').find((l) => /error/.test(l)) ?? '').trim().slice(0, 160)} — nothing was compile-checked`); return made; }
+    const mine = res.diags.filter((d) => d.file === testPath && inScope(d.line - 1) && /^CS/.test(d.code));
+    if (!mine.length) break;
+    const cand = [];
+    const missingTypes = new Map();
+    const members = [];
+    for (const d of mine) {
+      const l = lines[d.line - 1] ?? '';
+      const un = usingNs(l);
+      const n = q(d.msg)[0];
+      if (un && /^CS(0246|0234|0400)$/.test(d.code)) { unresolved.add(un); if (!cand.includes(un)) cand.push(un); continue; }
+      if (d.code === 'CS0246' || d.code === 'CS0103') {
+        if (!n || /[<>]/.test(n)) { (made.notes ??= []).push(`${d.code} ${n ?? ''}: not stubbed (generic or unparseable)`); continue; }
+        if (/^[A-Z]/.test(n) && (d.code === 'CS0246' || new RegExp(`\\b${esc(n)}\\s*\\.`).test(l.slice(Math.max(0, d.col - 1), d.col + n.length + 1)) || new RegExp(`\\bnew\\s+${esc(n)}\\b`).test(l))) missingTypes.set(n, true);
+        else (made.notes ??= []).push(`${d.code} '${n}' in ${testPath}:${d.line}: not stubbed (a local name or helper, not a type)`);
+        continue;
+      }
+      if (d.code === 'CS1061' || d.code === 'CS0117') {
+        const [T, mname] = q(d.msg);
+        const at = l.indexOf(mname, Math.max(0, d.col - 1));
+        const after = at >= 0 ? l.slice(at + mname.length) : '';
+        members.push({ T, mname, method: /^\s*\(/.test(after), set: /^\s*=[^=]/.test(after), stat: d.code === 'CS0117' });
+        continue;
+      }
+      // Assert.Throws(() => x.M()) with a dynamic M binds to the obsolete Func<Task> overload: such a stub method returns object instead
+      if (d.code === 'CS0619') { const lm = /=>\s*(?:[\w.]+\.)?(\w+)\s*\(/.exec(l); if (lm) members.push({ fix: lm[1] }); continue; }
+      if (d.code === 'CS0019') {
+        const [op, T1] = q(d.msg);
+        if (op && T1 && /^[-+*\/%]$/.test(op)) members.push({ T: T1, mname: `operator ${op}`, op: true, stat: true });
+        continue;
+      }
+      (made.notes ??= []).push(`${d.code} at ${testPath}:${d.line}: ${d.msg.slice(0, 100)} — not stubbed`);
+    }
+    let progress = false;
+    const nsAssigned = new Set();
+    for (const n of missingTypes.keys()) { if (!findType(n)) { const before = made.length; createType(n, cand); progress ||= made.length > before; } }
+    for (const n of missingTypes.keys()) { const t = findType(n); if (t) nsAssigned.add(/^\s*namespace\s+([\w.]+)/m.exec(fs.readFileSync(path.join(ROOT, t.file), 'utf8'))?.[1]); }
+    // a `using` of a namespace nothing was placed in still has to resolve
+    for (const un of cand) if (!nsAssigned.has(un)) {
+      const p = projFor(un, un.split('.').pop());
+      const file = path.join(ROOT, p.dir, `Namespace.${un}.cs`);
+      if (!fs.existsSync(file)) { fs.writeFileSync(file, `${CS_MARK}\nnamespace ${un};\n\ninternal static class SddNamespaceMarker { }\n`); made.push(rel(file)); ours.add(rel(file)); progress = true; }
+    }
+    for (const m of members.filter((x) => x.fix)) for (const f of gitFiles('*.cs')) { try { const c = fs.readFileSync(path.join(ROOT, f), 'utf8'); const c2 = c.includes(CS_MARK) ? c.replace(new RegExp(`\\bdynamic(\\s+${esc(m.fix)}\\s*\\()`, 'g'), 'object$1') : c; if (c2 !== c) { fs.writeFileSync(path.join(ROOT, f), c2); progress = true; } } catch {} }
+    for (const m of members.filter((x) => !x.fix)) if (addMember(m.T, m.mname, { op: m.op, method: m.method, set: m.set, stat: m.stat, ret: FACTORY.test(m.mname) && m.stat ? m.T : undefined })) progress = true;
+    if (!progress) break;
+    res = build();
+  }
+  // a namespace marker is only needed while no type lives in that namespace
+  for (const f of [...ours].filter((x) => /(^|\/)Namespace\.[\w.]+\.cs$/.test(x))) {
+    const ns = /^namespace\s+([\w.]+);/m.exec(fs.readFileSync(path.join(ROOT, f), 'utf8'))?.[1];
+    if ([...ours].some((o) => o !== f && new RegExp(`^namespace\\s+${ns.replace(/\./g, '\\.')};`, 'm').test(fs.readFileSync(path.join(ROOT, o), 'utf8')))) { fs.rmSync(path.join(ROOT, f)); made.splice(made.indexOf(f), 1); ours.delete(f); }
+  }
+  if (!made.length && res.ok) return made;
+  const inS = res.diags.filter((d) => d.file === testPath && inScope(d.line - 1));
+  const outS = res.diags.filter((d) => !(d.file === testPath && inScope(d.line - 1)));
+  const show = (d) => `${d.file}:${d.line} ${d.code} ${d.msg}`.slice(0, 160);
+  if (res.ok) made.verified = 'ok';
+  else if (!inS.length && outS.length && !res.infra) { made.verified = 'partial'; made.verifyError = `${outS.length} compile error(s) remain outside ${id} (first: ${show(outS[0])})`; }
+  else { made.verified = 'fail'; made.verifyError = show(inS[0] ?? outS[0] ?? { file: testPath, line: 0, code: 'CS', msg: res.raw.slice(0, 120) }); }
+  made.pre = pre;
+  return made;
+}
+
 function stubFor(testPath, id) {
   const src = fs.readFileSync(path.join(ROOT, testPath), 'utf8');
   // the requested test only: shared preamble (before the first @id) + that test's own body (#130)
@@ -1365,6 +1628,7 @@ function stubFor(testPath, id) {
   if (/_test\.go$/.test(testPath)) return stubGo(testPath, src, dir, add, made);
   if (/\.rs$/.test(testPath)) return stubRust(testPath, scoped, dir, made);
   if (/\.java$/.test(testPath)) return stubJava(testPath, scoped, dir, add, made);
+  if (/\.cs$/.test(testPath)) return stubCs(testPath, src, id, made);
   if (/\.(c|cc|cpp|cxx)$/.test(testPath)) return stubC(testPath, scoped, dir, add, made);
   const lang = /\.php$/.test(testPath) ? 'php' : /\.jl$/.test(testPath) ? 'jl' : /\.[Rr]$/.test(testPath) ? 'r' : null;
   if (lang) return stubScript(lang, scoped, dir, add, made);
@@ -1551,7 +1815,8 @@ function testName(testPath, id) {
   const ls = text.split('\n');
   const at = ls.findIndex((l) => new RegExp(`@id\\s+${id}\\b`).test(l));
   for (const l of ls.slice(at + 1, at + 8)) {
-    const d = l.replace(/^\s*(@\w+(\([^)]*\))?\s*)+/, '');
+    // C# attributes ([Test], [TestCase(1, 2)], [TestMethod], [DataRow(..)], [Fact]) are not the test name (#137)
+    const d = l.replace(/^\s*(@\w+(\([^)]*\))?\s*)+/, '').replace(/^\s*(\[(?:[^\[\]"]|"(?:[^"\\]|\\.)*")*\]\s*)+/, '');
     if (!d.trim() || /^\s*(\/\/|\*|\/\*)/.test(d)) continue;
     const m = /(\w+)\s*\(/.exec(d);
     if (m && !/^(if|for|while|switch|return)$/.test(m[1])) return m[1];
@@ -1617,9 +1882,13 @@ function cmdTdd() {
     if (unknownReq.length) { out(`REFUSED: ${t.id} verifies ${unknownReq.join(', ')} which no spec defines — write the spec first`); return 1; }
     const made = stubFor(t.path, t.id);
     const scripted = /\.(?:[cm]?[jt]sx?|py)$/.test(t.path);
-    if (made.length) out(made.verified === 'ok' ? `stubbed (throwing, compile-checked): ${made.join(', ')} — now run: tdd red ${t.id}` : made.verified === 'fail' ? `stubbed (throwing): ${made.join(', ')} — ! the test still does not compile: ${made.verifyError}\n! could not fully stub ${t.id}: finish the stub by hand (types, struct fields, methods), then run: tdd red ${t.id}` : `stubbed (throwing; compile NOT verified${scripted ? '' : ' — no checker for this language'}): ${made.join(', ')} — now run: tdd red ${t.id}; if it reports a load/compile error, finish the stub by hand`);
+    if (made.length && made.verified === 'partial') out(`stubbed (throwing; NOT compile-checked — the project build still fails): ${made.join(', ')}`);
+    else if (made.length) out(made.verified === 'ok' ? `stubbed (throwing, compile-checked): ${made.join(', ')} — now run: tdd red ${t.id}` : made.verified === 'fail' ? `stubbed (throwing): ${made.join(', ')} — ! the test still does not compile: ${made.verifyError}\n! could not fully stub ${t.id}: finish the stub by hand (types, struct fields, methods), then run: tdd red ${t.id}` : `stubbed (throwing; compile NOT verified${scripted ? '' : ' — no checker for this language'}): ${made.join(', ')} — now run: tdd red ${t.id}; if it reports a load/compile error, finish the stub by hand`);
+    else if (made.verified === 'partial') out(`nothing was stubbed for ${t.id}: it has no compile errors of its own — NOT compile-checked`);
     else if (made.verified === 'fail') out(`nothing could be stubbed for ${t.id}: the test does not compile (${made.verifyError}) — write the missing code by hand`);
     else out(scripted ? `no missing relative imports in ${t.path}` : `nothing to stub for ${t.id} in ${t.path} (stubs only cover what this generator supports for the language); if the test still does not compile, write the missing code by hand`);
+    if (made.verified === 'partial') out(`! ${made.verifyError} — the requested test has no compile errors of its own; stub or implement the other tests (\`tdd stub <their ID>\`) before running the project's tests`);
+    for (const n of [...new Set(made.notes ?? [])]) out(`! ${n}`);
     if (made.realMissing?.length) out(`! not stubbed: ${made.realMissing.join('; ')} — those modules hold real code, which stubs never edit: add the names by hand`);
     if (made.warnings?.length) out(`! not stubbed: ${[...new Set(made.warnings)].join('; ')} — add the exports by hand`);
     return 0;
@@ -2249,6 +2518,19 @@ function importRev() {
   // a header and its implementation pair when they share a directory, or are the only same-named .h/.c in the project (#127)
   const cPair = (h, c) => stem(h) === stem(c) && (dir(h) === dir(c) || (files.filter((x) => /\.h(pp|h)?$/.test(x) && stem(x) === stem(h)).length === 1 && files.filter((x) => /\.(c|cc|cpp|cxx)$/.test(x) && stem(x) === stem(c)).length === 1));
   const csNs = new Map(), jlMod = new Map();
+  // ProjectReference graph: a using only links to files of projects the importer's project references (transitively); project files, shared props and solutions are graph nodes too (#135)
+  const dn = files.some((f) => f.endsWith('.cs')) ? dotnetGraph(ROOT) : null;
+  const csOwner = (f) => dn?.ownersOf(f) ?? [];
+  const csReach = new Map();
+  if (dn) {
+    for (const x of [...dn.projs.keys(), ...dn.props, ...dn.sols.keys()]) set.add(x);
+    for (const q of dn.projs.values()) for (const r of q.refs) add(r, q.file);
+    for (const x of dn.props) for (const q of dn.projs.values()) if (path.posix.dirname(x) === '.' || q.file.startsWith(path.posix.dirname(x) + '/')) add(x, q.file);
+    for (const [sf, ms] of dn.sols) for (const m of ms) add(sf, m);
+    for (const g of files) if (g.endsWith('.cs')) for (const o of csOwner(g)) add(o.file, g);
+    for (const q of dn.projs.values()) csReach.set(q.file, dn.deps(q.file));
+  }
+  const csVisible = (f, g) => { const of = csOwner(f), og = csOwner(g); return !of.length || !og.length || of.some((a) => og.some((b) => csReach.get(a.file)?.has(b.file))); };
   for (const g of files) {
     if (g.endsWith('.cs')) { const code = fs.readFileSync(path.join(ROOT, g), 'utf8'); const ns = /^\s*namespace\s+([\w.]+)/m.exec(code)?.[1]; if (ns) { const types = [...code.matchAll(/\b(?:class|record|struct|interface|enum)\s+(\w+)/g)].map((m) => m[1]); csNs.set(g, { ns, types }); } }
     else if (g.endsWith('.jl')) for (const m of fs.readFileSync(path.join(ROOT, g), 'utf8').matchAll(/^\s*module\s+(\w+)/gm)) { if (!jlMod.has(m[1])) jlMod.set(m[1], []); jlMod.get(m[1]).push(g); }
@@ -2327,7 +2609,7 @@ function importRev() {
       const own = csNs.get(f)?.ns;
       const usings = new Set([...src.matchAll(/^\s*(?:global\s+)?using\s+(?:static\s+)?(?:\w+\s*=\s*)?([\w.]+)\s*;/gm)].map((m) => m[1]));
       if (own) usings.add(own);
-      for (const [g, d] of csNs) if (g !== f && usings.has(d.ns) && d.types.some((t) => new RegExp(`\\b${t}\\b`).test(src))) add(g, f);
+      for (const [g, d] of csNs) if (g !== f && usings.has(d.ns) && csVisible(f, g) && d.types.some((t) => new RegExp(`\\b${t}\\b`).test(src))) add(g, f);
     } else if (/\.jl$/.test(f)) {
       for (const m of src.matchAll(/^\s*include\(\s*"([^"]+)"\s*\)/gm)) add(path.posix.normalize(path.posix.join(dir(f), m[1])), f);
       for (const m of src.matchAll(/^\s*(?:using|import)\s+\.*(\w+)/gm)) (jlMod.get(m[1]) ?? []).forEach((t) => add(t, f));

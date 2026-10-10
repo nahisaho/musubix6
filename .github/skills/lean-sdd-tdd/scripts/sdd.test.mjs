@@ -2451,3 +2451,175 @@ test('#130/#131 stub messages: no "no missing relative imports" for non-JS langu
   const r = sdd(m, 'tdd', 'red', 'TEST-A-001');
   assert.match(r.out, /stub already ran or found nothing/);
 });
+
+// ---- .NET: ProjectReference graph, scoped gate, C# stubs, NUnit/MSTest (#135 #136 #137) ----
+const HAS_DOTNET = spawnSync('dotnet', ['--version'], { stdio: 'ignore' }).status === 0;
+const DN = { skip: HAS_DOTNET ? false : 'dotnet SDK not installed' };
+const TFM = '<TargetFramework>net10.0</TargetFramework><Nullable>enable</Nullable><ImplicitUsings>enable</ImplicitUsings>';
+const libProj = (refs = []) => `<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup>${TFM}</PropertyGroup>${refs.length ? `<ItemGroup>${refs.map((r) => `<ProjectReference Include="${r}" />`).join('')}</ItemGroup>` : ''}</Project>`;
+const testProj = (pkgs, refs = []) => `<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup>${TFM}<IsPackable>false</IsPackable></PropertyGroup><ItemGroup>${pkgs.map(([n, v]) => `<PackageReference Include="${n}" Version="${v}" />`).join('')}${refs.map((r) => `<ProjectReference Include="${r}" />`).join('')}</ItemGroup></Project>`;
+const XUNIT = [['Microsoft.NET.Test.Sdk', '17.14.1'], ['xunit', '2.9.3'], ['xunit.runner.visualstudio', '3.1.4']];
+const restores = (d, proj) => spawnSync('dotnet', ['restore', proj, '--nologo', '-v', 'q'], { cwd: d, encoding: 'utf8', timeout: 240000 }).status === 0;
+const gitCommit = (d) => { spawnSync('git', ['add', '-A'], { cwd: d }); spawnSync('git', ['-c', 'user.email=t@t', '-c', 'user.name=t', 'commit', '-qm', 'base'], { cwd: d }); };
+
+test('#135 impact follows csproj ProjectReference: usings only link to referenced projects; csproj/props/solution are graph nodes', () => {
+  const d = tree({
+    'Directory.Build.props': '<Project />',
+    'src/Lib/Lib.csproj': libProj(), 'src/Lib/Calc.cs': 'namespace Shared;\npublic class Calc { }\n',
+    'src/Other/Other.csproj': libProj(), 'src/Other/Calc.cs': 'namespace Shared;\npublic class Calc { }\n',
+    'tests/T/T.csproj': testProj(XUNIT, ['..\\..\\src\\Lib\\Lib.csproj']),
+    'tests/T/CalcTests.cs': 'using Shared;\npublic class CalcTests { Calc c = new Calc(); }\n',
+    'App.slnx': '<Solution><Project Path="src/Lib/Lib.csproj" /><Project Path="tests/T/T.csproj" /></Solution>',
+  });
+  const lib = reached(d, 'src/Lib/Calc.cs');
+  assert.ok(lib.includes('tests/T/CalcTests.cs'), lib.join());
+  assert.ok(!reached(d, 'src/Other/Calc.cs').includes('tests/T/CalcTests.cs'), 'an unreferenced project does not feed the test project');
+  assert.ok(reached(d, 'src/Lib/Lib.csproj').includes('tests/T/CalcTests.cs'), 'a changed csproj reaches dependents');
+  assert.ok(reached(d, 'Directory.Build.props').includes('tests/T/CalcTests.cs'), 'shared props reach every project below');
+  assert.ok(reached(d, 'App.slnx').includes('src/Lib/Lib.csproj'), 'solution membership');
+});
+
+test('#135 default .NET changedCmd runs only changed test projects and test projects depending on changed projects; shared files fall back to the full run', () => {
+  const d = tree({
+    'App.slnx': '<Solution />',
+    'src/Lib/Lib.csproj': libProj(), 'src/Lib/Calc.cs': 'namespace Lib;\npublic class Calc { }\n',
+    'src/Core/Core.csproj': libProj(['..\\Lib\\Lib.csproj']), 'src/Core/C.cs': 'namespace Core;\npublic class C { }\n',
+    'src/Solo/Solo.csproj': libProj(), 'src/Solo/S.cs': 'namespace Solo;\npublic class S { }\n',
+    'tests/A/A.csproj': testProj(XUNIT, ['../../src/Core/Core.csproj']), 'tests/A/A.cs': 'public class A { }\n',
+    'tests/B/B.csproj': testProj(XUNIT, ['../../src/Solo/Solo.csproj']), 'tests/B/B.cs': 'public class B { }\n',
+    'README.md': 'x\n',
+  });
+  sddRaw(d, 'init');
+  const cp = path.join(d, '.sdd/config.json');
+  const cfg = JSON.parse(fs.readFileSync(cp, 'utf8'));
+  const chk = cfg.checks.find((c) => c.name === 'test');
+  assert.ok(chk.changedCmd.includes('{changedTestProjects}'), JSON.stringify(chk));
+  assert.match(chk.changedCmd.join(' '), /dotnet test/);
+  fs.writeFileSync(cp, JSON.stringify({ ...cfg, projects: undefined, checks: [{ name: 'test', cmd: ['echo', 'FULL'], changedCmd: ['echo', 'SCOPE', '{changedTestProjects}'] }] }));
+  gitCommit(d);
+  fs.appendFileSync(path.join(d, 'src/Lib/Calc.cs'), '// edit\n');
+  let g = sddRaw(d, 'gate', '--changed').out;
+  assert.match(g, /SCOPE tests\/A\/A\.csproj\b(?! tests\/B)/, g);
+  assert.doesNotMatch(g, /tests\/B\/B\.csproj/, g);
+  fs.appendFileSync(path.join(d, 'tests/B/B.cs'), '// edit\n');
+  g = sddRaw(d, 'gate', '--changed').out;
+  assert.match(g, /SCOPE tests\/A\/A\.csproj tests\/B\/B\.csproj/, g);
+  gitCommit(d);
+  fs.appendFileSync(path.join(d, 'README.md'), 'more\n');
+  g = sddRaw(d, 'gate', '--changed').out;
+  assert.match(g, /cannot scope changes for \{changedTestProjects\} — running the full check/, g);
+  gitCommit(d);
+  fs.writeFileSync(path.join(d, 'Directory.Build.props'), '<Project />');
+  g = sddRaw(d, 'gate', '--changed').out;
+  assert.match(g, /cannot scope changes for \{changedTestProjects\}/, g);
+});
+
+test('#135 nested .NET test projects depend on the projects they reference (transitively)', () => {
+  const d = tree({
+    'src/Lib/Lib.csproj': libProj(), 'src/Core/Core.csproj': libProj(['../Lib/Lib.csproj']),
+    'tests/A/A.csproj': testProj(XUNIT, ['../../src/Core/Core.csproj']),
+  });
+  sddRaw(d, 'init');
+  const cfg = JSON.parse(fs.readFileSync(path.join(d, '.sdd/config.json'), 'utf8'));
+  const p = cfg.projects.find((x) => x.root === 'tests/A');
+  assert.deepEqual([...p.dependsOn].sort(), ['src/Core', 'src/Lib']);
+});
+
+test('#137 build output (bin/, obj/) next to a .NET project is never scanned for @id, even without .gitignore', () => {
+  const d = tree({
+    'T/T.csproj': testProj(XUNIT),
+    'T/obj/Debug/net10.0/Gen.cs': '// @id TEST-OBJ-001 @verifies REQ-X-001\npublic class G { }\n',
+    'T/bin/Debug/net10.0/Gen2.cs': '// @id TEST-BIN-001 @verifies REQ-X-001\npublic class G2 { }\n',
+    'T/Real.cs': '// @id TEST-REAL-001 @verifies REQ-X-001\npublic class R { }\n',
+    'tools/bin/run.js': '// @id TEST-JS-001 @verifies REQ-X-001\n',
+  });
+  assert.match(sddRaw(d, 'impact', 'TEST-OBJ-001').out, /unknown target/);
+  assert.match(sddRaw(d, 'impact', 'TEST-BIN-001').out, /unknown target/);
+  assert.match(sddRaw(d, 'impact', 'TEST-REAL-001').out, /IMPACT TEST-REAL-001/);
+  assert.match(sddRaw(d, 'impact', 'TEST-JS-001').out, /IMPACT TEST-JS-001/, 'bin/ without a project file is untouched');
+});
+
+test('#137 NUnit/MSTest attributes are not the test name: the method below @id is used for --filter', () => {
+  const body = (attr) => `namespace T;\npublic class Tests\n{\n    // @id TEST-A-001 @verifies REQ-A-001\n    ${attr}\n    ${attr === '[Test]' ? '' : '[Description("x(1)")]\n    '}public void Adds_Numbers(int x) { }\n}\n`;
+  for (const attr of ['[TestCase(1, 2)]', '[TestMethod]', '[DataRow(1)]', '[Test]']) {
+    const d = mini(T1SPEC, { 'T/Tests.cs': body(attr) }, ['node', '-e', 'console.log("AssertionError: name=" + process.argv[1]); process.exit(1)', '{idu}']);
+    const r = sdd(d, 'tdd', 'red', 'TEST-A-001', '--expect', 'name=Adds_Numbers');
+    assert.equal(r.code, 0, `${attr}: ${r.out}`);
+  }
+});
+
+test('#137 dotnet test gets --no-build only for a repeat run with an unchanged tree and a clean previous build', () => {
+  const bin = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-fake-'));
+  const log = path.join(bin, 'calls.log');
+  fs.writeFileSync(path.join(bin, 'dotnet'), `#!/bin/sh\necho "$@" >> "${log}"\nif [ "$1" = "--version" ]; then echo 10.0.0; exit 0; fi\nif [ -n "$FAKE_BUILD_ERROR" ]; then echo "T.cs(1,1): error CS0103: nope"; fi\necho "Failed!  - Failed: 1, Passed: 0, Total: 1"\necho "Assert.Equal() Failure"\nexit 1\n`, { mode: 0o755 });
+  const spec = '---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | one shall hold. | TEST-A-001 |\n| REQ-A-002 | two shall hold. | TEST-A-002 |\n';
+  const mk = () => mini(spec, { 'T/T.csproj': testProj(XUNIT), 'T/Tests.cs': '// @id TEST-A-001 @verifies REQ-A-001\npublic class A { }\n// @id TEST-A-002 @verifies REQ-A-002\npublic class B { }\n' }, ['dotnet', 'test', 'T', '--nologo', '--filter', 'FullyQualifiedName~{idu}']);
+  const go = (d, env) => { fs.rmSync(log, { force: true }); spawnSync('node', [SDD, '--root', d, 'tdd', 'red', 'TEST-A-001', 'TEST-A-002', '--weak'], { encoding: 'utf8', env: { ...ENV, PATH: `${bin}:${process.env.PATH}`, ...env } }); return fs.readFileSync(log, 'utf8').trim().split('\n').filter((l) => /^test/.test(l)); };
+  const ok = go(mk(), {});
+  assert.equal(ok.length, 2, ok.join('\n'));
+  assert.doesNotMatch(ok[0], /--no-build/);
+  assert.match(ok[1], /^test --no-build /);
+  const broken = go(mk(), { FAKE_BUILD_ERROR: '1' });
+  assert.doesNotMatch(broken.join('\n'), /--no-build/, 'a failed build is never reused');
+});
+
+test('#136 C# tdd stub: diagnostics-driven throwing stubs, scoped to the requested test, compile-checked only when the build passes', DN, (t) => {
+  const d = tree({
+    'src/Lib/Lib.csproj': libProj(),
+    'tests/T/T.csproj': testProj(XUNIT, ['..\\..\\src\\Lib\\Lib.csproj']),
+    'tests/T/CalcTests.cs': [
+      'using Xunit;', 'using Lib.Calc;', '', 'namespace T;', '', 'public class CalcTests', '{',
+      '    /** @id TEST-A-001 @verifies REQ-A-001 */', '    [Fact]', '    public void adds()', '    {',
+      '        var m = Money.Of(1m, "USD") + Money.Of(2m, "USD");', '        Assert.Equal(3m, m.Amount);', '        Assert.Equal(Mode.Up, Rounder.Pick(m.Amount));',
+      '        var c = new Counter(5);', '        c.Inc();', '        c.Label = "x";', '        Assert.Throws<BadThingException>(() => c.Inc());', '    }', '',
+      '    /** @id TEST-A-002 @verifies REQ-A-002 */', '    [Fact]', '    public void other()', '    {', '        Assert.Equal(1, Other.Thing());', '    }', '}', '',
+    ].join('\n'),
+  });
+  if (!restores(d, 'tests/T/T.csproj')) return t.skip('NuGet packages cannot be restored');
+  const r = sddRaw(d, 'tdd', 'stub', 'TEST-A-001');
+  for (const f of ['Money', 'Mode', 'Rounder', 'Counter', 'BadThingException']) assert.ok(fs.existsSync(path.join(d, 'src/Lib', f + '.cs')), `${f}.cs\n${r.out}`);
+  assert.ok(!fs.existsSync(path.join(d, 'src/Lib/Other.cs')), 'symbols of other tests are not stubbed');
+  assert.doesNotMatch(r.out, /compile-checked\)/, 'the sibling test still fails to compile, so the verdict must not claim compile-checked');
+  assert.match(r.out, /NOT compile-checked/);
+  assert.match(r.out, /CS0103 The name 'Other'/);
+  assert.match(fs.readFileSync(path.join(d, 'src/Lib/BadThingException.cs'), 'utf8'), /: System\.Exception/);
+  assert.match(fs.readFileSync(path.join(d, 'src/Lib/Mode.cs'), 'utf8'), /enum Mode/);
+  // single-test file: the build passes, so the verdict is compile-checked and the stubs throw at run time
+  fs.writeFileSync(path.join(d, 'tests/T/CalcTests.cs'), fs.readFileSync(path.join(d, 'tests/T/CalcTests.cs'), 'utf8').replace('Other.Thing()', '1'));
+  fs.writeFileSync(path.join(d, 'tests/T/CalcTests.cs'), fs.readFileSync(path.join(d, 'tests/T/CalcTests.cs'), 'utf8').replace('c.Label = "x";', 'c.Label = "x"; Assert.Equal(1, c.Total);'));
+  const r2 = sddRaw(d, 'tdd', 'stub', 'TEST-A-001');
+  assert.match(r2.out, /stubbed \(throwing, compile-checked\): src\/Lib\/Counter\.cs/, r2.out);
+  const run = spawnSync('dotnet', ['test', 'tests/T', '--nologo', '--filter', 'FullyQualifiedName~adds'], { cwd: d, encoding: 'utf8', timeout: 240000 });
+  assert.match(run.stdout, /NotImplementedException/);
+});
+
+test('#136 C# tdd stub without a project file or without a restorable build says so instead of claiming a verdict', DN, () => {
+  const d = tree({ 'tests/FooTest.cs': '// @id TEST-A-001 @verifies REQ-A-001\npublic class FooTest { void X() { var a = new Missing(); } }\n' });
+  assert.match(sddRaw(d, 'tdd', 'stub', 'TEST-A-001').out, /nothing to stub/);
+  const e = tree({
+    'T/T.csproj': testProj([['Definitely.Not.A.Package.Sdd', '9.9.9']]),
+    'T/FooTest.cs': '// @id TEST-A-001 @verifies REQ-A-001\npublic class FooTest { void X() { var a = new Missing(); } }\n',
+  });
+  const r = sddRaw(e, 'tdd', 'stub', 'TEST-A-001');
+  assert.doesNotMatch(r.out, /compile-checked\)/);
+  assert.ok(!fs.existsSync(path.join(e, 'T/Missing.cs')), r.out);
+});
+
+for (const [name, pkgs, usingNs, attr, assertFail] of [
+  ['NUnit', [['Microsoft.NET.Test.Sdk', '17.14.0'], ['NUnit', '4.3.2'], ['NUnit3TestAdapter', '5.0.0']], 'NUnit.Framework', '[TestCase(1)]', 'Assert.That(x + 1, Is.EqualTo(99));'],
+  ['MSTest', [['Microsoft.NET.Test.Sdk', '17.14.0'], ['MSTest.TestFramework', '3.9.3'], ['MSTest.TestAdapter', '3.9.3']], 'Microsoft.VisualStudio.TestTools.UnitTesting', '[TestMethod]', 'Assert.AreEqual(99, 1);'],
+]) {
+  test(`#137 ${name}: red filters by @id through the test method name, and the second batch run reuses the build`, DN, (t) => {
+    const cls = name === 'MSTest' ? '[TestClass]\npublic class Tests' : 'public class Tests';
+    const spec = '---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | one shall hold. | TEST-A-001 |\n| REQ-A-002 | two shall hold. | TEST-A-002 |\n';
+    const d = mini(spec, {
+      'T/T.csproj': testProj(pkgs),
+      'T/Tests.cs': `using ${usingNs};\nnamespace T;\n${cls}\n{\n    // @id TEST-A-001 @verifies REQ-A-001\n    ${attr}\n    public void Adds_Numbers(${name === 'NUnit' ? 'int x' : ''}) { ${name === 'NUnit' ? assertFail : assertFail} }\n\n    // @id TEST-A-002 @verifies REQ-A-002\n    ${name === 'NUnit' ? '[Test]' : '[TestMethod]'}\n    public void Subtracts() { ${assertFail.replace('x + 1', '1')} }\n}\n`,
+    }, ['dotnet', 'test', 'T', '--nologo', '--filter', 'FullyQualifiedName~{idu}']);
+    if (!restores(d, 'T/T.csproj')) return t.skip(`${name} packages cannot be restored (offline?)`);
+    const r = sdd(d, 'tdd', 'red', 'TEST-A-001', 'TEST-A-002');
+    assert.match(r.out, /RED ok TEST-A-001/, r.out);
+    assert.match(r.out, /RED ok TEST-A-002/, r.out);
+    assert.doesNotMatch(r.out, /no test matched/);
+  });
+}
