@@ -199,7 +199,7 @@ function loadSpecs() {
     const reqs = [];
     text.split('\n').forEach((l, i) => {
       const m = /^[\s|#>*-]*\*{0,2}(REQ-[A-Z0-9]+(?:-[A-Z0-9]+)*)/.exec(l);
-      if (m) reqs.push({ id: m[1], line: i + 1, deferred: /deferred/i.test(l), testOnly: /test-only/i.test(l) });
+      if (m) reqs.push({ id: m[1], line: i + 1, sha: sha(l.replace(/\s+/g, ' ').trim()), deferred: /deferred/i.test(l), testOnly: /test-only/i.test(l) });
     });
     const extra = fm.artifacts ? fm.artifacts.split(',').map((s) => s.trim()).filter(Boolean) : [];
     const tl = text.split('\n');
@@ -247,6 +247,12 @@ function appendLedger(e) {
   fs.mkdirSync(SDD, { recursive: true });
   fs.appendFileSync(LEDGER, JSON.stringify(full) + '\n');
 }
+let REQ_SHA = null;
+// current hash of a REQ's spec line; entries recorded before this field existed have no reqSha and are not checked
+function reqShaOf(id) {
+  if (!REQ_SHA) { REQ_SHA = new Map(); for (const sp of loadSpecs()) for (const r of sp.reqs) REQ_SHA.set(r.id, r.sha); }
+  return REQ_SHA.get(id);
+}
 function evidenceStatus(testId, testPath, entries) {
   const es = entries.filter((e) => e.test === testId);
   const g = es.filter((e) => e.type === 'green').at(-1);
@@ -255,6 +261,7 @@ function evidenceStatus(testId, testPath, entries) {
   if (!r) return { ok: false, why: 'no Red preceding Green with same test hash' };
   const last = es.filter((e) => e.type === 'green' || e.type === 'refactor').at(-1);
   if (!shaMatches(last.fileSha, testPath, testId)) return { ok: false, why: 'test changed since last Green/Refactor' };
+  if (last.reqSha && reqShaOf(last.req) && last.reqSha !== reqShaOf(last.req)) return { ok: false, why: `${last.req} changed in the spec since last Green/Refactor: re-verify with tdd refactor (wording only) or tdd red/green (behaviour changed)` };
   return { ok: true, weak: !!r.weak, charac: !!r.characterization };
 }
 
@@ -826,7 +833,7 @@ function cmdTdd() {
   const setupSym = sub === 'red' && !flags['allow-setup-red'] && typeof flags.expect !== 'string' ? setupOrigin(rl.find((l) => /^E\s+.*(not implemented|NotImplementedError|unimplemented)/i.test(l)) ?? rl.find((l) => /not implemented|NotImplementedError|unimplemented/i.test(l)) ?? reason, t.path, id, res.text) : null;
   const charac = sub === 'red' && res.exit === 0 ? String(flags.characterization).trim() : '';
   const weakRed = loadWeak || !!setupSym || !!charac;
-  appendLedger({ type: sub, test: id, req, file: t.path, fileSha: after, cmdSha: sha(cmd.join('\0')), exit: res.exit, ms: res.ms, weak: weakRed ? true : undefined, weakWhy: setupSym ? `setup:${setupSym}` : charac ? 'characterization' : undefined, characterization: charac || undefined });
+  appendLedger({ type: sub, test: id, req, reqSha: reqShaOf(req), file: t.path, fileSha: after, cmdSha: sha(cmd.join('\0')), exit: res.exit, ms: res.ms, weak: weakRed ? true : undefined, weakWhy: setupSym ? `setup:${setupSym}` : charac ? 'characterization' : undefined, characterization: charac || undefined });
   out(`${sub.toUpperCase()} ok ${id} (${req}) ${res.ms}ms${reason ? ` — fails with: ${reason}` : ''}${weakRed ? ' [weak]' : ''}${setupSym ? ` ⚠ Red comes from setup call "${setupSym}", not the asserted behaviour (use --expect <text> or --allow-setup-red)` : ''}`);
   return 0;
 }

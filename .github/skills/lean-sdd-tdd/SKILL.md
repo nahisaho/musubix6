@@ -35,7 +35,7 @@ Unsure → higher tier. Escalate on discovery; never downgrade silently.
 Batch: write all tests for a feature, then red each, implement, green each, **one** gate at the end.
 
 ## 3. Rules the script enforces
-Spec lock (T2) · Red before Green with identical test hash (per test: its own `@id` region + the preamble before the first `@id`, so editing one test keeps its siblings' evidence) · hash-chained `.sdd/tdd.jsonl` · every REQ has a test, every annotation resolves · skipped checks ⇒ `INCOMPLETE` (exit 2), never PASS.
+Spec lock (T2) · REQ line changed since its test's last Green/Refactor ⇒ evidence stale (re-verify: `tdd refactor` for wording-only, `tdd red`/`green` for behaviour changes; so a new requirement means: edit spec first, then test) · Red before Green with identical test hash (per test: its own `@id` region + the preamble before the first `@id`, so editing one test keeps its siblings' evidence) · hash-chained `.sdd/tdd.jsonl` · every REQ has a test, every annotation resolves · skipped checks ⇒ `INCOMPLETE` (exit 2), never PASS.
 Not enforced (agent discipline): test quality, mutation, security review. Do not claim them.
 
 ## 3a. Install & config

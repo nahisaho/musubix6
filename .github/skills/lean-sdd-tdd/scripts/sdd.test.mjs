@@ -988,3 +988,24 @@ test('plan: orders features, flags bad dependencies, and names the next feature'
   assert.match(r.out, /dependency b is ordered after/);
   assert.match(r.out, /unknown dependency zzz/);
 });
+
+test('changing a REQ line stales its tests until tdd refactor/red re-verifies; other REQ edits do not', () => {
+  const d = project();
+  const sp = path.join(d, '.sdd/specs/calc.md');
+  sdd(d, 'init');
+  sdd(d, 'approve', 'record', 'calc', '--by', 'nahisaho');
+  impl(d, '(a, b) => a - b');
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-CALC-001').code, 0);
+  impl(d, '(a, b) => a + b');
+  assert.equal(sdd(d, 'tdd', 'green', 'TEST-CALC-001').code, 0);
+  assert.match(sdd(d, 'gate', '--no-run').out, /1\/1 tests Red→Green/);
+  fs.appendFileSync(sp, '\nnotes outside any REQ line\n');
+  sdd(d, 'approve', 'record', 'calc', '--by', 'nahisaho');
+  assert.match(sdd(d, 'gate', '--no-run').out, /1\/1 tests Red→Green/);
+  fs.writeFileSync(sp, fs.readFileSync(sp, 'utf8').replace('shall sum.', 'shall return the sum of both numbers.'));
+  sdd(d, 'approve', 'record', 'calc', '--by', 'nahisaho');
+  const g = sdd(d, 'gate', '--no-run');
+  assert.match(g.out, /REQ-CALC-001 changed in the spec/);
+  assert.equal(sdd(d, 'tdd', 'refactor', 'TEST-CALC-001').code, 0);
+  assert.match(sdd(d, 'gate', '--no-run').out, /1\/1 tests Red→Green/);
+});
