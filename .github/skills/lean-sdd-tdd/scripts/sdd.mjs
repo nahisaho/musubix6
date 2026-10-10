@@ -615,7 +615,7 @@ function stubFor(testPath) {
   if (/\.py$/.test(testPath)) {
     for (const m of src.matchAll(/^\s*from\s+(\.*[\w.]+)\s+import\s+([^\n#]+)/gm)) {
       const mod = m[1];
-      const base = mod.startsWith('.') ? dir : ROOT;
+      const base = mod.startsWith('.') ? dir : path.resolve(ROOT, projectFor(testPath)?.root ?? '.');
       const abs = path.join(base, ...mod.replace(/^\.+/, '').split('.')) + '.py';
       if (fs.existsSync(abs) || fs.existsSync(abs.replace(/\.py$/, '/__init__.py'))) continue;
       const ns = m[2].replace(/[()]/g, '').split(',').map((x) => x.trim().split(/\s+as\s+/)[0]).filter(Boolean);

@@ -619,3 +619,17 @@ test('#33 gate --changed scopes Go to changed packages plus dependents; go.mod f
   w('go.mod', 'module m\n\ngo 1.22\n');
   assert.match(sdd(d, 'gate', '--changed').out, /cannot scope changes for \{changedGoPkgs\} — running the full check/);
 });
+
+test('#34 tdd stub for a Python test inside a project dir writes the stub under that project, not the repo root', () => {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-pystub-'));
+  const w = (f, c) => { fs.mkdirSync(path.dirname(path.join(d, f)), { recursive: true }); fs.writeFileSync(path.join(d, f), c); };
+  spawnSync('git', ['init', '-q'], { cwd: d });
+  w('package.json', '{"name":"r","scripts":{"test":"true"}}');
+  w('worker/pyproject.toml', '[project]\nname="w"\nversion="0"\n');
+  w('worker/tests/test_s.py', '# @id TEST-S-001\n# @verifies REQ-S-001\nfrom jobworker.stats import percentile\ndef test_s_001():\n    assert percentile([1], 50) == 1\n');
+  w('.sdd/specs/s.md', '---\nfeature: s\ntier: T1\n---\n| ID | EARS | Test |\n| --- | --- | --- |\n| REQ-S-001 | When p, the system shall return. | TEST-S-001 |\n');
+  sdd(d, 'init');
+  sdd(d, 'tdd', 'stub', 'TEST-S-001');
+  assert.ok(fs.existsSync(path.join(d, 'worker/jobworker/stats.py')));
+  assert.ok(!fs.existsSync(path.join(d, 'jobworker')));
+});
