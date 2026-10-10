@@ -26,7 +26,7 @@ Unsure → higher tier. Escalate on discovery; never downgrade silently.
 1. Write the test with `/** @id TEST-F-001 @verifies REQ-F-001 */` above it and the test title containing `TEST-F-001`.
 2. T2 only: spike risky assumptions in scratch (see `references/t2.md`), AI-review the spec, then `$S approve record <feature> --by ai:<reviewer> --review "<1 line>"`.
 3. `$S tdd red TEST-F-001` → must fail by assertion. Load/compile error is rejected: add a failing stub (preferred) or `--weak`.
-4. Implement minimal code with `/** @id CODE-F-001 @implements REQ-F-001 */`. Do not edit the test.
+4. Implement minimal code with `/** @id CODE-F-001 @implements REQ-F-001 */`. Do not edit the test. A REQ verified only by golden/characterization tests (no implementing code): write `test-only` on its REQ line in the spec to silence the `no @implements code` warning (like `deferred`; the spec is hash-locked, so reviewers see it).
 5. `$S tdd green TEST-F-001`. Test edited since Red → rejected: revert, or record a new Red.
 6. Optional refactor, then `$S tdd refactor TEST-F-001`.
 7. `$S gate --changed` (trace + evidence for touched REQs + project checks). Fix; stop after 3 identical failures and report.

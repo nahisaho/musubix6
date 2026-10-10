@@ -872,3 +872,14 @@ test('#46 gate --changed: a scoped run that matched no tests falls back to the f
   assert.match(r, /scoped run matched no tests — running the full check instead/);
   assert.match(r, /✗ cmd test/);
 });
+
+test('#47 a REQ marked "test-only" is not warned about missing @implements', () => {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-testonly-'));
+  spawnSync('git', ['init', '-q'], { cwd: d });
+  fs.mkdirSync(path.join(d, '.sdd/specs'), { recursive: true });
+  fs.writeFileSync(path.join(d, '.sdd/specs/s.md'), '---\nfeature: s\ntier: T1\n---\n| REQ-S-001 | Golden file matches. (test-only) | TEST-S-001 |\n| REQ-S-002 | f returns 1. | TEST-S-002 |\n');
+  fs.writeFileSync(path.join(d, 't.test.js'), '// @id TEST-S-001 @verifies REQ-S-001\n// @id TEST-S-002 @verifies REQ-S-002\n');
+  const r = sdd(d, 'trace').out;
+  assert.doesNotMatch(r, /REQ-S-001 has no @implements/, r);
+  assert.match(r, /REQ-S-002 has no @implements/, r);
+});

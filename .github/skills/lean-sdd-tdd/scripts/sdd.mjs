@@ -199,7 +199,7 @@ function loadSpecs() {
     const reqs = [];
     text.split('\n').forEach((l, i) => {
       const m = /^[\s|#>*-]*\*{0,2}(REQ-[A-Z0-9]+(?:-[A-Z0-9]+)*)/.exec(l);
-      if (m) reqs.push({ id: m[1], line: i + 1, deferred: /deferred/i.test(l) });
+      if (m) reqs.push({ id: m[1], line: i + 1, deferred: /deferred/i.test(l), testOnly: /test-only/i.test(l) });
     });
     const extra = fm.artifacts ? fm.artifacts.split(',').map((s) => s.trim()).filter(Boolean) : [];
     specs.push({ path: p, feature: fm.feature || f.replace(/\.md$/, ''), tier: (fm.tier || 'T1').toUpperCase(), approval: (fm.approval || 'auto').toLowerCase(), reqs, artifacts: [p, ...extra] });
@@ -825,7 +825,7 @@ function traceCheck(ents, dups, specs) {
   for (const r of reqs.values()) {
     if (r.deferred) continue;
     if (!tested.has(r.id)) errors.push(`${r.id} has no test (@verifies)`);
-    if (!implemented.has(r.id)) warnings.push(`${r.id} has no @implements code`);
+    if (!implemented.has(r.id) && !r.testOnly) warnings.push(`${r.id} has no @implements code`);
   }
   return { errors, warnings, reqs, tested };
 }
