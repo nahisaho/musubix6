@@ -1221,3 +1221,28 @@ test('#68 python tdd stub: src layout and multi-line imports', () => {
   assert.match(body, /def alpha/);
   assert.match(body, /def beta/);
 });
+
+test('#69 tdd stub: Rust module paths and Go types/methods/fields', { skip: ['go', 'cargo'].some((c) => spawnSync('which', [c]).status !== 0) }, () => {
+  const mk = (files) => {
+    const d = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-'));
+    spawnSync('git', ['init', '-q'], { cwd: d });
+    for (const [f, body] of Object.entries(files)) { fs.mkdirSync(path.dirname(path.join(d, f)), { recursive: true }); fs.writeFileSync(path.join(d, f), body); }
+    return d;
+  };
+  const read = (d, f) => fs.readFileSync(path.join(d, f), 'utf8');
+  const rs = mk({ 'Cargo.toml': '[package]\nname = "app04"\nversion = "0.1.0"\nedition = "2021"\n', 'tests/t.rs': 'use app04::lex::{tokenize, Tok};\nuse app04::types::check::{check, Ty};\n// @id TEST-R-001 @verifies REQ-R-001\n#[test]\nfn test_r_001() { assert_eq!(tokenize("x"), 3); let _t: Tok; assert_eq!(check(1), Ty::Int); }\n' });
+  sdd(rs, 'tdd', 'stub', 'TEST-R-001');
+  assert.match(read(rs, 'src/lib.rs'), /pub mod lex;\npub mod types;/);
+  assert.doesNotMatch(read(rs, 'src/lib.rs'), /pub fn lex/);
+  assert.match(read(rs, 'src/lex.rs'), /pub fn tokenize<A0>[\s\S]*pub struct Tok;/);
+  assert.match(read(rs, 'src/types.rs'), /pub mod check;/);
+  assert.match(read(rs, 'src/types/check.rs'), /pub fn check<A0>[\s\S]*pub enum Ty \{\n    Int,/);
+  const go = mk({ 'go.mod': 'module m\n\ngo 1.21\n', 'm_test.go': 'package m\nimport "testing"\n// @id TEST-M-001 @verifies REQ-M-001\nfunc TestTEST_M_001(t *testing.T) {\n\to := NewOrder("x")\n\to.Add(Item{Name: "a", Qty: 2})\n\tif o.Total() != 3 { t.Fatal("x") }\n\tvar c Config\n\t_ = c\n\tif o.Count != 1 { t.Fatal("y") }\n}\n' });
+  sdd(go, 'tdd', 'stub', 'TEST-M-001');
+  const g = read(go, 'm.go');
+  assert.match(g, /type Item struct/);
+  assert.match(g, /func NewOrder\(a0 any\) \*Order/);
+  assert.match(g, /func \(\*Order\) Add\(/);
+  assert.match(g, /func \(\*Order\) Total\(\) int/);
+  assert.equal(spawnSync('go', ['vet', './...'], { cwd: go }).status, 0);
+});

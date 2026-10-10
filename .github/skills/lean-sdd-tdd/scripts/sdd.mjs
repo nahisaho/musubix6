@@ -597,14 +597,47 @@ const probe = (cmd, args, cwd) => { const r = spawnSync(cmd, args, { cwd, encodi
 
 function stubGo(testPath, src, dir, add, made) {
   const pkg = /^package\s+(\w+)/m.exec(src)?.[1]?.replace(/_test$/, '') ?? 'main';
-  const names = [...new Set([...probe('go', ['test', '-count=1', '-run', '^$', '.'], dir).matchAll(/undefined: (\w+)/g)].map((m) => m[1]))];
-  if (!names.length) return made;
   const T = { int: 'int', float: 'float64', str: 'string', bool: 'bool' };
-  const body = names.map((n) => { const c = callInfo(src, n); const r = T[c.ret] ?? 'any'; return `func ${n}(${Array.from({ length: c.args.length }, (_, i) => `a${i}`).join(', ')}${c.args.length ? ' any' : ''}) ${c.multi ? `(${r}, error)` : r} {\n\tpanic("not implemented: ${n}")\n}\n`; }).join('\n');
-  // classify by the call site that actually threw: test-file frames inside this test's body
+  const params = (c) => Array.from({ length: c.args.length }, (_, i) => `a${i}`).join(', ') + (c.args.length ? ' any' : '');
+  const retOf = (c) => { const r = T[c.ret] ?? 'any'; return c.multi ? `(${r}, error)` : r; };
+  const funcs = new Set();
+  const types = new Map();
+  const methods = new Map();
   const base = path.basename(testPath).replace(/_test\.go$/, '');
-  const target = fs.existsSync(path.join(dir, base + '.go')) ? path.join(dir, base + '_stub.go') : path.join(dir, base + '.go');
-  add(target, `package ${pkg}\n\n${body}`);
+  let target = path.join(dir, base + '.go');
+  for (let n = 1; fs.existsSync(target); n++) target = path.join(dir, `${base}_stub${n > 1 ? n : ''}.go`);
+  const render = () => {
+    const parts = [];
+    for (const [t, fields] of types) parts.push(`type ${t} struct {\n${[...fields].map((f) => `\t${f} any\n`).join('')}}\n`);
+    for (const f of funcs) { const c = callInfo(src, f); const ctor = /^New([A-Z]\w*)$/.exec(f)?.[1]; const r = ctor ? (c.multi ? `(*${ctor}, error)` : `*${ctor}`) : retOf(c); parts.push(`func ${f}(${params(c)}) ${r} {\n\tpanic("not implemented: ${f}")\n}\n`); }
+    for (const [t, ms] of methods) for (const m of ms) { const c = callInfo(src.replace(new RegExp(`\\w+\\.${m}\\(`, 'g'), `${m}(`), m); parts.push(`func (*${t}) ${m}(${params(c)}) ${retOf(c)} {\n\tpanic("not implemented: ${t}.${m}")\n}\n`); }
+    return `package ${pkg}\n\n${parts.join('\n')}`;
+  };
+  // each pass reveals the next layer: undefined names, then methods/fields of the types just created (#69)
+  for (let pass = 0; pass < 4; pass++) {
+    const out = probe('go', ['test', '-count=1', '-gcflags=-e', '-run', '^$', '.'], dir);
+    let grew = false;
+    for (const m of out.matchAll(/undefined: (\w+)/g)) {
+      const n = m[1];
+      const isType = /^[A-Z]/.test(n) && (new RegExp(`\\b${n}\\s*\\{|[*\\]]${n}\\b|\\bvar\\s+\\w+\\s+${n}\\b|\\b\\w+\\s+\\*?${n}\\s*[,)]`).test(src)) && !new RegExp(`(?<![\\w.])${n}\\s*\\(`).test(src);
+      if (isType ? types.has(n) : funcs.has(n)) continue;
+      if (isType) types.set(n, new Set()); else { funcs.add(n); const ct = /^New([A-Z]\w*)$/.exec(n)?.[1]; if (ct && !types.has(ct)) types.set(ct, new Set()); }
+      grew = true;
+    }
+    for (const m of out.matchAll(/\.(\w+) undefined \(type \*?(\w+) has no field or method \w+\)/g)) {
+      const [, member, t] = m;
+      const isCall = new RegExp(`\\.${member}\\s*\\(`).test(src);
+      if (isCall) { if (!methods.has(t)) methods.set(t, new Set()); if (methods.get(t).has(member)) continue; methods.get(t).add(member); }
+      else { if (!types.has(t)) continue; if (types.get(t).has(member)) continue; types.get(t).add(member); }
+      grew = true;
+    }
+    for (const m of out.matchAll(/unknown field (\w+) in struct literal of type (\w+)/g)) {
+      if (types.has(m[2]) && !types.get(m[2]).has(m[1])) { types.get(m[2]).add(m[1]); grew = true; }
+    }
+    if (!grew) break;
+    fs.writeFileSync(target, render());
+  }
+  if (fs.existsSync(target)) made.push(rel(target));
   return made;
 }
 
@@ -614,17 +647,46 @@ function stubRust(testPath, src, dir, made) {
   const lib = path.join(root, 'src/lib.rs');
   const probeFile = !fs.existsSync(lib);
   if (probeFile) { fs.mkdirSync(path.dirname(lib), { recursive: true }); fs.writeFileSync(lib, ''); }
-  const out = probe('cargo', ['test', '--no-run', '--offline', '--test', path.basename(testPath, '.rs')], root);
-  const names = [...new Set([...out.matchAll(/cannot find function `(\w+)`|unresolved import `[\w:]+::(\w+)`|no `(\w+)` in the root/g)].map((m) => m[1] ?? m[2] ?? m[3]))];
-  if (!names.length) { if (probeFile) fs.rmSync(lib); return made; }
   const T = { int: 'i64', float: 'f64', str: 'String', bool: 'bool', result: 'Result<i64, String>' };
   // capitalised names are types: `Name::Variant` => enum, otherwise a unit struct (never a function)
   const typeStub = (n) => { const vs = [...new Set([...src.matchAll(new RegExp(`\\b${n}::([A-Z]\\w*)`, 'g'))].map((m) => m[1]))]; return vs.length ? `#[derive(Debug, Clone, Copy, PartialEq, Eq)]\npub enum ${n} {\n${vs.map((v) => `    ${v},\n`).join('')}}\n` : `#[derive(Debug, Clone, Default, PartialEq)]\npub struct ${n};\n`; };
-  const body = names.map((n) => { if (/^[A-Z]/.test(n)) return typeStub(n); const c = callInfo(src, n); const g = c.args.map((_, i) => `A${i}`); return `pub fn ${n}${g.length ? `<${g.join(', ')}>` : ''}(${c.args.map((_, i) => `_a${i}: A${i}`).join(', ')}) -> ${T[c.ret] ?? 'i64'} {\n    unimplemented!("${n}")\n}\n`; }).join('\n');
+  const itemStub = (n) => { if (/^[A-Z]/.test(n)) return typeStub(n); const c = callInfo(src, n); const g = c.args.map((_, i) => `A${i}`); return `pub fn ${n}${g.length ? `<${g.join(', ')}>` : ''}(${c.args.map((_, i) => `_a${i}: A${i}`).join(', ')}) -> ${T[c.ret] ?? 'i64'} {\n    unimplemented!("${n}")\n}\n`; };
+  // `use <crate>::a::b::{X, f};` => missing modules `a`, `a/b` (declared in the parent) holding the imported items (#69). Existing modules are never touched.
+  const crateName = /^\s*name\s*=\s*"([^"]+)"/m.exec(fs.readFileSync(path.join(root, 'Cargo.toml'), 'utf8'))?.[1]?.replace(/-/g, '_');
+  const modNames = new Set();
+  for (const m of src.matchAll(/^\s*use\s+(\w+)((?:::[a-z_]\w*)+)::(\{[^}]*\}|\w+)\s*;/gm)) {
+    if (m[1] !== crateName) continue;
+    const segs = m[2].split('::').filter(Boolean);
+    const items = (m[3].startsWith('{') ? m[3].slice(1, -1).split(',') : [m[3]]).map((x) => x.trim().split(/\s+as\s+/)[0]).filter((x) => /^[A-Za-z_]\w*$/.test(x) && x !== 'self');
+    segs.forEach((x) => modNames.add(x));
+    let parent = lib;
+    let created = false;
+    let last = lib;
+    for (let i = 0; i < segs.length; i++) {
+      const f = path.join(root, 'src', ...segs.slice(0, i + 1)) + '.rs';
+      const mf = path.join(root, 'src', ...segs.slice(0, i + 1), 'mod.rs');
+      created = false;
+      if (!fs.existsSync(f) && !fs.existsSync(mf)) {
+        fs.mkdirSync(path.dirname(f), { recursive: true });
+        fs.writeFileSync(f, '');
+        const prev = fs.readFileSync(parent, 'utf8');
+        if (!new RegExp(`\\bmod\\s+${segs[i]}\\b`).test(prev)) fs.writeFileSync(parent, prev + (prev && !prev.endsWith('\n') ? '\n' : '') + `pub mod ${segs[i]};\n`);
+        made.push(rel(parent), rel(f));
+        created = true;
+      }
+      parent = fs.existsSync(f) ? f : mf;
+      last = parent;
+    }
+    if (created) fs.writeFileSync(last, items.map(itemStub).join('\n'));
+  }
+  const out = probe('cargo', ['test', '--no-run', '--offline', '--test', path.basename(testPath, '.rs')], root);
+  const names = [...new Set([...out.matchAll(/cannot find function `(\w+)`|unresolved import `[\w:]+::(\w+)`|no `(\w+)` in the root/g)].map((m) => m[1] ?? m[2] ?? m[3]))].filter((n) => !modNames.has(n));
+  if (!names.length) { if (probeFile && !made.length) fs.rmSync(lib); return [...new Set(made)]; }
+  const body = names.map(itemStub).join('\n');
   const prev = fs.readFileSync(lib, 'utf8');
   fs.writeFileSync(lib, prev + (prev && !prev.endsWith('\n\n') ? '\n' : '') + body);
   made.push(rel(lib));
-  return made;
+  return [...new Set(made)];
 }
 
 function stubJava(testPath, src, dir, add, made) {
