@@ -1045,3 +1045,24 @@ test('appending a new test after the last one keeps the previous last test evide
   assert.match(g, /TEST-C-002 \(REQ-C-002\): no Green recorded/);
   assert.doesNotMatch(g, /TEST-C-001 .*changed/);
 });
+
+test('#55 adding a name to an import list keeps sibling evidence; changing the import module does not', () => {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-imp-'));
+  spawnSync('git', ['init', '-q'], { cwd: d });
+  fs.mkdirSync(path.join(d, '.sdd/specs'), { recursive: true });
+  fs.writeFileSync(path.join(d, '.sdd/specs/c.md'), '---\nfeature: c\ntier: T1\n---\n| REQ-C-001 | f shall return 1. | TEST-C-001 |\n| REQ-C-002 | g shall return 2. | TEST-C-002 |\n');
+  fs.writeFileSync(path.join(d, 'f.mjs'), '// @id CODE-C-001 @implements REQ-C-001 REQ-C-002\nexport const f = () => 1;\nexport const g = () => 2;\n');
+  fs.writeFileSync(path.join(d, 'other.mjs'), 'export const f = () => 1;\n');
+  const head = (names, mod = './f.mjs') => `import { test } from 'node:test';\nimport assert from 'node:assert/strict';\nimport { ${names} } from '${mod}';\n`;
+  const t1 = "// @id TEST-C-001 @verifies REQ-C-001\ntest('TEST-C-001 f', () => assert.equal(f(), 1));\n";
+  const t2 = "// @id TEST-C-002 @verifies REQ-C-002\ntest('TEST-C-002 g', () => assert.equal(g(), 2));\n";
+  const file = path.join(d, 'c.test.mjs');
+  fs.writeFileSync(file, head('f') + t1);
+  sdd(d, 'init');
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-C-001', '--characterization', 'impl exists').code, 0);
+  assert.equal(sdd(d, 'tdd', 'green', 'TEST-C-001').code, 0);
+  fs.writeFileSync(file, head('f, g') + t1 + t2);
+  assert.doesNotMatch(sdd(d, 'gate', '--no-run').out, /TEST-C-001 .*changed/);
+  fs.writeFileSync(file, head('f, g', './other.mjs') + t1 + t2);
+  assert.match(sdd(d, 'gate', '--no-run').out, /TEST-C-001 .*changed/);
+});

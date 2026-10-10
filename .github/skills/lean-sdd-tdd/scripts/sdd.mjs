@@ -37,8 +37,12 @@ const writeJson = (p, v) => { fs.mkdirSync(path.dirname(p), { recursive: true })
 const fileSha = (p) => sha(fs.readFileSync(path.join(ROOT, p)));
 // Evidence is keyed to the test's own @id region (+ the preamble before the first @id: imports/helpers), so editing one test does not invalidate its siblings (#38).
 // Files mixing implementation and tests (e.g. Rust #[cfg(test)]) hash only the region. Entries recorded with the whole-file hash (older ledgers) still match.
-// trim: drop trailing blank/col-0 closer lines (a describe's `});`) so appending a new test after the last one keeps its evidence; trim=false is the legacy hash
-const testShaVariant = (p, id, trim) => {
+// trim: drop trailing blank/col-0 closer lines (a describe's `});`) so appending a new test after the last one keeps its evidence.
+// norm: hash import statements by module only, so adding a name to an import list does not stale sibling tests (#55). trim=false/norm=false are the legacy hashes.
+const normImports = (t) => t
+  .replace(/\bimport\s+(?:type\s+)?[\w$*{}\s,]*?\s*from\s*(['"][^'"]+['"])\s*;?/g, 'import from $1')
+  .replace(/^from\s+(\S+)\s+import\s*(?:\([^)]*\)|.*)$/gm, 'from $1');
+const testShaVariant = (p, id, trim, norm = false) => {
   const txt = fs.readFileSync(path.join(ROOT, p), 'utf8');
   const ls = txt.split('\n');
   const start = ls.findIndex((l) => new RegExp(`@id\\s+${id}\\b`).test(l));
@@ -50,10 +54,11 @@ const testShaVariant = (p, id, trim) => {
   const region = rl.join('\n');
   if (/@implements\b/.test(txt)) return sha(region);
   const first = ls.findIndex((l) => /@id\s/.test(l));
-  return sha(ls.slice(0, first).join('\n') + '\u0000' + region);
+  const pre = ls.slice(0, first).join('\n');
+  return sha((norm ? normImports(pre) : pre) + '\u0000' + region);
 };
-const testSha = (p, id) => testShaVariant(p, id, true);
-const shaMatches = (recorded, p, id) => recorded === testSha(p, id) || recorded === testShaVariant(p, id, false) || recorded === sha(fs.readFileSync(path.join(ROOT, p)));
+const testSha = (p, id) => testShaVariant(p, id, true, true);
+const shaMatches = (recorded, p, id) => recorded === testSha(p, id) || recorded === testShaVariant(p, id, true) || recorded === testShaVariant(p, id, false) || recorded === sha(fs.readFileSync(path.join(ROOT, p)));
 const out = (s = '') => process.stdout.write(s + '\n');
 const tail = (s, n = 15) => s.trimEnd().split('\n').slice(-n).join('\n');
 
