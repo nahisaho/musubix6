@@ -25,3 +25,6 @@ If `--review` is a file (e.g. `.sdd/review.md`) it must follow the schema from `
 - Weak Red heuristic (setup vs asserted call) is best-effort: helper functions are scanned, and `step(..).unwrap();` right before the assertions counts as the act; `gate` prints a hint to re-run `tdd red <ID> --expect <text>` for weak Reds. Use `--expect` / `--allow-setup-red` to override.
 - `@id` suffixes must be uppercase; `CODE-X-001b` is reported as an invalid id, not as a duplicate.
 - `gate --changed` warns (`!`) when changed files are imported by code/tests of another feature; their evidence is not re-checked, so run a full gate or `impact <file>`.
+  The hint lists every affected feature and also fires on a spec-only change. `impact` resolves Python relative imports, PHP `use`, and skips TS type-only imports; its output is capped.
+- Ledger writes take `.sdd/tdd.lock` (stale after 15s), so concurrent `tdd` runs no longer corrupt `tdd.jsonl`. Lone-CR (`\r`) line endings in spec frontmatter are accepted.
+- `tdd refactor` warns when the test body changed since the last Green (no Red proves the new assertions); use `tdd red/green` if assertions changed. Record `approve` after the last spec edit: any later edit invalidates the hash.

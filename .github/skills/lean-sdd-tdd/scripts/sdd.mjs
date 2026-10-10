@@ -234,7 +234,7 @@ function scanEntities(files) {
 function parseFrontmatter(text) {
   const m = /^---\r?\n([\s\S]*?)\r?\n---/.exec(text.replace(/^\uFEFF/, ''));
   const fm = {};
-  if (m) for (const l of m[1].split(/\r?\n/)) { const kv = /^(\w+):\s*(.*)$/.exec(l); if (kv) fm[kv[1]] = kv[2].replace(/\s+#.*$/, '').trim().replace(/^(["'])(.*)\1$/, '$2').trim(); }
+  if (m) for (const l of m[1].split(/\r\n|\r|\n/)) { const kv = /^(\w+):\s*(.*)$/.exec(l); if (kv) fm[kv[1]] = kv[2].replace(/\s+#.*$/, '').trim().replace(/^(["'])(.*)\1$/, '$2').trim(); }
   return fm;
 }
 // `deferred` / `test-only` count only as a delimited marker ((deferred), [deferred], `deferred`, own cell), never as a word in the prose (#58)
@@ -248,7 +248,7 @@ function loadSpecs() {
     if (/^<{7}( |$)/m.test(text) && /^>{7}( |$)/m.test(text)) { out(`SPEC CONFLICT: ${p} has git merge conflict markers — resolve them first`); process.exit(2); }
     const fm = parseFrontmatter(text);
     const reqs = [];
-    const lines = text.split(/\r?\n/);
+    const lines = text.split(/\r\n|\r|\n/);
     lines.forEach((raw, i) => {
       // full-width digits/letters/brackets are matched as their ASCII forms; hashes still use the raw text (#78)
       const l = raw.normalize('NFKC');
@@ -314,7 +314,25 @@ function verifyChain(entries) {
   }
   return null;
 }
+// exclusive lock so concurrent tdd runs cannot fork the hash chain (#109)
+function withLedgerLock(fn) {
+  fs.mkdirSync(SDD, { recursive: true });
+  const lock = path.join(SDD, 'tdd.lock');
+  const t0 = Date.now();
+  for (;;) {
+    try { fs.mkdirSync(lock); break; } catch (err) {
+      if (err.code !== 'EEXIST') throw err;
+      try { if (Date.now() - fs.statSync(lock).mtimeMs > 15000) { fs.rmdirSync(lock); continue; } } catch { continue; }
+      if (Date.now() - t0 > 30000) { out(`ledger lock ${path.relative(ROOT, lock)} held >30s by another tdd run; remove it if stale`); process.exit(2); }
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 25);
+    }
+  }
+  try { return fn(); } finally { try { fs.rmdirSync(lock); } catch {} }
+}
 function appendLedger(e) {
+  withLedgerLock(() => appendLedgerLocked(e));
+}
+function appendLedgerLocked(e) {
   const entries = readLedger();
   const full = { v: 1, seq: entries.length + 1, ...e, at: new Date().toISOString(), prev: entries.at(-1)?.hash ?? '' };
   full.hash = entryHash(full);
@@ -381,7 +399,7 @@ function detectConfig(base = ROOT) {
     if (testCmd[0] === 'python3') checks.push({ name: 'test', cmd: ['python3', '-m', 'pytest', '-q'] });
     else if (has('go.mod')) checks.push({ name: 'test', cmd: ['go', 'test', './...'], changedCmd: ['go', 'test', '{changedGoPkgs}'] });
     else if (has('Cargo.toml')) checks.push({ name: 'test', cmd: ['cargo', 'test'], changedCmd: ['cargo', 'test', '{changedCargoPkgs}'] });
-    else if (has('pom.xml')) checks.push({ name: 'test', cmd: ['mvn', '-B', '-ntp', 'test'], changedCmd: ['mvn', '-B', '-ntp', 'test', '-pl', '{changedModulesCsv}', '-amd', '-DfailIfNoTests=false'] });
+    else if (has('pom.xml')) checks.push({ name: 'test', cmd: ['mvn', '-B', '-ntp', 'test'], changedCmd: ['mvn', '-B', '-ntp', 'test', '-pl', '{changedModulesCsv}', '-am', '-amd', '-DfailIfNoTests=false'] });
     else if (gradle) checks.push({ name: 'test', cmd: [gradle, 'cleanTest', 'test', '--console=plain'], changedCmd: [gradle, '--console=plain', '{changedGradleTasks}'] });
     else if (has('CMakeLists.txt')) checks.push({ name: 'test', cmd: ['sh', '-c', CMAKE_RUN], changedCmd: ['sh', '-c', CMAKE_RUN + ' -R "$0"', '{changedCtestRegex}'] });
     else if (testCmd[0] === phpunit) checks.push({ name: 'test', cmd: [phpunit, '--do-not-cache-result'] });
@@ -502,6 +520,13 @@ const LOAD_ERR = /(cannot find (module|package)|modulenotfounderror|importerror|
 // a missing *relative* import that the test file itself references = declared new module
 function declaredMissingModule(text, testPath) {
   const src = fs.readFileSync(path.join(ROOT, testPath), 'utf8');
+  // PHPUnit: `Class "Ns\\Cls" not found` for a class the test itself imports/uses and no project file declares yet (#117)
+  const pm = /Class\s+"([\\\w]+)"\s+not found/.exec(text);
+  if (pm && /\.php$/.test(testPath)) {
+    const short = pm[1].split('\\').pop();
+    const declared = gitFiles('*.php').filter((f) => !/(^|\/)vendor\//.test(f)).some((f) => new RegExp(`\\b(?:class|interface|enum|trait)\\s+${short}\\b`).test(fs.readFileSync(path.join(ROOT, f), 'utf8')));
+    return !declared && (src.includes(pm[1].replace(/^\\/, '')) || new RegExp(`\\b${short}\\b`).test(src));
+  }
   const m = /(?:cannot find (?:module|package)|failed to resolve import|err_module_not_found)[^\n]*?['"`]((?:\.{1,2}\/|\/)[^'"`]+)['"`]/i.exec(text);
   if (!m) return false;
   const dir = path.resolve(ROOT, path.dirname(testPath));
@@ -659,7 +684,7 @@ function cmdGuard() {
 
 // ---- typed languages: infer arity, arg and return types from the call sites in the test
 const LIT = '("(?:[^"\\\\]|\\\\.)*"|-?\\d+\\.\\d+|-?\\d+|true|false)';
-const litType = (t) => /^-?\d+$/.test(t) ? 'int' : /^-?\d+\.\d+$/.test(t) ? 'float' : /^"/.test(t) ? 'str' : /^(true|false)$/.test(t) ? 'bool' : /^&/.test(t) ? 'ptr' : null;
+const litType = (t) => /^-?\d+[lL]$/.test(t) ? 'long' : /^-?\d+$/.test(t) ? 'int' : /^-?\d+\.\d+$/.test(t) ? 'float' : /^"/.test(t) ? 'str' : /^(true|false)$/.test(t) ? 'bool' : /^&/.test(t) ? 'ptr' : null;
 function callInfo(src, name) {
   const re = new RegExp(`(?<![\\w.])${name}\\s*\\(`, 'g');
   const m = re.exec(src);
@@ -679,8 +704,9 @@ function callInfo(src, name) {
   const some = new RegExp(`^\\s*(?:==|!=|,)\\s*Some\\(\\s*(?:\\(\\s*${LIT}(?:\\s*,\\s*${LIT})+\\s*\\)|${LIT})\\s*\\)`).exec(after);
   const RT = { int: 'i64', float: 'f64', str: 'String', bool: 'bool' };
   const optInner = some && (/^\s*(?:==|!=|,)\s*Some\(\s*\(/.test(after) ? `(${[...some[0].slice(some[0].indexOf('(', some[0].indexOf('Some(') + 5)).matchAll(new RegExp(LIT, 'g'))].map((x) => RT[litType(x[1])] ?? 'i64').join(', ')})` : RT[litType(/Some\(\s*(\S+?)\s*\)/.exec(some[0])?.[1] ?? '0')] ?? 'i64');
-  const ret = optInner ? `opt:${optInner}` : /^\s*\.(is_err|is_ok|unwrap_err)\(/.test(after) ? 'result' : lit ? litType(lit) : null;
-  return { args: args.map(litType), raws: args, ret, multi: /,\s*\w+\s*:?=\s*$/.test(before), argc: args.length };
+  const ret = optInner ? `opt:${optInner}` : /^\s*\.(is_err|is_ok|unwrap_err|unwrap|expect|expect_err)\(/.test(after) || /^\s*(?:==|!=|,)\s*(?:Err|Ok)\(/.test(after) || /\b(?:Err|Ok)\(\s*$/.test(before) ? 'result' : lit ? litType(lit) : null;
+  // `_, err := New().Record(..)`: the tuple belongs to the chained method, not to this call (#113)
+  return { args: args.map(litType), raws: args, ret, multi: /,\s*\w+\s*:?=\s*$/.test(before) && !/^\s*\./.test(after), chained: /^\s*\./.test(after), argc: args.length };
 }
 const probe = (cmd, args, cwd) => { const r = spawnSync(cmd, args, { cwd, encoding: 'utf8', timeout: 120000, env: { ...process.env, LC_ALL: 'C' } }); return (r.stdout ?? '') + (r.stderr ?? ''); };
 
@@ -695,9 +721,12 @@ function stubGo(testPath, src, dir, add, made) {
   const first = (c, name) => retTypes.get(name) ?? T[c.ret] ?? 'any';
   const retOf = (c, name) => {
     const lhs = name && new RegExp(`((?:[\\w.]+\\s*,\\s*)+[\\w.]+)\\s*:?=\\s*(?:[\\w.]+\\.)?${name}\\(`).exec(src)?.[1].split(',').map((x) => x.trim());
-    if (lhs) return `(${lhs.map((x, i) => (/^err\w*$/i.test(x) && i === lhs.length - 1 ? 'error' : i === 0 ? first(c, name) : /^(ok|found|has|exists)$/i.test(x) ? 'bool' : 'any')).join(', ')})`;
-    if (name && new RegExp(`errors\\.(?:Is|As)\\(\\s*(?:[\\w.]+\\.)?${name}\\(|\\berr\\s*:?=\\s*(?:[\\w.]+\\.)?${name}\\(`).test(src)) return 'error';
-    const r = first(c, name);
+    if (lhs && c.multi) return `(${lhs.map((x, i) => (/^err\w*$/i.test(x) && i === lhs.length - 1 ? 'error' : i === 0 ? first(c, name) : /^(ok|found|has|exists)$/i.test(x) ? 'bool' : 'any')).join(', ')})`;
+    if (name && !c.chained && new RegExp(`errors\\.(?:Is|As)\\(\\s*(?:[\\w.]+\\.)?${name}\\(|\\berr\\s*:?=\\s*(?:[\\w.]+\\.)?${name}\\(`).test(src)) return 'error';
+    let r = first(c, name);
+    // `x := f(..)` followed by len(x) / range x / x[i] needs a slice-like result (#113)
+    const sv = name && new RegExp(`\\b(\\w+)\\s*:?=\\s*(?:[\\w.]+\\.)?${name}\\(`).exec(src)?.[1];
+    if (r === 'any' && sv && new RegExp(`\\blen\\(\\s*${sv}\\s*\\)|\\brange\\s+${sv}\\b|\\b${sv}\\[`).test(src)) r = '[]any';
     return c.multi ? `(${r}, error)` : r;
   };
   const funcs = new Set();
@@ -712,11 +741,61 @@ function stubGo(testPath, src, dir, add, made) {
     const parts = [];
     for (const [t, fields] of types) parts.push(`type ${t} struct {\n${[...fields].map((f) => `\t${f} any\n`).join('')}}\n`);
     for (const f of funcs) { const c = callInfo(src, f); const ctor = /^New([A-Z]\w*)$/.exec(f)?.[1]; const r = ctor ? (c.multi ? `(*${ctor}, error)` : `*${ctor}`) : retOf(c, f); parts.push(`func ${f}(${params(c)}) ${r} {\n\tpanic("not implemented: ${f}")\n}\n`); }
-    for (const [t, ms] of methods) for (const m of ms) { const c = callInfo(src.replace(new RegExp(`\\w+\\.${m}\\(`, 'g'), `${m}(`), m); parts.push(`func (*${t}) ${m}(${params(c)}) ${retOf(c, m)} {\n\tpanic("not implemented: ${t}.${m}")\n}\n`); }
+    for (const [t, ms] of methods) for (const m of ms) { const c = callInfo(src.replace(new RegExp(`\\b\\w+\\([^()]*\\)\\.${m}\\(`, 'g'), `${m}(`).replace(new RegExp(`\\w+\\.${m}\\(`, 'g'), `${m}(`), m); parts.push(`func (*${t}) ${m}(${params(c)}) ${retOf(c, m)} {\n\tpanic("not implemented: ${t}.${m}")\n}\n`); }
     for (const e of errs) parts.unshift(`var ${e} = errors.New("${e}")\n`);
     for (const k of consts) parts.unshift(`const ${k} = 0\n`);
     return `package ${pkg}\n\n${errs.size ? 'import "errors"\n\n' : ''}${parts.join('\n')}`;
   };
+  // external test package (`package x_test`): stub the qualified symbols of the imported project packages (#113)
+  if (/^package\s+\w+_test\b/m.test(src)) {
+    let gr = dir;
+    while (gr !== path.dirname(gr) && !fs.existsSync(path.join(gr, 'go.mod'))) gr = path.dirname(gr);
+    const mod = fs.existsSync(path.join(gr, 'go.mod')) ? /^module\s+(\S+)/m.exec(fs.readFileSync(path.join(gr, 'go.mod'), 'utf8'))?.[1] : null;
+    const exts = [];
+    if (mod) for (const m of src.matchAll(/^\s*(?:import\s+)?(?:(\w+)\s+)?"([^"\n]+)"/gm)) {
+      if (!m[2].startsWith(mod + '/')) continue;
+      const idir = path.join(gr, m[2].slice(mod.length + 1));
+      const last = m[2].split('/').pop();
+      const alias = m[1] ?? last;
+      const hasGo = fs.existsSync(idir) && fs.readdirSync(idir).some((f) => /\.go$/.test(f) && !/_test\.go$/.test(f));
+      exts.push({ alias, idir, last, hasGo, file: path.join(idir, hasGo ? `${last}_stub.go` : `${last}.go`), funcs: new Set(), types: new Map(), consts: new Set(), methods: new Map() });
+    }
+    for (const e of exts) {
+      const q = (x) => x.replace(new RegExp(`\\b${e.alias}\\.`, 'g'), '');
+      const render = () => {
+        const parts = [];
+        for (const [t, fields] of e.types) parts.push(`type ${t} struct {\n${[...fields].map((f) => `\t${f} any\n`).join('')}}\n`);
+        for (const f of e.funcs) { const c = callInfo(q(src), f); const ctor = /^New([A-Z]\w*)$/.exec(f)?.[1]; parts.push(`func ${f}(${params(c)}) ${ctor ? (c.multi ? `(*${ctor}, error)` : `*${ctor}`) : retOf(c, f)} {\n\tpanic("not implemented: ${f}")\n}\n`); }
+        for (const [t, ms] of e.methods) for (const m of ms) { const c = callInfo(q(src).replace(new RegExp(`\\b\\w+\\([^()]*\\)\\.${m}\\(`, 'g'), `${m}(`).replace(new RegExp(`\\w+\\.${m}\\(`, 'g'), `${m}(`), m); parts.push(`func (*${t}) ${m}(${params(c)}) ${retOf(c, m)} {\n\tpanic("not implemented: ${t}.${m}")\n}\n`); }
+        for (const k of e.consts) parts.unshift(`const ${k} = 0\n`);
+        return `package ${e.last}\n\n${parts.join('\n')}`;
+      };
+      if (!e.hasGo) { fs.mkdirSync(e.idir, { recursive: true }); fs.writeFileSync(e.file, `package ${e.last}\n`); }
+      for (let pass = 0; pass < 5; pass++) {
+        const out = probe('go', ['test', '-count=1', '-gcflags=-e', '-run', '^$', '.'], dir);
+        let grew = false;
+        for (const m of out.matchAll(new RegExp(`undefined: ${e.alias}\\.(\\w+)`, 'g'))) {
+          const n = m[1];
+          const isCall = new RegExp(`${e.alias}\\.${n}\\s*\\(`).test(src);
+          const isType = !isCall && /^[A-Z]/.test(n) && new RegExp(`${e.alias}\\.${n}\\s*\\{|[*\\]]${e.alias}\\.${n}\\b|\\bvar\\s+\\w+\\s+\\*?${e.alias}\\.${n}\\b`).test(src);
+          if (isCall) { if (e.funcs.has(n)) continue; e.funcs.add(n); const ct = /^New([A-Z]\w*)$/.exec(n)?.[1]; if (ct && !e.types.has(ct)) e.types.set(ct, new Set()); }
+          else if (isType) { if (e.types.has(n)) continue; e.types.set(n, new Set()); }
+          else { if (e.consts.has(n)) continue; e.consts.add(n); }
+          grew = true;
+        }
+        for (const m of out.matchAll(new RegExp(`(\\S+)\\.(\\w+) undefined \\(type \\*?${e.alias}\\.(\\w+) has no field or method`, 'g'))) {
+          const [, recv, member, t] = m;
+          if (new RegExp(`${recv.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\.${member}\\s*\\(`).test(src)) { if (!e.methods.has(t)) e.methods.set(t, new Set()); if (e.methods.get(t).has(member)) continue; e.methods.get(t).add(member); }
+          else { if (!e.types.has(t) || e.types.get(t).has(member)) continue; e.types.get(t).add(member); }
+          grew = true;
+        }
+        if (!grew) break;
+        fs.writeFileSync(e.file, render());
+      }
+      if (e.funcs.size || e.types.size || e.consts.size) made.push(rel(e.file));
+      else if (!e.hasGo) fs.rmSync(e.file, { force: true });
+    }
+  }
   // each pass reveals the next layer: undefined names, then methods/fields of the types just created (#69)
   for (let pass = 0; pass < 4; pass++) {
     const out = probe('go', ['test', '-count=1', '-gcflags=-e', '-run', '^$', '.'], dir);
@@ -732,10 +811,10 @@ function stubGo(testPath, src, dir, add, made) {
       if (isType) types.set(n, new Set()); else { funcs.add(n); const ct = /^New([A-Z]\w*)$/.exec(n)?.[1]; if (ct && !types.has(ct)) types.set(ct, new Set()); }
       grew = true;
     }
-    for (const m of out.matchAll(/\.(\w+) undefined \(type \*?(\w+) has no field or method \w+\)/g)) {
+    for (const m of [...out.matchAll(/(\S+)\.(\w+) undefined \(type \*?(\w+) has no field or method \w+\)/g)].map((x) => Object.assign([x[0], x[2], x[3]], { recv: x[1] }))) {
       const [, member, t] = m;
       if (t === 'any') continue;
-      const isCall = new RegExp(`\\.${member}\\s*\\(`).test(src);
+      const isCall = new RegExp(`\\.${member}\\s*\\(`).test(src) && !(m.recv && !new RegExp(`${m.recv.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\.${member}\\s*\\(`).test(src));
       if (isCall) { if (!methods.has(t)) methods.set(t, new Set()); if (methods.get(t).has(member)) continue; methods.get(t).add(member); }
       else { if (!types.has(t)) continue; if (types.get(t).has(member)) continue; types.get(t).add(member); }
       grew = true;
@@ -773,9 +852,12 @@ function stubRust(testPath, src, dir, made) {
     const assoc = [...new Set([...src.matchAll(new RegExp(`(?<![\\w:])${n}::([a-z_]\\w*)\\s*\\(`, 'g'))].map((m) => m[1]))];
     const vars = [...new Set([...src.matchAll(new RegExp(`\\blet\\s+(?:mut\\s+)?(\\w+)\\s*(?::[^=]+)?=\\s*${n}::[a-z_]\\w*\\s*\\(`, 'g'))].map((m) => m[1]))];
     const inst = [...new Set(vars.flatMap((v) => [...src.matchAll(new RegExp(`(?<![\\w.])${v}\\s*\\.\\s*([a-z_]\\w*)\\s*\\(`, 'g'))].map((m) => m[1])))].filter((k) => !assoc.includes(k));
+    // methods called only on `let mut v` bindings take `&mut self` (#114)
+    const mutVars = new Set([...src.matchAll(new RegExp(`\\blet\\s+mut\\s+(\\w+)\\s*(?::[^=]+)?=\\s*${n}::[a-z_]\\w*\\s*\\(`, 'g'))].map((m) => m[1]));
+    const needsMut = (k) => { const cs = vars.filter((v) => new RegExp(`(?<![\\w.])${v}\\s*\\.\\s*${k}\\s*\\(`).test(src)); return cs.length > 0 && cs.every((v) => mutVars.has(v)) && cs.some((v) => new RegExp(`^\\s*${v}\\s*\\.\\s*${k}\\s*\\(`, 'm').test(src)); };
     if (!assoc.length && !inst.length) return '';
     const gen = (c) => c.args.map((_, i) => `A${i}`);
-    const sig = (k, self) => { const c = callInfo(src.replace(/\b\w+\./g, ''), k); const g = gen(c); return `    pub fn ${k}${g.length ? `<${g.join(', ')}>` : ''}(${[self ? '&self' : '', ...g.map((t, i) => `_a${i}: ${t}`)].filter(Boolean).join(', ')}) -> ${self ? (T[c.ret] ?? 'i64') : 'Self'} {\n        ${!self && /^(new|default|with_\w+|from_\w+|create|empty)$/.test(k) ? 'Self' : `unimplemented!("not implemented: ${n}::${k}")`}\n    }\n`; };
+    const sig = (k, self) => { const c = callInfo(src.replace(/\b\w+\./g, ''), k); const g = gen(c); return `    pub fn ${k}${g.length ? `<${g.join(', ')}>` : ''}(${[self ? (needsMut(k) ? '&mut self' : '&self') : '', ...g.map((t, i) => `_a${i}: ${t}`)].filter(Boolean).join(', ')}) -> ${self ? (T[c.ret] ?? 'i64') : 'Self'} {\n        ${!self && /^(new|default|with_\w+|from_\w+|create|empty)$/.test(k) ? 'Self' : `unimplemented!("${n}::${k}")`}\n    }\n`; };
     return `\nimpl ${n} {\n${[...assoc.map((k) => sig(k, false)), ...inst.map((k) => sig(k, true))].join('\n')}}\n`;
   };
   const typeStub = (n) => { const vs = [...new Set([...src.matchAll(new RegExp(`\\b${n}::([A-Z]\\w*)`, 'g'))].map((m) => m[1]))]; return vs.length ? `#[derive(Debug, Clone, Copy, PartialEq, Eq)]\npub enum ${n} {\n${vs.map((v) => `    ${v},\n`).join('')}}\n` : `#[derive(Debug, Clone, Default, PartialEq)]\npub struct ${n};\n${rustImpl(n)}`; };
@@ -830,25 +912,29 @@ function stubJava(testPath, src, dir, add, made) {
   const local = new Set([...src.matchAll(/\b(?:class|interface|enum|record)\s+(\w+)/g)].map((m) => m[1]));
   const known = new Set(listFiles().map((f) => path.basename(f).replace(/\.java$/, '')));
   const JDK = /^(System|Math|String|Integer|Long|Double|Boolean|Character|Objects|Arrays|List|Map|Set|Collections|Optional|Thread|Assertions?|Assert|Files|Paths|Path|Instant|Duration|LocalDate|LocalDateTime|StringBuilder|Stream|Collectors|Pattern|UUID|BigDecimal|BigInteger)$/;
+  // names that a java.*/javax.* wildcard import (or java.lang) already provides must never be stubbed into the project (#115)
+  const wild = [...src.matchAll(/^import\s+((?:java|javax)[\w.]*)\.\*\s*;/gm)].map((m) => m[1]).concat('java.lang');
+  const jdkCache = new Map();
+  const isJdk = (n) => JDK.test(n) || (jdkCache.has(n) ? jdkCache.get(n) : (jdkCache.set(n, wild.some((p) => spawnSync('javap', [`${p}.${n}`], { stdio: 'ignore' }).status === 0)), jdkCache.get(n)));
   const byClass = new Map();
   for (const m of src.matchAll(/(?<![\w.])([A-Z]\w*)\.([a-z]\w*)\s*\(/g)) {
-    if (imported.has(m[1]) || local.has(m[1]) || known.has(m[1]) || JDK.test(m[1])) continue;
+    if (imported.has(m[1]) || local.has(m[1]) || known.has(m[1]) || isJdk(m[1])) continue;
     byClass.set(m[1], [...(byClass.get(m[1]) ?? []), m[2]]);
   }
   // `new X(...)` needs a constructible class too (#76)
   const ctors = new Set();
   for (const m of src.matchAll(/\bnew\s+([A-Z]\w*)\s*\(/g)) {
-    if (imported.has(m[1]) || local.has(m[1]) || known.has(m[1]) || JDK.test(m[1]) || /^(Exception|RuntimeException|IllegalArgumentException|IllegalStateException|ArrayList|HashMap|HashSet|LinkedList|Object|Random|Scanner)$/.test(m[1])) continue;
+    if (imported.has(m[1]) || local.has(m[1]) || known.has(m[1]) || isJdk(m[1]) || /^(Exception|RuntimeException|IllegalArgumentException|IllegalStateException|ArrayList|HashMap|HashSet|LinkedList|Object|Random|Scanner)$/.test(m[1])) continue;
     ctors.add(m[1]);
     if (!byClass.has(m[1])) byClass.set(m[1], []);
   }
   const rootRel = rel(dir);
   const mainDir = /src\/test\/java/.test(rootRel + '/') ? path.resolve(ROOT, rootRel.replace('src/test/java', 'src/main/java')) : /(^|\/)test$/.test(rootRel) ? path.resolve(dir, '../src') : dir;
-  const T = { int: 'int', float: 'double', str: 'String', bool: 'boolean' };
+  const T = { int: 'int', long: 'long', float: 'double', str: 'String', bool: 'boolean' };
   // `Cls.UPPER` (no call) => enum constant; a class used only that way becomes an enum (#76)
   const consts = new Map();
   for (const m of src.matchAll(/(?<![\w.])([A-Z]\w*)\.([A-Z][A-Z0-9_]*)\b(?!\s*\()/g)) {
-    if (imported.has(m[1]) || local.has(m[1]) || known.has(m[1]) || JDK.test(m[1])) continue;
+    if (imported.has(m[1]) || local.has(m[1]) || known.has(m[1]) || isJdk(m[1])) continue;
     consts.set(m[1], [...new Set([...(consts.get(m[1]) ?? []), m[2]])]);
     if (!byClass.has(m[1])) byClass.set(m[1], []);
   }
@@ -859,7 +945,7 @@ function stubJava(testPath, src, dir, add, made) {
     const ctorDecl = ctorSrc ? `    public ${cls}(${ctorSrc.args.map((t, i) => `${T[t] ?? 'Object'} a${i}`).join(', ')}) {}\n` : '';
     const body = [...new Set(ms)].map((n) => { const c = callInfo(src.replace(new RegExp(`\\b${cls}\\.`, 'g'), ''), n); return `    public static ${T[c.ret] ?? 'int'} ${n}(${c.args.map((_, i) => `Object a${i}`).join(', ')}) {\n        throw new UnsupportedOperationException("not implemented: ${n}");\n    }\n`; }).join('\n');
     // instance methods called on `new Cls(..)` / a variable holding one (#103)
-    const inst = methodsOf(src, cls).filter((n) => !ms.includes(n)).map((n) => { const c = callInfo(src.replace(/\b\w+\./g, ''), n); return `    public ${T[c.ret] ?? 'int'} ${n}(${c.args.map((_, i) => `Object a${i}`).join(', ')}) {\n        throw new UnsupportedOperationException("not implemented: ${cls}.${n}");\n    }\n`; }).join('\n');
+    const inst = methodsOf(src, cls).filter((n) => !ms.includes(n)).map((n) => { const c = callInfo(src.replace(/\b\w+\./g, '').replace(/\)\s*\.\s*/g, ') '), n); return `    public ${T[c.ret] ?? 'int'} ${n}(${c.args.map((_, i) => `Object a${i}`).join(', ')}) {\n        throw new UnsupportedOperationException("not implemented: ${cls}.${n}");\n    }\n`; }).join('\n');
     const all = [body, inst].filter(Boolean).join('\n');
     add(path.join(mainDir, cls + '.java'), `${pkg ? `package ${pkg};\n\n` : ''}public class ${cls} {\n${cc}${ctorDecl}${(cc || ctorDecl) && all ? '\n' : ''}${all}}\n`);
   }
@@ -887,7 +973,8 @@ function stubC(testPath, src, dir, add, made) {
     const c = callInfo(src, n), pt = new RegExp(`\\b([A-Za-z_]\\w*)\\s*\\*\\s*\\w+\\s*=\\s*${n}\\s*\\(`).exec(src)?.[1], r = pt && !cpp ? 'void *' : T[c.ret] ?? 'int';
     if (cpp) return `template <class... A>\ninline ${r} ${n}(A&&...) {\n    throw std::logic_error("not implemented: ${n}");\n}\n`;
     const ps = c.args.map((t, i) => `${t === 'ptr' ? 'void *' : T[t] ?? declaredPtr(c.raws?.[i]) ?? 'int'} a${i}`).join(', ') || 'void';
-    return `static inline ${r} ${n}(${ps}) {\n    fprintf(stderr, "not implemented: ${n}\\n");\n    abort();\n}\n`;
+    const unused = c.args.map((_, i) => `    (void)a${i};\n`).join('');
+    return `static inline ${r} ${n}(${ps}) {\n${unused}    fprintf(stderr, "not implemented: ${n}\\n");\n    abort();\n}\n`;
   }).join('\n');
   const head = cpp ? '#pragma once\n#include <stdexcept>\n\n' : '#pragma once\n#include <stdio.h>\n#include <stdlib.h>\n\n';
   // a missing header belongs next to the production code (include/ or src/), not in tests/ where it would shadow it (#76)
@@ -909,6 +996,8 @@ function stubScript(lang, src, dir, add, made) {
   // PHP classes used as Class::method( / new Class( get a class with throwing static methods (#87)
   const phpClasses = new Map();
   const exc = new Set();
+  let psrDone = false;
+  const classBody = (c, ms) => exc.has(c) ? `class ${c} extends \\Exception\n{\n}\n` : `class ${c}\n{\n${[...ms].map((n) => `    public static function ${n}(...$args)\n    {\n        throw new \\LogicException('not implemented: ${c}::${n}');\n    }\n`).join('\n')}}\n`;
   if (lang === 'php') {
     for (const m of code.matchAll(/(?<![\w$\\])([A-Z]\w*)::([A-Za-z_]\w*)\s*\(/g)) phpClasses.set(m[1], new Set([...(phpClasses.get(m[1]) ?? []), m[2]]));
     for (const m of code.matchAll(/\bnew\s+([A-Z]\w*)/g)) if (!phpClasses.has(m[1])) phpClasses.set(m[1], new Set());
@@ -921,8 +1010,22 @@ function stubScript(lang, src, dir, add, made) {
     const builtin = new Set(bi?.status === 0 ? bi.stdout.split('\n').filter(Boolean) : []);
     for (const c of names) if (builtin.has(c) || new RegExp(`\\b(?:class|interface|enum|trait)\\s+${c}\\b`).test(projSrc)) phpClasses.delete(c);
     unknown = unknown.filter((n) => !phpClasses.has(n) && !new RegExp(`\\bnew\\s+${n}\\b`).test(code));
+    // `use Ns\\Cls;` classes become PSR-4 files (composer.json autoload mapping, else first namespace segment => src/) with a `namespace` line (#117)
+    const psr4 = [];
+    try { const cj = JSON.parse(fs.readFileSync(path.join(ROOT, 'composer.json'), 'utf8')); for (const sec of [cj.autoload, cj['autoload-dev']]) for (const [k, v] of Object.entries(sec?.['psr-4'] ?? {})) psr4.push([k, [].concat(v)[0]]); } catch {}
+    psr4.sort((a, b) => b[0].length - a[0].length);
+    for (const m of code.matchAll(/^\s*use\s+([A-Za-z_][\w\\]*\\)([A-Za-z_]\w*)\s*;/gm)) {
+      const ns = m[1].replace(/\\$/, ''), cls = m[2];
+      if (!phpClasses.has(cls) && !new RegExp(`\\b${cls}\\b`).test(code.replace(m[0], ''))) continue;
+      if (new RegExp(`\\b(?:class|interface|enum|trait)\\s+${cls}\\b`).test(projSrc)) continue;
+      const hit = psr4.find(([k]) => (ns + '\\').startsWith(k));
+      const rest = hit ? (ns + '\\').slice(hit[0].length).split('\\').filter(Boolean) : ns.split('\\').slice(1);
+      const fileAbs = path.join(ROOT, hit ? hit[1] : 'src', ...rest, cls + '.php');
+      add(fileAbs, `<?php\n\nnamespace ${ns};\n\n${classBody(cls, phpClasses.get(cls) ?? new Set())}`);
+      phpClasses.delete(cls);
+      psrDone = true;
+    }
   }
-  const classBody = (c, ms) => exc.has(c) ? `class ${c} extends \\Exception\n{\n}\n` : `class ${c}\n{\n${[...ms].map((n) => `    public static function ${n}(...$args)\n    {\n        throw new \\LogicException('not implemented: ${c}::${n}');\n    }\n`).join('\n')}}\n`;
   const loads = [...src.matchAll(loadRe)].map((m) => path.resolve(dir, m[1].replace(/^\/+/, ''))).filter((abs) => !fs.existsSync(abs));
   const used = new Set();
   for (const abs of loads) {
@@ -940,6 +1043,15 @@ function methodsOf(src, cls) {
   const skip = /^(assert\w*|then|catch|toString|valueOf|constructor|call|apply|bind)$/;
   for (const m of src.matchAll(new RegExp(`(?:new\\s+)?\\b${cls}\\s*\\([^()]*\\)\\s*\\.\\s*([A-Za-z_$][\\w$]*)\\s*\\(`, 'g'))) out.add(m[1]);
   const vars = [...src.matchAll(new RegExp(`\\b([A-Za-z_$][\\w$]*)\\s*(?::[^=\\n]+)?=\\s*(?:await\\s+)?(?:new\\s+)?${cls}\\s*\\(`, 'g'))].map((m) => m[1]);
+  // objects built inside a helper (`const { s } = setup()`, `c, j = setup()`, `setup().s.m(`): methods called on whatever the helper returns (#112)
+  const lines = src.split('\n');
+  const DEF = /^\s*(?:export\s+)?(?:async\s+)?(?:function\s+(\w+)|def\s+(\w+)|(?:const|let)\s+(\w+)\s*=\s*(?:async\s*)?\()/;
+  const defs = lines.map((l, i) => ({ i, n: DEF.exec(l) })).filter((d) => d.n).map((d) => ({ i: d.i, name: d.n[1] ?? d.n[2] ?? d.n[3] }));
+  const helpers = defs.filter((d, k) => lines.slice(d.i, k + 1 < defs.length ? defs[k + 1].i : lines.length).some((l) => new RegExp(`\\b${cls}\\s*\\(`).test(l))).map((d) => d.name).filter((n) => !/^test/i.test(n));
+  for (const h of helpers) {
+    for (const m of src.matchAll(new RegExp(`\\b${h}\\s*\\([^()]*\\)\\s*(?:\\.\\s*[A-Za-z_$][\\w$]*\\s*)?\\.\\s*([A-Za-z_$][\\w$]*)\\s*\\(`, 'g'))) out.add(m[1]);
+    for (const m of src.matchAll(new RegExp(`^\\s*(?:(?:const|let|var)\\s+)?[\\[{(]?\\s*([\\w$]+(?:\\s*[,:]\\s*[\\w$]+)*)\\s*[\\]})]?\\s*(?::[^=\\n]+)?=\\s*(?:await\\s+)?${h}\\s*\\(`, 'gm'))) vars.push(...m[1].split(/\s*[,:]\s*/).filter((x) => x && x !== '_'));
+  }
   for (const v of new Set(vars)) for (const m of src.matchAll(new RegExp(`(?<![\\w$.])${v.replace(/\$/g, '\\$')}\\s*\\.\\s*([A-Za-z_$][\\w$]*)\\s*\\(`, 'g'))) out.add(m[1]);
   return [...out].filter((n) => !skip.test(n));
 }
@@ -972,13 +1084,24 @@ function stubFor(testPath) {
       const ns = m[2].replace(/#[^\n]*/g, '').replace(/[()]/g, '').split(',').map((x) => x.trim().split(/\s+as\s+/)[0]).filter(Boolean);
       // pytest.raises(X) / assertRaises(X) / except X => an Exception subclass, else the Red is "must derive from BaseException"
       const isExc = (n) => new RegExp(`(raises|assertRaises|assertRaisesRegex)\\(\\s*${n}\\b|\\bexcept\\s+\\(?\\s*${n}\\b`).test(src);
-      const stubOf = (n) => isExc(n) ? `class ${n}(Exception):\n    pass\n` : /^[A-Z]/.test(n) ? `class ${n}:\n    def __init__(self, *a, **k):\n        pass\n${methodsOf(src, n).map((k) => `\n    def ${k}(self, *a, **k):\n        raise NotImplementedError("${k}")\n`).join('')}` : `def ${n}(*a, **k):\n    raise NotImplementedError("${n}")\n`;
+      // ALL_CAPS names that are never called are constants, not classes (#112)
+      const isConst = (n) => /^[A-Z][A-Z0-9_]+$/.test(n) && !new RegExp(`\\b${n}\\s*\\(`).test(src);
+      const stubOf = (n) => isExc(n) ? `class ${n}(Exception):\n    pass\n` : isConst(n) ? `${n} = None\n` : /^[A-Z]/.test(n) ? `class ${n}:\n    def __init__(self, *a, **k):\n        pass\n${methodsOf(src, n).map((k) => `\n    def ${k}(self, *a, **k):\n        raise NotImplementedError("${k}")\n`).join('')}` : `def ${n}(*a, **k):\n    raise NotImplementedError("${n}")\n`;
       const existing = fs.existsSync(abs) ? abs : fs.existsSync(abs.replace(/\.py$/, '/__init__.py')) ? abs.replace(/\.py$/, '/__init__.py') : null;
       if (existing) {
         // a module that still holds only stubs gets the newly imported names; real code is never touched
         const cur = fs.readFileSync(existing, 'utf8');
         const rest = cur.replace(/^class \w+(\(Exception\))?:\n(?:    def __init__\(self, \*a, \*\*k\):\n        pass\n|    pass\n)(?:\n    def \w+\(self, \*a, \*\*k\):\n        raise NotImplementedError\("\w+"\)\n)*/gm, '').replace(/^def \w+\(\*a, \*\*k\):\n    raise NotImplementedError\("\w+"\)\n/gm, '');
-        const missing = ns.filter((n) => !new RegExp(`^(class|def)\\s+${n}\\b|^${n}\\s*=`, 'm').test(cur));
+        let missing = ns.filter((n) => !new RegExp(`^(class|def)\\s+${n}\\b|^${n}\\s*=`, 'm').test(cur));
+        // `from pkg import mod` used as `mod.f(...)` is a submodule: create pkg/mod.py and leave __init__.py alone (#112)
+        if (/__init__\.py$/.test(existing)) {
+          const sub = missing.filter((n) => /^[a-z_]\w*$/.test(n) && new RegExp(`\\b${n}\\.\\w`).test(src) && !new RegExp(`(?<![\\w.])${n}\\s*\\(`).test(src));
+          for (const n of sub) {
+            const fns = [...new Set([...src.matchAll(new RegExp(`\\b${n}\\.([A-Za-z_]\\w*)\\s*\\(`, 'g'))].map((x) => x[1]))];
+            add(path.join(path.dirname(existing), n + '.py'), fns.map((f) => `def ${f}(*a, **k):\n    raise NotImplementedError("${f}")\n`).join('\n\n') || 'pass\n');
+          }
+          missing = missing.filter((n) => !sub.includes(n));
+        }
         if (missing.length && !rest.trim()) { fs.appendFileSync(existing, (cur.endsWith('\n') ? '\n\n' : '\n\n\n') + missing.map(stubOf).join('\n\n')); made.push(rel(existing)); }
         else if (missing.length) (made.realMissing ??= []).push(`${missing.join(', ')} in ${rel(existing)}`);
         continue;
@@ -994,6 +1117,30 @@ function stubFor(testPath) {
   const lang = /\.php$/.test(testPath) ? 'php' : /\.jl$/.test(testPath) ? 'jl' : /\.[Rr]$/.test(testPath) ? 'r' : null;
   if (lang) return stubScript(lang, src, dir, add, made);
   const ts = /\.[cm]?tsx?$/.test(testPath);
+  // the module exists but lacks a name the test imports (or a method of a class it already has): add throwing stubs, never touch existing lines (#112)
+  const jsExisting = (file, clause) => {
+    const { named, def } = names(clause.replace(/^\*\s+as\s+\w+$/, ''));
+    let cur = fs.readFileSync(file, 'utf8');
+    const has = (n) => new RegExp(`\\b(?:function|class|const|let|var|enum|interface|type)\\s+${n}\\b|\\bexport\\s*\\{[^}]*\\b${n}\\b|\\bas\\s+${n}\\b`).test(cur);
+    const isClass = (n) => new RegExp(`\\bnew\\s+${n}\\b|\\bextends\\s+${n}\\b|\\binstanceof\\s+${n}\\b`).test(src);
+    const add2 = [];
+    for (const n of named.filter((x) => !has(x))) add2.push(/^[A-Z][A-Z0-9_]+$/.test(n) && !new RegExp(`\\b${n}\\s*\\(`).test(src) ? `export const ${n}${ts ? ': any' : ''} = undefined;\n` : isClass(n) ? `export class ${n} {\n  constructor(..._args${ts ? ': any[]' : ''}) {}\n}\n` : ts ? `export function ${n}(..._args: any[]): any {\n  throw new Error('not implemented: ${n}');\n}\n` : `export function ${n}() {\n  throw new Error('not implemented: ${n}');\n}\n`);
+    let changed = false;
+    for (const n of [...named, def].filter((x) => x && has(x))) {
+      const cm = new RegExp(`\\bclass\\s+${n}\\b[^{]*\\{`).exec(cur);
+      if (!cm) continue;
+      let depth = 1, i = cm.index + cm[0].length;
+      for (; i < cur.length && depth > 0; i++) { if (cur[i] === '{') depth++; else if (cur[i] === '}') depth--; }
+      const body = cur.slice(cm.index + cm[0].length, i - 1);
+      const miss = methodsOf(src, n).filter((k) => !new RegExp(`(?:^|\\s)(?:async\\s+|static\\s+|get\\s+|set\\s+)*${k}\\s*\\(|\\b${k}\\s*[=:]`).test(body));
+      if (!miss.length) continue;
+      const ins = miss.map((k) => `\n  ${k}(..._args${ts ? ': any[]): any' : ')'} {\n    throw new Error('not implemented: ${n}.${k}');\n  }\n`).join('');
+      cur = cur.slice(0, i - 1) + ins + cur.slice(i - 1);
+      changed = true;
+    }
+    if (add2.length) { cur += (cur.endsWith('\n') ? '\n' : '\n\n') + add2.join('\n'); changed = true; }
+    if (changed) { fs.writeFileSync(file, cur); made.push(rel(file)); }
+  };
   // static `import … from './x'` and dynamic `(const {a} | x) = await import('./x')`, also in .cjs tests (#76)
   const imps = [...src.matchAll(/import\s+([^'"\n;]*?)\s+from\s+['"](\.{1,2}\/[^'"]+)['"]/g)].map((m) => ({ 1: m[1], 2: m[2] }));
   for (const m of src.matchAll(/(?:(?:const|let|var)\s+(\{[^}]*\}|\w+)\s*=\s*)?await\s+import\(\s*['"](\.{1,2}\/[^'"]+)['"]\s*\)/g)) imps.push({ 1: m[1] && m[1].startsWith('{') ? m[1] : '', 2: m[2] });
@@ -1002,7 +1149,8 @@ function stubFor(testPath) {
     const abs = path.resolve(dir, spec);
     const exts = ['', '.ts', '.tsx', '.js', '.mjs', '.cjs', '.jsx', '/index.ts', '/index.js'];
     const stem = abs.replace(/\.[cm]?[jt]sx?$/, '');
-    if (exts.some((e) => fs.existsSync(abs + e) || fs.existsSync(stem + e))) continue;
+    const found = exts.map((e) => (fs.existsSync(abs + e) && fs.statSync(abs + e).isFile() ? abs + e : fs.existsSync(stem + e) && fs.statSync(stem + e).isFile() ? stem + e : null)).find(Boolean);
+    if (found) { jsExisting(found, m[1]); continue; }
     const target = /\.[cm]?[jt]sx?$/.test(abs) ? (ts ? stem + '.ts' : abs) : abs + (ts ? '.ts' : '.js');
     const { named, def } = names(m[1].replace(/^\*\s+as\s+\w+$/, ''));
     // used with new / extends / instanceof / toThrow(Class) => must be a class, or `new X()` in setup fails every test
@@ -1047,7 +1195,7 @@ function markAsserts(lines) {
 // Red caused by a stub called from setup (not from the asserted behaviour) is not evidence for the REQ
 function setupOrigin(line, testPath, id, text = '') {
   // a missing method on a constructor-only stub (`x.m is not a function`, `has no attribute 'm'`) is a setup failure too (#75)
-  const m = /not implemented:?\s*([\w$]+)|NotImplementedError:?\s*\(?["']?([\w$]+)|unimplemented!?\(?\s*"?([\w$]+)|\.([\w$]+) is not a function|has no attribute '([\w$]+)'/i.exec(line ?? '');
+  const m = /not implemented:?\s*(?:[\w$]+::)*([\w$]+)|NotImplementedError:?\s*\(?["']?([\w$]+)|unimplemented!?\(?\s*"?([\w$]+)|\.([\w$]+) is not a function|has no attribute '([\w$]+)'/i.exec(line ?? '');
   const x = m?.[1] ?? m?.[2] ?? m?.[3] ?? m?.[4] ?? m?.[5];
   if (!x) return null;
   if (/ERROR at setup of/.test(text)) return x; // pytest fixture failure is always setup
@@ -1060,11 +1208,13 @@ function setupOrigin(line, testPath, id, text = '') {
   // `const r = sut(...)` followed by assertions on r is the act under test, not setup
   const assertedResult = (hitLines) => {
     const WRAP = '(?:(?:list|len|sorted|set|tuple|dict|str|int|float|sum|bool|String|Number|JSON\\.stringify|Object\\.\\w+|Array\\.from)\\(\\s*)*';
-    const vars = hitLines.map((l) => /^\s*(?:(?:const|let|var)\s+(?:mut\s+)?)?([A-Za-z_$][\w$]*)\s*(?::[^=]+)?=(?!=)/.exec(l)?.[1]).filter(Boolean);
+    // single, tuple-unpacked (`a, b = f()` / `let (a, b) = f()`) and Go `:=` targets (#110)
+    const vars = hitLines.flatMap((l) => { const m = /^\s*(?:(?:const|let|var)\s+(?:mut\s+)?)?\(?\s*([A-Za-z_$][\w$]*(?:\s*,\s*(?:mut\s+)?[A-Za-z_$][\w$]*)*)\s*\)?\s*(?::(?!=)[^=]+)?:?=(?!=)/.exec(l); return m ? m[1].split(/\s*,\s*(?:mut\s+)?/).filter((v) => v !== '_') : []; });
     const bl = testBody(testPath, id), bf = markAsserts(bl);
     const body = bl.filter((_, i) => bf[i]);
     const subject = (v) => new RegExp(`(?:expect\\(\\s*(?:await\\s+)?|assert\\w*!?(?:\\.\\w+)?\\(\\s*|\\bassert\\s+(?:not\\s+)?)${WRAP}&?${v.replace(/[$]/g, '\\$&')}(?![\\w$])`);
-    return vars.some((v) => body.some((l) => subject(v).test(l)));
+    const goIf = (v) => new RegExp(`\\bif\\b[^{]*?(?<![\\w$.])${v.replace(/[$]/g, '\\$&')}(?![\\w$])`);
+    return vars.some((v) => body.some((l) => subject(v).test(l) || goIf(v).test(l)));
   };
   // the stub is hit inside a helper defined outside the test: the test's calls to that helper are setup unless its result is asserted (#106)
   const helperVerdict = () => {
@@ -1090,6 +1240,8 @@ function setupOrigin(line, testPath, id, text = '') {
     if (hit.some(({ i }) => /raises|assertRaises|assertThrows|assert_raises/.test(all[i - 1] ?? ''))) return null;
     if (!hit.length) return helperVerdict();
     if (hit.some(({ i }) => inA[i])) return null;
+    // `match f(..).unwrap() { .. }` / `match Regex::new(..) { .. }`: the scrutinee is the behaviour under test (#110)
+    if (hit.some(({ l }) => /^\s*(?:match|switch)\b/.test(l))) return null;
     const firstAssert = inA.findIndex((v, i) => v && i >= start);
     const prevStmt = (() => { for (let k = firstAssert - 1; k > start; k--) if (all[k].trim() && !/^\s*(\/\/|#)/.test(all[k])) return k; return -1; })();
     if (hit.some(({ i, l }) => i === prevStmt && /\.(unwrap|expect)\s*\(/.test(l))) return null;
@@ -1242,6 +1394,8 @@ function cmdTdd() {
     const all = readJson(APPROVALS, {});
     if (all[x.feature]?.code) { all[x.feature].code = implFileShas(x); writeJson(APPROVALS, all); }
   }
+  const lastGreen = prior.filter((e) => e.type === 'green').at(-1);
+  if (sub === 'refactor' && lastGreen && lastGreen.fileSha !== after) out(`⚠ ${id}: test body changed since the last Green; a refactor does not prove the new assertions can fail (no Red). If behaviour/assertions changed, use tdd red/green instead (#118)`);
   out(`${sub.toUpperCase()} ok ${id} (${req}) ${res.ms}ms${reason ? ` — fails with: ${reason}` : ''}${weakRed ? ' [weak]' : ''}${setupSym ? ` ⚠ Red comes from setup call "${setupSym}", not the asserted behaviour (use --expect <text> or --allow-setup-red)` : ''}`);
   return 0;
 }
@@ -1445,7 +1599,10 @@ function jsRev(files) {
   };
   const rev = new Map();
   for (const f of files) {
-    const src = fs.readFileSync(path.join(ROOT, f), 'utf8');
+    // type-only imports are erased at runtime and do not propagate a change (#111)
+    const src = fs.readFileSync(path.join(ROOT, f), 'utf8')
+      .replace(/\bimport\s+type\b[^;'"]*?from\s*['"][^'"\n]+['"]/g, '')
+      .replace(/\bimport\s*\{([^}]*)\}\s*from\s*(['"][^'"\n]+['"])/g, (all, specs, q) => (specs.trim() && specs.split(',').filter((x) => x.trim()).every((x) => /^\s*type\s/.test(x)) ? '' : all));
     for (const m of src.matchAll(/(?:from\s+|import\s*\(?\s*|require\(\s*)['"]([^'"\n]+)['"]/g)) {
       const t = m[1].startsWith('.') ? resolve(f, m[1]) : resolveBare(m[1]);
       if (t) { if (!rev.has(t)) rev.set(t, []); rev.get(t).push(f); }
@@ -1545,8 +1702,12 @@ function cmdGate() {
     }
   }
   if (flags.changed) {
-    const x = crossImpact(changedFiles());
-    if (x.length) lines.push(`! changed files are imported by other feature(s): ${[...new Set(x.map((o) => o.feature))].slice(0, 4).join(', ')} (${x.slice(0, 4).map((o) => o.req).join(', ')}${x.length > 4 ? ', …' : ''}) — their evidence is not re-checked here; run a full gate (or \`impact <file>\`)`);
+    const chg = changedFiles();
+    const specFeatures = new Set(loadSpecs().filter((sp) => chg.has(sp.path) || [...chg].some((c) => c.replace(/^\.\//, '') === sp.path)).map((sp) => sp.feature));
+    const specImpl = specFeatures.size ? [...scanEntities(listFiles()).ents.values()].filter((e) => e.refs.implements.some((r) => loadSpecs().some((sp) => specFeatures.has(sp.feature) && sp.reqs.some((q) => q.id === r)))).map((e) => e.path) : [];
+    const x = crossImpact(new Set([...chg, ...specImpl]));
+    const xf = [...new Set(x.map((o) => o.feature))];
+    if (x.length) lines.push(`! changed files/specs are imported by other feature(s): ${xf.join(', ')} (${x.slice(0, 4).map((o) => o.req).join(', ')}${x.length > 4 ? ', …' : ''}) — their evidence is not re-checked here; run a full gate (or \`impact <file>\`)`);
   }
   const allChecks = [...(cfg.checks ?? []), ...(cfg.projects ?? []).flatMap((p) => (p.checks ?? []).map((c) => ({ ...c, name: `${p.root}:${c.name}`, cwd: p.root, dependsOn: p.dependsOn })))];
   let sharedHinted = false;
@@ -1702,7 +1863,8 @@ function cmdPlan(args) {
     if (!byFeat.has(r.feature)) warns.push(`${r.feature}: no spec yet`);
     for (const d of r.deps) {
       if (!pos.has(d)) problems.push(`${r.feature}: unknown dependency ${d}`);
-      else if (pos.get(d) >= r.order) problems.push(`${r.feature}: dependency ${d} is ordered after it (cycle or wrong order)`);
+      else if (pos.get(d) === r.order) problems.push(`${r.feature}: dependency ${d} has the same order number (${r.order}); give ${r.feature} a larger number`);
+      else if (pos.get(d) > r.order) problems.push(`${r.feature}: dependency ${d} is ordered after it (cycle or wrong order)`);
     }
   }
   const done = new Map(rows.map((r) => [r.feature, isDone(r.feature)]));
@@ -1741,10 +1903,26 @@ function importRev() {
   const cImpl = [];
   const javaPkg = new Map();
   for (const g of files) if (g.endsWith('.java')) { const k = /^\s*package\s+([\w.]+)\s*;/m.exec(fs.readFileSync(path.join(ROOT, g), 'utf8'))?.[1] ?? dir(g); if (!javaPkg.has(k)) javaPkg.set(k, []); javaPkg.get(k).push(g); }
+  const phpDecl = new Map();
+  for (const g of files) if (g.endsWith('.php')) {
+    const code = fs.readFileSync(path.join(ROOT, g), 'utf8');
+    const ns = /^\s*namespace\s+([\w\\]+)\s*;/m.exec(code)?.[1];
+    if (ns) for (const m of code.matchAll(/^\s*(?:abstract\s+|final\s+)*(?:class|interface|trait|enum)\s+(\w+)/gm)) { const q = `${ns}\\${m[1]}`; if (!phpDecl.has(q)) phpDecl.set(q, []); phpDecl.get(q).push(g); }
+  }
   const endsWith = (suffix) => files.filter((f) => f === suffix || f.endsWith('/' + suffix));
   for (const f of files) {
     const src = fs.readFileSync(path.join(ROOT, f), 'utf8');
     if (/\.py$/.test(f)) {
+      // relative imports resolve against the importing file's package (#111)
+      for (const m of src.matchAll(/^\s*from\s+(\.+)([\w.]*)\s+import\s+(\([^)]*\)|[^\n#]+)/gm)) {
+        let base = dir(f);
+        for (let k = 1; k < m[1].length; k++) base = dir(base);
+        const sub = m[2].replace(/\./g, '/');
+        const root = [base, sub].filter((x) => x && x !== '.').join('/');
+        if (sub) for (const c of [`${root}.py`, `${root}/__init__.py`]) add(c, f);
+        else add(`${base === '.' ? '' : base + '/'}__init__.py`.replace(/^\//, ''), f);
+        for (const n of m[3].replace(/[()]/g, '').split(',').map((x) => x.trim().split(/\s+as\s+/)[0]).filter((x) => /^\w+$/.test(x))) for (const c of [`${root}/${n}.py`, `${root}/${n}/__init__.py`]) add(c, f);
+      }
       for (const m of src.matchAll(/^\s*(?:from\s+([\w.]+)\s+import|import\s+([\w.]+))/gm)) {
         const mod = (m[1] ?? m[2]).replace(/^\.+/, '').replace(/\./g, '/');
         if (mod) for (const c of [mod + '.py', mod + '/__init__.py']) endsWith(c).forEach((t) => add(t, f));
@@ -1795,6 +1973,13 @@ function importRev() {
       if (/\.h(pp|h)?$/.test(f)) for (const x of files) if (/\.(c|cc|cpp|cxx)$/.test(x) && path.posix.basename(x).replace(/\.\w+$/, '') === path.posix.basename(f).replace(/\.\w+$/, '')) add(f, x);
       if (/\.(c|cc|cpp|cxx)$/.test(f)) cImpl.push(f);
     } else if (/\.php$/.test(f)) {
+      // `use Ns\Class;`, group uses and same-namespace references resolve through declared namespace + class name (#111)
+      for (const m of src.matchAll(/^\s*use\s+(?:function\s+|const\s+)?([\w\\]+?)(?:\s+as\s+\w+)?\s*;|^\s*use\s+([\w\\]+)\\\{([^}]*)\}\s*;/gm)) {
+        const fqns = m[1] ? [m[1]] : m[3].split(',').map((x) => `${m[2]}\\${x.trim().split(/\s+as\s+/)[0]}`);
+        for (const q of fqns) phpDecl.get(q.replace(/^\\/, ''))?.forEach((t) => add(t, f));
+      }
+      const ns = /^\s*namespace\s+([\w\\]+)\s*;/m.exec(src)?.[1];
+      if (ns) for (const [q, ts] of phpDecl) if (q.startsWith(ns + '\\') && !q.slice(ns.length + 1).includes('\\') && new RegExp(`\\b${q.split('\\').pop()}\\b`).test(src)) ts.forEach((t) => add(t, f));
       for (const m of src.matchAll(/(?:require|include)(?:_once)?\s*\(?\s*(?:__DIR__\s*\.\s*)?['"]([^'"]+)['"]/g)) {
         const p = m[1].replace(/^\//, '');
         add(path.posix.normalize(path.posix.join(dir(f), p)), f);
@@ -1855,10 +2040,12 @@ function cmdImpact() {
   const verifiers = all.filter((e) => e.refs.verifies.some((r) => reqs.includes(r)));
   const affected = new Map();
   const ownFeatures = new Set(reqs.map((r) => reqFeature.get(r)));
+  // a header/file without @implements belongs to the features of the same-named implementation files (#111)
+  if (!reqs.length) for (const sd of seeds) { const stem = path.posix.basename(sd).replace(/\.\w+$/, ''); for (const e of all) if (path.posix.basename(e.path).replace(/\.\w+$/, '') === stem) for (const r of [...e.refs.implements, ...e.refs.verifies]) if (reqFeature.get(r)) ownFeatures.add(reqFeature.get(r)); }
   for (const f of via.keys()) for (const e of entsIn(f)) for (const r of [...e.refs.verifies, ...e.refs.implements]) if (!reqs.includes(r)) { if (!affected.has(r)) affected.set(r, new Set()); affected.get(r).add(e.id + ' (' + f + ')'); }
   const sameFeature = [...affected.keys()].filter((r) => ownFeatures.has(reqFeature.get(r)));
   for (const r of sameFeature) affected.delete(r);
-  const chain = (f) => { const c = [f]; while (via.get(c[c.length - 1])) c.push(via.get(c[c.length - 1])); return c.reverse().join(' → '); };
+  const chain = (f) => { const c = [f]; while (via.get(c[c.length - 1])) c.push(via.get(c[c.length - 1])); return c.join(' ← '); };
   const result = {
     target, reqs, impl: seeds, verifiedBy: verifiers.map((e) => e.id), reachedFiles: reached,
     sameFeatureReqs: sameFeature,
@@ -1866,11 +2053,15 @@ function cmdImpact() {
     reachedTests: reached.filter((f) => entsIn(f).some((e) => e.refs.verifies.length) || TEST_FILE.test(f)),
   };
   if (flags.json) { out(JSON.stringify(result)); return 0; }
-  out(`IMPACT ${target}${reqs.length && target !== reqs[0] ? ` (${reqs.join(', ')})` : ''}`);
+  const cap = (a, n = 8) => a.slice(0, n).join(', ') + (a.length > n ? `, … +${a.length - n} more` : '');
+  out(`IMPACT ${target}${reqs.length && target !== reqs[0] ? ` (${cap(reqs)})` : ''}`);
   out(`  impl: ${seeds.join(', ') || '(none)'}`);
-  if (verifiers.length) out(`  verified by: ${verifiers.map((e) => `${e.id}`).join(', ')}`);
-  out(`  reaches ${reached.length} file(s) via imports${result.reachedTests.length ? `; tests: ${result.reachedTests.slice(0, 8).join(', ')}` : ''}`);
+  if (verifiers.length) out(`  verified by: ${cap(verifiers.map((e) => e.id))}`);
+  out(`  reaches ${reached.length} file(s) via imports${result.reachedTests.length ? `; tests: ${cap(result.reachedTests)}` : ''}`);
   if (sameFeature.length) out(`  same feature: ${sameFeature.length} other REQ(s) (${sameFeature.slice(0, 4).join(', ')}${sameFeature.length > 4 ? ', …' : ''})`);
+  const perFeature = new Map();
+  for (const o of result.otherReqs) perFeature.set(o.feature ?? '?', (perFeature.get(o.feature ?? '?') ?? 0) + 1);
+  if (perFeature.size) out(`  other features: ${[...perFeature].map(([f, n]) => `${f} (${n})`).join(', ')}`);
   for (const o of result.otherReqs.slice(0, 8)) out(`  ! other feature ${o.req}${o.feature ? ` [${o.feature}]` : ''}: ${o.via.slice(0, 3).join(', ')} — chain ${chain(o.via[0].replace(/^.*\((.*)\)$/, '$1'))}`);
   if (result.otherReqs.length > 8) out(`  … +${result.otherReqs.length - 8} more`);
   return 0;

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { spawnSync } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -1671,7 +1671,7 @@ test('#103 Java/Rust stubs generate instance methods called on constructed objec
   const lib = fs.readFileSync(path.join(d, 'src/lib.rs'), 'utf8');
   assert.match(lib, /pub fn new/);
   assert.match(lib, /pub fn balance\(&self/);
-  assert.match(lib, /pub fn deposit<A0>\(&self/);
+  assert.match(lib, /pub fn deposit<A0>\(&mut self/);
   const r = sdd(d, 'tdd', 'red', 'TEST-S-001');
   assert.equal(r.code, 0, r.out);
   assert.match(r.out, /not implemented: Account::balance|not implemented: Account::deposit/);
@@ -1741,4 +1741,201 @@ test('#106 weak Red: a setup call inside a helper is weak; `.unwrap()` act befor
   const d2 = mk(actSrc);
   const r2 = spawnSync('node', [SDD, '--root', d2, 'tdd', 'red', 'TEST-A-001'], { encoding: 'utf8', env: { ...ENV, W: 'step', L: '6' } });
   assert.doesNotMatch(r2.stdout, /Red comes from setup/, r2.stdout);
+});
+
+test('#107 gate --changed lists every importing feature and also fires on a spec-only change', () => {
+  const d = mini(T1SPEC, { 'a.test.mjs': jsTest(), 'a.mjs': '/** @id CODE-A-001 @implements REQ-A-001 */\nexport const a = 1;\n' }, PASS);
+  for (const f of ['b', 'c', 'd', 'e', 'f']) {
+    const F = f.toUpperCase();
+    fs.writeFileSync(path.join(d, `.sdd/specs/${f}.md`), `---\nfeature: ${f}\ntier: T1\n---\n| REQ-${F}-001 | x | TEST-${F}-001 |\n`);
+    fs.writeFileSync(path.join(d, `${f}.mjs`), `import { a } from './a.mjs';\n/** @id CODE-${F}-001 @implements REQ-${F}-001 */\nexport const ${f} = a + 1;\n`);
+  }
+  spawnSync('git', ['add', '-A'], { cwd: d });
+  spawnSync('git', ['-c', 'user.email=t@t', '-c', 'user.name=t', 'commit', '-qm', 'x'], { cwd: d });
+  fs.appendFileSync(path.join(d, 'a.mjs'), '// edit\n');
+  assert.match(sdd(d, 'gate', '--changed', '--no-run').out, /other feature\(s\): b, c, d, e, f \(/);
+  spawnSync('git', ['checkout', 'a.mjs'], { cwd: d });
+  fs.appendFileSync(path.join(d, '.sdd/specs/a.md'), '\n');
+  assert.match(sdd(d, 'gate', '--changed', '--no-run').out, /other feature\(s\): b, c, d, e, f \(/);
+});
+
+test('#108 a lone CR in the frontmatter does not downgrade approval: human', () => {
+  const d = mini(T1SPEC.replace('tier: T1', 'tier: T1\napproval: human'), {}, PASS);
+  const p = path.join(d, '.sdd/specs/a.md');
+  fs.writeFileSync(p, fs.readFileSync(p, 'utf8').replace('approval: human', 'approval: human # c\r').replace(/\n/g, '\r\n'));
+  assert.match(sddRaw(d, 'approve', 'prepare', 'a').out, /approval: human/);
+});
+
+test('#109 concurrent ledger appends keep the hash chain intact', async () => {
+  const d = mini(T1SPEC, { 'a.test.mjs': jsTest() }, FAIL);
+  const S = fileURLToPath(new URL('./sdd.mjs', import.meta.url));
+  const one = () => new Promise((res) => { const p = spawn(process.execPath, [S, '--root', d, 'tdd', 'red', 'TEST-A-001', '--weak'], { stdio: 'ignore' }); p.on('close', res); });
+  await Promise.all(Array.from({ length: 8 }, one));
+  const r = sddRaw(d, 'tdd', 'check');
+  assert.equal(r.code, 0, r.out);
+  assert.ok(fs.readFileSync(path.join(d, '.sdd/tdd.jsonl'), 'utf8').trim().split('\n').length >= 2);
+});
+
+test('#110 weak Red: an assigned (tuple / :=) result that is asserted, or a match scrutinee, is the act', () => {
+  const run = (body, line) => {
+    const d = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-w110-'));
+    fs.mkdirSync(path.join(d, '.sdd/specs'), { recursive: true });
+    fs.writeFileSync(path.join(d, 'package.json'), '{}');
+    spawnSync('git', ['init', '-q'], { cwd: d });
+    fs.writeFileSync(path.join(d, '.sdd/specs/a.md'), T1SPEC);
+    fs.writeFileSync(path.join(d, 'a.test.mjs'), `// @id TEST-A-001 @verifies REQ-A-001\n${body}\n`);
+    sdd(d, 'init');
+    setCmd(d, ['node', '-e', "const e=new Error('not implemented: '+process.env.W);e.stack='Error: '+e.message+'\\n    at x (a.test.mjs:'+process.env.L+':1)';console.log(e.stack);process.exit(1)"]);
+    return spawnSync('node', [SDD, '--root', d, 'tdd', 'red', 'TEST-A-001'], { encoding: 'utf8', env: { ...ENV, W: 'step', L: String(line) } }).stdout;
+  };
+  assert.doesNotMatch(run('recs, rej = step(t)\nassert recs == 1', 2), /Red comes from setup/);
+  assert.doesNotMatch(run('e := step(t)\nif len(e) != 1 {', 2), /Red comes from setup/);
+  assert.doesNotMatch(run('match step(1).unwrap() {\n  Ok(x) => {}\n}\nassert_eq!(1, 2);', 2), /Red comes from setup/);
+  assert.match(run('s = step(t)\nassert 1 == 2', 2), /Red comes from setup/);
+});
+
+test('#111 impact: python relative imports, PHP use, TS type-only edges, header owner, capped header', () => {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-i111-'));
+  const w = (f, b) => { fs.mkdirSync(path.dirname(path.join(d, f)), { recursive: true }); fs.writeFileSync(path.join(d, f), b); };
+  spawnSync('git', ['init', '-q'], { cwd: d });
+  for (const f of ['a', 'b', 'c', 'e', 'k']) w(`.sdd/specs/${f}.md`, `---\nfeature: ${f}\ntier: T1\n---\n- REQ-${f.toUpperCase()}-001 x\n`);
+  w('pkg/__init__.py', '');
+  w('pkg/a.py', '# @id CODE-A-001 @implements REQ-A-001\nX = 1\n');
+  w('pkg/b.py', 'from . import a\n# @id CODE-B-001 @implements REQ-B-001\nY = a.X\n');
+  w('src/Core/A.php', '<?php\nnamespace P\\Core;\n// @id CODE-C-001 @implements REQ-C-001\nclass Money {}\n');
+  w('src/Pay/B.php', '<?php\nnamespace P\\Pay;\nuse P\\Core\\Money;\n// @id CODE-E-001 @implements REQ-E-001\nclass Pay { function f() { return new Money(); } }\n');
+  w('t/x.ts', '// @id CODE-K-001 @implements REQ-K-001\nexport type T = number;\nexport const v = 1;\n');
+  w('t/y.ts', "import type { T } from './x';\nimport { type T as U } from './x';\nexport const z = 1;\n");
+  sdd(d, 'init');
+  assert.ok(JSON.parse(sdd(d, 'impact', 'pkg/a.py', '--json').out).reachedFiles.includes('pkg/b.py'));
+  assert.ok(JSON.parse(sdd(d, 'impact', 'src/Core/A.php', '--json').out).reachedFiles.includes('src/Pay/B.php'));
+  assert.ok(!JSON.parse(sdd(d, 'impact', 't/x.ts', '--json').out).reachedFiles.includes('t/y.ts'));
+  const txt = sdd(d, 'impact', 'pkg/a.py').out;
+  assert.match(txt, /other features: b \(1\)/);
+  assert.match(txt, /pkg\/b\.py ← pkg\/a\.py/);
+});
+
+test('#112 stub: existing JS module gets missing exports/methods; helper-built objects; py constants and submodules', () => {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-s112-'));
+  const w = (f, b) => { fs.mkdirSync(path.dirname(path.join(d, f)), { recursive: true }); fs.writeFileSync(path.join(d, f), b); };
+  spawnSync('git', ['init', '-q'], { cwd: d });
+  w('package.json', '{}');
+  w('.sdd/specs/a.md', T1SPEC);
+  w('lib.mjs', 'export function old() { return 1; }\nexport class Box {\n  put() { return 1; }\n}\n');
+  w('a.test.mjs', "import { old, fresh, GENESIS, Box } from './lib.mjs';\nfunction setup() { return { b: new Box() }; }\n// @id TEST-A-001 @verifies REQ-A-001\ntest('x', () => {\n  const { b } = setup();\n  b.reset();\n  assert(fresh() && GENESIS && old());\n});\n");
+  sdd(d, 'init');
+  sdd(d, 'tdd', 'stub', 'TEST-A-001');
+  const lib = fs.readFileSync(path.join(d, 'lib.mjs'), 'utf8');
+  assert.match(lib, /export function old\(\) \{ return 1; \}/);
+  assert.match(lib, /export function fresh\(\)/);
+  assert.match(lib, /export const GENESIS = undefined/);
+  assert.match(lib, /reset\(\.\.\._args\)[^]*not implemented: Box\.reset/);
+  assert.equal((lib.match(/put\(\)/g) ?? []).length, 1);
+
+  const p = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-p112-'));
+  const wp = (f, b) => { fs.mkdirSync(path.dirname(path.join(p, f)), { recursive: true }); fs.writeFileSync(path.join(p, f), b); };
+  spawnSync('git', ['init', '-q'], { cwd: p });
+  wp('.sdd/specs/a.md', T1SPEC);
+  wp('pipe/__init__.py', '');
+  wp('test_a.py', "from pipe import load, Journal, GENESIS\n\ndef setup():\n    return Journal(), 1\n\n# @id TEST-A-001 @verifies REQ-A-001\ndef test_x():\n    j, n = setup()\n    j.post(n)\n    load.write(1)\n    assert GENESIS\n");
+  sdd(p, 'init');
+  sdd(p, 'tdd', 'stub', 'TEST-A-001');
+  assert.equal(fs.readFileSync(path.join(p, 'pipe/load.py'), 'utf8').includes('def write'), true);
+  const init = fs.readFileSync(path.join(p, 'pipe/__init__.py'), 'utf8');
+  assert.doesNotMatch(init, /def load/);
+  assert.match(init, /GENESIS = None/);
+  assert.match(init, /def post\(self/);
+});
+
+test('#114/#115/#116 Rust Result + message, Java JDK wildcard/chained args/long, C unused params, Maven -am, plan equal order', { skip: ['cargo', 'mvn', 'gcc'].some((c) => spawnSync('which', [c]).status !== 0) }, () => {
+  const proj = (name, spec) => { const d = fs.mkdtempSync(path.join(os.tmpdir(), name)); spawnSync('git', ['init', '-q'], { cwd: d }); fs.mkdirSync(path.join(d, '.sdd/specs'), { recursive: true }); fs.writeFileSync(path.join(d, '.sdd/specs/s.md'), spec ?? '---\nfeature: s\ntier: T1\n---\n| REQ-S-001 | x | TEST-S-001 |\n'); return d; };
+  const w = (d, f, b) => { fs.mkdirSync(path.dirname(path.join(d, f)), { recursive: true }); fs.writeFileSync(path.join(d, f), b); };
+  const r = proj('sdd-rs114-');
+  w(r, 'Cargo.toml', '[package]\nname = "lp"\nversion = "0.1.0"\nedition = "2021"\n');
+  w(r, 'tests/t.rs', 'use lp::{parse, Acc};\n\n// @id TEST-S-001 @verifies REQ-S-001\n#[test]\nfn test_s_001() {\n    let mut a = Acc::new(1);\n    a.add(2);\n    let v = parse("x").unwrap();\n    assert_eq!(v, 3);\n}\n');
+  sdd(r, 'init');
+  sdd(r, 'tdd', 'stub', 'TEST-S-001');
+  const lib = fs.readFileSync(path.join(r, 'src/lib.rs'), 'utf8');
+  assert.match(lib, /pub fn parse<A0>\(_a0: A0\) -> Result<i64, String>/);
+  assert.match(lib, /pub fn add<A0>\(&mut self/);
+  assert.match(lib, /unimplemented!\("Acc::add"\)/);
+  const red = sdd(r, 'tdd', 'red', 'TEST-S-001');
+  assert.doesNotMatch(red.out, /setup call "not"/);
+
+  const c = proj('sdd-c116-');
+  w(c, 'Makefile', 'test:\n\ttrue\n');
+  w(c, 'test_t.c', '#include <assert.h>\n#include "c.h"\n// @id TEST-S-001 @verifies REQ-S-001\nint main(void) { assert(foo(1, 2) == 3); return 0; }\n');
+  sdd(c, 'init');
+  setCmd(c, ['gcc', '-Wall', '-Wextra', '-Werror', '-o', '/dev/null', 'test_t.c']);
+  sdd(c, 'tdd', 'stub', 'TEST-S-001');
+  const ch = fs.readdirSync(c).filter((f) => /\.h$/.test(f)).map((f) => fs.readFileSync(path.join(c, f), 'utf8')).join('');
+  assert.match(ch, /\(void\)a0;\s*\(void\)a1;/);
+
+  const j = proj('sdd-j115-');
+  w(j, 'pom.xml', '<project/>');
+  w(j, 'src/test/java/AccTest.java', 'import java.util.concurrent.*;\nimport org.junit.jupiter.api.Test;\nclass AccTest {\n  // @id TEST-S-001 @verifies REQ-S-001\n  @Test void test_s_001() {\n    ExecutorService e = Executors.newFixedThreadPool(8);\n    Money m = new Money(250L, "USD").times(3);\n  }\n}\n');
+  sdd(j, 'init');
+  sdd(j, 'tdd', 'stub', 'TEST-S-001');
+  assert.ok(!fs.existsSync(path.join(j, 'src/main/java/Executors.java')));
+  const mj = fs.readFileSync(path.join(j, 'src/main/java/Money.java'), 'utf8');
+  assert.match(mj, /public Money\(long a0, String a1\)/);
+  assert.match(mj, /times\(Object a0\)/);
+  assert.match(fs.readFileSync(path.join(j, '.sdd/config.json'), 'utf8'), /"-am"/);
+
+  const p = proj('sdd-p115-');
+  w(p, '.sdd/plan.md', '| order | feature | depends |\n|---|---|---|\n| 5 | shipping | |\n| 5 | tracking | shipping |\n');
+  assert.match(sdd(p, 'plan').out, /same order number/);
+});
+
+test('#113 Go stubs: external test package, chained New().M, slice results, field vs method', { skip: spawnSync('which', ['go']).status !== 0 }, () => {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-go113-'));
+  const w = (f, b) => { fs.mkdirSync(path.dirname(path.join(d, f)), { recursive: true }); fs.writeFileSync(path.join(d, f), b); };
+  spawnSync('git', ['init', '-q'], { cwd: d });
+  w('go.mod', 'module m\n\ngo 1.21\n');
+  w('.sdd/specs/s.md', '---\nfeature: s\ntier: T1\n---\n| REQ-S-001 | x | TEST-S-001 |\n| REQ-S-002 | y | TEST-S-002 |\n');
+  w('core/log_test.go', 'package core_test\n\nimport (\n\t"testing"\n\n\t"m/core"\n)\n\n// @id TEST-S-001 @verifies REQ-S-001\nfunc TestS001(t *testing.T) {\n\tl := core.NewLog()\n\tl.Append(1)\n\tvar e core.Entry\n\t_ = e\n\tif core.Max != 0 {\n\t\tt.Fatal("x")\n\t}\n}\n');
+  w('aud/aud_test.go', 'package aud\n\nimport "testing"\n\n// @id TEST-S-002 @verifies REQ-S-002\nfunc TestS002(t *testing.T) {\n\tif _, err := New().Record(1, ""); err != nil {\n\t\tt.Fatal(err)\n\t}\n}\n');
+  sdd(d, 'init');
+  sdd(d, 'tdd', 'stub', 'TEST-S-001');
+  const core = fs.readdirSync(path.join(d, 'core')).filter((f) => !/_test/.test(f)).map((f) => fs.readFileSync(path.join(d, 'core', f), 'utf8')).join('');
+  assert.match(core, /package core/);
+  assert.match(core, /func NewLog\(\) \*Log/);
+  assert.match(core, /type Entry /);
+  assert.match(core, /func \(\*Log\) Append\(/);
+  assert.match(core, /const Max = 0/);
+  assert.equal(spawnSync('go', ['vet', './core/'], { cwd: d }).status, 0);
+  sdd(d, 'tdd', 'stub', 'TEST-S-002');
+  const aud = fs.readdirSync(path.join(d, 'aud')).filter((f) => !/_test/.test(f)).map((f) => fs.readFileSync(path.join(d, 'aud', f), 'utf8')).join('');
+  assert.match(aud, /func New\(\) \*Aud\b/);
+  assert.match(aud, /\) Record\(.*\) \(?\w*,? ?error\)?/);
+});
+
+test('#117 PHP: `use Ns\\Cls` stubs a namespaced PSR-4 file; --missing-module accepts Class not found', { skip: spawnSync('which', ['php']).status !== 0 }, () => {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-php117-'));
+  const w = (f, b) => { fs.mkdirSync(path.dirname(path.join(d, f)), { recursive: true }); fs.writeFileSync(path.join(d, f), b); };
+  spawnSync('git', ['init', '-q'], { cwd: d });
+  w('composer.json', '{"autoload":{"psr-4":{"Payroll\\\\":"src/"}}}');
+  w('.sdd/specs/s.md', T1SPEC.replace('REQ-A-001', 'REQ-S-001').replace('TEST-A-001', 'TEST-S-001').replace('feature: a', 'feature: s'));
+  w('tests/CoreTest.php', "<?php\nuse Payroll\\Core\\Money;\n// @id TEST-S-001 @verifies REQ-S-001\nfinal class CoreTest { function test_s_001() { assert(Money::of(1) === 1); } }\n");
+  sdd(d, 'init');
+  const out = sdd(d, 'tdd', 'stub', 'TEST-S-001').out;
+  assert.match(out, /src\/Core\/Money\.php/);
+  const f = fs.readFileSync(path.join(d, 'src/Core/Money.php'), 'utf8');
+  assert.match(f, /namespace Payroll\\Core;/);
+  assert.match(f, /class Money/);
+  assert.match(f, /static function of/);
+  fs.rmSync(path.join(d, 'src'), { recursive: true });
+  setCmd(d, ['node', '-e', "console.log('Error: Class \"Payroll\\\\Core\\\\Money\" not found');process.exit(1)"]);
+  const r = sdd(d, 'tdd', 'red', 'TEST-S-001', '--missing-module');
+  assert.doesNotMatch(r.out, /REJECTED/, r.out);
+});
+
+test('#118 tdd refactor warns when the test body changed since Green', () => {
+  const d = mini(T1SPEC, { 'a.test.mjs': jsTest() }, PASS);
+  sdd(d, 'tdd', 'red', 'TEST-A-001', '--characterization', 'x');
+  sdd(d, 'tdd', 'green', 'TEST-A-001');
+  const f = path.join(d, 'a.test.mjs');
+  fs.writeFileSync(f, fs.readFileSync(f, 'utf8').replace(/\)\s*;?\s*\}\);?\s*$/, ') ; void 0; });\n'));
+  const r = sdd(d, 'tdd', 'refactor', 'TEST-A-001');
+  assert.match(r.out, /test body changed since the last Green/, r.out);
 });
