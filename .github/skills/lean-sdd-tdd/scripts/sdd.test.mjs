@@ -24,7 +24,9 @@ function project() {
   return d;
 }
 const { NODE_TEST_CONTEXT, ...ENV } = process.env;
-const sdd = (d, ...a) => { const r = spawnSync('node', [SDD, '--root', d, ...a], { encoding: 'utf8', env: ENV }); return { code: r.status, out: r.stdout + r.stderr }; };
+const sddRaw = (d, ...a) => { const r = spawnSync('node', [SDD, '--root', d, ...a], { encoding: 'utf8', env: ENV }); return { code: r.status, out: r.stdout + r.stderr }; };
+// human `approve record` needs a matching prepare (#99); tests that are not about that run prepare first
+const sdd = (d, ...a) => { if (a[0] === 'approve' && a[1] === 'record' && !/^ai\s*:/i.test(String(a[a.indexOf('--by') + 1] ?? ''))) sddRaw(d, 'approve', 'prepare', a[2]); return sddRaw(d, ...a); };
 const impl = (d, body) => fs.writeFileSync(path.join(d, 'add.mjs'), `/** @id CODE-CALC-001 @implements REQ-CALC-001 */\nexport const add = ${body};\n`);
 
 test('T2 flow: refuses Red before approval, then Red -> Green -> gate', () => {
@@ -1437,7 +1439,7 @@ test('#91 impact: REQ change lists dependent tests/REQs of other features (JS, P
   const r = sdd(js, 'impact', 'REQ-A-001');
   assert.equal(r.code, 0, r.out);
   assert.match(r.out, /impl: a\.mjs/);
-  assert.match(r.out, /other REQ REQ-B-001 \[b\]/);
+  assert.match(r.out, /other feature REQ-B-001 \[b\]/);
   assert.match(r.out, /b\.test\.mjs/);
   assert.equal(JSON.parse(sdd(js, 'impact', 'a.mjs', '--json').out).otherReqs[0].req, 'REQ-B-001');
   assert.equal(sdd(js, 'impact', 'REQ-NOPE-1').code, 1);
@@ -1447,7 +1449,7 @@ test('#91 impact: REQ change lists dependent tests/REQs of other features (JS, P
     'pkg/core.py': '# @id CODE-A-001 @implements REQ-A-001\ndef f(): return 1\n',
     'tests/test_b.py': '# @id TEST-B-001 @verifies REQ-B-001\nfrom pkg.core import f\n',
   });
-  assert.match(sdd(py, 'impact', 'REQ-A-001').out, /other REQ REQ-B-001/);
+  assert.match(sdd(py, 'impact', 'REQ-A-001').out, /other feature REQ-B-001/);
 
   const go = mk({
     '.sdd/specs/a.md': spec('a', 'REQ-A-001'), '.sdd/specs/b.md': spec('b', 'REQ-B-001'),
@@ -1455,12 +1457,202 @@ test('#91 impact: REQ change lists dependent tests/REQs of other features (JS, P
     'core/core.go': 'package core\n// @id CODE-A-001 @implements REQ-A-001\nfunc F() int { return 1 }\n',
     'cli/cli_test.go': 'package cli\nimport "ex.com/m/core"\n// @id TEST-B-001 @verifies REQ-B-001\nfunc TestX() { core.F() }\n',
   });
-  assert.match(sdd(go, 'impact', 'REQ-A-001').out, /other REQ REQ-B-001/);
+  assert.match(sdd(go, 'impact', 'REQ-A-001').out, /other feature REQ-B-001/);
 
   const c = mk({
     '.sdd/specs/a.md': spec('a', 'REQ-A-001'), '.sdd/specs/b.md': spec('b', 'REQ-B-001'),
     'include/arena.h': '// @id CODE-A-001 @implements REQ-A-001\nint x;\n',
     'tests/t.c': '#include "arena.h"\n// @id TEST-B-001 @verifies REQ-B-001\nint main(void){return 0;}\n',
   });
-  assert.match(sdd(c, 'impact', 'REQ-A-001').out, /other REQ REQ-B-001/);
+  assert.match(sdd(c, 'impact', 'REQ-A-001').out, /other feature REQ-B-001/);
+});
+
+// ---- dogfood round 5 (#92-#102) ----
+test('#92 human-approved: first implementation after approval does not warn; later change does', () => {
+  const d = mini(T2SPEC, { 'a.test.mjs': jsTest(), 'a.mjs': '// @id CODE-A-001 @implements REQ-A-001\nexport const a = () => { throw new Error("not implemented"); };\n' }, FAIL);
+  assert.equal(sdd(d, 'approve', 'record', 'a', '--by', 'alice').code, 0);
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-A-001', '--allow-setup-red').code, 0);
+  fs.writeFileSync(path.join(d, 'a.mjs'), '// @id CODE-A-001 @implements REQ-A-001\nexport const a = () => 1;\n');
+  setCmd(d, PASS);
+  assert.equal(sdd(d, 'tdd', 'green', 'TEST-A-001').code, 0);
+  assert.doesNotMatch(sdd(d, 'gate', '--no-run').out, /implementation changed since approval/);
+  fs.appendFileSync(path.join(d, 'a.mjs'), 'export const b = 2;\n');
+  assert.match(sdd(d, 'gate', '--no-run').out, /implementation changed since approval/);
+});
+
+test('#93 impact: same-feature REQs separated, TEST target shows impl files, Rust lib.rs/Java same-package/C .c impl', () => {
+  const mk = (files) => {
+    const d = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-'));
+    spawnSync('git', ['init', '-q'], { cwd: d });
+    fs.mkdirSync(path.join(d, '.sdd/specs'), { recursive: true });
+    for (const [f, body] of Object.entries(files)) { fs.mkdirSync(path.dirname(path.join(d, f)), { recursive: true }); fs.writeFileSync(path.join(d, f), body); }
+    return d;
+  };
+  const sp = (f, ...ids) => `---\nfeature: ${f}\ntier: T1\n---\n${ids.map((i) => `- ${i} x`).join('\n')}\n`;
+  const js = mk({
+    '.sdd/specs/a.md': sp('a', 'REQ-A-001', 'REQ-A-002'),
+    'a.mjs': '// @id CODE-A-001 @implements REQ-A-001\nexport const a=1;\n// @id CODE-A-002 @implements REQ-A-002\nexport const b=2;\n',
+    'a.test.mjs': '// @id TEST-A-001 @verifies REQ-A-001\nimport {a} from "./a.mjs";\n',
+  });
+  const r = sdd(js, 'impact', 'REQ-A-001').out;
+  assert.match(r, /same feature: 1 other REQ/);
+  assert.doesNotMatch(r, /other feature/);
+  const t = sdd(js, 'impact', 'TEST-A-001').out;
+  assert.match(t, /impl: a\.mjs/);
+  assert.doesNotMatch(t, /impl: .*test/);
+
+  const rs = mk({
+    '.sdd/specs/a.md': sp('a', 'REQ-A-001'), '.sdd/specs/b.md': sp('b', 'REQ-B-001'),
+    'Cargo.toml': '[package]\nname = "m"\nversion = "0.1.0"\nedition = "2021"\n',
+    'src/lib.rs': 'pub mod a;\npub mod b;\n',
+    'src/a.rs': '// @id CODE-A-001 @implements REQ-A-001\npub fn fa() {}\n',
+    'src/b.rs': '// @id CODE-B-001 @implements REQ-B-001\npub fn fb() {}\n',
+    'tests/b.rs': '// @id TEST-B-001 @verifies REQ-B-001\nuse m::b::fb;\n',
+  });
+  assert.doesNotMatch(sdd(rs, 'impact', 'REQ-A-001').out, /REQ-B-001/);
+
+  const jv = mk({
+    '.sdd/specs/a.md': sp('a', 'REQ-A-001'), '.sdd/specs/b.md': sp('b', 'REQ-B-001'),
+    'src/main/java/p/Money.java': 'package p;\n// @id CODE-A-001 @implements REQ-A-001\npublic class Money {}\n',
+    'src/test/java/p/RateTest.java': 'package p;\n// @id TEST-B-001 @verifies REQ-B-001\nclass RateTest { Money m; }\n',
+  });
+  assert.match(sdd(jv, 'impact', 'REQ-A-001').out, /other feature REQ-B-001/);
+
+  const c = mk({
+    '.sdd/specs/a.md': sp('a', 'REQ-A-001'), '.sdd/specs/b.md': sp('b', 'REQ-B-001'),
+    'include/arena.h': 'int arena_x(void);\n',
+    'src/arena.c': '#include "arena.h"\n// @id CODE-A-001 @implements REQ-A-001\nint arena_x(void){return 1;}\n',
+    'tests/t.c': '#include "arena.h"\n// @id TEST-B-001 @verifies REQ-B-001\nint main(void){return 0;}\n',
+  });
+  assert.match(sdd(c, 'impact', 'REQ-A-001').out, /other feature REQ-B-001/);
+});
+
+test('#94 Go: no methods on any receivers; Red is classified by the test package, not ./...', { skip: spawnSync('which', ['go']).status !== 0 }, () => {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-'));
+  const w = (f, b) => { fs.mkdirSync(path.dirname(path.join(d, f)), { recursive: true }); fs.writeFileSync(path.join(d, f), b); };
+  spawnSync('git', ['init', '-q'], { cwd: d });
+  w('go.mod', 'module ex.com/m\n\ngo 1.21\n');
+  w('.sdd/specs/a.md', '---\nfeature: a\ntier: T1\n---\n- REQ-A-001 x\n- REQ-B-001 y\n');
+  w('bad/bad.go', 'package bad\nfunc Broken() int { return "x" }\n');
+  w('ok/ok.go', 'package ok\n// @id CODE-A-001 @implements REQ-A-001\nfunc Two() int { panic("not implemented: Two") }\n');
+  w('ok/ok_test.go', 'package ok\nimport "testing"\n// @id TEST-A-001 @verifies REQ-A-001\nfunc TestTEST_A_001_two(t *testing.T) { if Two() != 2 { t.Fatalf("want 2, got %d", Two()) } }\n');
+  sdd(d, 'init');
+  const r = sdd(d, 'tdd', 'red', 'TEST-A-001', '--allow-setup-red');
+  assert.equal(r.code, 0, r.out);
+
+  const d2 = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-'));
+  spawnSync('git', ['init', '-q'], { cwd: d2 });
+  fs.mkdirSync(path.join(d2, '.sdd/specs'), { recursive: true });
+  fs.writeFileSync(path.join(d2, 'go.mod'), 'module ex.com/m\n\ngo 1.21\n');
+  fs.writeFileSync(path.join(d2, '.sdd/specs/a.md'), '---\nfeature: a\ntier: T1\n---\n- REQ-A-001 x\n');
+  fs.mkdirSync(path.join(d2, 'tx'));
+  fs.writeFileSync(path.join(d2, 'tx/tx_test.go'), 'package tx\nimport "testing"\n// @id TEST-A-001 @verifies REQ-A-001\nfunc TestTEST_A_001_put(t *testing.T) {\n\ttx := Begin(1)\n\ttx.Put("k", 1)\n}\n');
+  sdd(d2, 'init');
+  sdd(d2, 'tdd', 'stub', 'TEST-A-001');
+  const stub = fs.readdirSync(path.join(d2, 'tx')).filter((f) => f.endsWith('.go') && !f.endsWith('_test.go')).map((f) => fs.readFileSync(path.join(d2, 'tx', f), 'utf8')).join('\n');
+  assert.doesNotMatch(stub, /\(\*any\)/);
+  assert.equal(spawnSync('go', ['vet', './...'], { cwd: d2 }).status, 0, stub);
+});
+
+test('#95 PHP stub: existing/builtin classes are not redeclared, exception classes extend Exception; redeclare is a load error', { skip: spawnSync('which', ['php']).status !== 0 }, () => {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-'));
+  const w = (f, b) => { fs.mkdirSync(path.dirname(path.join(d, f)), { recursive: true }); fs.writeFileSync(path.join(d, f), b); };
+  spawnSync('git', ['init', '-q'], { cwd: d });
+  w('.sdd/specs/c.md', '---\nfeature: c\ntier: T1\n---\n- REQ-C-001 x\n');
+  w('src/Money.php', '<?php\nclass Money { public static function yen($n) { return new Money(); } }\n');
+  w('CartTest.php', "<?php\nrequire __DIR__ . '/src/Money.php';\nrequire __DIR__ . '/src/Cart.php';\n// @id TEST-C-001 @verifies REQ-C-001\nfunction test_c_001() { $c = new Cart(); Money::yen(1); $d = new DateTimeImmutable('now'); expectException(CartException::class); }\n");
+  sdd(d, 'init');
+  const r = sdd(d, 'tdd', 'stub', 'TEST-C-001');
+  assert.equal(r.code, 0, r.out);
+  const cart = fs.readFileSync(path.join(d, 'src/Cart.php'), 'utf8');
+  assert.match(cart, /class Cart\b/);
+  assert.doesNotMatch(cart, /class Money|function DateTimeImmutable|class DateTimeImmutable/);
+  assert.doesNotMatch(cart, /function DateTimeImmutable/);
+  assert.equal(spawnSync('php', ['-l', path.join(d, 'src/Cart.php')]).status, 0);
+});
+
+test('#96 C stub: functions/types declared by existing headers are not redeclared', { skip: spawnSync('which', ['cc']).status !== 0 }, () => {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-'));
+  const w = (f, b) => { fs.mkdirSync(path.dirname(path.join(d, f)), { recursive: true }); fs.writeFileSync(path.join(d, f), b); };
+  spawnSync('git', ['init', '-q'], { cwd: d });
+  w('.sdd/specs/c.md', '---\nfeature: c\ntier: T1\n---\n- REQ-C-001 x\n');
+  w('include/base.h', '#pragma once\ntypedef struct base_t { int x; } base_t;\nint base_make(int a);\n');
+  w('tests/t.c', '#include <assert.h>\n#include "base.h"\n#include "cart.h"\n/* @id TEST-C-001 @verifies REQ-C-001 */\nint main(void) { base_t b; (void)b; assert(base_make(1) == 1); assert(cart_total(2) == 2); return 0; }\n');
+  fs.writeFileSync(path.join(d, 'include/base.c'), '');
+  sdd(d, 'init');
+  const r = sdd(d, 'tdd', 'stub', 'TEST-C-001');
+  assert.equal(r.code, 0, r.out);
+  const files = spawnSync('git', ['ls-files', '-co', '--exclude-standard', '*cart.h'], { cwd: d, encoding: 'utf8' }).stdout.trim();
+  const h = fs.readFileSync(path.join(d, files), 'utf8');
+  assert.match(h, /cart_total/);
+  assert.doesNotMatch(h, /base_make|base_t/);
+});
+
+test('#97 JS/Python class stubs get throwing methods for the methods the test calls', { skip: spawnSync('which', ['python3']).status !== 0 }, () => {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-'));
+  const w = (f, b) => { fs.mkdirSync(path.dirname(path.join(d, f)), { recursive: true }); fs.writeFileSync(path.join(d, f), b); };
+  spawnSync('git', ['init', '-q'], { cwd: d });
+  w('.sdd/specs/b.md', '---\nfeature: b\ntier: T1\n---\n- REQ-B-001 x\n- REQ-B-002 y\n');
+  w('b.test.mjs', "import test from 'node:test';\nimport { Book } from './book.mjs';\n// @id TEST-B-001 @verifies REQ-B-001\ntest('a', () => { const b = new Book(); b.add(1); });\n");
+  w('test_p.py', "from idx import Index\n# @id TEST-B-002 @verifies REQ-B-002\ndef test_b_002():\n    i = Index()\n    i.add(1)\n    assert i.size() == 1\n");
+  sdd(d, 'init');
+  assert.equal(sdd(d, 'tdd', 'stub', 'TEST-B-001').code, 0);
+  assert.match(fs.readFileSync(path.join(d, 'book.mjs'), 'utf8'), /add\(\.\.\._args\) \{[\s\S]*not implemented: Book\.add/);
+  assert.equal(sdd(d, 'tdd', 'stub', 'TEST-B-002').code, 0);
+  const py = fs.readFileSync(path.join(d, 'idx.py'), 'utf8');
+  assert.match(py, /def add\(self/);
+  assert.match(py, /def size\(self/);
+  assert.equal(spawnSync('python3', ['-c', 'import ast,sys;ast.parse(open(sys.argv[1]).read())', path.join(d, 'idx.py')]).status, 0);
+});
+
+test('#98 pytest -k: a longer test name extending this id is excluded from the selection', { skip: spawnSync('python3', ['-m', 'pytest', '--version']).status !== 0 }, () => {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-'));
+  const w = (f, b) => { fs.mkdirSync(path.dirname(path.join(d, f)), { recursive: true }); fs.writeFileSync(path.join(d, f), b); };
+  spawnSync('git', ['init', '-q'], { cwd: d });
+  w('.sdd/specs/t.md', '---\nfeature: t\ntier: T1\n---\n- REQ-T-007 a\n- REQ-T-0071 b\n');
+  w('requirements.txt', '');
+  w('mod.py', 'def f():\n    return 1\n');
+  w('test_m.py', "from mod import f\n# @id TEST-T-007 @verifies REQ-T-007\ndef test_t_007():\n    assert f() == 1\n# @id TEST-T-0071 @verifies REQ-T-0071\ndef test_t_0071():\n    assert f() == 2\n");
+  sdd(d, 'init');
+  const r = sdd(d, 'tdd', 'red', 'TEST-T-007');
+  assert.notEqual(r.code, 0, r.out);
+  assert.match(r.out, /test passed/);
+});
+
+test('#99 approve record for a human spec is refused without a matching prepare; allowed after it', () => {
+  const d = mini(T2SPEC, { 'a.test.mjs': jsTest() }, PASS);
+  const r = sddRaw(d, 'approve', 'record', 'a', '--by', 'Alice');
+  assert.equal(r.code, 1, r.out);
+  assert.match(r.out, /approve prepare a/);
+  assert.equal(sddRaw(d, 'approve', 'prepare', 'a').code, 0);
+  assert.equal(sddRaw(d, 'approve', 'record', 'a', '--by', 'Alice').code, 0);
+});
+
+test('#100 Green is accepted after reverting a wrong test edit back to an earlier Red content', () => {
+  const d = mini(T1SPEC, { 'a.test.mjs': jsTest() }, FAIL);
+  const tp = path.join(d, 'a.test.mjs');
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-A-001').code, 0);
+  fs.writeFileSync(tp, jsTest().replace('assert.ok(1)', 'assert.ok(2)'));
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-A-001').code, 0);
+  fs.writeFileSync(tp, jsTest());
+  setCmd(d, PASS);
+  const r = sdd(d, 'tdd', 'green', 'TEST-A-001');
+  assert.equal(r.code, 0, r.out);
+});
+
+test('#102 trace +N more, invalid lowercase id suffix, test CRLF does not stale evidence, ＜test-only＞ marker', () => {
+  // test CRLF conversion keeps Green
+  const d = mini(T1SPEC, { 'a.test.mjs': jsTest() }, FAIL);
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-A-001').code, 0);
+  setCmd(d, PASS);
+  assert.equal(sdd(d, 'tdd', 'green', 'TEST-A-001').code, 0);
+  const tp = path.join(d, 'a.test.mjs');
+  fs.writeFileSync(tp, fs.readFileSync(tp, 'utf8').replace(/\n/g, '\r\n'));
+  assert.match(sdd(d, 'gate', '--no-run').out, /tdd evidence[^\n]*1\/1 tests Red→Green/);
+  // lowercase suffix
+  fs.writeFileSync(path.join(d, 'x.mjs'), '/** @id CODE-A-001b @implements REQ-A-001 */\nexport const x = 1;\n');
+  assert.match(sdd(d, 'trace').out, /invalid @id CODE-A-001b/);
+  // fullwidth angle brackets
+  const e = mini('---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | one shall hold. ＜test-only＞ | TEST-A-001 |\n', { 'a.test.mjs': jsTest() }, PASS);
+  assert.doesNotMatch(sdd(e, 'trace').out, /REQ-A-001 has no @implements/);
 });
