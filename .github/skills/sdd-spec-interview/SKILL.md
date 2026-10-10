@@ -23,6 +23,8 @@ Follow the user's language. Output of this skill = `.sdd/specs/<feature>.md` in 
 7. **Interfaces & contracts**: public API shape, cross-language/golden files (shared fixtures → `(test-only)` REQs), framework behaviours that must be pinned (what the framework does on invalid input, not what you assume).
 8. **Security / data / irreversible actions**: auth, secrets, deletion, publishing → decides `tier: T2` and possibly `approval: human`.
 9. **Non-functional** only if relevant: performance bound, compatibility.
+10. **Design (T2 only, after the requirements are agreed)**, one question each: components and boundaries (what owns what); data flow / external dependencies; state machine (states, transitions, illegal ones) or policy table; key decisions with the rejected alternative; riskiest assumption (becomes a spike). Write answers into `## Design`.
+11. **Large work (more than ~5 features or one spec would exceed 30 lines)**: propose a split into features and a build order with dependencies; confirm with the user; write `.sdd/plan.md`, then interview and spec each feature in that order.
 
 ## Tier and approval (decide, do not ask unless unclear)
 - T1: behaviour change/bug fix. T2: security, policy, public contract, data, state machine, concurrency. Unsure → T2.
@@ -32,7 +34,8 @@ Follow the user's language. Output of this skill = `.sdd/specs/<feature>.md` in 
 - Path `.sdd/specs/<feature>.md`; front matter `feature`, `tier`, `approval`. ≤30 lines; split features that exceed it.
 - One EARS row per testable behaviour: `When <trigger>, the system shall <response>.` / `If <bad condition>, then the system shall <response>.` / `While <state>, …`. Each row is atomic, observable, has a concrete value or status code, and one or more `TEST-<F>-nnn`.
 - IDs: `REQ-<F>-nnn`, `TEST-<F>-nnn`, globally unique. Unknowns that the user postponed → `(deferred)` row with `—` test. REQs verified only by golden/characterization tests → add `(test-only)` to the row.
-- Add `## Design` (≤10 lines) only for T2 or non-obvious decisions, and `## Assumptions / risks`.
+- `## Design` (≥2 non-blank lines, ≤10) is **required for T2** (`approve record`, `guard` and `gate` reject a T2 spec without it); for T1 only when decisions are non-obvious. Add `## Assumptions / risks`.
+- Large work: `.sdd/plan.md` table `| order | feature | depends | note |` (`depends` = comma-separated features or `-`); check with `node <lean-sdd-tdd>/scripts/sdd.mjs plan`.
 - Do not invent requirements the user did not confirm and that are not recorded as assumptions.
 
 ## Hand-off

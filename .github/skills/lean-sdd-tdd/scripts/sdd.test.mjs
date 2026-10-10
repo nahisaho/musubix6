@@ -12,7 +12,7 @@ function project() {
   const d = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-'));
   spawnSync('git', ['init', '-q'], { cwd: d });
   fs.mkdirSync(path.join(d, '.sdd/specs'), { recursive: true });
-  fs.writeFileSync(path.join(d, '.sdd/specs/calc.md'), '---\nfeature: calc\ntier: T2\n---\n| REQ-CALC-001 | When add is called, the system shall sum. | TEST-CALC-001 |\n');
+  fs.writeFileSync(path.join(d, '.sdd/specs/calc.md'), '---\nfeature: calc\ntier: T2\n---\n## Design\nadd is a pure function.\nno state.\n\n| REQ-CALC-001 | When add is called, the system shall sum. | TEST-CALC-001 |\n');
   fs.writeFileSync(path.join(d, 'add.test.mjs'), [
     "import { test } from 'node:test';",
     "import assert from 'node:assert/strict';",
@@ -431,7 +431,7 @@ test('C/C++ sources are scanned; unknown stack warns at init; "FAIL <name>" is s
   const d = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-'));
   spawnSync('git', ['init', '-q'], { cwd: d });
   fs.mkdirSync(path.join(d, '.sdd/specs'), { recursive: true });
-  fs.writeFileSync(path.join(d, '.sdd/specs/calc.md'), '---\nfeature: calc\ntier: T2\n---\n| REQ-CALC-001 | When add is called, the system shall sum. | TEST-CALC-001 |\n');
+  fs.writeFileSync(path.join(d, '.sdd/specs/calc.md'), '---\nfeature: calc\ntier: T2\n---\n## Design\nadd is a pure function.\nno state.\n\n| REQ-CALC-001 | When add is called, the system shall sum. | TEST-CALC-001 |\n');
   fs.writeFileSync(path.join(d, 'calc.c'), '/* @id CODE-CALC-001 @implements REQ-CALC-001 */\nint add(int a, int b) { return a - b; }\n');
   fs.writeFileSync(path.join(d, 't.cpp'), '// @id TEST-CALC-001 @verifies REQ-CALC-001\nint main() { return 1; }\n');
   assert.match(sdd(d, 'init').out, /WARNING: stack not recognised/);
@@ -959,4 +959,32 @@ test('#52 framework build output (.mastra, .next, …) is not scanned for @id (n
   fs.writeFileSync(path.join(d, 'f.mjs'), code);
   fs.writeFileSync(path.join(d, '.mastra/output/f.mjs'), code);
   assert.doesNotMatch(sdd(d, 'trace').out, /duplicate @id/);
+});
+
+test('T2 spec without a ## Design section cannot be locked and fails guard/gate', () => {
+  const d = project();
+  const sp = path.join(d, '.sdd/specs/calc.md');
+  fs.writeFileSync(sp, fs.readFileSync(sp, 'utf8').replace(/## Design[\s\S]*?\n\n/, ''));
+  const a = sdd(d, 'approve', 'record', 'calc', '--by', 'nahisaho');
+  assert.equal(a.code, 1);
+  assert.match(a.out, /needs a "## Design"/);
+  assert.match(sdd(d, 'guard').out, /GUARD FAIL/);
+  assert.match(sdd(d, 'gate', '--no-run').out, /design calc: missing/);
+});
+
+test('plan: orders features, flags bad dependencies, and names the next feature', () => {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-plan-'));
+  spawnSync('git', ['init', '-q'], { cwd: d });
+  fs.mkdirSync(path.join(d, '.sdd/specs'), { recursive: true });
+  fs.writeFileSync(path.join(d, '.sdd/specs/a.md'), '---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | f shall return 1. | TEST-A-001 |\n');
+  const plan = (rows) => fs.writeFileSync(path.join(d, '.sdd/plan.md'), `| order | feature | depends | note |\n|---|---|---|---|\n${rows}\n`);
+  plan('| 1 | a | - | core |\n| 2 | b | a | later |');
+  let r = sdd(d, 'plan');
+  assert.equal(r.code, 0);
+  assert.match(r.out, /next: a/);
+  plan('| 1 | a | b | x |\n| 2 | b | a | y |\n| 3 | c | zzz | z |');
+  r = sdd(d, 'plan');
+  assert.equal(r.code, 1);
+  assert.match(r.out, /dependency b is ordered after/);
+  assert.match(r.out, /unknown dependency zzz/);
 });

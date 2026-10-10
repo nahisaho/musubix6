@@ -17,7 +17,8 @@ Follow the user's language. One zero-dependency script enforces the rules; the a
 - No spec yet and the request is vague ("〜を作りたい")? Use the `sdd-spec-interview` skill first: it asks the user one question at a time and writes the spec.
 - **T0** typo/docs/rename, no behavior change: edit → project checks. No spec, no ledger.
 - **T1** behavior change / bug fix: spec (≤15 lines) → Red → Green → gate.
-- **T2** security, policy, public contract, data, state machine, concurrency: T1 + spike + spec lock after AI review + parallel risk review.
+- **T2** security, policy, public contract, data, state machine, concurrency: T1 + required `## Design` section + spike + spec lock after AI review + parallel risk review.
+- **Large work** (several features): split into features, write `.sdd/plan.md` (`| order | feature | depends | note |`), run `$S plan` (shows done/lock state, flags unknown/misordered dependencies, prints `next:`), then do each feature as T1/T2. The Red-test order inside a feature is its implementation plan; no separate plan document.
 Unsure → higher tier. Escalate on discovery; never downgrade silently.
 
 ## 1. Spec (one file = requirements + design + approval unit)

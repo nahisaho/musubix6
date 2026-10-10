@@ -15,11 +15,12 @@ Goal: <one sentence>   Non-goals: <bullets>
 | REQ-CALC-002 | If an argument is not a number, then the system shall throw TypeError. | TEST-CALC-002 |
 | REQ-CALC-003 (deferred) | Overflow handling. | — |
 
-## Design (≤10 lines): components, data flow, key decisions, state/policy tables
+## Design (≤10 lines; REQUIRED for T2, ≥2 lines): components, data flow, key decisions, state/policy tables
 ## Assumptions / risks: <each with the test or spike that retires it>
 ```
 
 - IDs: `REQ-<F>-nnn`, `TEST-<F>-nnn`, `CODE-<F>-nnn`; globally unique. Rows marked `deferred` are excluded from coverage.
 - Annotations: `/** @id TEST-CALC-001 @verifies REQ-CALC-001 */`, `/** @id CODE-CALC-001 @implements REQ-CALC-001 */`. Python/shell: consecutive `#` lines. Compatible with musubix3 annotations.
 - Test title must contain its ID (vitest/jest/node:test); pytest/Go/Cargo use the lower-case underscore form (`test_calc_001`), matched via `{idu}` in `.sdd/config.json` `testCmd`.
+- Large work: `.sdd/plan.md` with `| order | feature | depends | note |` rows; `sdd.mjs plan` reports state and the next feature.
 - Any edit to the spec invalidates its lock; re-review and re-lock (one command).

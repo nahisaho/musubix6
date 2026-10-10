@@ -202,9 +202,18 @@ function loadSpecs() {
       if (m) reqs.push({ id: m[1], line: i + 1, deferred: /deferred/i.test(l), testOnly: /test-only/i.test(l) });
     });
     const extra = fm.artifacts ? fm.artifacts.split(',').map((s) => s.trim()).filter(Boolean) : [];
-    specs.push({ path: p, feature: fm.feature || f.replace(/\.md$/, ''), tier: (fm.tier || 'T1').toUpperCase(), approval: (fm.approval || 'auto').toLowerCase(), reqs, artifacts: [p, ...extra] });
+    const tl = text.split('\n');
+    const di = tl.findIndex((l) => /^#{1,4}\s*(?:\d+[.)]?\s*)?(Design|設計)\b/i.test(l));
+    let designLines = 0;
+    if (di >= 0) for (const l of tl.slice(di + 1)) { if (/^#{1,4}\s/.test(l)) break; if (l.trim()) designLines++; }
+    specs.push({ path: p, feature: fm.feature || f.replace(/\.md$/, ''), tier: (fm.tier || 'T1').toUpperCase(), approval: (fm.approval || 'auto').toLowerCase(), reqs, designLines, artifacts: [p, ...extra] });
   }
   return specs;
+}
+
+// a T2 spec must carry a Design section (components, state/policy tables, key decisions) before it can be locked
+function designProblem(s) {
+  return s.tier === 'T2' && s.designLines < 2 ? `${s.path}: T2 spec needs a "## Design" section (≥2 lines: components, data flow, state/policy tables, key decisions)` : null;
 }
 
 // ---------- approval ----------
@@ -481,6 +490,8 @@ function cmdApprove() {
     if (typeof flags.by !== 'string') { out('--by <name> required (ai:<reviewer> for auto specs, human name for approval: human)'); return 2; }
     const isAi = /^ai:/i.test(flags.by);
     if (spec.approval === 'human' && isAi) { out(`REFUSED: ${spec.feature} requires a human approver (approval: human)`); return 1; }
+    const dp = designProblem(spec);
+    if (dp) { out(`REFUSED: ${dp}`); return 1; }
     const review = typeof flags.review === 'string' ? flags.review.trim() : '';
     if (isAi && (/^ai:\s*(self)?$/i.test(flags.by) || !review)) { out('REFUSED: ai approver needs a named reviewer (not ai:self) and --review <path-or-summary>'); return 1; }
     const reviewIsFile = !!review && fs.existsSync(path.join(ROOT, review)) && fs.statSync(path.join(ROOT, review)).isFile();
@@ -505,6 +516,8 @@ function cmdGuard() {
   let bad = 0;
   for (const s of specs) {
     const st = s.tier === 'T2' ? approvalState(s) : 'n/a';
+    const dp = designProblem(s);
+    if (dp) { out(`GUARD FAIL ${s.feature} (T2): ${dp}`); bad++; }
     if (st !== 'ok' && st !== 'n/a') { out(`GUARD FAIL ${s.feature} (T2): approval ${st}`); bad++; }
   }
   if (!bad) out(`GUARD OK (${specs.length} spec${specs.length > 1 ? 's' : ''})`);
@@ -1050,7 +1063,7 @@ function cmdGate() {
   const specs = loadSpecs();
   const { ents, dups } = scanEntities(listFiles());
   if (!specs.length) { lines.push('! spec: none in .sdd/specs — T0 changes need no gate; for T1/T2 write .sdd/specs/<feature>.md (result is INCOMPLETE)'); incomplete = true; }
-  for (const s of specs.filter((x) => x.tier === 'T2')) { const st = approvalState(s); const ap = readJson(APPROVALS, {})[s.feature]; add(st === 'ok', `lock ${s.feature}: ${st}${ap ? ` [${ap.kind}${ap.kind === 'ai' ? `, review ${ap.review ? (ap.reviewSha ? 'file' : 'summary') : 'none'}` : ''}]` : ''}${s.approval === 'human' ? ' (human required)' : ''}`); }
+  for (const s of specs.filter((x) => x.tier === 'T2')) { const st = approvalState(s); const ap = readJson(APPROVALS, {})[s.feature]; add(st === 'ok', `lock ${s.feature}: ${st}${ap ? ` [${ap.kind}${ap.kind === 'ai' ? `, review ${ap.review ? (ap.reviewSha ? 'file' : 'summary') : 'none'}` : ''}]` : ''}${s.approval === 'human' ? ' (human required)' : ''}`); const dp = designProblem(s); if (dp) add(false, `design ${s.feature}: missing`, [dp]); }
 
   const t = applyBaseline(traceCheck(ents, dups, specs));
   add(!t.errors.length, `trace: ${t.reqs.size} REQ, ${t.errors.length} errors${t.warnings.length ? `, ${t.warnings.length} warnings` : ''}`, t.errors.slice(0, 6));
@@ -1181,10 +1194,74 @@ function cmdStatus() {
   return 0;
 }
 
-const cmds = { review: cmdReview, init: cmdInit, approve: cmdApprove, guard: cmdGuard, tdd: cmdTdd, trace: cmdTrace, gate: cmdGate, status: cmdStatus };
+// ---------- plan (feature-level order for large work) ----------
+function loadPlan() {
+  const f = path.join(SDD, 'plan.md');
+  if (!fs.existsSync(f)) return null;
+  const rows = [];
+  for (const l of fs.readFileSync(f, 'utf8').split('\n')) {
+    const c = l.trim().replace(/^\||\|$/g, '').split('|').map((x) => x.trim());
+    if (c.length < 2 || !/^\d+$/.test(c[0])) continue;
+    rows.push({ order: Number(c[0]), feature: c[1], deps: (c[2] ?? '').split(',').map((x) => x.trim()).filter((x) => x && x !== '-'), note: c[3] ?? '' });
+  }
+  return rows.sort((a, b) => a.order - b.order);
+}
+
+function cmdPlan(args) {
+  const rows = loadPlan();
+  if (!rows) { out('no .sdd/plan.md (table: | order | feature | depends | note |)'); return 1; }
+  const specs = loadSpecs();
+  const { ents } = scanEntities(listFiles());
+  const entries = readLedger();
+  const byFeat = new Map(specs.map((s) => [s.feature, s]));
+  const isDone = (feat) => {
+    const sp = byFeat.get(feat);
+    if (!sp) return false;
+    let n = 0;
+    for (const r of sp.reqs) {
+      if (r.deferred) continue;
+      for (const e of ents.values()) {
+        if (e.kind !== 'TEST' || !e.refs.verifies.includes(r.id)) continue;
+        n++;
+        if (!evidenceStatus(e.id, e.path, entries).ok) return false;
+      }
+    }
+    return n > 0;
+  };
+  const problems = [];
+  const warns = [];
+  const seen = new Set();
+  const pos = new Map(rows.map((r) => [r.feature, r.order]));
+  for (const r of rows) {
+    if (seen.has(r.feature)) problems.push(`duplicate feature ${r.feature}`);
+    seen.add(r.feature);
+    if (!byFeat.has(r.feature)) warns.push(`${r.feature}: no spec yet`);
+    for (const d of r.deps) {
+      if (!pos.has(d)) problems.push(`${r.feature}: unknown dependency ${d}`);
+      else if (pos.get(d) >= r.order) problems.push(`${r.feature}: dependency ${d} is ordered after it (cycle or wrong order)`);
+    }
+  }
+  const done = new Map(rows.map((r) => [r.feature, isDone(r.feature)]));
+  let next = null;
+  for (const r of rows) {
+    const sp = byFeat.get(r.feature);
+    const depsOk = r.deps.every((d) => done.get(d));
+    const started = sp && [...ents.values()].some((e) => e.kind === 'TEST' && sp.reqs.some((q) => e.refs.verifies.includes(q.id)) && entries.some((x) => x.test === e.id));
+    if (started && !depsOk) warns.push(`${r.feature}: started before dependencies are done (${r.deps.filter((d) => !done.get(d)).join(', ')})`);
+    if (!next && !done.get(r.feature) && depsOk) next = r.feature;
+    const st = sp ? `${sp.tier}${sp.tier === 'T2' ? `:${approvalState(sp)}` : ''}` : 'no-spec';
+    out(`${done.get(r.feature) ? '✓' : '·'} ${r.order}. ${r.feature} [${st}]${r.deps.length ? ` ← ${r.deps.join(', ')}` : ''}${r.note ? ` — ${r.note}` : ''}`);
+  }
+  for (const w of warns) out(`  ! ${w}`);
+  for (const p of problems) out(`  ✗ ${p}`);
+  out(next ? `next: ${next}` : problems.length ? 'next: (fix plan first)' : 'next: (all features done)');
+  return problems.length ? 1 : 0;
+}
+
+const cmds = { review: cmdReview, init: cmdInit, approve: cmdApprove, guard: cmdGuard, tdd: cmdTdd, trace: cmdTrace, gate: cmdGate, status: cmdStatus, plan: cmdPlan };
 const fn = cmds[pos[0]];
 if (!fn) {
-  out('usage: sdd.mjs init | review template <feature> | review check <file> --feature <f> | approve prepare|record <feature> | guard | tdd red|green|refactor <TEST-ID> | tdd stub <TEST-ID> | tdd check | trace [--baseline] | gate [--changed] [--no-run] | status   [--root dir]\n  tdd red: tdd red --characterization "<reason>" records a data-only/characterization test that cannot fail without implementation (weak Red); --expect <text> requires that text in the failure; --allow-setup-red accepts a stub-in-setup Red; --missing-module accepts a Red caused by the test own not-yet-created import (non-weak); approve record --by ai:<reviewer> needs --review <path|summary>');
+  out('usage: sdd.mjs init | review template <feature> | review check <file> --feature <f> | approve prepare|record <feature> | guard | tdd red|green|refactor <TEST-ID> | tdd stub <TEST-ID> | tdd check | trace [--baseline] | gate [--changed] [--no-run] | status | plan   [--root dir]\n  tdd red: tdd red --characterization "<reason>" records a data-only/characterization test that cannot fail without implementation (weak Red); --expect <text> requires that text in the failure; --allow-setup-red accepts a stub-in-setup Red; --missing-module accepts a Red caused by the test own not-yet-created import (non-weak); approve record --by ai:<reviewer> needs --review <path|summary>');
   process.exit(2);
 }
 process.exit(fn() ?? 0);
