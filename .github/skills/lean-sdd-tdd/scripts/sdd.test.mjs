@@ -407,13 +407,24 @@ test('#16 regex literals and JSX text do not desync the tokenizer; unterminated 
 
 test('#17 review template/check: schema is validated, counts must match', () => {
   const d = project();
-  const t = sdd(d, 'review', 'template', 'calc').out;
+  const t = sdd(d, 'review', 'template', 'calc').out.replace('verdict: pending', 'verdict: pass');
   fs.writeFileSync(path.join(d, '.sdd/review.md'), t);
   assert.match(sdd(d, 'review', 'check', '.sdd/review.md', '--feature', 'calc').out, /REVIEW OK/);
   fs.writeFileSync(path.join(d, '.sdd/review.md'), t.replace('verdict: pass', 'verdict: fail'));
   assert.equal(sdd(d, 'review', 'check', '.sdd/review.md', '--feature', 'calc').code, 1);
-  fs.writeFileSync(path.join(d, '.sdd/review.md'), t.replace('Closed', 'Open'));
+  fs.writeFileSync(path.join(d, '.sdd/review.md'), t + '\n| F1 | high | a.ts:1 | Open |\n');
   assert.match(sdd(d, 'review', 'check', '.sdd/review.md', '--feature', 'calc').out, /does not match 1/);
+});
+
+test('#36 an unedited review template is rejected (verdict pending, no sample finding)', () => {
+  const d = project();
+  const t = sdd(d, 'review', 'template', 'calc').out;
+  assert.match(t, /verdict: pending/);
+  assert.doesNotMatch(t, /\bF1\b/);
+  fs.writeFileSync(path.join(d, '.sdd/review.md'), t);
+  const r = sdd(d, 'review', 'check', '.sdd/review.md', '--feature', 'calc');
+  assert.equal(r.code, 1);
+  assert.match(r.out, /verdict is "pending"/);
 });
 
 test('C/C++ sources are scanned; unknown stack warns at init; "FAIL <name>" is shown as the Red reason', () => {

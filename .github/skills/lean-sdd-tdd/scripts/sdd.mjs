@@ -431,7 +431,7 @@ function cmdReview() {
   const [sub, a] = pos.slice(1);
   if (sub === 'template') {
     const spec = loadSpecs().find((x) => x.feature === a);
-    out(`spec: sha256:${spec ? fileSha(spec.path) : '<spec sha256>'}\nverdict: pass\nopen: 0\n\n## Findings\n| ID | Severity | Where | Status |\n|----|----------|-------|--------|\n| F1 | high | file.ts:10 | Closed |`);
+    out(`spec: sha256:${spec ? fileSha(spec.path) : '<spec sha256>'}\nverdict: pending\nopen: 0\n\n## Findings\n| ID | Severity | Where | Status |\n|----|----------|-------|--------|\n(add one row per finding with Status Open or Closed, then set verdict: pass|fail)`);
     return 0;
   }
   if (sub === 'check' && a && typeof flags.feature === 'string') {
