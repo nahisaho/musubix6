@@ -644,3 +644,16 @@ test('#34 tdd stub for a Python test inside a project dir writes the stub under 
   assert.ok(fs.existsSync(path.join(d, 'worker/jobworker/stats.py')));
   assert.ok(!fs.existsSync(path.join(d, 'jobworker')));
 });
+
+test('#37 a check whose runner reports "no tests ran" is INCOMPLETE, a real failure still FAILs', () => {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-'));
+  spawnSync('git', ['init', '-q'], { cwd: d });
+  fs.mkdirSync(path.join(d, '.sdd/specs'), { recursive: true });
+  const cfg = (cmd) => fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ checks: [{ name: 'py', cmd }] }));
+  cfg(['node', '-e', "console.log('no tests ran in 0.01s'); process.exit(5)"]);
+  const r = sdd(d, 'gate');
+  assert.match(r.out, /no tests exist yet/);
+  assert.doesNotMatch(r.out, /✗ cmd/);
+  cfg(['node', '-e', "console.log('1 failed, 3 passed'); process.exit(1)"]);
+  assert.match(sdd(d, 'gate').out, /✗ cmd py/);
+});
