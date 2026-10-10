@@ -1,0 +1,1 @@
+{"testCmd":["node","--test","--test-name-pattern","{id}(?![0-9A-Za-z])","{file}"],"checks":[]}

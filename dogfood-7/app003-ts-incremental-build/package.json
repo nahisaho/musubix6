@@ -1,0 +1,12 @@
+{
+  "name": "incremental-build-lab",
+  "private": true,
+  "type": "module",
+  "workspaces": ["packages/*"],
+  "scripts": {
+    "build": "tsc --noEmit",
+    "test": "node --test packages/*/test/*.test.ts",
+    "demo": "node examples/build.ts"
+  },
+  "devDependencies": {"typescript": "^5.9.3", "@types/node": "^24.0.0"}
+}

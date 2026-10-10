@@ -1,0 +1,5 @@
+spec: sha256:0000000000000000000000000000000000000000000000000000000000000000
+verdict: pass
+open: 0
+This review actually cites the wrong specification above.
+Unrelated diagnostic artifact hash: 823df95858f66d7c7c6cd476157cb7c1015873a44b44388168971e3a00557d08

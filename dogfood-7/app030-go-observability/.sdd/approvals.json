@@ -1,0 +1,58 @@
+{
+  "trace": {
+    "by": "ai:observability-contract-review",
+    "kind": "ai",
+    "review": "Tagged characterization locks existing fixed identity arrays without implementation change",
+    "at": "2026-10-10T16:49:24.516Z",
+    "artifacts": {
+      ".sdd/specs/trace.md": "f3b6eb9d8d7712408bc31af30e60fe96e6545162753d2dcbe34e09053749bb57"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "sampling": {
+    "by": "ai:observability-contract-review",
+    "kind": "ai",
+    "review": "Independent review found boundedness overflow cancellation issues; fixed with explicit limits and commit semantics",
+    "at": "2026-10-10T16:43:09.275Z",
+    "artifacts": {
+      ".sdd/specs/sampling.md": "64b606e8f8efdc81539bdf81eb640ebe8c6e8c760f35ef7b2458c10825a79c4a"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "metrics": {
+    "by": "ai:observability-final-delta",
+    "kind": "ai",
+    "review": ".sdd/review.md",
+    "reviewSha": "bbf18160b7c349ee5ca2d8fdfa84f71f8401b8abe3c81e943177188afcd9a06c",
+    "at": "2026-10-10T16:52:49.826Z",
+    "artifacts": {
+      ".sdd/specs/metrics.md": "5a8359928ecca5de4c1707a6c88914febcf4ccd61b778169a2b7ee954d6219d1"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "logging": {
+    "by": "ai:observability-contract-review",
+    "kind": "ai",
+    "review": "Delta contract fix strips untrusted identity without context",
+    "at": "2026-10-10T16:45:39.097Z",
+    "artifacts": {
+      ".sdd/specs/logging.md": "9935b90c732486c1a2c2504e83394f9f040c9078fde001580ace581412e21710"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "pipeline": {
+    "by": "ai:observability-contract-review",
+    "kind": "ai",
+    "review": "Independent review found boundedness overflow cancellation issues; fixed with explicit limits and commit semantics",
+    "at": "2026-10-10T16:43:09.412Z",
+    "artifacts": {
+      ".sdd/specs/pipeline.md": "fd174ca75cb57530a51367cfafa9d1075ac0dfa4967c5ad087d2f9a10e47d7df"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  }
+}

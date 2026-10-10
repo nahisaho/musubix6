@@ -1,0 +1,10 @@
+{
+  "name": "app010-js-pubsub-broker",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "demo": "node examples/demo.js"
+  },
+  "engines": { "node": ">=20" }
+}

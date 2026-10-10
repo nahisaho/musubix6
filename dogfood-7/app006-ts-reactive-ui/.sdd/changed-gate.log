@@ -1,0 +1,17 @@
+SDD GATE PASS
+✓ lock runtime: ok [ai, review summary]
+✓ lock scheduler: ok [ai, review summary]
+✓ lock signals: ok [ai, review summary]
+✓ lock ssr: ok [ai, review summary]
+✓ lock vdom: ok [ai, review summary]
+✓ trace: 53 REQ, 0 errors
+✓ ledger: 107 entries, chain intact
+✓ tdd evidence (changed scope): 0/0 tests Red→Green
+! root-owned data/config changes: .github/skills/lean-sdd-tdd/SKILL.md, .github/skills/sdd-spec-interview/SKILL.md, dogfood-7/.gitignore, … — if a project reads these, add the path to its `dependsOn` in .sdd/config.json so that project's checks run too
+✓ cmd typecheck (1.0s)
+✓ cmd test (0.3s)
+! cmd packages/signals:test: no changed files in packages/signals — skipped
+! cmd packages/scheduler:test: no changed files in packages/scheduler — skipped
+! cmd packages/vdom:test: no changed files in packages/vdom — skipped
+! cmd packages/ssr:test: no changed files in packages/ssr or its dependencies (packages/signals, packages/vdom) — skipped
+! cmd packages/runtime:test: no changed files in packages/runtime or its dependencies (packages/signals, packages/scheduler, packages/vdom, packages/ssr) — skipped

@@ -1,0 +1,24 @@
+--- FAIL: TestTEST_AUTH_001 (0.00s)
+    auth_test.go:11: identity {User: Database:} 28000: role denied
+--- FAIL: TestTEST_AUTH_005 (0.00s)
+    auth_test.go:50: policy aliasing
+FAIL
+FAIL	example.com/sqlwire/internal/auth	0.002s
+--- FAIL: TestTEST_SESSION_001 (0.00s)
+    server_test.go:148: EOF
+--- FAIL: TestTEST_SESSION_002 (0.00s)
+    server_test.go:155: EOF
+--- FAIL: TestTEST_SESSION_003 (0.00s)
+    server_test.go:173: EOF
+--- FAIL: TestTEST_SESSION_004 (0.00s)
+    server_test.go:193: EOF
+--- FAIL: TestTEST_SESSION_005 (0.00s)
+    --- FAIL: TestTEST_SESSION_005/22 (0.00s)
+        server_test.go:225: EOF
+    --- FAIL: TestTEST_SESSION_005/11 (0.00s)
+        server_test.go:225: EOF
+--- FAIL: TestTEST_SESSION_006 (0.00s)
+    server_test.go:239: EOF
+FAIL
+FAIL	example.com/sqlwire/server	0.004s
+FAIL

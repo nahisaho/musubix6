@@ -1,6 +1,0 @@
-<Project Sdk="Microsoft.NET.Sdk">
-  <ItemGroup>
-    <ProjectReference Include="..\Fraud.Dsl\Fraud.Dsl.csproj" />
-    <ProjectReference Include="..\Fraud.Velocity\Fraud.Velocity.csproj" />
-  </ItemGroup>
-</Project>

@@ -1,0 +1,58 @@
+{
+  "cache": {
+    "by": "ai:final-state-pass",
+    "kind": "ai",
+    "review": ".sdd/review.md",
+    "reviewSha": "9bded5841781f6f3b3ee5a64fa2cabb35ccb9b1ade333921f1ca7ec6302a44bf",
+    "at": "2026-10-10T17:04:25.497Z",
+    "artifacts": {
+      ".sdd/specs/cache.md": "fb22130c3e43e5ea867e6e6245e0d18097671449e6e131a4382786dca557db1d"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "queue": {
+    "by": "ai:fix-spec-delta",
+    "kind": "ai",
+    "review": "Independent regression review: unseen tombstone retention and delayed retry cancellation consistent; tests compile at package scope",
+    "at": "2026-10-10T16:49:23.913Z",
+    "artifacts": {
+      ".sdd/specs/queue.md": "168165a16e067e9f8aadc0c4045ec05f6d31bca1e42a5a10faedddc64e014c14"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "leader": {
+    "by": "ai:transaction-delta",
+    "kind": "ai",
+    "review": "Independent transaction review: global cross-object resource versions, stale fencing rejection, out-of-lock event callbacks, no-op suppression; trusted transaction non-reentrant",
+    "at": "2026-10-10T16:54:04.989Z",
+    "artifacts": {
+      ".sdd/specs/leader.md": "fee5996fc02af5f64cc420578f3c2e8d612dca7b7cb6d3c915ef96874f6f3e1d"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "finalizer": {
+    "by": "ai:spec-delta",
+    "kind": "ai",
+    "review": "Independent spec review: relist high-watermark and writer fencing clarified; trusted in-memory adapters and idempotent cleanup explicitly assumed",
+    "at": "2026-10-10T16:43:18.827Z",
+    "artifacts": {
+      ".sdd/specs/finalizer.md": "3d01263667787fb037d2d27ef211341246e1cab94cc44c353258fb7888be1789"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "runtime": {
+    "by": "ai:transaction-delta",
+    "kind": "ai",
+    "review": "Independent transaction review: global cross-object resource versions, stale fencing rejection, out-of-lock event callbacks, no-op suppression; trusted transaction non-reentrant",
+    "at": "2026-10-10T16:54:04.954Z",
+    "artifacts": {
+      ".sdd/specs/runtime.md": "cd07f9023e846a58103db5deaabd53de0da7356349abe4e7ebc0f0cb82599abf"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  }
+}

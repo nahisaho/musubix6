@@ -1,0 +1,4 @@
+node_modules/
+dist/
+.sdd/prepare-cache.json
+.sdd/tdd.lock

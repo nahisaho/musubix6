@@ -1,0 +1,34 @@
+⚠ TEST-RUNTIME-001: test body changed since the last Green (includes the file preamble: imports/includes/helpers); a refactor does not prove the new assertions can fail (no Red). If behaviour/assertions changed, use tdd red/green instead (#118)
+REFACTOR ok TEST-RUNTIME-001 (REQ-RUNTIME-001) 223ms
+⚠ TEST-RUNTIME-002: test body changed since the last Green (includes the file preamble: imports/includes/helpers); a refactor does not prove the new assertions can fail (no Red). If behaviour/assertions changed, use tdd red/green instead (#118)
+REFACTOR ok TEST-RUNTIME-002 (REQ-RUNTIME-002) 232ms
+⚠ TEST-RUNTIME-003: test body changed since the last Green (includes the file preamble: imports/includes/helpers); a refactor does not prove the new assertions can fail (no Red). If behaviour/assertions changed, use tdd red/green instead (#118)
+REFACTOR ok TEST-RUNTIME-003 (REQ-RUNTIME-003) 221ms
+⚠ TEST-RUNTIME-004: test body changed since the last Green (includes the file preamble: imports/includes/helpers); a refactor does not prove the new assertions can fail (no Red). If behaviour/assertions changed, use tdd red/green instead (#118)
+REFACTOR ok TEST-RUNTIME-004 (REQ-RUNTIME-004) 243ms
+⚠ TEST-RUNTIME-005: test body changed since the last Green (includes the file preamble: imports/includes/helpers); a refactor does not prove the new assertions can fail (no Red). If behaviour/assertions changed, use tdd red/green instead (#118)
+REFACTOR ok TEST-RUNTIME-005 (REQ-RUNTIME-005) 231ms
+⚠ TEST-RUNTIME-006: test body changed since the last Green (includes the file preamble: imports/includes/helpers); a refactor does not prove the new assertions can fail (no Red). If behaviour/assertions changed, use tdd red/green instead (#118)
+REFACTOR ok TEST-RUNTIME-006 (REQ-RUNTIME-006) 233ms
+⚠ TEST-RUNTIME-007: test body changed since the last Green (includes the file preamble: imports/includes/helpers); a refactor does not prove the new assertions can fail (no Red). If behaviour/assertions changed, use tdd red/green instead (#118)
+REFACTOR ok TEST-RUNTIME-007 (REQ-RUNTIME-007) 250ms
+⚠ TEST-RUNTIME-008: test body changed since the last Green (includes the file preamble: imports/includes/helpers); a refactor does not prove the new assertions can fail (no Red). If behaviour/assertions changed, use tdd red/green instead (#118)
+REFACTOR ok TEST-RUNTIME-008 (REQ-RUNTIME-008) 271ms
+⚠ TEST-RUNTIME-009: test body changed since the last Green (includes the file preamble: imports/includes/helpers); a refactor does not prove the new assertions can fail (no Red). If behaviour/assertions changed, use tdd red/green instead (#118)
+REFACTOR ok TEST-RUNTIME-009 (REQ-RUNTIME-009) 262ms
+⚠ TEST-RUNTIME-010: test body changed since the last Green (includes the file preamble: imports/includes/helpers); a refactor does not prove the new assertions can fail (no Red). If behaviour/assertions changed, use tdd red/green instead (#118)
+REFACTOR ok TEST-RUNTIME-010 (REQ-RUNTIME-010) 226ms
+⚠ TEST-RUNTIME-011: test body changed since the last Green (includes the file preamble: imports/includes/helpers); a refactor does not prove the new assertions can fail (no Red). If behaviour/assertions changed, use tdd red/green instead (#118)
+REFACTOR ok TEST-RUNTIME-011 (REQ-RUNTIME-011) 233ms
+REFACTOR ok TEST-SSR-001 (REQ-SSR-001) 130ms
+REFACTOR ok TEST-SSR-002 (REQ-SSR-002) 144ms
+REFACTOR ok TEST-SSR-003 (REQ-SSR-003) 146ms
+REFACTOR ok TEST-SSR-004 (REQ-SSR-004) 150ms
+REFACTOR ok TEST-SSR-005 (REQ-SSR-005) 146ms
+REFACTOR ok TEST-SSR-006 (REQ-SSR-006) 136ms
+REFACTOR ok TEST-SSR-007 (REQ-SSR-007) 142ms
+REFACTOR ok TEST-SSR-008 (REQ-SSR-008) 142ms
+REFACTOR ok TEST-SSR-009 (REQ-SSR-009) 152ms
+REFACTOR ok TEST-SSR-010 (REQ-SSR-010) 172ms
+REFACTOR ok TEST-SSR-011 (REQ-SSR-011) 159ms
+REFACTOR ok TEST-SSR-012 (REQ-SSR-012) 139ms

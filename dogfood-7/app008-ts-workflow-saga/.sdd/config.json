@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 1,
+  "testCmd": [
+    "node",
+    "--test",
+    "--test-name-pattern",
+    "{id}(?![0-9A-Za-z])",
+    "{file}"
+  ],
+  "checks": [
+    {
+      "name": "typecheck",
+      "cmd": [
+        "npm",
+        "run",
+        "typecheck"
+      ]
+    }
+  ],
+  "timeoutMs": 120000,
+  "scan": { "exclude": [".sdd/spike/**", "node_modules/**"] },
+  "projects": [
+    {
+      "root": "packages/history",
+      "testCmd": ["node", "--test", "--test-name-pattern", "{id}(?![0-9A-Za-z])", "{file}"],
+      "checks": [{ "name": "test", "cmd": ["npm", "test"] }]
+    },
+    {
+      "root": "packages/definitions",
+      "dependsOn": ["packages/history"],
+      "testCmd": ["node", "--test", "--test-name-pattern", "{id}(?![0-9A-Za-z])", "{file}"],
+      "checks": [{ "name": "test", "cmd": ["npm", "test"] }]
+    },
+    {
+      "root": "packages/timers",
+      "testCmd": ["node", "--test", "--test-name-pattern", "{id}(?![0-9A-Za-z])", "{file}"],
+      "checks": [{ "name": "test", "cmd": ["npm", "test"] }]
+    },
+    {
+      "root": "packages/saga",
+      "dependsOn": ["./packages/definitions/", "packages/timers"],
+      "testCmd": ["node", "--test", "--test-name-pattern", "{id}(?![0-9A-Za-z])", "{file}"],
+      "checks": [{ "name": "test", "cmd": ["npm", "test"] }]
+    },
+    {
+      "root": "packages/runtime",
+      "dependsOn": ["packages/history", "packages/definitions", "packages/timers", "packages/saga"],
+      "testCmd": ["node", "--test", "--test-name-pattern", "{id}(?![0-9A-Za-z])", "{file}"],
+      "checks": [{ "name": "test", "cmd": ["npm", "test"] }]
+    }
+  ]
+}

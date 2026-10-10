@@ -1,0 +1,1 @@
+{"name":"@build/engine","private":true,"type":"module","exports":"./src/index.ts","dependencies":{"@build/graph":"*","@build/cache":"*","@build/executor":"*"}}

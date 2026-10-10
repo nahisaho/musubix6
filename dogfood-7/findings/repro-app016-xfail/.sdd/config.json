@@ -1,0 +1,1 @@
+{"testCmd":["python3","-m","pytest","{file}","-k","{idu}"],"checks":[{"name":"pytest","cmd":["python3","-m","pytest"]}]}

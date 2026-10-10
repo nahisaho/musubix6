@@ -1,0 +1,57 @@
+{
+  "wire": {
+    "by": "ai:dns-spec-lock",
+    "kind": "ai",
+    "review": "Independent revised T2 spec review passed with zone anchors, authenticated CNAME links and secure-cache bypass",
+    "at": "2026-10-10T16:42:58.541Z",
+    "artifacts": {
+      ".sdd/specs/wire.md": "0fd1d486ed75f2eb778898d7056770761a622a27f40f17a30ed9e34b2f9a9a1c"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "cache": {
+    "by": "ai:dns-spec-lock",
+    "kind": "ai",
+    "review": "Independent revised T2 spec review passed with zone anchors, authenticated CNAME links and secure-cache bypass",
+    "at": "2026-10-10T16:42:58.587Z",
+    "artifacts": {
+      ".sdd/specs/cache.md": "04421339321bbbf04e3dbd47662f87f3c5cbb1dac6f55fc147ba49b1150aa9de"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "dnssec": {
+    "by": "ai:dns-ttl-spec",
+    "kind": "ai",
+    "review": "Reviewed TTL inflation regression contract and tests: pass",
+    "at": "2026-10-10T16:57:05.174Z",
+    "artifacts": {
+      ".sdd/specs/dnssec.md": "388a1f151061b41eeb1c04b70a7962be535c6f769a263cf678a4d80b48d7aa50"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "transport": {
+    "by": "ai:dns-spec-lock",
+    "kind": "ai",
+    "review": "Independent revised T2 spec review passed with zone anchors, authenticated CNAME links and secure-cache bypass",
+    "at": "2026-10-10T16:42:58.672Z",
+    "artifacts": {
+      ".sdd/specs/transport.md": "a84b06a545b0103f9f73943628e80d9a6106a69eb7782f78f139470f71ef8a22"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "resolver": {
+    "by": "ai:dns-ttl-spec",
+    "kind": "ai",
+    "review": "Reviewed negative alias TTL and signature expiry TTL regression contracts: pass",
+    "at": "2026-10-10T16:57:05.215Z",
+    "artifacts": {
+      ".sdd/specs/resolver.md": "0bebeab4888a5d6b7de316763e9cbe50afa3eef07cedc215b7784a61a5654ca6"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  }
+}

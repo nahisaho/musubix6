@@ -1,0 +1,7 @@
+{
+  "runtime": "v24.21.0",
+  "exclusiveMkdir": true,
+  "localFsync": true,
+  "overflowBoundary": true,
+  "typescriptNativeStrip": true
+}

@@ -1,0 +1,57 @@
+{
+  "model": {
+    "by": "ai:mesh-clean-round-one",
+    "kind": "ai",
+    "review": "Independent mesh-clean-round-one confirms wording-only explicit endpoint validation contract",
+    "at": "2026-10-10T16:52:38.249Z",
+    "artifacts": {
+      ".sdd/specs/model.md": "0526d2cc7624ba627890572f9fc30a70ee55bec1d16980ba6e1b0479f7b03d86"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "xds": {
+    "by": "ai:mesh-state-risk",
+    "kind": "ai",
+    "review": "Independent risk review confirms isolated old-cancel regression contract",
+    "at": "2026-10-10T16:46:26.690Z",
+    "artifacts": {
+      ".sdd/specs/xds.md": "c56fe217550f60e356a928bd9ed6a1f1e1d3d893923e5f7b3804b3c9da6f4dec"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "balance": {
+    "by": "ai:mesh-spec-delta",
+    "kind": "ai",
+    "review": "Independent mesh-spec-review and mesh-spec-delta resolved generation and clock contracts",
+    "at": "2026-10-10T16:40:29.648Z",
+    "artifacts": {
+      ".sdd/specs/balance.md": "485bd5f7d774680072447b3c8a69807a25ab5af619c3032f11707684b57c70d7"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "circuit": {
+    "by": "ai:mesh-spec-delta",
+    "kind": "ai",
+    "review": "Independent mesh-spec-review and mesh-spec-delta resolved generation and clock contracts",
+    "at": "2026-10-10T16:40:29.689Z",
+    "artifacts": {
+      ".sdd/specs/circuit.md": "8aa701636031c9936ce1d943f594057d0bc02d3be1ab70cb2abea262029bd2a3"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "resilience": {
+    "by": "ai:mesh-delta-one",
+    "kind": "ai",
+    "review": "Independent mesh-delta-one identifies late-failure expiry regression and its correct max-expiry contract",
+    "at": "2026-10-10T16:49:37.968Z",
+    "artifacts": {
+      ".sdd/specs/resilience.md": "2de99be48795ead67e450f669131770118af000f76b98aec6a83ba847d688913"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  }
+}

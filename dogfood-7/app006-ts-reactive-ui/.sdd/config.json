@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "testCmd": [
+    "node",
+    "--test",
+    "--test-name-pattern",
+    "{id}(?![0-9A-Za-z])",
+    "{file}"
+  ],
+  "checks": [
+    {
+      "name": "typecheck",
+      "cmd": [
+        "npm",
+        "run",
+        "typecheck"
+      ]
+    },
+    {
+      "name": "test",
+      "cmd": [
+        "npm",
+        "run",
+        "test"
+      ]
+    }
+  ],
+  "timeoutMs": 120000,
+  "scan": { "include": ["packages/**/*.ts"], "exclude": [".sdd/spikes/**", "node_modules/**"] },
+  "projects": [
+    {
+      "root": "packages/signals",
+      "testCmd": ["node", "--test", "--test-name-pattern", "{id}(?![0-9A-Za-z])", "{file}"],
+      "checks": [{ "name": "test", "cmd": ["node", "--test", "test/signals.test.ts"] }]
+    },
+    {
+      "root": "packages/scheduler",
+      "testCmd": ["node", "--test", "--test-name-pattern", "{id}(?![0-9A-Za-z])", "{file}"],
+      "checks": [{ "name": "test", "cmd": ["node", "--test", "test/scheduler.test.ts"] }]
+    },
+    {
+      "root": "packages/vdom",
+      "testCmd": ["node", "--test", "--test-name-pattern", "{id}(?![0-9A-Za-z])", "{file}"],
+      "checks": [{ "name": "test", "cmd": ["node", "--test", "test/vdom.test.ts"] }]
+    },
+    {
+      "root": "packages/ssr",
+      "dependsOn": ["packages/signals", "packages/vdom"],
+      "testCmd": ["node", "--test", "--test-name-pattern", "{id}(?![0-9A-Za-z])", "{file}"],
+      "checks": [{ "name": "test", "cmd": ["node", "--test", "test/ssr.test.ts"] }]
+    },
+    {
+      "root": "packages/runtime",
+      "dependsOn": ["packages/signals", "packages/scheduler", "packages/vdom", "packages/ssr"],
+      "testCmd": ["node", "--test", "--test-name-pattern", "{id}(?![0-9A-Za-z])", "{file}"],
+      "checks": [{ "name": "test", "cmd": ["node", "--test", "test/runtime.test.ts"] }]
+    }
+  ]
+}

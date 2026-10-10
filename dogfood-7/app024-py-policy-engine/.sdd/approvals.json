@@ -1,0 +1,57 @@
+{
+  "dsl": {
+    "by": "ai:policy-spec-delta",
+    "kind": "ai",
+    "review": "Independent spec review with two material findings fixed and delta verified",
+    "at": "2026-10-10T16:39:18.112Z",
+    "artifacts": {
+      ".sdd/specs/dsl.md": "aa24607c246842fcd3414cf970717aa318d2c5bd851adda564f72d59d455dc01"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "roles": {
+    "by": "ai:policy-bugfix-spec",
+    "kind": "ai",
+    "review": "Role shape and deep hierarchy regression contracts independently reviewed pass",
+    "at": "2026-10-10T16:43:29.042Z",
+    "artifacts": {
+      ".sdd/specs/roles.md": "041bc2d04ec3217d8976a3edeefe57bbefc1752522e93e79be7994cbedd1bcc9"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "combine": {
+    "by": "ai:policy-wording-review",
+    "kind": "ai",
+    "review": "Independent wording-only contract delta review confirmed unchanged empty-input behavior",
+    "at": "2026-10-10T16:49:00.113Z",
+    "artifacts": {
+      ".sdd/specs/combine.md": "02e5f2043086c41740c956ab15113054348702c598db8d59fecc952fe27193d5"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "decisions": {
+    "by": "ai:policy-bugfix-spec",
+    "kind": "ai",
+    "review": "Role shape and deep hierarchy regression contracts independently reviewed pass",
+    "at": "2026-10-10T16:43:29.079Z",
+    "artifacts": {
+      ".sdd/specs/decisions.md": "a5f1012bb37bc2760ac719edd795f711d709ceabcfcf0414f87fa5e37e9b0699"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "analysis": {
+    "by": "ai:policy-analysis-spec",
+    "kind": "ai",
+    "review": "Scalar ancestor-path contradiction regression independently reviewed pass",
+    "at": "2026-10-10T16:46:21.256Z",
+    "artifacts": {
+      ".sdd/specs/analysis.md": "a5a0ba5ecd20eda07b62fe199fa52a6d2ad09ff4316eefb30e42fb7b064c7203"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  }
+}

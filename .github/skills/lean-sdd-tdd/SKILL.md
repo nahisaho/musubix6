@@ -26,13 +26,13 @@ Unsure → higher tier. Escalate on discovery; never downgrade silently.
 
 ## 2. T1/T2 loop (each step one command)
 1. Write the test with `/** @id TEST-F-001 @verifies REQ-F-001 */` above it and the test title containing `TEST-F-001`.
-2. T2 only: spike risky assumptions in scratch (see `references/t2.md`), AI-review the spec, then `$S approve record <feature> --by ai:<reviewer> --review "<1 line>"`. `approval: human` specs: `$S approve prepare <feature>` → show the human the exact paths/hashes → `approve record <feature> --by <name>` (refused without a matching prepare; prepare again after any spec edit).
+2. T2 only: spike risky assumptions in scratch (see `references/t2.md`), AI-review the spec, then `$S approve record <feature> --by ai:<reviewer> --review "<1 line>"`. `approval: human`: see Autonomy model (prepare again after any spec edit).
 3. `$S tdd red TEST-F-001` → must fail by assertion. Load/compile error is rejected: add a failing stub (preferred) or `--weak`.
-4. Implement minimal code with `/** @id CODE-F-001 @implements REQ-F-001 */`. Do not edit the test. A REQ verified only by golden/characterization tests (no implementing code): write `test-only` on its REQ line in the spec to silence the `no @implements code` warning (like `deferred`; the spec is hash-locked, so reviewers see it). `deferred`/`test-only` count only as a delimited marker (`REQ-X-1 (deferred)`, `[test-only]`, own table cell), never as a word in the prose.
+4. Implement minimal code with `/** @id CODE-F-001 @implements REQ-F-001 */`. Do not edit the test. REQ verified only by golden/characterization tests: mark the REQ line `(test-only)` (or `(deferred)`) as a delimited marker, never prose.
 5. `$S tdd green TEST-F-001`. Test edited since Red → rejected: revert, or record a new Red.
 6. Optional refactor, then `$S tdd refactor TEST-F-001`.
 7. `$S gate --changed` (trace + evidence for touched REQs + project checks). Fix; stop after 3 identical failures and report.
-Impact: `$S impact <REQ|TEST|CODE|file> [--json]` lists implementing files, verifying tests, and other features' REQs/tests reached through imports (JS/TS precise; Py/Go/Rust/Java/C/PHP/C#/Julia best-effort, name-based — see references/enforced-rules.md). C# follows `ProjectReference` (csproj/`Directory.Build.props`/`.sln`/`.slnx` are graph nodes). Run before changing a shared REQ.
+Impact: `$S impact <REQ|TEST|CODE|file> [--json]` lists implementing files, verifying tests and cross-feature REQs reached via imports (precision per language: `references/enforced-rules.md`). Run before changing a shared REQ.
 Batch: write all tests for a feature, then red each, implement, green each, **one** gate at the end.
 
 ## 3. Rules the script enforces (details: `references/enforced-rules.md`)

@@ -1,0 +1,16 @@
+SDD GATE FAIL
+✗ lock runtime: stale [ai, review summary]
+✓ lock scheduler: ok [ai, review summary]
+✗ lock signals: stale [ai, review summary]
+✗ lock ssr: stale [ai, review summary]
+✗ lock vdom: stale [ai, review summary]
+✓ trace: 58 REQ, 0 errors, 5 warnings
+✓ ledger: 107 entries, chain intact
+✗ tdd evidence: 52/58 tests Red→Green
+    TEST-RUNTIME-009 (REQ-RUNTIME-009): REQ-RUNTIME-009 changed in the spec since last Green/Refactor: re-verify with tdd refactor (wording only) or tdd red/green (behaviour changed)
+    TEST-SIGNALS-012 (REQ-SIGNALS-012): no Green recorded
+    TEST-SIGNALS-013 (REQ-SIGNALS-013): no Green recorded
+    TEST-SSR-011 (REQ-SSR-011): no Green recorded
+    TEST-SSR-012 (REQ-SSR-012): no Green recorded
+    TEST-VDOM-011 (REQ-VDOM-011): no Green recorded
+! commands: SKIPPED (--no-run) — result is INCOMPLETE

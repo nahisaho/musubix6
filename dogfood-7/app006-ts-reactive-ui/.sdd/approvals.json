@@ -1,0 +1,58 @@
+{
+  "signals": {
+    "by": "ai:app006-fix-spec-review",
+    "kind": "ai",
+    "review": "Independent regression spec review; preflight gap fixed and verified by app006-preflight-spec-review; nonthrowing host boundary explicit",
+    "at": "2026-10-10T13:03:22.410Z",
+    "artifacts": {
+      ".sdd/specs/signals.md": "203ffac558c844f63f5eab5340650d854f12d98c2908b4b39b9fcf9c8b3279c6"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "scheduler": {
+    "by": "ai:app006-spec-delta",
+    "kind": "ai",
+    "review": "Independent spec review completed; computed propagation, cancellation generations and automatic error delivery gaps fixed and delta verified",
+    "at": "2026-10-10T12:56:38.639Z",
+    "artifacts": {
+      ".sdd/specs/scheduler.md": "6b9bed67126e258ad796d397ac4740aa9619a2baedcab97c7ce0f4930ead7f69"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "vdom": {
+    "by": "ai:app006-fix-spec-review",
+    "kind": "ai",
+    "review": "Independent regression spec review; preflight gap fixed and verified by app006-preflight-spec-review; nonthrowing host boundary explicit",
+    "at": "2026-10-10T13:03:22.459Z",
+    "artifacts": {
+      ".sdd/specs/vdom.md": "f870aee01d43fedafb61d5401a564fa1bf14e19ac93b5847315b60813eb90513"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "ssr": {
+    "by": "ai:app006-fix-spec-review",
+    "kind": "ai",
+    "review": "Independent regression spec review; preflight gap fixed and verified by app006-preflight-spec-review; nonthrowing host boundary explicit",
+    "at": "2026-10-10T13:03:22.507Z",
+    "artifacts": {
+      ".sdd/specs/ssr.md": "9ff3ca707b38d649149b61883edfabee24101f1867c0a136650053d672b48887"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "runtime": {
+    "by": "ai:app006-clean-round-2",
+    "kind": "ai",
+    "review": ".sdd/review.md",
+    "reviewSha": "64c1cfa1da23ba097999f54647ed187653c0385db0f23044362821fb45331d81",
+    "at": "2026-10-10T13:09:32.653Z",
+    "artifacts": {
+      ".sdd/specs/runtime.md": "150e2dce73e6689146a73236f104b2ad14bedb823f7bfb6e8ee1554890c8ebc2"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  }
+}

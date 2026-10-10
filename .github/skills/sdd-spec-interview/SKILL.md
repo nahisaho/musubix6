@@ -42,8 +42,3 @@ Follow the user's language. Output of this skill = `.sdd/specs/<feature>.md` in 
 1. Run `node <lean-sdd-tdd>/scripts/sdd.mjs approve prepare <feature>` to confirm the spec parses (REQ list printed).
 2. Tell the user, in ≤5 lines: the spec path, the REQ count, the tier/approval, the assumptions chosen.
 3. Continue with `lean-sdd-tdd` (independent review → `approve record` → tests Red → code Green → `gate`) if the user asked for implementation; otherwise stop.
-
-## Question examples
-- "入力が空文字・空白のみの場合の扱いは?" → 422 を返す(推奨) / 空として受け付ける / 例外を投げる
-- "存在しない ID の更新は?" → 404(推奨) / 自動作成 / 無視
-- "同時更新の整合性は?" → 今回は対象外(deferred・推奨) / 原子的に保証

@@ -1,0 +1,58 @@
+{
+  "net": {
+    "by": "ai:paxos-spec-delta",
+    "kind": "ai",
+    "review": "Independent spec review resolves coordinator fencing and latest-sequence semantics; no significant issues",
+    "at": "2026-10-10T16:40:19.693Z",
+    "artifacts": {
+      ".sdd/specs/net.md": "b38aeb40099c4420796b069da58234fe0ea05de582ec1d444f15862103050ed1"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "quorum": {
+    "by": "ai:paxos-spec-delta",
+    "kind": "ai",
+    "review": "Independent spec review resolves coordinator fencing and latest-sequence semantics; no significant issues",
+    "at": "2026-10-10T16:40:19.737Z",
+    "artifacts": {
+      ".sdd/specs/quorum.md": "4eae9c6761fb4faed91906ea6b964f86d9b49039a3c9977b695a1d8e12c976dd"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "paxos": {
+    "by": "ai:paxos-risk-review",
+    "kind": "ai",
+    "review": "Independent risk review requires conflicting same-ballot rejection with identical retransmission allowed",
+    "at": "2026-10-10T16:44:17.873Z",
+    "artifacts": {
+      ".sdd/specs/paxos.md": "f4042d0c824e49692c83e13b9980baeb8e4a171117fa49f9df95715a93f0f151"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "machine": {
+    "by": "ai:paxos-spec-delta",
+    "kind": "ai",
+    "review": "Independent spec review resolves coordinator fencing and latest-sequence semantics; no significant issues",
+    "at": "2026-10-10T16:40:19.824Z",
+    "artifacts": {
+      ".sdd/specs/machine.md": "0cacf8017b53983bf63d46e15ae075b2b1ddfc47b8a74223b86072c488e6023d"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "history": {
+    "by": "ai:paxos-risk-delta2",
+    "kind": "ai",
+    "review": ".sdd/review.md",
+    "reviewSha": "0e13662fd63aa29ceb0aca9d4ae2a198dde6f456bf21dbcde5a0be4f0feaf5eb",
+    "at": "2026-10-10T16:49:25.073Z",
+    "artifacts": {
+      ".sdd/specs/history.md": "bf1a182d66451e57243692390f3ac5bd4846c11df65966b6df57163e7edd2a7b"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  }
+}

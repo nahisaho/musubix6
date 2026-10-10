@@ -1,0 +1,62 @@
+{
+  "rules": {
+    "by": "ai:flags-regression-spec-delta",
+    "kind": "ai",
+    "review": ".sdd/review.md",
+    "reviewSha": "dff996de6cbbece9e0e7714273da5b6a0fa65a8305168b5f285f09de62b019e3",
+    "at": "2026-10-10T13:45:36.191Z",
+    "artifacts": {
+      ".sdd/specs/rules.md": "4f5189504eeb291e5a81e9a0238efbb66917cc0e45751544a0bfd5f302226ded"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "rollout": {
+    "by": "ai:flags-spec-delta",
+    "kind": "ai",
+    "review": ".sdd/review.md",
+    "reviewSha": "dff996de6cbbece9e0e7714273da5b6a0fa65a8305168b5f285f09de62b019e3",
+    "at": "2026-10-10T13:45:36.274Z",
+    "artifacts": {
+      ".sdd/specs/rollout.md": "b7a42f1be566751ccf0e0e714270ac5a79008c5ca374d6443cfc6fc8e832614b"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "segments": {
+    "by": "ai:flags-spec-delta",
+    "kind": "ai",
+    "review": ".sdd/review.md",
+    "reviewSha": "dff996de6cbbece9e0e7714273da5b6a0fa65a8305168b5f285f09de62b019e3",
+    "at": "2026-10-10T13:45:36.366Z",
+    "artifacts": {
+      ".sdd/specs/segments.md": "8f8072dbf089f58fa3d28290df4f73e1c41b88469c2079d42fe82a77e9efcf21"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "control": {
+    "by": "ai:flags-regression-spec-delta",
+    "kind": "ai",
+    "review": ".sdd/review.md",
+    "reviewSha": "dff996de6cbbece9e0e7714273da5b6a0fa65a8305168b5f285f09de62b019e3",
+    "at": "2026-10-10T13:45:36.470Z",
+    "artifacts": {
+      ".sdd/specs/control.md": "a4e8f2bf878618310b3a258e9f166f5630c18f6cce3e70fcb71cd99b1527998a"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "sdk": {
+    "by": "ai:flags-regression-spec-delta",
+    "kind": "ai",
+    "review": ".sdd/review.md",
+    "reviewSha": "dff996de6cbbece9e0e7714273da5b6a0fa65a8305168b5f285f09de62b019e3",
+    "at": "2026-10-10T13:45:36.569Z",
+    "artifacts": {
+      ".sdd/specs/sdk.md": "de924b0892b18b6a734e76aa0cf9d2fb31d922b7762b7694802c843c9cfad196"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  }
+}

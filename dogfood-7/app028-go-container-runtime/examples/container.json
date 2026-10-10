@@ -1,0 +1,7 @@
+{
+  "ociVersion": "1.0.2",
+  "root": "/root",
+  "args": ["sh"],
+  "env": ["MODE=simulation"],
+  "limits": {"memory": 128, "cpu": 10, "pids": 4}
+}

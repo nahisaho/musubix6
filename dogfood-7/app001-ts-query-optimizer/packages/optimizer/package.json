@@ -1,0 +1,5 @@
+{
+  "name": "@query/optimizer", "version": "1.0.0", "private": true,
+  "type": "module", "exports": "./src/index.ts",
+  "dependencies": { "@query/algebra": "1.0.0" }
+}

@@ -29,6 +29,294 @@ const sddRaw = (d, ...a) => { const r = spawnSync('node', [SDD, '--root', d, ...
 const sdd = (d, ...a) => { if (a[0] === 'approve' && a[1] === 'record' && !/^ai\s*:/i.test(String(a[a.indexOf('--by') + 1] ?? ''))) sddRaw(d, 'approve', 'prepare', a[2]); return sddRaw(d, ...a); };
 const impl = (d, body) => fs.writeFileSync(path.join(d, 'add.mjs'), `/** @id CODE-CALC-001 @implements REQ-CALC-001 */\nexport const add = ${body};\n`);
 
+test('#157 pytest descriptive and suffixed names cannot borrow sibling failures', { skip: spawnSync('python3', ['-m', 'pytest', '--version']).status !== 0 }, () => {
+  for (const name of ['test_calc_001_target', 'test_descriptive_target']) {
+    const d = project();
+    fs.rmSync(path.join(d, 'add.test.mjs'));
+    fs.writeFileSync(path.join(d, 'pytest.ini'), '[pytest]\n');
+    fs.writeFileSync(path.join(d, 'test_calc.py'), `# @id TEST-CALC-001 @verifies REQ-CALC-001\ndef ${name}():\n    assert True\n\n# @id TEST-CALC-0011 @verifies REQ-CALC-001\ndef ${name}1_sibling():\n    assert False, "sibling only"\n`);
+    sdd(d, 'approve', 'record', 'calc', '--by', 'tester');
+    const r = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
+    assert.equal(r.code, 1, r.out);
+    assert.match(r.out, /test passed/);
+    assert.equal(fs.existsSync(path.join(d, '.sdd/tdd.jsonl')), false);
+    fs.writeFileSync(path.join(d, 'test_calc.py'), fs.readFileSync(path.join(d, 'test_calc.py'), 'utf8').replace('assert True', 'assert False, "target only"'));
+    const red = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
+    assert.equal(red.code, 0, red.out);
+    assert.match(red.out, /target only/);
+    assert.doesNotMatch(red.out, /sibling only/);
+  }
+});
+
+test('#158 Python submodule stubs use selected calls and local aliases', () => {
+  for (const clause of ['api', 'api as renamed']) {
+    const d = project();
+    const local = clause.includes(' as ') ? 'renamed' : 'api';
+    fs.rmSync(path.join(d, 'add.test.mjs'));
+    fs.mkdirSync(path.join(d, 'scope_demo'));
+    fs.writeFileSync(path.join(d, 'scope_demo/__init__.py'), '');
+    fs.writeFileSync(path.join(d, 'test_calc.py'), `from scope_demo import ${clause}\n# @id TEST-CALC-001 @verifies REQ-CALC-001\ndef test_calc_001():\n    assert ${local}.first() == 1\n# @id TEST-CALC-002 @verifies REQ-CALC-001\ndef test_calc_002():\n    assert ${local}.unrelated() == 1\n`);
+    const r = sdd(d, 'tdd', 'stub', 'TEST-CALC-001');
+    assert.equal(r.code, 0, r.out);
+    const api = fs.readFileSync(path.join(d, 'scope_demo/api.py'), 'utf8');
+    assert.match(api, /def first/);
+    assert.doesNotMatch(api, /unrelated/);
+    assert.equal(fs.readFileSync(path.join(d, 'scope_demo/__init__.py'), 'utf8'), '');
+  }
+});
+
+test('#158 Python missing-module accepts only a directly declared absent project import', { skip: spawnSync('python3', ['-m', 'pytest', '--version']).status !== 0 }, () => {
+  const d = project();
+  fs.rmSync(path.join(d, 'add.test.mjs'));
+  fs.writeFileSync(path.join(d, 'pytest.ini'), '[pytest]\n');
+  fs.writeFileSync(path.join(d, 'test_calc.py'), 'from missing_calc_project import calculate\n# @id TEST-CALC-001 @verifies REQ-CALC-001\ndef test_calc_001():\n    assert calculate() == 1\n');
+  sdd(d, 'approve', 'record', 'calc', '--by', 'tester');
+  const red = sdd(d, 'tdd', 'red', 'TEST-CALC-001', '--missing-module');
+  assert.equal(red.code, 0, red.out);
+  assert.doesNotMatch(red.out, /\[weak\]/);
+  fs.writeFileSync(path.join(d, 'missing_calc_project.py'), 'import unrelated_missing_dependency\n');
+  const bad = sdd(d, 'tdd', 'red', 'TEST-CALC-001', '--missing-module');
+  assert.equal(bad.code, 1, bad.out);
+  assert.match(bad.out, /load\/compile error/);
+});
+
+for (const [kind, before, after] of [
+  ['import binding', 'from oracle import wrong as value', 'from oracle import right as value'],
+  ['decorator above comment', '@pytest.mark.parametrize(\n    "value", [0]\n)\n# @id TEST-CALC-002 @verifies REQ-CALC-001\ndef test_calc_002(value):\n    assert value == 1', '@pytest.mark.parametrize(\n    "value", [1]\n)\n# @id TEST-CALC-002 @verifies REQ-CALC-001\ndef test_calc_002(value):\n    assert value == 1'],
+  ['trailing transitive oracle helper', 'def expected():\n    return oracle()\n\ndef oracle():\n    return 2', 'def expected():\n    return oracle()\n\ndef oracle():\n    return 1'],
+  ['multiline docstring signature', 'def test_calc_002(\n    value=False,\n):\n    """@id TEST-CALC-002 @verifies REQ-CALC-001"""\n    assert value is True', 'def test_calc_002(\n    value=True,\n):\n    """@id TEST-CALC-002 @verifies REQ-CALC-001"""\n    assert value is True'],
+]) {
+  test(`#159 Python hash locks ${kind}`, () => {
+    const d = project();
+    fs.rmSync(path.join(d, 'add.test.mjs'));
+    const base = '# @id TEST-CALC-001 @verifies REQ-CALC-001\ndef test_calc_001():\n    assert True\n\n';
+    const target = '# @id TEST-CALC-002 @verifies REQ-CALC-001\ndef test_calc_002():\n    assert value() == expected()\n\n';
+    const body = kind === 'import binding' ? before + '\n' + base + target : base + (kind.includes('oracle') ? target + before : before) + '\n';
+    fs.writeFileSync(path.join(d, 'test_calc.py'), body);
+    sdd(d, 'approve', 'record', 'calc', '--by', 'tester');
+    fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ testCmd: ['node', '-e', 'console.log("AssertionError: target");process.exit(1)'], checks: [] }));
+    const red = sdd(d, 'tdd', 'red', 'TEST-CALC-002');
+    assert.equal(red.code, 0, red.out);
+    fs.writeFileSync(path.join(d, 'test_calc.py'), body.replace(before, after));
+    fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ testCmd: ['node', '-e', '0'], checks: [] }));
+    const green = sdd(d, 'tdd', 'green', 'TEST-CALC-002');
+    assert.equal(green.code, 1, green.out);
+    assert.match(green.out, /changed since Red/);
+  });
+}
+
+test('#159 Python sibling additions preserve evidence, but shared oracle data changes stale it', () => {
+  const d = project();
+  fs.rmSync(path.join(d, 'add.test.mjs'));
+  const body = '# @id TEST-CALC-001 @verifies REQ-CALC-001\ndef test_calc_001():\n    assert actual() == EXPECTED\n\nEXPECTED = 2\n';
+  fs.writeFileSync(path.join(d, 'test_calc.py'), body);
+  sdd(d, 'approve', 'record', 'calc', '--by', 'tester');
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ testCmd: ['node', '-e', 'process.exit(1)'], checks: [] }));
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-CALC-001').code, 0);
+  fs.appendFileSync(path.join(d, 'test_calc.py'), '\n@pytest.mark.parametrize("x", [1])\n# @id TEST-CALC-002 @verifies REQ-CALC-001\ndef test_calc_002(x):\n    assert x == 1\n');
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ testCmd: ['node', '-e', '0'], checks: [] }));
+  const green = sdd(d, 'tdd', 'green', 'TEST-CALC-001');
+  assert.equal(green.code, 0, green.out);
+  fs.writeFileSync(path.join(d, 'test_calc.py'), fs.readFileSync(path.join(d, 'test_calc.py'), 'utf8').replace('EXPECTED = 2', 'EXPECTED = 1'));
+  assert.match(sdd(d, 'gate', '--no-run').out, /test changed/);
+});
+
+test('#160 Go impact follows same-package production symbols and module-root imports', () => {
+  const d = project();
+  writeAll(d, {
+    'go.mod': 'module example.org/core\n',
+    'helper.go': 'package core\nfunc hash() int { return 1 }\n',
+    'api.go': 'package core\nfunc Run() int { return hash() }\n',
+    'unused.go': 'package core\nfunc Unused() int { return 0 }\n',
+    'client/client.go': 'package client\nimport core "example.org/core"\nfunc Value() int { return core.Run() }\n',
+    'client/client_test.go': 'package client\nimport "testing"\nfunc TestValue(t *testing.T) { if Value() != 1 { t.Fatal("wrong") } }\n',
+  });
+  const r = sdd(d, 'impact', 'helper.go', '--json');
+  assert.equal(r.code, 0, r.out);
+  const reached = JSON.parse(r.out).reachedFiles;
+  for (const f of ['api.go', 'client/client.go', 'client/client_test.go']) assert.ok(reached.includes(f), `${f}: ${r.out}`);
+  assert.ok(!reached.includes('unused.go'), r.out);
+});
+
+test('#160 Go impact follows promoted methods and unnamed local alias receivers (issue comment)', () => {
+  const d = project();
+  writeAll(d, {
+    'go.mod': 'module example.org/model\n',
+    'model/base.go': 'package model\ntype Base struct{}\n',
+    'model/method.go': 'package model\nfunc (b *Base) Value() int { return 7 }\n',
+    'model/shell.go': 'package model\ntype Shell struct { Base }\nfunc NewShell() *Shell { return &Shell{} }\n',
+    'model/alias.go': 'package model\ntype Alias = Base\n',
+    'model/alias_method.go': 'package model\nfunc (Alias) Count() int { return 7 }\n',
+    'client/client.go': 'package client\nimport "example.org/model/model"\nfunc Value() int { return model.NewShell().Value() }\nfunc Count() int { return (model.Base{}).Count() }\n',
+    'client/client_test.go': 'package client\nfunc TestValue() { Value(); Count() }\n',
+  });
+  for (const seed of ['model/method.go', 'model/alias_method.go']) {
+    const r = sdd(d, 'impact', seed, '--json');
+    const reached = JSON.parse(r.out).reachedFiles;
+    for (const f of ['client/client.go', 'client/client_test.go']) assert.ok(reached.includes(f), `${seed} -> ${f}: ${r.out}`);
+  }
+});
+
+test('#160 Go local replace paths resolve per importer and preserve subpackage suffixes', () => {
+  const d = project();
+  writeAll(d, {
+    'go.mod': 'module example.org/app\nrequire imported.local/sdk v0.0.0\nreplace (\n imported.local/sdk => ./libs/shared\n)\n',
+    'libs/shared/go.mod': 'module original.local/sdk\n',
+    'libs/shared/counter/counter.go': 'package counter\nfunc Count() int { return 1 }\n',
+    'consumer/consumer.go': 'package consumer\nimport "imported.local/sdk/counter"\nfunc Value() int { return counter.Count() }\n',
+    'consumer/consumer_test.go': 'package consumer\nfunc TestValue() { Value() }\n',
+    'other/go.mod': 'module example.org/other\n',
+    'other/other.go': 'package other\nimport "imported.local/sdk/counter"\nfunc Value() int { return counter.Count() }\n',
+  });
+  const r = sdd(d, 'impact', 'libs/shared/counter/counter.go', '--json');
+  const reached = JSON.parse(r.out).reachedFiles;
+  for (const f of ['consumer/consumer.go', 'consumer/consumer_test.go']) assert.ok(reached.includes(f), r.out);
+  assert.ok(!reached.includes('other/other.go'), r.out);
+});
+
+test('#161 Go external stubs preserve real colliding files and use the declared package', { skip: spawnSync('which', ['go']).status !== 0 }, () => {
+  const d = project();
+  fs.rmSync(path.join(d, 'add.test.mjs'));
+  const real = 'package runtime\n// real production code\nfunc Keep() int { return 73 }\n';
+  writeAll(d, {
+    'go.mod': 'module example.org/stub\n',
+    'internal/runtimev1/runtimev1_stub.go': real,
+    'internal/runtimev1/runtimev1_stub2.go': 'package runtime\nfunc KeepToo() int { return 42 }\n',
+    'tests/probe_test.go': 'package runtime_test\nimport (\n "testing"\n rt "example.org/stub/internal/runtimev1"\n)\n// @id TEST-CALC-001 @verifies REQ-CALC-001\nfunc TestTEST_CALC_001(t *testing.T) { if rt.NewGauge().Value() != 1 { t.Fatal("wrong") } }\n',
+  });
+  const r = sdd(d, 'tdd', 'stub', 'TEST-CALC-001');
+  assert.equal(r.code, 0, r.out);
+  assert.equal(fs.readFileSync(path.join(d, 'internal/runtimev1/runtimev1_stub.go'), 'utf8'), real);
+  assert.match(r.out, /compile-checked/);
+  assert.doesNotMatch(r.out, /still does not compile/);
+  const files = fs.readdirSync(path.join(d, 'internal/runtimev1'));
+  const generated = files.filter((f) => !['runtimev1_stub.go', 'runtimev1_stub2.go'].includes(f));
+  assert.equal(generated.length, 1, r.out);
+  assert.match(fs.readFileSync(path.join(d, 'internal/runtimev1', generated[0]), 'utf8'), /^package runtime\b/);
+  const build = spawnSync('go', ['test', './...','-run', '^$'], { cwd: d, encoding: 'utf8' });
+  assert.equal(build.status, 0, build.stdout + build.stderr);
+});
+
+test('#161 init checks independent nested Go modules even below another module', { skip: spawnSync('which', ['go']).status !== 0 }, () => {
+  const d = project();
+  writeAll(d, {
+    'go.mod': 'module example.org/root\n',
+    'root.go': 'package root\n',
+    'child/go.mod': 'module example.org/child\n',
+    'child/child_test.go': 'package child\nimport "testing"\nfunc TestFailure(t *testing.T) { t.Fatal("nested Go module must be checked") }\n',
+    'child/grandchild/go.mod': 'module example.org/grandchild\n',
+    'child/grandchild/grandchild.go': 'package grandchild\n',
+  });
+  const init = sdd(d, 'init');
+  assert.equal(init.code, 0, init.out);
+  const cfg = JSON.parse(fs.readFileSync(path.join(d, '.sdd/config.json'), 'utf8'));
+  assert.deepEqual((cfg.projects ?? []).map((p) => p.root), ['child', 'child/grandchild']);
+  assert.ok(cfg.checks.some((c) => c.cmd[0] === 'go'));
+  const gate = sdd(d, 'gate');
+  assert.equal(gate.code, 1, gate.out);
+  assert.match(gate.out, /✗ cmd child:test/);
+});
+
+test('#161 Go TestMain early exits cannot provide Red, characterization, Green or Refactor', { skip: spawnSync('which', ['go']).status !== 0 }, () => {
+  const d = project();
+  fs.rmSync(path.join(d, 'add.test.mjs'));
+  writeAll(d, {
+    'go.mod': 'module example.org/setup\n',
+    'probe_test.go': 'package setup\nimport ("testing"; "os")\nfunc TestMain(m *testing.M) { if os.Getenv("SDD_SETUP_EXIT") != "" { if os.Getenv("SDD_SETUP_EXIT") == "fail" { os.Exit(1) }; os.Exit(0) }; os.Exit(m.Run()) }\n// @id TEST-CALC-001 @verifies REQ-CALC-001\nfunc TestTEST_CALC_001(t *testing.T) { if os.Getenv("SDD_TARGET_PASS") == "" { t.Fatal("target assertion") } }\n',
+  });
+  sdd(d, 'approve', 'record', 'calc', '--by', 'tester');
+  const run = (exit, ...args) => {
+    const r = spawnSync('node', [SDD, '--root', d, 'tdd', ...args], { encoding: 'utf8', env: { ...ENV, SDD_SETUP_EXIT: exit } });
+    return { code: r.status, out: r.stdout + r.stderr };
+  };
+  for (const args of [['red', 'TEST-CALC-001'], ['red', 'TEST-CALC-001', '--weak'], ['red', 'TEST-CALC-001', '--characterization', 'setup must still run test']]) {
+    const r = run(args.includes('--characterization') ? 'pass' : 'fail', ...args);
+    assert.equal(r.code, 1, r.out);
+    assert.match(r.out, /no test matched|never ran/);
+  }
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-CALC-001').code, 0);
+  const green = run('pass', 'green', 'TEST-CALC-001');
+  assert.equal(green.code, 1, green.out);
+  const passed = spawnSync('node', [SDD, '--root', d, 'tdd', 'green', 'TEST-CALC-001'], { encoding: 'utf8', env: { ...ENV, SDD_TARGET_PASS: '1' } });
+  assert.equal(passed.status, 0, passed.stdout + passed.stderr);
+  assert.equal(run('pass', 'refactor', 'TEST-CALC-001').code, 1);
+});
+
+test('#162 Go annotated subtests cannot borrow failures from siblings or the parent', { skip: spawnSync('which', ['go']).status !== 0 }, () => {
+  for (const json of [false, true]) {
+    const d = project();
+    fs.rmSync(path.join(d, 'add.test.mjs'));
+    writeAll(d, {
+      'go.mod': 'module example.org/subtest\n',
+      'probe_test.go': 'package subtest\nimport "testing"\nfunc TestTEST_CALC_001(t *testing.T) {\n t.Run("TEST_CALC_001", func(t *testing.T) {\n // @id TEST-CALC-001 @verifies REQ-CALC-001\n if 1 != 1 { t.Fatal("target assertion") }\n })\n t.Run("unrelated", func(t *testing.T) { t.Fatal("sibling only") })\n t.Fatal("parent only")\n}\n',
+    });
+    fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ testCmd: ['go', 'test', './...', ...(json ? ['-json'] : []), '-run', '{IDU}(_|$)'], checks: [] }));
+    sdd(d, 'approve', 'record', 'calc', '--by', 'tester');
+    const r = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
+    assert.equal(r.code, 1, r.out);
+    assert.match(r.out, /itself passes|test passed/);
+    assert.equal(fs.existsSync(path.join(d, '.sdd/tdd.jsonl')), false);
+  }
+});
+
+test('#162 Go nested subtest selection is hierarchical and supports comments before t.Run', { skip: spawnSync('which', ['go']).status !== 0 }, () => {
+  const d = project();
+  fs.rmSync(path.join(d, 'add.test.mjs'));
+  writeAll(d, {
+    'go.mod': 'module example.org/subtest\n',
+    'probe_test.go': 'package subtest\nimport ("testing"; "os")\nfunc TestTable(t *testing.T) {\n t.Run("group one", func(t *testing.T) {\n // @id TEST-CALC-001 @verifies REQ-CALC-001\n t.Run("case.+", func(t *testing.T) { if os.Getenv("SDD_TARGET_PASS") == "" { t.Fatal("selected target") } })\n t.Run("caseXX", func(t *testing.T) { t.Fatal("wrong regex sibling") })\n })\n t.Run("other", func(t *testing.T) { t.Fatal("wrong top sibling") })\n}\n',
+  });
+  sdd(d, 'approve', 'record', 'calc', '--by', 'tester');
+  const r = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
+  assert.equal(r.code, 0, r.out);
+  assert.match(r.out, /selected target/);
+  assert.doesNotMatch(r.out, /wrong.*sibling/);
+  const green = spawnSync('node', [SDD, '--root', d, 'tdd', 'green', 'TEST-CALC-001'], { encoding: 'utf8', env: { ...ENV, SDD_TARGET_PASS: '1' } });
+  assert.equal(green.status, 0, green.stdout + green.stderr);
+});
+
+test('#162 Go unresolved dynamic and skipped annotated subtests cannot use parent evidence', { skip: spawnSync('which', ['go']).status !== 0 }, () => {
+  for (const dynamic of [false, true]) {
+    const d = project();
+    fs.rmSync(path.join(d, 'add.test.mjs'));
+    writeAll(d, {
+      'go.mod': 'module example.org/subtest\n',
+      'probe_test.go': `package subtest\nimport "testing"\nfunc TestTEST_CALC_001(t *testing.T) {\n name := "target"\n _ = name\n t.Run(${dynamic ? 'name' : '"target"'}, func(t *testing.T) {\n // @id TEST-CALC-001 @verifies REQ-CALC-001\n ${dynamic ? 't.Fatal("dynamic failure")' : 't.Skip("skip target")'}\n })\n t.Fatal("parent failure")\n}\n`,
+    });
+    sdd(d, 'approve', 'record', 'calc', '--by', 'tester');
+    const r = sdd(d, 'tdd', 'red', 'TEST-CALC-001', '--weak');
+    assert.equal(r.code, 1, r.out);
+    assert.match(r.out, /no test matched|never ran/);
+  }
+});
+
+test('#152 nested --root scopes Git changes to the root and runs project checks', () => {
+  const repo = project();
+  const d = path.join(repo, 'nested app');
+  fs.mkdirSync(d);
+  for (const f of ['.sdd', 'add.test.mjs']) fs.renameSync(path.join(repo, f), path.join(d, f));
+  fs.writeFileSync(path.join(d, '.sdd/specs/calc.md'), '---\nfeature: calc\ntier: T1\n---\n| REQ-CALC-001 | sum | TEST-CALC-001 |\n');
+  impl(d, '(a, b) => a + b');
+  fs.mkdirSync(path.join(d, 'src'));
+  fs.writeFileSync(path.join(d, 'src/quoted "name".mjs'), 'export const value = 1;\n');
+  fs.writeFileSync(path.join(repo, 'outside.mjs'), 'export const unrelated = 1;\n');
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({
+    testCmd: ['node', '--test', '--test-name-pattern', '{id}', '{file}'],
+    checks: [{ name: 'nested', cwd: 'src', cmd: ['node', '-e', 'process.exit(1)'] }],
+  }));
+  const gate = sdd(d, 'gate', '--changed');
+  assert.equal(gate.code, 1, gate.out);
+  assert.match(gate.out, /0\/1 tests Red→Green/);
+  assert.match(gate.out, /no Green recorded/);
+  assert.match(gate.out, /✗ cmd nested/);
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({
+    checks: [{ name: 'paths', cmd: ['node', '-e', 'process.exit(1)'], changedCmd: ['node', '-e', 'console.log(process.argv.slice(1).join("|"));process.exit(1)', '{changedFiles}'] }],
+  }));
+  const paths = sdd(d, 'gate', '--changed');
+  assert.match(paths.out, /src\/quoted "name"\.mjs/);
+  assert.doesNotMatch(paths.out, /outside\.mjs|nested app\//);
+});
+
 test('T2 flow: refuses Red before approval, then Red -> Green -> gate', () => {
   const d = project();
   sdd(d, 'init');
@@ -167,6 +455,57 @@ test('#5 tdd stub creates a throwing stub so Red is real (not weak)', () => {
   assert.equal(r.code, 0, r.out);
   assert.doesNotMatch(r.out, /weak/);
   assert.match(sdd(d, 'tdd', 'stub', 'TEST-CALC-001').out, /no missing/);
+});
+
+test('#155 unresolved review statuses with explanatory suffixes block check and approval', () => {
+  const d = project();
+  const hash = sdd(d, 'approve', 'prepare', 'calc').out.match(/sha256:([0-9a-f]{64})/)[1];
+  for (const status of ['Open (awaiting fix)', 'OPEN: follow up', '**Open** — fix required', 'Pending (review)', 'In progress - incomplete', 'Blocked: dependency']) {
+    fs.writeFileSync(path.join(d, '.sdd/review.md'), `spec: sha256:${hash}\nverdict: pass\nopen: 0\n| R1 | high | add.mjs:1 | ${status} |\n`);
+    for (const args of [
+      ['review', 'check', '.sdd/review.md', '--feature', 'calc'],
+      ['approve', 'record', 'calc', '--by', 'ai:duck', '--review', '.sdd/review.md'],
+    ]) {
+      const r = sdd(d, ...args);
+      assert.equal(r.code, 1, `${status}: ${r.out}`);
+      assert.match(r.out, /1 Open/);
+    }
+  }
+  assert.equal(fs.existsSync(path.join(d, '.sdd/approvals.json')), false);
+});
+
+test('#155 review spec hash must be a matching header, not a substring anywhere in prose', () => {
+  const d = project();
+  const hash = sdd(d, 'approve', 'prepare', 'calc').out.match(/sha256:([0-9a-f]{64})/)[1];
+  const wrong = '0'.repeat(64);
+  for (const header of [
+    `spec: sha256:${wrong}\nArtifact hash: ${hash}`,
+    `Artifact hash: ${hash}`,
+    `spec: sha256:${hash.slice(0, 12)}${wrong.slice(12)}`,
+    `spec: sha256:${hash.slice(0, 11)}`,
+    `spec: sha256:${hash}\nspec: sha256:${wrong}`,
+  ]) {
+    fs.writeFileSync(path.join(d, '.sdd/review.md'), `${header}\nverdict: pass\nopen: 0\n`);
+    const check = sdd(d, 'review', 'check', '.sdd/review.md', '--feature', 'calc');
+    assert.equal(check.code, 1, check.out);
+    assert.match(check.out, /spec hash/);
+    assert.equal(sdd(d, 'approve', 'record', 'calc', '--by', 'ai:duck', '--review', '.sdd/review.md').code, 1);
+  }
+  for (const header of [`spec: sha256:${hash}`, `spec: sha256:${hash.slice(0, 12)}`, `spec ${hash}`]) {
+    fs.writeFileSync(path.join(d, '.sdd/review.md'), `${header}\nverdict: pass\nopen: 0\n`);
+    assert.equal(sdd(d, 'review', 'check', '.sdd/review.md', '--feature', 'calc').code, 0, header);
+  }
+});
+
+test('#155 passing characterization Red reports passing evidence, not a failure footer', () => {
+  const d = project();
+  assert.equal(sdd(d, 'approve', 'record', 'calc', '--by', 'tester').code, 0);
+  impl(d, '(a, b) => a + b');
+  const r = sdd(d, 'tdd', 'red', 'TEST-CALC-001', '--characterization', 'existing golden fixture');
+  assert.equal(r.code, 0, r.out);
+  assert.doesNotMatch(r.out, /fails with|duration_ms/);
+  assert.match(r.out, /characterization: existing golden fixture.*test passed/);
+  assert.match(r.out, /\[weak\]/);
 });
 
 test('#4 Open detection covers table, checkbox and state: formats', () => {
@@ -551,6 +890,79 @@ function jsStubProject(files) {
   sdd(d, 'init');
   return d;
 }
+
+test('#153 JS/TS stubs infer only selected-test methods and imports', () => {
+  for (const ext of ['js', 'ts']) {
+    const real = 'export class Worker { run() { return 1; } }\n';
+    const d = jsStubProject({
+      [`src/worker.${ext}`]: real,
+      [`test/a.test.${ext}`]: [
+        `import { Worker } from '../src/worker.${ext}';`,
+        "import * as boxes from '../src/box';",
+        '/** @id TEST-A-001 @verifies REQ-A-001 */',
+        "test('TEST-A-001', () => { new Worker().run(); new boxes.Box().first(); });",
+        '/** @id TEST-A-002 @verifies REQ-A-001 */',
+        "test('TEST-A-002', async () => { new Worker().stop(); new boxes.Box().second(); const { extra } = await import('../src/sibling'); extra(); });",
+      ].join('\n'),
+    });
+    const r = sdd(d, 'tdd', 'stub', 'TEST-A-001');
+    assert.equal(r.code, 0, r.out);
+    assert.equal(fs.readFileSync(path.join(d, `src/worker.${ext}`), 'utf8'), real);
+    const box = fs.readFileSync(path.join(d, `src/box.${ext}`), 'utf8');
+    assert.match(box, /first\(/);
+    assert.doesNotMatch(box, /second\(/);
+    assert.equal(fs.existsSync(path.join(d, `src/sibling.${ext}`)), false);
+  }
+});
+
+test('#153 factory return values are not instances of the factory class', () => {
+  const real = 'export class Registry { create() { return new Child(); } }\nexport class Child { get() { return 1; } }\n';
+  const d = jsStubProject({
+    'src/registry.js': real,
+    'test/a.test.js': [
+      "import { Registry } from '../src/registry.js';",
+      'const make = () => new Registry().create();',
+      '/** @id TEST-A-001 @verifies REQ-A-001 */',
+      "test('TEST-A-001', () => { const child = new Registry().create(); child.get(); const other = make(); other.get(); });",
+    ].join('\n'),
+  });
+  assert.equal(sdd(d, 'tdd', 'stub', 'TEST-A-001').code, 0);
+  assert.equal(fs.readFileSync(path.join(d, 'src/registry.js'), 'utf8'), real);
+});
+
+test('#153 a missing workspace export entry is created, including conditional subpath exports', () => {
+  for (const [exports, spec, file] of [
+    ['./src/index.ts', '@repro/lib', 'src/index.ts'],
+    [{ import: './src/main.ts' }, '@repro/lib', 'src/main.ts'],
+    [{ '.': { import: './src/index.mjs' }, './math': { default: './src/math.mjs' } }, '@repro/lib/math', 'src/math.mjs'],
+  ]) {
+    const d = jsStubProject({
+      'packages/lib/package.json': JSON.stringify({ name: '@repro/lib', exports }),
+      'test/a.test.ts': `import { add } from '${spec}';\n/** @id TEST-A-001 @verifies REQ-A-001 */\ntest('TEST-A-001', () => { add(1, 2); });\n`,
+    });
+    const r = sdd(d, 'tdd', 'stub', 'TEST-A-001');
+    assert.equal(r.code, 0, r.out);
+    assert.match(fs.readFileSync(path.join(d, 'packages/lib', file), 'utf8'), /export function add/);
+    assert.doesNotMatch(r.out, /no missing|not stubbed/);
+  }
+});
+
+test('#153 assert.rejects/throws subjects are ordinary classes; matcher constructors extend Error', () => {
+  const d = jsStubProject({
+    'test/a.test.js': [
+      "import { Worker, Boom, Fault } from '../src/worker.js';",
+      '/** @id TEST-A-001 @verifies REQ-A-001 */',
+      "test('TEST-A-001', async () => { await assert.rejects(new Worker().run(), /failure/);",
+      "assert.throws(() => new Worker().run(), Boom); await assert.rejects(async () => new Worker().run(), Fault); });",
+    ].join('\n'),
+  });
+  const r = sdd(d, 'tdd', 'stub', 'TEST-A-001');
+  assert.equal(r.code, 0, r.out);
+  const text = fs.readFileSync(path.join(d, 'src/worker.js'), 'utf8');
+  assert.match(text, /class Worker \{/);
+  assert.match(text, /class Boom extends Error/);
+  assert.match(text, /class Fault extends Error/);
+});
 
 test('#128 tdd stub never adds methods to an existing class unless the receiver is provably that class', () => {
   const real = 'export class Store { read() { return []; } }\nexport class Other { go() { return 1; } }\n';
@@ -2057,6 +2469,56 @@ test('#119 Node file-level pass with no ID match is rejected for red --character
   assert.match(r.out, /no test matched/, r.out);
 });
 
+test('#154 an ID-bearing filename is not proof of an executed Node test (spec and TAP)', () => {
+  for (const reporter of ['spec', 'tap']) {
+    const d = mini(T1SPEC, { 'TEST-A-001.test.mjs': "import { test } from 'node:test';\nimport assert from 'node:assert/strict';\n// @id TEST-A-001 @verifies REQ-A-001\ntest('TEST-A-001 x', () => assert.equal(1, 2));\n" });
+    const cmd = ['node', '--test', `--test-reporter=${reporter}`, '--test-name-pattern', '{id}', '{file}'];
+    setCmd(d, cmd);
+    assert.equal(sdd(d, 'tdd', 'red', 'TEST-A-001').code, 0);
+    setCmd(d, cmd.map((x) => x === '{id}' ? 'MATCHES-NOTHING' : x));
+    for (const sub of ['green', 'red']) {
+      const r = sdd(d, 'tdd', sub, 'TEST-A-001', '--characterization', 'no implementation needed');
+      assert.equal(r.code, 1, r.out);
+      assert.match(r.out, /no test matched/, r.out);
+    }
+    const ledger = fs.readFileSync(path.join(d, '.sdd/tdd.jsonl'), 'utf8').trim().split('\n');
+    assert.equal(ledger.length, 1, 'rejected no-match runs write no evidence');
+  }
+});
+
+test('#154 TODO-only Node assertions cannot establish Red, Green or Refactor evidence', () => {
+  for (const reporter of ['spec', 'tap']) {
+    const d = mini(T1SPEC, {
+      'a.test.mjs': [
+        "import { test } from 'node:test';",
+        "import assert from 'node:assert/strict';",
+        "import fs from 'node:fs';",
+        '/** @id TEST-A-001 @verifies REQ-A-001 */',
+        "test('TEST-A-001 assertion', { todo: fs.existsSync('.sdd/todo') }, () => assert.equal(fs.existsSync('.sdd/pass'), true));",
+      ].join('\n'),
+    });
+    const cfg = JSON.parse(fs.readFileSync(path.join(d, '.sdd/config.json'), 'utf8'));
+    cfg.testCmd = ['node', '--test', `--test-reporter=${reporter}`, '--test-name-pattern', '{id}', '{file}'];
+    cfg.checks = [{ name: 'test', cmd: ['node', '--test', `--test-reporter=${reporter}`, 'a.test.mjs'] }];
+    fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify(cfg));
+    assert.equal(sdd(d, 'tdd', 'red', 'TEST-A-001').code, 0);
+    fs.writeFileSync(path.join(d, '.sdd/pass'), '');
+    assert.equal(sdd(d, 'tdd', 'green', 'TEST-A-001').code, 0);
+    fs.writeFileSync(path.join(d, '.sdd/todo'), '');
+    for (const failing of [false, true]) {
+      if (failing) fs.rmSync(path.join(d, '.sdd/pass'));
+      for (const sub of ['red', 'green', 'refactor']) {
+        const r = sdd(d, 'tdd', sub, 'TEST-A-001', '--characterization', 'TODO cannot count');
+        assert.equal(r.code, 1, r.out);
+      }
+      const gate = sdd(d, 'gate');
+      assert.equal(gate.code, 2, gate.out);
+      assert.match(gate.out, /INCOMPLETE/);
+    }
+    assert.equal(fs.readFileSync(path.join(d, '.sdd/tdd.jsonl'), 'utf8').trim().split('\n').length, 2);
+  }
+});
+
 test('#120 approve record strips zero-width chars before generic-name check', () => {
   const d = mini('---\nfeature: a\ntier: T2\napproval: human\n---\n## Design\nx\ny\n\n| REQ-A-001 | one shall hold. | TEST-A-001 |\n', { 'a.test.mjs': jsTest() });
   sddRaw(d, 'approve', 'prepare', 'a');
@@ -2089,6 +2551,103 @@ test('#123 pytest collection error is a load error (Red rejected)', () => {
   const d = mini(T1SPEC, { 'a.test.mjs': jsTest() });
   setCmd(d, ['node', '-e', "console.log('ERROR collecting t.py\\nAttributeError: x\\nInterrupted: 1 error during collection');process.exit(2)"]);
   assert.match(sdd(d, 'tdd', 'red', 'TEST-A-001').out, /REJECTED.*load\/compile/);
+});
+
+test('#156 pytest skipped/xfail-only runs cannot establish evidence or full gate PASS', { skip: spawnSync('python3', ['-m', 'pytest', '--version']).status !== 0 }, () => {
+  for (const [verdict, verbosity] of [['skip', '-q'], ['xfail', '-q'], ['skip', '-qq'], ['xfail', '-qq']]) {
+    const d = mini(T1SPEC.replace('one shall hold.', 'one shall hold. (test-only)'), {
+      'test_a.py': [
+        'from pathlib import Path',
+        'import pytest',
+        '# @id TEST-A-001 @verifies REQ-A-001',
+        'def test_a_001():',
+        '    if Path(".sdd/nonexecuted").exists():',
+        `        pytest.${verdict}("not a passing assertion")`,
+        '    assert Path(".sdd/pass").exists()',
+      ].join('\n'),
+    });
+    const cp = path.join(d, '.sdd/config.json');
+    const cfg = JSON.parse(fs.readFileSync(cp, 'utf8'));
+    cfg.testCmd = ['python3', '-m', 'pytest', verbosity, '{file}', '-k', '{idu}'];
+    cfg.checks = [{ name: 'test', cmd: ['python3', '-m', 'pytest', verbosity, 'test_a.py'] }];
+    fs.writeFileSync(cp, JSON.stringify(cfg));
+    assert.equal(sdd(d, 'tdd', 'red', 'TEST-A-001').code, 0);
+    fs.writeFileSync(path.join(d, '.sdd/pass'), '');
+    assert.equal(sdd(d, 'tdd', 'green', 'TEST-A-001').code, 0);
+    fs.writeFileSync(path.join(d, '.sdd/nonexecuted'), '');
+    for (const sub of ['red', 'green', 'refactor']) {
+      const r = sdd(d, 'tdd', sub, 'TEST-A-001', '--characterization', 'cannot implement a skipped test');
+      assert.equal(r.code, 1, r.out);
+      assert.match(r.out, /no test matched|skipped/);
+    }
+    const gate = sdd(d, 'gate');
+    assert.equal(gate.code, 2, gate.out);
+    assert.match(gate.out, /INCOMPLETE/);
+    assert.equal(fs.readFileSync(path.join(d, '.sdd/tdd.jsonl'), 'utf8').trim().split('\n').length, 2);
+  }
+});
+
+test('#156 pytest nonexecution summaries are recognized without rejecting mixed passing runs', () => {
+  for (const summary of [
+    '1 skipped in 0.01s',
+    '1 xfailed in 0.01s',
+    '================== 1 skipped, 2 xfailed, 1 warning in 0.02s ==================',
+    'ssx                                                                      [100%]',
+  ]) {
+    const d = mini(T1SPEC, { 'a.test.mjs': jsTest() }, ['node', '-e', `console.log(${JSON.stringify(summary)})`]);
+    const r = sdd(d, 'tdd', 'red', 'TEST-A-001', '--characterization', 'skipped suite');
+    assert.equal(r.code, 1, r.out);
+    assert.equal(fs.existsSync(path.join(d, '.sdd/tdd.jsonl')), false);
+  }
+  for (const summary of [
+    '1 passed, 2 skipped, 1 xfailed in 0.01s',
+    '1 xpassed, 1 skipped in 0.01s',
+    '1 skipped in 0.01s\n1 passed in 0.02s',
+    '.sx                                                                      [100%]',
+  ]) {
+    const d = mini(T1SPEC, { 'a.test.mjs': jsTest() }, FAIL);
+    assert.equal(sdd(d, 'tdd', 'red', 'TEST-A-001').code, 0);
+    setCmd(d, ['node', '-e', `console.log(${JSON.stringify(summary)})`]);
+    const r = sdd(d, 'tdd', 'green', 'TEST-A-001');
+    assert.equal(r.code, 0, r.out);
+  }
+});
+
+test('#156 a scoped pytest skipped-only check falls back to the full check', () => {
+  const d = mini(T1SPEC.replace('one shall hold.', 'one shall hold. (test-only)'), { 'a.test.mjs': jsTest() }, FAIL);
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-A-001').code, 0);
+  setCmd(d, PASS);
+  assert.equal(sdd(d, 'tdd', 'green', 'TEST-A-001').code, 0);
+  const cp = path.join(d, '.sdd/config.json');
+  const cfg = JSON.parse(fs.readFileSync(cp, 'utf8'));
+  cfg.checks = [{
+    name: 'test',
+    cmd: ['node', '-e', 'console.log("1 passed in 0.01s")'],
+    changedCmd: ['node', '-e', 'console.log("1 skipped in 0.01s")'],
+  }];
+  fs.writeFileSync(cp, JSON.stringify(cfg));
+  const r = sdd(d, 'gate', '--changed');
+  assert.equal(r.code, 0, r.out);
+  assert.match(r.out, /scoped run.*running the full check/);
+});
+
+test('#156 fatal Python errors and signal-terminated runners are rejected even with --weak', () => {
+  for (const cmd of [
+    ['node', '-e', 'console.log("Fatal Python error: Aborted\\nAssertionError: not evidence");process.exit(1)'],
+    ['node', '-e', 'process.kill(process.pid, "SIGTERM")'],
+  ]) {
+    const d = mini(T1SPEC, { 'a.test.mjs': jsTest() }, FAIL);
+    assert.equal(sdd(d, 'tdd', 'red', 'TEST-A-001').code, 0);
+    setCmd(d, PASS);
+    assert.equal(sdd(d, 'tdd', 'green', 'TEST-A-001').code, 0);
+    setCmd(d, cmd);
+    for (const sub of ['red', 'green', 'refactor']) {
+      const r = sdd(d, 'tdd', sub, 'TEST-A-001', '--weak');
+      assert.equal(r.code, 1, r.out);
+      assert.match(r.out, /runner process crashed/);
+    }
+    assert.equal(fs.readFileSync(path.join(d, '.sdd/tdd.jsonl'), 'utf8').trim().split('\n').length, 2);
+  }
 });
 
 test('#123 Julia top-level LoadError is a load error; sibling-only failure rejected', () => {

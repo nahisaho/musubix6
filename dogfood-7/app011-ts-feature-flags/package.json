@@ -1,0 +1,14 @@
+{
+  "name": "app011-feature-flags",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "workspaces": ["packages/*"],
+  "scripts": {
+    "test": "node --test packages/*/test/*.test.ts",
+    "typecheck": "tsc --noEmit",
+    "spike": "node spikes/runtime.ts",
+    "demo": "node examples/demo.ts"
+  },
+  "devDependencies": { "@types/node": "^24.0.0", "typescript": "^5.9.0" }
+}

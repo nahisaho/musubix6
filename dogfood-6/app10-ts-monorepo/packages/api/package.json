@@ -1,1 +1,0 @@
-{ "name": "@bk/api", "version": "0.0.0", "type": "module", "main": "src/index.ts", "dependencies": { "@bk/domain": "*", "@bk/scheduling": "*" } }

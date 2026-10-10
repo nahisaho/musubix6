@@ -1,7 +1,0 @@
-{
-  "name": "dogfood/saga",
-  "autoload": {"psr-4": {"Saga\\": "src/"}},
-  "autoload-dev": {"psr-4": {"Saga\\Tests\\": "tests/"}},
-  "require": {"php": ">=8.1"},
-  "require-dev": {"phpunit/phpunit": "^11.0"}
-}

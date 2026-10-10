@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "testCmd": [
+    "go",
+    "test",
+    "-race",
+    "-tags=contract",
+    "./...",
+    "-run",
+    "{IDU}(_|$)"
+  ],
+  "checks": [
+    {
+      "name": "test",
+      "cmd": [
+        "go",
+        "test",
+        "-race",
+        "-tags=contract",
+        "-count=1",
+        "./..."
+      ],
+      "changedCmd": [
+        "go",
+        "test",
+        "-race",
+        "-tags=contract",
+        "{changedGoPkgs}"
+      ]
+    },
+    {
+      "name": "vet",
+      "cmd": ["go", "vet", "-tags=contract", "./..."]
+    }
+  ],
+  "timeoutMs": 120000
+}

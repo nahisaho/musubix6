@@ -1,0 +1,58 @@
+{
+  "mem": {
+    "by": "ai:lsm-risk-delta-one",
+    "kind": "ai",
+    "review": ".sdd/review.md",
+    "reviewSha": "a2d0c14e6a05f7a07f513e38efe95b8d26af6bc877820a6e5b38269542cc49fe",
+    "at": "2026-10-10T16:58:38.863Z",
+    "artifacts": {
+      ".sdd/specs/mem.md": "628b4771ca5f8e564f0a132d142f7ceb05d8e9507784ef6f0ad6f221832e6fc3"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "sst": {
+    "by": "ai:lsm-spec-review",
+    "kind": "ai",
+    "review": "Independent reviewer findings resolved: durable publication ordering, recovered sequence high watermark, global MVCC selection",
+    "at": "2026-10-10T16:38:07.533Z",
+    "artifacts": {
+      ".sdd/specs/sst.md": "1853dd32c5399f5aa2516fa277fc220bf41ef4ce10b6c1ebcf1e29d54839f236"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "wal": {
+    "by": "ai:lsm-state-risk",
+    "kind": "ai",
+    "review": "State risk review requires failing handles reject subsequent append; added explicit failure contract and injected write/sync tests",
+    "at": "2026-10-10T16:54:09.368Z",
+    "artifacts": {
+      ".sdd/specs/wal.md": "14ce7ef17a48dcfca5e4ed03eea07db6de43555b4f14d6058bdf989aa08fda6b"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "engine": {
+    "by": "ai:lsm-recovery-review",
+    "kind": "ai",
+    "review": "Recovery delta reviewed; added WAL-only and mixed SST/WAL highwater cases per reviewer",
+    "at": "2026-10-10T16:44:43.416Z",
+    "artifacts": {
+      ".sdd/specs/engine.md": "b64e7a60472a1edcb0def8975734a6591e83c947f41b17b775deb0813e01ac99"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "compact": {
+    "by": "ai:lsm-spec-review",
+    "kind": "ai",
+    "review": "Independent reviewer findings resolved: durable publication ordering, recovered sequence high watermark, global MVCC selection",
+    "at": "2026-10-10T16:38:07.680Z",
+    "artifacts": {
+      ".sdd/specs/compact.md": "b7c02f7cc03e00a97209160fa5e7e04170893f1ee15acfaec2f2025bf93306ea"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  }
+}

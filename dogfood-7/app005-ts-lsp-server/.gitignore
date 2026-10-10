@@ -1,0 +1,4 @@
+node_modules/
+.sdd/*.lock
+.sdd/prepare-cache.json
+spike/

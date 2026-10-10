@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "testCmd": [
+    "node",
+    "--test",
+    "--test-name-pattern",
+    "{id}(?![0-9A-Za-z])",
+    "{file}"
+  ],
+  "checks": [
+    {
+      "name": "typecheck",
+      "cmd": [
+        "npm",
+        "run",
+        "typecheck"
+      ]
+    }
+  ],
+  "projects": [
+    {
+      "root": "packages/rules",
+      "testCmd": ["node","--test","--test-name-pattern","{id}(?![0-9A-Za-z])","{file}"],
+      "checks": [{"name":"test","cmd":["node","--test","test/rules.test.ts"]}]
+    },
+    {
+      "root": "packages/rollout",
+      "testCmd": ["node","--test","--test-name-pattern","{id}(?![0-9A-Za-z])","{file}"],
+      "checks": [{"name":"test","cmd":["node","--test","test/rollout.test.ts"]}]
+    },
+    {
+      "root": "packages/segments",
+      "dependsOn": ["packages/rules"],
+      "testCmd": ["node","--test","--test-name-pattern","{id}(?![0-9A-Za-z])","{file}"],
+      "checks": [{"name":"test","cmd":["node","--test","test/segments.test.ts"]}]
+    },
+    {
+      "root": "packages/control",
+      "dependsOn": ["packages/rules","packages/rollout","packages/segments"],
+      "testCmd": ["node","--test","--test-name-pattern","{id}(?![0-9A-Za-z])","{file}"],
+      "checks": [{"name":"test","cmd":["node","--test","test/control.test.ts"]}]
+    },
+    {
+      "root": "packages/sdk",
+      "dependsOn": ["packages/rules","packages/rollout","packages/segments","packages/control"],
+      "testCmd": ["node","--test","--test-name-pattern","{id}(?![0-9A-Za-z])","{file}"],
+      "checks": [{"name":"test","cmd":["node","--test","test/sdk.test.ts"]}]
+    }
+  ],
+  "timeoutMs": 120000
+}

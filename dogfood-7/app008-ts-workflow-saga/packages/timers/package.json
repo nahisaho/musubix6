@@ -1,0 +1,7 @@
+{
+  "name": "@app008/timers",
+  "version": "1.0.0",
+  "type": "module",
+  "exports": "./src/index.ts",
+  "scripts": { "test": "node --test test/*.test.ts" }
+}

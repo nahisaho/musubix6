@@ -1,0 +1,9 @@
+{
+  "name": "@app006/vdom",
+  "private": true,
+  "type": "module",
+  "exports": "./src/index.ts",
+  "scripts": {
+    "test": "node --test test/*.test.ts"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "plan": {
+    "kind": "join",
+    "left": {
+      "kind": "join",
+      "left": { "kind": "scan", "table": "users", "alias": "u", "columns": ["id"] },
+      "right": { "kind": "scan", "table": "orders", "alias": "o", "columns": ["user_id", "item_id"] },
+      "predicate": { "kind": "compare", "op": "eq", "left": { "kind": "column", "name": "u.id" }, "right": { "kind": "column", "name": "o.user_id" } }
+    },
+    "right": { "kind": "scan", "table": "items", "alias": "i", "columns": ["id"] },
+    "predicate": { "kind": "compare", "op": "eq", "left": { "kind": "column", "name": "o.item_id" }, "right": { "kind": "column", "name": "i.id" } }
+  },
+  "stats": {
+    "users": { "rows": 100000, "columns": { "id": { "distinct": 100000 } } },
+    "orders": { "rows": 1000000, "columns": { "user_id": { "distinct": 100000 }, "item_id": { "distinct": 1000 } } },
+    "items": { "rows": 10, "columns": { "id": { "distinct": 10 } } }
+  }
+}

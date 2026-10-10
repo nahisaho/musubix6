@@ -1,0 +1,58 @@
+{
+  "oci": {
+    "by": "ai:app028-local-review",
+    "kind": "ai",
+    "review": ".sdd/oci-review.md",
+    "reviewSha": "adf34f45ec12027a8f83f7a9c7a184cb25e5c4205481c134e77dc1b3dc196526",
+    "at": "2026-10-10T16:44:35.788Z",
+    "artifacts": {
+      ".sdd/specs/oci.md": "1493dc06b2dc5106eec57a05f9996322125d965f74c78710bd5883778fa85d6b"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "fs": {
+    "by": "ai:app028-local-review",
+    "kind": "ai",
+    "review": "Local contract review: strict validation and complete rejection tables; independent review unavailable",
+    "at": "2026-10-10T16:40:08.810Z",
+    "artifacts": {
+      ".sdd/specs/fs.md": "06cd6ee00e095b62bc8694da13bb826592029e4b704c8465b1c3c11331ae467a"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "cg": {
+    "by": "ai:app028-local-review",
+    "kind": "ai",
+    "review": "Local contract review: strict validation and complete rejection tables; independent review unavailable",
+    "at": "2026-10-10T16:40:08.848Z",
+    "artifacts": {
+      ".sdd/specs/cg.md": "ee841812d864ea264cfbe62aadd1ef5781c533062c03f442029aebef19b94e5f"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "life": {
+    "by": "ai:app028-local-review",
+    "kind": "ai",
+    "review": "Local contract review: strict validation and complete rejection tables; independent review unavailable",
+    "at": "2026-10-10T16:40:08.894Z",
+    "artifacts": {
+      ".sdd/specs/life.md": "1a1300624258fc1ca8c1ec1d2f571bb960fe887c09681102b44f8a5ae7d61d5f"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "snap": {
+    "by": "ai:app028-local-review",
+    "kind": "ai",
+    "review": "Checkpoint review rejects snapshots restoration would reject",
+    "at": "2026-10-10T16:42:24.408Z",
+    "artifacts": {
+      ".sdd/specs/snap.md": "e67bcca5507dca5deffaf09b8592ac28f4b2a06e269b1e9e58f38e5327939823"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  }
+}

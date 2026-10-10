@@ -1,0 +1,8 @@
+{
+  "transport": "real TCP loopback",
+  "startup": "pass",
+  "simple_select": "pass",
+  "prepared_text_parameter": "pass",
+  "describe": "pass",
+  "terminate": "pass"
+}

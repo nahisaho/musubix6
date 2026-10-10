@@ -1,0 +1,57 @@
+{
+  "topics": {
+    "by": "ai:broker-fix-spec",
+    "kind": "ai",
+    "review": "Independent review confirms hidden shared buffer rejection requirement and regression test",
+    "at": "2026-10-10T13:03:00.477Z",
+    "artifacts": {
+      ".sdd/specs/topics.md": "e4bcff23f5e83c11d26d953f9d790b28b2ac6e77a319628ca7240e4ccd64b0d2"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "groups": {
+    "by": "ai:broker-spec-delta",
+    "kind": "ai",
+    "review": "Independent spec review resolved shared memory isolation and retained retry policy",
+    "at": "2026-10-10T12:56:08.026Z",
+    "artifacts": {
+      ".sdd/specs/groups.md": "3554ef0cc0af5b5af34fb608f47798a0be9cf1daa5ad6de815290af78eeb95d4"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "offsets": {
+    "by": "ai:broker-spec-delta",
+    "kind": "ai",
+    "review": "Independent spec review resolved shared memory isolation and retained retry policy",
+    "at": "2026-10-10T12:56:08.073Z",
+    "artifacts": {
+      ".sdd/specs/offsets.md": "ded17f8771da2ce59bfee65b130479455e548eb55515809eb3a61d262d4e4e67"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "delivery": {
+    "by": "ai:broker-fix-spec",
+    "kind": "ai",
+    "review": "Independent review confirms sparse atomicity, namespace isolation and retained input failure fixes",
+    "at": "2026-10-10T13:03:00.521Z",
+    "artifacts": {
+      ".sdd/specs/delivery.md": "a44888efd22d19615f8b27de20376cae9112665530917ed2abd56b57f3f5a015"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "lifecycle": {
+    "by": "ai:broker-spec-delta",
+    "kind": "ai",
+    "review": "Independent spec review resolved shared memory isolation and retained retry policy",
+    "at": "2026-10-10T12:56:08.166Z",
+    "artifacts": {
+      ".sdd/specs/lifecycle.md": "27eb1dcc1ddc811c99cec842bf5639e49aac46234645d69cf4879aa026969f61"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  }
+}

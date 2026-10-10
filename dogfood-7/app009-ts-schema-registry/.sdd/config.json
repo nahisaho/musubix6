@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "testCmd": [
+    "node",
+    "--test",
+    "--test-name-pattern",
+    "{id}(?![0-9A-Za-z])",
+    "{file}"
+  ],
+  "checks": [
+    {
+      "name": "typecheck",
+      "cmd": [
+        "npm",
+        "run",
+        "typecheck"
+      ]
+    },
+    {
+      "name": "test",
+      "cmd": [
+        "npm",
+        "run",
+        "test"
+      ]
+    },
+    {
+      "name": "demo",
+      "cmd": ["npm", "run", "demo"]
+    }
+  ],
+  "timeoutMs": 120000
+}

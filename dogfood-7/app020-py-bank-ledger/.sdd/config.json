@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "testCmd": [
+    "python3", "-m", "pytest",
+    "-k", "{idu}",
+    "{file}"
+  ],
+  "checks": [{"name":"pytest","cmd":["python3","-m","pytest"]}],
+  "scan": {"include":["ledger/**/*.py","tests/**/*.py"],"exclude":["spikes/**"]},
+  "timeoutMs": 120000
+}

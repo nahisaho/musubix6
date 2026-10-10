@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
+import { setTimeout } from 'node:timers/promises';
+const digest: string = createHash('sha256').update('spike').digest('hex');
+assert.equal(digest.length, 64);
+const controller = new AbortController();
+const promise = setTimeout(100, null, {signal: controller.signal});
+controller.abort();
+await assert.rejects(promise, {name: 'AbortError'});
+await Promise.resolve();
+console.log('PASS: native TypeScript, SHA-256, abortable promises and microtask ordering');

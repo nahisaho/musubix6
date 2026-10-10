@@ -1,7 +1,0 @@
-{
-  "schemaVersion": 1,
-  "testCmd": ["dotnet", "test", "tests/Pricing.Tests", "--nologo", "--filter", "FullyQualifiedName~{idu}"],
-  "checks": [{ "name": "test", "cmd": ["dotnet", "test", "Pricing.slnx", "--nologo"] }],
-  "scan": { "exclude": ["**/obj/**", "**/bin/**"] },
-  "timeoutMs": 300000
-}

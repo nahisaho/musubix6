@@ -1,0 +1,10 @@
+[project]
+name = "mini-smt"
+version = "0.1.0"
+requires-python = ">=3.10"
+description = "Exact rational ground QF_UFLRA solver with CDCL and simplex"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-q"

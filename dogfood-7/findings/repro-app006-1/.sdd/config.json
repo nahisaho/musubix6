@@ -1,0 +1,6 @@
+{
+  "testCmd": ["node", "--test", "--test-name-pattern", "{id}", "{file}"],
+  "checks": [{"name": "test", "cmd": ["node", "--test", "contract.test.mjs"]}],
+  "scan": {"include": ["*.mjs"]},
+  "timeoutMs": 10000
+}

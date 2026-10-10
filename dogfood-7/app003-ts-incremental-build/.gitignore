@@ -1,0 +1,3 @@
+node_modules/
+.sdd/tdd.lock
+.sdd/prepare-cache.json

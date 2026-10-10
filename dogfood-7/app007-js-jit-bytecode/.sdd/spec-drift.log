@@ -1,0 +1,25 @@
+SDD GATE FAIL
+✓ lock allocation: ok [ai, review summary]
+✗ lock bytecode: stale [ai, review summary]
+✓ lock caches: ok [ai, review summary]
+✓ lock collection: ok [ai, review summary]
+✗ lock tiering: stale [ai, review summary]
+✓ trace: 42 REQ, 0 errors, 2 warnings
+✓ ledger: 80 entries, chain intact
+✗ tdd evidence: 32/42 tests Red→Green
+    TEST-BC-001 (REQ-BC-001): test changed since last Green/Refactor
+    TEST-BC-002 (REQ-BC-002): test changed since last Green/Refactor
+    TEST-BC-003 (REQ-BC-003): test changed since last Green/Refactor
+    TEST-BC-004 (REQ-BC-004): test changed since last Green/Refactor
+    TEST-BC-005 (REQ-BC-005): test changed since last Green/Refactor
+    TEST-BC-006 (REQ-BC-006): test changed since last Green/Refactor
+    … +4 more
+✗ cmd test (0.3s)
+    ✖ TEST-BC-009 ordinary get/set method names are not protocols (1.054462ms)
+    ✖ TEST-OPT-009 live register handles survive unlink and collection (1.325244ms)
+    ℹ fail 2
+    ✖ failing tests:
+      AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+    npm notice run app007-js-jit-bytecode@1.0.0 test
+    npm notice run node --test tests/*.test.js
+✓ cmd syntax (0.5s)

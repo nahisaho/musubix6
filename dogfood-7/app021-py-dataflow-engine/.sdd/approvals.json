@@ -1,0 +1,57 @@
+{
+  "clock": {
+    "by": "ai:dataflow-spec-delta",
+    "kind": "ai",
+    "review": "Independent spec review corrected watermark safety and arithmetic overflow; delta review clean",
+    "at": "2026-10-10T13:52:55.891Z",
+    "artifacts": {
+      ".sdd/specs/clock.md": "26d1c813506bdc109f48f6416c5afdd0143d7d92b46e3f1dee9fc1e7677f8a4e"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "window": {
+    "by": "ai:dataflow-bug-spec-delta",
+    "kind": "ai",
+    "review": "Independent bug spec and test review; fractional completeness corrected and delta clean",
+    "at": "2026-10-10T14:01:49.936Z",
+    "artifacts": {
+      ".sdd/specs/window.md": "4d1e7d9e1e4d7391956b7a496707405476345a8e35cec0a4a0e2c5e0f21abd39"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "state": {
+    "by": "ai:dataflow-spec-delta",
+    "kind": "ai",
+    "review": "Independent spec review corrected watermark safety and arithmetic overflow; delta review clean",
+    "at": "2026-10-10T13:52:56.013Z",
+    "artifacts": {
+      ".sdd/specs/state.md": "860f1a722bff9beff9c09f1fa328e0608f1d44d290a0cb443e27d5f53427f338"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "flow": {
+    "by": "ai:dataflow-bug-spec-delta",
+    "kind": "ai",
+    "review": "Independent bug spec and test review; fractional completeness corrected and delta clean",
+    "at": "2026-10-10T14:01:49.979Z",
+    "artifacts": {
+      ".sdd/specs/flow.md": "ce1f51356ec4718f9806e4b1a6c51c469eb72532bc07364c4a457636073c24bc"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "snapshot": {
+    "by": "ai:dataflow-bug-spec-delta",
+    "kind": "ai",
+    "review": "Independent bug spec and test review; fractional completeness corrected and delta clean",
+    "at": "2026-10-10T14:01:50.025Z",
+    "artifacts": {
+      ".sdd/specs/snapshot.md": "b19e7ae1ccacc941806169ab5736d3b3cbbbe5c9ca23f1561eacc757a3a74ec5"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  }
+}

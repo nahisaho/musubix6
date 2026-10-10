@@ -1,0 +1,13 @@
+{
+  "name": "@app008/runtime",
+  "version": "1.0.0",
+  "type": "module",
+  "exports": "./src/index.ts",
+  "dependencies": {
+    "@app008/history": "1.0.0",
+    "@app008/definitions": "1.0.0",
+    "@app008/timers": "1.0.0",
+    "@app008/saga": "1.0.0"
+  },
+  "scripts": { "test": "node --test test/*.test.ts" }
+}

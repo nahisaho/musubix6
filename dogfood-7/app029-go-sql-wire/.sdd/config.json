@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "testCmd": [
+    "go",
+    "test",
+    "./...",
+    "-run",
+    "{IDU}(_|$)"
+  ],
+  "checks": [
+    {
+      "name": "test",
+      "cmd": [
+        "go",
+        "test",
+        "./..."
+      ],
+      "changedCmd": [
+        "go",
+        "test",
+        "{changedGoPkgs}"
+      ]
+    },
+    {
+      "name": "vet",
+      "cmd": ["go", "vet", "./..."]
+    },
+    {
+      "name": "race",
+      "cmd": ["go", "test", "-race", "./..."]
+    },
+    {
+      "name": "build-tags",
+      "cmd": ["go", "test", "-tags=stress", "./..."]
+    }
+  ],
+  "timeoutMs": 120000
+}

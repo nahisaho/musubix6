@@ -1,0 +1,58 @@
+{
+  "model": {
+    "by": "ai:orm-edge-spec",
+    "kind": "ai",
+    "review": "Independent edge-contract review completed; missing autocommit persistence assertion corrected in delta review",
+    "at": "2026-10-10T16:38:08.911Z",
+    "artifacts": {
+      ".sdd/specs/model.md": "4cd12b76219476b56cbd5babdbf9d99192bf978a1a95be742ec0b8cb44130367"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "query": {
+    "by": "ai:orm-contract-delta",
+    "kind": "ai",
+    "review": ".sdd/review.md",
+    "reviewSha": "d54601f113ace95833e5b50c52ad427ffe868f7384c61a04ea508a0ebb38660c",
+    "at": "2026-10-10T16:41:03.932Z",
+    "artifacts": {
+      ".sdd/specs/query.md": "9b3043e368794586c5b8f8285cf34a15a3d8a6121c2708c63a3055fe28165009"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "work": {
+    "by": "ai:orm-edge-spec",
+    "kind": "ai",
+    "review": "Independent edge-contract review completed; missing autocommit persistence assertion corrected in delta review",
+    "at": "2026-10-10T16:38:08.960Z",
+    "artifacts": {
+      ".sdd/specs/work.md": "4d58d0965ff769b13443e1279973f8333762890b6fd67c2fc9019070f551dc03"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "relation": {
+    "by": "ai:orm-edge-spec",
+    "kind": "ai",
+    "review": "Independent edge-contract review completed; missing autocommit persistence assertion corrected in delta review",
+    "at": "2026-10-10T16:38:09.008Z",
+    "artifacts": {
+      ".sdd/specs/relation.md": "fde731cf47ec07760dc5a02d6eb0abdee1ae975d5ab8a60dcf343ca6e9e15d7e"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "migration": {
+    "by": "ai:orm-edge-spec",
+    "kind": "ai",
+    "review": "Independent edge-contract review completed; missing autocommit persistence assertion corrected in delta review",
+    "at": "2026-10-10T16:38:09.055Z",
+    "artifacts": {
+      ".sdd/specs/migration.md": "268c2ed307fe4851174b8aa759c8baa2f7eaabe186c58d6a3b34a3dcac101096"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  }
+}

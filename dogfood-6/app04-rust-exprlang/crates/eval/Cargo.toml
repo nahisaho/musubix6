@@ -1,8 +1,0 @@
-[package]
-name = "exprlang-eval"
-version = "0.1.0"
-edition = "2021"
-
-[dependencies]
-exprlang-syntax = { path = "../syntax" }
-exprlang-types = { path = "../types" }

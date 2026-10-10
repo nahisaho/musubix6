@@ -1,0 +1,57 @@
+{
+  "bytecode": {
+    "by": "ai:vm-regression-review",
+    "kind": "ai",
+    "review": "Regression delta reviewed; branded and ordinary property access covered",
+    "at": "2026-10-10T13:03:30.401Z",
+    "artifacts": {
+      ".sdd/specs/bytecode.md": "bb25e6e36c3dd54d368f168642edc0054ae289cfb6ca55f006e1f40b54d5a2c7"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "allocation": {
+    "by": "ai:vm-spec-review",
+    "kind": "ai",
+    "review": "Independent VM specification review; schema, invocation roots and atomic graph updates resolved",
+    "at": "2026-10-10T12:57:33.542Z",
+    "artifacts": {
+      ".sdd/specs/allocation.md": "25bba37892836eef5a5818c66aff5a84968d9cafac192ba5041fd4184a9bbfa7"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "caches": {
+    "by": "ai:vm-spec-review",
+    "kind": "ai",
+    "review": "Independent VM specification review; schema, invocation roots and atomic graph updates resolved",
+    "at": "2026-10-10T12:57:33.593Z",
+    "artifacts": {
+      ".sdd/specs/caches.md": "0db90a357e8790a406e0bdb85c47d81c9d5615176a22af0de841109ba1da01de"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "collection": {
+    "by": "ai:vm-spec-review",
+    "kind": "ai",
+    "review": "Independent VM specification review; schema, invocation roots and atomic graph updates resolved",
+    "at": "2026-10-10T12:57:33.639Z",
+    "artifacts": {
+      ".sdd/specs/collection.md": "d46200e817211f1c7d2c5be1b59a024e9b80df3a41eea348c4cddac9040d1e28"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "tiering": {
+    "by": "ai:sparse-contract-review",
+    "kind": "ai",
+    "review": "Independent sparse-contract-review passed dense normalization requirement and cold baseline optimized coverage",
+    "at": "2026-10-10T13:08:30.600Z",
+    "artifacts": {
+      ".sdd/specs/tiering.md": "fdb995a393e0c0cc8741c1c138038037afb74435b66c50cc8a10fa383f993b0d"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  }
+}

@@ -46,6 +46,38 @@ const artifactSha = (p) => sha(fs.readFileSync(path.join(ROOT, p), 'utf8').repla
 const normImports = (t) => t
   .replace(/\bimport\s+(?:type\s+)?[\w$*{}\s,]*?\s*from\s*(['"][^'"]+['"])\s*;?/g, 'import from $1')
   .replace(/^from\s+(\S+)\s+import\s*(?:\([^)]*\)|.*)$/gm, 'from $1');
+const pythonScopes = new Map();
+function pythonScope(txt) {
+  if (pythonScopes.has(txt)) return pythonScopes.get(txt);
+  const parser = `import ast,json,re,sys
+src=sys.stdin.read()
+ls=src.splitlines()
+tree=ast.parse(src)
+ranges=[]
+for n in ast.walk(tree):
+    if not isinstance(n,(ast.FunctionDef,ast.AsyncFunctionDef)): continue
+    start=min([n.lineno]+[d.lineno for d in n.decorator_list])-1
+    while start>0 and (not ls[start-1].strip() or ls[start-1].lstrip().startswith("#")):
+        start-=1
+    ids=re.findall(r"@id\\s+(TEST-[A-Z0-9-]+)", "\\n".join(ls[start:n.end_lineno]))
+    if ids or n.name.startswith("test"):
+        ranges.append(dict(start=start,end=n.end_lineno,ids=ids))
+print(json.dumps(ranges))
+`;
+  const r = spawnSync('python3', ['-c', parser], { input: txt, encoding: 'utf8', timeout: 10000, maxBuffer: 8 * 1024 * 1024 });
+  let ranges = null;
+  try { if (r.status === 0) ranges = JSON.parse(r.stdout); } catch {}
+  pythonScopes.set(txt, ranges);
+  return ranges;
+}
+function pythonTestSha(txt, id) {
+  const ranges = pythonScope(txt);
+  const mine = ranges?.find((r) => r.ids.includes(id));
+  if (!mine) return sha(txt);
+  const ls = txt.split('\n');
+  const shared = ls.filter((_, i) => !ranges.some((r) => i >= r.start && i < r.end)).join('\n').trim();
+  return sha(shared + '\u0000' + ls.slice(mine.start, mine.end).join('\n').trim());
+}
 // legacy=true: pre-#66 behaviour (no Python docstring scoping, whole-file @implements check)
 // cut (any test, not only the last: a helper or a new describe between tests is not part of the previous test, #144): the region stops where its own top-level construct ends (blank line or pure closer, then a non-closer line at the test's indent), so appended tests/comments/main() do not stale it (#73)
 // inl: a Rust file with a #[cfg(test)] module holds code next to its tests, so only the test's region counts even before @implements exists (#80)
@@ -54,6 +86,7 @@ let eolNorm = false;
 const testShaVariant = (p, id, trim, norm = false, legacy = false, cut = true, inl = true) => {
   const raw = fs.readFileSync(path.join(ROOT, p), 'utf8');
   const txt = eolNorm ? raw.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n') : raw;
+  if (/\.py$/.test(p)) return pythonTestSha(txt, id);
   const ls = txt.split('\n');
   // Python docstring-style `"""@id ..."""`: the `def` line and decorators before the docstring belong to that test (#66)
   const begin = (i) => {
@@ -89,7 +122,7 @@ const testShaVariant = (p, id, trim, norm = false, legacy = false, cut = true, i
   return sha((norm ? normImports(pre) : pre) + '\u0000' + region);
 };
 const testSha = (p, id) => { eolNorm = true; try { return testShaVariant(p, id, true, true); } finally { eolNorm = false; } };
-const shaMatches = (recorded, p, id) => shaMatchesRaw(recorded, p, id) || (() => { eolNorm = true; try { return shaMatchesRaw(recorded, p, id); } finally { eolNorm = false; } })();
+const shaMatches = (recorded, p, id) => /\.py$/.test(p) ? recorded === testSha(p, id) : shaMatchesRaw(recorded, p, id) || (() => { eolNorm = true; try { return shaMatchesRaw(recorded, p, id); } finally { eolNorm = false; } })();
 const shaMatchesRaw = (recorded, p, id) => [true, false].some((cut) => [true, false].some((inl) => recorded === testShaVariant(p, id, true, true, false, cut, inl) || recorded === testShaVariant(p, id, true, false, false, cut, inl) || recorded === testShaVariant(p, id, false, false, false, cut, inl) || recorded === testShaVariant(p, id, true, true, true, cut, inl) || recorded === testShaVariant(p, id, true, false, true, cut, inl) || recorded === testShaVariant(p, id, false, false, true, cut, inl))) ||
   recorded === testSha(p, id) || recorded === testShaVariant(p, id, true) || recorded === testShaVariant(p, id, false) || recorded === testShaVariant(p, id, true, true, true) || recorded === testShaVariant(p, id, true, false, true) || recorded === testShaVariant(p, id, false, false, true) || recorded === sha(fs.readFileSync(path.join(ROOT, p)));
 const out = (s = '') => process.stdout.write(s + '\n');
@@ -102,6 +135,10 @@ const specificReason = (rl) => {
   // Go: the panic text is the reason, not the `--- FAIL:` line (#142)
   const gp = rl.find((l) => /^panic: \S/.test(l));
   if (gp && rl.some((l) => /^--- FAIL:/.test(l))) return gp;
+  if (rl.some((l) => /^--- FAIL:/.test(l))) {
+    const assertion = rl.map((l) => /^\S+_test\.go:\d+:\s*(.+)/.exec(l)?.[1]).find(Boolean);
+    if (assertion) return assertion;
+  }
   // PHPUnit: first message line below `There was 1 failure:` / `1) Class::test` (#143)
   const pu = rl.findIndex((l) => /^There w(?:as|ere) \d+ failures?:/.test(l));
   if (pu >= 0) { const m = rl.slice(pu + 1, pu + 8).findIndex((l) => /^\d+\) /.test(l)); const msg = m >= 0 ? rl.slice(pu + 2 + m, pu + 6 + m).find((l) => l && !/^(Failed asserting|-|\+|@@)/.test(l)) : undefined; if (msg) return msg; }
@@ -456,12 +493,12 @@ const ECO = [[/package\.json$/, 'js'], [/(pyproject\.toml|requirements\.txt|pyte
 const ecoOf = (f) => ECO.find(([re]) => re.test(f))?.[1];
 // only csproj files that can run tests (Microsoft.NET.Test.Sdk / IsTestProject) become projects; class libraries are covered by the test projects that reference them (#132)
 const isTestCsproj = (f) => { try { return /Microsoft\.NET\.Test\.Sdk|<IsTestProject>\s*true/i.test(fs.readFileSync(path.join(ROOT, f), 'utf8')); } catch { return false; } };
-// skipEco: ecosystems already handled by the root manifest; nested projects of those stay with the root (workspaces)
+// Go runners cannot cross nested module boundaries, unlike root-managed workspaces.
 function detectProjects(skipEco = new Set()) {
   const dirs = new Set();
   const all = spawnSync('git', ['ls-files', '-co', '--exclude-standard'], { cwd: ROOT, encoding: 'utf8', maxBuffer: 64e6 }).stdout.split('\n');
-  for (const f of all) if (MANIFESTS.test(f) && f.includes('/') && !skipEco.has(ecoOf(f)) && !/(^|\/)(node_modules|vendor|target|build)\//.test(f) && !(/\.csproj$/.test(f) && !isTestCsproj(f))) dirs.add(path.posix.dirname(f));
-  const roots = [...dirs].sort().filter((d, i, a) => !a.slice(0, i).some((p) => d.startsWith(p + '/')));
+  for (const f of all) if (MANIFESTS.test(f) && f.includes('/') && (ecoOf(f) === 'go' || !skipEco.has(ecoOf(f))) && !/(^|\/)(node_modules|vendor|target|build)\//.test(f) && !(/\.csproj$/.test(f) && !isTestCsproj(f))) dirs.add(path.posix.dirname(f));
+  const roots = [...dirs].sort().filter((d, i, a) => fs.existsSync(path.join(ROOT, d, 'go.mod')) || !a.slice(0, i).some((p) => d.startsWith(p + '/')));
   // Go modules that require/replace a sibling module depend on it: a change there must run the dependent's tests under gate --changed (#74)
   const gomod = (r) => { try { return fs.readFileSync(path.join(ROOT, r, 'go.mod'), 'utf8'); } catch { return ''; } };
   const modName = new Map(roots.map((r) => [/^module\s+(\S+)/m.exec(gomod(r))?.[1], r]).filter(([m]) => m));
@@ -509,7 +546,7 @@ function run1(cmd, timeoutMs, cwd = '.') {
   const t0 = Date.now();
   const r = spawnSync(cmd[0], cmd.slice(1), { cwd: path.resolve(ROOT, cwd), encoding: 'utf8', timeout: timeoutMs, maxBuffer: 64e6 });
   const text = (r.stdout ?? '') + (r.stderr ?? '') + (r.error ? String(r.error.message) : '');
-  return { exit: r.status ?? (r.error ? 127 : 1), text, ms: Date.now() - t0, timedOut: r.error?.code === 'ETIMEDOUT' };
+  return { exit: r.status ?? (r.error ? 127 : 1), signal: r.signal, text, ms: Date.now() - t0, timedOut: r.error?.code === 'ETIMEDOUT' };
 }
 // Scope placeholders for changedCmd. An empty result means "cannot scope" and the caller falls back to the full check.
 function cmdOut(cmd, cwd) {
@@ -668,6 +705,15 @@ function phpProjectFqcns() {
 // a missing *relative* import that the test file itself references = declared new module
 function declaredMissingModule(text, testPath) {
   const src = fs.readFileSync(path.join(ROOT, testPath), 'utf8');
+  if (/\.py$/.test(testPath)) {
+    const missing = /ModuleNotFoundError:\s*No module named ['"]([\w.]+)['"]/.exec(text)?.[1];
+    if (!missing) return false;
+    const imports = [...src.matchAll(/^\s*from\s+([\w.]+)\s+import\b|^\s*import\s+([^\n#]+)/gm)].flatMap((m) => m[1] ? [m[1]] : m[2].split(',').map((s) => s.trim().split(/\s+as\s+/)[0]));
+    if (!imports.some((m) => m === missing || m.startsWith(missing + '.'))) return false;
+    const base = path.resolve(ROOT, projectFor(testPath)?.root ?? '.');
+    const dirs = [base, path.join(base, 'src'), path.dirname(path.join(ROOT, testPath))];
+    return !dirs.some((d) => fs.existsSync(path.join(d, ...missing.split('.')) + '.py') || fs.existsSync(path.join(d, ...missing.split('.'), '__init__.py')));
+  }
   // PHPUnit: `Class "Ns\\Cls" not found` for a class the test itself imports/uses and no project file declares yet (#117)
   const pm = /Class\s+"([\\\w]+)"\s+not found/.exec(text);
   if (pm && /\.php$/.test(testPath)) {
@@ -689,8 +735,35 @@ function declaredMissingModule(text, testPath) {
 // Go: a package line with a duration but no `[no tests to run]`, or a `--- PASS/FAIL` line, means a test ran (#74)
 const RAN_TESTS = /tests run: [1-9]\d*,|(?:Passed|Failed)!\s+-\s+Failed:\s*\d+,\s*Passed:\s*\d+,\s*Skipped:\s*\d+,\s*Total:\s*[1-9]|^\s*--- (?:PASS|FAIL): |^(?:ok|FAIL)\s+\S+\s+(?:[\d.]+s|\(cached\))(?:(?!\[no tests)[^\n])*$|ran [1-9]\d* tests?\b|[1-9]\d* tests? (completed|successful|passed)|^ok \d+ /im;
 // vitest/jest summary that lists no passed test (everything skipped by -t) means nothing ran (#62)
-const NO_PASSED = /^\s*Tests:?\s+(?![^\n]*\d+ (?:passed|failed))[^\n]*\d+ (?:skipped|todo)|^(?:# |ℹ )pass 0\b[^\n]*\n(?:(?:# |ℹ )(?:fail|cancelled) 0\b[^\n]*\n)*(?:# |ℹ )skipped [1-9]/im;
+const NO_PASSED = /^\s*Tests:?\s+(?![^\n]*\d+ (?:passed|failed))[^\n]*\d+ (?:skipped|todo)|^(?:# |ℹ )pass 0\b[^\n]*\n(?:(?:# |ℹ )(?:fail|cancelled|skipped) 0\b[^\n]*\n)*(?:# |ℹ )(?:skipped|todo) [1-9]/im;
 const ZERO_TESTS = /(no tests? (found|ran|collected)|# tests 0\b|ran 0 tests|collected 0 items|0 tests? (ran|found|passed)\b|no test files found|no tests were found|no tests to run|tests run: 0,|no tests executed|no test matches)/i;
+
+function pytestNoExecution(text) {
+  let skipped = 0, executed = 0;
+  const plain = text.replace(/\x1b\[[0-9;]*m/g, '');
+  // -qq hides the summary; progress still distinguishes skipped/xfail from executed tests.
+  for (const m of plain.matchAll(/^\s*([.sxFEX]+)\s+\[\s*\d+%\]\s*$/gm)) {
+    skipped += (m[1].match(/[sx]/g) ?? []).length;
+    executed += (m[1].match(/[.FEX]/g) ?? []).length;
+  }
+  for (const m of plain.matchAll(/^\s*(?:=+\s*)?((?:\d+\s+(?:passed|failed|skipped|xfailed|xpassed|deselected|errors?|warnings?)(?:,\s*)?)+)\s+in\s+[\d.]+s\b[^\n]*$/gim)) {
+    for (const count of m[1].matchAll(/(\d+)\s+(\w+)/g)) {
+      if (/^(skipped|xfailed)$/i.test(count[2])) skipped += Number(count[1]);
+      if (/^(passed|failed|xpassed|errors?)$/i.test(count[2])) executed += Number(count[1]);
+    }
+  }
+  return skipped > 0 && executed === 0;
+}
+
+function nodeTestRan(text, id, testPath) {
+  const token = new RegExp(`${id}(?![0-9a-z])`, 'i');
+  return text.split('\n').some((line) => {
+    const m = /^\s*(?:[✔✖]\s+|(?:not )?ok\s+\d+\s+-\s+)(.+)$/.exec(line);
+    if (!m || /#\s*(TODO|SKIP)\b/i.test(m[1])) return false;
+    const title = m[1].replace(/\s+\([\d.]+(?:ms|s|µs)\).*$/, '').trim();
+    return token.test(title) && title !== path.basename(testPath) && path.resolve(ROOT, title) !== path.resolve(ROOT, testPath);
+  });
+}
 
 // ---------- commands ----------
 function cmdInit() {
@@ -711,7 +784,7 @@ function cmdInit() {
 // Review file schema: header lines `spec: sha256:<hash>`, `verdict: pass`, `open: <n>`; findings carry an explicit status.
 // unresolved statuses (#138): anything but Closed/Resolved/Fixed counts as open
 const OPEN_WORD = '(?:open|pending|reopened|re-opened|unresolved|todo|wip|in[ -]progress|blocked)';
-const isOpenLine = (l) => /^\s*[-*]\s*\[ \]/.test(l) || new RegExp(`\\b(state|status)\\s*[:=]\\s*\\**${OPEN_WORD}\\b`, 'i').test(l) || new RegExp(`\\*\\*${OPEN_WORD}\\*\\*`, 'i').test(l) || new RegExp(`^\\s*[-*]\\s+${OPEN_WORD}\\b`, 'i').test(l) || l.split('|').some((c) => new RegExp(`^\\s*${OPEN_WORD}\\s*$`, 'i').test(c));
+const isOpenLine = (l) => /^\s*[-*]\s*\[ \]/.test(l) || new RegExp(`\\b(state|status)\\s*[:=]\\s*\\**${OPEN_WORD}\\b`, 'i').test(l) || new RegExp(`\\*\\*${OPEN_WORD}\\*\\*`, 'i').test(l) || new RegExp(`^\\s*[-*]\\s+${OPEN_WORD}\\b`, 'i').test(l) || (l.includes('|') ? l.split('|').some((c) => new RegExp(`^\\s*\\**${OPEN_WORD}\\b`, 'i').test(c)) : new RegExp(`^\\s*${OPEN_WORD}\\s*$`, 'i').test(l));
 function reviewProblems(text, specHash) {
   const probs = [];
   const lines = text.split('\n');
@@ -723,7 +796,9 @@ function reviewProblems(text, specHash) {
   if (declared === undefined) probs.push('missing `open: <n>` line');
   else if (Number(declared) !== open.length) probs.push(`open: ${declared} does not match ${open.length} Open finding line(s) found`);
   if (open.length) { probs.push(`${open.length} Open finding(s):`); open.slice(0, 5).forEach((l) => probs.push(`  ${l.trim()}`)); }
-  if (!text.includes(specHash.slice(0, 12))) probs.push(`must reference the spec hash (spec: sha256:${specHash.slice(0, 12)}…)`);
+  const specLines = lines.filter((l) => /^\s*spec(?:\s*[:=]|\s+)/i.test(l));
+  const cited = specLines.length === 1 ? /^\s*spec(?:\s*[:=]\s*|\s+)(?:sha256:)?([0-9a-f]{12,64})(?:…|\.\.\.)?\s*$/i.exec(specLines[0])?.[1]?.toLowerCase() : null;
+  if (!cited || !specHash.startsWith(cited)) probs.push(`must reference the spec hash in one matching header (spec: sha256:${specHash.slice(0, 12)}…)`);
   return probs;
 }
 function cmdReview() {
@@ -922,16 +997,21 @@ function stubGo(testPath, src, dir, add, made) {
     const mod = fs.existsSync(path.join(gr, 'go.mod')) ? /^module\s+(\S+)/m.exec(fs.readFileSync(path.join(gr, 'go.mod'), 'utf8'))?.[1] : null;
     const exts = [];
     if (mod) for (const m of src.matchAll(/^\s*(?:import\s+)?(?:(\w+)\s+)?"([^"\n]+)"/gm)) {
-      if (!m[2].startsWith(mod + '/')) continue;
-      const idir = path.join(gr, m[2].slice(mod.length + 1));
+      if (m[2] !== mod && !m[2].startsWith(mod + '/')) continue;
+      const idir = path.join(gr, m[2].slice(mod.length).replace(/^\//, ''));
       const last = m[2].split('/').pop();
-      const alias = m[1] ?? last;
-      const hasGo = fs.existsSync(idir) && fs.readdirSync(idir).some((f) => /\.go$/.test(f) && !/_test\.go$/.test(f));
-      exts.push({ alias, idir, last, hasGo, file: path.join(idir, hasGo ? `${last}_stub.go` : `${last}.go`), funcs: new Set(), types: new Map(), consts: new Set(), errs: new Set(), methods: new Map() });
+      const sources = fs.existsSync(idir) ? fs.readdirSync(idir).filter((f) => /\.go$/.test(f) && !/_test\.go$/.test(f)) : [];
+      const hasGo = sources.length > 0;
+      const packageName = sources.map((f) => /^\s*package\s+(\w+)/m.exec(fs.readFileSync(path.join(idir, f), 'utf8'))?.[1]).find(Boolean) ?? last;
+      const alias = m[1] ?? packageName;
+      let file = path.join(idir, hasGo ? `${last}_stub.go` : `${last}.go`);
+      for (let n = 2; fs.existsSync(file); n++) file = path.join(idir, `${last}_stub${n}.go`);
+      exts.push({ alias, idir, last, packageName, importPath: m[2], hasGo, file, funcs: new Set(), types: new Map(), consts: new Set(), errs: new Set(), methods: new Map() });
     }
     extDone = exts.length > 0;
     for (const e of exts) {
       const q = (x) => x.replace(new RegExp(`\\b${e.alias}\\.`, 'g'), '');
+      const qualifier = `(?:${e.alias}|${e.packageName}|"${e.importPath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}")`;
       const render = () => {
         const parts = [];
         for (const [t, fields] of e.types) parts.push(`type ${t} struct {\n${[...fields].map((f) => `\t${f} any\n`).join('')}}\n`);
@@ -939,9 +1019,9 @@ function stubGo(testPath, src, dir, add, made) {
         for (const [t, ms] of e.methods) for (const m of ms) { const c = callInfo(q(src).replace(new RegExp(`\\b\\w+\\([^()]*\\)\\.${m}\\(`, 'g'), `${m}(`).replace(new RegExp(`[\\w.]+\\.${m}\\(`, 'g'), `${m}(`), m); parts.push(`func (*${t}) ${m}(${params(c)}) ${retOf(c, m)} {\n\tpanic("not implemented: ${t}.${m}")\n}\n`); }
         for (const x of e.errs) parts.unshift(`var ${x} = errors.New("${x}")\n`);
         for (const k of e.consts) parts.unshift(`const ${k} = 0\n`);
-        return `package ${e.last}\n\n${e.errs.size ? 'import "errors"\n\n' : ''}${parts.join('\n')}`;
+        return `package ${e.packageName}\n\n${e.errs.size ? 'import "errors"\n\n' : ''}${parts.join('\n')}`;
       };
-      if (!e.hasGo) { fs.mkdirSync(e.idir, { recursive: true }); fs.writeFileSync(e.file, `package ${e.last}\n`); }
+      if (!e.hasGo) { fs.mkdirSync(e.idir, { recursive: true }); fs.writeFileSync(e.file, `package ${e.packageName}\n`); }
       for (let pass = 0; pass < 5; pass++) {
         const out = probe('go', ['test', '-count=1', '-gcflags=-e', '-run', '^$', '.'], dir);
         let grew = false;
@@ -963,14 +1043,14 @@ function stubGo(testPath, src, dir, add, made) {
           else { if (e.consts.has(n)) continue; e.consts.add(n); }
           grew = true;
         }
-        for (const m of out.matchAll(new RegExp(`(\\S+)\\.(\\w+) undefined \\(type \\*?${e.alias}\\.(\\w+) has no field or method`, 'g'))) {
+        for (const m of out.matchAll(new RegExp(`(\\S+)\\.(\\w+) undefined \\(type \\*?${qualifier}\\.(\\w+) has no field or method`, 'g'))) {
           const [, recv, member, t] = m;
           if (!new RegExp(`\\.${member}\\b`).test(src)) continue;
           if (new RegExp(`${recv.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\.${member}\\s*\\(`).test(src)) { if (!e.methods.has(t)) e.methods.set(t, new Set()); if (e.methods.get(t).has(member)) continue; e.methods.get(t).add(member); }
           else { if (!e.types.has(t) || e.types.get(t).has(member)) continue; e.types.get(t).add(member); }
           grew = true;
         }
-        for (const m of out.matchAll(new RegExp(`unknown field (\\w+) in struct literal of type ${e.alias}\\.(\\w+)`, 'g'))) {
+        for (const m of out.matchAll(new RegExp(`unknown field (\\w+) in struct literal of type ${qualifier}\\.(\\w+)`, 'g'))) {
           if (e.types.has(m[2]) && !e.types.get(m[2]).has(m[1])) { e.types.get(m[2]).add(m[1]); grew = true; }
         }
         if (!grew) break;
@@ -1443,16 +1523,27 @@ function methodsOf(src, cls, strict = false) {
   const out = new Set();
   const skip = /^(assert\w*|then|catch|toString|valueOf|constructor|call|apply|bind)$/;
   for (const m of src.matchAll(new RegExp(`(?:new\\s+)?\\b${cls}\\s*\\([^()]*\\)\\s*\\.\\s*([A-Za-z_$][\\w$]*)\\s*\\(`, 'g'))) out.add(m[1]);
-  const vars = [...src.matchAll(new RegExp(`\\b([A-Za-z_$][\\w$]*)\\s*(?::[^=\\n]+)?=\\s*(?:await\\s+)?(?:new\\s+)?${cls}\\s*\\(`, 'g'))].map((m) => m[1]);
+  const directCtor = (text, start) => {
+    let depth = 1, i = start, quote = '';
+    for (; i < text.length && depth; i++) {
+      const c = text[i];
+      if (quote) { if (c === '\\') i++; else if (c === quote) quote = ''; }
+      else if (/['"`]/.test(c)) quote = c;
+      else if (c === '(') depth++;
+      else if (c === ')') depth--;
+    }
+    return depth === 0 && !/^\s*\)*\s*(?:\?\.|\.|\[)/.test(text.slice(i));
+  };
+  const vars = [...src.matchAll(new RegExp(`\\b([A-Za-z_$][\\w$]*)\\s*(?::[^=\\n]+)?=\\s*(?:await\\s+)?(?:new\\s+)?${cls}\\s*\\(`, 'g'))].filter((m) => directCtor(src, m.index + m[0].length)).map((m) => m[1]);
   // objects built inside a helper (`const { s } = setup()`, `c, j = setup()`, `setup().s.m(`): methods called on whatever the helper returns (#112)
   const lines = src.split('\n');
   const DEF = /^\s*(?:export\s+)?(?:async\s+)?(?:function\s+(\w+)|def\s+(\w+)|(?:const|let)\s+(\w+)\s*=\s*(?:async\s*)?\()/;
   const defs = lines.map((l, i) => ({ i, n: DEF.exec(l) })).filter((d) => d.n).map((d) => ({ i: d.i, name: d.n[1] ?? d.n[2] ?? d.n[3] }));
   // strict (existing real classes): a helper counts only when it returns `new Cls(..)` itself, and its body ends at the next test block
   const retRe = new RegExp(`(?:=>|\\breturn)\\s*[\\[({\\s]*(?:[\\w$]+\\s*:\\s*)?(?:await\\s+)?new\\s+${cls}\\b`);
-  const ret = { test: (l) => retRe.test(l) && ![...l.matchAll(/\bnew\s+([\w$]+)/g)].some((x) => x[1] !== cls) };
+  const ret = { test: (l) => retRe.test(l) && [...l.matchAll(new RegExp(`\\bnew\\s+${cls}\\s*\\(`, 'g'))].some((m) => directCtor(l, m.index + m[0].length)) && ![...l.matchAll(/\bnew\s+([\w$]+)/g)].some((x) => x[1] !== cls) };
   const bodyEnd = (k) => { let e = k + 1 < defs.length ? defs[k + 1].i : lines.length; for (let j = defs[k].i + 1; j < e; j++) if (/^\s*(?:\/\*\*|\/\/\s*@id|(?:test|it|describe)\s*[(.])/.test(lines[j])) { e = j; break; } return e; };
-  const helpers = defs.filter((d, k) => lines.slice(d.i, bodyEnd(k)).some((l) => (strict ? ret : new RegExp(`\\b${cls}\\s*\\(`)).test(l))).map((d) => d.name).filter((n) => !/^test/i.test(n));
+  const helpers = defs.filter((d, k) => lines.slice(d.i, bodyEnd(k)).some((l) => strict ? ret.test(l) : [...l.matchAll(new RegExp(`\\b${cls}\\s*\\(`, 'g'))].some((m) => directCtor(l, m.index + m[0].length)))).map((d) => d.name).filter((n) => !/^test/i.test(n));
   for (const h of helpers) {
     // `return Eng(log), log` + `eng, log = make()`: only the tuple slot that holds the class instance is the SUT variable (#131)
     let sutIdx = -1, slots = 0, sutKeys = null;
@@ -1723,20 +1814,38 @@ function stubFor(testPath, id) {
   const prep = (clause) => {
     const { named, def, ns, types } = names(clause);
     const e = ns?.replace(/\$/g, '\\$');
-    const S = ns ? src.replace(new RegExp(`(?<![\\w$./'"\`-])${e}\\.(?=[A-Za-z_$])`, 'g'), '') : src;
-    const members = ns ? [...new Set([...src.matchAll(new RegExp(`(?<![\\w$./'"\`-])${e}\\.([A-Za-z_$][\\w$]*)`, 'g'))].map((m) => m[1]))] : [];
+    const S = ns ? scoped.replace(new RegExp(`(?<![\\w$./'"\`-])${e}\\.(?=[A-Za-z_$])`, 'g'), '') : scoped;
+    const members = ns ? [...new Set([...scoped.matchAll(new RegExp(`(?<![\\w$./'"\`-])${e}\\.([A-Za-z_$][\\w$]*)`, 'g'))].map((m) => m[1]))] : [];
     return { named: [...new Set([...named, ...members])], def, types, S };
   };
   // static methods the test calls on an imported class: `Foo.create(` (#128)
   const staticsOf = (S, n) => [...new Set([...S.matchAll(new RegExp(`(?<![\\w$.])${n.replace(/\$/g, '\\$')}\\s*\\.\\s*([A-Za-z_$][\\w$]*)\\s*\\(`, 'g'))].map((m) => m[1]))].filter((k) => !/^(then|catch|toString|valueOf|call|apply|bind|constructor)$/.test(k));
-  const isCls = (S, n) => /^[A-Z]\w*(Error|Exception)$/.test(n) || new RegExp(`\\bnew\\s+${n}\\b|\\bextends\\s+${n}\\b|\\binstanceof\\s+${n}\\b|\\b(toThrow|toThrowError|toBeInstanceOf|rejects\\.toThrow)\\(\\s*${n}\\s*\\)`).test(S) || (/^[A-Z]/.test(n) && !/^[A-Z0-9_]+$/.test(n) && staticsOf(S, n).length > 0);
+  const isError = (S, n) => {
+    if (/(Error|Exception)$/.test(n) || new RegExp(`\\b(?:toThrow|toThrowError)\\(\\s*${n}\\s*\\)`).test(S)) return true;
+    for (const m of S.matchAll(/\b(?:throws|rejects)\s*\(/g)) {
+      let depth = 1, quote = '';
+      for (let i = m.index + m[0].length; i < S.length && depth; i++) {
+        const c = S[i];
+        if (quote) { if (c === '\\') i++; else if (c === quote) quote = ''; }
+        else if (/['"`]/.test(c)) quote = c;
+        else if ('([{'.includes(c)) depth++;
+        else if (')]}'.includes(c)) depth--;
+        else if (c === ',' && depth === 1) {
+          if (new RegExp(`^\\s*${n}\\s*[,)]`).test(S.slice(i + 1))) return true;
+          break;
+        }
+      }
+    }
+    return false;
+  };
+  const isCls = (S, n) => isError(S, n) || new RegExp(`\\bnew\\s+${n}\\b|\\bextends\\s+${n}\\b|\\binstanceof\\s+${n}\\b|\\btoBeInstanceOf\\(\\s*${n}\\s*\\)`).test(S) || (/^[A-Z]/.test(n) && !/^[A-Z0-9_]+$/.test(n) && staticsOf(S, n).length > 0);
   const mth = (n, k, stat) => `\n  ${stat ? 'static ' : ''}${k}(..._args${ts ? ': any[]): any' : ')'} {\n    throw new Error('not implemented: ${n}.${k}');\n  }\n`;
   // a name the test never calls is a value (`CONFIG.max`, `initialState`): any use fails deliberately instead of reading `undefined`
   const valueStub = (n) => `export const ${n}${ts ? ': any' : ''} = new Proxy(function () {}, {\n  get(_t${ts ? ': any' : ''}, p${ts ? ': any' : ''}) { if (typeof p === 'string' && p !== 'then') throw new Error(\`not implemented: ${n}.\${p}\`); },\n  apply() { throw new Error('not implemented: ${n}'); },\n});\n`;
   const exportOf = (n, S, dflt) => {
     const fnBody = ts ? `(..._args: any[]): any {\n  throw new Error('not implemented: ${n}');\n}\n` : `() {\n  throw new Error('not implemented: ${n}');\n}\n`;
     // error types (`FooError`, `toThrow(Foo)`, `instanceof`-checked names ending in Error/Exception) extend Error so `new Foo()` and `instanceof` behave (#151)
-    if (isCls(S, n) && (/(Error|Exception)$/.test(n) || new RegExp(`\\b(toThrow|toThrowError|rejects\\.toThrow|throws|rejects)\\([^)]*\\b${n}\\b`).test(S))) return `export ${dflt ? 'default ' : ''}class ${n} extends Error {\n  constructor(..._args${ts ? ': any[]' : ''}) {\n    super(typeof _args[0] === 'string' ? _args[0] : undefined);\n    this.name = '${n}';\n  }\n${[...staticsOf(S, n).map((k) => mth(n, k, true)), ...methodsOf(S, n).map((k) => mth(n, k))].join('')}}\n`;
+    if (isError(S, n)) return `export ${dflt ? 'default ' : ''}class ${n} extends Error {\n  constructor(..._args${ts ? ': any[]' : ''}) {\n    super(typeof _args[0] === 'string' ? _args[0] : undefined);\n    this.name = '${n}';\n  }\n${[...staticsOf(S, n).map((k) => mth(n, k, true)), ...methodsOf(S, n).map((k) => mth(n, k))].join('')}}\n`;
     if (isCls(S, n)) return `export ${dflt ? 'default ' : ''}class ${n} {\n  constructor(..._args${ts ? ': any[]' : ''}) {}\n${[...staticsOf(S, n).map((k) => mth(n, k, true)), ...methodsOf(S, n).map((k) => mth(n, k))].join('')}}\n`;
     if (dflt) return `export default function ${n}${fnBody}`;
     if (new RegExp(`(?<![\\w$.])${n.replace(/\$/g, '\\$')}\\s*\\(`).test(S)) return `export function ${n}${fnBody}`;
@@ -1745,7 +1854,7 @@ function stubFor(testPath, id) {
   };
   if (/\.py$/.test(testPath)) {
     // class stubs must construct: a throwing __init__ in a fixture/setup makes every test a weak Red
-    for (const m of src.matchAll(/^\s*from\s+(\.*[\w.]+)\s+import\s+(\([^)]*\)|[^\n#]+)/gm)) {
+    for (const m of scoped.matchAll(/^\s*from\s+(\.*[\w.]+)\s+import\s+(\([^)]*\)|[^\n#]+)/gm)) {
       const mod = m[1];
       // stdlib / installed packages must not be shadowed by a stub (probe with cwd removed from sys.path so project dirs do not count; user site and PYTHONPATH do)
       if (!mod.startsWith('.') && spawnSync('python3', ['-c', 'import importlib.util,sys;sys.path=[p for p in sys.path if p not in ("",".")];sys.exit(0 if importlib.util.find_spec(sys.argv[1].split(".")[0]) else 1)', mod], { cwd: os.tmpdir() }).status === 0) continue;
@@ -1760,7 +1869,9 @@ function stubFor(testPath, id) {
       const abs = path.join(base, ...mod.replace(/^\.+/, '').split('.')) + '.py';
       // `from pkg import x` where pkg/ is a namespace package: never create pkg.py next to it
       if (fs.existsSync(abs.replace(/\.py$/, '')) && fs.statSync(abs.replace(/\.py$/, '')).isDirectory() && !fs.existsSync(abs.replace(/\.py$/, '/__init__.py'))) continue;
-      const ns = m[2].replace(/#[^\n]*/g, '').replace(/[()]/g, '').split(',').map((x) => x.trim().split(/\s+as\s+/)[0]).filter(Boolean);
+      const bindings = m[2].replace(/#[^\n]*/g, '').replace(/[()]/g, '').split(',').map((x) => x.trim().split(/\s+as\s+/)).filter(([n]) => n);
+      const ns = bindings.map(([n]) => n);
+      const localOf = (n) => bindings.find(([name]) => name === n)?.[1] ?? n;
       // pytest.raises(X) / assertRaises(X) / except X => an Exception subclass, else the Red is "must derive from BaseException"
       const isExc = (n) => new RegExp(`(raises|assertRaises|assertRaisesRegex)\\(\\s*${n}\\b|\\bexcept\\s+\\(?\\s*${n}\\b`).test(scoped);
       // ALL_CAPS names that are never called are constants, not classes (#112)
@@ -1774,9 +1885,9 @@ function stubFor(testPath, id) {
         let missing = ns.filter((n) => !new RegExp(`^(class|def)\\s+${n}\\b|^${n}\\s*=`, 'm').test(cur));
         // `from pkg import mod` used as `mod.f(...)` is a submodule: create pkg/mod.py and leave __init__.py alone (#112)
         if (/__init__\.py$/.test(existing)) {
-          const sub = missing.filter((n) => /^[a-z_]\w*$/.test(n) && new RegExp(`\\b${n}\\.\\w`).test(src) && !new RegExp(`(?<![\\w.])${n}\\s*\\(`).test(src));
+          const sub = missing.filter((n) => /^[a-z_]\w*$/.test(n) && new RegExp(`\\b${localOf(n)}\\.\\w`).test(scoped) && !new RegExp(`(?<![\\w.])${localOf(n)}\\s*\\(`).test(scoped));
           for (const n of sub) {
-            const fns = [...new Set([...src.matchAll(new RegExp(`\\b${n}\\.([A-Za-z_]\\w*)\\s*\\(`, 'g'))].map((x) => x[1]))];
+            const fns = [...new Set([...scoped.matchAll(new RegExp(`\\b${localOf(n)}\\.([A-Za-z_]\\w*)\\s*\\(`, 'g'))].map((x) => x[1]))];
             add(path.join(path.dirname(existing), n + '.py'), fns.map((f) => `def ${f}(*a, **k):\n    raise NotImplementedError("${f}")\n`).join('\n\n') || 'pass\n');
           }
           missing = missing.filter((n) => !sub.includes(n));
@@ -1796,7 +1907,15 @@ function stubFor(testPath, id) {
   if (/\.(c|cc|cpp|cxx)$/.test(testPath)) return stubC(testPath, scoped, dir, add, made);
   const lang = /\.php$/.test(testPath) ? 'php' : /\.jl$/.test(testPath) ? 'jl' : /\.[Rr]$/.test(testPath) ? 'r' : null;
   if (lang) return stubScript(lang, scoped, dir, add, made);
-  const ts = /\.[cm]?tsx?$/.test(testPath);
+  const testTs = /\.[cm]?tsx?$/.test(testPath);
+  let ts = testTs;
+  const newBody = (clause) => {
+    const { named, def, types, S } = prep(clause);
+    let body = named.map((n) => exportOf(n, S)).join('\n');
+    if (ts && types.length) body += (body ? '\n' : '') + types.map((n) => `export type ${n} = any;\n`).join('\n');
+    if (def) body += (body ? '\n' : '') + exportOf(def, S, true);
+    return body || 'export {};\n';
+  };
   // the module exists but lacks a name the test imports (or a method of a class it already has): add throwing stubs, never touch existing lines (#112)
   const jsExisting = (file, clause) => {
     const { named, def, types, S } = prep(clause);
@@ -1838,17 +1957,18 @@ function stubFor(testPath, id) {
   // static `import … from './x'` (multi-line clauses too) and dynamic `(const {a} | x) = await import('./x')`, also in .cjs tests (#76, #128)
   // bare package specifiers that a workspace package.json name or tsconfig path resolves to a source file are stubbed in that entry file (#128)
   const pkgEntry = (spec) => {
-    const hit = aliasMap(new Set(gitFiles('*'))).find(([name, , isDir]) => name === spec && !isDir);
+    const hit = aliasMap(new Set(gitFiles('*')), true).find(([name, , isDir]) => name === spec && !isDir);
     return hit ? path.join(ROOT, hit[1]) : null;
   };
-  const imps = [...src.matchAll(/import\s+([^'";]*?)\s+from\s+['"]([^'"\n]+)['"]/g)].map((m) => ({ 1: m[1].replace(/\s+/g, ' ').trim(), 2: m[2] }));
-  for (const m of src.matchAll(/(?:(?:const|let|var)\s+(\{[^}]*\}|\w+)\s*=\s*)?await\s+import\(\s*['"](\.{1,2}\/[^'"]+)['"]\s*\)/g)) imps.push({ 1: m[1] && m[1].startsWith('{') ? m[1] : '', 2: m[2] });
+  const imps = [...scoped.matchAll(/import\s+([^'";]*?)\s+from\s+['"]([^'"\n]+)['"]/g)].map((m) => ({ 1: m[1].replace(/\s+/g, ' ').trim(), 2: m[2] }));
+  for (const m of scoped.matchAll(/(?:(?:const|let|var)\s+(\{[^}]*\}|\w+)\s*=\s*)?await\s+import\(\s*['"](\.{1,2}\/[^'"]+)['"]\s*\)/g)) imps.push({ 1: m[1] && m[1].startsWith('{') ? m[1] : '', 2: m[2] });
   for (const m of imps) {
+    ts = testTs;
     const spec = m[2];
     if (!/^\.{1,2}\//.test(spec)) {
       if (/^(node:|data:|https?:)/.test(spec) || builtinModules.includes(spec)) continue;
       const entry = pkgEntry(spec);
-      if (entry) { jsExisting(entry, m[1]); continue; }
+      if (entry) { ts = /\.[cm]?tsx?$/.test(entry); if (fs.existsSync(entry)) jsExisting(entry, m[1]); else add(entry, newBody(m[1])); continue; }
       const pkgName = spec.startsWith('@') ? spec.split('/').slice(0, 2).join('/') : spec.split('/')[0];
       let up = dir, installed = false;
       for (;; up = path.dirname(up)) { if (fs.existsSync(path.join(up, 'node_modules', pkgName))) { installed = true; break; } if (up === path.dirname(up)) break; }
@@ -1861,11 +1981,7 @@ function stubFor(testPath, id) {
     const found = exts.map((e) => (fs.existsSync(abs + e) && fs.statSync(abs + e).isFile() ? abs + e : fs.existsSync(stem + e) && fs.statSync(stem + e).isFile() ? stem + e : null)).find(Boolean);
     if (found) { jsExisting(found, m[1]); continue; }
     const target = /\.[cm]?[jt]sx?$/.test(abs) ? (ts ? stem + '.ts' : abs) : abs + (ts ? '.ts' : '.js');
-    const { named, def, types, S } = prep(m[1]);
-    let body = named.map((n) => exportOf(n, S)).join('\n');
-    if (ts && types.length) body += (body ? '\n' : '') + types.map((n) => `export type ${n} = any;\n`).join('\n');
-    if (def) body += (body ? '\n' : '') + exportOf(def, S, true);
-    add(target, body || 'export {};\n');
+    add(target, newBody(m[1]));
   }
   return made;
 }
@@ -1873,6 +1989,10 @@ function stubFor(testPath, id) {
 // body of the test annotated with `@id <id>` (up to the next @id), as lines
 function testBody(testPath, id) {
   const ls = fs.readFileSync(path.join(ROOT, testPath), 'utf8').split('\n');
+  if (/\.py$/.test(testPath)) {
+    const range = pythonScope(ls.join('\n'))?.find((r) => r.ids.includes(id));
+    if (range) return ls.slice(range.start, range.end);
+  }
   const start = ls.findIndex((l) => new RegExp(`@id\\s+${id}\\b`).test(l));
   if (start < 0) return [];
   let end = ls.findIndex((l, i) => i > start && /@id\s/.test(l));
@@ -2014,10 +2134,70 @@ function setupOrigin(line, testPath, id, text = '') {
   return assertedResult(bl.filter((l, i) => re.test(l) && !bf[i])) ? null : x;
 }
 
+function goTestTarget(testPath, id) {
+  const src = fs.readFileSync(path.join(ROOT, testPath), 'utf8');
+  const at = new RegExp(`@id\\s+${id}\\b`).exec(src);
+  if (!at) return null;
+  const clean = src.replace(/"(?:\\.|[^"\\])*"|`[^`]*`|'(?:\\.|[^'\\])*'|\/\/[^\n]*|\/\*[\s\S]*?\*\//g, (s) => s.replace(/[^\n]/g, ' '));
+  const close = (open) => {
+    let depth = 1;
+    for (let i = open + 1; i < clean.length; i++) {
+      if (clean[i] === '{') depth++;
+      if (clean[i] === '}' && --depth === 0) return i;
+    }
+    return clean.length;
+  };
+  const adjacent = (start) => start >= at.index && !clean.slice(at.index, start).trim();
+  const funcs = [...clean.matchAll(/^func\s+(Test\w+)\s*\([^)]*\)\s*\{/gm)].map((m) => ({ name: m[1], start: m.index, open: m.index + m[0].length - 1 }));
+  const fn = funcs.find((f) => adjacent(f.start)) ?? funcs.find((f) => f.open < at.index && close(f.open) > at.index);
+  if (!fn) return null;
+  const runs = [...src.matchAll(/\b\w+\.Run\s*\(\s*("(?:\\.|[^"\\])*"|`[^`]*`|[^,{}]+)\s*,\s*func\s*\([^)]*\)\s*\{/g)].filter((m) => clean.slice(m.index, m.index + 1).trim()).map((m) => {
+    let name = null;
+    try { name = m[1].startsWith('`') ? m[1].slice(1, -1) : JSON.parse(m[1]); } catch {}
+    const open = m.index + m[0].length - 1;
+    return { name: typeof name === 'string' ? name.replace(/\s/g, '_') : null, start: m.index, open, end: close(open) };
+  }).filter((r) => r.start > fn.open && r.end < close(fn.open));
+  const direct = runs.find((r) => adjacent(r.start));
+  const containers = runs.filter((r) => r.open < at.index && r.end > at.index);
+  if (direct) containers.push(direct);
+  containers.sort((a, b) => a.open - b.open);
+  if (containers.some((r) => r.name === null)) return null;
+  const parts = [fn.name, ...containers.map((r) => r.name)];
+  return { name: parts.join('/'), pattern: parts.flatMap((n) => n.split('/')).map((n) => '^' + n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$').join('/') };
+}
+function goResult(text, target) {
+  let result = null;
+  for (const line of text.split('\n')) {
+    const m = /^\s*--- (PASS|FAIL|SKIP):\s+(\S+)/.exec(line);
+    if (m?.[2] === target) result = m[1].toLowerCase();
+    if (line.startsWith('{')) {
+      try { const e = JSON.parse(line); if (e.Test === target && /^(pass|fail|skip)$/.test(e.Action)) result = e.Action; } catch {}
+    }
+  }
+  return result;
+}
+function goOutput(text) {
+  return text.split('\n').map((line) => {
+    if (!line.startsWith('{')) return line + '\n';
+    try { const e = JSON.parse(line); return typeof e.Output === 'string' ? e.Output : ''; } catch { return line + '\n'; }
+  }).join('');
+}
+
 // name used for {idu}: the lowercase ID when the file contains it, else the name of the test declared right below `@id` (camelCase / @DisplayName styles)
 function testName(testPath, id) {
   const idu = id.toLowerCase().replaceAll('-', '_');
   const text = fs.readFileSync(path.join(ROOT, testPath), 'utf8');
+  if (/_test\.go$/.test(testPath)) {
+    const target = goTestTarget(testPath, id);
+    if (target) return target.name;
+    const name = /^func\s+(Test\w+)\s*\(/m.exec(testBody(testPath, id).join('\n'))?.[1];
+    if (name) return name;
+  }
+  if (/\.py$/.test(testPath)) {
+    const body = testBody(testPath, id).join('\n');
+    const name = /^\s*(?:async\s+)?def\s+(\w+)\s*\(/m.exec(body)?.[1];
+    if (name) return name;
+  }
   // keep the case used in the file: NUnit/xUnit FullyQualifiedName~ is case-sensitive (#141)
   const cased = new RegExp(`(?<![0-9A-Za-z_])${idu}(?![0-9A-Za-z_])`, 'i').exec(text)?.[0] ?? new RegExp(idu, 'i').exec(text)?.[0];
   if (cased) return cased;
@@ -2159,23 +2339,35 @@ function cmdTdd() {
   }
   // a build failure in another Go package must not turn this test's Red into a load error (#94)
   if (/_test\.go$/.test(t.path) && cmd[0] === 'go' && cmd[1] === 'test' && cmd.includes('./...')) { const pd = path.posix.dirname(fileArg); cmd[cmd.indexOf('./...')] = pd === '.' ? '.' : './' + pd; }
+  const goRunner = /_test\.go$/.test(t.path) && cmd[0] === 'go' && cmd[1] === 'test';
+  if (goRunner && !cmd.includes('-v')) cmd.push('-v');
+  const goTarget = goRunner ? goTestTarget(t.path, id) : null;
+  if (goTarget) {
+    const ri = cmd.findIndex((a) => a === '-run' || a.startsWith('-run='));
+    if (ri < 0) cmd.push('-run', goTarget.pattern);
+    else if (cmd[ri] === '-run') cmd[ri + 1] = goTarget.pattern;
+    else cmd[ri] = '-run=' + goTarget.pattern;
+  }
   const res = run(cmd, cfg.timeoutMs ?? 120000, proj?.root);
   const after = testSha(t.path, id);
   if (after !== before) { out(`REFUSED: ${t.path} changed while running (formatter/watch?)`); return 1; }
 
+  const goVerdict = goRunner ? goResult(res.text, goTarget?.name ?? testName(t.path, id)) : null;
+  if (goRunner) res.text = goOutput(res.text);
   const plain = res.text.replace(/\x1b\[[0-9;]*m/g, '');
   // Go t.Skip and JUnit @Disabled: every test that ran was skipped (#84)
   const allSkipped = (/--- SKIP:/.test(plain) && !/--- (PASS|FAIL):/.test(plain)) || [...plain.matchAll(/Tests run: (\d+), Failures: 0, Errors: 0, Skipped: (\d+)/g)].some((m) => m[1] === m[2] && +m[1] > 0 && [...plain.matchAll(/Tests run: (\d+), Failures: 0, Errors: 0, Skipped: (\d+)/g)].every((x) => x[1] === x[2]));
   // PHPUnit skipped / no assertions, dotnet Passed: 0 + Skipped: n executed nothing (#140)
   const noAssert = /Tests: \d+, Assertions: 0\b|OK, but (?:some tests were skipped|incomplete, skipped)|did not perform any assertions|Passed: 0,[^\n]*Skipped: [1-9]/i.test(plain);
-  // Node >=22 reports a file as one passing test when --test-name-pattern matches nothing: the ID must appear in the run output (#119)
-  const nodeNoMatch = res.exit === 0 && /(^|\n)\s*(ℹ tests \d+|# tests \d+)/.test(plain) && !plain.toLowerCase().includes(id.toLowerCase());
-  const zero = (ZERO_TESTS.test(res.text) && !RAN_TESTS.test(res.text)) || NO_PASSED.test(plain) || allSkipped || noAssert || nodeNoMatch;
+  // Node >=22 can report a file-level pass: only an executed test result proves the ID matched (#154).
+  const nodeNoMatch = res.exit === 0 && /(^|\n)\s*(ℹ tests \d+|# tests \d+)/.test(plain) && !nodeTestRan(plain, id, t.path);
+  const goNoMatch = goRunner && !LOAD_ERR.test(plain) && (!goTarget || !goVerdict || goVerdict === 'skip');
+  const zero = (ZERO_TESTS.test(res.text) && !RAN_TESTS.test(res.text)) || NO_PASSED.test(plain) || pytestNoExecution(plain) || allSkipped || noAssert || nodeNoMatch || goNoMatch;
   const siblingFail = juliaSiblingFail(plain, id);
   const timeoutWhy = `the test run timed out after ${(res.ms / 1000).toFixed(0)}s (raise timeoutMs in .sdd/config.json or fix the hang); a timeout is neither Red nor Green`;
   // forked JVM / test host died: the test matched but the runner crashed (#143)
-  const crashed = res.exit !== 0 && /There was an error in the forked process|OutOfMemoryError|The forked VM terminated|Fatal error\. Internal CLR error|Test host process crashed|The active test run was aborted/i.test(plain);
-  const crashWhy = 'the test runner process crashed (forked JVM/test host died: OutOfMemoryError / CLR error / aborted run), so the test result is unknown; make the failure an assertion or fix the crash';
+  const crashed = res.exit !== 0 && (res.signal || /There was an error in the forked process|OutOfMemoryError|The forked VM terminated|Fatal error\. Internal CLR error|Test host process crashed|The active test run was aborted|Fatal Python error:/i.test(plain));
+  const crashWhy = `the test runner process crashed (${res.signal ?? 'fatal Python error / forked JVM / test host failure'}), so the test result is unknown; make the failure an assertion or fix the crash`;
   const notRunWhy = `${id} never ran: an earlier top-level testset of the file failed and Julia aborted the file (whole-file runner); fix or Red/Green the earlier tests first`;
   let ok;
   let why = '';
@@ -2184,6 +2376,7 @@ function cmdTdd() {
     else if (crashed) { ok = false; why = crashWhy; }
     else if (siblingFail === 'notrun') { ok = false; why = notRunWhy; }
     else if (siblingFail === 'sibling') { ok = false; why = `${id} itself passes; the failure comes from another test of the same file (whole-file runner)`; }
+    else if (goRunner && goVerdict === 'pass' && res.exit !== 0) { ok = false; why = `${id} itself passes; the failure comes from its parent, a sibling or suite setup`; }
     else if (zero) { ok = false; why = 'no test matched the ID, or the test is skipped/todo (check @id vs test title/method name; skipped tests cannot give Red/Green)'; }
     else if (res.exit === 0 && retest) ok = true;
     else if (res.exit === 0 && typeof flags.characterization === 'string' && flags.characterization.trim()) ok = true;
@@ -2201,7 +2394,7 @@ function cmdTdd() {
   }
   if (!ok) { out(`${sub.toUpperCase()} REJECTED ${id}: ${why}`); out(rejectTail(res.text)); return 1; }
   const rl = res.text.replace(/\x1b\[[0-9;]*m/g, '').split('\n').map((l) => l.trim());
-  const reason = sub === 'red' ? (rl.find((l) => /^E\s+\S/.test(l) && !/\d+ \/ \d+ \(\d+%\)|^E\s+\[\s*\d+%\]/.test(l))?.replace(/^E\s+/, '') ?? (() => { const i = rl.findIndex((l) => /panicked at/.test(l)); return i >= 0 && rl[i + 1] && !/^note:/.test(rl[i + 1]) ? rl[i + 1] : undefined; })() ?? specificReason(rl) ?? rl.find((l) => /not implemented/i.test(l) && !/^\d+\s*\|/.test(l)) ?? rl.find((l) => /(--- FAIL|AssertionError|Error:|assert |Failed asserting|FAILED|panicked|expected|\(Failed\)|not implemented|Test Failed|Error During Test|\w*Exception:|^Error in )/.test(l) && !/^(FAIL|❯|> Task|The following tests)/.test(l) && !/^\d+\s*\|/.test(l)) ?? rl.find((l) => /^(FAIL|not ok)\s+\S+$/.test(l)) ?? [...rl].reverse().find((l) => l && !/^(npm |note: |error: test failed|test result:|Failed!|Passed!)/.test(l)) ?? '').slice(0, 110) : '';
+  const reason = sub === 'red' && res.exit !== 0 ? (rl.find((l) => /^E\s+\S/.test(l) && !/\d+ \/ \d+ \(\d+%\)|^E\s+\[\s*\d+%\]/.test(l))?.replace(/^E\s+/, '') ?? (() => { const i = rl.findIndex((l) => /panicked at/.test(l)); return i >= 0 && rl[i + 1] && !/^note:/.test(rl[i + 1]) ? rl[i + 1] : undefined; })() ?? specificReason(rl) ?? rl.find((l) => /not implemented/i.test(l) && !/^\d+\s*\|/.test(l)) ?? rl.find((l) => /(--- FAIL|AssertionError|Error:|assert |Failed asserting|FAILED|panicked|expected|\(Failed\)|not implemented|Test Failed|Error During Test|\w*Exception:|^Error in )/.test(l) && !/^(FAIL|❯|> Task|The following tests)/.test(l) && !/^\d+\s*\|/.test(l)) ?? rl.find((l) => /^(FAIL|not ok)\s+\S+$/.test(l)) ?? [...rl].reverse().find((l) => l && !/^(npm |note: |error: test failed|test result:|Failed!|Passed!)/.test(l)) ?? '').slice(0, 110) : '';
   const loadWeak = sub === 'red' && LOAD_ERR.test(res.text) && !(flags['missing-module'] && declaredMissingModule(res.text, t.path));
   const setupSym = sub === 'red' && !flags['allow-setup-red'] && typeof flags.expect !== 'string' ? setupOrigin(rl.find((l) => /^E\s+.*(not implemented|NotImplementedError|unimplemented|is not a function|has no attribute)/i.test(l)) ?? rl.find((l) => /not implemented|NotImplementedError|unimplemented|is not a function|has no attribute/i.test(l) && !/^\d+\s*\|/.test(l)) ?? reason, t.path, id, res.text) : null;
   const charac = sub === 'red' && res.exit === 0 && !retest ? String(flags.characterization).trim() : '';
@@ -2217,7 +2410,7 @@ function cmdTdd() {
   }
   const lastGreen = prior.filter((e) => e.type === 'green' || e.type === 'refactor').at(-1);
   if (sub === 'refactor' && lastGreen && lastGreen.fileSha !== after) out(`⚠ ${id}: test body changed since the last Green (includes the file preamble: imports/includes/helpers); a refactor does not prove the new assertions can fail (no Red). If behaviour/assertions changed, use tdd red/green instead (#118)`);
-  out(`${sub.toUpperCase()} ok ${id} (${req}) ${res.ms}ms${reason ? ` — fails with: ${reason}` : ''}${weakRed ? ' [weak]' : ''}${setupSym ? ` ⚠ Red comes from setup call "${setupSym}", not the asserted behaviour (use --expect <text> or --allow-setup-red)` : ''}`);
+  out(`${sub.toUpperCase()} ok ${id} (${req}) ${res.ms}ms${reason ? ` — fails with: ${reason}` : ''}${charac ? ` — characterization: ${charac} (test passed)` : retestWeak ? ` — retest: ${retest} (test passed)` : ''}${weakRed ? ' [weak]' : ''}${setupSym ? ` ⚠ Red comes from setup call "${setupSym}", not the asserted behaviour (use --expect <text> or --allow-setup-red)` : ''}`);
   return 0;
 }
 
@@ -2290,8 +2483,22 @@ function cmdTrace() {
 
 function changedFiles() {
   const set = new Set();
-  const st = spawnSync('git', ['status', '--porcelain', '-uall'], { cwd: ROOT, encoding: 'utf8' });
-  if (st.status === 0) for (const l of st.stdout.split('\n').filter(Boolean)) set.add(l.slice(3).split(' -> ').pop());
+  const top = spawnSync('git', ['rev-parse', '--show-toplevel'], { cwd: ROOT, encoding: 'utf8' });
+  if (top.status !== 0) return set;
+  const st = spawnSync('git', ['status', '--porcelain', '-z', '-uall'], { cwd: ROOT, encoding: 'utf8' });
+  const add = (f) => {
+    const p = path.relative(ROOT, path.resolve(top.stdout.trim(), f)).split(path.sep).join('/');
+    if (p && p !== '..' && !p.startsWith('../') && !path.isAbsolute(p)) set.add(p);
+  };
+  if (st.status === 0) {
+    const entries = st.stdout.split('\0');
+    for (let i = 0; i < entries.length; i++) {
+      const l = entries[i];
+      if (!l) continue;
+      add(l.slice(3));
+      if (/[RC]/.test(l.slice(0, 2)) && entries[i + 1]) add(entries[++i]);
+    }
+  }
   return set;
 }
 
@@ -2304,20 +2511,22 @@ function gitFiles(glob) {
 }
 const stripJsonc = (t) => t.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:"'])\/\/.*$/gm, '$1').replace(/,(\s*[}\]])/g, '$1');
 // bare-specifier aliases: workspace package names and tsconfig paths -> source file candidates
-function aliasMap(set) {
+function aliasMap(set, allowMissing = false) {
   const map = [];
-  const pick = (dir, target) => {
+  const pick = (dir, target, missing = allowMissing) => {
+    if (typeof target !== 'string') return null;
     const t = path.posix.normalize(path.posix.join(dir, String(target)));
     const stem = t.replace(/\.[cm]?[jt]sx?$/, '');
     const srcStem = stem.replace(/^((?:.*\/)?)(dist|build|lib)\//, '$1src/');
     for (const c of [stem, srcStem]) for (const e of ['.ts', '.tsx', '.js', '.mjs', '.jsx', '/index.ts', '/index.js']) if (set.has(c + e)) return c + e;
+    if (missing) return /\.[cm]?[jt]sx?$/.test(t) ? t : stem + '.ts';
     return null;
   };
   for (const pf of gitFiles('*package.json')) {
     const dir = path.posix.dirname(pf);
     const pkg = readJson(path.join(ROOT, pf), null);
     if (!pkg?.name) continue;
-    const ex = typeof pkg.exports === 'string' ? { '.': pkg.exports } : pkg.exports ?? {};
+    const ex = typeof pkg.exports === 'string' || (pkg.exports && typeof pkg.exports === 'object' && !Object.keys(pkg.exports).some((k) => k.startsWith('.'))) ? { '.': pkg.exports } : pkg.exports ?? {};
     const entry = (v) => typeof v === 'string' ? v : v && typeof v === 'object' ? entry(v.import ?? v.default ?? v.require ?? Object.values(v)[0]) : null;
     const root = entry(ex['.']) ?? pkg.main ?? pkg.module ?? 'src/index.ts';
     const f = pick(dir, root) ?? pick(dir, 'src/index');
@@ -2331,7 +2540,7 @@ function aliasMap(set) {
     const base = path.posix.join(dir, co?.compilerOptions?.baseUrl ?? '.');
     for (const [k, vs] of Object.entries(co?.compilerOptions?.paths ?? {})) {
       const star = k.endsWith('/*');
-      const t = pick(base, String(vs[0]).replace(/\/\*$/, ''));
+      const t = pick(base, String(vs[0]).replace(/\/\*$/, ''), allowMissing && !star);
       map.push([star ? k.slice(0, -2) : k, t ?? path.posix.join(base, String(vs[0]).replace(/\/\*$/, '')), star || !t]);
     }
   }
@@ -2610,12 +2819,13 @@ function cmdGate() {
     }
     let r = run(cmd, scoped ? (c.changedTimeoutMs ?? cfg.changedTimeoutMs ?? 60000) : (c.timeoutMs ?? cfg.timeoutMs ?? 120000), c.cwd);
     // a scoped run that executed no tests (e.g. `vitest related data.json`) proves nothing: run the full check instead
-    if (scoped && r.exit === 0 && !r.timedOut && ZERO_TESTS.test(r.text) && !RAN_TESTS.test(r.text)) {
+    if (scoped && r.exit === 0 && !r.timedOut && ((ZERO_TESTS.test(r.text) && !RAN_TESTS.test(r.text)) || NO_PASSED.test(r.text) || pytestNoExecution(r.text))) {
       lines.push(`! cmd ${c.name}: scoped run matched no tests — running the full check instead`);
       scoped = false;
       r = run(c.cmd, c.timeoutMs ?? cfg.timeoutMs ?? 120000, c.cwd);
     }
     if (r.timedOut) { add(false, `cmd ${c.name} TIMEOUT after ${(r.ms / 1000).toFixed(0)}s ${scoped ? '— narrow changedCmd (e.g. {changedTests} {changedScopes}) or raise changedTimeoutMs; run full gate (no --changed) before merge' : '— raise timeoutMs in .sdd/config.json'}`); continue; }
+    if (r.exit === 0 && (NO_PASSED.test(r.text) || pytestNoExecution(r.text))) { lines.push(`! cmd ${c.name}: all tests skipped/todo/xfail — INCOMPLETE, no passing assertions`); incomplete = true; continue; }
     if (r.exit !== 0 && ZERO_TESTS.test(r.text) && !RAN_TESTS.test(r.text)) { lines.push(`! cmd ${c.name}: no tests exist yet (runner exit ${r.exit}) — INCOMPLETE, not a failure`); incomplete = true; continue; }
     add(r.exit === 0, `cmd ${c.name} (${(r.ms / 1000).toFixed(1)}s)`, r.exit === 0 ? [] : failTail(r.text, 8).split('\n'));
   }
@@ -2756,6 +2966,11 @@ function importRev() {
     for (const n of new Set([pkgName?.replace(/-/g, '_'), libName].filter(Boolean))) if (set.has(sd + '/lib.rs')) crateBySrc.set(n, [...(crateBySrc.get(n) ?? []), sd]);
   }
   const stem = (x) => path.posix.basename(x).replace(/\.\w+$/, '');
+  const goMods = gitFiles('*go.mod').filter((g) => /(^|\/)go\.mod$/.test(g)).map((g) => {
+    const text = fs.readFileSync(path.join(ROOT, g), 'utf8');
+    const replacements = [...text.matchAll(/^\s*(?:replace\s+)?([^\s()]+)(?:\s+v[^\s]+)?\s+=>\s+(\.[^\s]+)\s*$/gm)].map((m) => ({ path: m[1], dir: path.posix.normalize(path.posix.join(dir(g), m[2])) }));
+    return { dir: dir(g), path: /^\s*module\s+(\S+)/m.exec(text)?.[1], replacements };
+  }).filter((m) => m.path);
   // a header and its implementation pair when they share a directory, or are the only same-named .h/.c in the project (#127)
   const cPair = (h, c) => stem(h) === stem(c) && (dir(h) === dir(c) || (files.filter((x) => /\.h(pp|h)?$/.test(x) && stem(x) === stem(h)).length === 1 && files.filter((x) => /\.(c|cc|cpp|cxx)$/.test(x) && stem(x) === stem(c)).length === 1));
   const csNs = new Map(), jlMod = new Map();
@@ -2802,25 +3017,43 @@ function importRev() {
       // package-granular imports narrowed to the files declaring a symbol this file uses (#105); falls back to the whole package
       const declares = (t, names) => { const code = fs.readFileSync(path.join(ROOT, t), 'utf8'); return [...names].some((n) => new RegExp(`^(?:func\\s+(?:\\([^)]*\\)\\s*)?|type\\s+|var\\s+|const\\s+)${n}\\b|^\\s+${n}\\b\\s*(?:=|[A-Za-z*\\[])`, 'm').test(code)); };
       // methods-only files belong to the package API of the types they extend: include them when a hit file declares the receiver type (#145)
-      const goTypes = (t) => { const code = fs.readFileSync(path.join(ROOT, t), 'utf8'); return new Set([...code.matchAll(/^type\s+(\w+)|^\s+(\w+)\s+(?:struct|interface)\b/gm)].map((x) => x[1] ?? x[2])); };
-      const goRecv = (t) => [...fs.readFileSync(path.join(ROOT, t), 'utf8').matchAll(/^func\s+\(\s*\w*\s*\*?\s*(\w+)/gm)].map((x) => x[1]);
+      const codeOf = (t) => fs.readFileSync(path.join(ROOT, t), 'utf8');
+      const goTypes = (t) => new Set([...codeOf(t).matchAll(/^type\s+(\w+)|^\s+(\w+)\s+(?:struct|interface)\b/gm)].map((x) => x[1] ?? x[2]));
+      const goRecv = (t) => [...codeOf(t).matchAll(/^func\s+\(\s*(?:\w+\s+)?\*?\s*(\w+)/gm)].map((x) => x[1]);
       const narrow = (cands, names) => {
         const hit = names.size ? cands.filter((t) => { try { return declares(t, names); } catch { return true; } }) : [];
         if (!hit.length) return cands;
         const tys = new Set(hit.flatMap((t) => { try { return [...goTypes(t)]; } catch { return []; } }));
+        const aliases = cands.flatMap((t) => [...codeOf(t).matchAll(/^(?:type\s+|\s+)(\w+)\s*=\s*(\w+)\b/gm)].map((m) => [m[1], m[2]]));
+        let grew;
+        do {
+          grew = false;
+          for (const [a, b] of aliases) if (tys.has(a) || tys.has(b)) for (const n of [a, b]) if (!tys.has(n)) { tys.add(n); grew = true; }
+        } while (grew);
         return [...new Set([...hit, ...cands.filter((t) => { try { return goRecv(t).some((r) => tys.has(r)); } catch { return false; } })])];
       };
       // import paths are module-relative: map `<module>/x` to `<go.mod dir>/x` (go.mod may live in a subdirectory)
-      const goMods = gitFiles('*go.mod').filter((g) => /(^|\/)go\.mod$/.test(g)).map((g) => [dir(g), /^\s*module\s+(\S+)/m.exec(fs.readFileSync(path.join(ROOT, g), 'utf8'))?.[1]]).filter(([, mp]) => mp);
-      const goModDir = (imp) => { for (const [gd, mp] of goMods) if (imp === mp || imp.startsWith(mp + '/')) return path.posix.join(gd, imp.slice(mp.length + 1)); return null; };
+      const owner = goMods.filter((m) => m.dir === '.' || f.startsWith(m.dir + '/')).sort((a, b) => b.dir.length - a.dir.length)[0];
+      const goModDir = (imp) => {
+        const mappings = [...(owner?.replacements ?? []), ...goMods].filter((m) => imp === m.path || imp.startsWith(m.path + '/'));
+        const best = mappings.sort((a, b) => b.path.length - a.path.length)[0];
+        return best ? path.posix.join(best.dir, imp.slice(best.path.length).replace(/^\//, '')) : null;
+      };
       for (const m of src.matchAll(/(?:(\w+)\s+)?"([\w./-]+)"/g)) {
-        for (const d of byDir.keys()) if (d !== '.' && (m[2] === d || m[2].endsWith('/' + d) || goModDir(m[2]) === d)) {
-          const alias = m[1] && m[1] !== 'import' ? m[1] : m[2].split('/').pop();
+        const resolved = goModDir(m[2]);
+        for (const d of byDir.keys()) if (resolved === d || (resolved === null && d !== '.' && (m[2] === d || m[2].endsWith('/' + d)))) {
+          const pkg = (byDir.get(d) ?? []).find((x) => x.endsWith('.go') && !x.endsWith('_test.go'));
+          const alias = m[1] && m[1] !== 'import' ? m[1] : pkg && /^\s*package\s+(\w+)/m.exec(codeOf(pkg))?.[1] || m[2].split('/').pop();
           const used = new Set([...src.matchAll(new RegExp(`\\b${alias}\\.([A-Za-z_]\\w*)`, 'g'))].map((x) => x[1]));
           narrow(byDir.get(d).filter((x) => /\.go$/.test(x) && !/_test\.go$/.test(x)), used).forEach((t) => add(t, f));
         }
       }
-      if (/_test\.go$/.test(f)) narrow((byDir.get(dir(f)) ?? []).filter((x) => /\.go$/.test(x) && !/_test\.go$/.test(x)), new Set([...src.matchAll(/\b([A-Za-z_]\w*)\s*\(/g)].map((x) => x[1]))).forEach((t) => add(t, f));
+      const ownPackage = /^\s*package\s+(\w+)/m.exec(src)?.[1];
+      const samePackage = (byDir.get(dir(f)) ?? []).filter((x) => /\.go$/.test(x) && !/_test\.go$/.test(x) && /^\s*package\s+(\w+)/m.exec(codeOf(x))?.[1] === ownPackage);
+      const used = new Set([...src.matchAll(/\b([A-Za-z_]\w*)\b/g)].map((x) => x[1]));
+      // Production callers have the same implicit symbol dependencies as in-package tests.
+      const hits = samePackage.filter((t) => t !== f && declares(t, used));
+      if (hits.length) narrow(samePackage, used).forEach((t) => add(t, f));
     } else if (/\.rs$/.test(f)) {
       const crateSrc = (x) => x.replace(/\/(src|tests|benches|examples)\/.*$/, '').replace(/^(src|tests|benches|examples)\/.*$/, '');
       const srcDir = (x) => (crateSrc(x) ? crateSrc(x) + '/src' : 'src');

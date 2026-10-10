@@ -1,0 +1,15 @@
+import assert from 'node:assert/strict';
+import path from 'node:path';
+import {fileURLToPath} from 'node:url';
+import {spawnSync} from 'node:child_process';
+const root=fileURLToPath(new URL('.',import.meta.url));
+const script=path.resolve(root,'../../../.github/skills/lean-sdd-tdd/scripts/sdd.mjs');
+const run=args=>spawnSync(process.execPath,[script,'--root',root,'gate',...args],{encoding:'utf8'});
+const changed=run(['--changed']);const full=run([]);
+assert.equal(changed.status,0,changed.stdout+changed.stderr);
+assert.equal(full.status,1,full.stdout+full.stderr);
+assert.match(changed.stdout,/0\/0 tests/);
+assert.match(full.stdout,/no Green recorded/);
+console.log(changed.stdout.trim());
+console.log(full.stdout.trim());
+console.log('BUG reproduced: nested-root changed gate skips required TDD evidence and falsely passes');

@@ -1,0 +1,7 @@
+(define (domain transport)
+ (:requirements :strips :typing)
+ (:types location)
+ (:predicates (at ?x - location) (edge ?a ?b - location))
+ (:action move :parameters (?a ?b - location)
+  :precondition (and (at ?a) (edge ?a ?b))
+  :effect (and (not (at ?a)) (at ?b))))

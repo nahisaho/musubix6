@@ -1,0 +1,57 @@
+{
+  "wire": {
+    "by": "ai:spec-review",
+    "kind": "ai",
+    "review": "Independent spec review; Terminate exception and explicit lite portal lifetime resolved",
+    "at": "2026-10-10T16:41:24.698Z",
+    "artifacts": {
+      ".sdd/specs/wire.md": "8bf5e9448797c8beb884bb7710ea43b81e473abec705b8d43d2263a66b364c3c"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "tx": {
+    "by": "ai:spec-review",
+    "kind": "ai",
+    "review": "Independent spec review; Terminate exception and explicit lite portal lifetime resolved",
+    "at": "2026-10-10T16:41:24.745Z",
+    "artifacts": {
+      ".sdd/specs/tx.md": "e8394f263a0b76fe2191564befa295810d585152688441c644d89088001ff92d"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "query": {
+    "by": "ai:regression-spec-review",
+    "kind": "ai",
+    "review": "Independent requirement review; discovered test placement errors corrected at package scope",
+    "at": "2026-10-10T16:47:31.949Z",
+    "artifacts": {
+      ".sdd/specs/query.md": "676b8eacc0a948d0d805f6e63dbef76688399e547816d48a4bb61565ad463db2"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "auth": {
+    "by": "ai:spec-review",
+    "kind": "ai",
+    "review": "Independent spec review; Terminate exception and explicit lite portal lifetime resolved",
+    "at": "2026-10-10T16:41:24.843Z",
+    "artifacts": {
+      ".sdd/specs/auth.md": "42f34e9f233add4a3b5cf43531670ce68220f3758ff55e63200720b57ef3ac44"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "session": {
+    "by": "ai:contract-review",
+    "kind": "ai",
+    "review": "Independent state/contract risk reviewers required aborted Parse-Bind guards, bounded DataRows and non-text OID rejection; added precise regression requirements",
+    "at": "2026-10-10T16:56:36.153Z",
+    "artifacts": {
+      ".sdd/specs/session.md": "82e96bf40a5f183a459e42f58a694dda38c308bfe33347540184ef3ba99938f5"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  }
+}

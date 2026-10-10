@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "testCmd": [
+    "go",
+    "test",
+    "./...",
+    "-run",
+    "{IDU}(_|$)"
+  ],
+  "checks": [
+    {
+      "name": "test",
+      "cmd": [
+        "go",
+        "test",
+        "-race",
+        "./..."
+      ],
+      "changedCmd": [
+        "go",
+        "test",
+        "-race",
+        "{changedGoPkgs}"
+      ]
+    },
+    {"name":"vet","cmd":["go","vet","-composites=false","./..."]}
+  ],
+  "timeoutMs": 120000
+}

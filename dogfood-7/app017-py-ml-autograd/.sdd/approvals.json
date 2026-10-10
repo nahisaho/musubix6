@@ -1,0 +1,58 @@
+{
+  "tensor": {
+    "by": "ai:review-regression-specs",
+    "kind": "ai",
+    "review": "Independent review approves scalar reshape and atomic checkpoint and finite gradient regressions",
+    "at": "2026-10-10T13:57:57.000Z",
+    "artifacts": {
+      ".sdd/specs/tensor.md": "f717314dd493ecefc9467343962b93f65e4249672deaf86288cec6c99a15a39d"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "autograd": {
+    "by": "ai:fix-spec-review",
+    "kind": "ai",
+    "review": "Independent delta review approves zero-power finite gradient and mixed-negative permutation regressions",
+    "at": "2026-10-10T13:53:16.896Z",
+    "artifacts": {
+      ".sdd/specs/autograd.md": "fde0e44a698423eaf2a1372129839db0153dd22429ff3f2c197906d586b7ca6c"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "optim": {
+    "by": "ai:review-regression-specs",
+    "kind": "ai",
+    "review": "Independent review approves scalar reshape and atomic checkpoint and finite gradient regressions",
+    "at": "2026-10-10T13:57:57.049Z",
+    "artifacts": {
+      ".sdd/specs/optim.md": "6eddb7472f2cd8ecb29e0c9235c1b4795ca81b396ed7f3cd509fd8f6dc49c6cb"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "layers": {
+    "by": "ai:review-regression-specs",
+    "kind": "ai",
+    "review": "Independent review approves scalar reshape and atomic checkpoint and finite gradient regressions",
+    "at": "2026-10-10T13:57:57.092Z",
+    "artifacts": {
+      ".sdd/specs/layers.md": "c14d0353e04a45053597c4c47eca1d74d345a1cb68e6f6c67578449244d8c1f4"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "gradcheck": {
+    "by": "ai:oracle-review-round4",
+    "kind": "ai",
+    "review": ".sdd/review.md",
+    "reviewSha": "25f1130bde2ab59bebb8fb82747fbf174c14f968f0fbce7fcd1041609593587c",
+    "at": "2026-10-10T14:05:01.304Z",
+    "artifacts": {
+      ".sdd/specs/gradcheck.md": "42d52f10d30a7d6ea5ddeecaef0bf6e4add3ae54e7eb525530dfe41dbd73c5c2"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  }
+}

@@ -1,7 +1,0 @@
-[package]
-name = "rx-vm"
-version = "0.1.0"
-edition = "2021"
-
-[dependencies]
-rx-syntax = { path = "../rx-syntax" }

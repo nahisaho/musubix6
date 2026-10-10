@@ -1,0 +1,57 @@
+{
+  "types": {
+    "by": "ai:spec-delta",
+    "kind": "ai",
+    "review": "Reviewed only regression rows, lexical characterization and annotation safety clarification",
+    "at": "2026-10-10T13:40:15.555Z",
+    "artifacts": {
+      ".sdd/specs/types.md": "83db9766d87cc9c781614b69616f0a1955d7ccd7eb72b7c05d566808aeca225e"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "hm": {
+    "by": "ai:risk-spec-delta",
+    "kind": "ai",
+    "review": "Reviewed six risk regression contracts; added substituted generic invariance in both argument orders",
+    "at": "2026-10-10T13:44:21.619Z",
+    "artifacts": {
+      ".sdd/specs/hm.md": "c485ef3b94c62eaa12d143a08151e369adc513473119aabf647b7021efbf35d1"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "contracts": {
+    "by": "ai:risk-spec-delta",
+    "kind": "ai",
+    "review": "Reviewed six risk regression contracts; added substituted generic invariance in both argument orders",
+    "at": "2026-10-10T13:44:21.666Z",
+    "artifacts": {
+      ".sdd/specs/contracts.md": "2b9583544fe09b046f09f2f5f812f0fc0d4629d08b9f11e6b6b7cfec543b3bda"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "flow": {
+    "by": "ai:spec-delta",
+    "kind": "ai",
+    "review": "Reviewed only regression rows, lexical characterization and annotation safety clarification",
+    "at": "2026-10-10T13:40:15.598Z",
+    "artifacts": {
+      ".sdd/specs/flow.md": "06961584146a0a81366ddd637f2b83cd96fdcdce02b226b1ab89d2e568220108"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "checker": {
+    "by": "ai:risk-spec-delta",
+    "kind": "ai",
+    "review": "Reviewed six risk regression contracts; added substituted generic invariance in both argument orders",
+    "at": "2026-10-10T13:44:21.709Z",
+    "artifacts": {
+      ".sdd/specs/checker.md": "59586c65d7889ef22ca5303c32411303875b7cbc5fec40338583a39f3ba8ad4c"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  }
+}

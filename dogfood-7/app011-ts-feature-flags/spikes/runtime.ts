@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
+const tuple: [string, string, string] = ['checkout', 'alice', 'v1'];
+assert.equal(createHash('sha256').update(JSON.stringify(tuple)).digest('hex').length, 64);
+assert.notEqual(JSON.stringify(['a:b','c','']), JSON.stringify(['a','b:c','']));
+const original = { include: ['alice'] };
+const clone = structuredClone(original);
+original.include.push('bob');
+assert.deepEqual(clone.include, ['alice']);
+assert.equal(new Map([['__proto__', 1]]).get('__proto__'), 1);
+console.log('spike: TS stripping, hashing, clone and prototype-safe maps verified');

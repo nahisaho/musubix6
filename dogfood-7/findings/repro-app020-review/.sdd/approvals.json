@@ -1,0 +1,14 @@
+{
+  "probe": {
+    "by": "ai:fixture-reviewer",
+    "kind": "ai",
+    "review": "malformed-review.md",
+    "reviewSha": "c83f79c44dc76f41083c9aa95b80cc303c657a21740ec9b1332e1af873abe11b",
+    "at": "2026-10-10T17:20:06.497Z",
+    "artifacts": {
+      ".sdd/specs/probe.md": "823df95858f66d7c7c6cd476157cb7c1015873a44b44388168971e3a00557d08"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  }
+}
