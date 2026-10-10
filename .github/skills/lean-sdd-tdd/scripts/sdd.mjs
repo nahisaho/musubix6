@@ -243,7 +243,8 @@ function detectConfig(base = ROOT) {
   const gradle = (has('build.gradle') || has('build.gradle.kts') || has('settings.gradle') || has('settings.gradle.kts')) ? (has('gradlew') ? './gradlew' : 'gradle') : null;
   const dotnet = fs.existsSync(base) && fs.readdirSync(base).some((f) => /\.(csproj|sln)$/.test(f));
   const phpunit = has('vendor/bin/phpunit') ? 'vendor/bin/phpunit' : 'phpunit';
-  const CMAKE_RUN = 'cmake -S . -B build -Wno-dev >/dev/null && cmake --build build && ctest --test-dir build --output-on-failure';
+  // configure once, keep the build log quiet unless it fails (cmake --build re-configures when CMakeLists change)
+  const CMAKE_RUN = '[ -f build/CMakeCache.txt ] || cmake -S . -B build -Wno-dev >/dev/null || exit 1; cmake --build build >build/.sdd-build.log 2>&1 || { cat build/.sdd-build.log; exit 1; }; ctest --test-dir build --output-on-failure';
   if (has('node_modules/.bin/vitest')) deps.vitest ??= '*';
   if (has('node_modules/.bin/jest')) deps.jest ??= '*';
   if (deps.vitest) testCmd = ['npx', 'vitest', 'run', '{file}', '-t', '{id}'];
