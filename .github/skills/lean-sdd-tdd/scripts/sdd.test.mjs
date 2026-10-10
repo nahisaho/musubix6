@@ -1382,3 +1382,39 @@ test('#84 skipped Go/JUnit test is not a Red; #86 gate shows the failing line', 
   fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ checks: [{ name: 'c', cmd: ['node', '-e', `console.log("FAIL arena_reset expected 0");console.log("${lines}");process.exit(1)`] }] }));
   assert.match(sdd(d, 'gate').out, /FAIL arena_reset expected 0/);
 });
+
+test('#87 tdd stub: PHP class (no fn keyword), C opaque typedef + typed pointer param, Rust Option return', () => {
+  const mk = (files) => {
+    const d = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-'));
+    spawnSync('git', ['init', '-q'], { cwd: d });
+    for (const [f, body] of Object.entries(files)) { fs.mkdirSync(path.dirname(path.join(d, f)), { recursive: true }); fs.writeFileSync(path.join(d, f), body); }
+    return d;
+  };
+  const read = (d, f) => fs.readFileSync(path.join(d, f), 'utf8');
+  const php = mk({ 'MoneyTest.php': "<?php\nrequire __DIR__ . '/src/Money.php';\n// @id TEST-M-001 @verifies REQ-M-001\ntest('TEST-M-001', fn() => assertEq(Money::yen(5)->amount(), 5));\n" });
+  sdd(php, 'tdd', 'stub', 'TEST-M-001');
+  const m = read(php, 'src/Money.php');
+  assert.match(m, /class Money/);
+  assert.match(m, /public static function yen/);
+  assert.doesNotMatch(m, /function fn\b|function assertEq/);
+  const c = mk({ 'include/.keep': '', 'tests/t.c': '#include "arena.h"\n// @id TEST-C-001 @verifies REQ-C-001\nint main(void) { arena_t *a = arena_create(1024); arena_reset(a); return 0; }\n' });
+  sdd(c, 'tdd', 'stub', 'TEST-C-001');
+  assert.match(read(c, 'include/arena.h'), /typedef struct arena arena_t;/);
+  assert.match(read(c, 'include/arena.h'), /arena_reset\(arena_t \* a0\)/);
+});
+
+test('#88 human-approved feature: implementation change after approval is flagged by gate', () => {
+  const d = mini(T2SPEC, { 'a.test.mjs': jsTest(), 'a.mjs': '// @id CODE-A-001 @implements REQ-A-001\nexport const a = 1;\n' }, PASS);
+  assert.equal(sdd(d, 'approve', 'record', 'a', '--by', 'alice').code, 0);
+  assert.doesNotMatch(sdd(d, 'gate', '--no-run').out, /implementation changed since approval/);
+  fs.appendFileSync(path.join(d, 'a.mjs'), 'export const b = 2;\n');
+  assert.match(sdd(d, 'gate', '--no-run').out, /implementation changed since approval/);
+});
+
+test('#89 init re-run reports the kept config; call inside a multi-line assertion is not a weak Red', () => {
+  const d = mini(T1SPEC, { 'a.test.mjs': "// @id TEST-A-001 @verifies REQ-A-001\ntest('TEST-A-001 x', () => {\n  expect(\n    foo(1),\n  ).toBe(2);\n});\n" }, ['node', '-e', 'console.log("Error: not implemented: foo");process.exit(1)']);
+  assert.match(sdd(d, 'init').out, /existing config kept/);
+  const r = sdd(d, 'tdd', 'red', 'TEST-A-001');
+  assert.equal(r.code, 0, r.out);
+  assert.doesNotMatch(r.out, /weak|setup call/i);
+});
