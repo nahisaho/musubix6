@@ -1066,3 +1066,158 @@ test('#55 adding a name to an import list keeps sibling evidence; changing the i
   fs.writeFileSync(file, head('f, g', './other.mjs') + t1 + t2);
   assert.match(sdd(d, 'gate', '--no-run').out, /TEST-C-001 .*changed/);
 });
+
+// ---- 2nd dogfood round (#56-#68) ----
+function mini(spec, files = {}, cmd = null) {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-m-'));
+  spawnSync('git', ['init', '-q'], { cwd: d });
+  fs.mkdirSync(path.join(d, '.sdd/specs'), { recursive: true });
+  for (const [f, body] of Object.entries({ '.sdd/specs/a.md': spec, 'package.json': '{}', ...files })) { fs.mkdirSync(path.dirname(path.join(d, f)), { recursive: true }); fs.writeFileSync(path.join(d, f), body); }
+  sdd(d, 'init');
+  if (cmd) { const cp = path.join(d, '.sdd/config.json'); const c = JSON.parse(fs.readFileSync(cp, 'utf8')); c.testCmd = cmd; fs.writeFileSync(cp, JSON.stringify(c)); }
+  return d;
+}
+const PASS = ['node', '-e', '0'];
+const FAIL = ['node', '-e', 'console.log("AssertionError: boom");process.exit(1)'];
+const setCmd = (d, cmd) => { const cp = path.join(d, '.sdd/config.json'); const c = JSON.parse(fs.readFileSync(cp, 'utf8')); c.testCmd = cmd; fs.writeFileSync(cp, JSON.stringify(c)); };
+
+test('#56 every @verifies REQ is hash-tracked, not only the first', () => {
+  const spec = (w) => `---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | one shall hold. | TEST-A-001 |\n| REQ-A-002 | two ${w} hold. | TEST-A-001 |\n`;
+  const d = mini(spec('shall'), { 'a.test.mjs': '// @id TEST-A-001 @verifies REQ-A-001 REQ-A-002\n// test body\n' }, FAIL);
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-A-001').code, 0);
+  setCmd(d, PASS);
+  assert.equal(sdd(d, 'tdd', 'green', 'TEST-A-001').code, 0);
+  assert.match(sdd(d, 'gate', '--no-run').out, /1\/1 tests Red→Green/);
+  fs.writeFileSync(path.join(d, '.sdd/specs/a.md'), spec('must not'));
+  assert.match(sdd(d, 'gate', '--no-run').out, /REQ-A-002 changed in the spec/);
+});
+
+test('#57 approver name is normalized: whitespace/empty/ai variants cannot satisfy approval: human', () => {
+  const d = mini('---\nfeature: a\ntier: T1\napproval: human\n---\n| REQ-A-001 | x shall hold. | TEST-A-001 |\n');
+  for (const by of [' ai:duck', 'ai :duck', 'ai:duck ', '', ' ', 'ai', 'ａｉ:duck']) assert.notEqual(sdd(d, 'approve', 'record', 'a', '--by', by, '--review', 'ok').code, 0, JSON.stringify(by));
+  assert.equal(sdd(d, 'approve', 'record', 'a', '--by', 'Alice').code, 0);
+  const d2 = mini('---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | x shall hold. | TEST-A-001 |\n');
+  assert.notEqual(sdd(d2, 'approve', 'record', 'a', '--by', 'ai:self ', '--review', 'ok').code, 0);
+});
+
+test('#58 deferred/test-only only count as delimited markers, not prose words', () => {
+  const d = mini('---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | The system shall retry deferred jobs. | TEST-A-001 |\n| REQ-A-002 (deferred) | Later. | — |\n');
+  const t = sdd(d, 'trace').out;
+  assert.match(t, /REQ-A-001 has no test/);
+  assert.doesNotMatch(t, /REQ-A-002 has no test/);
+});
+
+test('#59 frontmatter: trailing comments, quotes and CRLF do not downgrade T2 / approval: human', () => {
+  for (const fm of ['tier: T2   # security', 'tier: "T2"', 'tier: t2']) {
+    const d = mini(`---\nfeature: a\n${fm}\n---\n| REQ-A-001 | x shall hold. | TEST-A-001 |\n`);
+    assert.match(sdd(d, 'guard').out, /Design|T2/i, fm);
+    assert.notEqual(sdd(d, 'guard').code, 0, fm);
+  }
+  const crlf = mini('---\r\nfeature: a\r\ntier: T1\r\napproval: human   # destructive\r\n---\r\n| REQ-A-001 | x shall hold. | TEST-A-001 |\r\n');
+  assert.notEqual(sdd(crlf, 'approve', 'record', 'a', '--by', 'ai:duck', '--review', 'ok').code, 0);
+});
+
+test('#60 gate/trace --changed: untracked dirs and file-less trace errors are not hidden', () => {
+  const d = mini('---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | x shall hold. | TEST-A-001 |\n');
+  spawnSync('git', ['add', '-A'], { cwd: d });
+  spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'i'], { cwd: d });
+  fs.appendFileSync(path.join(d, '.sdd/specs/a.md'), '| REQ-A-002 | y shall hold. | TEST-A-002 |\n');
+  const tr = sdd(d, 'trace', '--changed');
+  assert.notEqual(tr.code, 0);
+  assert.match(tr.out, /REQ-A-00[12] has no test/);
+  fs.mkdirSync(path.join(d, 'newdir'));
+  fs.writeFileSync(path.join(d, 'newdir/a.test.mjs'), '// @id TEST-A-001 @verifies REQ-A-001\n');
+  const g = sdd(d, 'gate', '--changed', '--no-run');
+  assert.match(g.out, /TEST-A-001 .*no Green recorded/);
+});
+
+test('#61 plan warns about specs missing from plan.md instead of "all features done"', () => {
+  const d = mini('---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | x shall hold. | TEST-A-001 |\n', { '.sdd/specs/b.md': '---\nfeature: b\ntier: T1\n---\n| REQ-B-001 | y shall hold. | TEST-B-001 |\n', '.sdd/plan.md': '| order | feature | depends | note |\n|---|---|---|---|\n| 1 | a | | |\n' });
+  const o = sdd(d, 'plan').out;
+  assert.match(o, /b: spec is not in plan\.md/);
+  assert.doesNotMatch(o, /all features done/);
+});
+
+test('#62 green/refactor refuse a run where everything was skipped (vitest/jest summary)', () => {
+  const d = mini('---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | x shall hold. | TEST-A-001 |\n', { 'a.test.mjs': '// @id TEST-A-001 @verifies REQ-A-001\n' }, FAIL);
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-A-001').code, 0);
+  setCmd(d, ['node', '-e', 'console.log(" Test Files  1 passed (1)\\n      Tests  1 skipped (1)")']);
+  assert.match(sdd(d, 'tdd', 'green', 'TEST-A-001').out, /REJECTED/);
+});
+
+test('#63 approval: human on a T1 spec still needs a lock', () => {
+  const d = mini('---\nfeature: a\ntier: T1\napproval: human\n---\n| REQ-A-001 | x shall hold. | TEST-A-001 |\n', { 'a.test.mjs': '// @id TEST-A-001 @verifies REQ-A-001\n' }, FAIL);
+  assert.match(sdd(d, 'tdd', 'red', 'TEST-A-001').out, /REFUSED/);
+  assert.match(sdd(d, 'gate', '--no-run').out, /✗ lock a: missing/);
+  assert.equal(sdd(d, 'approve', 'record', 'a', '--by', 'Alice').code, 0);
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-A-001').code, 0);
+});
+
+test('#64 ts-jest compile errors are a load error, not a Red', () => {
+  const d = mini('---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | x shall hold. | TEST-A-001 |\n', { 'a.test.mjs': '// @id TEST-A-001 @verifies REQ-A-001\n' },
+    ['node', '-e', 'console.log("FAIL tests/m.test.ts\\n  Test suite failed to run\\n    error TS2305: Module has no exported member add");process.exit(1)']);
+  assert.match(sdd(d, 'tdd', 'red', 'TEST-A-001').out, /REJECTED.*load\/compile/);
+});
+
+test('#65 prose lines are not REQs; continuation lines of a bullet REQ are hashed', () => {
+  const spec = (tail) => `---\nfeature: a\ntier: T1\n---\n- REQ-A-001 When add is called,\n  the system shall return ${tail}.\n\n## Assumptions\nREQ-A-001 was spiked on 2026-01-01.\n`;
+  const d = mini(spec('a+b'), { 'a.test.mjs': '// @id TEST-A-001 @verifies REQ-A-001\n' }, FAIL);
+  assert.doesNotMatch(sdd(d, 'trace').out, /duplicate REQ/);
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-A-001').code, 0);
+  setCmd(d, PASS);
+  assert.equal(sdd(d, 'tdd', 'green', 'TEST-A-001').code, 0);
+  fs.writeFileSync(path.join(d, '.sdd/specs/a.md'), spec('a-b'));
+  assert.match(sdd(d, 'gate', '--no-run').out, /REQ-A-001 changed in the spec/);
+});
+
+test('#66 preamble edits are detected even when a comment mentions @implements; python docstring @id scopes def lines', () => {
+  const spec = '---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | x shall hold. | TEST-A-001 |\n| REQ-A-002 | y shall hold. | TEST-A-002 |\n';
+  const d = mini(spec, { 'a.test.mjs': 'const base = () => 1;\n// @id TEST-A-001 @verifies REQ-A-001\n// t1\n// @id TEST-A-002 @verifies REQ-A-002\n// t2\n// note: @implements lives in lib.mjs\n' }, FAIL);
+  for (const id of ['TEST-A-001', 'TEST-A-002']) assert.equal(sdd(d, 'tdd', 'red', id).code, 0);
+  setCmd(d, PASS);
+  for (const id of ['TEST-A-001', 'TEST-A-002']) assert.equal(sdd(d, 'tdd', 'green', id).code, 0);
+  fs.writeFileSync(path.join(d, 'a.test.mjs'), fs.readFileSync(path.join(d, 'a.test.mjs'), 'utf8').replace('=> 1', '=> 2'));
+  assert.match(sdd(d, 'gate', '--no-run').out, /test changed/);
+
+  const py = (extra) => `import pytest\n\ndef test_a_001():\n    """@id TEST-A-001 @verifies REQ-A-001"""\n    assert 1\n\ndef test_a_002():\n    """@id TEST-A-002 @verifies REQ-A-002"""\n    assert 2\n${extra}`;
+  const d2 = mini(spec, { 't_test.py': py('') }, FAIL);
+  fs.renameSync(path.join(d2, 't_test.py'), path.join(d2, 'test_t.py'));
+  for (const id of ['TEST-A-001', 'TEST-A-002']) assert.equal(sdd(d2, 'tdd', 'red', id).code, 0);
+  setCmd(d2, PASS);
+  for (const id of ['TEST-A-001', 'TEST-A-002']) assert.equal(sdd(d2, 'tdd', 'green', id).code, 0);
+  fs.appendFileSync(path.join(d2, 'test_t.py'), '\n@pytest.mark.skip\ndef test_a_003():\n    """@id TEST-A-003 @verifies REQ-A-002"""\n    assert 3\n');
+  const g = sdd(d2, 'gate', '--no-run').out;
+  assert.doesNotMatch(g, /TEST-A-002 .*changed/);
+  fs.writeFileSync(path.join(d2, 'test_t.py'), fs.readFileSync(path.join(d2, 'test_t.py'), 'utf8').replace('assert 1', 'assert 11'));
+  const g2 = sdd(d2, 'gate', '--no-run').out;
+  assert.match(g2, /TEST-A-001 .*changed/);
+  assert.doesNotMatch(g2, /TEST-A-002 .*changed/);
+});
+
+test('#67 polyglot: dependsOn may be a file; root-owned change hint shows without root checks', () => {
+  const d = mini('---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | x shall hold. | TEST-A-001 |\n', { 'svc/x.txt': 'x', 'contract/schema.json': '{}', 'README.md': 'r' });
+  const cp = path.join(d, '.sdd/config.json');
+  fs.writeFileSync(cp, JSON.stringify({ testCmd: PASS, checks: [], projects: [{ root: 'svc', testCmd: PASS, dependsOn: ['contract/schema.json'], checks: [{ name: 'ok', cmd: ['node', '-e', '0'] }] }] }));
+  spawnSync('git', ['add', '-A'], { cwd: d });
+  spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'i'], { cwd: d });
+  fs.writeFileSync(path.join(d, 'contract/schema.json'), '{"a":1}');
+  assert.match(sdd(d, 'gate', '--changed').out, /✓ cmd svc:ok/);
+  spawnSync('git', ['checkout', 'contract/schema.json'], { cwd: d });
+  fs.writeFileSync(path.join(d, 'README.md'), 'changed');
+  assert.match(sdd(d, 'gate', '--changed').out, /root-owned data\/config changes: README\.md/);
+});
+
+test('#68 python tdd stub: src layout and multi-line imports', () => {
+  const d = mini('---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | x shall hold. | TEST-A-001 |\n', {
+    'pyproject.toml': '[project]\nname="m"\nversion="0"\n',
+    'src/pkg/__init__.py': '',
+    'src/pkg/real.py': 'def ok():\n    return 1\n',
+    'tests/test_a.py': 'from pkg.mod import (\n    alpha,\n    beta,\n)\nfrom pkg import real\n\ndef test_a_001():\n    """@id TEST-A-001 @verifies REQ-A-001"""\n    assert alpha() == 1\n',
+  });
+  sdd(d, 'tdd', 'stub', 'TEST-A-001');
+  assert.ok(fs.existsSync(path.join(d, 'src/pkg/mod.py')), 'stub under src/');
+  assert.ok(!fs.existsSync(path.join(d, 'pkg')), 'no stub at project root');
+  const body = fs.readFileSync(path.join(d, 'src/pkg/mod.py'), 'utf8');
+  assert.match(body, /def alpha/);
+  assert.match(body, /def beta/);
+});

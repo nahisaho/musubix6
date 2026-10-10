@@ -42,23 +42,35 @@ const fileSha = (p) => sha(fs.readFileSync(path.join(ROOT, p)));
 const normImports = (t) => t
   .replace(/\bimport\s+(?:type\s+)?[\w$*{}\s,]*?\s*from\s*(['"][^'"]+['"])\s*;?/g, 'import from $1')
   .replace(/^from\s+(\S+)\s+import\s*(?:\([^)]*\)|.*)$/gm, 'from $1');
-const testShaVariant = (p, id, trim, norm = false) => {
+// legacy=true: pre-#66 behaviour (no Python docstring scoping, whole-file @implements check)
+const testShaVariant = (p, id, trim, norm = false, legacy = false) => {
   const txt = fs.readFileSync(path.join(ROOT, p), 'utf8');
   const ls = txt.split('\n');
-  const start = ls.findIndex((l) => new RegExp(`@id\\s+${id}\\b`).test(l));
-  if (start < 0) return sha(txt);
-  let end = ls.findIndex((l, i) => i > start && /@id\s/.test(l));
-  if (end < 0) end = ls.length;
+  // Python docstring-style `"""@id ..."""`: the `def` line and decorators before the docstring belong to that test (#66)
+  const begin = (i) => {
+    if (legacy) return i;
+    let k = -1;
+    if (i >= 1 && /^\s*(async\s+)?def\s/.test(ls[i - 1])) k = i - 1;
+    else if (i >= 2 && /^\s*[rbuRBU]{0,2}("""|\'\'\')\s*$/.test(ls[i - 1]) && /^\s*(async\s+)?def\s/.test(ls[i - 2])) k = i - 2;
+    if (k < 0) return i;
+    while (k > 0 && /^\s*@\w/.test(ls[k - 1])) k--;
+    return k;
+  };
+  const starts = ls.map((l, i) => (/@id\s/.test(l) ? i : -1)).filter((i) => i >= 0);
+  const at = ls.findIndex((l) => new RegExp(`@id\\s+${id}\\b`).test(l));
+  if (at < 0) return sha(txt);
+  const start = begin(at);
+  const nx = starts.find((i) => i > at);
+  const end = nx === undefined ? ls.length : Math.max(begin(nx), at + 1);
   let rl = ls.slice(start, end);
   if (trim) while (rl.length > 1 && /^[})\];,\s]*$/.test(rl.at(-1)) && !/^\s+\S/.test(rl.at(-1))) rl.pop();
   const region = rl.join('\n');
-  if (/@implements\b/.test(txt)) return sha(region);
-  const first = ls.findIndex((l) => /@id\s/.test(l));
-  const pre = ls.slice(0, first).join('\n');
+  if (legacy ? /@implements\b/.test(txt) : /@id\s+CODE-/.test(txt)) return sha(region);
+  const pre = ls.slice(0, begin(starts[0])).join('\n');
   return sha((norm ? normImports(pre) : pre) + '\u0000' + region);
 };
 const testSha = (p, id) => testShaVariant(p, id, true, true);
-const shaMatches = (recorded, p, id) => recorded === testSha(p, id) || recorded === testShaVariant(p, id, true) || recorded === testShaVariant(p, id, false) || recorded === sha(fs.readFileSync(path.join(ROOT, p)));
+const shaMatches = (recorded, p, id) => recorded === testSha(p, id) || recorded === testShaVariant(p, id, true) || recorded === testShaVariant(p, id, false) || recorded === testShaVariant(p, id, true, true, true) || recorded === testShaVariant(p, id, true, false, true) || recorded === testShaVariant(p, id, false, false, true) || recorded === sha(fs.readFileSync(path.join(ROOT, p)));
 const out = (s = '') => process.stdout.write(s + '\n');
 const tail = (s, n = 15) => s.trimEnd().split('\n').slice(-n).join('\n');
 
@@ -192,12 +204,15 @@ function scanEntities(files) {
   return { ents, dups };
 }
 
+// CRLF, trailing `# comment`, and quotes are tolerated so tier/approval can never silently degrade (#59)
 function parseFrontmatter(text) {
-  const m = /^---\n([\s\S]*?)\n---/.exec(text);
+  const m = /^---\r?\n([\s\S]*?)\r?\n---/.exec(text);
   const fm = {};
-  if (m) for (const l of m[1].split('\n')) { const kv = /^(\w+):\s*(.*)$/.exec(l); if (kv) fm[kv[1]] = kv[2].trim(); }
+  if (m) for (const l of m[1].split(/\r?\n/)) { const kv = /^(\w+):\s*(.*)$/.exec(l); if (kv) fm[kv[1]] = kv[2].replace(/\s+#.*$/, '').trim().replace(/^(["'])(.*)\1$/, '$2').trim(); }
   return fm;
 }
+// `deferred` / `test-only` count only as a delimited marker ((deferred), [deferred], `deferred`, own cell), never as a word in the prose (#58)
+const hasMarker = (l, w) => new RegExp(`(?:^|[(\\[\`*|])\\s*${w}\\s*(?:$|[)\\]\`*|])`, 'i').test(l);
 function loadSpecs() {
   const specs = [];
   if (!fs.existsSync(SPECS)) return specs;
@@ -206,12 +221,20 @@ function loadSpecs() {
     const text = fs.readFileSync(path.join(ROOT, p), 'utf8');
     const fm = parseFrontmatter(text);
     const reqs = [];
-    text.split('\n').forEach((l, i) => {
-      const m = /^[\s|#>*-]*\*{0,2}(REQ-[A-Z0-9]+(?:-[A-Z0-9]+)*)/.exec(l);
-      if (m) reqs.push({ id: m[1], line: i + 1, sha: sha(l.replace(/\s+/g, ' ').trim()), deferred: /deferred/i.test(l), testOnly: /test-only/i.test(l) });
+    const lines = text.split(/\r?\n/);
+    lines.forEach((l, i) => {
+      const m = /^([\s|#>*-]*)\*{0,2}(REQ-[A-Z0-9]+(?:-[A-Z0-9]+)*)/.exec(l);
+      if (!m) return;
+      const marked = /[|#>*-]/.test(m[1]);
+      // a bare line starting with an id is prose (e.g. "REQ-X-2 was spiked") unless the id is followed by a delimiter (#65)
+      if (!marked && !/^\s*REQ-[A-Z0-9-]+\s*(?:[:：|(]|\*\*)/.test(l)) return;
+      let body = l;
+      // continuation lines of a list/prose requirement belong to its wording (#65)
+      if (!m[1].includes('|')) for (let j = i + 1; j < lines.length && /^\s+\S/.test(lines[j]) && !/^\s*(?:[|#>*-]|REQ-)/.test(lines[j]); j++) body += ' ' + lines[j];
+      reqs.push({ id: m[2], line: i + 1, sha: sha(body.replace(/\s+/g, ' ').trim()), deferred: hasMarker(body, 'deferred'), testOnly: hasMarker(body, 'test-only') });
     });
     const extra = fm.artifacts ? fm.artifacts.split(',').map((s) => s.trim()).filter(Boolean) : [];
-    const tl = text.split('\n');
+    const tl = lines;
     const di = tl.findIndex((l) => /^#{1,4}\s*(?:\d+[.)]?\s*)?(Design|設計)\b/i.test(l));
     let designLines = 0;
     if (di >= 0) for (const l of tl.slice(di + 1)) { if (/^#{1,4}\s/.test(l)) break; if (l.trim()) designLines++; }
@@ -220,6 +243,8 @@ function loadSpecs() {
   return specs;
 }
 
+// T2 specs and `approval: human` specs (any tier) need a lock (#63)
+const needsLock = (s) => s.tier === 'T2' || s.approval === 'human';
 // a T2 spec must carry a Design section (components, state/policy tables, key decisions) before it can be locked
 function designProblem(s) {
   return s.tier === 'T2' && s.designLines < 2 ? `${s.path}: T2 spec needs a "## Design" section (≥2 lines: components, data flow, state/policy tables, key decisions)` : null;
@@ -270,7 +295,10 @@ function evidenceStatus(testId, testPath, entries) {
   if (!r) return { ok: false, why: 'no Red preceding Green with same test hash' };
   const last = es.filter((e) => e.type === 'green' || e.type === 'refactor').at(-1);
   if (!shaMatches(last.fileSha, testPath, testId)) return { ok: false, why: 'test changed since last Green/Refactor' };
-  if (last.reqSha && reqShaOf(last.req) && last.reqSha !== reqShaOf(last.req)) return { ok: false, why: `${last.req} changed in the spec since last Green/Refactor: re-verify with tdd refactor (wording only) or tdd red/green (behaviour changed)` };
+  // every verified REQ is hash-tracked (reqShas); older entries carry only the first one
+  for (const [rid, rsha] of Object.entries(last.reqShas ?? { [last.req]: last.reqSha })) {
+    if (rsha && reqShaOf(rid) && rsha !== reqShaOf(rid)) return { ok: false, why: `${rid} changed in the spec since last Green/Refactor: re-verify with tdd refactor (wording only) or tdd red/green (behaviour changed)` };
+  }
   return { ok: true, weak: !!r.weak, charac: !!r.characterization };
 }
 
@@ -424,7 +452,7 @@ const SCOPE_TOKENS = {
     return stems.length ? [[...new Set(stems)].map((x) => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')] : [];
   },
 };
-const LOAD_ERR = /(cannot find (module|package)|modulenotfounderror|importerror|syntaxerror|cannot resolve|no such file|undefined reference|could not compile|error\[e\d+\]|failed to resolve import|\[build failed\]|^[^\s:]+:\d+(?::\d+)?: (?:fatal )?error\b|cannot find symbol|ld returned \d+ exit status|\[setup failed\]|failed opening required|class \"[^\"]+\" not found|call to undefined (function|method)|php parse error|could not find function|there is no package called|what went wrong:\s*\n(?!execution failed for task '[^']*test')|error (cs|msb|nu)\d+|non-parseable pom|the build could not read|compilation failure|could not resolve dependencies|dependencies? .{0,80}could not be resolved|cannot open the connection|undefvarerror|loaderror: (systemerror|parseerror)|^# [^\n]*\n[^\n]*:\d+:\d+: (undefined|cannot|missing))/im;
+const LOAD_ERR = /(cannot find (module|package)|modulenotfounderror|importerror|syntaxerror|cannot resolve|no such file|undefined reference|could not compile|error\[e\d+\]|failed to resolve import|\[build failed\]|^[^\s:]+:\d+(?::\d+)?: (?:fatal )?error\b|cannot find symbol|ld returned \d+ exit status|\[setup failed\]|failed opening required|class \"[^\"]+\" not found|call to undefined (function|method)|php parse error|could not find function|there is no package called|what went wrong:\s*\n(?!execution failed for task '[^']*test')|error (cs|msb|nu)\d+|error ts\d+|test suite failed to run|non-parseable pom|the build could not read|compilation failure|could not resolve dependencies|dependencies? .{0,80}could not be resolved|cannot open the connection|undefvarerror|loaderror: (systemerror|parseerror)|^# [^\n]*\n[^\n]*:\d+:\d+: (undefined|cannot|missing))/im;
 // a missing *relative* import that the test file itself references = declared new module
 function declaredMissingModule(text, testPath) {
   const src = fs.readFileSync(path.join(ROOT, testPath), 'utf8');
@@ -438,6 +466,8 @@ function declaredMissingModule(text, testPath) {
 }
 // multi-module builds print a zero-test line for modules without a match; only all-zero counts
 const RAN_TESTS = /tests run: [1-9]\d*,|ran [1-9]\d* tests?\b|[1-9]\d* tests? (completed|successful|passed)|^ok \d+ /im;
+// vitest/jest summary that lists no passed test (everything skipped by -t) means nothing ran (#62)
+const NO_PASSED = /^\s*Tests:?\s+(?![^\n]*\d+ (?:passed|failed))[^\n]*\d+ (?:skipped|todo)/im;
 const ZERO_TESTS = /(no tests? (found|ran|collected)|# tests 0\b|ran 0 tests|collected 0 items|0 tests? (ran|found|passed)\b|no test files found|no tests were found|no tests to run|tests run: 0,|no tests executed|no test matches)/i;
 
 // ---------- commands ----------
@@ -504,6 +534,8 @@ function cmdApprove() {
   }
   if (sub === 'record') {
     if (typeof flags.by !== 'string') { out('--by <name> required (ai:<reviewer> for auto specs, human name for approval: human)'); return 2; }
+    flags.by = flags.by.normalize('NFKC').trim().replace(/^ai\s*:\s*/i, (m) => m.replace(/\s/g, ''));
+    if (!flags.by || /^ai$/i.test(flags.by)) { out('REFUSED: --by needs a non-empty approver name (ai:<reviewer> for AI, a human name otherwise)'); return 2; }
     const isAi = /^ai:/i.test(flags.by);
     if (spec.approval === 'human' && isAi) { out(`REFUSED: ${spec.feature} requires a human approver (approval: human)`); return 1; }
     const dp = designProblem(spec);
@@ -531,7 +563,7 @@ function cmdGuard() {
   if (!specs.length) { out('GUARD FAIL: no spec found in .sdd/specs'); return 1; }
   let bad = 0;
   for (const s of specs) {
-    const st = s.tier === 'T2' ? approvalState(s) : 'n/a';
+    const st = needsLock(s) ? approvalState(s) : 'n/a';
     const dp = designProblem(s);
     if (dp) { out(`GUARD FAIL ${s.feature} (T2): ${dp}`); bad++; }
     if (st !== 'ok' && st !== 'n/a') { out(`GUARD FAIL ${s.feature} (T2): approval ${st}`); bad++; }
@@ -664,13 +696,20 @@ function stubFor(testPath) {
   };
   if (/\.py$/.test(testPath)) {
     // class stubs must construct: a throwing __init__ in a fixture/setup makes every test a weak Red
-    for (const m of src.matchAll(/^\s*from\s+(\.*[\w.]+)\s+import\s+([^\n#]+)/gm)) {
+    for (const m of src.matchAll(/^\s*from\s+(\.*[\w.]+)\s+import\s+(\([^)]*\)|[^\n#]+)/gm)) {
       const mod = m[1];
       // stdlib / installed packages must not be shadowed by a stub (probe with cwd removed from sys.path so project dirs do not count; user site and PYTHONPATH do)
       if (!mod.startsWith('.') && spawnSync('python3', ['-c', 'import importlib.util,sys;sys.path=[p for p in sys.path if p not in ("",".")];sys.exit(0 if importlib.util.find_spec(sys.argv[1].split(".")[0]) else 1)', mod], { cwd: os.tmpdir() }).status === 0) continue;
-      const base = mod.startsWith('.') ? dir : path.resolve(ROOT, projectFor(testPath)?.root ?? '.');
+      const proot = path.resolve(ROOT, projectFor(testPath)?.root ?? '.');
+      const top = mod.replace(/^\.+/, '').split('.')[0];
+      const has = (b) => fs.existsSync(path.join(b, top)) || fs.existsSync(path.join(b, top + '.py'));
+      // src layout: put new modules under src/ when the package already lives there (or src/ is the only package root) (#68)
+      const srcLayout = !has(proot) && (has(path.join(proot, 'src')) || (fs.existsSync(path.join(proot, 'src')) && fs.readdirSync(path.join(proot, 'src')).some((x) => fs.existsSync(path.join(proot, 'src', x, '__init__.py')))));
+      const base = mod.startsWith('.') ? dir : srcLayout ? path.join(proot, 'src') : proot;
       const abs = path.join(base, ...mod.replace(/^\.+/, '').split('.')) + '.py';
-      const ns = m[2].replace(/[()]/g, '').split(',').map((x) => x.trim().split(/\s+as\s+/)[0]).filter(Boolean);
+      // `from pkg import x` where pkg/ is a namespace package: never create pkg.py next to it
+      if (fs.existsSync(abs.replace(/\.py$/, '')) && fs.statSync(abs.replace(/\.py$/, '')).isDirectory() && !fs.existsSync(abs.replace(/\.py$/, '/__init__.py'))) continue;
+      const ns = m[2].replace(/#[^\n]*/g, '').replace(/[()]/g, '').split(',').map((x) => x.trim().split(/\s+as\s+/)[0]).filter(Boolean);
       // pytest.raises(X) / assertRaises(X) / except X => an Exception subclass, else the Red is "must derive from BaseException"
       const isExc = (n) => new RegExp(`(raises|assertRaises|assertRaisesRegex)\\(\\s*${n}\\b|\\bexcept\\s+\\(?\\s*${n}\\b`).test(src);
       const stubOf = (n) => isExc(n) ? `class ${n}(Exception):\n    pass\n` : /^[A-Z]/.test(n) ? `class ${n}:\n    def __init__(self, *a, **k):\n        pass\n` : `def ${n}(*a, **k):\n    raise NotImplementedError("${n}")\n`;
@@ -800,7 +839,7 @@ function cmdTdd() {
   const specs = loadSpecs();
   const spec = specs.find((s) => s.reqs.some((r) => r.id === req));
   if (!req || !spec) { out(`${id}: no @verifies REQ defined in a spec (.sdd/specs). add @verifies or --req`); return 2; }
-  if (spec.tier === 'T2' && approvalState(spec) !== 'ok') { out(`REFUSED: T2 feature ${spec.feature} approval is ${approvalState(spec)}. run: approve prepare ${spec.feature}`); return 1; }
+  if (needsLock(spec) && approvalState(spec) !== 'ok') { out(`REFUSED: ${spec.tier} feature ${spec.feature} approval is ${approvalState(spec)}. run: approve prepare ${spec.feature}`); return 1; }
 
   const entries = readLedger();
   const before = testSha(t.path, id);
@@ -820,7 +859,7 @@ function cmdTdd() {
   const after = testSha(t.path, id);
   if (after !== before) { out(`REFUSED: ${t.path} changed while running (formatter/watch?)`); return 1; }
 
-  const zero = ZERO_TESTS.test(res.text) && !RAN_TESTS.test(res.text);
+  const zero = (ZERO_TESTS.test(res.text) && !RAN_TESTS.test(res.text)) || NO_PASSED.test(res.text.replace(/\x1b\[[0-9;]*m/g, ''));
   let ok;
   let why = '';
   if (sub === 'red') {
@@ -842,7 +881,7 @@ function cmdTdd() {
   const setupSym = sub === 'red' && !flags['allow-setup-red'] && typeof flags.expect !== 'string' ? setupOrigin(rl.find((l) => /^E\s+.*(not implemented|NotImplementedError|unimplemented)/i.test(l)) ?? rl.find((l) => /not implemented|NotImplementedError|unimplemented/i.test(l)) ?? reason, t.path, id, res.text) : null;
   const charac = sub === 'red' && res.exit === 0 ? String(flags.characterization).trim() : '';
   const weakRed = loadWeak || !!setupSym || !!charac;
-  appendLedger({ type: sub, test: id, req, reqSha: reqShaOf(req), file: t.path, fileSha: after, cmdSha: sha(cmd.join('\0')), exit: res.exit, ms: res.ms, weak: weakRed ? true : undefined, weakWhy: setupSym ? `setup:${setupSym}` : charac ? 'characterization' : undefined, characterization: charac || undefined });
+  appendLedger({ type: sub, test: id, req, reqSha: reqShaOf(req), reqShas: Object.fromEntries([...new Set([req, ...t.refs.verifies])].map((r) => [r, reqShaOf(r)]).filter(([, v]) => v)), file: t.path, fileSha: after, cmdSha: sha(cmd.join('\0')), exit: res.exit, ms: res.ms, weak: weakRed ? true : undefined, weakWhy: setupSym ? `setup:${setupSym}` : charac ? 'characterization' : undefined, characterization: charac || undefined });
   out(`${sub.toUpperCase()} ok ${id} (${req}) ${res.ms}ms${reason ? ` — fails with: ${reason}` : ''}${weakRed ? ' [weak]' : ''}${setupSym ? ` ⚠ Red comes from setup call "${setupSym}", not the asserted behaviour (use --expect <text> or --allow-setup-red)` : ''}`);
   return 0;
 }
@@ -887,7 +926,8 @@ function applyBaseline(t) {
   const keep = (e) => {
     const k = errKey(e);
     if (budget.get(k) > 0) { budget.set(k, budget.get(k) - 1); return false; }
-    return base || !ch || [...ch].some((f) => e.includes(f));
+    // errors without a file location (no test for a REQ, duplicate REQ) are repo-wide: never hide them in --changed mode (#60)
+    return base || !ch || !/^\S+:\d+ /.test(e) || [...ch].some((f) => e.includes(f));
   };
   return { ...t, errors: t.errors.filter(keep) };
 }
@@ -908,7 +948,7 @@ function cmdTrace() {
 
 function changedFiles() {
   const set = new Set();
-  const st = spawnSync('git', ['status', '--porcelain'], { cwd: ROOT, encoding: 'utf8' });
+  const st = spawnSync('git', ['status', '--porcelain', '-uall'], { cwd: ROOT, encoding: 'utf8' });
   if (st.status === 0) for (const l of st.stdout.split('\n').filter(Boolean)) set.add(l.slice(3).split(' -> ').pop());
   return set;
 }
@@ -1079,7 +1119,7 @@ function cmdGate() {
   const specs = loadSpecs();
   const { ents, dups } = scanEntities(listFiles());
   if (!specs.length) { lines.push('! spec: none in .sdd/specs — T0 changes need no gate; for T1/T2 write .sdd/specs/<feature>.md (result is INCOMPLETE)'); incomplete = true; }
-  for (const s of specs.filter((x) => x.tier === 'T2')) { const st = approvalState(s); const ap = readJson(APPROVALS, {})[s.feature]; add(st === 'ok', `lock ${s.feature}: ${st}${ap ? ` [${ap.kind}${ap.kind === 'ai' ? `, review ${ap.review ? (ap.reviewSha ? 'file' : 'summary') : 'none'}` : ''}]` : ''}${s.approval === 'human' ? ' (human required)' : ''}`); const dp = designProblem(s); if (dp) add(false, `design ${s.feature}: missing`, [dp]); }
+  for (const s of specs.filter(needsLock)) { const st = approvalState(s); const ap = readJson(APPROVALS, {})[s.feature]; add(st === 'ok', `lock ${s.feature}: ${st}${ap ? ` [${ap.kind}${ap.kind === 'ai' ? `, review ${ap.review ? (ap.reviewSha ? 'file' : 'summary') : 'none'}` : ''}]` : ''}${s.approval === 'human' ? ' (human required)' : ''}`); const dp = designProblem(s); if (dp) add(false, `design ${s.feature}: missing`, [dp]); }
 
   const t = applyBaseline(traceCheck(ents, dups, specs));
   add(!t.errors.length, `trace: ${t.reqs.size} REQ, ${t.errors.length} errors${t.warnings.length ? `, ${t.warnings.length} warnings` : ''}`, t.errors.slice(0, 6));
@@ -1100,17 +1140,19 @@ function cmdGate() {
   let weak = 0;
   let charac = 0;
   let total = 0;
+  const seenTests = new Set();
   for (const id of relevant) {
     const r = t.reqs.get(id);
     if (!r || r.deferred) continue;
     for (const e of ents.values()) {
-      if (e.kind !== 'TEST' || !e.refs.verifies.includes(id)) continue;
+      if (e.kind !== 'TEST' || !e.refs.verifies.includes(id) || seenTests.has(e.id)) continue;
+      seenTests.add(e.id);
       total++;
       const s = evidenceStatus(e.id, e.path, entries);
       if (s.ok) { covered++; if (s.weak) weak++; if (s.charac) charac++; } else problems.push(`${e.id} (${id}): ${s.why}`);
     }
   }
-  add(!problems.length, `tdd evidence${flags.changed ? ' (changed scope)' : ''}: ${covered}/${total} tests Red→Green${weak ? `, ${weak} weak Red${charac ? ` (${charac} characterization: passed without a failing Red)` : ''}` : ''}`, problems.slice(0, 6));
+  add(!problems.length, `tdd evidence${flags.changed ? ' (changed scope)' : ''}: ${covered}/${total} tests Red→Green${weak ? `, ${weak} weak Red${charac ? ` (${charac} characterization: passed without a failing Red)` : ''}` : ''}`, [...problems.slice(0, 6), ...(problems.length > 6 ? [`… +${problems.length - 6} more`] : [])]);
 
   const cfg = loadConfig();
   if (cfg.prepare && !flags['no-run']) {
@@ -1128,19 +1170,24 @@ function cmdGate() {
   const allChecks = [...(cfg.checks ?? []), ...(cfg.projects ?? []).flatMap((p) => (p.checks ?? []).map((c) => ({ ...c, name: `${p.root}:${c.name}`, cwd: p.root, dependsOn: p.dependsOn })))];
   let sharedHinted = false;
   if (flags['no-run']) { lines.push('! commands: SKIPPED (--no-run) — result is INCOMPLETE'); incomplete = true; }
-  else for (const c of allChecks) {
+  else {
+  // root-owned files no project depends on: hint once, also when the root has no checks of its own (#67)
+  if (flags.changed && (cfg.projects ?? []).length) {
+    const pr = cfg.projects.map((p) => p.root.replace(/\/$/, '') + '/');
+    const coveredBy = (f) => cfg.projects.some((p) => (p.dependsOn ?? []).some((d) => { const x = d.replace(/\/$/, ''); return f === x || f.startsWith(x + '/'); }));
+    const dataOnly = [...changedFiles()].filter((f) => !f.startsWith('.sdd/') && !pr.some((r) => f.startsWith(r)) && !EXT.test(f) && !coveredBy(f));
+    if (dataOnly.length) { sharedHinted = true; lines.push(`! root-owned data/config changes: ${dataOnly.slice(0, 3).join(', ')}${dataOnly.length > 3 ? ', …' : ''} — if a project reads these, add the path to its \`dependsOn\` in .sdd/config.json so that project's checks run too`); }
+  }
+  for (const c of allChecks) {
     let cmd = c.cmd;
     const base = c.cwd ? c.cwd.replace(/\/$/, '') + '/' : '';
-    const roots = c.cwd ? [base, ...(c.dependsOn ?? []).map((r) => r.replace(/\/$/, '') + '/')] : [];
-    if (c.cwd && flags.changed && ![...changedFiles()].some((f) => roots.some((r) => f.startsWith(r)))) { lines.push(`! cmd ${c.name}: no changed files in ${c.cwd}${c.dependsOn?.length ? ` or its dependencies (${c.dependsOn.join(', ')})` : ''} — skipped`); continue; }
+    const inDeps = (f) => (c.dependsOn ?? []).some((d) => { const x = d.replace(/\/$/, ''); return f === x || f.startsWith(x + '/'); });
+    if (c.cwd && flags.changed && ![...changedFiles()].some((f) => f.startsWith(base) || inDeps(f))) { lines.push(`! cmd ${c.name}: no changed files in ${c.cwd}${c.dependsOn?.length ? ` or its dependencies (${c.dependsOn.join(', ')})` : ''} — skipped`); continue; }
     const pRoots = (cfg.projects ?? []).map((p) => p.root.replace(/\/$/, '') + '/');
     if (!c.cwd && flags.changed && pRoots.length) {
       const chg = [...changedFiles()].filter((f) => !f.startsWith('.sdd/'));
       const outside = chg.filter((f) => !pRoots.some((r) => f.startsWith(r)));
       if (chg.length && !outside.length) { lines.push(`! cmd ${c.name}: all changed files are inside nested projects (${pRoots.join(', ')}) — root check skipped`); continue; }
-      const covered = (f) => (cfg.projects ?? []).some((p) => (p.dependsOn ?? []).some((d) => f.startsWith(d.replace(/\/$/, '') + '/') || f === d));
-      const dataOnly = outside.filter((f) => !EXT.test(f) && !covered(f));
-      if (dataOnly.length && !sharedHinted) { sharedHinted = true; lines.push(`! root-owned data/config changes: ${dataOnly.slice(0, 3).join(', ')}${dataOnly.length > 3 ? ', …' : ''} — if a project reads these, add the path to its \`dependsOn\` in .sdd/config.json so that project's checks run too`); }
     }
     const ownChanged = !base || [...changedFiles()].some((f) => f.startsWith(base));
     let scoped = false;
@@ -1193,6 +1240,7 @@ function cmdGate() {
     if (r.exit !== 0 && ZERO_TESTS.test(r.text) && !RAN_TESTS.test(r.text)) { lines.push(`! cmd ${c.name}: no tests exist yet (runner exit ${r.exit}) — INCOMPLETE, not a failure`); incomplete = true; continue; }
     add(r.exit === 0, `cmd ${c.name} (${(r.ms / 1000).toFixed(1)}s)`, r.exit === 0 ? [] : tail(r.text, 8).split('\n'));
   }
+  }
   if (!flags['no-run'] && !allChecks.length) { lines.push('! commands: none configured — nothing was run'); incomplete = true; }
 
   const verdict = fail ? 'FAIL' : incomplete ? 'INCOMPLETE' : 'PASS';
@@ -1205,7 +1253,7 @@ function cmdStatus() {
   const specs = loadSpecs();
   const { ents } = scanEntities(listFiles());
   const entries = readLedger();
-  const ap = specs.map((s) => `${s.feature}:${s.tier}:${s.tier === 'T2' ? approvalState(s) : 'n/a'}`).join(' ');
+  const ap = specs.map((s) => `${s.feature}:${s.tier}:${needsLock(s) ? approvalState(s) : 'n/a'}`).join(' ');
   out(`specs ${specs.length} [${ap}] | entities ${ents.size} | ledger ${entries.length}`);
   return 0;
 }
@@ -1233,7 +1281,7 @@ function cmdPlan(args) {
   const isDone = (feat) => {
     const sp = byFeat.get(feat);
     if (!sp) return false;
-    if (sp.tier === 'T2' && (approvalState(sp) !== 'ok' || designProblem(sp))) return false;
+    if (needsLock(sp) && (approvalState(sp) !== 'ok' || designProblem(sp))) return false;
     let n = 0;
     for (const r of sp.reqs) {
       if (r.deferred) continue;
@@ -1269,12 +1317,14 @@ function cmdPlan(args) {
     const started = sp && [...ents.values()].some((e) => e.kind === 'TEST' && sp.reqs.some((q) => e.refs.verifies.includes(q.id)) && entries.some((x) => x.test === e.id));
     if (started && !depsOk) warns.push(`${r.feature}: started before dependencies are done (${r.deps.filter((d) => !done.get(d)).join(', ')})`);
     if (!next && !done.get(r.feature) && depsOk) next = r.feature;
-    const st = sp ? `${sp.tier}${sp.tier === 'T2' ? `:${approvalState(sp)}` : ''}` : 'no-spec';
+    const st = sp ? `${sp.tier}${needsLock(sp) ? `:${approvalState(sp)}` : ''}` : 'no-spec';
     out(`${done.get(r.feature) ? '✓' : '·'} ${r.order}. ${r.feature} [${st}]${r.deps.length ? ` ← ${r.deps.join(', ')}` : ''}${r.note ? ` — ${r.note}` : ''}`);
   }
+  const unlisted = specs.filter((sp) => !pos.has(sp.feature)).map((sp) => sp.feature);
+  for (const f of unlisted) warns.push(`${f}: spec is not in plan.md${isDone(f) ? '' : ' and is not done'}`);
   for (const w of warns) out(`  ! ${w}`);
   for (const p of problems) out(`  ✗ ${p}`);
-  out(next ? `next: ${next}` : problems.length ? 'next: (fix plan first)' : 'next: (all features done)');
+  out(next ? `next: ${next}` : problems.length ? 'next: (fix plan first)' : unlisted.length ? `next: (listed features done; add to plan.md: ${unlisted.join(', ')})` : 'next: (all features done)');
   return problems.length ? 1 : 0;
 }
 

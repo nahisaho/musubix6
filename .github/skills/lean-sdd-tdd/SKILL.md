@@ -28,7 +28,7 @@ Unsure → higher tier. Escalate on discovery; never downgrade silently.
 1. Write the test with `/** @id TEST-F-001 @verifies REQ-F-001 */` above it and the test title containing `TEST-F-001`.
 2. T2 only: spike risky assumptions in scratch (see `references/t2.md`), AI-review the spec, then `$S approve record <feature> --by ai:<reviewer> --review "<1 line>"`.
 3. `$S tdd red TEST-F-001` → must fail by assertion. Load/compile error is rejected: add a failing stub (preferred) or `--weak`.
-4. Implement minimal code with `/** @id CODE-F-001 @implements REQ-F-001 */`. Do not edit the test. A REQ verified only by golden/characterization tests (no implementing code): write `test-only` on its REQ line in the spec to silence the `no @implements code` warning (like `deferred`; the spec is hash-locked, so reviewers see it).
+4. Implement minimal code with `/** @id CODE-F-001 @implements REQ-F-001 */`. Do not edit the test. A REQ verified only by golden/characterization tests (no implementing code): write `test-only` on its REQ line in the spec to silence the `no @implements code` warning (like `deferred`; the spec is hash-locked, so reviewers see it). `deferred`/`test-only` count only as a delimited marker (`REQ-X-1 (deferred)`, `[test-only]`, own table cell), never as a word in the prose.
 5. `$S tdd green TEST-F-001`. Test edited since Red → rejected: revert, or record a new Red.
 6. Optional refactor, then `$S tdd refactor TEST-F-001`.
 7. `$S gate --changed` (trace + evidence for touched REQs + project checks). Fix; stop after 3 identical failures and report.
@@ -36,6 +36,7 @@ Batch: write all tests for a feature, then red each, implement, green each, **on
 
 ## 3. Rules the script enforces
 Spec lock (T2) · REQ line changed since its test's last Green/Refactor ⇒ evidence stale (re-verify: `tdd refactor` for wording-only, `tdd red`/`green` for behaviour changes; so a new requirement means: edit spec first, then test) · Red before Green with identical test hash (per test: its own `@id` region + the preamble before the first `@id`, so editing one test keeps its siblings' evidence) · hash-chained `.sdd/tdd.jsonl` · every REQ has a test, every annotation resolves · skipped checks ⇒ `INCOMPLETE` (exit 2), never PASS.
+Every `@verifies` REQ of a test is hash-tracked · `approval: human` needs a lock on any tier; `--by` is normalized (trim/NFKC), so `" ai:x"`, `ai`, empty names cannot pass as a human · frontmatter tolerates CRLF, trailing `# comments`, quotes · `plan` warns about specs missing from `.sdd/plan.md` · a green/refactor run where every test was skipped is rejected · `gate --changed` keeps repo-wide trace errors and sees untracked dirs.
 Not enforced (agent discipline): test quality, mutation, security review. Do not claim them.
 
 ## 3a. Install & config
