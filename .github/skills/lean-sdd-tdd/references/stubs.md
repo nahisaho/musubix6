@@ -1,0 +1,11 @@
+# `tdd stub <TEST-ID>`
+
+Writes throwing stubs so `tdd red` is a real, non-weak Red. Stubs only fill in missing files/functions (real code is never touched). Arity comes from the call site and the return type from the compared literal (`== 3`, `, "s")`, `.is_err()`), falling back to `int`/`i64`/`any`; if the stub does not compile, write it by hand. An unknown REQ on the test is refused when specs exist.
+
+- **ts/js/py**: throwing stubs for the test's missing relative imports.
+- **Python**: skips stdlib and installed packages (including user-site/PYTHONPATH ones); names used in `pytest.raises`/`assertRaises`/`except` become `class X(Exception)`; a module that still holds only stubs gets newly imported names appended.
+- **Go** (`go test` finds `undefined: X`): `NewX` constructors (`*X`), types, struct-literal fields, methods and fields (up to 4 probe passes); bare `New()` creates type `Pkg`; field access on a returned value creates `<Func>Result` structs.
+- **Rust** (`tests/*.rs` → `src/lib.rs`): free functions and, for capitalised imports, types (`enum` for `Name::Variant`, else a unit struct); `use crate::a::b::{…}` creates missing `src/a.rs`, `src/a/b.rs` and the `pub mod` lines; `use member_crate::a::X` goes into that workspace crate; `== Some(...)`/tuple literals give `Option<…>` returns. Struct fields/methods on Rust types still need a hand-written stub (the Red is rejected as a compile error until then). Red reasons show the panic message.
+- **Java** (`Cls.method(` → `src/Cls.java` / `src/main/java`): `new X(a, b)` ctors (typed from literals) and `X.CONST` enums. Instance-method stubs (`a.balance()`) are not generated.
+- **C/C++** (missing `#include "x.h"` → header-only stub; names from compiler diagnostics): headers go into `include/`/`src/` (never shadowing from `tests/`); unknown `foo_t` types get an opaque `typedef struct foo foo_t;`; typed pointer params come from declarations. Stubs are header-only, so drop the missing `.c`/`.cpp` from your build command.
+- **PHP / Julia / R**: writes the file the test loads (`require_once`/`include`/`source`) with throwing functions (`LogicException` / `error()` / `stop()`) for unknown calls; PHP also generates classes from `Class::method(`/`new Class` and skips reserved words and `assert*` helpers.
