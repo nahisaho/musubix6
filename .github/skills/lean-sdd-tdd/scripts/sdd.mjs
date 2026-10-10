@@ -89,6 +89,8 @@ const shaMatches = (recorded, p, id) => [true, false].some((cut) => [true, false
   recorded === testSha(p, id) || recorded === testShaVariant(p, id, true) || recorded === testShaVariant(p, id, false) || recorded === testShaVariant(p, id, true, true, true) || recorded === testShaVariant(p, id, true, false, true) || recorded === testShaVariant(p, id, false, false, true) || recorded === sha(fs.readFileSync(path.join(ROOT, p)));
 const out = (s = '') => process.stdout.write(s + '\n');
 // npm's trailing `npm error …` / `npm notice …` boilerplate would push the real failure out of the window (#75)
+// failure lines first (FAIL/assert/error/panic), then the last lines — the failing test is rarely in the last few lines of make/cargo output (#86)
+const failTail = (s, n = 8) => { const ls = s.trimEnd().split('\n'); const hit = ls.filter((l) => /\bFAIL(ED)?\b|assert|\berror\b|panic|not ok|✗|✖/i.test(l)).slice(0, 6); const last = ls.slice(-Math.max(2, n - hit.length)); return [...new Set([...hit, ...last])].join('\n'); };
 const tail = (s, n = 15) => { const ls = s.trimEnd().split('\n'); const real = ls.filter((l) => !/^npm (notice|error|warn)\b/.test(l)); return (real.length ? real : ls).slice(-n).join('\n'); };
 
 // ---------- scanning ----------
@@ -237,6 +239,7 @@ function loadSpecs() {
   for (const f of fs.readdirSync(SPECS).filter((x) => x.endsWith('.md')).sort()) {
     const p = `.sdd/specs/${f}`;
     const text = fs.readFileSync(path.join(ROOT, p), 'utf8').replace(/^\uFEFF/, '');
+    if (/^<{7}( |$)/m.test(text) && /^>{7}( |$)/m.test(text)) { out(`SPEC CONFLICT: ${p} has git merge conflict markers — resolve them first`); process.exit(2); }
     const fm = parseFrontmatter(text);
     const reqs = [];
     const lines = text.split(/\r?\n/);
@@ -251,7 +254,7 @@ function loadSpecs() {
       let body = raw;
       // continuation lines of a list/prose requirement belong to its wording (#65)
       if (!m[1].includes('|')) for (let j = i + 1; j < lines.length && /^\s+\S/.test(lines[j]) && !/^\s*(?:[|#>*-]|REQ-)/.test(lines[j]); j++) body += ' ' + lines[j];
-      reqs.push({ id: m[2], line: i + 1, sha: sha(body.replace(/\s+/g, ' ').trim()), deferred: hasMarker(body.normalize('NFKC'), 'deferred'), testOnly: hasMarker(body.normalize('NFKC'), 'test-only') });
+      reqs.push({ id: m[2], line: i + 1, sha: sha(body.normalize('NFKC').replace(/\s+/g, ' ').trim()), rawSha: sha(body.replace(/\s+/g, ' ').trim()), deferred: hasMarker(body.normalize('NFKC'), 'deferred'), testOnly: hasMarker(body.normalize('NFKC'), 'test-only') });
     });
     const extra = fm.artifacts ? fm.artifacts.split(',').map((s) => s.trim()).filter(Boolean) : [];
     const tl = lines;
@@ -315,9 +318,11 @@ function appendLedger(e) {
 let REQ_SHA = null;
 // current hash of a REQ's spec line; entries recorded before this field existed have no reqSha and are not checked
 function reqShaOf(id) {
-  if (!REQ_SHA) { REQ_SHA = new Map(); for (const sp of loadSpecs()) for (const r of sp.reqs) REQ_SHA.set(r.id, r.sha); }
-  return REQ_SHA.get(id);
+  if (!REQ_SHA) { REQ_SHA = new Map(); for (const sp of loadSpecs()) for (const r of sp.reqs) REQ_SHA.set(r.id, { sha: r.sha, raw: r.rawSha }); }
+  return REQ_SHA.get(id)?.sha;
 }
+// ledgers written before NFKC hashing carry the raw-text hash (#83)
+const reqShaSame = (id, rsha) => { const c = REQ_SHA?.get(id); return !c || c.sha === rsha || c.raw === rsha; };
 function evidenceStatus(testId, testPath, entries) {
   const es = entries.filter((e) => e.test === testId);
   const g = es.filter((e) => e.type === 'green').at(-1);
@@ -328,7 +333,7 @@ function evidenceStatus(testId, testPath, entries) {
   if (!shaMatches(last.fileSha, testPath, testId)) return { ok: false, why: 'test changed since last Green/Refactor' };
   // every verified REQ is hash-tracked (reqShas); older entries carry only the first one
   for (const [rid, rsha] of Object.entries(last.reqShas ?? { [last.req]: last.reqSha })) {
-    if (rsha && reqShaOf(rid) && rsha !== reqShaOf(rid)) return { ok: false, why: `${rid} changed in the spec since last Green/Refactor: re-verify with tdd refactor (wording only) or tdd red/green (behaviour changed)` };
+    if (rsha && reqShaOf(rid) && !reqShaSame(rid, rsha)) return { ok: false, why: `${rid} changed in the spec since last Green/Refactor: re-verify with tdd refactor (wording only) or tdd red/green (behaviour changed)` };
   }
   return { ok: true, weak: !!r.weak, charac: !!r.characterization };
 }
@@ -352,7 +357,7 @@ function detectConfig(base = ROOT) {
   if (deps.vitest) testCmd = ['npx', 'vitest', 'run', '{file}', '-t', '{id}'];
   else if (deps.jest) testCmd = ['npx', 'jest', '{file}', '-t', '{id}'];
   else if (has('pyproject.toml') || has('pytest.ini') || has('requirements.txt')) testCmd = ['python3', '-m', 'pytest', '-q', '{file}', '-k', '{idu}'];
-  else if (has('go.mod')) testCmd = ['go', 'test', './...', '-run', '{IDU}'];
+  else if (has('go.mod')) testCmd = ['go', 'test', './...', '-run', '{IDU}(_|$)'];
   else if (has('Cargo.toml')) testCmd = ['cargo', 'test', '{idu}'];
   else if (has('pom.xml')) testCmd = ['mvn', '-B', '-ntp', 'test', '-Dtest=*#*{idu}*', '-Dsurefire.failIfNoSpecifiedTests=false'];
   else if (gradle) testCmd = ['sh', '-c', `f=$(mktemp --suffix=.gradle) && printf '%s\\n' '${GRADLE_INIT}' > "$f" && ${gradle} -I "$f" cleanTest test --tests "*$0*" --console=plain; r=$?; rm -f "$f"; exit $r`, '{idu}'];
@@ -487,7 +492,7 @@ const SCOPE_TOKENS = {
     return stems.length ? [[...new Set(stems)].map((x) => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')] : [];
   },
 };
-const LOAD_ERR = /(cannot find (module|package)|modulenotfounderror|importerror|syntaxerror|cannot resolve|no such file|undefined reference|could not compile|error\[e\d+\]|failed to resolve import|failed to load url|\[build failed\]|^[^\s:]+:\d+(?::\d+)?: (?:fatal )?error\b|cannot find symbol|ld returned \d+ exit status|\[setup failed\]|failed opening required|class \"[^\"]+\" not found|call to undefined (function|method)|php parse error|could not find function|there is no package called|what went wrong:\s*\n(?!execution failed for task '[^']*test')|error (cs|msb|nu)\d+|error ts\d+|test suite failed to run|non-parseable pom|the build could not read|compilation failure|could not resolve dependencies|dependencies? .{0,80}could not be resolved|cannot open the connection|undefvarerror|loaderror: (systemerror|parseerror)|^# [^\n]*\n[^\n]*:\d+:\d+: (undefined|cannot|missing))/im;
+const LOAD_ERR = /(cannot find (module|package)|modulenotfounderror|importerror|syntaxerror|cannot resolve|no such file|undefined reference|could not compile|error\[e\d+\]|failed to resolve import|failed to load url|\[build failed\]|^[^\s:]+:\d+(?::\d+)?: (?:fatal )?error\b|cannot find symbol|ld returned \d+ exit status|\[setup failed\]|failed opening required|class \"[^\"]+\" not found|call to undefined (function|method)|php parse error|could not find function|there is no package called|what went wrong:\s*\n(?!execution failed for task '[^']*test')|error (cs|msb|nu)\d+|error ts\d+|test suite failed to run|non-parseable pom|the build could not read|compilation failure|fatal error compiling|release version \d+ not supported|mojoexecutionexception|could not resolve dependencies|dependencies? .{0,80}could not be resolved|cannot open the connection|undefvarerror|loaderror: (systemerror|parseerror)|^# [^\n]*\n[^\n]*:\d+:\d+: (undefined|cannot|missing))/im;
 // a missing *relative* import that the test file itself references = declared new module
 function declaredMissingModule(text, testPath) {
   const src = fs.readFileSync(path.join(ROOT, testPath), 'utf8');
@@ -623,6 +628,9 @@ function cmdGuard() {
     if (dp) { out(`GUARD FAIL ${s.feature} (T2): ${dp}`); bad++; }
     if (st !== 'ok' && st !== 'n/a') { out(`GUARD FAIL ${s.feature} (T2): approval ${st}`); bad++; }
   }
+  const { ents, dups } = scanEntities(listFiles());
+  const orphans = traceCheck(ents, dups, loadSpecs()).errors.filter((e) => /references unknown REQ-/.test(e));
+  for (const o of orphans.slice(0, 10)) { out(`GUARD FAIL: ${o}`); bad++; }
   if (!bad) out(`GUARD OK (${specs.length} spec${specs.length > 1 ? 's' : ''})`);
   return bad ? 1 : 0;
 }
@@ -655,11 +663,15 @@ function stubGo(testPath, src, dir, add, made) {
   const T = { int: 'int', float: 'float64', str: 'string', bool: 'bool' };
   const params = (c) => Array.from({ length: c.args.length }, (_, i) => `a${i}`).join(', ') + (c.args.length ? ' any' : '');
   // `a, ok, err := X(...)` fixes the number of results (#76)
+  // functions whose first result must be a struct (field/method access on the result), and bare New() constructors (#84)
+  const retTypes = new Map();
+  const capPkg = pkg.charAt(0).toUpperCase() + pkg.slice(1);
+  const first = (c, name) => retTypes.get(name) ?? T[c.ret] ?? 'any';
   const retOf = (c, name) => {
     const lhs = name && new RegExp(`((?:[\\w.]+\\s*,\\s*)+[\\w.]+)\\s*:?=\\s*(?:[\\w.]+\\.)?${name}\\(`).exec(src)?.[1].split(',').map((x) => x.trim());
-    if (lhs) return `(${lhs.map((x, i) => (/^err\w*$/i.test(x) && i === lhs.length - 1 ? 'error' : i === 0 ? (T[c.ret] ?? 'any') : /^(ok|found|has|exists)$/i.test(x) ? 'bool' : 'any')).join(', ')})`;
+    if (lhs) return `(${lhs.map((x, i) => (/^err\w*$/i.test(x) && i === lhs.length - 1 ? 'error' : i === 0 ? first(c, name) : /^(ok|found|has|exists)$/i.test(x) ? 'bool' : 'any')).join(', ')})`;
     if (name && new RegExp(`errors\\.(?:Is|As)\\(\\s*(?:[\\w.]+\\.)?${name}\\(|\\berr\\s*:?=\\s*(?:[\\w.]+\\.)?${name}\\(`).test(src)) return 'error';
-    const r = T[c.ret] ?? 'any';
+    const r = first(c, name);
     return c.multi ? `(${r}, error)` : r;
   };
   const funcs = new Set();
@@ -690,6 +702,7 @@ function stubGo(testPath, src, dir, add, made) {
       if (/^Err[A-Z]/.test(n) && !isCall) { if (errs.has(n)) continue; errs.add(n); grew = true; continue; }
       if (/^[A-Z]/.test(n) && !isType && !isCall && !/^New/.test(n)) { if (consts.has(n)) continue; consts.add(n); grew = true; continue; }
       if (isType ? types.has(n) : funcs.has(n)) continue;
+      if (n === 'New' && isCall && !isType) { funcs.add(n); retTypes.set(n, `*${capPkg}`); if (!types.has(capPkg)) types.set(capPkg, new Set()); grew = true; continue; }
       if (isType) types.set(n, new Set()); else { funcs.add(n); const ct = /^New([A-Z]\w*)$/.exec(n)?.[1]; if (ct && !types.has(ct)) types.set(ct, new Set()); }
       grew = true;
     }
@@ -698,6 +711,16 @@ function stubGo(testPath, src, dir, add, made) {
       const isCall = new RegExp(`\\.${member}\\s*\\(`).test(src);
       if (isCall) { if (!methods.has(t)) methods.set(t, new Set()); if (methods.get(t).has(member)) continue; methods.get(t).add(member); }
       else { if (!types.has(t)) continue; if (types.get(t).has(member)) continue; types.get(t).add(member); }
+      grew = true;
+    }
+    for (const m of out.matchAll(/(\w+)\.(\w+) undefined \(type any has no field or method \w+\)/g)) {
+      const [, v, member] = m;
+      const as = [...src.matchAll(/((?:\w+\s*,\s*)*\w+)\s*:?=\s*(?:[\w.]+\.)?(\w+)\(/g)].find((x) => x[1].split(',').map((y) => y.trim())[0] === v);
+      if (!as || retTypes.has(as[2])) continue;
+      const tn = `${as[2]}Result`;
+      retTypes.set(as[2], tn);
+      types.set(tn, new Set());
+      funcs.add(as[2]);
       grew = true;
     }
     for (const m of out.matchAll(/unknown field (\w+) in struct literal of type (\w+)/g)) {
@@ -1013,6 +1036,9 @@ function cmdTdd() {
   if (sub === 'stub') {
     const t = ents.get(pos[2]);
     if (!t || t.kind !== 'TEST') { out(`${pos[2]} not found as "@id TEST-..." annotation in source`); return 2; }
+    const allSpecs = loadSpecs();
+    const unknownReq = allSpecs.length ? t.refs.verifies.filter((r) => !allSpecs.some((sp) => sp.reqs.some((q) => q.id === r))) : [];
+    if (unknownReq.length) { out(`REFUSED: ${t.id} verifies ${unknownReq.join(', ')} which no spec defines — write the spec first`); return 1; }
     const made = stubFor(t.path);
     out(made.length ? `stubbed (throwing, Red-safe): ${made.join(', ')} — now run: tdd red ${t.id}` : `no missing relative imports in ${t.path}`);
     if (made.realMissing?.length) out(`! not stubbed: ${made.realMissing.join('; ')} — those modules hold real code, which stubs never edit: add the names by hand`);
@@ -1046,7 +1072,10 @@ function cmdTdd() {
   const after = testSha(t.path, id);
   if (after !== before) { out(`REFUSED: ${t.path} changed while running (formatter/watch?)`); return 1; }
 
-  const zero = (ZERO_TESTS.test(res.text) && !RAN_TESTS.test(res.text)) || NO_PASSED.test(res.text.replace(/\x1b\[[0-9;]*m/g, ''));
+  const plain = res.text.replace(/\x1b\[[0-9;]*m/g, '');
+  // Go t.Skip and JUnit @Disabled: every test that ran was skipped (#84)
+  const allSkipped = (/--- SKIP:/.test(plain) && !/--- (PASS|FAIL):/.test(plain)) || [...plain.matchAll(/Tests run: (\d+), Failures: 0, Errors: 0, Skipped: (\d+)/g)].some((m) => m[1] === m[2] && +m[1] > 0 && [...plain.matchAll(/Tests run: (\d+), Failures: 0, Errors: 0, Skipped: (\d+)/g)].every((x) => x[1] === x[2]));
+  const zero = (ZERO_TESTS.test(res.text) && !RAN_TESTS.test(res.text)) || NO_PASSED.test(plain) || allSkipped;
   let ok;
   let why = '';
   if (sub === 'red') {
@@ -1433,7 +1462,7 @@ function cmdGate() {
     }
     if (r.timedOut) { add(false, `cmd ${c.name} TIMEOUT after ${(r.ms / 1000).toFixed(0)}s ${scoped ? '— narrow changedCmd (e.g. {changedTests} {changedScopes}) or raise changedTimeoutMs; run full gate (no --changed) before merge' : '— raise timeoutMs in .sdd/config.json'}`); continue; }
     if (r.exit !== 0 && ZERO_TESTS.test(r.text) && !RAN_TESTS.test(r.text)) { lines.push(`! cmd ${c.name}: no tests exist yet (runner exit ${r.exit}) — INCOMPLETE, not a failure`); incomplete = true; continue; }
-    add(r.exit === 0, `cmd ${c.name} (${(r.ms / 1000).toFixed(1)}s)`, r.exit === 0 ? [] : tail(r.text, 8).split('\n'));
+    add(r.exit === 0, `cmd ${c.name} (${(r.ms / 1000).toFixed(1)}s)`, r.exit === 0 ? [] : failTail(r.text, 8).split('\n'));
   }
   }
   if (!flags['no-run'] && !allChecks.length) { lines.push('! commands: none configured — nothing was run'); incomplete = true; }
@@ -1451,7 +1480,9 @@ function cmdStatus() {
   // an unlocked (T1) spec has no lock to go stale, but changed REQ/test evidence must still be visible (#77)
   const t1State = (s) => (s.reqs.some((r) => !r.deferred && [...ents.values()].some((e) => e.kind === 'TEST' && e.refs.verifies.includes(r.id) && /changed/.test(evidenceStatus(e.id, e.path, entries).why ?? ''))) ? 'stale' : 'n/a');
   const ap = specs.map((s) => `${s.feature}:${s.tier}:${needsLock(s) ? approvalState(s) : t1State(s)}`).join(' ');
-  out(`specs ${specs.length} [${ap}] | entities ${ents.size} | ledger ${entries.length}`);
+  const { dups } = scanEntities(listFiles());
+  const orphans = traceCheck(ents, dups, specs).errors.filter((e) => /references unknown REQ-/.test(e)).length;
+  out(`specs ${specs.length} [${ap}] | entities ${ents.size} | ledger ${entries.length}${orphans ? ` | ORPHAN refs ${orphans} (unknown REQ — see trace)` : ''}`);
   return 0;
 }
 
@@ -1514,16 +1545,21 @@ function cmdPlan(args) {
     }
   }
   const done = new Map(rows.map((r) => [r.feature, isDone(r.feature)]));
+  // a dependency that was completed once and is merely stale/edited is not 'not started'
+  const evidenced = (feat) => { const sp = byFeat.get(feat); return !!sp && [...ents.values()].some((e) => e.kind === 'TEST' && sp.reqs.some((q) => e.refs.verifies.includes(q.id)) && entries.some((x) => x.test === e.id && x.type === 'green')); };
   let next = null;
   for (const r of rows) {
     const sp = byFeat.get(r.feature);
     const depsOk = r.deps.every((d) => done.get(d));
     const started = sp && [...ents.values()].some((e) => e.kind === 'TEST' && sp.reqs.some((q) => e.refs.verifies.includes(q.id)) && entries.some((x) => x.test === e.id));
-    if (started && !depsOk && !done.get(r.feature)) warns.push(`${r.feature}: started before dependencies are done (${r.deps.filter((d) => !done.get(d)).join(', ')})`);
+    const untouched = r.deps.filter((d) => !done.get(d) && !evidenced(d));
+    if (started && untouched.length && !done.get(r.feature)) warns.push(`${r.feature}: started before dependencies are done (${untouched.join(', ')})`);
     if (!next && !done.get(r.feature) && depsOk) next = r.feature;
     const st = sp ? `${sp.tier}${needsLock(sp) ? `:${approvalState(sp)}` : ''}` : 'no-spec';
     out(`${done.get(r.feature) ? '✓' : '·'} ${r.order}. ${r.feature} [${st}]${r.deps.length ? ` ← ${r.deps.join(', ')}` : ''}${r.note ? ` — ${r.note}` : ''}`);
   }
+  const orphanReqs = [...new Set(tr.errors.map((e) => /references unknown (REQ-[A-Z0-9-]+)/.exec(e)?.[1]).filter(Boolean))].filter((u) => !specs.some((sp) => sp.reqs.some((r) => prefixOf(r.id) === prefixOf(u))));
+  for (const u of orphanReqs) problems.push(`${u} is referenced by tests/code but no spec defines it (write the spec first)`);
   const unlisted = specs.filter((sp) => !pos.has(sp.feature)).map((sp) => sp.feature);
   for (const f of unlisted) warns.push(`${f}: spec is not in plan.md${isDone(f) ? '' : ' and is not done'}`);
   for (const w of warns) out(`  ! ${w}`);

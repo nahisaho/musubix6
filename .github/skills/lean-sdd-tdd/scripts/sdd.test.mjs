@@ -348,7 +348,7 @@ test('#15 go/rust: init picks defaults and {IDU}/{idu} map IDs to test-name patt
   fs.writeFileSync(path.join(g, 'go.mod'), 'module x\n');
   sdd(g, 'init');
   const gc = JSON.parse(fs.readFileSync(path.join(g, '.sdd/config.json'), 'utf8'));
-  assert.deepEqual(gc.testCmd, ['go', 'test', './...', '-run', '{IDU}']);
+  assert.deepEqual(gc.testCmd, ['go', 'test', './...', '-run', '{IDU}(_|$)']);
   const r = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-'));
   spawnSync('git', ['init', '-q'], { cwd: r });
   fs.writeFileSync(path.join(r, 'Cargo.toml'), '[package]\nname="x"\n');
@@ -1345,4 +1345,40 @@ test('#76 tdd stub: Java ctor/enum, C header under include/, Rust workspace memb
   assert.match(read(r, 'crates/core/src/lib.rs'), /pub mod shapes;/);
   assert.match(read(r, 'crates/core/src/shapes.rs'), /pub fn area/);
   assert.equal(read(r, 'crates/app/src/lib.rs'), '');
+});
+
+// ---- dogfood round 4 (#82-#89) ----
+test('#82 guard/plan/status report orphan annotations; stub refuses unknown REQ; spec conflict markers flagged', () => {
+  const d = mini(T1SPEC, { 'a.test.mjs': jsTest(), 'b.test.mjs': "// @id TEST-B-001 @verifies REQ-B-001\ntest('TEST-B-001 x', () => {\n});\n" }, PASS);
+  fs.writeFileSync(path.join(d, '.sdd/plan.md'), '| order | feature | depends | note |\n|---|---|---|---|\n| 1 | a | - | x |\n');
+  const g = sdd(d, 'guard');
+  assert.notEqual(g.code, 0);
+  assert.match(g.out, /unknown REQ-B-001/);
+  assert.match(sdd(d, 'plan').out, /REQ-B-001 is referenced/);
+  assert.match(sdd(d, 'status').out, /ORPHAN refs 1/);
+  const st = sdd(d, 'tdd', 'stub', 'TEST-B-001');
+  assert.equal(st.code, 1);
+  assert.match(st.out, /no spec defines/);
+  fs.writeFileSync(specPath(d), `${T1SPEC}<<<<<<< HEAD\nx\n=======\ny\n>>>>>>> other\n`);
+  assert.match(sdd(d, 'trace').out, /SPEC CONFLICT/);
+});
+
+test('#83 full-width REQ id does not stale evidence', () => {
+  const d = mini(T1SPEC, { 'a.test.mjs': jsTest() }, FAIL);
+  sdd(d, 'tdd', 'red', 'TEST-A-001'); setCmd(d, PASS); assert.equal(sdd(d, 'tdd', 'green', 'TEST-A-001').code, 0);
+  fs.writeFileSync(specPath(d), T1SPEC.replace('REQ-A-001', 'ＲＥＱ－Ａ－００１'));
+  assert.match(sdd(d, 'gate', '--no-run').out, /1\/1 tests Red→Green/);
+});
+
+test('#85 Maven compiler-plugin failure is a load error, not a Red', () => {
+  const d = mini(T1SPEC, { 'a.test.mjs': jsTest() }, ['node', '-e', 'console.log("[ERROR] Fatal error compiling: error: release version 21 not supported\\n[INFO] BUILD FAILURE");process.exit(1)']);
+  assert.match(sdd(d, 'tdd', 'red', 'TEST-A-001').out, /REJECTED.*load\/compile/);
+});
+
+test('#84 skipped Go/JUnit test is not a Red; #86 gate shows the failing line', () => {
+  const d = mini(T1SPEC, { 'a.test.mjs': jsTest() }, ['node', '-e', 'console.log("--- SKIP: TestX (0.00s)\\nok  \\tm\\t0.00s");process.exit(0)']);
+  assert.match(sdd(d, 'tdd', 'red', 'TEST-A-001').out, /REJECTED.*skipped/);
+  const lines = Array.from({ length: 20 }, (_, i) => `ok line ${i}`).join('\\n');
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ checks: [{ name: 'c', cmd: ['node', '-e', `console.log("FAIL arena_reset expected 0");console.log("${lines}");process.exit(1)`] }] }));
+  assert.match(sdd(d, 'gate').out, /FAIL arena_reset expected 0/);
 });
