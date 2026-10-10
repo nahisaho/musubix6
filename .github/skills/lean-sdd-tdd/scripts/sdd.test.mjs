@@ -948,3 +948,15 @@ test('#50 Rust tdd stub: capitalised imports become types (enum for Name::Varian
   assert.match(lib, /pub enum Level \{\s*Warn,/);
   assert.doesNotMatch(lib, /pub fn Level/);
 });
+
+test('#52 framework build output (.mastra, .next, …) is not scanned for @id (no duplicate-@id errors)', () => {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-build-'));
+  spawnSync('git', ['init', '-q'], { cwd: d });
+  fs.mkdirSync(path.join(d, '.sdd/specs'), { recursive: true });
+  fs.mkdirSync(path.join(d, '.mastra/output'), { recursive: true });
+  fs.writeFileSync(path.join(d, '.sdd/specs/s.md'), '---\nfeature: s\ntier: T1\n---\n| REQ-S-001 | f shall return 1. | TEST-S-001 |\n');
+  const code = '// @id CODE-S-001 @implements REQ-S-001\nexport const f = () => 1;\n';
+  fs.writeFileSync(path.join(d, 'f.mjs'), code);
+  fs.writeFileSync(path.join(d, '.mastra/output/f.mjs'), code);
+  assert.doesNotMatch(sdd(d, 'trace').out, /duplicate @id/);
+});
