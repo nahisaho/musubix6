@@ -739,7 +739,9 @@ test('#39/#40 gate --changed: root checks skip when only a nested project change
   assert.match(b, /add the path to its `dependsOn`/);
   cfg.projects[0].dependsOn = ['contract'];
   fs.writeFileSync(cfgPath, JSON.stringify(cfg));
-  assert.match(sdd(d, 'gate', '--changed').out, /✓ cmd worker:t/);
+  const c = sdd(d, 'gate', '--changed').out;
+  assert.match(c, /✓ cmd worker:t/);
+  assert.doesNotMatch(c, /add the path to its `dependsOn`/);
 });
 
 test('#38 editing one test does not invalidate the Red/Green evidence of its siblings in the same file', () => {
@@ -916,4 +918,33 @@ test('#49 Python stub: exception classes derive from Exception; stub-only module
   fs.writeFileSync(path.join(d, 'tests/test_s.py'), fs.readFileSync(path.join(d, 'tests/test_s.py'), 'utf8') + '\nfrom pk.errors import Third\n');
   sdd(d, 'tdd', 'stub', 'TEST-S-002');
   assert.doesNotMatch(fs.readFileSync(f, 'utf8'), /Third/);
+});
+
+test('#50 Rust: type stubs, panic message as Red reason, asserted result of a stub call is not weak', () => {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-rust-'));
+  spawnSync('git', ['init', '-q'], { cwd: d });
+  fs.mkdirSync(path.join(d, '.sdd/specs'), { recursive: true });
+  fs.mkdirSync(path.join(d, 'src')); fs.mkdirSync(path.join(d, 'tests'));
+  fs.writeFileSync(path.join(d, '.sdd/specs/s.md'), '---\nfeature: s\ntier: T1\n---\n| REQ-S-001 | When count is called, it shall count. | TEST-S-001 |\n');
+  fs.writeFileSync(path.join(d, 'Cargo.toml'), '[package]\nname = "lp"\nversion = "0.1.0"\nedition = "2021"\n');
+  fs.writeFileSync(path.join(d, 'src/lib.rs'), '#[derive(Debug, PartialEq)]\npub struct S { pub n: usize }\npub fn count(_l: &[&str]) -> S { unimplemented!("count") }\n');
+  fs.writeFileSync(path.join(d, 'tests/t.rs'), 'use lp::count;\n\n// @id TEST-S-001 @verifies REQ-S-001\n#[test]\nfn test_s_001() {\n    let s = count(&["a"]);\n    assert_eq!(s.n, 1);\n}\n');
+  sdd(d, 'init');
+  const r = sdd(d, 'tdd', 'red', 'TEST-S-001').out;
+  assert.match(r, /fails with: not implemented: count/, r);
+  assert.doesNotMatch(r, /\[weak\]/, r);
+});
+
+test('#50 Rust tdd stub: capitalised imports become types (enum for Name::Variant), not functions', () => {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-rusttype-'));
+  spawnSync('git', ['init', '-q'], { cwd: d });
+  fs.mkdirSync(path.join(d, '.sdd/specs'), { recursive: true });
+  fs.mkdirSync(path.join(d, 'tests'));
+  fs.writeFileSync(path.join(d, 'Cargo.toml'), '[package]\nname = "lp"\nversion = "0.1.0"\nedition = "2021"\n');
+  fs.writeFileSync(path.join(d, 'tests/t.rs'), 'use lp::{parse, Level};\n\n// @id TEST-S-001 @verifies REQ-S-001\n#[test]\nfn test_s_001() {\n    assert_eq!(parse("x"), Level::Warn);\n}\n');
+  sdd(d, 'init');
+  sdd(d, 'tdd', 'stub', 'TEST-S-001');
+  const lib = fs.readFileSync(path.join(d, 'src/lib.rs'), 'utf8');
+  assert.match(lib, /pub enum Level \{\s*Warn,/);
+  assert.doesNotMatch(lib, /pub fn Level/);
 });

@@ -540,6 +540,7 @@ function stubGo(testPath, src, dir, add, made) {
   if (!names.length) return made;
   const T = { int: 'int', float: 'float64', str: 'string', bool: 'bool' };
   const body = names.map((n) => { const c = callInfo(src, n); const r = T[c.ret] ?? 'any'; return `func ${n}(${Array.from({ length: c.args.length }, (_, i) => `a${i}`).join(', ')}${c.args.length ? ' any' : ''}) ${c.multi ? `(${r}, error)` : r} {\n\tpanic("not implemented: ${n}")\n}\n`; }).join('\n');
+  // classify by the call site that actually threw: test-file frames inside this test's body
   const base = path.basename(testPath).replace(/_test\.go$/, '');
   const target = fs.existsSync(path.join(dir, base + '.go')) ? path.join(dir, base + '_stub.go') : path.join(dir, base + '.go');
   add(target, `package ${pkg}\n\n${body}`);
@@ -556,7 +557,9 @@ function stubRust(testPath, src, dir, made) {
   const names = [...new Set([...out.matchAll(/cannot find function `(\w+)`|unresolved import `[\w:]+::(\w+)`|no `(\w+)` in the root/g)].map((m) => m[1] ?? m[2] ?? m[3]))];
   if (!names.length) { if (probeFile) fs.rmSync(lib); return made; }
   const T = { int: 'i64', float: 'f64', str: 'String', bool: 'bool', result: 'Result<i64, String>' };
-  const body = names.map((n) => { const c = callInfo(src, n); const g = c.args.map((_, i) => `A${i}`); return `pub fn ${n}${g.length ? `<${g.join(', ')}>` : ''}(${c.args.map((_, i) => `_a${i}: A${i}`).join(', ')}) -> ${T[c.ret] ?? 'i64'} {\n    unimplemented!("${n}")\n}\n`; }).join('\n');
+  // capitalised names are types: `Name::Variant` => enum, otherwise a unit struct (never a function)
+  const typeStub = (n) => { const vs = [...new Set([...src.matchAll(new RegExp(`\\b${n}::([A-Z]\\w*)`, 'g'))].map((m) => m[1]))]; return vs.length ? `#[derive(Debug, Clone, Copy, PartialEq, Eq)]\npub enum ${n} {\n${vs.map((v) => `    ${v},\n`).join('')}}\n` : `#[derive(Debug, Clone, Default, PartialEq)]\npub struct ${n};\n`; };
+  const body = names.map((n) => { if (/^[A-Z]/.test(n)) return typeStub(n); const c = callInfo(src, n); const g = c.args.map((_, i) => `A${i}`); return `pub fn ${n}${g.length ? `<${g.join(', ')}>` : ''}(${c.args.map((_, i) => `_a${i}: A${i}`).join(', ')}) -> ${T[c.ret] ?? 'i64'} {\n    unimplemented!("${n}")\n}\n`; }).join('\n');
   const prev = fs.readFileSync(lib, 'utf8');
   fs.writeFileSync(lib, prev + (prev && !prev.endsWith('\n\n') ? '\n' : '') + body);
   made.push(rel(lib));
@@ -703,7 +706,14 @@ function setupOrigin(line, testPath, id, text = '') {
   const start = all.findIndex((l) => new RegExp(`@id\\s+${id}\\b`).test(l));
   let end = all.findIndex((l, i) => i > start && /@id\s/.test(l));
   if (end < 0) end = all.length;
-  // classify by the call site that actually threw: test-file frames inside this test's body
+  // `const r = sut(...)` followed by assertions on r is the act under test, not setup
+  const assertedResult = (hitLines) => {
+    const WRAP = '(?:(?:list|len|sorted|set|tuple|dict|str|int|float|sum|bool|String|Number|JSON\\.stringify|Object\\.\\w+|Array\\.from)\\(\\s*)*';
+    const vars = hitLines.map((l) => /^\s*(?:(?:const|let|var)\s+(?:mut\s+)?)?([A-Za-z_$][\w$]*)\s*(?::[^=]+)?=(?!=)/.exec(l)?.[1]).filter(Boolean);
+    const body = testBody(testPath, id).filter((l) => ASSERT_LINE.test(l));
+    const subject = (v) => new RegExp(`(?:expect\\(\\s*(?:await\\s+)?|assert\\w*!?(?:\\.\\w+)?\\(\\s*|\\bassert\\s+(?:not\\s+)?)${WRAP}&?${v.replace(/[$]/g, '\\$&')}(?![\\w$])`);
+    return vars.some((v) => body.some((l) => subject(v).test(l)));
+  };
   const base = path.basename(testPath).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const sites = [...new Set([...text.matchAll(new RegExp(`${base}:(\\d+)`, 'g')).map((f) => Number(f[1]) - 1)])].filter((i) => i >= start && i < end);
   if (sites.length) {
@@ -712,16 +722,12 @@ function setupOrigin(line, testPath, id, text = '') {
     if (hit.some(({ i }) => /raises|assertRaises|assertThrows|assert_raises/.test(all[i - 1] ?? ''))) return null;
     if (!hit.length) return null; // thrown through a helper: cannot tell setup from the asserted call
     if (hit.some(({ l }) => ASSERT_LINE.test(l))) return null;
-    // `const r = sut(...)` followed by assertions on r is the act under test, not setup
-    const WRAP = '(?:(?:list|len|sorted|set|tuple|dict|str|int|float|sum|bool|String|Number|JSON\\.stringify|Object\\.\\w+|Array\\.from)\\(\\s*)*';
-    const vars = hit.map(({ l }) => /^\s*(?:(?:const|let|var)\s+)?([A-Za-z_$][\w$]*)\s*(?::[^=]+)?=(?!=)/.exec(l)?.[1]).filter(Boolean);
-    const body = testBody(testPath, id).filter((l) => ASSERT_LINE.test(l));
-    const subject = (v) => new RegExp(`(?:expect\\(\\s*(?:await\\s+)?|assert\\w*(?:\\.\\w+)?\\(\\s*|\\bassert\\s+(?:not\\s+)?)${WRAP}${v.replace(/[$]/g, '\\$&')}(?![\\w$])`);
-    return vars.some((v) => body.some((l) => subject(v).test(l))) ? null : x;
+    return assertedResult(hit.map(({ l }) => l)) ? null : x;
   }
   const asserts = testBody(testPath, id).filter((l) => ASSERT_LINE.test(l));
   if (!asserts.length) return null;
-  return asserts.some((l) => re.test(l)) ? null : x;
+  if (asserts.some((l) => re.test(l))) return null;
+  return assertedResult(testBody(testPath, id).filter((l) => re.test(l) && !ASSERT_LINE.test(l))) ? null : x;
 }
 
 // name used for {idu}: the lowercase ID when the file contains it, else the name of the test declared right below `@id` (camelCase / @DisplayName styles)
@@ -802,7 +808,7 @@ function cmdTdd() {
   }
   if (!ok) { out(`${sub.toUpperCase()} REJECTED ${id}: ${why}`); out(tail(res.text, 12)); return 1; }
   const rl = res.text.replace(/\x1b\[[0-9;]*m/g, '').split('\n').map((l) => l.trim());
-  const reason = sub === 'red' ? (rl.find((l) => /^E\s+\S/.test(l) && !/\d+ \/ \d+ \(\d+%\)|^E\s+\[\s*\d+%\]/.test(l))?.replace(/^E\s+/, '') ?? rl.find((l) => /(--- FAIL|AssertionError|Error:|assert |FAILED|panicked|expected|\(Failed\)|not implemented|Test Failed|Error During Test|\w*Exception:|^Error in )/.test(l) && !/^(FAIL|❯|> Task|The following tests)/.test(l)) ?? rl.find((l) => /^(FAIL|not ok)\s+\S+$/.test(l)) ?? '').slice(0, 110) : '';
+  const reason = sub === 'red' ? (rl.find((l) => /^E\s+\S/.test(l) && !/\d+ \/ \d+ \(\d+%\)|^E\s+\[\s*\d+%\]/.test(l))?.replace(/^E\s+/, '') ?? (() => { const i = rl.findIndex((l) => /panicked at/.test(l)); return i >= 0 && rl[i + 1] && !/^note:/.test(rl[i + 1]) ? rl[i + 1] : undefined; })() ?? rl.find((l) => /(--- FAIL|AssertionError|Error:|assert |FAILED|panicked|expected|\(Failed\)|not implemented|Test Failed|Error During Test|\w*Exception:|^Error in )/.test(l) && !/^(FAIL|❯|> Task|The following tests)/.test(l)) ?? rl.find((l) => /^(FAIL|not ok)\s+\S+$/.test(l)) ?? '').slice(0, 110) : '';
   const loadWeak = sub === 'red' && LOAD_ERR.test(res.text) && !(flags['missing-module'] && declaredMissingModule(res.text, t.path));
   const setupSym = sub === 'red' && !flags['allow-setup-red'] && typeof flags.expect !== 'string' ? setupOrigin(rl.find((l) => /^E\s+.*(not implemented|NotImplementedError|unimplemented)/i.test(l)) ?? rl.find((l) => /not implemented|NotImplementedError|unimplemented/i.test(l)) ?? reason, t.path, id, res.text) : null;
   const charac = sub === 'red' && res.exit === 0 ? String(flags.characterization).trim() : '';
@@ -1103,7 +1109,8 @@ function cmdGate() {
       const chg = [...changedFiles()].filter((f) => !f.startsWith('.sdd/'));
       const outside = chg.filter((f) => !pRoots.some((r) => f.startsWith(r)));
       if (chg.length && !outside.length) { lines.push(`! cmd ${c.name}: all changed files are inside nested projects (${pRoots.join(', ')}) — root check skipped`); continue; }
-      const dataOnly = outside.filter((f) => !EXT.test(f));
+      const covered = (f) => (cfg.projects ?? []).some((p) => (p.dependsOn ?? []).some((d) => f.startsWith(d.replace(/\/$/, '') + '/') || f === d));
+      const dataOnly = outside.filter((f) => !EXT.test(f) && !covered(f));
       if (dataOnly.length && !sharedHinted) { sharedHinted = true; lines.push(`! root-owned data/config changes: ${dataOnly.slice(0, 3).join(', ')}${dataOnly.length > 3 ? ', …' : ''} — if a project reads these, add the path to its \`dependsOn\` in .sdd/config.json so that project's checks run too`); }
     }
     const ownChanged = !base || [...changedFiles()].some((f) => f.startsWith(base));
