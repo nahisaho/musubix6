@@ -1050,12 +1050,20 @@ function cmdGate() {
     }
   }
   const allChecks = [...(cfg.checks ?? []), ...(cfg.projects ?? []).flatMap((p) => (p.checks ?? []).map((c) => ({ ...c, name: `${p.root}:${c.name}`, cwd: p.root, dependsOn: p.dependsOn })))];
+  let sharedHinted = false;
   if (flags['no-run']) { lines.push('! commands: SKIPPED (--no-run) — result is INCOMPLETE'); incomplete = true; }
   else for (const c of allChecks) {
     let cmd = c.cmd;
     const base = c.cwd ? c.cwd.replace(/\/$/, '') + '/' : '';
     const roots = c.cwd ? [base, ...(c.dependsOn ?? []).map((r) => r.replace(/\/$/, '') + '/')] : [];
     if (c.cwd && flags.changed && ![...changedFiles()].some((f) => roots.some((r) => f.startsWith(r)))) { lines.push(`! cmd ${c.name}: no changed files in ${c.cwd}${c.dependsOn?.length ? ` or its dependencies (${c.dependsOn.join(', ')})` : ''} — skipped`); continue; }
+    const pRoots = (cfg.projects ?? []).map((p) => p.root.replace(/\/$/, '') + '/');
+    if (!c.cwd && flags.changed && pRoots.length) {
+      const chg = [...changedFiles()].filter((f) => !f.startsWith('.sdd/'));
+      const outside = chg.filter((f) => !pRoots.some((r) => f.startsWith(r)));
+      if (chg.length && !outside.length) { lines.push(`! cmd ${c.name}: all changed files are inside nested projects (${pRoots.join(', ')}) — root check skipped`); continue; }
+      if (outside.length && !sharedHinted) { sharedHinted = true; lines.push(`! root-owned changes: ${outside.slice(0, 3).join(', ')}${outside.length > 3 ? ', …' : ''} — if a project reads these, add the path to its \`dependsOn\` in .sdd/config.json so that project's checks run too`); }
+    }
     const ownChanged = !base || [...changedFiles()].some((f) => f.startsWith(base));
     let scoped = false;
     if (flags.changed && c.changedCmd && ownChanged) {

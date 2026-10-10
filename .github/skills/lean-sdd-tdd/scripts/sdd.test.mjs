@@ -710,3 +710,34 @@ test('#35 weak-Red classification follows the throwing call site: same symbol in
   test(['  const r = call(1, 2);', '  assert.equal(r, 3);']);
   assert.doesNotMatch(sdd(d, 'tdd', 'red', 'TEST-CALC-001').out, /\[weak\]/);
 });
+
+test('#39/#40 gate --changed: root checks skip when only a nested project changed; shared paths are reachable through dependsOn', () => {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-nest-'));
+  const git = (...a) => spawnSync('git', a, { cwd: d });
+  const w = (f, c) => { fs.mkdirSync(path.dirname(path.join(d, f)), { recursive: true }); fs.writeFileSync(path.join(d, f), c); };
+  git('init', '-q'); git('config', 'user.email', 'a@b'); git('config', 'user.name', 't');
+  w('package.json', '{"name":"r","scripts":{"test":"true"}}');
+  w('worker/pyproject.toml', '[project]\nname="w"\nversion="0"\n');
+  w('worker/a.py', 'x = 1\n');
+  w('contract/s.json', '[]\n');
+  sdd(d, 'init');
+  const cfgPath = path.join(d, '.sdd/config.json');
+  const cfg = JSON.parse(fs.readFileSync(cfgPath, 'utf8'));
+  cfg.checks = [{ name: 'root', cmd: ['node', '-e', '0'], changedCmd: ['node', '-e', '0'] }];
+  cfg.projects = [{ root: 'worker', checks: [{ name: 't', cmd: ['node', '-e', '0'], changedCmd: ['node', '-e', '0'] }] }];
+  fs.writeFileSync(cfgPath, JSON.stringify(cfg));
+  git('add', '-A'); git('commit', '-qm', 'base');
+  w('worker/a.py', 'x = 2\n');
+  const a = sdd(d, 'gate', '--changed').out;
+  assert.match(a, /cmd root: all changed files are inside nested projects/);
+  assert.match(a, /✓ cmd worker:t/);
+  git('commit', '-qam', 'a');
+  w('contract/s.json', '["x"]\n');
+  const b = sdd(d, 'gate', '--changed').out;
+  assert.match(b, /✓ cmd root/);
+  assert.match(b, /worker:t: no changed files/);
+  assert.match(b, /add the path to its `dependsOn`/);
+  cfg.projects[0].dependsOn = ['contract'];
+  fs.writeFileSync(cfgPath, JSON.stringify(cfg));
+  assert.match(sdd(d, 'gate', '--changed').out, /✓ cmd worker:t/);
+});
