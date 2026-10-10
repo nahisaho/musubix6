@@ -294,7 +294,7 @@ function run(cmd, timeoutMs, cwd = '.') {
   const text = (r.stdout ?? '') + (r.stderr ?? '') + (r.error ? String(r.error.message) : '');
   return { exit: r.status ?? (r.error ? 127 : 1), text, ms: Date.now() - t0, timedOut: r.error?.code === 'ETIMEDOUT' };
 }
-const LOAD_ERR = /(cannot find (module|package)|modulenotfounderror|importerror|syntaxerror|cannot resolve|no such file|undefined reference|could not compile|error\[e\d+\]|failed to resolve import|\[build failed\]|^[^\s:]+:\d+(?::\d+)?: (?:fatal )?error\b|cannot find symbol|ld returned \d+ exit status|\[setup failed\]|failed opening required|class \"[^\"]+\" not found|call to undefined (function|method)|php parse error|could not find function|there is no package called|undefvarerror|loaderror: (systemerror|parseerror)|^# [^\n]*\n[^\n]*:\d+:\d+: (undefined|cannot|missing))/im;
+const LOAD_ERR = /(cannot find (module|package)|modulenotfounderror|importerror|syntaxerror|cannot resolve|no such file|undefined reference|could not compile|error\[e\d+\]|failed to resolve import|\[build failed\]|^[^\s:]+:\d+(?::\d+)?: (?:fatal )?error\b|cannot find symbol|ld returned \d+ exit status|\[setup failed\]|failed opening required|class \"[^\"]+\" not found|call to undefined (function|method)|php parse error|could not find function|there is no package called|cannot open the connection|undefvarerror|loaderror: (systemerror|parseerror)|^# [^\n]*\n[^\n]*:\d+:\d+: (undefined|cannot|missing))/im;
 // a missing *relative* import that the test file itself references = declared new module
 function declaredMissingModule(text, testPath) {
   const src = fs.readFileSync(path.join(ROOT, testPath), 'utf8');
@@ -403,6 +403,98 @@ function cmdGuard() {
   return bad ? 1 : 0;
 }
 
+// ---- typed languages: infer arity, arg and return types from the call sites in the test
+const LIT = '("(?:[^"\\\\]|\\\\.)*"|-?\\d+\\.\\d+|-?\\d+|true|false)';
+const litType = (t) => /^-?\d+$/.test(t) ? 'int' : /^-?\d+\.\d+$/.test(t) ? 'float' : /^"/.test(t) ? 'str' : /^(true|false)$/.test(t) ? 'bool' : /^&/.test(t) ? 'ptr' : null;
+function callInfo(src, name) {
+  const re = new RegExp(`(?<![\\w.])${name}\\s*\\(`, 'g');
+  const m = re.exec(src);
+  if (!m) return { args: [], ret: null, multi: false };
+  let i = re.lastIndex, depth = 1, cur = '';
+  const args = [];
+  for (; i < src.length && depth; i++) {
+    const c = src[i];
+    if ('([{'.includes(c)) depth++;
+    else if (')]}'.includes(c)) { depth--; if (!depth) break; }
+    if (c === ',' && depth === 1) { args.push(cur.trim()); cur = ''; } else cur += c;
+  }
+  if (cur.trim()) args.push(cur.trim());
+  const after = src.slice(i + 1, i + 80), before = src.slice(Math.max(0, m.index - 60), m.index);
+  const lit = new RegExp(`^\\s*(?:==|!=|,)\\s*${LIT}`).exec(after)?.[1] ?? new RegExp(`${LIT}\\s*(?:==|!=|,)\\s*$`).exec(before)?.[1];
+  const ret = /^\s*\.(is_err|is_ok|unwrap_err)\(/.test(after) ? 'result' : lit ? litType(lit) : null;
+  return { args: args.map(litType), ret, multi: /,\s*\w+\s*:?=\s*$/.test(before), argc: args.length };
+}
+const probe = (cmd, args, cwd) => { const r = spawnSync(cmd, args, { cwd, encoding: 'utf8', timeout: 120000, env: { ...process.env, LC_ALL: 'C' } }); return (r.stdout ?? '') + (r.stderr ?? ''); };
+
+function stubGo(testPath, src, dir, add, made) {
+  const pkg = /^package\s+(\w+)/m.exec(src)?.[1]?.replace(/_test$/, '') ?? 'main';
+  const names = [...new Set([...probe('go', ['test', '-count=1', '-run', '^$', '.'], dir).matchAll(/undefined: (\w+)/g)].map((m) => m[1]))];
+  if (!names.length) return made;
+  const T = { int: 'int', float: 'float64', str: 'string', bool: 'bool' };
+  const body = names.map((n) => { const c = callInfo(src, n); const r = T[c.ret] ?? 'any'; return `func ${n}(${Array.from({ length: c.args.length }, (_, i) => `a${i}`).join(', ')}${c.args.length ? ' any' : ''}) ${c.multi ? `(${r}, error)` : r} {\n\tpanic("not implemented: ${n}")\n}\n`; }).join('\n');
+  const base = path.basename(testPath).replace(/_test\.go$/, '');
+  const target = fs.existsSync(path.join(dir, base + '.go')) ? path.join(dir, base + '_stub.go') : path.join(dir, base + '.go');
+  add(target, `package ${pkg}\n\n${body}`);
+  return made;
+}
+
+function stubRust(testPath, src, dir, made) {
+  const root = (() => { let d = dir; while (d !== path.dirname(d)) { if (fs.existsSync(path.join(d, 'Cargo.toml'))) return d; d = path.dirname(d); } return null; })();
+  if (!root || !/(^|\/)tests\//.test(testPath)) return made;
+  const lib = path.join(root, 'src/lib.rs');
+  const probeFile = !fs.existsSync(lib);
+  if (probeFile) { fs.mkdirSync(path.dirname(lib), { recursive: true }); fs.writeFileSync(lib, ''); }
+  const out = probe('cargo', ['test', '--no-run', '--offline', '--test', path.basename(testPath, '.rs')], root);
+  const names = [...new Set([...out.matchAll(/cannot find function `(\w+)`|unresolved import `[\w:]+::(\w+)`|no `(\w+)` in the root/g)].map((m) => m[1] ?? m[2] ?? m[3]))];
+  if (!names.length) { if (probeFile) fs.rmSync(lib); return made; }
+  const T = { int: 'i64', float: 'f64', str: 'String', bool: 'bool', result: 'Result<i64, String>' };
+  const body = names.map((n) => { const c = callInfo(src, n); const g = c.args.map((_, i) => `A${i}`); return `pub fn ${n}${g.length ? `<${g.join(', ')}>` : ''}(${c.args.map((_, i) => `_a${i}: A${i}`).join(', ')}) -> ${T[c.ret] ?? 'i64'} {\n    unimplemented!("${n}")\n}\n`; }).join('\n');
+  const prev = fs.readFileSync(lib, 'utf8');
+  fs.writeFileSync(lib, prev + (prev && !prev.endsWith('\n\n') ? '\n' : '') + body);
+  made.push(rel(lib));
+  return made;
+}
+
+function stubJava(testPath, src, dir, add, made) {
+  const pkg = /^package\s+([\w.]+);/m.exec(src)?.[1];
+  const imported = new Set([...src.matchAll(/^import\s+(?:static\s+)?[\w.]+\.(\w+)\s*;/gm)].map((m) => m[1]));
+  const local = new Set([...src.matchAll(/\b(?:class|interface|enum|record)\s+(\w+)/g)].map((m) => m[1]));
+  const known = new Set(listFiles().map((f) => path.basename(f).replace(/\.java$/, '')));
+  const JDK = /^(System|Math|String|Integer|Long|Double|Boolean|Character|Objects|Arrays|List|Map|Set|Collections|Optional|Thread|Assertions?|Assert|Files|Paths|Path|Instant|Duration|LocalDate|LocalDateTime|StringBuilder|Stream|Collectors|Pattern|UUID|BigDecimal|BigInteger)$/;
+  const byClass = new Map();
+  for (const m of src.matchAll(/(?<![\w.])([A-Z]\w*)\.([a-z]\w*)\s*\(/g)) {
+    if (imported.has(m[1]) || local.has(m[1]) || known.has(m[1]) || JDK.test(m[1])) continue;
+    byClass.set(m[1], [...(byClass.get(m[1]) ?? []), m[2]]);
+  }
+  const rootRel = rel(dir);
+  const mainDir = /src\/test\/java/.test(rootRel + '/') ? path.resolve(ROOT, rootRel.replace('src/test/java', 'src/main/java')) : /(^|\/)test$/.test(rootRel) ? path.resolve(dir, '../src') : dir;
+  const T = { int: 'int', float: 'double', str: 'String', bool: 'boolean' };
+  for (const [cls, ms] of byClass) {
+    const body = [...new Set(ms)].map((n) => { const c = callInfo(src.replace(new RegExp(`\\b${cls}\\.`, 'g'), ''), n); return `    public static ${T[c.ret] ?? 'int'} ${n}(${c.args.map((_, i) => `Object a${i}`).join(', ')}) {\n        throw new UnsupportedOperationException("not implemented: ${n}");\n    }\n`; }).join('\n');
+    add(path.join(mainDir, cls + '.java'), `${pkg ? `package ${pkg};\n\n` : ''}public class ${cls} {\n${body}}\n`);
+  }
+  return made;
+}
+
+function stubC(testPath, src, dir, add, made) {
+  const cpp = /\.(cc|cpp|cxx)$/.test(testPath);
+  const missing = [...src.matchAll(/#include\s+"([^"]+)"/g)].map((m) => m[1]).filter((h) => !fs.existsSync(path.resolve(dir, h)) && !fs.existsSync(path.resolve(ROOT, h)));
+  if (!missing.length) return made;
+  for (const h of missing) { fs.mkdirSync(path.dirname(path.resolve(dir, h)), { recursive: true }); fs.writeFileSync(path.resolve(dir, h), ''); }
+  const out = probe(cpp ? 'c++' : 'cc', ['-fsyntax-only', '-I', dir, path.join(ROOT, testPath)], dir);
+  const names = [...new Set([...out.matchAll(/implicit declaration of function '(\w+)'|'(\w+)' was not declared in this scope|use of undeclared identifier '(\w+)'|call to undeclared function '(\w+)'/g)].map((m) => m[1] ?? m[2] ?? m[3] ?? m[4]))];
+  const T = { int: 'int', float: 'double', str: 'const char *', bool: 'int' };
+  const body = names.map((n) => {
+    const c = callInfo(src, n), r = T[c.ret] ?? 'int';
+    if (cpp) return `template <class... A>\ninline ${r} ${n}(A&&...) {\n    throw std::logic_error("not implemented: ${n}");\n}\n`;
+    const ps = c.args.map((t, i) => `${t === 'ptr' ? 'void *' : T[t] ?? 'int'} a${i}`).join(', ') || 'void';
+    return `static inline ${r} ${n}(${ps}) {\n    fprintf(stderr, "not implemented: ${n}\\n");\n    abort();\n}\n`;
+  }).join('\n');
+  const head = cpp ? '#pragma once\n#include <stdexcept>\n\n' : '#pragma once\n#include <stdio.h>\n#include <stdlib.h>\n\n';
+  for (const h of missing) { fs.rmSync(path.resolve(dir, h)); add(path.resolve(dir, h), head + body); }
+  return made;
+}
+
 // php / julia / R: stub the file the test loads (require/include/source) with throwing functions for the unknown calls
 function stubScript(lang, src, dir, add, made) {
   const loadRe = { php: /(?:require|include)(?:_once)?\s*\(?\s*(?:__DIR__\s*\.\s*)?['"]([^'"]+\.php)['"]/g, jl: /\binclude\(\s*"([^"]+\.jl)"/g, r: /\bsource\(\s*"([^"]+\.[Rr])"/g }[lang];
@@ -441,6 +533,10 @@ function stubFor(testPath) {
     }
     return made;
   }
+  if (/_test\.go$/.test(testPath)) return stubGo(testPath, src, dir, add, made);
+  if (/\.rs$/.test(testPath)) return stubRust(testPath, src, dir, made);
+  if (/\.java$/.test(testPath)) return stubJava(testPath, src, dir, add, made);
+  if (/\.(c|cc|cpp|cxx)$/.test(testPath)) return stubC(testPath, src, dir, add, made);
   const lang = /\.php$/.test(testPath) ? 'php' : /\.jl$/.test(testPath) ? 'jl' : /\.[Rr]$/.test(testPath) ? 'r' : null;
   if (lang) return stubScript(lang, src, dir, add, made);
   const ts = /\.[cm]?tsx?$/.test(testPath);
@@ -469,7 +565,7 @@ function testBody(testPath, id) {
   if (end < 0) end = ls.length;
   return ls.slice(start, end);
 }
-const ASSERT_LINE = /(expect\s*\(|\bassert|raises|toThrow|\.should|assertEquals|@test\b|expect_|t\.(Error|Fatal))/;
+const ASSERT_LINE = /(expect\s*\(|\bassert|raises|toThrow|\.should|assertEquals|@test\b|expect_|\bif\b.*[!=]=|t\.(Error|Fatal))/;
 // Red caused by a stub called from setup (not from the asserted behaviour) is not evidence for the REQ
 function setupOrigin(line, testPath, id) {
   const m = /not implemented:?\s*([\w$]+)|NotImplementedError:?\s*([\w$]+)|unimplemented!?\(?\s*"?([\w$]+)/i.exec(line ?? '');
@@ -542,7 +638,7 @@ function cmdTdd() {
   }
   if (!ok) { out(`${sub.toUpperCase()} REJECTED ${id}: ${why}`); out(tail(res.text, 12)); return 1; }
   const rl = res.text.replace(/\x1b\[[0-9;]*m/g, '').split('\n').map((l) => l.trim());
-  const reason = sub === 'red' ? (rl.find((l) => /^E\s+\S/.test(l) && !/\d+ \/ \d+ \(\d+%\)/.test(l))?.replace(/^E\s+/, '') ?? rl.find((l) => /(--- FAIL|AssertionError|Error:|assert |FAILED|panicked|expected|\(Failed\)|Test Failed|Error During Test|\w*Exception:|── (Failure|Error))/.test(l) && !/^(FAIL|❯|> Task|The following tests)/.test(l)) ?? rl.find((l) => /^(FAIL|not ok)\s+\S+$/.test(l)) ?? '').slice(0, 110) : '';
+  const reason = sub === 'red' ? (rl.find((l) => /^E\s+\S/.test(l) && !/\d+ \/ \d+ \(\d+%\)/.test(l))?.replace(/^E\s+/, '') ?? rl.find((l) => /(--- FAIL|AssertionError|Error:|assert |FAILED|panicked|expected|\(Failed\)|not implemented|Test Failed|Error During Test|\w*Exception:|^Error in )/.test(l) && !/^(FAIL|❯|> Task|The following tests)/.test(l)) ?? rl.find((l) => /^(FAIL|not ok)\s+\S+$/.test(l)) ?? '').slice(0, 110) : '';
   const loadWeak = sub === 'red' && LOAD_ERR.test(res.text) && !(flags['missing-module'] && declaredMissingModule(res.text, t.path));
   const setupSym = sub === 'red' && !flags['allow-setup-red'] && typeof flags.expect !== 'string' ? setupOrigin(rl.find((l) => /not implemented|NotImplementedError|unimplemented/i.test(l)) ?? reason, t.path, id) : null;
   const weakRed = loadWeak || !!setupSym;
