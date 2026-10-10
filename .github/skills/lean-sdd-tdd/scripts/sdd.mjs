@@ -348,14 +348,31 @@ const SCOPE_TOKENS = {
     return [...hit].flatMap((n) => ['-p', n]);
   },
   '{changedGradleTasks}': (rel, abs) => {
-    if (rel.some((f) => /(^|\/)(settings|build)\.gradle(\.kts)?$|(^|\/)gradle\.properties$|(^|\/)libs\.versions\.toml$/.test(f) && !f.includes('/'))) return [];
-    const dirs = new Set();
-    for (const f of rel) {
-      const d = nearestDir(abs, f, (x) => fs.existsSync(path.join(x, 'build.gradle')) || fs.existsSync(path.join(x, 'build.gradle.kts')));
-      if (!d || d === '.') return [];
-      dirs.add(d);
+    if (rel.some((f) => !f.includes('/') && /^(settings|build)\.gradle(\.kts)?$|^gradle\.properties$/.test(f) || /(^|\/)libs\.versions\.toml$/.test(f))) return [];
+    const isMod = (x) => fs.existsSync(path.join(x, 'build.gradle')) || fs.existsSync(path.join(x, 'build.gradle.kts'));
+    const mods = new Map();
+    const walk = (dir, relDir) => {
+      for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+        if (!e.isDirectory() || /^(build|node_modules|\.git|\.gradle|\.sdd|out)$/.test(e.name)) continue;
+        const r = relDir ? `${relDir}/${e.name}` : e.name;
+        if (isMod(path.join(dir, e.name))) mods.set(r, new Set());
+        walk(path.join(dir, e.name), r);
+      }
+    };
+    walk(abs, '');
+    // dependents are derived from project(':x') references; Gradle's own buildDependents misses them when the dependent is evaluated later
+    for (const [m, deps] of mods) for (const f of ['build.gradle', 'build.gradle.kts']) {
+      const fp = path.join(abs, m, f);
+      if (fs.existsSync(fp)) for (const x of fs.readFileSync(fp, 'utf8').matchAll(/project\(\s*(?:path\s*[:=]\s*)?['"]:?([^'"]+)['"]/g)) deps.add(x[1].split(':').join('/'));
     }
-    return [...dirs].map((d) => ':' + d.split('/').join(':') + ':buildDependents');
+    const hit = new Set();
+    for (const f of rel) {
+      const d = nearestDir(abs, f, isMod);
+      if (!d || d === '.') return [];
+      hit.add(d);
+    }
+    for (let grew = true; grew;) { grew = false; for (const [m, deps] of mods) if (!hit.has(m) && [...deps].some((d) => hit.has(d))) { hit.add(m); grew = true; } }
+    return [...hit].flatMap((m) => { const t = ':' + m.split('/').join(':'); return [`${t}:cleanTest`, `${t}:test`]; });
   },
   '{changedCtestRegex}': (rel) => {
     const stems = rel.filter((f) => /(^|\/)(test_?[^/]*|[^/]*_?tests?)\.(c|cc|cpp|cxx)$/i.test(f)).flatMap((f) => { const b = path.posix.basename(f).replace(/\.[^.]+$/, ''); return [b, b.replace(/^test_?|_?tests?$/gi, '')]; }).filter(Boolean);
