@@ -1,0 +1,4 @@
+#!/bin/sh
+D=$(dirname "$0")
+export JAVA_HOME=${JAVA_HOME:-/usr/lib/jvm/java-21-openjdk-amd64}
+exec "$D/.tools/gradle-8.14.3/bin/gradle" --offline "$@"

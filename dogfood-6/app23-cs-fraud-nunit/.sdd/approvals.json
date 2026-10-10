@@ -1,0 +1,26 @@
+{
+  "audit": {
+    "by": "ai:rubber-duck",
+    "kind": "ai",
+    "review": ".sdd/review-audit.md",
+    "reviewSha": "41d58bfeb3bc3c44e004dfd096bfa696d560836e1976a7126aa2c859abded41a",
+    "at": "2026-10-10T10:46:07.372Z",
+    "artifacts": {
+      ".sdd/specs/audit.md": "888bb45cfa4e4834f5322e84fa320a7f7d536c9e400ed1306fcf6d6fdfa49504"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "decision": {
+    "by": "ai:rubber-duck",
+    "kind": "ai",
+    "review": ".sdd/review-decision.md",
+    "reviewSha": "cb25102da26136caf66273aea8f5600594e9c4ba3722ba9157f44a1874b62a32",
+    "at": "2026-10-10T11:28:40.974Z",
+    "artifacts": {
+      ".sdd/specs/decision.md": "f1bbc67008f5fe2961aace4b6922884db95f6d4b3465b3fff91e23961cf70757"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  }
+}

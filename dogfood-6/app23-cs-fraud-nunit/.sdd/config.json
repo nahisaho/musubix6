@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "testCmd": [
+    "dotnet",
+    "test",
+    "--nologo",
+    "--filter",
+    "FullyQualifiedName~{IDU}"
+  ],
+  "checks": [
+    {
+      "name": "test",
+      "cmd": [
+        "dotnet",
+        "test",
+        "--nologo"
+      ],
+      "changedCmd": [
+        "sh",
+        "-c",
+        "r=0; for p in \"$@\"; do dotnet test \"$p\" --nologo || r=1; done; exit $r",
+        "sdd",
+        "{changedTestProjects}"
+      ]
+    }
+  ],
+  "timeoutMs": 120000
+}

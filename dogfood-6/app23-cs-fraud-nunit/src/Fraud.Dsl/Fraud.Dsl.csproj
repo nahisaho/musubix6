@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\Fraud.Core\Fraud.Core.csproj" />
+  </ItemGroup>
+</Project>

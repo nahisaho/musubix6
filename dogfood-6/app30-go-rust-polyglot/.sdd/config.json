@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "testCmd": [
+    "node",
+    "--test",
+    "--test-name-pattern",
+    "{id}",
+    "{file}"
+  ],
+  "checks": [],
+  "timeoutMs": 120000,
+  "projects": [
+    {
+      "root": "go",
+      "testCmd": [
+        "go",
+        "test",
+        "./...",
+        "-run",
+        "{IDU}(_|$)"
+      ],
+      "checks": [
+        {
+          "name": "test",
+          "cmd": [
+            "go",
+            "test",
+            "./..."
+          ],
+          "changedCmd": [
+            "go",
+            "test",
+            "{changedGoPkgs}"
+          ]
+        }
+      ],
+      "dependsOn": [
+        "contract"
+      ]
+    },
+    {
+      "root": "rust",
+      "testCmd": [
+        "cargo",
+        "test",
+        "{idu}"
+      ],
+      "checks": [
+        {
+          "name": "test",
+          "cmd": [
+            "cargo",
+            "test"
+          ],
+          "changedCmd": [
+            "cargo",
+            "test",
+            "{changedCargoPkgs}"
+          ]
+        }
+      ],
+      "dependsOn": [
+        "contract"
+      ]
+    }
+  ]
+}

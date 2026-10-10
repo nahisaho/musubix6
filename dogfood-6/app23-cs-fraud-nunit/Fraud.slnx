@@ -1,0 +1,13 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Fraud.Core/Fraud.Core.csproj" />
+    <Project Path="src/Fraud.Dsl/Fraud.Dsl.csproj" />
+    <Project Path="src/Fraud.Velocity/Fraud.Velocity.csproj" />
+    <Project Path="src/Fraud.Scoring/Fraud.Scoring.csproj" />
+    <Project Path="src/Fraud.Decision/Fraud.Decision.csproj" />
+    <Project Path="src/Fraud.Audit/Fraud.Audit.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Fraud.Tests/Fraud.Tests.csproj" />
+  </Folder>
+</Solution>

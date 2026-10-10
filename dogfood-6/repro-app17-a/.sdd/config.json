@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "testCmd": [
+    "sh",
+    "-c",
+    "f=$(mktemp --suffix=.gradle) && printf '%s\\n' 'allprojects { tasks.withType(Test).configureEach { filter.failOnNoMatchingTests = false; afterSuite { d, r -> if (!d.parent) println(\"Tests run: \" + r.testCount + \", Failures: \" + r.failedTestCount) } } }' > \"$f\" && ./gradlew -I \"$f\" cleanTest test --tests \"*$0*\" --console=plain; r=$?; rm -f \"$f\"; exit $r",
+    "{idu}"
+  ],
+  "checks": [
+    {
+      "name": "test",
+      "cmd": [
+        "./gradlew",
+        "cleanTest",
+        "test",
+        "--console=plain"
+      ],
+      "changedCmd": [
+        "./gradlew",
+        "--console=plain",
+        "{changedGradleTasks}"
+      ]
+    }
+  ],
+  "timeoutMs": 120000
+}

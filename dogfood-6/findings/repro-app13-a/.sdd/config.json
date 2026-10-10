@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "testCmd": [
+    "go",
+    "test",
+    "./...",
+    "-run",
+    "{IDU}(_|$)"
+  ],
+  "checks": [
+    {
+      "name": "test",
+      "cmd": [
+        "go",
+        "test",
+        "./..."
+      ],
+      "changedCmd": [
+        "go",
+        "test",
+        "{changedGoPkgs}"
+      ]
+    }
+  ],
+  "timeoutMs": 120000
+}

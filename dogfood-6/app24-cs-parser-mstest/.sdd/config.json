@@ -1,0 +1,102 @@
+{
+  "schemaVersion": 1,
+  "testCmd": [
+    "dotnet",
+    "test",
+    "--nologo",
+    "--filter",
+    "FullyQualifiedName~{idu}"
+  ],
+  "checks": [
+    {
+      "name": "test",
+      "cmd": [
+        "dotnet",
+        "test",
+        "--nologo"
+      ],
+      "changedCmd": [
+        "sh",
+        "-c",
+        "r=0; for p in \"$@\"; do dotnet test \"$p\" --nologo || r=1; done; exit $r",
+        "sdd",
+        "{changedTestProjects}"
+      ]
+    }
+  ],
+  "timeoutMs": 120000,
+  "projects": [
+    {
+      "root": "tests/ParserKit.Core.Tests",
+      "testCmd": [
+        "dotnet",
+        "test",
+        "--nologo",
+        "--filter",
+        "FullyQualifiedName~{idu}"
+      ],
+      "checks": [
+        {
+          "name": "test",
+          "cmd": [
+            "dotnet",
+            "test",
+            "--nologo"
+          ]
+        }
+      ],
+      "dependsOn": [
+        "src/ParserKit.Core"
+      ]
+    },
+    {
+      "root": "tests/ParserKit.Lang.Tests",
+      "testCmd": [
+        "dotnet",
+        "test",
+        "--nologo",
+        "--filter",
+        "FullyQualifiedName~{idu}"
+      ],
+      "checks": [
+        {
+          "name": "test",
+          "cmd": [
+            "dotnet",
+            "test",
+            "--nologo"
+          ]
+        }
+      ],
+      "dependsOn": [
+        "src/ParserKit.Lang",
+        "src/ParserKit.Core"
+      ]
+    },
+    {
+      "root": "tests/ParserKit.Interp.Tests",
+      "testCmd": [
+        "dotnet",
+        "test",
+        "--nologo",
+        "--filter",
+        "FullyQualifiedName~{idu}"
+      ],
+      "checks": [
+        {
+          "name": "test",
+          "cmd": [
+            "dotnet",
+            "test",
+            "--nologo"
+          ]
+        }
+      ],
+      "dependsOn": [
+        "src/ParserKit.Interp",
+        "src/ParserKit.Lang",
+        "src/ParserKit.Core"
+      ]
+    }
+  ]
+}

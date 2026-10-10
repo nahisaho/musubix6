@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "testCmd": [
+    "cargo",
+    "test",
+    "{idu}"
+  ],
+  "checks": [
+    {
+      "name": "test",
+      "cmd": [
+        "cargo",
+        "test"
+      ],
+      "changedCmd": [
+        "cargo",
+        "test",
+        "{changedCargoPkgs}"
+      ]
+    }
+  ],
+  "timeoutMs": 120000
+}

@@ -1,0 +1,60 @@
+{
+  "codec": {
+    "by": "ai:reviewer-codec",
+    "kind": "ai",
+    "review": ".sdd/review-codec2.md",
+    "reviewSha": "fd7477984ff4b5fc5d24a6e48c0041a7228e5bd307fe83f888c1398e0c4c4c3e",
+    "at": "2026-10-10T11:15:55.580Z",
+    "artifacts": {
+      ".sdd/specs/codec.md": "9c354b52d8247f050a56d3746fb44299238fb51564bc8179ebddfadb97c636b6"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "index": {
+    "by": "ai:reviewer-index",
+    "kind": "ai",
+    "review": ".sdd/review-index.md",
+    "reviewSha": "a4d0639006691254fe56e408d6916a9ab5d38dc6902c65173f9cc2ac73ebeb98",
+    "at": "2026-10-10T10:53:45.465Z",
+    "artifacts": {
+      ".sdd/specs/index.md": "f9b55bb55ce8531ce20bc97a8200940a4453b56ea984c6625bcafec3161a4d1a"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "rank": {
+    "by": "ai:reviewer-rank",
+    "kind": "ai",
+    "review": ".sdd/review-rank.md",
+    "reviewSha": "d237b112ec471c420cd6649115a30e1d30f9c6e7e096a7c9a954c071ee68df2f",
+    "at": "2026-10-10T10:53:45.601Z",
+    "artifacts": {
+      ".sdd/specs/rank.md": "6a34172156cbda5e324d1dcd682d02932b1c6dbde3a9e2831f0965250e5e25f8"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "query": {
+    "by": "ai:reviewer-query",
+    "kind": "ai",
+    "review": "diff-only review: grammar/state table complete, no open findings",
+    "at": "2026-10-10T10:53:45.653Z",
+    "artifacts": {
+      ".sdd/specs/query.md": "ef4e47b6ad7fbd9cfb663e665e8d1a091d014572e4b514ee2c90635f2341e5df"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "engine": {
+    "by": "ai:reviewer-engine",
+    "kind": "ai",
+    "review": "diff-only review: grammar/state table complete, no open findings",
+    "at": "2026-10-10T10:53:45.702Z",
+    "artifacts": {
+      ".sdd/specs/engine.md": "c8aa7ebb4be58cd79f35e0f14303b177b78496b3f3b33677b95cbb89d66ebc7d"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  }
+}

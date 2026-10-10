@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "testCmd": [
+    "julia",
+    "--project=.",
+    "{file}"
+  ],
+  "checks": [
+    {
+      "name": "test",
+      "cmd": [
+        "sh",
+        "-c",
+        "out=$(julia --project=. -e \"using Pkg; Pkg.test()\" 2>&1); r=$?; if [ $r -eq 0 ]; then printf \"%s\\n\" \"$out\"; exit 0; fi; if [ -f test/runtests.jl ] && printf \"%s\" \"$out\" | grep -qiE \"to be registered|registry|could not resolve host|failed to (fetch|clone)|network|offline\"; then echo \"sdd: INFRA: Pkg.test() failed to resolve packages (no registry/network) — falling back to julia --project=. test/runtests.jl\"; julia --project=. test/runtests.jl; exit $?; fi; printf \"%s\\n\" \"$out\"; exit $r"
+      ]
+    }
+  ],
+  "timeoutMs": 120000
+}

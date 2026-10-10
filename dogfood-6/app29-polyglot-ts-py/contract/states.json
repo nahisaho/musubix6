@@ -1,0 +1,13 @@
+{
+  "states": ["queued", "running", "succeeded", "failed", "retrying", "dead", "cancelled"],
+  "terminal": ["succeeded", "dead", "cancelled"],
+  "transitions": {
+    "queued": ["running", "cancelled"],
+    "running": ["succeeded", "failed", "cancelled"],
+    "failed": ["retrying", "dead"],
+    "retrying": ["running", "cancelled"],
+    "succeeded": [],
+    "dead": [],
+    "cancelled": []
+  }
+}

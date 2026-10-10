@@ -1,0 +1,9 @@
+spec: sha256:f1c0bbe79f86119fde24a93a14a839cb5c5afa932c047cd17b86f5c3cfc6c7e7
+verdict: pass
+open: 0
+
+## Findings
+| ID | Severity | Where | Status |
+|----|----------|-------|--------|
+(add one row per finding with Status Open or Closed, then set verdict: pass|fail)
+| R9 | med | bugfix REQ-vclock-011 | Closed |

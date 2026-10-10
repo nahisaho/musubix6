@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="NUnit" Version="4.3.2" />
+    <PackageReference Include="NUnit3TestAdapter" Version="5.0.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <Using Include="NUnit.Framework" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Fraud.Core\Fraud.Core.csproj" />
+    <ProjectReference Include="..\..\src\Fraud.Dsl\Fraud.Dsl.csproj" />
+    <ProjectReference Include="..\..\src\Fraud.Velocity\Fraud.Velocity.csproj" />
+    <ProjectReference Include="..\..\src\Fraud.Scoring\Fraud.Scoring.csproj" />
+    <ProjectReference Include="..\..\src\Fraud.Decision\Fraud.Decision.csproj" />
+    <ProjectReference Include="..\..\src\Fraud.Audit\Fraud.Audit.csproj" />
+  </ItemGroup>
+</Project>

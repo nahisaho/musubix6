@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "testCmd": [
+    "node",
+    "--test",
+    "--test-name-pattern",
+    "{id}",
+    "{file}"
+  ],
+  "checks": [],
+  "timeoutMs": 120000
+}

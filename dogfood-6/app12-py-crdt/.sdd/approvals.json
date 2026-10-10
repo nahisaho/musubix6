@@ -1,0 +1,72 @@
+{
+  "vclock": {
+    "by": "ai:reviewer-d",
+    "kind": "ai",
+    "review": ".sdd/reviews/vclock.md",
+    "reviewSha": "29f71a973d6ad34f5a6344f8f8d863b50785fc9cfd7ae625cffe2c68c89f571a",
+    "at": "2026-10-10T10:53:42.171Z",
+    "artifacts": {
+      ".sdd/specs/vclock.md": "f1c0bbe79f86119fde24a93a14a839cb5c5afa932c047cd17b86f5c3cfc6c7e7"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "counters": {
+    "by": "ai:reviewer-a",
+    "kind": "ai",
+    "review": "T1 spec reviewed",
+    "at": "2026-10-10T10:45:48.364Z",
+    "artifacts": {
+      ".sdd/specs/counters.md": "1c4ab9dbaedf4c34ccad8ba4baf480a02fe6071afb4641b173362530fe40e2c5"
+    },
+    "tier": "T1",
+    "requireHuman": false
+  },
+  "lwwmap": {
+    "by": "ai:reviewer-d",
+    "kind": "ai",
+    "review": ".sdd/reviews/lwwmap.md",
+    "reviewSha": "bea6493ad8ac27ce128bb178d567218fe92344aa7cf7d045e0db6e1a8c942ab9",
+    "at": "2026-10-10T10:53:42.266Z",
+    "artifacts": {
+      ".sdd/specs/lwwmap.md": "38d53c998537d2fa99ee0d2177c8b921cab68df8d6053c856ffeb8bf9a595b48"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "orset": {
+    "by": "ai:reviewer-b",
+    "kind": "ai",
+    "review": ".sdd/reviews/orset.md",
+    "reviewSha": "f212ae076f107dd4e1d6626fa730f6883114b5a0c3344034c1455168c0945b6b",
+    "at": "2026-10-10T10:50:35.319Z",
+    "artifacts": {
+      ".sdd/specs/orset.md": "f9dc266c3d487228f80d375ff53ef7cb4a7e7fb1ae3ae877f25b05d645a685de"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "sync": {
+    "by": "ai:reviewer-c",
+    "kind": "ai",
+    "review": ".sdd/reviews/sync.md",
+    "reviewSha": "d84cac3850c91eb82711517bb6f0b8969b1f0bb78c8f3319789bb960b9fc7ca6",
+    "at": "2026-10-10T10:49:18.233Z",
+    "artifacts": {
+      ".sdd/specs/sync.md": "8331a858bcfc155c59a5fb6994b4e3275af6dea549e02781b29e2cbfc5de885d"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "convergence": {
+    "by": "ai:reviewer-c",
+    "kind": "ai",
+    "review": "T1 spec checked for law coverage",
+    "at": "2026-10-10T10:51:54.742Z",
+    "artifacts": {
+      ".sdd/specs/convergence.md": "de30c3bc43305795e18cd94d07af07ca12c648c8fc26458ad7febbb68e7ac2ce"
+    },
+    "tier": "T1",
+    "requireHuman": false
+  }
+}

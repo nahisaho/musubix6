@@ -1,0 +1,57 @@
+{
+  "store": {
+    "by": "ai:rubber-duck",
+    "kind": "ai",
+    "review": "re-reviewed: added REQ-STORE-016 (panic-safe Apply)",
+    "at": "2026-10-10T11:00:34.282Z",
+    "artifacts": {
+      ".sdd/specs/store.md": "caee8cb1820efa27cf32dbe72ae9df2713c0d409a5e5e161022a6bb2e1a72749"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "watch": {
+    "by": "ai:rubber-duck",
+    "kind": "ai",
+    "review": "reviewed: pending/replay race closed by register-first; added PrefixEnd edge; compaction split to compact feature",
+    "at": "2026-10-10T10:48:49.742Z",
+    "artifacts": {
+      ".sdd/specs/watch.md": "ad3782ec3b4edeab67543a46d0efdab322e183ce03aebdfd11aa30eb0680c877"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "lease": {
+    "by": "ai:rubber-duck",
+    "kind": "ai",
+    "review": "re-reviewed: REQ-LEASE-010 expired-pending put rejected",
+    "at": "2026-10-10T11:02:11.316Z",
+    "artifacts": {
+      ".sdd/specs/lease.md": "0edfa8d6f3ec0d29ed1b818076ce7c116998f7bdb263c341113b5904898ca46d"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "txn": {
+    "by": "ai:rubber-duck",
+    "kind": "ai",
+    "review": "reviewed: missing-key compare table explicit; validation before write; snapshot reads; branch validation covers both branches",
+    "at": "2026-10-10T10:54:37.855Z",
+    "artifacts": {
+      ".sdd/specs/txn.md": "f6301f73fc041195fcfea9d1a511cd2d8836094acbd44ca9288e80f70898502c"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "compact": {
+    "by": "ai:rubber-duck",
+    "kind": "ai",
+    "review": "reviewed: HashKV invariance, tombstone-head rule, watcher interplay",
+    "at": "2026-10-10T10:56:14.671Z",
+    "artifacts": {
+      ".sdd/specs/compact.md": "5fc01fcb2e828f298ece9d8b4bf4d897600456fcaa4f13a780965779a00434f9"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  }
+}

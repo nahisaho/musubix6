@@ -1,0 +1,50 @@
+{
+  "retry": {
+    "by": "ai:rubber-duck",
+    "kind": "ai",
+    "review": ".sdd/review-retry.md",
+    "reviewSha": "160a6f025da2b5f8d02b6eccf0b264332ccba31391a83bf7c135179ccc8fa3e6",
+    "at": "2026-10-10T10:45:25.663Z",
+    "artifacts": {
+      ".sdd/specs/retry.md": "456117db20c6132da1d3428982bae95879b58460a440e66ea2ec7918a6bc49c1"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "state": {
+    "by": "ai:rubber-duck",
+    "kind": "ai",
+    "review": ".sdd/review-state.md",
+    "reviewSha": "41e96b1dc4c7506b83b0b8ecbd7fc5ba6d5af7493142026ff9659ed2a212a7a1",
+    "at": "2026-10-10T10:50:37.247Z",
+    "artifacts": {
+      ".sdd/specs/state.md": "c9bc1f81c1352172588eea370b0532eab5eed19f18c8a5b15b928d65f49f9711"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "idem": {
+    "by": "ai:rubber-duck",
+    "kind": "ai",
+    "review": ".sdd/review-idem.md",
+    "reviewSha": "1db40f37d0f672c19677e77fc0bb2d00f51d094b990ba744d69b46b3caf0cc86",
+    "at": "2026-10-10T11:00:43.339Z",
+    "artifacts": {
+      ".sdd/specs/idem.md": "9d5050c41a00543b26d45f5abb9b1c81b698b75ad9d1ce7bd066f1d6c1d7ef36"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "orch": {
+    "by": "ai:rubber-duck",
+    "kind": "ai",
+    "review": ".sdd/review-orch.md",
+    "reviewSha": "43e3e2d42197f0e88ec5095c9a7f73fe221d6cfd324848c974840877aec73c76",
+    "at": "2026-10-10T11:01:49.988Z",
+    "artifacts": {
+      ".sdd/specs/orch.md": "1d76b069fc386cfb338116731319aa1f362b5c1892f56040bccca9dbffa29b60"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  }
+}

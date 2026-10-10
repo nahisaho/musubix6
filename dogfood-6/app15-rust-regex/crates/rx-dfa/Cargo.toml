@@ -1,0 +1,8 @@
+[package]
+name = "rx-dfa"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+rx-syntax = { path = "../rx-syntax" }
+rx-nfa = { path = "../rx-nfa" }

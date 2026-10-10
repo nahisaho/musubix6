@@ -1,0 +1,15 @@
+[package]
+name = "rx-cli"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+rx-engine = { path = "../rx-engine" }
+rx-syntax = { path = "../rx-syntax" }
+rx-vm = { path = "../rx-vm" }
+rx-dfa = { path = "../rx-dfa" }
+rx-nfa = { path = "../rx-nfa" }
+
+[[bin]]
+name = "rx"
+path = "src/main.rs"

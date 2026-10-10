@@ -1,0 +1,49 @@
+{
+  "btree": {
+    "by": "ai:reviewer1",
+    "kind": "ai",
+    "review": "delta: REQ-BT-013 page_size validation bugfix, depends on REQ-PAGE-009",
+    "at": "2026-10-10T11:06:02.486Z",
+    "artifacts": {
+      ".sdd/specs/btree.md": "bca7d832cd16d51353c72e5cbbbfa90839897521123f1f6f15f74c0e2e50ecbc"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "wal": {
+    "by": "ai:reviewer2",
+    "kind": "ai",
+    "review": ".sdd/review-wal.md",
+    "reviewSha": "1c25a40415906f61d7df2dadae51952c9e586e7c8715f562fbb3eaa29644bf9a",
+    "at": "2026-10-10T10:53:58.125Z",
+    "artifacts": {
+      ".sdd/specs/wal.md": "7cd7158034316db6ebcfbac0666b681263cb9bb745682c41c74cc4b2ae964755"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "mvcc": {
+    "by": "ai:reviewer3",
+    "kind": "ai",
+    "review": ".sdd/review-mvcc.md",
+    "reviewSha": "f88922ef24a2a977645de2f182ef06bf67bdfe5071dc5e8985824e3f63f75cf8",
+    "at": "2026-10-10T10:56:00.453Z",
+    "artifacts": {
+      ".sdd/specs/mvcc.md": "4d35a7f3d6e2a45db82b2e8ae3f4aeedaa74dc1502b1a507be23646870305a59"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "engine": {
+    "by": "ai:reviewer1",
+    "kind": "ai",
+    "review": ".sdd/review-engine.md",
+    "reviewSha": "4746f26dadf58aa4703a5df18b9ee33a0d2873fca295b6ad8e3e7612773d19ab",
+    "at": "2026-10-10T11:10:26.702Z",
+    "artifacts": {
+      ".sdd/specs/engine.md": "607201661f2f868cc5be0ba3f13cba70f4488786e05ad2cc969317eb0b0a321d"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  }
+}

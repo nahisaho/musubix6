@@ -1,0 +1,74 @@
+{
+  "contract": {
+    "by": "ai:reviewer1",
+    "kind": "ai",
+    "review": ".sdd/review-contract.md",
+    "reviewSha": "2c4fc723d63c42441fafbda3e9f05d9595ea9bcafc6d049b4d283517f4dcd283",
+    "at": "2026-10-10T10:44:03.661Z",
+    "artifacts": {
+      ".sdd/specs/contract.md": "60cc05db9514832fce65ff278455b3378dec128d6ae1582681ce232d0fe8b01f"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "hist": {
+    "by": "ai:reviewer1",
+    "kind": "ai",
+    "review": ".sdd/review-hist.md",
+    "reviewSha": "605f5f0d91745fef047ba3423935a5ab25bc15635f71135dcc9c664450e80a21",
+    "at": "2026-10-10T10:49:07.144Z",
+    "artifacts": {
+      ".sdd/specs/hist.md": "6b1a5b2fc9d436b0bdf7684647304c25fc94856778777118b8cadf4d3afe4c01"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "digest": {
+    "by": "ai:reviewer2",
+    "kind": "ai",
+    "review": ".sdd/review-digest.md",
+    "reviewSha": "b5f356d46351a95a24c16517dfd7619e7e28f2943c143045899f6b71a1b43e18",
+    "at": "2026-10-10T10:54:47.702Z",
+    "artifacts": {
+      ".sdd/specs/digest.md": "c08ccf7b781381135a15bb2a2850c497fea7f060ae7cbbdf3eb8efa653a02039"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "window": {
+    "by": "ai:reviewer2",
+    "kind": "ai",
+    "review": ".sdd/review-window.md",
+    "reviewSha": "f8fe6b4b80050c45e80da2daad01bbc054960f5027b31a4be36d352f6e9018bc",
+    "at": "2026-10-10T10:54:47.757Z",
+    "artifacts": {
+      ".sdd/specs/window.md": "3f38806f47303628912e12fef5022e3982d8b512f48ea9d55f2f0a49904edda3"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "ingest": {
+    "by": "ai:reviewer2",
+    "kind": "ai",
+    "review": ".sdd/review-ingest.md",
+    "reviewSha": "e7fcb36a4cea435864a68126f6a32475a3f04b5f874c666cd63e1a360b44893a",
+    "at": "2026-10-10T10:54:47.816Z",
+    "artifacts": {
+      ".sdd/specs/ingest.md": "996a8ee9ab5d61fc50dbb371a42fdb4ae8e28c3f2b7f82c35da9d12c04d14dc9"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "rollup": {
+    "by": "ai:reviewer3",
+    "kind": "ai",
+    "review": ".sdd/review-rollup.md",
+    "reviewSha": "14938e3b909cefe4bacc4364440a5626f5aadc7ec7410805ef30b178c334f141",
+    "at": "2026-10-10T11:11:23.173Z",
+    "artifacts": {
+      ".sdd/specs/rollup.md": "334e6aff90ca930b968da509aceb35159e6500e694504a5c85a78f15fa26dda6"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  }
+}

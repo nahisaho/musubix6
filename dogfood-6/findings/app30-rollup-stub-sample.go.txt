@@ -1,0 +1,76 @@
+package rollup
+
+import "errors"
+
+var ErrLate = errors.New("ErrLate")
+
+var ErrQuantile = errors.New("ErrQuantile")
+
+var ErrEmpty = errors.New("ErrEmpty")
+
+var ErrCardinality = errors.New("ErrCardinality")
+
+type Engine struct {
+}
+
+type Rollup struct {
+}
+
+type Options struct {
+	Retention any
+}
+
+type Cell struct {
+	Count any
+	Sum any
+	Hist any
+}
+
+type GetResult struct {
+	Count any
+	Sum any
+	Min any
+	Max any
+	Hist any
+	Saturated any
+}
+
+func New(a0, a1 any) *Rollup {
+	return &Rollup{}
+}
+
+func Align(a0, a1 any) any {
+	panic("not implemented: Align")
+}
+
+func Quantile(a0, a1 any) (any, error) {
+	panic("not implemented: Quantile")
+}
+
+func Get() GetResult {
+	panic("not implemented: Get")
+}
+
+func (*Engine) Add(a0 any) error {
+	panic("not implemented: Engine.Add")
+}
+
+func (*Rollup) Get(a0, a1, a2 any) (GetResult, bool) {
+	panic("not implemented: Rollup.Get")
+}
+
+func (*Rollup) Add(a0 any) error {
+	panic("not implemented: Rollup.Add")
+}
+
+func (*Rollup) Roll() any {
+	panic("not implemented: Rollup.Roll")
+}
+
+func (*Rollup) Snapshot() any {
+	panic("not implemented: Rollup.Snapshot")
+}
+
+func (*Rollup) Evict(a0 any) any {
+	panic("not implemented: Rollup.Evict")
+}

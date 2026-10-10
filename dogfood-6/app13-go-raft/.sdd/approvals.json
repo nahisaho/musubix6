@@ -1,0 +1,48 @@
+{
+  "network": {
+    "by": "ai:reviewer1",
+    "kind": "ai",
+    "review": ".sdd/review-network.md",
+    "reviewSha": "e34d2bc22f88df5bd6780e98d9e454448e03f53a2db742e47fc2f7aa53a76797",
+    "at": "2026-10-10T10:59:41.017Z",
+    "artifacts": {
+      ".sdd/specs/network.md": "784d321d2d9006f7f1eb882df792db8022cfd0be673c253ef62490bc2236076c"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "election": {
+    "by": "ai:reviewer2",
+    "kind": "ai",
+    "review": "diff-only review of election design: states/invariants complete, vote-clear order addressed",
+    "at": "2026-10-10T10:48:49.198Z",
+    "artifacts": {
+      ".sdd/specs/election.md": "1d492992437c7e47c95ec77873f1dfb8f54c93ff300ab295ab93a4df16e5c8cc"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "replication": {
+    "by": "ai:reviewer3",
+    "kind": "ai",
+    "review": "REQ-REPL-013 stale response handling reviewed",
+    "at": "2026-10-10T11:02:26.335Z",
+    "artifacts": {
+      ".sdd/specs/replication.md": "2584c693421cc47e78a2425b3125a9a41c36439bb11986e6ff0ad21c0d8fa1fa"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "sim": {
+    "by": "ai:reviewer4",
+    "kind": "ai",
+    "review": ".sdd/review-sim.md",
+    "reviewSha": "c7d0f8622ac430bf3eef85dcd683b19a37651977581c9e3338fa085867e9b060",
+    "at": "2026-10-10T10:57:18.756Z",
+    "artifacts": {
+      ".sdd/specs/sim.md": "2807655886386907b146acc436e4d4593cf0716782c32aec5c11b34b573fcbf5"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  }
+}

@@ -1,0 +1,9 @@
+name = "AutoDiff"
+uuid = "6f1e2c0a-3b7d-4d52-9a41-0c5e8b7a1d25"
+version = "0.1.0"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c245e3a0f8"
+
+[targets]
+test = ["Test"]

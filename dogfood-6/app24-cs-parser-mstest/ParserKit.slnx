@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/ParserKit.Core/ParserKit.Core.csproj" />
+    <Project Path="src/ParserKit.Lang/ParserKit.Lang.csproj" />
+    <Project Path="src/ParserKit.Interp/ParserKit.Interp.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/ParserKit.Core.Tests/ParserKit.Core.Tests.csproj" />
+    <Project Path="tests/ParserKit.Lang.Tests/ParserKit.Lang.Tests.csproj" />
+    <Project Path="tests/ParserKit.Interp.Tests/ParserKit.Interp.Tests.csproj" />
+  </Folder>
+</Solution>

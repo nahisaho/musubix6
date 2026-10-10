@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "priority": { "min": 0, "max": 9, "default": 5 },
+  "maxAttempts": { "min": 1, "max": 10, "default": 3 },
+  "maxPayloadBytes": 1024,
+  "typePattern": "^[a-z][a-z0-9]*(\\.[a-z][a-z0-9]*)*$",
+  "idempotencyKeyPattern": "^[A-Za-z0-9_-]{1,64}$",
+  "allowedFields": ["type", "payload", "priority", "maxAttempts", "runAt", "deadline", "idempotencyKey"]
+}

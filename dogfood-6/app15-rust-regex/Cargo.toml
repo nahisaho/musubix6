@@ -1,0 +1,3 @@
+[workspace]
+resolver = "2"
+members = ["crates/rx-syntax","crates/rx-nfa","crates/rx-dfa","crates/rx-vm","crates/rx-engine","crates/rx-cli"]

@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "testCmd": [
+    "vendor/bin/phpunit",
+    "--do-not-cache-result",
+    "--filter",
+    "{idu}",
+    "{file}"
+  ],
+  "checks": [
+    {
+      "name": "test",
+      "cmd": [
+        "vendor/bin/phpunit",
+        "--do-not-cache-result"
+      ]
+    }
+  ],
+  "timeoutMs": 120000
+}
