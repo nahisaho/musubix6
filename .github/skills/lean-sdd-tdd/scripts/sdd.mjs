@@ -2922,7 +2922,13 @@ function setupOrigin(line, testPath, id, text = '') {
     const DEF = /^\s*(?:pub\s+)?(?:async\s+)?(?:fn|def|function|func)\s+(\w+)|^\s*(?:const|let)\s+(\w+)\s*=\s*(?:async\s*)?\(/;
     const defs = all.map((l, i) => ({ i, n: DEF.exec(l) })).filter((d) => d.n).map((d) => ({ i: d.i, name: d.n[1] ?? d.n[2] }));
     const bodyOf = (d, k) => all.slice(d.i, k + 1 < defs.length ? defs[k + 1].i : all.length);
-    const helpers = defs.filter((d, k) => (d.i < start || d.i >= end) && bodyOf(d, k).some((l) => re.test(l)) && !/^test/i.test(d.name)).map((d) => d.name);
+    const outside = defs.filter((d) => (d.i < start || d.i >= end) && !/^test/i.test(d.name));
+    const helpers = outside.filter((d) => bodyOf(d, defs.indexOf(d)).some((l) => re.test(l))).map((d) => d.name);
+    // helpers that reach the stub only through other helpers (`check_same` -> `inl` -> stub) are setup/act wrappers too (#244)
+    for (let grew = true; grew;) {
+      grew = false;
+      for (const d of outside) if (!helpers.includes(d.name) && bodyOf(d, defs.indexOf(d)).some((l) => helpers.some((h) => new RegExp(`(?<![\\w$])${h}\\s*\\(`).test(l)))) { helpers.push(d.name); grew = true; }
+    }
     const bl = testBody(testPath, id), bf = markAsserts(bl);
     for (const h of helpers) {
       const hre = new RegExp(`(?<![\\w$])${h}\\s*\\(`);

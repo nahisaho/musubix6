@@ -6007,3 +6007,17 @@ test('#248 C stub: includes/build of a project subdirectory are searched, not on
   assert.doesNotMatch(out, /No such file/, out);
   assert.match(out, /compile-checked|nothing to stub/, out);
 });
+
+test('#244 weak Red: a stub reached through nested helpers is asserted when the result is asserted', () => {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-js-'));
+  fs.mkdirSync(path.join(d, '.sdd/specs'), { recursive: true });
+  fs.writeFileSync(path.join(d, 'package.json'), '{}');
+  spawnSync('git', ['init', '-q'], { cwd: d });
+  fs.writeFileSync(path.join(d, '.sdd/specs/a.md'), T1SPEC);
+  fs.writeFileSync(path.join(d, 'a.test.mjs'), "import assert from 'node:assert';\nimport { make } from './lib.mjs';\nfunction inner() {\n  return make();\n}\nfunction outer() {\n  const r = inner();\n  return r;\n}\n// @id TEST-A-001 @verifies REQ-A-001\ntest('TEST-A-001', () => {\n  const r = outer();\n  assert.equal(r.n, 1);\n});\n");
+  fs.writeFileSync(path.join(d, 'lib.mjs'), "export function make() { throw new Error('not implemented: make'); }\n");
+  sdd(d, 'init');
+  setCmd(d, ['node', '-e', "const e=new Error('not implemented: make');e.stack='Error: '+e.message+'\\n    at x (a.test.mjs:4:1)';console.log(e.stack);process.exit(1)"]);
+  const r = spawnSync('node', [SDD, '--root', d, 'tdd', 'red', 'TEST-A-001'], { encoding: 'utf8', env: ENV });
+  assert.doesNotMatch(r.stdout, /setup call|\[weak\]/, r.stdout);
+});
