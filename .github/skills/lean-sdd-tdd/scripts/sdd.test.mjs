@@ -5516,3 +5516,32 @@ test('#219 JS tdd stub: require() of a missing relative module and dynamic impor
   assert.match(lib, /^export const one = \(\) => 1;\n/);
   assert.match(lib, /three/);
 });
+
+test('#222 PHP tdd stub: enum cases with instance methods, `use function` / `use const` namespaced symbols', { skip: spawnSync('which', ['php']).status !== 0 }, () => {
+  const spec = '---\nfeature: k\ntier: T1\n---\n| REQ-K-001 | x shall hold. | TEST-K-001 |\n| REQ-K-002 | y shall hold. | TEST-K-002 |\n';
+  const d = mini(spec, {
+    'composer.json': '{"autoload":{"psr-4":{"Kernel\\\\":"src/"}}}',
+    'tests/KTest.php': [
+      '<?php', 'use PHPUnit\\Framework\\TestCase;', 'use function Kernel\\{clamp, stable_id};', 'use const Kernel\\MAX_NIGHTS;', 'use Kernel\\Level;', '',
+      'final class KTest extends TestCase', '{',
+      '    /** @id TEST-K-001 @verifies REQ-K-001 */',
+      "    public function test_k_001(): void { $this->assertSame(3, clamp(5, MAX_NIGHTS)); $this->assertSame('a', stable_id('a')); }",
+      '    /** @id TEST-K-002 @verifies REQ-K-002 */',
+      '    public function test_k_002(): void { $this->assertSame(2, Level::High->rank()); }', '}', '',
+    ].join('\n'),
+  });
+  sdd(d, 'tdd', 'stub', 'TEST-K-001');
+  const fns = fs.readFileSync(path.join(d, 'src/functions.php'), 'utf8');
+  assert.match(fns, /namespace Kernel;/);
+  assert.match(fns, /function clamp\(/);
+  assert.match(fns, /function stable_id\(/);
+  assert.match(fns, /const MAX_NIGHTS/);
+  assert.deepEqual(JSON.parse(fs.readFileSync(path.join(d, 'composer.json'), 'utf8')).autoload.files, ['src/functions.php']);
+  assert.equal(spawnSync('php', ['-l', path.join(d, 'src/functions.php')]).status, 0);
+  sdd(d, 'tdd', 'stub', 'TEST-K-002');
+  const en = fs.readFileSync(path.join(d, 'src/Level.php'), 'utf8');
+  assert.match(en, /enum Level/);
+  assert.match(en, /case High/);
+  assert.match(en, /public function rank\(/);
+  assert.doesNotMatch(en, /static function rank/);
+});

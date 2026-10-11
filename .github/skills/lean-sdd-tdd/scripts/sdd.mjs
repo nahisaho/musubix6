@@ -2040,17 +2040,20 @@ function stubScript(lang, src, dir, add, made) {
     for (const k of code.matchAll(new RegExp(`new\\s+\\\\?${c}\\s*\\([^()]*\\)\\s*\\)?\\s*->\\s*(\\w+)\\s*\\(`, 'g'))) ms.add(k[1]);
     return [...ms].filter((k) => !/^(assert\w*|expect\w*|__\w+)$/.test(k));
   };
-  const phpConsts = new Map(), phpEnums = new Set();
-  const classBody = (c, ms) => phpEnums.has(c) ? `enum ${c}: string\n{\n${[...[...(phpConsts.get(c) ?? [])].map((k) => `    case ${k} = '${k}';\n`), ...[...ms].map((n) => `\n    public static function ${n}(...$args)\n    {\n        throw new \\LogicException('not implemented: ${c}::${n}');\n    }\n`)].join('')}}\n` : exc.has(c) ? `class ${c} extends \\Exception\n{\n}\n` : `class ${c}\n{\n${[...[...(phpConsts.get(c) ?? [])].map((k) => `    public const ${k} = '${k}';\n`), ...[...ms].map((n) => `    public static function ${n}(...$args)\n    {\n        throw new \\LogicException('not implemented: ${c}::${n}');\n    }\n`), ...phpInst(c).filter((n) => !ms.has(n)).map((n) => `    public function ${n}(...$args)\n    {\n        throw new \\LogicException('not implemented: ${c}->${n}');\n    }\n`)].join('\n')}}\n`;
+  const phpConsts = new Map(), phpEnums = new Set(), phpEnumInst = new Map();
+  const classBody = (c, ms) => phpEnums.has(c) ? `enum ${c}: string\n{\n${[...[...(phpConsts.get(c) ?? [])].map((k) => `    case ${k} = '${k}';\n`), ...[...ms].map((n) => `\n    public static function ${n}(...$args)\n    {\n        throw new \\LogicException('not implemented: ${c}::${n}');\n    }\n`), ...[...(phpEnumInst.get(c) ?? [])].filter((n) => !ms.has(n)).map((n) => `\n    public function ${n}(...$args)\n    {\n        throw new \\LogicException('not implemented: ${c}->${n}');\n    }\n`)].join('')}}\n` : exc.has(c) ? `class ${c} extends \\Exception\n{\n}\n` : `class ${c}\n{\n${[...[...(phpConsts.get(c) ?? [])].map((k) => `    public const ${k} = '${k}';\n`), ...[...ms].map((n) => `    public static function ${n}(...$args)\n    {\n        throw new \\LogicException('not implemented: ${c}::${n}');\n    }\n`), ...phpInst(c).filter((n) => !ms.has(n)).map((n) => `    public function ${n}(...$args)\n    {\n        throw new \\LogicException('not implemented: ${c}->${n}');\n    }\n`)].join('\n')}}\n`;
   if (lang === 'php') {
     for (const m of code.matchAll(/(?<![\w$\\])([A-Z]\w*)::([A-Za-z_]\w*)\s*\(/g)) phpClasses.set(m[1], new Set([...(phpClasses.get(m[1]) ?? []), m[2]]));
     for (const m of code.matchAll(/\bnew\s+([A-Z]\w*)/g)) if (!phpClasses.has(m[1])) phpClasses.set(m[1], new Set());
     // `Cls::CONST` / `Enum::CASE->value` reference a class too: constants become `const`s, enum-style use (`->value`/`->name`) an enum (#150)
-    for (const m of code.matchAll(/(?<![\w$\\])([A-Z]\w*)::([A-Za-z_]\w*)\b(?!\s*\()(\s*->\s*(?:value|name)\b)?/g)) {
-      if (m[2] === 'class' || !(m[3] || /^[A-Z][A-Z0-9_]*$/.test(m[2]))) continue;
+    // a CamelCase `Cls::Case`, or any `Cls::NAME->member`, is an enum case; `->method(` on it is an instance method of the enum (#222)
+    for (const m of code.matchAll(/(?<![\w$\\])([A-Z]\w*)::([A-Za-z_]\w*)\b(?!\s*\()(\s*->\s*(\w+)(\s*\()?)?/g)) {
+      const caseLike = /^[A-Z]\w*$/.test(m[2]) && /[a-z]/.test(m[2]);
+      if (m[2] === 'class' || !(m[3] || caseLike || /^[A-Z][A-Z0-9_]*$/.test(m[2]))) continue;
       if (!phpClasses.has(m[1])) phpClasses.set(m[1], new Set());
       phpConsts.set(m[1], new Set([...(phpConsts.get(m[1]) ?? []), m[2]]));
-      if (m[3]) phpEnums.add(m[1]);
+      if (m[3] || caseLike) phpEnums.add(m[1]);
+      if (m[5] && !/^(value|name)$/.test(m[4])) phpEnumInst.set(m[1], new Set([...(phpEnumInst.get(m[1]) ?? []), m[4]]));
     }
     for (const c of [...phpClasses.keys()]) if (new RegExp(`\\b(?:class|interface|enum)\\s+${c}\\b`).test(code) || /^(self|static|parent|DateTime\w*|Exception|\w*Exception|Closure|ArrayObject|ArrayIterator|stdClass|Throwable|Error|Generator|SplStack|SplQueue|SplObjectStorage|JsonException|DateInterval|DateTimeZone)$/.test(c)) phpClasses.delete(c);
     for (const m of code.matchAll(/expectException\(\s*\\?([A-Z]\w*)::class/g)) { exc.add(m[1]); if (!phpClasses.has(m[1])) phpClasses.set(m[1], new Set()); }
@@ -2108,6 +2111,41 @@ function stubScript(lang, src, dir, add, made) {
       phpClasses.delete(local);
       psrDone = true;
     }
+    // `use function Ns\f` / `use const Ns\C`: throwing namespaced functions and placeholder consts live in <PSR-4 root>/functions.php, registered under composer.json autoload.files (#222)
+    const nsSyms = new Map();
+    for (const [kind, fq] of [...[...phpImports(code, 'function').values()].map((q) => ['function', q]), ...[...phpImports(code, 'const').values()].map((q) => ['const', q])]) {
+      const name = fq.split('\\').pop(), ns = fq.slice(0, -name.length - 1);
+      if (!ns) continue;
+      const defined = gitFiles('*.php').some((f) => { try { const t = fs.readFileSync(path.join(ROOT, f), 'utf8'); return new RegExp(`^\\s*namespace\\s+${escapeRe(ns)}\\s*[;{]`, 'm').test(t) && new RegExp(kind === 'function' ? `\\bfunction\\s+&?${name}\\s*\\(` : `\\bconst\\s+${name}\\b`).test(t); } catch { return false; } });
+      if (defined) continue;
+      if (!nsSyms.has(ns)) nsSyms.set(ns, { fns: [], consts: [] });
+      nsSyms.get(ns)[kind === 'function' ? 'fns' : 'consts'].push(name);
+    }
+    for (const [ns, { fns, consts }] of nsSyms) {
+      const hit = psr4.find(([k]) => (ns + '\\').startsWith(k));
+      const rest = hit ? (ns + '\\').slice(hit[0].length).split('\\').filter(Boolean) : ns.split('\\').slice(1);
+      const fileAbs = path.join(hit ? path.resolve(ROOT, hit[1]) : path.join(ROOT, 'src'), ...rest, 'functions.php');
+      if (!fileAbs.startsWith(ROOT + path.sep) || /(^|\/)vendor\//.test(rel(fileAbs))) { (made.notes ??= []).push(`${ns}: function/const destination is outside project source — not stubbed`); continue; }
+      const defs = [...fns.map((n) => `function ${n}(...$args)\n{\n    throw new \\LogicException('not implemented: ${n}');\n}\n`), ...consts.map((n) => `const ${n} = 0;\n`)].join('\n');
+      if (fs.existsSync(fileAbs)) {
+        const cur = fs.readFileSync(fileAbs, 'utf8');
+        const lack = (n, isFn) => !new RegExp(isFn ? `\\bfunction\\s+&?${n}\\s*\\(` : `\\bconst\\s+${n}\\b`).test(cur);
+        const add2 = [...fns.filter((n) => lack(n, true)).map((n) => `function ${n}(...$args)\n{\n    throw new \\LogicException('not implemented: ${n}');\n}\n`), ...consts.filter((n) => lack(n, false)).map((n) => `const ${n} = 0;\n`)].join('\n');
+        if (add2 && new RegExp(`^\\s*namespace\\s+${escapeRe(ns)}\\s*;`, 'm').test(cur)) { fs.appendFileSync(fileAbs, `${cur.endsWith('\n') ? '' : '\n'}\n${add2}`); made.push(rel(fileAbs)); }
+        else if (add2) (made.realMissing ??= []).push(`${[...fns, ...consts].join(', ')} in ${rel(fileAbs)}`);
+      } else add(fileAbs, `<?php\n\nnamespace ${ns};\n\n${defs}`);
+      if (!fs.existsSync(fileAbs)) continue;
+      try {
+        const cjPath = path.join(ROOT, 'composer.json'), raw = fs.readFileSync(cjPath, 'utf8'), cj = JSON.parse(raw);
+        const relFile = rel(fileAbs);
+        if (!(cj.autoload?.files ?? []).includes(relFile)) {
+          cj.autoload = { ...(cj.autoload ?? {}), files: [...(cj.autoload?.files ?? []), relFile] };
+          fs.writeFileSync(cjPath, JSON.stringify(cj, null, /^\n?( +)"/m.exec(raw)?.[1].length ?? 0) + '\n');
+          (made.notes ??= []).push(`${relFile} registered under composer.json autoload.files — run \`composer dump-autoload\` if vendor/ already exists`);
+        }
+      } catch { (made.notes ??= []).push(`${rel(fileAbs)}: add it to composer.json "autoload.files" so the functions load`); }
+    }
+    unknown = unknown.filter((n) => ![...nsSyms.values()].some((x) => x.fns.includes(n)) && !phpImports(code, 'function').has(n));
   }
   const loads = [...src.matchAll(loadRe)].map((m) => path.resolve(dir, m[1].replace(/^\/+/, ''))).filter((abs) => !fs.existsSync(abs));
   const used = new Set();
