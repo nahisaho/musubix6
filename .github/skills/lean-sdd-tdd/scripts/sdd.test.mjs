@@ -5507,3 +5507,20 @@ test('#227 Go tests behind a //go:build tag run with -tags automatically', () =>
   fs.writeFileSync(path.join(d, 'calc.go'), 'package m\n\nfunc Calc() int { return 1 }\n');
   assert.equal(sdd(d, 'tdd', 'green', 'TEST-CALC-001').code, 0);
 });
+
+test('#229 appending a test to a partial test-class sibling does not stale the other file', () => {
+  const body = (n, extra = '') => `namespace Tests;\npublic partial class MoneyTests {\n${extra}// @id TEST-CALC-00${n} @verifies REQ-CALC-001\n[Fact]\npublic void test_calc_00${n}() { Assert.Equal(1, 2); }\n}\n`;
+  const d = batch2Source('tests/MoneyTests.cs', body(1));
+  writeAll(d, { 'tests/MoneyTests.Fx.cs': body(2) });
+  fakeOut(d, 'AssertionError: target');
+  for (const id of ['TEST-CALC-001', 'TEST-CALC-002']) assert.equal(sdd(d, 'tdd', 'red', id).code, 0, id);
+  fakeOut(d, 'pass', 0);
+  for (const id of ['TEST-CALC-001', 'TEST-CALC-002']) assert.equal(sdd(d, 'tdd', 'green', id).code, 0, id);
+  const f = path.join(d, 'tests/MoneyTests.cs');
+  fs.writeFileSync(f, rd130(d, 'tests/MoneyTests.cs').replace(/\}\n$/, '// @id TEST-CALC-003 @verifies REQ-CALC-001\n[Fact]\npublic void test_calc_003() { Assert.Equal(1, 2); }\n}\n'));
+  const r = sdd(d, 'tdd', 'green', 'TEST-CALC-002');
+  assert.equal(r.code, 0, r.out);
+  assert.doesNotMatch(r.out, /changed since/);
+  fs.writeFileSync(path.join(d, 'tests/MoneyTests.cs'), rd130(d, 'tests/MoneyTests.cs').replace('namespace Tests;', 'namespace Tests;\nusing Oracle;'));
+  assert.equal(sdd(d, 'tdd', 'green', 'TEST-CALC-002').code, 1, 'shared sibling content is still an oracle');
+});

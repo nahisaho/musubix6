@@ -558,6 +558,14 @@ function localSourceDependencies(file, text, rootFile = false, cFamily = false, 
 }
 // Local test-support dependencies are conservative oracles; annotated production is not (#181).
 let oracleDependencyFiles = [];
+// a sibling file that holds its own annotated tests (partial test class, shared test module): only its non-test content is an oracle, so adding a test there does not stale this one (#229)
+function siblingTestSha(file, text, raw) {
+  if (!BRACE_TEST.test(file) || !/@id\s+TEST-/.test(text)) return sha(raw);
+  const ranges = braceFunctions(text, file);
+  if (!ranges) return sha(raw);
+  const tests = ranges.filter((r) => /@id\s+TEST-/.test(r.body));
+  return tests.length ? sha('tests-excluded\u0000' + sharedOutside(text, tests)) : sha(raw);
+}
 function externalOracleSha(p, hash) {
   oracleDependencyFiles = [];
   if (!/\.(?:rs|c|cc|cpp|cxx|java|php|cs|jl|py|[cm]?[jt]s|[jt]sx|[rR])$/.test(p)) return hash;
@@ -568,7 +576,7 @@ function externalOracleSha(p, hash) {
     try { raw = fs.readFileSync(file); text = raw.toString('utf8').replace(/^\uFEFF/, '').replace(/\r\n/g, '\n'); }
     catch { if (!rootFile) deps.set(rel(file), 'missing'); return; }
     if (!rootFile && /@id\s+CODE-/.test(text) && !/@id\s+TEST-/.test(text)) return;
-    if (!rootFile) deps.set(rel(file), sha(raw));
+    if (!rootFile) deps.set(rel(file), siblingTestSha(file, text, raw));
     const next = localSourceDependencies(file, text, rootFile, !!compiler, compiler);
     for (const dep of next) {
       if (!dep.startsWith(ROOT + path.sep) || seen.has(dep)) continue;
