@@ -5576,3 +5576,53 @@ test('#221 C++ stub: a namespace-qualified using-declaration places the class in
   assert.match(s, /class Arena/);
   assert.match(r.out, /compile-checked/, r.out);
 });
+
+const HAS_MIX = spawnSync('mix', ['--version'], { encoding: 'utf8' }).status === 0;
+const exSpec = '---\nfeature: e\ntier: T1\n---\n| REQ-E-001 | add shall hold. | TEST-E-001 |\n| REQ-E-002 | sub shall hold. | TEST-E-002 |\n';
+const exFiles = {
+  'mix.exs': 'defmodule D.MixProject do\n  use Mix.Project\n  def project, do: [app: :d, version: "0.1.0", deps: []]\nend\n',
+  'test/test_helper.exs': 'ExUnit.start()\n',
+  'test/support/helpers.ex': 'defmodule D.Helpers do\n  def three, do: 3\nend\n',
+  'test/d_test.exs': 'defmodule DTest do\n  use ExUnit.Case, async: true\n  alias D.Calc\n\n  describe "math" do\n    # @id TEST-E-001\n    # @verifies REQ-E-001\n    test "adds" do\n      assert Calc.add(1, 2) == D.Helpers.three()\n    end\n\n    # @id TEST-E-002\n    # @verifies REQ-E-002\n    @tag :slow\n    test "subs" do\n      assert Calc.sub(3, 2) == 99\n    end\n  end\nend\n',
+};
+
+test('ExUnit: mix detection, tdd stub, Red/Green attribution by test, impact and oracle hashing', { skip: !HAS_MIX }, () => {
+  const d = mini(exSpec, exFiles);
+  fs.rmSync(path.join(d, 'package.json'));
+  fs.rmSync(path.join(d, '.sdd/config.json'));
+  sdd(d, 'init');
+  const cfg = JSON.parse(fs.readFileSync(path.join(d, '.sdd/config.json'), 'utf8'));
+  assert.deepEqual(cfg.testCmd, ['mix', 'test', '{file}']);
+  assert.deepEqual(cfg.checks.map((c) => c.cmd.join(' ')), ['mix test']);
+  const st = sdd(d, 'tdd', 'stub', 'TEST-E-001');
+  const lib = fs.readFileSync(path.join(d, 'lib/d/calc.ex'), 'utf8');
+  assert.match(lib, /defmodule D\.Calc do/, st.out);
+  assert.match(lib, /def add\(_a1, _a2\)/);
+  assert.doesNotMatch(lib, /three|sub/);
+  assert.match(lib, /^# @id CODE-E-001-STUB-001/, lib);
+  const red = sdd(d, 'tdd', 'red', 'TEST-E-001', '--allow-setup-red');
+  assert.match(red.out, /RED/i, red.out);
+  fs.writeFileSync(path.join(d, 'lib/d/calc.ex'), '# @id CODE-E-001-STUB-001 @implements REQ-E-001\ndefmodule D.Calc do\n  def add(a, b), do: a + b\n  def sub(a, b), do: a - b\nend\n');
+  const green = sdd(d, 'tdd', 'green', 'TEST-E-001');
+  assert.match(green.out, /GREEN/i, green.out);
+  // TEST-E-002 fails on its own assertion: attributed to it by file:line, not to TEST-E-001
+  const red2 = sdd(d, 'tdd', 'red', 'TEST-E-002');
+  assert.match(red2.out, /RED/i, red2.out);
+  const imp = sdd(d, 'impact', 'lib/d/calc.ex');
+  assert.match(imp.out, /test\/d_test\.exs/, imp.out);
+  const before = sdd(d, 'tdd', 'refactor', 'TEST-E-001').out;
+  fs.writeFileSync(path.join(d, 'test/support/helpers.ex'), 'defmodule D.Helpers do\n  def three, do: 4\nend\n');
+  const stale = sdd(d, 'tdd', 'green', 'TEST-E-001');
+  assert.match(stale.out, /REFUSED|REJECTED/, before + stale.out);
+});
+
+test('ExUnit: a missing module is a load error, a skipped/excluded test is not Green', { skip: !HAS_MIX }, () => {
+  const d = mini(exSpec, { ...exFiles, 'test/d_test.exs': exFiles['test/d_test.exs'].replace('@tag :slow', '@tag :skip') }, ['mix', 'test', '{file}']);
+  const r = sdd(d, 'tdd', 'red', 'TEST-E-001');
+  assert.match(r.out, /REJECTED[^\n]*load\/compile error/, r.out);
+  fs.mkdirSync(path.join(d, 'lib/d'), { recursive: true });
+  fs.writeFileSync(path.join(d, 'lib/d/calc.ex'), 'defmodule D.Calc do\n  def add(a, b), do: a + b\n  def sub(a, b), do: a - b\nend\n');
+  sdd(d, 'tdd', 'red', 'TEST-E-001', '--characterization', 'already implemented');
+  const skipped = sdd(d, 'tdd', 'red', 'TEST-E-002');
+  assert.match(skipped.out, /REJECTED[^\n]*no test matched|skipped/i, skipped.out);
+});
