@@ -390,8 +390,49 @@ function javaModuleRoot(file) {
   }
   return ROOT;
 }
+// Test-support files are oracles; production files (annotated CODE-, or outside test-like locations) are not (#181, #214, #219, #224).
+const testSupportPath = (f) => /(^|\/)(?:tests?|__tests__|specs?|fixtures?|__fixtures__|__mocks__|testdata|test-data|testthat|e2e|support|helpers?)\//i.test(rel(f)) || /(?:^|[/.-])(?:test|spec|helper|fixture|oracle|setup|mock)s?[^/]*$/i.test(rel(f));
+function pythonConftests(file) {
+  const found = [];
+  for (let dir = path.dirname(file); dir.startsWith(ROOT); dir = path.dirname(dir)) {
+    const conftest = path.join(dir, 'conftest.py');
+    if (conftest !== file && fs.existsSync(conftest)) found.push(conftest);
+    if (dir === ROOT) break;
+  }
+  return found;
+}
+function scriptOracleImports(file, text) {
+  const found = [], exts = ['', '.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs', '.mts', '.cts', '.json', '/index.ts', '/index.js', '/index.mjs'];
+  const specs = [...text.matchAll(/\b(?:import|export)\b[^'";]*?\bfrom\s*(['"])([^'"]+)\1|\bimport\s*(['"])([^'"]+)\3|\b(?:require|import)\s*\(\s*(['"`])([^'"`$]+)\5\s*\)/g)].map((m) => m[2] ?? m[4] ?? m[6]);
+  for (const spec of specs) {
+    if (!/^\.{1,2}\//.test(spec)) continue;
+    const base = path.resolve(path.dirname(file), spec);
+    const hit = exts.map((e) => base + e).concat(spec.endsWith('.js') ? [base.replace(/\.js$/, '.ts'), base.replace(/\.js$/, '.tsx')] : []).find((f) => { try { return fs.statSync(f).isFile(); } catch { return false; } });
+    if (!hit) continue;
+    let code = true;
+    try { code = !/\.json$/i.test(hit) && fs.readFileSync(hit, 'utf8').includes('@id CODE-'); } catch {}
+    if (!code && (testSupportPath(hit) || /\.(?:json|csv|txt|ya?ml)$/i.test(hit))) found.push(hit);
+  }
+  return found;
+}
+function rOracleImports(file, text) {
+  const found = [], dir = path.dirname(file);
+  const add = (f) => { try { if (fs.statSync(f).isFile()) found.push(f); } catch {} };
+  for (const m of text.matchAll(/\b(source|sys\.source|test_path|read\.csv2?|read\.delim|read\.table|readRDS|readLines|scan|load|fread|read_csv|read_tsv|read_delim|read_rds|read_excel|read_json|fromJSON|file)\s*\(\s*(?:file\s*=\s*)?(['"])([^'"]+)\2/g)) {
+    const target = path.resolve(dir, m[3]);
+    const rootTarget = path.resolve(ROOT, m[3]);
+    for (const f of new Set([target, rootTarget])) {
+      if (!/^source|^sys\.source/.test(m[1]) || testSupportPath(f)) add(f);
+    }
+  }
+  if (rel(file).startsWith('tests/') || /(^|\/)testthat\//.test(rel(file))) for (const f of fs.readdirSync(dir)) if (/^(?:helper|setup)[-_].*\.[Rr]$/.test(f)) add(path.join(dir, f));
+  return found.filter((f) => f !== file);
+}
 function localSourceDependencies(file, text, rootFile = false, cFamily = false, compilerContext = null) {
   const next = [], ext = path.extname(file);
+  if (ext === '.py') return rootFile ? pythonConftests(file) : [];
+  if (/^\.(?:[cm]?[jt]s|[jt]sx)$/.test(ext)) return scriptOracleImports(file, text);
+  if (/^\.r$/i.test(ext)) return rOracleImports(file, text);
   const suffix = (name) => workspaceFiles().filter((f) => f === name || f.endsWith('/' + name)).map((f) => path.join(ROOT, f));
   if (ext === '.rs') {
     const inline = rootFile ? rustTestRegion(text) : -1;
@@ -498,7 +539,7 @@ function localSourceDependencies(file, text, rootFile = false, cFamily = false, 
 let oracleDependencyFiles = [];
 function externalOracleSha(p, hash) {
   oracleDependencyFiles = [];
-  if (!/\.(?:rs|c|cc|cpp|cxx|java|php|cs|jl)$/.test(p)) return hash;
+  if (!/\.(?:rs|c|cc|cpp|cxx|java|php|cs|jl|py|[cm]?[jt]s|[jt]sx|[rR])$/.test(p)) return hash;
   const root = path.join(ROOT, p), seen = new Set([root]), deps = new Map();
   const compiler = /\.(?:c|cc|cpp|cxx)$/.test(p) ? cCompilerInputs(root) : null;
   const visit = (file, rootFile = false) => {

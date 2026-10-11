@@ -5269,3 +5269,37 @@ test('#142 weak Red: Go panic stub in test setup and C# static initializer are w
   fakeOut(e, 'System.TypeInitializationException: The type initializer for \'T\' threw an exception.\n ---> System.NotImplementedException : The method or operation is not implemented.\n   at P.Satisfy(Func`2 f) in /x/P.cs:line 3\n');
   assert.match(sdd(e, 'tdd', 'red', 'TEST-CALC-001').out, /\[weak\].*setup call "Satisfy"/);
 });
+
+// ---- wave 3/4 dogfood-7 (#213-#224) ----
+const oracleDrift = (d, id, edit) => {
+  assert.equal(sdd(d, 'tdd', 'red', id).code, 0);
+  fakeOut(d, 'pass', 0);
+  assert.equal(sdd(d, 'tdd', 'green', id).code, 0, 'unchanged oracle keeps Green');
+  edit();
+  const g = sdd(d, 'tdd', 'green', id);
+  assert.equal(g.code, 1, g.out);
+  assert.match(g.out, /changed since Red/);
+};
+
+test('#219 JS/TS local test-support imports and data are hashed oracles; production is not', () => {
+  const d = batch2Source('test/a.test.js', "import { expected } from './oracle.js';\nimport { add } from '../src/add.js';\nimport data from './data.json';\n// @id TEST-CALC-001 @verifies REQ-CALC-001\ntest('a', () => { assert.equal(add(1, 2), expected + data.n); });\n");
+  writeAll(d, { 'test/oracle.js': 'export const expected = 4;\n', 'test/data.json': '{"n":0}', 'src/add.js': 'export const add = (a, b) => 0;\n' });
+  fakeOut(d, 'AssertionError: 0 !== 4');
+  oracleDrift(d, 'TEST-CALC-001', () => writeAll(d, { 'test/oracle.js': 'export const expected = 3;\n' }));
+  writeAll(d, { 'test/oracle.js': 'export const expected = 3;\n', 'src/add.js': 'export const add = (a, b) => a + b;\n' });
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-CALC-001', '--retest', 'oracle fixed').code, 0);
+});
+
+test('#214 Python conftest.py edits stale test evidence', () => {
+  const d = batch2Source('tests/test_a.py', 'def test_calc_001(val):\n    # @id TEST-CALC-001 @verifies REQ-CALC-001\n    assert val == 2\n');
+  writeAll(d, { 'tests/conftest.py': 'import pytest\n@pytest.fixture\ndef val():\n    return 1\n' });
+  fakeOut(d, 'E   assert 1 == 2\nFAILED tests/test_a.py::test_calc_001 - assert 1 == 2\n1 failed');
+  oracleDrift(d, 'TEST-CALC-001', () => writeAll(d, { 'tests/conftest.py': 'import pytest\n@pytest.fixture\ndef val():\n    return 2\n' }));
+});
+
+test('#224 R source()/helper/data oracles are hashed', () => {
+  const d = batch2Source('tests/testthat/test-a.R', 'source("oracle_b.R")\ntest_that("a", {\n  # @id TEST-CALC-001 @verifies REQ-CALC-001\n  expect_equal(f(), expected_b + helper_v() + nrow(read.csv("oracle_c.csv")))\n})\n');
+  writeAll(d, { 'tests/testthat/oracle_b.R': 'expected_b <- 1\n', 'tests/testthat/oracle_c.csv': 'a\n1\n', 'tests/testthat/helper-x.R': 'helper_v <- function() 1\n' });
+  fakeOut(d, 'Failure (test-a.R:4:3): a\nf() not equal to 3\n');
+  oracleDrift(d, 'TEST-CALC-001', () => writeAll(d, { 'tests/testthat/helper-x.R': 'helper_v <- function() 2\n' }));
+});
