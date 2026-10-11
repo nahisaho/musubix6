@@ -130,13 +130,14 @@ function maskAttributes(masked) {
   }
   return masked;
 }
-function phpImports(txt) {
+function phpImports(txt, kind = '') {
   const aliases = new Map();
-  for (const m of txt.matchAll(/\buse\s+([^;]+);/gi)) {
+  for (const m of maskBraces(txt).matchAll(/\buse\s+([^;]+);/gi)) {
     const group = /^([^{}]+)\{([^{}]+)\}$/.exec(m[1].trim());
+    const prefix = /^(?:(function|const)\s+)?(.*)$/i.exec((group?.[1] ?? '').trim());
     for (const item of (group?.[2] ?? m[1]).split(',')) {
-      const use = /^\s*(\\?[\w\\]+)(?:\s+as\s+(\w+))?\s*$/i.exec(item);
-      if (use) aliases.set(use[2] ?? use[1].split('\\').at(-1), ((group?.[1] ?? '') + use[1]).replace(/^\\/, ''));
+      const use = /^\s*(?:(function|const)\s+)?(\\?[\w\\]+)(?:\s+as\s+(\w+))?\s*$/i.exec(item);
+      if (use && (use[1]?.toLowerCase() ?? prefix[1]?.toLowerCase() ?? '') === kind) aliases.set(use[3] ?? use[2].split('\\').at(-1), (prefix[2] + use[2]).replace(/^\\/, ''));
     }
   }
   return aliases;
@@ -231,24 +232,68 @@ function braceTestSha(txt, id, p) {
   if (!ranges) return sha(txt);
   const mine = ranges.find((r) => new RegExp(`@id\\s+${id}\\b`).test(r.body));
   if (!mine) return sha(txt);
-  const inline = /\.rs$/.test(p) ? txt.indexOf('#[cfg(test)]') : -1;
+  const inline = /\.rs$/.test(p) ? rustTestRegion(txt) : -1;
   const helpers = ranges.filter((r) => !r.test && !r.code && (inline < 0 || r.start > inline));
   const shared = sharedOutside(txt, ranges, inline >= 0 ? inline : 0);
   return sha(shared + '\u0000' + mine.body.trim() + '\u0000' + protectedHelpers(mine, helpers, shared, /\.php$/.test(p)));
 }
+function rustTestRegion(text) {
+  return maskBraces(text, true).search(/#\s*\[\s*cfg\s*\(\s*test\s*\)\s*\]/);
+}
+let localCargo;
+function cargoSources() {
+  if (localCargo) return localCargo;
+  const packages = workspaceFiles().filter((f) => /(?:^|\/)Cargo\.toml$/.test(f)).map((file) => {
+    const text = fs.readFileSync(path.join(ROOT, file), 'utf8');
+    const dir = path.dirname(file);
+    const sections = [...text.matchAll(/^\s*\[([^\]\n]+)\][^\n]*\n([\s\S]*?)(?=^\s*\[|$(?![\s\S]))/gm)].map((m) => ({ name: m[1], body: m[2] }));
+    const pkg = sections.find((s) => s.name === 'package')?.body ?? '';
+    const lib = sections.find((s) => s.name === 'lib')?.body ?? '';
+    const value = (body, key) => new RegExp(`\\b${key}\\s*=\\s*"([^"]+)"`).exec(body)?.[1];
+    return { file, dir, sections, name: value(pkg, 'name'), lib: path.normalize(path.join(dir, value(lib, 'path') ?? 'src/lib.rs')), libName: value(lib, 'name'), bindings: new Map() };
+  });
+  const declarations = (pkg, workspace = false) => pkg.sections.flatMap((s) => {
+    const head = workspace ? 'workspace\\.dependencies' : '(?:(?:target\\.[^.]+)\\.)?(?:dependencies|dev-dependencies|build-dependencies)';
+    const table = new RegExp(`^${head}(?:\\.([\\w-]+))?$`).exec(s.name);
+    if (!table) return [];
+    if (table[1]) return [[table[1], s.body]];
+    return [...s.body.matchAll(/^\s*([\w-]+)(?:\.workspace)?\s*=\s*(\{[^}]*\}|[^\n#]+)/gm)].map((m) => [m[1], m[0].includes('.workspace') ? `workspace=${m[2]}` : m[2]]);
+  });
+  for (const pkg of packages) {
+    const workspace = packages.filter((p) => p.sections.some((s) => s.name === 'workspace') && (p.dir === '.' || pkg.dir === p.dir || pkg.dir.startsWith(p.dir + path.sep))).sort((a, b) => b.dir.length - a.dir.length)[0];
+    const inherited = new Map(workspace ? declarations(workspace, true) : []);
+    for (const [alias, localFields] of declarations(pkg)) {
+      const inherits = /\bworkspace\s*=\s*true\b/.test(localFields);
+      const fields = inherits ? inherited.get(alias) : localFields;
+      if (!fields) continue;
+      const p = /\bpath\s*=\s*"([^"]+)"/.exec(fields)?.[1];
+      const name = /\bpackage\s*=\s*"([^"]+)"/.exec(fields)?.[1];
+      const target = p ? packages.find((q) => q.dir === path.normalize(path.join(inherits ? workspace.dir : pkg.dir, p))) : packages.find((q) => q.name === (name ?? alias));
+      if (target) pkg.bindings.set(alias.replace(/-/g, '_'), target);
+    }
+  }
+  return localCargo = packages;
+}
+function rustCrateDependencies(file, text) {
+  const owner = cargoSources().filter((p) => p.name && (p.dir === '.' || rel(file).startsWith(p.dir + '/'))).sort((a, b) => b.dir.length - a.dir.length)[0];
+  if (!owner) return [];
+  const names = new Set([...maskBraces(text, true).matchAll(/\b(?:r#)?(\w+)\s*::|\bextern\s+crate\s+(\w+)/g)].map((m) => m[1] ?? m[2]));
+  return [...owner.bindings].filter(([name]) => names.has(name)).map(([, target]) => path.join(ROOT, target.lib));
+}
 function rustLocalModules(file, txt, entry = file) {
   const mask = maskBraces(txt, true), scope = [], paths = [];
-  for (const m of mask.matchAll(/\bmod\s+(\w+)\s*([;{])|[{}]/g)) {
+  for (const m of mask.matchAll(/\bmod\s+((?:r#)?\w+)\s*([;{])|[{}]/g)) {
     if (m[1] && m[2] === '{') { scope.push(m[1]); continue; }
     if (m[0] === '{') { scope.push(null); continue; }
     if (m[0] === '}') { scope.pop(); continue; }
     const parents = scope.filter(Boolean);
     const base = path.basename(file) === 'mod.rs' || file === entry ? path.dirname(file) : file.slice(0, -3);
-    const home = path.join(base, ...parents);
+    const home = path.join(base, ...parents.map((n) => n.replace(/^r#/, '')));
     const attribute = /#\[path\s*=\s*(r#*"[\s\S]*?"#*|"(?:\\.|[^"\\])*")\](?:\s*#\[[^\]]*\])*\s*(?:pub(?:\([^)]*\))?\s+)?$/.exec(txt.slice(0, m.index))?.[1];
     const override = attribute ? rustIncludeValue(attribute, file) : null;
     if (attribute && override === null) throw new Error(`REFUSED: unresolved Rust path oracle in ${rel(file)}`);
-    const candidates = override !== null ? [path.resolve(parents.length ? home : path.dirname(file), override)] : [path.join(home, m[1] + '.rs'), path.join(home, m[1], 'mod.rs')];
+    const name = m[1].replace(/^r#/, '');
+    const candidates = override !== null ? [path.resolve(parents.length ? home : path.dirname(file), override)] : [path.join(home, name + '.rs'), path.join(home, name, 'mod.rs')];
     paths.push({ file: candidates.find((p) => fs.existsSync(p)) ?? candidates[0], mods: [...parents, m[1]] });
   }
   return paths;
@@ -318,6 +363,7 @@ function cCompilerInputs(file) {
           if (/^(?:-I|-iquote|-isystem)$/.test(a)) includes.push(path.resolve(dir, args[++i] ?? ''));
           else if (a.startsWith('-I')) includes.push(path.resolve(dir, a.slice(2)));
           else if (/^(?:-include|-imacros|\/FI)$/.test(a)) forced.push({ dir, value: args[++i] ?? '' });
+          else if (/^-include|-imacros/.test(a)) forced.push({ dir, value: a.replace(/^-(?:include|imacros)/, '') });
           else if (a.startsWith('/FI')) forced.push({ dir, value: a.slice(3) });
           else if (a === '-D' || a.startsWith('-D')) {
             const value = a === '-D' ? args[++i] : a.slice(2), eq = value?.indexOf('=');
@@ -335,14 +381,24 @@ function cCompilerInputs(file) {
     return matches.length ? matches : [local];
   }), macros };
 }
-function localSourceDependencies(file, text, rootFile = false, cFamily = false) {
+function javaModuleRoot(file) {
+  const configured = projectFor(rel(file));
+  if (configured) return path.resolve(ROOT, configured.root);
+  for (let dir = path.dirname(file); dir.startsWith(ROOT); dir = path.dirname(dir)) {
+    if (['pom.xml', 'build.gradle', 'build.gradle.kts'].some((f) => fs.existsSync(path.join(dir, f)))) return dir;
+    if (dir === ROOT) break;
+  }
+  return ROOT;
+}
+function localSourceDependencies(file, text, rootFile = false, cFamily = false, compilerContext = null) {
   const next = [], ext = path.extname(file);
   const suffix = (name) => workspaceFiles().filter((f) => f === name || f.endsWith('/' + name)).map((f) => path.join(ROOT, f));
   if (ext === '.rs') {
-    const inline = rootFile ? text.indexOf('#[cfg(test)]') : -1;
+    const inline = rootFile ? rustTestRegion(text) : -1;
     const input = inline >= 0 ? ' '.repeat(inline) + text.slice(inline) : text;
     const entry = /(?:^|\/)(?:lib|main|mod)\.rs$|(?:^|\/)(?:tests|benches|examples)\/[^/]+\.rs$/.test(rel(file)) ? file : '';
     next.push(...rustLocalModules(file, input, entry).map((m) => m.file));
+    next.push(...rustCrateDependencies(file, input));
     const mask = maskBraces(input, true);
     for (const m of mask.matchAll(/\binclude(?:_str|_bytes)?!\s*\(/g)) {
       const start = m.index + m[0].length;
@@ -353,9 +409,9 @@ function localSourceDependencies(file, text, rootFile = false, cFamily = false) 
       next.push(path.resolve(path.dirname(file), value));
     }
   } else if (cFamily || /\.(?:c|h|cc|cpp|cxx|hpp|hh|inc|inl|tpp)$/.test(ext)) {
-    const compiler = cCompilerInputs(file), macros = compiler.macros;
+    const compiler = compilerContext ?? cCompilerInputs(file), macros = compiler.macros;
     for (const m of text.matchAll(/^\s*#\s*define\s+(\w+)[ \t]+([^\n]+)/gm)) macros.set(m[1], m[2].trim());
-    next.push(...compiler.forced);
+    if (rootFile || !compilerContext) next.push(...compiler.forced);
     for (const m of text.matchAll(/^\s*#\s*include\s+([^\n]+)/gm)) {
       let value = m[1].replace(/\/\/.*$|\/\*[\s\S]*?\*\//g, '').trim();
       const seen = new Set();
@@ -389,6 +445,11 @@ function localSourceDependencies(file, text, rootFile = false, cFamily = false) 
       }
       for (const m of text.matchAll(/@([\w.]+)/g)) references.add(m[1]);
       for (const m of text.matchAll(/\b[A-Z]\w*\b/g)) references.add(m[0]);
+      for (const m of text.matchAll(/@(?:[\w.]+\.)?MethodSource\s*\(([\s\S]*?)\)/g)) for (const value of m[1].matchAll(/"([\w.$]+)#[\w$]+"/g)) references.add(value[1]);
+      if (rootFile) for (const type of sourceTypes().filter((t) => t.file === rel(file) && new RegExp(`\\binterface\\s+${escapeRe(t.name)}\\b`).test(maskBraces(t.text)) && braceFunctions(text, rel(file))?.some((r) => r.test && r.owner === t.fq))) {
+        const owner = javaExecutionOwner(type.fq);
+        if (owner !== type.fq) next.push(...sourceTypes().filter((t) => t.fq === owner).map((t) => path.join(ROOT, t.file)));
+      }
       for (const m of text.matchAll(/@(?:[\w.]+\.)?CsvFileSource\s*\(([\s\S]*?)\)/g)) {
         for (const binding of m[1].matchAll(/\b(resources|files)\s*=\s*(\{[^}]*\}|"(?:\\.|[^"\\])*"|[^,]+)/g)) {
           const values = expressionArguments(binding[2].replace(/^\{|\}$/g, ''));
@@ -396,7 +457,7 @@ function localSourceDependencies(file, text, rootFile = false, cFamily = false) 
             let value;
             try { value = JSON.parse(expression); } catch { throw new Error(`REFUSED: unresolved Java CSV oracle in ${rel(file)}`); }
             if (typeof value !== 'string') throw new Error(`REFUSED: unresolved Java CSV oracle in ${rel(file)}`);
-            const matches = binding[1] === 'resources' ? suffix(value.replace(/^\//, '')).filter((f) => /(?:^|\/)resources\//.test(rel(f))) : [path.resolve(ROOT, projectFor(rel(file))?.root ?? '.', value)];
+            const matches = binding[1] === 'resources' ? suffix(value.replace(/^\//, '')).filter((f) => /(?:^|\/)resources\//.test(rel(f))) : [path.resolve(javaModuleRoot(file), value)];
             next.push(...(matches.length ? matches : [path.resolve(ROOT, 'src/test/resources', value.replace(/^\//, ''))]));
           }
         }
@@ -404,10 +465,17 @@ function localSourceDependencies(file, text, rootFile = false, cFamily = false) 
     } else if (ext === '.php') {
       for (const m of text.matchAll(/\b(?:extends|implements)\s+([\\\w]+)/g)) references.add(m[1]);
       for (const [n] of phpImports(text)) references.add(n);
-      for (const m of text.matchAll(/\b[A-Z]\w*(?=\s*::)|\bnew\s+([A-Z]\w*)/g)) references.add(m[1] ?? m[0]);
+      for (const m of maskBraces(text).matchAll(/(?<![\w\\])(\\?[\w\\]+)(?=\s*::)|\bnew\s+(\\?[\w\\]+)/g)) references.add(m[1] ?? m[2]);
+      const functions = new Set(phpImports(text, 'function').values());
+      if (functions.size) for (const f of workspaceFiles().filter((f) => f.endsWith('.php'))) {
+        const body = maskBraces(fs.readFileSync(path.join(ROOT, f), 'utf8'));
+        const namespace = /\bnamespace\s+([\w\\]+)/.exec(body)?.[1] ?? '';
+        if ([...body.matchAll(/\bfunction\s+&?\s*(\w+)\s*\(/g)].some((m) => functions.has([namespace, m[1]].filter(Boolean).join('\\')))) next.push(path.join(ROOT, f));
+      }
     } else {
       for (const m of text.matchAll(/\b(?:class|record|struct)\s+\w+(?:<[^>]*>)?\s*:\s*([^{\n]+)/g)) for (const n of m[1].split(',')) references.add(n.trim().split(/[<\s]/)[0]);
       for (const m of text.matchAll(/\b(?:[A-Z]\w*)\b/g)) references.add(m[0]);
+      for (const m of maskBraces(text).matchAll(/\busing\s+(\w+)\s*=/g)) references.add(m[1]);
       const namespace = /\bnamespace\s+([\w.]+)/.exec(text)?.[1] ?? '';
       const collections = new Set([...text.matchAll(/\[(?:[\w.]+\.)?Collection(?:Attribute)?\s*\(\s*"([^"]+)"/g)].map((m) => m[1]));
       const owners = dotnetGraph(ROOT).ownersOf(rel(file));
@@ -415,7 +483,11 @@ function localSourceDependencies(file, text, rootFile = false, cFamily = false) 
         if (owners.length && !dotnetGraph(ROOT).ownersOf(candidate.file).some((o) => owners.some((owner) => owner.file === o.file))) continue;
         const setup = /\[(?:[\w.]+\.)?SetUpFixture(?:Attribute)?\b/.test(candidate.text) && (!candidate.ns || namespace === candidate.ns || namespace.startsWith(candidate.ns + '.'));
         const collection = [...candidate.text.matchAll(/\[(?:[\w.]+\.)?CollectionDefinition(?:Attribute)?\s*\(\s*"([^"]+)"/g)].some((m) => collections.has(m[1]));
-        if (setup || collection) next.push(path.join(ROOT, candidate.file));
+        const assembly = [...candidate.text.matchAll(/\[([^\]]+)\]/g)].some((m) => [...m[1].matchAll(/(?:^|,)\s*((?:global::)?[\w.]+)/g)].some((a) => {
+          const aliases = new Map([...candidate.text.matchAll(/\busing\s+(\w+)\s*=\s*(?:global::)?([\w.]+)\s*;/g)].map((u) => [u[1], u[2]]));
+          return /^(?:AssemblyInitialize|AssemblyCleanup)(?:Attribute)?$/.test((aliases.get(a[1]) ?? a[1]).split('.').at(-1));
+        }));
+        if (setup || collection || assembly) next.push(path.join(ROOT, candidate.file));
       }
     }
     for (const name of references) next.push(...localTypeFiles(file, text, name));
@@ -428,13 +500,14 @@ function externalOracleSha(p, hash) {
   oracleDependencyFiles = [];
   if (!/\.(?:rs|c|cc|cpp|cxx|java|php|cs|jl)$/.test(p)) return hash;
   const root = path.join(ROOT, p), seen = new Set([root]), deps = new Map();
+  const compiler = /\.(?:c|cc|cpp|cxx)$/.test(p) ? cCompilerInputs(root) : null;
   const visit = (file, rootFile = false) => {
     let text, raw;
     try { raw = fs.readFileSync(file); text = raw.toString('utf8').replace(/^\uFEFF/, '').replace(/\r\n/g, '\n'); }
     catch { if (!rootFile) deps.set(rel(file), 'missing'); return; }
     if (!rootFile && /@id\s+CODE-/.test(text) && !/@id\s+TEST-/.test(text)) return;
     if (!rootFile) deps.set(rel(file), sha(raw));
-    const next = localSourceDependencies(file, text, rootFile, /\.(?:c|cc|cpp|cxx)$/.test(p));
+    const next = localSourceDependencies(file, text, rootFile, !!compiler, compiler);
     for (const dep of next) {
       if (!dep.startsWith(ROOT + path.sep) || seen.has(dep)) continue;
       seen.add(dep);
@@ -2804,7 +2877,7 @@ function juliaScriptIndex(cmd) {
 let rustRunnerSelection = null;
 function rustIncludedSources(file, text) {
   const mask = maskBraces(text, true), scope = [], includes = [];
-  for (const m of mask.matchAll(/\bmod\s+(\w+)\s*\{|[{}]|\binclude!\s*\(/g)) {
+  for (const m of mask.matchAll(/\bmod\s+((?:r#)?\w+)\s*\{|[{}]|\binclude!\s*\(/g)) {
     if (m[1]) scope.push(m[1]);
     else if (m[0] === '{') scope.push(null);
     else if (m[0] === '}') scope.pop();
@@ -2830,7 +2903,7 @@ function rustTarget(testPath, cwd = ROOT) {
   if (!manifest) return null;
   let metadata;
   try { metadata = JSON.parse(cmdOut(['cargo', 'metadata', '--no-deps', '--format-version', '1', '--offline', '--manifest-path', manifest], cwd)); } catch { return null; }
-  const candidates = metadata.packages.filter((pkg) => !rustRunnerSelection?.package || pkg.name === rustRunnerSelection.package).flatMap((pkg) => pkg.targets.filter((t) => t.test !== false && !t.kind.includes('custom-build') && (!rustRunnerSelection?.kind || (rustRunnerSelection.kind === '--lib' ? t.kind.some((k) => /lib/.test(k)) : t.kind.includes(rustRunnerSelection.kind.slice(2)) && t.name === rustRunnerSelection.name))).flatMap((t) => {
+  const routes = metadata.packages.filter((pkg) => !rustRunnerSelection?.package || pkg.name === rustRunnerSelection.package).flatMap((pkg) => pkg.targets.filter((t) => t.test !== false && !t.kind.includes('custom-build') && (!rustRunnerSelection?.kind || (rustRunnerSelection.kind === '--lib' ? t.kind.some((k) => /lib/.test(k)) : t.kind.includes(rustRunnerSelection.kind.slice(2)) && t.name === rustRunnerSelection.name))).flatMap((t) => {
     const entry = path.resolve(t.src_path);
     const find = (file, mods, visited = new Set()) => {
       if (file === abs) return [mods];
@@ -2844,6 +2917,7 @@ function rustTarget(testPath, cwd = ROOT) {
     };
     return find(entry, []).map((mods) => ({ package: pkg.name, dir: path.dirname(pkg.manifest_path), target: t.name, kind: t.kind, entry, mods }));
   }));
+  const candidates = [...new Map(routes.map((c) => [JSON.stringify([c.package, c.entry, c.target, c.kind, c.mods]), c])).values()];
   if (candidates.length > 1) throw new Error(`REFUSED: Rust test ownership is ambiguous for ${testPath}; configure --lib/--bin/--test/--example explicitly`);
   if (!candidates.length) throw new Error(`REFUSED: no owning Cargo target resolved for ${testPath}; check include/module paths and the configured package/target`);
   return candidates.length === 1 ? candidates[0] : null;
@@ -2852,12 +2926,34 @@ function qualifiedTestName(testPath, id, rust = false) {
   const name = testName(testPath, id);
   const text = fs.readFileSync(path.join(ROOT, testPath), 'utf8');
   const at = text.search(new RegExp(`@id\\s+${id}(?![\\w-])`));
-  return [qualifiedTestScope(testPath, text, at, rust), name].filter(Boolean).join(rust ? '::' : '.');
+  const scope = qualifiedTestScope(testPath, text, at, rust);
+  return [/\.java$/.test(testPath) ? javaExecutionOwner(scope) : scope, name].filter(Boolean).join(rust ? '::' : '.');
+}
+function javaExecutionOwner(scope) {
+  const types = sourceTypes().filter((t) => t.ext === '.java');
+  const declaration = types.find((t) => t.fq === scope);
+  if (!declaration || !new RegExp(`\\binterface\\s+${escapeRe(declaration.name)}\\b`).test(maskBraces(declaration.text))) return scope;
+  const inherits = (type, seen = new Set()) => {
+    if (type.fq === scope) return true;
+    if (seen.has(type.fq)) return false;
+    seen.add(type.fq);
+    const parents = new RegExp(`\\b(?:class|interface|record)\\s+${escapeRe(type.name)}(?:\\s*<[^>]*>)?\\s+(?:extends|implements)\\s+([^\\{]+)`).exec(maskBraces(type.text))?.[1] ?? '';
+    return [...parents.replace(/\bimplements\b/g, ',').matchAll(/[\w.$]+/g)].some((m) => {
+      const files = localTypeFiles(path.join(ROOT, type.file), type.text, m[0]);
+      return types.filter((t) => files.includes(path.join(ROOT, t.file)) && (t.name === m[0].split('.').at(-1) || t.fq === m[0])).some((t) => inherits(t, new Set(seen)));
+    });
+  };
+  const owners = [...new Set(types.filter((t) => {
+    const text = maskBraces(t.text);
+    return new RegExp(`\\b(?:class|record)\\s+${escapeRe(t.name)}\\b`).test(text) && !new RegExp(`\\babstract\\s+class\\s+${escapeRe(t.name)}\\b`).test(text) && inherits(t);
+  }).map((t) => t.fq))];
+  if (owners.length !== 1) throw new Error(`REFUSED: Java test ownership is ${owners.length ? 'ambiguous' : 'unresolved'} for ${scope}; declare the annotated test in a concrete test class or wrapper`);
+  return owners[0];
 }
 function qualifiedTestScope(testPath, text, at, rust = false) {
   const pre = maskBraces(text.slice(0, at), rust);
   const stack = [];
-  const re = rust ? /\bmod\s+(\w+)\s*\{|([{}])/g : /\b(namespace|class|record(?:\s+(?:class|struct))?)\s+([\w.\\]+)[^{;]*([{;])|([{}])/g;
+  const re = rust ? /\bmod\s+((?:r#)?\w+)\s*\{|([{}])/g : /\b(namespace|class|interface|record(?:\s+(?:class|struct))?)\s+([\w.\\]+)[^{;]*([{;])|([{}])/g;
   let fileNs = '';
   for (const m of pre.matchAll(re)) {
     if (rust) { if (m[1]) stack.push(m[1]); else if (m[2] === '{') stack.push(null); else stack.pop(); }
@@ -2879,7 +2975,7 @@ function ctestRows(plain) {
 }
 function ambiguousJavaMethod(testPath, id) {
   const txt = fs.readFileSync(path.join(ROOT, testPath), 'utf8'), name = testName(testPath, id);
-  const cls = qualifiedTestName(testPath, id).slice(0, -name.length - 1);
+  const cls = qualifiedTestScope(testPath, txt, txt.search(new RegExp(`@id\\s+${id}\\b`)));
   const masked = maskBraces(txt).replace(/@[\w.]+(?:\([^)]*\))?/g, (s) => s.replace(/[^\n]/g, ' '));
   const decl = new RegExp(`\\b[\\w.<>\\[\\]?]+\\s+${escapeRe(name)}\\s*\\([^{};]*\\)\\s*(?:throws\\s+[^{};]+)?\\s*\\{`, 'g');
   return [...masked.matchAll(decl)].filter((m) => qualifiedTestScope(testPath, txt, m.index) === cls).length > 1;
@@ -3105,7 +3201,7 @@ function cmdTdd() {
     if (ambiguousJavaMethod(t.path, id)) { out(`${sub.toUpperCase()} REJECTED ${id}: overloaded JUnit method ownership is ambiguous; use unique method names within the declaring class`); return 1; }
     const name = testName(t.path, id), full = qualifiedTestName(t.path, id), cls = full.slice(0, -name.length - 1);
     for (let i = 0; i < cmd.length; i++) {
-      if (cmd[i] === '-Dtest=*#*' + name) cmd[i] = `-Dtest=${cls}#${name}`;
+      if (cmd[i] === '-Dtest=*#*' + name || cmd[i] === '-Dtest=' + name) cmd[i] = `-Dtest=${cls}#${name}`;
       if (cmd[i].includes('--tests "*$0"') && cmd[i + 1] === name) { cmd[i] = cmd[i].replace('--tests "*$0"', '--tests "$0"'); cmd[i + 1] = full; }
       if (cmd[i] === '--tests' && cmd[i + 1] === '*' + name) cmd[i + 1] = full;
     }
@@ -3842,21 +3938,7 @@ function importRev() {
     for (const n of new Set([pkgName?.replace(/-/g, '_'), libName].filter(Boolean))) if (set.has(sd + '/lib.rs')) crateBySrc.set(n, [...(crateBySrc.get(n) ?? []), sd]);
   }
   const cargoAliases = new Map();
-  for (const pkg of cargoPackages) {
-    const aliases = new Map();
-    for (const section of pkg.toml.matchAll(/^\[([^\]\n]+)\][^\n]*\n([\s\S]*?)(?=^\[|$(?![\s\S]))/gm)) {
-      if (!/(?:^|\.)(?:dependencies|dev-dependencies|build-dependencies)(?:\.|$)/.test(section[1])) continue;
-      const tableAlias = /(?:^|\.)(?:dependencies|dev-dependencies|build-dependencies)\.([\w-]+)$/.exec(section[1])?.[1];
-      const bindings = tableAlias ? [[tableAlias, section[2]]] : [...section[2].matchAll(/^\s*([\w-]+)\s*=\s*\{([^}]+)\}/gm)].map((m) => [m[1], m[2]]);
-      for (const [alias, fields] of bindings) {
-        const p = /\bpath\s*=\s*"([^"]+)"/.exec(fields)?.[1];
-        const name = /\bpackage\s*=\s*"([^"]+)"/.exec(fields)?.[1];
-        const target = p ? cargoPackages.find((q) => q.dir === path.posix.normalize(path.posix.join(pkg.dir, p))) : cargoPackages.find((q) => q.name === (name ?? alias));
-        if (target) aliases.set(alias.replace(/-/g, '_'), [target.src]);
-      }
-    }
-    cargoAliases.set(pkg.dir, aliases);
-  }
+  for (const pkg of cargoSources()) cargoAliases.set(pkg.dir, new Map([...pkg.bindings].map(([alias, target]) => [alias, [path.posix.dirname(target.lib)]])));
   const stem = (x) => path.posix.basename(x).replace(/\.\w+$/, '');
   const goMods = gitFiles('*go.mod').filter((g) => /(^|\/)go\.mod$/.test(g)).map((g) => {
     const text = fs.readFileSync(path.join(ROOT, g), 'utf8');

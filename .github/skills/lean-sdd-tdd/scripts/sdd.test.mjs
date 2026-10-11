@@ -3534,6 +3534,151 @@ const batch2Run = (d, runner, body, cmd, ...args) => {
   return { code: r.status, out: r.stdout + r.stderr };
 };
 
+for (const [issue, label, file, pre, deps, changed] of [
+  [206, 'Cargo dev-dependency', 'client/tests/t.rs', 'use oracle::expected;', {
+    'Cargo.toml': '[workspace]\nmembers=["client","oracle"]\nresolver="2"\n',
+    'client/Cargo.toml': '[package]\nname="client"\nversion="0.1.0"\n[dev-dependencies]\noracle={path="../oracle"}\n',
+    'client/src/lib.rs': '// @id CODE-CALC-001 @implements REQ-CALC-001\npub fn value() -> i32 { 0 }\n',
+    'oracle/Cargo.toml': '[package]\nname="oracle"\nversion="0.1.0"\n',
+    'oracle/src/lib.rs': 'mod deep;\npub use deep::expected;\n',
+    'oracle/src/deep.rs': 'pub fn expected() -> i32 { 7 }\n',
+  }, 'oracle/src/deep.rs'],
+  [208, 'Maven module CSV', 'worker/src/test/java/probe/T.java', 'package probe;\nclass T {\n@CsvFileSource(files="oracle.csv")', { 'pom.xml': '<project/>', 'worker/pom.xml': '<project/>', 'worker/oracle.csv': '7,7\n' }, 'worker/oracle.csv'],
+  [208, 'Gradle module CSV', 'engine/src/test/java/probe/T.java', 'package probe;\nclass T {\n@CsvFileSource(files={"oracle.csv"})', { 'build.gradle': '', 'engine/build.gradle.kts': '', 'engine/oracle.csv': '7,7\n' }, 'engine/oracle.csv'],
+  [208, 'fully qualified MethodSource', 'tests/probe/T.java', 'package probe;\nclass T {\n@MethodSource({"oracle.Expected#cases"})', { 'tests/oracle/Expected.java': 'package oracle;\nclass Expected { static int cases() { return Deep.value(); } }\n', 'tests/oracle/Deep.java': 'package oracle;\nclass Deep { static int value() { return 7; } }\n' }, 'tests/oracle/Deep.java'],
+  [210, 'joined GCC include', 'tests/t.cpp', '', { 'build/compile_commands.json': JSON.stringify([{ directory: '.', file: 'tests/t.cpp', arguments: ['c++', '-includetests/oracle.hpp', '-c', 'tests/t.cpp'] }]), 'tests/oracle.hpp': '#define EXPECTED 7\n' }, 'tests/oracle.hpp'],
+  [210, 'joined GCC imacros', 'tests/t.cpp', '', { 'build/compile_commands.json': JSON.stringify([{ directory: '.', file: 'tests/t.cpp', arguments: ['c++', '-imacrostests/oracle.hpp', '-c', 'tests/t.cpp'] }]), 'tests/oracle.hpp': '#define EXPECTED 7\n' }, 'tests/oracle.hpp'],
+  [210, 'transitive TU compiler context', 'tests/t.cpp', '#include "bridge.hpp"', { 'build/compile_commands.json': JSON.stringify([{ directory: '.', file: 'tests/t.cpp', arguments: ['c++', '-I', 'headers', '-DORACLE_HEADER="oracle.hpp"', '-c', 'tests/t.cpp'] }]), 'tests/bridge.hpp': '#include ORACLE_HEADER\n', 'headers/oracle.hpp': '#define EXPECTED 7\n' }, 'headers/oracle.hpp'],
+  [211, 'fully qualified PHP static class', 'tests/T.php', '<?php\nnamespace Tests;\nclass T {\npublic function expected() { return \\Probe\\Oracle\\Expected::value(); }', { 'src/Expected.php': '<?php\nnamespace Probe\\Oracle;\nclass Expected { public static function value() { return 7; } }\n' }, 'src/Expected.php'],
+  [211, 'fully qualified PHP constructor', 'tests/T.php', '<?php\nnamespace Tests;\nclass T {\npublic function expected() { return new \\Probe\\Oracle\\Expected(); }', { 'src/Expected.php': '<?php\nnamespace Probe\\Oracle;\nclass Expected { public int $value = 7; }\n' }, 'src/Expected.php'],
+  [211, 'aliased PHP function', 'tests/T.php', '<?php\nnamespace Tests;\nuse function Probe\\Oracle\\height as expectedHeight;\nclass T {', { 'src/functions.php': '<?php\nnamespace Probe\\Oracle;\nfunction height() { return 7; }\n' }, 'src/functions.php'],
+  [211, 'grouped PHP functions', 'tests/T.php', '<?php\nnamespace Tests;\nuse function Probe\\Oracle\\{height as expectedHeight, width};\nclass T {', { 'src/functions.php': '<?php\nnamespace Probe\\Oracle;\nfunction height() { return 7; }\nfunction width() { return 1; }\n' }, 'src/functions.php'],
+  [211, 'mixed grouped PHP function', 'tests/T.php', '<?php\nnamespace Tests;\nuse Probe\\Oracle\\{function height as expectedHeight};\nclass T {', { 'src/functions.php': '<?php\nnamespace Probe\\Oracle;\nfunction height() { return 7; }\n' }, 'src/functions.php'],
+  [212, 'MSTest assembly initialize', 'tests/T.cs', 'namespace Tests;\nclass T {', { 'tests/Hooks.cs': 'namespace Support;\nclass Hooks { [Microsoft.VisualStudio.TestTools.UnitTesting.AssemblyInitializeAttribute]\npublic static void Init() { int expected = 7; } }\n' }, 'tests/Hooks.cs'],
+  [212, 'MSTest aliased assembly cleanup', 'tests/T.cs', 'namespace Tests;\nclass T {', { 'tests/Hooks.cs': 'using finish = Microsoft.VisualStudio.TestTools.UnitTesting.AssemblyCleanupAttribute;\nnamespace Support;\nclass Hooks { [finish]\npublic static void Cleanup() { int expected = 7; } }\n' }, 'tests/Hooks.cs'],
+  [212, 'lowercase C# type alias', 'tests/T.cs', 'using check = Probe.Oracle;\nnamespace Tests;\nclass T {', { 'src/Oracle.cs': 'namespace Probe;\nclass Oracle { public static int Expected => 7; }\n' }, 'src/Oracle.cs'],
+]) {
+  test(`#${issue} ${label} changes and deletions invalidate oracle evidence`, () => {
+    const target = '// @id TEST-CALC-001 @verifies REQ-CALC-001\n' + (file.endsWith('.rs') ? '#[test]\nfn test_calc_001() { assert_eq!(expected(), 2); }\n' : file.endsWith('.php') ? 'public function test_calc_001(): void { self::assertSame(2, expectedHeight()); }\n}\n' : file.endsWith('.java') ? '@Test\nvoid test_calc_001() { assertTrue(true); }\n}\n' : file.endsWith('.cs') ? '[TestMethod]\nvoid test_calc_001() { Assert.AreEqual(2, check.Expected); }\n}\n' : 'void test_calc_001() { CHECK(EXPECTED); }\n');
+    const d = batch2Source(file, pre + '\n' + target);
+    writeAll(d, deps);
+    fakeOut(d, 'AssertionError: oracle');
+    const red = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
+    assert.equal(red.code, 0, red.out);
+    fakeOut(d, 'pass', 0);
+    assert.equal(sdd(d, 'tdd', 'green', 'TEST-CALC-001').code, 0);
+    fs.writeFileSync(path.join(d, changed), deps[changed].replace('7', '2'));
+    const green = sdd(d, 'tdd', 'green', 'TEST-CALC-001');
+    assert.equal(green.code, 1, green.out);
+    assert.match(green.out, /changed since Red/);
+    assert.match(sdd(d, 'gate', '--no-run').out, /test changed/);
+    fs.rmSync(path.join(d, changed));
+    assert.equal(sdd(d, 'tdd', 'green', 'TEST-CALC-001').code, 1);
+  });
+}
+
+for (const marker of ['const DOC: &str = "#[cfg(test)]";', '// #[cfg(test)]', 'const DOC: &str = r#"#[cfg(test)]"#;']) {
+  test(`#206 literal/comment cfg(test) does not hide a preceding oracle: ${marker}`, () => {
+    const body = 'fn expected() -> i32 { 7 }\n' + marker + '\n// @id TEST-CALC-001 @verifies REQ-CALC-001\n#[test]\nfn test_calc_001() { assert_eq!(expected(), 2); }\n';
+    const d = batch2Source('tests/t.rs', body);
+    fakeOut(d, 'AssertionError: target');
+    assert.equal(sdd(d, 'tdd', 'red', 'TEST-CALC-001').code, 0);
+    fs.writeFileSync(path.join(d, 'tests/t.rs'), body.replace('{ 7 }', '{ 2 }'));
+    fakeOut(d, 'pass', 0);
+    const green = sdd(d, 'tdd', 'green', 'TEST-CALC-001');
+    assert.equal(green.code, 1, green.out);
+    assert.match(green.out, /changed since Red/);
+  });
+}
+
+for (const binding of ['shared.workspace=true', 'shared={workspace=true}', '[dependencies.shared]\nworkspace=true']) {
+  test(`#207 Cargo inherited alias impact resolves ${binding}`, () => {
+    const d = approved();
+    writeAll(d, {
+      'Cargo.toml': '[workspace]\nmembers=["base","client"]\n[workspace.dependencies]\nshared={package="actual-base",path="base"}\n',
+      'base/Cargo.toml': '[package]\nname="actual-base"\nversion="0.1.0"\n',
+      'base/src/lib.rs': '// @id CODE-CALC-001 @implements REQ-CALC-001\npub fn value() -> i32 { 7 }\n',
+      'client/Cargo.toml': '[package]\nname="client"\nversion="0.1.0"\n[dependencies]\n' + binding + '\n',
+      'client/src/lib.rs': 'use shared::value;\n// @id CODE-CLIENT-001 @implements REQ-CLIENT-001\npub fn compute() -> i32 { value() }\n',
+      'client/tests/t.rs': 'use client::compute;\n// @id TEST-CLIENT-001 @verifies REQ-CLIENT-001\n#[test]\nfn test_client_001() { assert_eq!(compute(), 7); }\n',
+      '.sdd/specs/client.md': '---\nfeature: client\ntier: T1\n---\nREQ-CLIENT-001: When called, the system shall compute.\n',
+    });
+    const result = sdd(d, 'impact', 'REQ-CALC-001', '--json');
+    assert.equal(result.code, 0, result.out);
+    const impact = JSON.parse(result.out);
+    assert.ok(impact.reachedFiles.includes('client/src/lib.rs'), result.out);
+    assert.ok(impact.reachedFiles.includes('client/tests/t.rs'), result.out);
+    assert.ok(impact.otherReqs.some((o) => o.req === 'REQ-CLIENT-001'), result.out);
+  });
+}
+
+test('#207 Rust raw identifier modules retain exact scopes and ordinary module filenames', { skip: !has130('cargo') }, () => {
+  const d = batch2Source('src/type.rs', '// @id TEST-CALC-001 @verifies REQ-CALC-001\n#[test]\nfn test_calc_001() { assert_eq!(crate::answer(), 7); }\n');
+  writeAll(d, { 'Cargo.toml': '[package]\nname="raw-probe"\nversion="0.1.0"\nedition="2021"\n', 'src/lib.rs': '// @id CODE-CALC-001 @implements REQ-CALC-001\npub fn answer() -> i32 { 0 }\n#[cfg(test)] mod r#type;\n' });
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ testCmd: ['cargo', 'test', '{idu}'], checks: [] }));
+  const red = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
+  assert.equal(red.code, 0, red.out);
+  fs.writeFileSync(path.join(d, 'src/lib.rs'), rd130(d, 'src/lib.rs').replace('{ 0 }', '{ 7 }'));
+  assert.equal(sdd(d, 'tdd', 'green', 'TEST-CALC-001').code, 0);
+});
+
+test('#207 cfg-exclusive identical Rust module owner tuples deduplicate', { skip: !has130('cargo') }, () => {
+  const d = batch2Source('src/cases.rs', '// @id TEST-CALC-001 @verifies REQ-CALC-001\n#[test]\nfn test_calc_001() { assert_eq!(crate::answer(), 7); }\n');
+  writeAll(d, { 'Cargo.toml': '[package]\nname="cfg-probe"\nversion="0.1.0"\nedition="2021"\n', 'src/lib.rs': '// @id CODE-CALC-001 @implements REQ-CALC-001\npub fn answer() -> i32 { 0 }\n#[cfg(all(test,unix))]\n#[path="cases.rs"] mod platform;\n#[cfg(all(test,windows))]\n#[path="cases.rs"] mod platform;\n' });
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ testCmd: ['cargo', 'test', '--lib', '{idu}'], checks: [] }));
+  const red = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
+  assert.equal(red.code, 0, red.out);
+  fs.writeFileSync(path.join(d, 'src/lib.rs'), rd130(d, 'src/lib.rs').replace('{ 0 }', '{ 7 }'));
+  assert.equal(sdd(d, 'tdd', 'green', 'TEST-CALC-001').code, 0);
+});
+
+test('#209 JUnit default interface tests resolve concrete runtime owners and reject ambiguity', () => {
+  const d = batch2Source('tests/probe/Contract.java', 'package probe;\ninterface Contract {\n// @id TEST-CALC-001 @verifies REQ-CALC-001\n@Test\ndefault void test_calc_001() { assertEquals(1, 2); }\n}\n');
+  writeAll(d, { 'tests/probe/ContractTest.java': 'package probe;\nclass ContractTest implements Contract {}\n' });
+  const red = batch2Run(d, 'mvn', 'printf "%s\\n" "$@" > args.txt\necho "SDD-TEST probe.ContractTest test_calc_001 FAILURE"\necho "AssertionError: contract"\nexit 1\n', ['mvn', 'test', '-Dtest={idu}'], 'tdd', 'red', 'TEST-CALC-001');
+  assert.equal(red.code, 0, red.out);
+  assert.match(rd130(d, 'args.txt'), /-Dtest=probe.ContractTest#test_calc_001/);
+  writeAll(d, { 'tests/probe/OtherTest.java': 'package probe;\nclass OtherTest implements Contract {}\n' });
+  const ambiguous = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
+  assert.equal(ambiguous.code, 1, ambiguous.out);
+  assert.match(ambiguous.out, /Java.*ownership.*ambiguous|ambiguous.*Java.*owner/i);
+  assert.doesNotMatch(ambiguous.out, /no test matched/);
+});
+
+test('#210 compiler macro contexts do not leak across translation units', () => {
+  const d = batch2Source('tests/one.cpp', '#include "bridge.hpp"\n// @id TEST-CALC-001 @verifies REQ-CALC-001\nvoid test_calc_001() { CHECK(EXPECTED); }\n');
+  writeAll(d, {
+    'tests/two.cpp': '#include "bridge.hpp"\n// @id TEST-CALC-002 @verifies REQ-CALC-001\nvoid test_calc_002() { CHECK(EXPECTED); }\n',
+    'tests/bridge.hpp': '#include ORACLE_HEADER\n',
+    'headers/one.hpp': '#define EXPECTED 7\n', 'headers/two.hpp': '#define EXPECTED 8\n',
+    'build/compile_commands.json': JSON.stringify(['one', 'two'].map((n) => ({ directory: '.', file: `tests/${n}.cpp`, arguments: ['c++', '-Iheaders', `-DORACLE_HEADER="${n}.hpp"`] }))),
+  });
+  fakeOut(d, 'AssertionError: target');
+  for (const id of ['TEST-CALC-001', 'TEST-CALC-002']) assert.equal(sdd(d, 'tdd', 'red', id).code, 0);
+  fakeOut(d, 'pass', 0);
+  for (const id of ['TEST-CALC-001', 'TEST-CALC-002']) assert.equal(sdd(d, 'tdd', 'green', id).code, 0);
+  fs.writeFileSync(path.join(d, 'headers/two.hpp'), '#define EXPECTED 9\n');
+  assert.equal(sdd(d, 'tdd', 'green', 'TEST-CALC-001').code, 0);
+  assert.equal(sdd(d, 'tdd', 'green', 'TEST-CALC-002').code, 1);
+});
+
+test('#212 assembly lifecycle support is restricted to the owning MSTest project', () => {
+  const d = batch2Source('tests/T.cs', 'namespace Tests;\nclass T {\n// @id TEST-CALC-001 @verifies REQ-CALC-001\n[TestMethod]\nvoid test_calc_001() { Assert.IsTrue(true); }\n}\n');
+  writeAll(d, {
+    'tests/Tests.csproj': '<Project Sdk="Microsoft.NET.Sdk"/>',
+    'other/Other.csproj': '<Project Sdk="Microsoft.NET.Sdk"/>',
+    'tests/Hooks.cs': 'namespace Hooks;\nclass Init { [AssemblyInitialize] public static void Seed() { int expected = 7; } }\n',
+    'other/Hooks.cs': 'namespace Hooks;\nclass Init { [AssemblyInitialize] public static void Seed() { int expected = 8; } }\n',
+  });
+  fakeOut(d, 'AssertionError: target');
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-CALC-001').code, 0);
+  fakeOut(d, 'pass', 0);
+  fs.writeFileSync(path.join(d, 'other/Hooks.cs'), rd130(d, 'other/Hooks.cs').replace('8', '9'));
+  assert.equal(sdd(d, 'tdd', 'green', 'TEST-CALC-001').code, 0);
+  fs.writeFileSync(path.join(d, 'tests/Hooks.cs'), rd130(d, 'tests/Hooks.cs').replace('7', '2'));
+  assert.equal(sdd(d, 'tdd', 'green', 'TEST-CALC-001').code, 1);
+});
+
 for (const [label, file, pre, deps, changed] of [
   ['Rust Unicode path', 'tests/t.rs', '#[path = "expected\\u{2e}rs"] mod oracle;', { 'tests/expected.rs': 'pub fn expected() -> i32 { 7 }\n' }, 'tests/expected.rs'],
   ['Rust intervening attribute', 'tests/t.rs', '#[path = "expected.rs"]\n#[allow(dead_code)]\nmod oracle;', { 'tests/expected.rs': 'pub fn expected() -> i32 { 7 }\n' }, 'tests/expected.rs'],
