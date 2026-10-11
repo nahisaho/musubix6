@@ -5444,3 +5444,21 @@ test('#218 plan accepts an em dash as "no dependency"; impact sees `record struc
   assert.doesNotMatch(pl.out + pl.err, /unknown dependency/);
   assert.ok(JSON.parse(sdd(d, 'impact', 'Geo/Pt.cs', '--json').out).reachedFiles.includes('Route/Route.cs'));
 });
+
+test('#214 python tdd stub: namespace dir, __init__ re-exports and package-with-submodule layout', () => {
+  const spec = '---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | x shall hold. | TEST-A-001 |\n';
+  const t = (imports) => `${imports}\n\ndef test_a_001():\n    """@id TEST-A-001 @verifies REQ-A-001"""\n    assert Clock().tick() == 1\n`;
+  const d1 = mini(spec, { 'pyproject.toml': '[project]\nname="m"\nversion="0"\n', 'src/pkg/sub/leaf.py': 'X = 1\n', 'tests/test_a.py': t('from pkg import Clock') });
+  sdd(d1, 'tdd', 'stub', 'TEST-A-001');
+  assert.match(fs.readFileSync(path.join(d1, 'src/pkg/__init__.py'), 'utf8'), /class Clock/);
+  assert.ok(!fs.existsSync(path.join(d1, 'src/pkg.py')));
+  const d2 = mini(spec, { 'pyproject.toml': '[project]\nname="m"\nversion="0"\n', 'src/pkg/__init__.py': 'from .core import Clock\n', 'src/pkg/core.py': 'class Clock:\n    def tick(self):\n        return 1\n', 'tests/test_a.py': t('from pkg import Clock') });
+  const r2 = sdd(d2, 'tdd', 'stub', 'TEST-A-001');
+  assert.doesNotMatch(r2.out, /not stubbed/);
+  assert.equal(fs.readFileSync(path.join(d2, 'src/pkg/__init__.py'), 'utf8'), 'from .core import Clock\n');
+  const d3 = mini(spec, { 'pyproject.toml': '[project]\nname="m"\nversion="0"\n', 'src/pkg/__init__.py': '', 'tests/test_a.py': t('from pkg.sql import parse\nfrom pkg.sql.ast import Clock') });
+  sdd(d3, 'tdd', 'stub', 'TEST-A-001');
+  assert.ok(fs.existsSync(path.join(d3, 'src/pkg/sql/__init__.py')) && fs.existsSync(path.join(d3, 'src/pkg/sql/ast.py')));
+  assert.ok(!fs.existsSync(path.join(d3, 'src/pkg/sql.py')));
+  assert.match(fs.readFileSync(path.join(d3, 'src/pkg/sql/__init__.py'), 'utf8'), /def parse/);
+});

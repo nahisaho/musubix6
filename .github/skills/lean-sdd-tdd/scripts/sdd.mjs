@@ -2508,7 +2508,8 @@ function stubFor(testPath, id) {
       const base = mod.startsWith('.') ? dir : ppDir && !has(proot) ? path.join(proot, ppDir) : srcLayout ? path.join(proot, 'src') : proot;
       const abs = path.join(base, ...mod.replace(/^\.+/, '').split('.')) + '.py';
       // `from pkg import x` where pkg/ is a namespace package: never create pkg.py next to it
-      if (fs.existsSync(abs.replace(/\.py$/, '')) && fs.statSync(abs.replace(/\.py$/, '')).isDirectory() && !fs.existsSync(abs.replace(/\.py$/, '/__init__.py'))) continue;
+      const nsDir = abs.replace(/\.py$/, '');
+      const isNsDir = fs.existsSync(nsDir) && fs.statSync(nsDir).isDirectory() && !fs.existsSync(path.join(nsDir, '__init__.py'));
       const bindings = m[2].replace(/#[^\n]*/g, '').replace(/[()]/g, '').split(',').map((x) => x.trim().split(/\s+as\s+/)).filter(([n]) => n);
       const ns = bindings.map(([n]) => n);
       const localOf = (n) => bindings.find(([name]) => name === n)?.[1] ?? n;
@@ -2517,12 +2518,24 @@ function stubFor(testPath, id) {
       // ALL_CAPS names that are never called are constants, not classes (#112)
       const isConst = (n) => /^[A-Z][A-Z0-9_]+$/.test(n) && !new RegExp(`\\b${n}\\s*\\(`).test(scoped);
       const stubOf = (n) => isExc(n) ? `class ${n}(Exception):\n    pass\n` : isConst(n) ? `${n} = None\n` : /^[A-Z]/.test(n) ? `class ${n}:\n    def __init__(self, *a, **k):\n        pass\n${methodsOf(scoped, n).map((k) => `\n    def ${k}(self, *a, **k):\n        raise NotImplementedError("${k}")\n`).join('')}` : `def ${n}(*a, **k):\n    raise NotImplementedError("${n}")\n`;
-      const existing = fs.existsSync(abs) ? abs : fs.existsSync(abs.replace(/\.py$/, '/__init__.py')) ? abs.replace(/\.py$/, '/__init__.py') : null;
+      // a namespace dir (no __init__.py) satisfies only the submodules it holds; any other imported name needs an __init__.py that defines it (#214)
+      if (isNsDir) {
+        const miss = ns.filter((n) => !fs.existsSync(path.join(nsDir, n + '.py')) && !fs.existsSync(path.join(nsDir, n)));
+        if (miss.length) add(path.join(nsDir, '__init__.py'), miss.map(stubOf).join('\n\n'));
+        continue;
+      }
+      // `from pkg.sql import x` plus `from pkg.sql.ast import y`: pkg.sql must be a package, never sql.py next to sql/ (#214)
+      const asPkg = !mod.startsWith('.') && [...scoped.matchAll(/^\s*from\s+([\w.]+)\s+import\b/gm)].some((x) => x[1].startsWith(mod + '.'));
+      const absOut = asPkg ? path.join(nsDir, '__init__.py') : abs;
+      const existing = fs.existsSync(absOut) ? absOut : fs.existsSync(abs.replace(/\.py$/, '/__init__.py')) ? abs.replace(/\.py$/, '/__init__.py') : null;
       if (existing) {
         // a module that still holds only stubs gets the newly imported names; real code is never touched
         const cur = fs.readFileSync(existing, 'utf8');
         const rest = cur.replace(/^class \w+(\(Exception\))?:\n(?:    def __init__\(self, \*a, \*\*k\):\n        pass\n|    pass\n)(?:\n    def \w+\(self, \*a, \*\*k\):\n        raise NotImplementedError\("\w+"\)\n)*/gm, '').replace(/^def \w+\(\*a, \*\*k\):\n    raise NotImplementedError\("\w+"\)\n/gm, '');
-        let missing = ns.filter((n) => !new RegExp(`^(class|def)\\s+${n}\\b|^${n}\\s*=`, 'm').test(cur));
+        // names a module re-exports (`from .core import Clock`, `import x as Clock`) are importable, never stubbed over (#214)
+        const reExported = new Set();
+        for (const im of cur.matchAll(/^(?:from\s+\S+\s+import\s+(\([^)]*\)|[^\n]+)|import\s+([^\n]+))/gm)) for (const b of (im[1] ?? im[2]).replace(/#[^\n]*/g, '').replace(/[()]/g, '').split(',')) { const parts = b.trim().split(/\s+as\s+/); const nm = parts[1] ?? parts[0]; if (nm && nm !== '*') reExported.add(nm.split('.')[0]); }
+        let missing = ns.filter((n) => !reExported.has(n) && !new RegExp(`^(class|def)\\s+${n}\\b|^${n}\\s*=`, 'm').test(cur));
         // `from pkg import mod` used as `mod.f(...)` is a submodule: create pkg/mod.py and leave __init__.py alone (#112)
         if (/__init__\.py$/.test(existing)) {
           const sub = missing.filter((n) => /^[a-z_]\w*$/.test(n) && new RegExp(`\\b${localOf(n)}\\.\\w`).test(scoped) && !new RegExp(`(?<![\\w.])${localOf(n)}\\s*\\(`).test(scoped));
@@ -2536,7 +2549,7 @@ function stubFor(testPath, id) {
         else if (missing.length) (made.realMissing ??= []).push(`${missing.join(', ')} in ${rel(existing)}`);
         continue;
       }
-      add(abs, ns.map(stubOf).join('\n\n'));
+      add(absOut, ns.map(stubOf).join('\n\n'));
     }
     return Object.assign([...new Set(made)], { realMissing: made.realMissing });
   }
