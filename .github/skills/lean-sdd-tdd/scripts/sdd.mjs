@@ -79,7 +79,7 @@ function pythonTestSha(txt, id) {
   return sha(shared + '\u0000' + ls.slice(mine.start, mine.end).join('\n').trim());
 }
 const BRACE_TEST = /\.(rs|java|php|cs|c|cc|cpp|cxx)$/;
-const maskBraces = (txt, rust = false) => txt.replace(rust ? /\/\*[\s\S]*?\*\/|\/\/[^\n]*|"(?:\\[\s\S]|[^"\\])*"|'(?:\\.|[^'\\\n])'/g : /\/\*[\s\S]*?\*\/|\/\/[^\n]*|"(?:\\[\s\S]|[^"\\])*"|'(?:\\[\s\S]|[^'\\])*'/g, (s) => s.replace(/[^\n]/g, ' '));
+const maskBraces = (txt, rust = false) => txt.replace(rust ? /\/\*[\s\S]*?\*\/|\/\/[^\n]*|\b(?:br|r)(#+)"[\s\S]*?"\1|\b(?:br|r)"[\s\S]*?"|"(?:\\[\s\S]|[^"\\])*"|'(?:\\.|[^'\\\n])'/g : /\/\*[\s\S]*?\*\/|\/\/[^\n]*|"(?:\\[\s\S]|[^"\\])*"|'(?:\\[\s\S]|[^'\\])*'/g, (s) => s.replace(/[^\n]/g, ' '));
 function sharedOutside(txt, ranges, start = 0) {
   let shared = '', cursor = start;
   for (const r of [...ranges].sort((a, b) => a.start - b.start)) {
@@ -90,6 +90,9 @@ function sharedOutside(txt, ranges, start = 0) {
   return (shared + txt.slice(cursor)).split('\n').filter((l) => l.trim()).join('\n').trim();
 }
 function protectedHelpers(mine, helpers, shared, insensitive = false) {
+  return reachableHelpers(mine, helpers, shared, insensitive).map((r) => r.body.trim()).join('\u0000');
+}
+function reachableHelpers(mine, helpers, shared, insensitive = false) {
   const selected = new Set();
   let calls = mine.body + '\n' + shared;
   for (;;) {
@@ -97,11 +100,13 @@ function protectedHelpers(mine, helpers, shared, insensitive = false) {
     if (!next.length) break;
     for (const r of next) { selected.add(r); calls += '\n' + r.body; }
   }
-  return [...selected].sort((a, b) => a.start - b.start).map((r) => r.body.trim()).join('\u0000');
+  return [...selected].sort((a, b) => a.start - b.start);
 }
-// Protect shared oracles without including sibling tests or annotated implementation (#166/#170).
-function braceTestSha(txt, id, p) {
-  const masked = maskBraces(txt, /\.rs$/.test(p));
+function braceFunctions(txt, p) {
+  let masked = maskBraces(txt, /\.rs$/.test(p));
+  const blank = (s) => s.replace(/[^\n]/g, ' ');
+  if (/\.java$/.test(p)) masked = masked.replace(/@[\w.]+(?:\([^)]*\))?/g, blank);
+  if (/\.(?:php|cs)$/.test(p)) masked = masked.replace(/^[ \t]*(?:#?\[[^\]\n]*\][ \t]*)+/gm, blank);
   const ls = txt.split('\n'), offsets = [];
   let offset = 0;
   for (const l of ls) { offsets.push(offset); offset += l.length + 1; }
@@ -110,18 +115,36 @@ function braceTestSha(txt, id, p) {
   for (const m of masked.matchAll(decl)) {
     const open = m.index + m[0].length - m[2].length;
     let end = open, depth = 0;
-    if (m[2] === '=>') { end = masked.indexOf(';', open); if (end < 0) return sha(txt); end++; }
+    if (m[2] === '=>') { end = masked.indexOf(';', open); if (end < 0) return null; end++; }
     else {
       for (; end < masked.length; end++) { if (masked[end] === '{') depth++; else if (masked[end] === '}' && --depth === 0) { end++; break; } }
-      if (depth) return sha(txt);
+      if (depth) return null;
     }
     let line = offsets.findLastIndex((o) => o <= m.index + m[0].search(/\S/));
-    while (line > 0 && (!ls[line - 1].trim() || /^\s*(\/\/|\/\*|\*|#\[|@\w|\[)/.test(ls[line - 1]))) line--;
+    while (line > 0 && offsets[line - 1] >= (ranges.at(-1)?.end ?? 0) && (!ls[line - 1].trim() || /^\s*(\/\/|\/\*|\*|#\[|@\w|\[)/.test(ls[line - 1]))) line--;
     const start = offsets[line];
     const body = txt.slice(start, end);
-    const implicit = /\.java$/.test(p) ? /@(?:BeforeEach|BeforeAll|AfterEach|AfterAll|Before|After)\b/.test(body) : /\.cs$/.test(p) ? /\[(?:TestInitialize|TestCleanup|ClassInitialize|ClassCleanup|AssemblyInitialize|AssemblyCleanup|SetUp|TearDown|OneTimeSetUp|OneTimeTearDown)\b/.test(body) || /^(?:Dispose|DisposeAsync|InitializeAsync)$/.test(m[1]) : /\.php$/.test(p) && /^(?:setUp|tearDown|setUpBeforeClass|tearDownAfterClass|assertPreConditions|assertPostConditions)$/i.test(m[1]);
-    ranges.push({ start, end, name: m[1], body, implicit, test: /@id\s+TEST-|#\[test\]|@Test\b|\[(?:Fact|Theory|Test|TestCase|TestMethod|DataRow)\b/.test(body) || /^test_/.test(m[1]), code: /@id\s+CODE-/.test(body) });
+    const implicit = /\.java$/.test(p) ? /@(?:[\w.]+\.)?(?:BeforeEach|BeforeAll|AfterEach|AfterAll|Before|After)\b/.test(body) : /\.cs$/.test(p) ? /\[(?:TestInitialize|TestCleanup|ClassInitialize|ClassCleanup|AssemblyInitialize|AssemblyCleanup|SetUp|TearDown|OneTimeSetUp|OneTimeTearDown)\b/.test(body) || /^(?:Dispose|DisposeAsync|InitializeAsync)$/.test(m[1]) : /\.php$/.test(p) && (/^(?:setUp|tearDown|setUpBeforeClass|tearDownAfterClass|assertPreConditions|assertPostConditions)$/i.test(m[1]) || phpLifecycle(body, txt));
+    ranges.push({ start, end, name: m[1], body, implicit, test: /@id\s+TEST-|#\[test\]|@(?:[\w.]+\.)?(?:Test|ParameterizedTest|RepeatedTest|TestFactory|TestTemplate)\b|\[(?:Fact|Theory|Test|TestCase|TestMethod|DataRow)\b/.test(body) || /^test_/.test(m[1]), code: /@id\s+CODE-/.test(body) });
   }
+  return ranges;
+}
+function phpLifecycle(body, txt) {
+  const aliases = new Map();
+  for (const m of txt.matchAll(/\buse\s+([^;\n]+);/gi)) {
+    const group = /^([^{}]+)\{([^{}]+)\}$/.exec(m[1].trim());
+    for (const item of (group?.[2] ?? m[1]).split(',')) {
+      const use = /^\s*(\\?[\w\\]+)(?:\s+as\s+(\w+))?\s*$/i.exec(item);
+      if (use) aliases.set((use[2] ?? use[1].split('\\').at(-1)).toLowerCase(), (group?.[1] ?? '') + use[1]);
+    }
+  }
+  const lifecycle = /^(?:Before|After|BeforeClass|AfterClass|PreCondition|PostCondition)$/i;
+  return [...body.matchAll(/#\[([^\]]*)\]/g)].some((attr) => [...attr[1].matchAll(/(?:^|,)\s*(\\?[\w\\]+)/g)].some((m) => lifecycle.test((aliases.get(m[1].toLowerCase()) ?? m[1]).split('\\').at(-1))));
+}
+// Protect shared oracles without including sibling tests or annotated implementation (#166/#170).
+function braceTestSha(txt, id, p) {
+  const ranges = braceFunctions(txt, p);
+  if (!ranges) return sha(txt);
   const mine = ranges.find((r) => new RegExp(`@id\\s+${id}\\b`).test(r.body));
   if (!mine) return sha(txt);
   const inline = /\.rs$/.test(p) ? txt.indexOf('#[cfg(test)]') : -1;
@@ -129,7 +152,59 @@ function braceTestSha(txt, id, p) {
   const shared = sharedOutside(txt, ranges, inline >= 0 ? inline : 0);
   return sha(shared + '\u0000' + mine.body.trim() + '\u0000' + protectedHelpers(mine, helpers, shared, /\.php$/.test(p)));
 }
-function juliaTestSha(txt, id) {
+function rustLocalModules(file, txt, entry = file) {
+  const mask = maskBraces(txt, true), scope = [], paths = [];
+  for (const m of mask.matchAll(/\bmod\s+(\w+)\s*([;{])|[{}]/g)) {
+    if (m[1] && m[2] === '{') { scope.push(m[1]); continue; }
+    if (m[0] === '{') { scope.push(null); continue; }
+    if (m[0] === '}') { scope.pop(); continue; }
+    const parents = scope.filter(Boolean);
+    const base = path.basename(file) === 'mod.rs' || file === entry ? path.dirname(file) : file.slice(0, -3);
+    const home = path.join(base, ...parents);
+    const override = /#\[path\s*=\s*"([^"]+)"\]\s*$/.exec(txt.slice(0, m.index))?.[1];
+    const candidates = override ? [path.resolve(path.dirname(file), override)] : [path.join(home, m[1] + '.rs'), path.join(home, m[1], 'mod.rs')];
+    paths.push({ file: candidates.find((p) => fs.existsSync(p)) ?? candidates[0], mods: [...parents, m[1]] });
+  }
+  return paths;
+}
+// Local test-support dependencies are conservative oracles; annotated production is not (#181).
+function externalOracleSha(p, hash) {
+  if (!/\.(?:rs|c|cc|cpp|cxx)$/.test(p)) return hash;
+  const root = path.join(ROOT, p), seen = new Set([root]), deps = new Map();
+  let all;
+  const visit = (file, rootFile = false) => {
+    let text, raw;
+    try { raw = fs.readFileSync(file); text = raw.toString('utf8').replace(/^\uFEFF/, '').replace(/\r\n/g, '\n'); }
+    catch { if (!rootFile) deps.set(rel(file), 'missing'); return; }
+    if (!rootFile && /\.(?:rs|c|h|cc|cpp|cxx|hpp|hh)$/.test(file) && /@id\s+CODE-/.test(text) && !/@id\s+TEST-/.test(text)) return;
+    if (!rootFile) deps.set(rel(file), sha(raw));
+    const next = [];
+    if (/\.rs$/.test(file)) {
+      const inline = rootFile ? text.indexOf('#[cfg(test)]') : -1;
+      const input = inline >= 0 ? ' '.repeat(inline) + text.slice(inline) : text;
+      const entry = /(?:^|\/)(?:lib|main|mod)\.rs$|(?:^|\/)(?:tests|benches|examples)\/[^/]+\.rs$/.test(rel(file)) ? file : '';
+      next.push(...rustLocalModules(file, input, entry).map((m) => m.file));
+      for (const m of input.matchAll(/\binclude(?:_str|_bytes)?!\s*\(\s*"([^"]+)"/g)) next.push(path.resolve(path.dirname(file), m[1]));
+    } else {
+      for (const m of text.matchAll(/^\s*#\s*include\s+([<"])([^>"]+)[>"]/gm)) {
+        const local = path.resolve(path.dirname(file), m[2]);
+        if (m[1] === '"' && fs.existsSync(local)) { next.push(local); continue; }
+        if (m[1] === '<' && !m[2].includes('/')) continue;
+        all ??= workspaceFiles();
+        const matches = all.filter((f) => f === m[2] || f.endsWith('/' + m[2])).map((f) => path.join(ROOT, f));
+        next.push(...(matches.length ? matches : m[1] === '"' ? [local] : []));
+      }
+    }
+    for (const dep of next) {
+      if (!dep.startsWith(ROOT + path.sep) || seen.has(dep)) continue;
+      seen.add(dep);
+      visit(dep);
+    }
+  };
+  visit(root, true);
+  return deps.size ? sha(hash + '\u0000' + [...deps].sort(([a], [b]) => a.localeCompare(b)).map(([f, h]) => f + '\u0000' + h).join('\u0000')) : hash;
+}
+function juliaRanges(txt) {
   const masked = txt.replace(/#[^\n]*|"""[\s\S]*?"""|"(?:\\[\s\S]|[^"\\])*"/g, (s) => s.replace(/[^\n]/g, ' '));
   const ranges = [];
   for (const a of txt.matchAll(/^[ \t]*#.*@id\s+((?:TEST|CODE)-[A-Z0-9-]+)[^\n]*\n/gm)) {
@@ -143,9 +218,14 @@ function juliaTestSha(txt, id) {
       else { depth++; found = true; }
       if (found && depth === 0) { end = from + m.index + m[0].length; break; }
     }
-    if (!found || end === from) return sha(txt);
+    if (!found || end === from) return null;
     ranges.push({ start, end, id: a[1], body: txt.slice(start, end) });
   }
+  return ranges;
+}
+function juliaTestSha(txt, id) {
+  const ranges = juliaRanges(txt);
+  if (!ranges) return sha(txt);
   const mine = ranges.find((r) => r.id === id);
   if (!mine) return sha(txt);
   return sha(sharedOutside(txt, ranges) + '\u0000' + mine.body.trim());
@@ -195,7 +275,7 @@ const testShaVariant = (p, id, trim, norm = false, legacy = false, cut = true, i
   const pre = ls.slice(0, begin(starts[0])).join('\n');
   return sha((norm ? normImports(pre) : pre) + '\u0000' + region);
 };
-const testSha = (p, id) => { eolNorm = true; try { return testShaVariant(p, id, true, true); } finally { eolNorm = false; } };
+const testSha = (p, id) => { eolNorm = true; try { return externalOracleSha(p, testShaVariant(p, id, true, true)); } finally { eolNorm = false; } };
 const shaMatches = (recorded, p, id) => /\.(?:py|jl)$/.test(p) || BRACE_TEST.test(p) ? recorded === testSha(p, id) : shaMatchesRaw(recorded, p, id) || (() => { eolNorm = true; try { return shaMatchesRaw(recorded, p, id); } finally { eolNorm = false; } })();
 const shaMatchesRaw = (recorded, p, id) => [true, false].some((cut) => [true, false].some((inl) => recorded === testShaVariant(p, id, true, true, false, cut, inl) || recorded === testShaVariant(p, id, true, false, false, cut, inl) || recorded === testShaVariant(p, id, false, false, false, cut, inl) || recorded === testShaVariant(p, id, true, true, true, cut, inl) || recorded === testShaVariant(p, id, true, false, true, cut, inl) || recorded === testShaVariant(p, id, false, false, true, cut, inl))) ||
   recorded === testSha(p, id) || recorded === testShaVariant(p, id, true) || recorded === testShaVariant(p, id, false) || recorded === testShaVariant(p, id, true, true, true) || recorded === testShaVariant(p, id, true, false, true) || recorded === testShaVariant(p, id, false, false, true) || recorded === sha(fs.readFileSync(path.join(ROOT, p)));
@@ -518,8 +598,11 @@ const JULIA_TEST = 'out=$(julia --project=. -e "using Pkg; Pkg.test()" 2>&1); r=
 const JULIA_VERBOSE = `function sdd_verbose(ex)
     ex isa Expr || return ex
     if ex.head === :macrocall && (ex.args[1] === Symbol("@testset") || (ex.args[1] isa GlobalRef && ex.args[1].name === Symbol("@testset")))
-        filter!(a -> !(a isa Expr && a.head === :(=) && a.args[1] === :verbose), ex.args)
-        insert!(ex.args, 3, Expr(:(=), :verbose, true))
+        compatible(a) = a isa AbstractString || a === :DefaultTestSet || (a isa Expr && a.head in (:(=), :string)) || (a isa GlobalRef && a.name === :DefaultTestSet)
+        if all(compatible, ex.args[3:end-1])
+            filter!(a -> !(a isa Expr && a.head === :(=) && a.args[1] === :verbose), ex.args)
+            insert!(ex.args, 3, Expr(:(=), :verbose, true))
+        end
     end
     ex.args = map(sdd_verbose, ex.args)
     ex
@@ -2388,13 +2471,42 @@ const juliaFailedSets = (plain) => (juliaSummaryRows(plain) ?? []).filter((r) =>
 function juliaSiblingFail(plain, id) {
   const rows = juliaSummaryRows(plain);
   if (!rows) return null;
-  const mine = rows.filter((r) => new RegExp(`(?<![\\w])${id}(?![\\w])`, 'i').test(r.name));
+  const mine = rows.filter((r) => new RegExp(`(?<![\\w-])${id}(?![\\w-])`, 'i').test(r.name));
   // another top-level testset failed first and aborted the file: this testset never ran (#143)
   if (!mine.length) return 'notrun';
   if (!mine.some((r) => r.executed)) return 'skip';
   return !mine.some((r) => r.bad) && rows.some((r) => r.bad) ? 'sibling' : null;
 }
 const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+function juliaFailureOutput(plain, id, testPath) {
+  const lines = plain.split('\n'), mine = [], boundary = new RegExp(`(?<![\\w-])${escapeRe(id)}(?![\\w-])`, 'i');
+  const txt = fs.readFileSync(path.join(ROOT, testPath), 'utf8');
+  const range = juliaRanges(txt)?.find((r) => r.id === id);
+  const start = range ? txt.slice(0, range.start).split('\n').length : 0;
+  const end = range ? txt.slice(0, range.end).split('\n').length : 0;
+  let selected = false, found = false;
+  for (const line of lines) {
+    if (/^(?:.+?: )?(?:Test Failed|Error During Test) at\b/.test(line)) {
+      found = true;
+      const loc = / at (.*?):(\d+)(?::\d+)?\s*$/.exec(line);
+      const ownLocation = loc && path.resolve(ROOT, loc[1]) === path.resolve(ROOT, testPath) && +loc[2] >= start && +loc[2] <= end;
+      selected = boundary.test(line.split(/: (?:Test Failed|Error During Test) at/)[0]) || !!ownLocation;
+    }
+    else if (/Test Summary:|^ERROR: LoadError:/.test(line)) selected = false;
+    if (selected) mine.push(line);
+  }
+  return found ? mine.join('\n') : null;
+}
+function juliaScriptIndex(cmd) {
+  const values = new Set(['-J', '--sysimage', '-L', '--load', '-H', '--machine-file', '-C', '--cpu-target', '-t', '--threads', '-p', '--procs', '-O', '--optimize', '--compile', '--startup-file', '--history-file', '--color', '--depwarn', '--check-bounds', '--banner']);
+  for (let i = 1; i < cmd.length; i++) {
+    if (/^(?:-e|-E|--eval|--print)(?:=|$)/.test(cmd[i])) return -1;
+    if (cmd[i] === '--') return i + 1;
+    if (values.has(cmd[i])) { i++; continue; }
+    if (!cmd[i].startsWith('-')) return i;
+  }
+  return -1;
+}
 function rustTarget(testPath, cwd = ROOT) {
   const abs = path.resolve(ROOT, testPath);
   let dir = path.dirname(abs), manifest;
@@ -2414,19 +2526,9 @@ function rustTarget(testPath, cwd = ROOT) {
       if (file === abs) return mods;
       if (visited.has(file) || !fs.existsSync(file)) return null;
       visited.add(file);
-      const text = fs.readFileSync(file, 'utf8');
-      const mask = maskBraces(text, true);
-      const scope = [];
-      for (const m of mask.matchAll(/\bmod\s+(\w+)\s*([;{])|[{}]/g)) {
-        if (m[1] && m[2] === '{') { scope.push(m[1]); continue; }
-        if (m[0] === '{') { scope.push(null); continue; }
-        if (m[0] === '}') { scope.pop(); continue; }
-        const parents = scope.filter(Boolean);
-        const base = path.basename(file) === 'mod.rs' || file === entry ? path.dirname(file) : file.slice(0, -3);
-        const home = path.join(base, ...parents);
-        const override = /#\[path\s*=\s*"([^"]+)"\]\s*$/.exec(text.slice(0, m.index))?.[1];
-        const paths = override ? [path.resolve(path.dirname(file), override)] : [path.join(home, m[1] + '.rs'), path.join(home, m[1], 'mod.rs')];
-        for (const next of paths) { const found = find(next, [...mods, ...parents, m[1]]); if (found) return found; }
+      for (const next of rustLocalModules(file, fs.readFileSync(file, 'utf8'), entry)) {
+        const found = find(next.file, [...mods, ...next.mods]);
+        if (found) return found;
       }
       return null;
     };
@@ -2438,23 +2540,48 @@ function rustTarget(testPath, cwd = ROOT) {
 function qualifiedTestName(testPath, id, rust = false) {
   const name = testName(testPath, id);
   const text = fs.readFileSync(path.join(ROOT, testPath), 'utf8');
-  const at = text.search(new RegExp(`@id\\s+${id}\\b`));
+  const at = text.search(new RegExp(`@id\\s+${id}(?![\\w-])`));
+  return [qualifiedTestScope(testPath, text, at, rust), name].filter(Boolean).join(rust ? '::' : '.');
+}
+function qualifiedTestScope(testPath, text, at, rust = false) {
   const pre = maskBraces(text.slice(0, at), rust);
   const stack = [];
-  const re = rust ? /\bmod\s+(\w+)\s*\{|([{}])/g : /\b(namespace|class)\s+([\w.]+)[^{;]*([{;])|([{}])/g;
+  const re = rust ? /\bmod\s+(\w+)\s*\{|([{}])/g : /\b(namespace|class|record(?:\s+(?:class|struct))?)\s+([\w.]+)[^{;]*([{;])|([{}])/g;
   let fileNs = '';
   for (const m of pre.matchAll(re)) {
     if (rust) { if (m[1]) stack.push(m[1]); else if (m[2] === '{') stack.push(null); else stack.pop(); }
-    else if (m[1]) { if (m[3] === ';') fileNs = m[2]; else stack.push(m[2]); }
+    else if (m[1]) { if (m[3] === ';') fileNs = m[2]; else stack.push({ kind: m[1], name: m[2] }); }
     else if (m[4] === '{') stack.push(null);
     else stack.pop();
   }
   const pkg = /\.java$/.test(testPath) ? /^package\s+([\w.]+);/m.exec(text)?.[1] : '';
   const mods = rust ? rustTarget(testPath)?.mods ?? [] : [];
-  return [pkg, fileNs, ...mods, ...stack.filter(Boolean), name].filter(Boolean).join(rust ? '::' : '.');
+  if (rust) return [...mods, ...stack.filter(Boolean)].join('::');
+  const namespaces = stack.filter((s) => s?.kind === 'namespace').map((s) => s.name);
+  const classes = stack.filter((s) => s && s.kind !== 'namespace').map((s) => s.name);
+  return [pkg, fileNs, ...namespaces, classes.join(/\.java$/.test(testPath) ? '$' : '+')].filter(Boolean).join('.');
 }
-function targetVerdict(plain, testPath, id, selectedName = null) {
+function ambiguousJavaMethod(testPath, id) {
+  const txt = fs.readFileSync(path.join(ROOT, testPath), 'utf8'), name = testName(testPath, id);
+  const cls = qualifiedTestName(testPath, id).slice(0, -name.length - 1);
+  const masked = maskBraces(txt).replace(/@[\w.]+(?:\([^)]*\))?/g, (s) => s.replace(/[^\n]/g, ' '));
+  const decl = new RegExp(`\\b[\\w.<>\\[\\]?]+\\s+${escapeRe(name)}\\s*\\([^{};]*\\)\\s*(?:throws\\s+[^{};]+)?\\s*\\{`, 'g');
+  return [...masked.matchAll(decl)].filter((m) => qualifiedTestScope(testPath, txt, m.index) === cls).length > 1;
+}
+function javaCaseMatches(caseName, testPath, id) {
+  const name = testName(testPath, id);
+  const noArgs = new RegExp(`\\b${escapeRe(name)}\\s*\\(\\s*\\)`).test(testBody(testPath, id).join('\n'));
+  return caseName === name || caseName?.startsWith(name + '[') || (noArgs ? new RegExp(`^${escapeRe(name)}\\(\\)(?:\\[|$)`).test(caseName ?? '') : caseName?.startsWith(name + '('));
+}
+function targetVerdict(plain, testPath, id, selectedName = null, requireJavaResult = false) {
   const name = testName(testPath, id), exact = escapeRe(name);
+  if (/\.jl$/.test(testPath)) {
+    const rows = juliaSummaryRows(plain);
+    if (rows) {
+      const mine = rows.filter((r) => new RegExp(`(?<![\\w-])${escapeRe(id)}(?![\\w-])`, 'i').test(r.name));
+      return !mine.length ? 'notrun' : mine.some((r) => r.bad) ? 'fail' : mine.some((r) => r.pass) ? 'pass' : 'skip';
+    }
+  }
   if (/\.rs$/.test(testPath) && (/^test \S+ \.\.\. /m.test(plain) || /running \d+ tests|test result:/.test(plain))) {
     const full = qualifiedTestName(testPath, id, true);
     const owner = rustTarget(testPath);
@@ -2480,7 +2607,7 @@ function targetVerdict(plain, testPath, id, selectedName = null) {
   }
   if (/\.java$/.test(testPath)) {
     const full = qualifiedTestName(testPath, id), cls = full.slice(0, -name.length - 1);
-    const rows = [...plain.matchAll(/^SDD-TEST (\S+) (.+?) (SUCCESS|FAILURE|SKIPPED)$/gm)].filter((m) => m[1] === cls && (m[2] === name || m[2].startsWith(name + '(') || m[2].startsWith(name + '[')));
+    const rows = [...plain.matchAll(/^SDD-TEST (\S+) (.+?) (SUCCESS|FAILURE|SKIPPED)$/gm)].filter((m) => m[1] === cls && javaCaseMatches(m[2], testPath, id));
     if (rows.length) return rows.some((m) => m[3] === 'FAILURE') ? 'fail' : rows.some((m) => m[3] === 'SUCCESS') ? 'pass' : 'skip';
     const xmlRows = [];
     const dirs = [path.join(ROOT, 'target/surefire-reports'), path.join(ROOT, 'build/test-results/test'), ...workspaceFiles().filter((f) => /\/(?:pom.xml|build.gradle(?:.kts)?)$/.test(f)).flatMap((f) => [path.join(ROOT, path.dirname(f), 'target/surefire-reports'), path.join(ROOT, path.dirname(f), 'build/test-results/test')])];
@@ -2490,12 +2617,12 @@ function targetVerdict(plain, testPath, id, selectedName = null) {
         const text = fs.readFileSync(path.join(dir, f), 'utf8');
         for (const m of text.matchAll(/<testcase\b([^>]*?)(?:\/>|>([\s\S]*?)<\/testcase>)/g)) {
           const attrs = Object.fromEntries([...m[1].matchAll(/(\w+)="([^"]*)"/g)].map((a) => [a[1], a[2]]));
-          if (attrs.classname === cls && (attrs.name === name || attrs.name?.startsWith(name + '(') || attrs.name?.startsWith(name + '['))) xmlRows.push(/<(failure|error)\b/.test(m[2] ?? '') ? 'fail' : /<skipped\b/.test(m[2] ?? '') ? 'skip' : 'pass');
+          if (attrs.classname === cls && javaCaseMatches(attrs.name, testPath, id)) xmlRows.push(/<(failure|error)\b/.test(m[2] ?? '') ? 'fail' : /<skipped\b/.test(m[2] ?? '') ? 'skip' : 'pass');
         }
       }
     }
     if (xmlRows.length) return xmlRows.includes('fail') ? 'fail' : xmlRows.includes('pass') ? 'pass' : 'skip';
-    if (/^SDD-TEST /m.test(plain)) return 'notrun';
+    if (/^SDD-TEST /m.test(plain) || (requireJavaResult && !LOAD_ERR.test(plain))) return 'notrun';
   }
   if (/\.cs$/.test(testPath) && /^\s*(Passed|Failed|Skipped)\s+\S+/m.test(plain)) {
     const full = qualifiedTestName(testPath, id);
@@ -2617,6 +2744,7 @@ function cmdTdd() {
     }
   }
   if (/\.java$/.test(t.path)) {
+    if (ambiguousJavaMethod(t.path, id)) { out(`${sub.toUpperCase()} REJECTED ${id}: overloaded JUnit method ownership is ambiguous; use unique method names within the declaring class`); return 1; }
     const name = testName(t.path, id), full = qualifiedTestName(t.path, id), cls = full.slice(0, -name.length - 1);
     for (let i = 0; i < cmd.length; i++) {
       if (cmd[i] === '-Dtest=*#*' + name) cmd[i] = `-Dtest=${cls}#${name}`;
@@ -2643,7 +2771,7 @@ function cmdTdd() {
       if (tests) {
         const exact = tests.filter((t) => t.name === name);
         const token = id.toLowerCase().replaceAll('-', '_');
-        const candidates = exact.length ? exact : tests.filter((t) => new RegExp(`(?:^|_)${escapeRe(token)}(?:_|$)`, 'i').test(t.name) || t.name === id);
+        const candidates = exact.length ? exact : tests.filter((t) => new RegExp(`(?:^|[^A-Za-z0-9])${escapeRe(token)}(?:[^A-Za-z0-9]|$)`, 'i').test(t.name) || t.name === id);
         if (candidates.length !== 1) { out(`${sub.toUpperCase()} REJECTED ${id}: CTest registration is missing or ambiguous; configure an exact -R selector`); return 1; }
         selectedName = candidates[0].name;
         if (shell >= 0) cmd[shell + 1] = selectedName;
@@ -2658,8 +2786,18 @@ function cmdTdd() {
     const i = cmd.indexOf('--filter');
     if (i >= 0 && cmd[i + 1] === testName(t.path, id)) cmd[i + 1] = '/::' + escapeRe(cmd[i + 1]) + '(?:\\s+with data set [\\s\\S]*)?$/';
   }
-  if (/\.jl$/.test(t.path) && cmd[0] === 'julia' && cmd.at(-1) === fileArg && !cmd.includes('-e')) cmd.splice(cmd.length - 1, 0, '-e', JULIA_VERBOSE);
+  if (/\.jl$/.test(t.path) && cmd[0] === 'julia' && juliaScriptIndex(cmd) === cmd.length - 1 && cmd.at(-1) === fileArg) cmd.splice(cmd.at(-2) === '--' ? cmd.length - 2 : cmd.length - 1, 0, '-e', JULIA_VERBOSE);
   if (/\.cs$/.test(t.path) && cmd[0] === 'dotnet' && cmd[1] === 'test') {
+    const owners = dotnetGraph(ROOT).ownersOf(t.path);
+    if (owners.length) {
+      const operand = cmd.findIndex((a, i) => i > 1 && /\.(?:csproj|sln|slnx)$/.test(a));
+      const explicit = operand >= 0 && cmd[operand].endsWith('.csproj') ? path.posix.normalize(path.posix.join(proj?.root ?? '.', cmd[operand])) : null;
+      const owner = explicit ? owners.find((o) => o.file === explicit) : owners.length === 1 ? owners[0] : null;
+      if (!owner) { out(`${sub.toUpperCase()} REJECTED ${id}: .NET test project ownership is ambiguous or disagrees with the runner; configure the owning csproj explicitly`); return 1; }
+      const projectArg = path.posix.relative(proj?.root ?? '.', owner.file);
+      if (operand >= 0) cmd[operand] = projectArg;
+      else cmd.splice(2, 0, projectArg);
+    }
     const i = cmd.indexOf('--filter');
     if (i >= 0 && cmd[i + 1] === 'FullyQualifiedName~' + testName(t.path, id)) {
       const full = qualifiedTestName(t.path, id);
@@ -2701,13 +2839,23 @@ function cmdTdd() {
   // Node >=22 can report a file-level pass: only an executed test result proves the ID matched (#154).
   const nodeNoMatch = res.exit === 0 && /(^|\n)\s*(ℹ tests \d+|# tests \d+)/.test(plain) && !nodeTestRan(plain, id, t.path);
   const goNoMatch = goRunner && !LOAD_ERR.test(plain) && (!goTarget || !goVerdict || goVerdict === 'skip');
-  const verdict = targetVerdict(plain, t.path, id, selectedName);
+  const javaRunner = /\.java$/.test(t.path) && /(?:^|[/\s])(?:mvn|mvnw|gradle|gradlew)(?:\s|$)/.test(cmd.join(' '));
+  const verdict = targetVerdict(plain, t.path, id, selectedName, javaRunner);
   const targetExecuted = verdict === 'pass' || verdict === 'fail';
   const zero = (!targetExecuted && ((ZERO_TESTS.test(res.text) && !RAN_TESTS.test(res.text)) || allSkipped || noAssert)) || NO_PASSED.test(plain) || pytestNoExecution(plain) || nodeNoMatch || goNoMatch || verdict === 'notrun' || verdict === 'skip';
   const siblingFail = juliaSiblingFail(plain, id);
+  const targetPassed = verdict ? verdict === 'pass' : goVerdict ? goVerdict === 'pass' : siblingFail === 'sibling' || res.exit === 0;
+  const targetOutput = juliaSummaryRows(plain) ? juliaFailureOutput(plain, id, t.path) : null;
   const timeoutWhy = `the test run timed out after ${(res.ms / 1000).toFixed(0)}s (raise timeoutMs in .sdd/config.json or fix the hang); a timeout is neither Red nor Green`;
   // forked JVM / test host died: the test matched but the runner crashed (#143)
-  const cAssertionAbort = /\.(?:c|cc|cpp|cxx)$/.test(t.path) && new RegExp(`\\b${escapeRe(testName(t.path, id))}:\\s+Assertion\\b[^\\n]*failed\\.`).test(plain) && /Subprocess aborted/.test(plain);
+  let cAssertionAbort = false;
+  if (/\.(?:c|cc|cpp|cxx)$/.test(t.path)) {
+    const text = fs.readFileSync(path.join(ROOT, t.path), 'utf8'), ranges = braceFunctions(text, t.path) ?? [];
+    const mine = ranges.find((r) => new RegExp(`@id\\s+${id}(?![\\w-])`).test(r.body));
+    const called = mine ? [mine, ...reachableHelpers(mine, ranges.filter((r) => !r.test && !r.code), sharedOutside(text, ranges))].map((r) => r.name) : [testName(t.path, id)];
+    const targetBlock = [...plain.matchAll(/^\s*\d+\/\d+ Test\s+#\d+:\s+(\S+)[^\n]*(?:\n(?!\s*\d+\/\d+ Test\s+#\d+:)[^\n]*)*/gm)].find((m) => m[1] === (selectedName ?? testName(t.path, id)))?.[0] ?? '';
+    cAssertionAbort = /Subprocess aborted/.test(targetBlock) && called.some((name) => new RegExp(`\\b${escapeRe(name)}:\\s+Assertion\\b[^\\n]*failed\\.`).test(targetBlock));
+  }
   const childCrash = plain.split('\n').some((line) => /\*\*\*Exception:/i.test(line) && !(cAssertionAbort && new RegExp(`Test\\s+#\\d+:\\s+${escapeRe(selectedName ?? testName(t.path, id))}\\s+.*Subprocess aborted\\*\\*\\*Exception:`).test(line)));
   const crashed = res.exit !== 0 && (res.signal || /There was an error in the forked process|OutOfMemoryError|The forked VM terminated|Fatal error\. Internal CLR error|Test host process crashed|The active test run was aborted|Fatal Python error:|\((?:SEGFAULT|ILLEGAL|NUMERICAL|OTHER_FAULT|INTERRUPT)\)/i.test(plain) || childCrash);
   const crashWhy = `the test runner process crashed (${res.signal ?? 'fatal Python error / forked JVM / test host failure'}), so the test result is unknown; make the failure an assertion or fix the crash`;
@@ -2718,6 +2866,7 @@ function cmdTdd() {
     if (res.timedOut) { ok = false; why = timeoutWhy; }
     else if (crashed) { ok = false; why = crashWhy; }
     else if (siblingFail === 'notrun') { ok = false; why = notRunWhy; }
+    else if (retest && targetPassed && !zero && siblingFail !== 'skip') ok = true;
     else if (siblingFail === 'sibling') { ok = false; why = `${id} itself passes; the failure comes from another test of the same file (whole-file runner)`; }
     else if (verdict === 'pass' && res.exit !== 0) { ok = false; why = `${id} itself passes; the failure comes from another test or suite setup`; }
     else if (goRunner && goVerdict === 'pass' && res.exit !== 0) { ok = false; why = `${id} itself passes; the failure comes from its parent, a sibling or suite setup`; }
@@ -2726,23 +2875,23 @@ function cmdTdd() {
     else if (res.exit === 0 && typeof flags.characterization === 'string' && flags.characterization.trim()) ok = true;
     else if (res.exit === 0) { ok = false; why = 'test passed; Red needs a real failure (data-only / characterization test? record it explicitly: --characterization "<why no implementation can fail it>")'; }
     else if (LOAD_ERR.test(res.text) && !flags.weak && !(flags['missing-module'] && declaredMissingModule(res.text, t.path))) { ok = false; why = 'load/compile error, not an assertion failure. new module? run `tdd stub <ID>` once (or `--missing-module`); if stub already ran or found nothing, add the missing code by hand; or --weak to record as weak Red'; }
-    else if (typeof flags.expect === 'string' && !res.text.includes(flags.expect)) { ok = false; why = `failure output does not contain --expect "${flags.expect}" (Red for the wrong reason?)`; }
+    else if (typeof flags.expect === 'string' && !(juliaSummaryRows(plain) ? targetOutput ?? '' : res.text).includes(flags.expect)) { ok = false; why = `failure output does not contain --expect "${flags.expect}" (Red for the wrong reason?)`; }
     else ok = true;
   } else {
     if (res.timedOut) { ok = false; why = timeoutWhy; }
     else if (crashed) { ok = false; why = crashWhy; }
     else if (siblingFail === 'notrun') { ok = false; why = notRunWhy; }
-    else if (res.exit !== 0 && siblingFail !== 'sibling' && verdict !== 'pass') { ok = false; why = 'test failed'; }
+    else if (verdict === 'fail' || (res.exit !== 0 && siblingFail !== 'sibling' && verdict !== 'pass')) { ok = false; why = 'test failed'; }
     else if (zero || siblingFail === 'skip') { ok = false; why = 'no test matched the ID'; }
     else ok = true;
   }
   if (!ok) { out(`${sub.toUpperCase()} REJECTED ${id}: ${why}`); out(rejectTail(res.text)); return 1; }
-  const rl = res.text.replace(/\x1b\[[0-9;]*m/g, '').split('\n').map((l) => l.trim());
-  const reason = sub === 'red' && res.exit !== 0 ? (rl.find((l) => /^E\s+\S/.test(l) && !/\d+ \/ \d+ \(\d+%\)|^E\s+\[\s*\d+%\]/.test(l))?.replace(/^E\s+/, '') ?? (() => { const i = rl.findIndex((l) => /panicked at/.test(l)); return i >= 0 && rl[i + 1] && !/^note:/.test(rl[i + 1]) ? rl[i + 1] : undefined; })() ?? specificReason(rl) ?? rl.find((l) => /not implemented/i.test(l) && !/^\d+\s*\|/.test(l)) ?? rl.find((l) => /(--- FAIL|AssertionError|Error:|assert |Failed asserting|FAILED|panicked|expected|\(Failed\)|not implemented|Test Failed|Error During Test|\w*Exception:|^Error in )/.test(l) && !/^(FAIL|❯|> Task|The following tests)/.test(l) && !/^\d+\s*\|/.test(l)) ?? rl.find((l) => /^(FAIL|not ok)\s+\S+$/.test(l)) ?? [...rl].reverse().find((l) => l && !/^(npm |note: |error: test failed|test result:|Failed!|Passed!)/.test(l)) ?? '').slice(0, 110) : '';
+  const rl = (targetOutput ?? plain).split('\n').map((l) => l.trim());
+  const reason = sub === 'red' && res.exit !== 0 && !(retest && targetPassed) ? (rl.find((l) => /^E\s+\S/.test(l) && !/\d+ \/ \d+ \(\d+%\)|^E\s+\[\s*\d+%\]/.test(l))?.replace(/^E\s+/, '') ?? (() => { const i = rl.findIndex((l) => /panicked at/.test(l)); return i >= 0 && rl[i + 1] && !/^note:/.test(rl[i + 1]) ? rl[i + 1] : undefined; })() ?? specificReason(rl) ?? rl.find((l) => /not implemented/i.test(l) && !/^\d+\s*\|/.test(l)) ?? rl.find((l) => /(--- FAIL|AssertionError|Error:|assert |Failed asserting|FAILED|panicked|expected|\(Failed\)|not implemented|Test Failed|Error During Test|\w*Exception:|^Error in )/.test(l) && !/^(FAIL|❯|> Task|The following tests)/.test(l) && !/^\d+\s*\|/.test(l)) ?? rl.find((l) => /^(FAIL|not ok)\s+\S+$/.test(l)) ?? [...rl].reverse().find((l) => l && !/^(npm |note: |error: test failed|test result:|Failed!|Passed!)/.test(l)) ?? '').slice(0, 110) : '';
   const loadWeak = sub === 'red' && LOAD_ERR.test(res.text) && !(flags['missing-module'] && declaredMissingModule(res.text, t.path));
   const setupSym = sub === 'red' && !flags['allow-setup-red'] && typeof flags.expect !== 'string' ? setupOrigin(rl.find((l) => /^E\s+.*(not implemented|NotImplementedError|unimplemented|is not a function|has no attribute)/i.test(l)) ?? rl.find((l) => /not implemented|NotImplementedError|unimplemented|is not a function|has no attribute/i.test(l) && !/^\d+\s*\|/.test(l)) ?? reason, t.path, id, res.text) : null;
   const charac = sub === 'red' && res.exit === 0 && !retest ? String(flags.characterization).trim() : '';
-  const retestWeak = sub === 'red' && res.exit === 0 && !!retest;
+  const retestWeak = sub === 'red' && targetPassed && !!retest;
   const weakRed = loadWeak || !!setupSym || !!charac || retestWeak;
   // human-approved code baseline follows the first implementation: refresh until the feature is fully Green (#92)
   const humanSpecs = sub === 'red' ? [] : loadSpecs().filter((x) => x.approval === 'human' && x.reqs.some((q) => t.refs.verifies.includes(q.id)));
@@ -3418,6 +3567,7 @@ function importRev() {
             for (const sg of segs) { const c = [`${cur}/${sg}.rs`, `${cur}/${sg}/mod.rs`].find((x) => set.has(x)); if (!c) break; add(c, f); hit = true; cur = c.endsWith('/mod.rs') ? dir(c) : c.replace(/\.rs$/, ''); }
             // an item re-exported from the crate root: link to the file that declares it
             if (!hit && segs.length) for (const x of files) if (x.startsWith(b + '/') && x.endsWith('.rs') && new RegExp(`\\bpub(?:\\([\\w:]+\\))?\\s+(?:fn|struct|enum|trait|const|type|static)\\s+${segs[0]}\\b`).test(fs.readFileSync(path.join(ROOT, x), 'utf8'))) add(x, f);
+            if (p.includes('*')) for (const x of files) if (x.endsWith('.rs') && (x.startsWith((hit ? cur : b) + '/') || x === cur + '.rs')) add(x, f);
           }
         }
       }

@@ -3534,6 +3534,332 @@ const batch2Run = (d, runner, body, cmd, ...args) => {
   return { code: r.status, out: r.stdout + r.stderr };
 };
 
+for (const [file, body, deps] of [
+  ['tests/t.rs', 'mod support;\n// @id TEST-CALC-001 @verifies REQ-CALC-001\n#[test]\nfn test_calc_001() { assert_eq!(value(), support::expected()); }\n',
+    { 'tests/support/mod.rs': 'mod deep;\npub fn expected() -> i32 { deep::oracle() }\n', 'tests/support/deep.rs': 'pub fn oracle() -> i32 { 7 }\n' }],
+  ['tests/t.c', '#include "oracle.h"\n// @id TEST-CALC-001 @verifies REQ-CALC-001\nvoid test_calc_001(void) { assert(actual() == EXPECTED); }\n',
+    { 'tests/oracle.h': '#include "deep.h"\n#define EXPECTED ORACLE\n', 'tests/deep.h': '#define ORACLE 7\n#include "oracle.h"\n' }],
+]) {
+  test(`#181 ${file} transitive external oracle hashes reject changed Red and stale Green`, () => {
+    const d = batch2Source(file, body);
+    writeAll(d, deps);
+    fakeOut(d, 'AssertionError: external oracle');
+    assert.equal(sdd(d, 'tdd', 'red', 'TEST-CALC-001').code, 0);
+    fakeOut(d, 'pass', 0);
+    assert.equal(sdd(d, 'tdd', 'green', 'TEST-CALC-001').code, 0);
+    const oracle = Object.keys(deps).at(-1);
+    fs.writeFileSync(path.join(d, oracle), deps[oracle].replace('7', '0'));
+    const green = sdd(d, 'tdd', 'green', 'TEST-CALC-001');
+    assert.equal(green.code, 1, green.out);
+    assert.match(green.out, /changed since Red/);
+    assert.match(sdd(d, 'gate', '--no-run').out, /test changed/);
+  });
+}
+
+test('#181 C oracle headers protect root-local expectations but not annotated production', () => {
+  const d = batch2Source('t.c', '#include "oracle.h"\n#include "subject.h"\n// @id TEST-CALC-001 @verifies REQ-CALC-001\nvoid test_calc_001(void) { assert(actual() == EXPECTED); }\n');
+  writeAll(d, { 'oracle.h': '#define EXPECTED 7\n', 'subject.h': '// @id CODE-CALC-001 @implements REQ-CALC-001\nint actual(void);\n' });
+  fakeOut(d, 'AssertionError: oracle');
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-CALC-001').code, 0);
+  fs.appendFileSync(path.join(d, 'subject.h'), '// production changed\n');
+  fakeOut(d, 'pass', 0);
+  assert.equal(sdd(d, 'tdd', 'green', 'TEST-CALC-001').code, 0);
+  fs.writeFileSync(path.join(d, 'oracle.h'), '#define EXPECTED 0\n');
+  assert.match(sdd(d, 'tdd', 'green', 'TEST-CALC-001').out, /changed since Red/);
+});
+
+test('#181 Rust path modules lock executable oracles across a real Cargo Red and Green', { skip: !has130('cargo') }, () => {
+  const d = mk130({
+    'Cargo.toml': '[package]\nname="oracle181"\nversion="0.1.0"\nedition="2021"\n',
+    'src/lib.rs': '// @id CODE-A-001 @implements REQ-A-001\npub fn actual() -> i32 { 0 }\n',
+    'tests/t.rs': '#[path="custom/oracle.rs"]\nmod support;\n// @id TEST-A-001 @verifies REQ-A-001\n#[test]\nfn test_a_001() { assert_eq!(oracle181::actual(), support::expected()); }\n',
+    'tests/custom/oracle.rs': 'pub fn expected() -> i32 { 7 }\n',
+  });
+  const red = sdd(d, 'tdd', 'red', 'TEST-A-001');
+  assert.equal(red.code, 0, red.out);
+  fs.writeFileSync(path.join(d, 'src/lib.rs'), rd130(d, 'src/lib.rs').replace('{ 0 }', '{ 7 }'));
+  const green = sdd(d, 'tdd', 'green', 'TEST-A-001');
+  assert.equal(green.code, 0, green.out);
+  fs.writeFileSync(path.join(d, 'tests/custom/oracle.rs'), 'pub fn expected() -> i32 { 0 }\n');
+  fs.writeFileSync(path.join(d, 'src/lib.rs'), rd130(d, 'src/lib.rs').replace('{ 7 }', '{ 0 }'));
+  assert.match(sdd(d, 'tdd', 'green', 'TEST-A-001').out, /changed since Red/);
+});
+
+test('#181 binary include_bytes oracle changes cannot collide through UTF-8 replacement characters', () => {
+  const d = batch2Source('tests/t.rs', 'const EXPECTED: &[u8] = include_bytes!("oracle.bin");\n// @id TEST-CALC-001 @verifies REQ-CALC-001\n#[test]\nfn test_calc_001() { assert_eq!(actual(), EXPECTED); }\n');
+  fs.writeFileSync(path.join(d, 'tests/oracle.bin'), Buffer.from([0xff, 0xfe]));
+  fakeOut(d, 'AssertionError: bytes');
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-CALC-001').code, 0);
+  fs.writeFileSync(path.join(d, 'tests/oracle.bin'), Buffer.from([0xff, 0xff]));
+  fakeOut(d, 'pass', 0);
+  assert.match(sdd(d, 'tdd', 'green', 'TEST-CALC-001').out, /changed since Red/);
+});
+
+test('#182 root, grouped and nested Rust glob imports retain conservative downstream impact', () => {
+  for (const clause of ['*', '{*}', 'exports::*', '{exports::*}']) {
+    const d = batch2Source('low/tests/t.rs', '// @id TEST-CALC-001 @verifies REQ-CALC-001\n#[test]\nfn test_calc_001() {}\n');
+    writeAll(d, {
+      'low/Cargo.toml': '[package]\nname="low"\nversion="0.1.0"\n',
+      'high/Cargo.toml': '[package]\nname="high"\nversion="0.1.0"\n[dependencies]\nlow={path="../low"}\n',
+      'low/src/lib.rs': 'pub mod exports;\npub use exports::*;\n',
+      'low/src/exports.rs': '// @id CODE-CALC-001 @implements REQ-CALC-001\npub fn value() -> i32 { 1 }\n',
+      'high/src/lib.rs': `use low::${clause};\n// @id CODE-HIGH-001 @implements REQ-HIGH-001\npub fn consume() -> i32 { value() }\n`,
+      'high/tests/client.rs': 'use high::consume;\n// @id TEST-HIGH-001 @verifies REQ-HIGH-001\n#[test]\nfn test_high_001() { assert_eq!(consume(), 1); }\n',
+      '.sdd/specs/high.md': '---\nfeature: high\ntier: T1\n---\n| REQ-HIGH-001 | consume | TEST-HIGH-001 |\n',
+    });
+    const impact = sdd(d, 'impact', 'REQ-CALC-001', '--json');
+    assert.equal(impact.code, 0, impact.out);
+    assert.match(impact.out, /high\/src\/lib.rs/, clause);
+    assert.match(impact.out, /TEST-HIGH-001/, clause);
+  }
+});
+
+test('#183 Rust raw string and byte raw string braces preserve exact inline modules', { skip: !has130('cargo') }, () => {
+  const d = mk130({
+    'Cargo.toml': '[package]\nname="raw183"\nversion="0.1.0"\nedition="2021"\n',
+    'src/lib.rs': 'mod tests {\nconst RAW: &str = r#""}"#;\nconst BYTES: &[u8] = br##""}}"##;\nconst PLAIN: &str = r"{";\n// @id TEST-A-001 @verifies REQ-A-001\n#[test]\nfn test_a_001() { assert_eq!(RAW.len()+BYTES.len()+PLAIN.len(), 0, "raw target assertion"); }\n}\n',
+  });
+  const red = sdd(d, 'tdd', 'red', 'TEST-A-001');
+  assert.equal(red.code, 0, red.out);
+  assert.match(red.out, /raw target assertion/);
+});
+
+for (const [ext, container, expected, runner] of [
+  ['java', 'class Outer { @Nested class Inner {', 'probe.Outer$Inner.test_calc_001', 'mvn'],
+  ['cs', 'class Outer { class Inner {', 'probe.Outer+Inner.test_calc_001', 'dotnet'],
+  ['cs', 'record RecordTests {', 'probe.RecordTests.test_calc_001', 'dotnet'],
+  ['cs', 'record class Outer { record Inner {', 'probe.Outer+Inner.test_calc_001', 'dotnet'],
+]) {
+  test(`#183 ${ext} ${container} uses runtime-qualified selection and attribution`, () => {
+    const cls = expected.slice(0, -'.test_calc_001'.length);
+    const source = `${ext === 'java' ? 'package probe;' : 'namespace probe;'}\n${container}\n// @id TEST-CALC-001 @verifies REQ-CALC-001\n${ext === 'java' ? '@Test' : '[Fact]'}\npublic void test_calc_001() { assert(false); }\n${container.includes('Inner') ? '}' : ''}\n}\n`;
+    const d = batch2Source(`T.${ext}`, source);
+    const cmd = runner === 'mvn' ? ['mvn', 'test', '-Dtest=*#*{idu}'] : ['dotnet', 'test', '--filter', 'FullyQualifiedName~{idu}'];
+    const output = runner === 'mvn' ? `SDD-TEST ${cls} test_calc_001 FAILURE\nexpected: <2> but was: <1>` : `Failed ${expected} [1 ms]\nAssert.True() Failure`;
+    const red = batch2Run(d, runner, `printf "%s\\n" "$@" > args.log\ncat <<'OUT'\n${output}\nOUT\nexit 1\n`, cmd, 'tdd', 'red', 'TEST-CALC-001');
+    assert.equal(red.code, 0, red.out);
+    const args = fs.readFileSync(path.join(d, 'args.log'), 'utf8');
+    assert.ok(args.includes(runner === 'mvn' ? `-Dtest=${cls}#test_calc_001` : `FullyQualifiedName=${expected}`), args);
+  });
+}
+
+test('#183 Maven successful build without fresh target results rejects all TDD evidence', () => {
+  const d = batch2Source('T.java', 'package probe;\nclass Outer {\n@Nested class Inner {\n// @id TEST-CALC-001 @verifies REQ-CALC-001\n@Test\nvoid test_calc_001() { assertEquals(2,1); }\n}\n}\n');
+  const cmd = ['mvn', 'test', '-Dtest=*#*{idu}'];
+  const run = (body, ...args) => batch2Run(d, 'mvn', body, cmd, 'tdd', ...args);
+  const red = run('echo "[INFO] BUILD SUCCESS"\n', 'red', 'TEST-CALC-001', '--characterization', 'unexecuted');
+  assert.equal(red.code, 1, red.out);
+  assert.match(red.out, /no test matched|never ran/);
+  assert.equal(run('echo \'SDD-TEST probe.Outer$Inner test_calc_001 FAILURE\'\necho "expected: <2> but was: <1>"\nexit 1\n', 'red', 'TEST-CALC-001').code, 0);
+  for (const sub of ['green', 'red']) {
+    assert.equal(run('echo "[INFO] BUILD SUCCESS"\n', sub, 'TEST-CALC-001', ...(sub === 'red' ? ['--characterization', 'none'] : [])).code, 1);
+  }
+  assert.equal(run('echo \'SDD-TEST probe.Outer$Inner test_calc_001 SUCCESS\'\n', 'green', 'TEST-CALC-001').code, 0);
+  assert.equal(run('echo "[INFO] BUILD SUCCESS"\n', 'refactor', 'TEST-CALC-001').code, 1);
+});
+
+test('#184 inline qualified JUnit annotations preserve sibling hash isolation and helpers', () => {
+  const body = 'class Target {\n// @id TEST-CALC-001 @verifies REQ-CALC-001\n@org.junit.jupiter.api.Test void test_calc_001() { assertEquals(expected(),actual()); }\n@Test void sibling() { assertTrue(true); }\nint expected() { return 7; }\n}\n';
+  const d = batch2Source('T.java', body);
+  fakeOut(d, 'AssertionError: target');
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-CALC-001').code, 0);
+  fakeOut(d, 'pass', 0);
+  assert.equal(sdd(d, 'tdd', 'green', 'TEST-CALC-001').code, 0);
+  fs.writeFileSync(path.join(d, 'T.java'), body.replace('assertTrue(true)', 'assertEquals(4,2+2)'));
+  const green = sdd(d, 'tdd', 'green', 'TEST-CALC-001');
+  assert.equal(green.code, 0, green.out);
+  fs.writeFileSync(path.join(d, 'T.java'), body.replace('return 7', 'return 0'));
+  assert.match(sdd(d, 'tdd', 'green', 'TEST-CALC-001').out, /changed since Red/);
+});
+
+for (const attr of ['Before', 'After', 'BeforeClass', 'AfterClass', 'PreCondition', 'PostCondition', '\\PHPUnit\\Framework\\Attributes\\Before', 'Prime']) {
+  test(`#184 PHPUnit ${attr} lifecycle attribute protects oracle hashes`, () => {
+    const body = `<?php\nuse PHPUnit\\Framework\\Attributes\\Before as Prime;\nclass Target {\n#[${attr}]\npublic function primeOracle(): void { $this->oracle = 7; }\n// @id TEST-CALC-001 @verifies REQ-CALC-001\npublic function test_calc_001(): void { self::assertSame($this->oracle, actual()); }\npublic function unrelated(): void { $n = 99; }\n}\n`;
+    const d = batch2Source('T.php', body);
+    fakeOut(d, 'AssertionError: oracle');
+    assert.equal(sdd(d, 'tdd', 'red', 'TEST-CALC-001').code, 0);
+    fakeOut(d, 'pass', 0);
+    fs.writeFileSync(path.join(d, 'T.php'), body.replace('$n = 99', '$n = 100'));
+    assert.equal(sdd(d, 'tdd', 'green', 'TEST-CALC-001').code, 0);
+    fs.writeFileSync(path.join(d, 'T.php'), body.replace('oracle = 7', 'oracle = 0'));
+    assert.match(sdd(d, 'tdd', 'green', 'TEST-CALC-001').out, /changed since Red/);
+  });
+}
+
+test('#184 grouped PHP import aliases and combined attributes protect lifecycle callbacks', () => {
+  const body = '<?php\nuse PHPUnit\\Framework\\Attributes\\{Before as Prime, After as Finish};\nclass Target {\n#[Unrelated, Prime]\npublic function primeOracle(): void { $this->oracle = 7; }\n#[Finish] public function finishOracle(): void { $this->done = true; }\n// @id TEST-CALC-001 @verifies REQ-CALC-001\npublic function test_calc_001(): void { self::assertSame($this->oracle, actual()); }\n}\n';
+  const d = batch2Source('T.php', body);
+  fakeOut(d, 'AssertionError: oracle');
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-CALC-001').code, 0);
+  fs.writeFileSync(path.join(d, 'T.php'), body.replace('oracle = 7', 'oracle = 0'));
+  fakeOut(d, 'pass', 0);
+  assert.match(sdd(d, 'tdd', 'green', 'TEST-CALC-001').out, /changed since Red/);
+});
+
+test('#185 overloaded JUnit methods in one class fail closed, unrelated classes are allowed', () => {
+  const body = 'package probe;\nclass Target {\n// @id TEST-CALC-001 @verifies REQ-CALC-001\n@Test void test_calc_001() { assertTrue(true); }\n@ParameterizedTest\nvoid test_calc_001(int n) { assertEquals(2,n); }\n}\nclass Other { void test_calc_001(String n) {} }\n';
+  const d = batch2Source('T.java', body);
+  const cmd = ['mvn', 'test', '-Dtest=*#*{idu}'];
+  const output = 'echo "SDD-TEST probe.Target test_calc_001 SUCCESS"\necho "SDD-TEST probe.Target test_calc_001(int)[1] FAILURE"\necho "expected: <2> but was: <3>"\nexit 1\n';
+  const red = batch2Run(d, 'mvn', output, cmd, 'tdd', 'red', 'TEST-CALC-001');
+  assert.equal(red.code, 1, red.out);
+  assert.match(red.out, /overload|ambiguous.*method|unique.*method/i);
+  assert.equal(fs.existsSync(path.join(d, '.sdd/tdd.jsonl')), false);
+  fs.writeFileSync(path.join(d, 'T.java'), body.replace('void test_calc_001(int n)', 'void other(int n)'));
+  const control = batch2Run(d, 'mvn', output, cmd, 'tdd', 'red', 'TEST-CALC-001');
+  assert.equal(control.code, 1, control.out);
+  assert.match(control.out, /itself passes|test passed/);
+});
+
+test('#185 solution-root .NET runner selects annotated test owning csproj', () => {
+  const d = batch2Source('A/T.cs', 'namespace Probe;\nclass SharedTests {\n// @id TEST-CALC-001 @verifies REQ-CALC-001\n[Fact]\npublic void Calculates() { Assert.True(true); }\n}\n');
+  writeAll(d, {
+    'A/A.csproj': '<Project><PropertyGroup><IsTestProject>true</IsTestProject></PropertyGroup></Project>',
+    'B/B.csproj': '<Project><PropertyGroup><IsTestProject>true</IsTestProject></PropertyGroup></Project>',
+    'B/T.cs': 'namespace Probe;\nclass SharedTests { public void Calculates() { Assert.True(false); } }\n',
+    'Probe.sln': '',
+  });
+  const red = batch2Run(d, 'dotnet', `printf "%s\\n" "$@" > args.log
+echo "Passed Probe.SharedTests.Calculates [1 ms]"
+if ! printf "%s\\n" "$@" | grep -q 'A/A.csproj'; then
+  echo "Failed Probe.SharedTests.Calculates [1 ms]"
+  echo "Assert.True() Failure"
+  exit 1
+fi
+`, ['dotnet', 'test', '--nologo', '--filter', 'FullyQualifiedName~{idu}'], 'tdd', 'red', 'TEST-CALC-001');
+  assert.equal(red.code, 1, red.out);
+  assert.match(red.out, /test passed/);
+  assert.match(fs.readFileSync(path.join(d, 'args.log'), 'utf8'), /A\/A.csproj/);
+  assert.equal(fs.existsSync(path.join(d, '.sdd/tdd.jsonl')), false);
+});
+
+test('#186 C standard assert in a reachable transitive helper is strong Red, unrelated helpers cannot excuse crashes', () => {
+  const d = batch2Source('T.c', '// @id TEST-CALC-001 @verifies REQ-CALC-001\nvoid test_calc_001(void) { check(); }\nvoid check(void) { oracle(0); }\nvoid oracle(int n) { assert(n==1); }\nvoid unrelated(void) { assert(0); }\n');
+  const output = (fn) => `1/1 Test #1: test_calc_001 ... Subprocess aborted***Exception: 0.1 sec\nT: T.c:4: ${fn}: Assertion \`n == 1' failed.\n`;
+  fakeOut(d, output('oracle'));
+  const red = sdd(d, 'tdd', 'red', 'TEST-CALC-001', '--expect', 'Assertion');
+  assert.equal(red.code, 0, red.out);
+  assert.doesNotMatch(red.out, /\[weak\]/);
+  fakeOut(d, output('unrelated'));
+  assert.match(sdd(d, 'tdd', 'red', 'TEST-CALC-001', '--weak').out, /crashed/);
+});
+
+for (const registration of ['group.test_calc_001', 'group/test_calc_001', 'group.test_calc_001.case+1']) {
+  test(`#186 unique punctuation CTest registration ${registration} is escaped and anchored`, () => {
+    const d = batch2Source('T.c', '// @id TEST-CALC-001 @verifies REQ-CALC-001\nvoid test_calc_001(void) { CHECK(0); }\n');
+    const red = batch2Run(d, 'ctest', `if [ "$1" = "--show-only=json-v1" ]; then
+echo '{"tests":[{"name":"${registration}"},{"name":"group.test_calc_0011"}]}'
+exit 0
+fi
+printf "%s\\n" "$@" > args.log
+echo "1/1 Test #1: ${registration} ... ***Failed"
+echo "CHECK failed: target"
+exit 1
+`, ['ctest', '-R', '{idu}'], 'tdd', 'red', 'TEST-CALC-001');
+    assert.equal(red.code, 0, red.out);
+    const regex = fs.readFileSync(path.join(d, 'args.log'), 'utf8').split('\n')[1];
+    assert.ok(new RegExp(regex).test(registration), regex);
+    assert.ok(!new RegExp(regex).test(registration + '1'), regex);
+    if (registration.includes('.')) assert.ok(!new RegExp(regex).test(registration.replace('.', 'X')), regex);
+  });
+}
+
+test('#187 Julia --expect is confined to selected target failure diagnostics', () => {
+  const d = batch2Source('T.jl', 'using Test\n# @id TEST-CALC-001 @verifies REQ-CALC-001\n@testset "TEST-CALC-001" begin\n@test 2 == 3\nend\n');
+  const text = 'TEST-CALC-001: Test Failed at T.jl:4\nExpression: 2 == 3\nEvaluated: 2 == 3\nTEST-SIBLING-001: Test Failed at T.jl:9\nExpression: "SIBLING_ONLY_SENTINEL" == "other"\nTest Summary: | Fail Total Time\nTEST-CALC-001 | 1 1 0.1s\nTEST-SIBLING-001 | 1 1 0.1s\n';
+  fakeOut(d, text);
+  const wrong = sdd(d, 'tdd', 'red', 'TEST-CALC-001', '--expect', 'SIBLING_ONLY_SENTINEL');
+  assert.equal(wrong.code, 1, wrong.out);
+  assert.match(wrong.out, /wrong reason|does not contain/);
+  const red = sdd(d, 'tdd', 'red', 'TEST-CALC-001', '--expect', '2 == 3');
+  assert.equal(red.code, 0, red.out);
+  assert.match(red.out, /fails with: Expression: 2 == 3/);
+});
+
+test('#187 Julia nested failure diagnostics use annotated source ownership, not sibling messages', () => {
+  const d = batch2Source('T.jl', 'using Test\n# @id TEST-CALC-001 @verifies REQ-CALC-001\n@testset "TEST-CALC-001" begin\n@testset "detail" begin\n@test 2 == 3\nend\nend\n# @id TEST-SIBLING-001 @verifies REQ-CALC-001\n@testset "TEST-SIBLING-001" begin\n@test false\nend\n');
+  fakeOut(d, 'detail: Test Failed at T.jl:5\nExpression: 2 == 3\nother: Test Failed at T.jl:10\nExpression: SIBLING_SENTINEL\nTest Summary: | Fail Total Time\nTEST-CALC-001 | 1 1 0.1s\n detail | 1 1 0.1s\nTEST-SIBLING-001 | 1 1 0.1s\n');
+  const wrong = sdd(d, 'tdd', 'red', 'TEST-CALC-001', '--expect', 'SIBLING_SENTINEL');
+  assert.equal(wrong.code, 1, wrong.out);
+  assert.match(wrong.out, /does not contain/);
+  const red = sdd(d, 'tdd', 'red', 'TEST-CALC-001', '--expect', '2 == 3');
+  assert.equal(red.code, 0, red.out);
+  assert.match(red.out, /fails with: Expression: 2 == 3/);
+});
+
+test('#187 hyphen-extended Julia IDs cannot supply skipped target execution', () => {
+  const d = batch2Source('T.jl', 'using Test\n# @id TEST-CALC-001 @verifies REQ-CALC-001\n@testset "TEST-CALC-001" begin\n@test_skip false\nend\n');
+  const run = (status) => fakeOut(d, `Test Summary: | ${status} Broken Total Time\nTEST-CALC-001 | 0 1 1 0.1s\nTEST-CALC-001-OTHER | 1 0 1 0.1s\n`, status === 'Pass' ? 0 : 1);
+  run('Fail');
+  const red = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
+  assert.equal(red.code, 1, red.out);
+  assert.match(red.out, /skipped/);
+  run('Pass');
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-CALC-001', '--characterization', 'skipped').code, 1);
+  assert.equal(fs.existsSync(path.join(d, '.sdd/tdd.jsonl')), false);
+});
+
+test('#187 hyphen-extended passing Julia sibling cannot supply Green or Refactor for a skipped target', () => {
+  const d = batch2Source('T.jl', 'using Test\n# @id TEST-CALC-001 @verifies REQ-CALC-001\n@testset "TEST-CALC-001" begin\nif skip_target()\n@test_skip false\nelse\n@test actual() == 1\nend\nend\n');
+  fakeOut(d, 'Test Summary: | Fail Total Time\nTEST-CALC-001 | 1 1 0.1s\n');
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-CALC-001').code, 0);
+  fakeOut(d, 'Test Summary: | Pass Total Time\nTEST-CALC-001 | 1 1 0.1s\n', 0);
+  assert.equal(sdd(d, 'tdd', 'green', 'TEST-CALC-001').code, 0);
+  fakeOut(d, 'Test Summary: | Pass Broken Total Time\nTEST-CALC-001 | 0 1 1 0.1s\nTEST-CALC-001-OTHER | 1 0 1 0.1s\n', 0);
+  for (const sub of ['green', 'refactor']) {
+    const result = sdd(d, 'tdd', sub, 'TEST-CALC-001');
+    assert.equal(result.code, 1, result.out);
+    assert.match(result.out, /no test matched/);
+  }
+});
+
+test('#187 passing Julia changed-target retest stays weak despite a failing sibling', () => {
+  const body = 'using Test\n# @id TEST-CALC-001 @verifies REQ-CALC-001\n@testset "TEST-CALC-001" begin\n@test actual() == 1\nend\n';
+  const d = batch2Source('T.jl', body);
+  fakeOut(d, 'Test Summary: | Fail Total Time\nTEST-CALC-001 | 1 1 0.1s\n');
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-CALC-001').code, 0);
+  fakeOut(d, 'Test Summary: | Pass Total Time\nTEST-CALC-001 | 1 1 0.1s\nTest Summary: | Fail Total Time\nTEST-SIBLING-001 | 1 1 0.1s\n');
+  assert.equal(sdd(d, 'tdd', 'green', 'TEST-CALC-001').code, 0);
+  fs.writeFileSync(path.join(d, 'T.jl'), body.replace('@test actual() == 1', '@test actual() == 1\n@test actual() > 0'));
+  const red = sdd(d, 'tdd', 'red', 'TEST-CALC-001', '--retest', 'Add positivity oracle');
+  assert.equal(red.code, 0, red.out);
+  assert.match(red.out, /\[weak\].*|retest/);
+  const last = JSON.parse(rd130(d, '.sdd/tdd.jsonl').trim().split('\n').at(-1));
+  assert.equal(last.weakWhy, 'retest');
+  assert.equal(last.retest, 'Add positivity oracle');
+  assert.equal(sdd(d, 'tdd', 'green', 'TEST-CALC-001').code, 0);
+});
+
+test('#188 Julia verbosity transform leaves custom testset constructors unchanged', { skip: !has130('julia') }, () => {
+  const d = mk130({
+    'Project.toml': 'name="Fixture"\n',
+    'test/t.jl': `using Test
+struct CompactSet <: Test.AbstractTestSet
+    inner::Test.DefaultTestSet
+    CompactSet(desc) = new(Test.DefaultTestSet(desc; verbose=true))
+end
+Test.record(t::CompactSet, x) = Test.record(t.inner, x)
+Test.finish(t::CompactSet) = Test.finish(t.inner)
+# @id TEST-A-001 @verifies REQ-A-001
+@testset CompactSet "TEST-A-001" begin
+    @test false
+end
+`,
+  });
+  const red = sdd(d, 'tdd', 'red', 'TEST-A-001');
+  assert.equal(red.code, 0, red.out);
+  assert.match(red.out, /Expression: false/);
+});
+
+test('#188 custom Julia script launcher preserves the selected file argument', () => {
+  const d = batch2Source('test/t.jl', 'using Test\n# @id TEST-CALC-001 @verifies REQ-CALC-001\n@testset "TEST-CALC-001" begin\n@test false\nend\n');
+  writeAll(d, { 'test/runner.jl': 'include(abspath(ARGS[1]))\n' });
+  const red = batch2Run(d, 'julia', 'printf "%s\\n" "$@" > args.log\necho "TEST-CALC-001: Test Failed at test/t.jl:4"\necho "Expression: false"\necho "Test Summary: | Fail Total Time"\necho "TEST-CALC-001 | 1 1 0.1s"\nexit 1\n',
+    ['julia', '--compile=min', '--project=.', 'test/runner.jl', '{file}'], 'tdd', 'red', 'TEST-CALC-001');
+  assert.equal(red.code, 0, red.out);
+  assert.equal(fs.readFileSync(path.join(d, 'args.log'), 'utf8'), '--compile=min\n--project=.\ntest/runner.jl\ntest/t.jl\n');
+});
+
 test('#171 Cargo selects the owning integration binary and package', { skip: !has130('cargo') }, () => {
   const d = mk130({
     'Cargo.toml': '[package]\nname="owner171"\nversion="0.1.0"\nedition="2021"\n',
