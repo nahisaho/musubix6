@@ -3518,6 +3518,324 @@ const fakeOut = (d, text, exit = 1, extra = {}) => {
 };
 const approved = () => { const d = project(); sdd(d, 'approve', 'record', 'calc', '--by', 'tester'); return d; };
 
+const batch2Source = (file, body) => {
+  const d = approved();
+  fs.rmSync(path.join(d, 'add.test.mjs'));
+  fs.mkdirSync(path.dirname(path.join(d, file)), { recursive: true });
+  fs.writeFileSync(path.join(d, file), body);
+  return d;
+};
+const batch2Run = (d, runner, body, cmd, ...args) => {
+  const bin = path.join(d, 'tools');
+  fs.mkdirSync(bin, { recursive: true });
+  fs.writeFileSync(path.join(bin, runner), '#!/bin/sh\n' + body, { mode: 0o755 });
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ testCmd: cmd, checks: [] }));
+  const r = spawnSync('node', [SDD, '--root', d, ...args], { encoding: 'utf8', env: { ...ENV, PATH: `${bin}:${ENV.PATH}` } });
+  return { code: r.status, out: r.stdout + r.stderr };
+};
+
+test('#171 Cargo selects the owning integration binary and package', { skip: !has130('cargo') }, () => {
+  const d = mk130({
+    'Cargo.toml': '[package]\nname="owner171"\nversion="0.1.0"\nedition="2021"\n',
+    'src/lib.rs': '',
+    'tests/target.rs': '// @id TEST-A-001 @verifies REQ-A-001\n#[test]\nfn test_a_001() { assert!(true); }\n',
+    'tests/sibling.rs': '#[test]\nfn test_a_001() { assert!(false, "wrong binary"); }\n',
+  });
+  const r = sdd(d, 'tdd', 'red', 'TEST-A-001');
+  assert.equal(r.code, 1, r.out);
+  assert.match(r.out, /test passed/);
+  assert.doesNotMatch(r.out, /wrong binary/);
+  fs.writeFileSync(path.join(d, 'tests/target.rs'), rd130(d, 'tests/target.rs').replace('#[test]', '#[test]\n#[ignore]'));
+  const skipped = sdd(d, 'tdd', 'red', 'TEST-A-001', '--characterization', 'ignored');
+  assert.equal(skipped.code, 1, skipped.out);
+  assert.match(skipped.out, /skipped|no test matched/);
+});
+
+test('#171 Rust outcome attribution does not merge identical names across executable headers', () => {
+  const d = batch2Source('tests/target.rs', '// @id TEST-CALC-001 @verifies REQ-CALC-001\n#[test]\nfn test_calc_001() { assert!(true); }\n');
+  fakeOut(d, 'Running tests/target.rs (target/debug/deps/target-abcd)\ntest test_calc_001 ... ignored\nRunning tests/sibling.rs (target/debug/deps/sibling-abcd)\ntest test_calc_001 ... ok\n', 0);
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-CALC-001', '--characterization', 'ignored').code, 1);
+  fakeOut(d, 'Running tests/target.rs (target/debug/deps/target-abcd)\ntest test_calc_001 ... ok\nRunning tests/sibling.rs (target/debug/deps/sibling-abcd)\ntest test_calc_001 ... FAILED\nassertion failed: wrong binary\n');
+  assert.match(sdd(d, 'tdd', 'red', 'TEST-CALC-001').out, /itself passes/);
+});
+
+for (const runner of ['mvn', 'gradle']) {
+  test(`#171 ${runner} exact class selection and disabled-target attribution`, () => {
+    const d = batch2Source('tests/TargetTest.java', 'package probe;\nclass TargetTest {\n// @id TEST-CALC-001 @verifies REQ-CALC-001\n@Disabled\n@Test\npublic void test_calc_001() { assertEquals(1, 0); }\n}\n');
+    const cmd = runner === 'mvn' ? ['mvn', 'test', '-Dtest=*#*{idu}'] : ['sh', '-c', 'gradle test --tests "*$0"', '{idu}'];
+    const result = batch2Run(d, runner, 'printf "%s\\n" "$@" > args.log\nprintf "%s\\n" "SDD-TEST probe.TargetTest test_calc_001 SKIPPED" "SDD-TEST probe.OtherTest test_calc_001 SUCCESS" "Tests run: 2, Failures: 0, Skipped: 1"\n', cmd, 'tdd', 'red', 'TEST-CALC-001', '--characterization', 'disabled');
+    assert.equal(result.code, 1, result.out);
+    assert.match(result.out, /skipped|no test matched/);
+    const args = fs.readFileSync(path.join(d, 'args.log'), 'utf8');
+    assert.match(args, runner === 'mvn' ? /-Dtest=probe.TargetTest#test_calc_001/ : /probe.TargetTest.test_calc_001/);
+  });
+}
+
+test('#171 Maven uses fresh exact-class XML, never stale reports or sibling results', () => {
+  const d = batch2Source('tests/TargetTest.java', 'package probe;\nclass TargetTest {\n// @id TEST-CALC-001 @verifies REQ-CALC-001\n@Test\npublic void test_calc_001() { assertEquals(1, 0); }\n}\n');
+  const reports = path.join(d, 'target/surefire-reports');
+  fs.mkdirSync(reports, { recursive: true });
+  fs.writeFileSync(path.join(reports, 'stale.xml'), '<testsuite><testcase classname="probe.TargetTest" name="test_calc_001"><failure/></testcase></testsuite>');
+  const runXml = (xml, exit) => batch2Run(d, 'mvn', `mkdir -p target/surefire-reports
+cat > target/surefire-reports/current.xml <<'XML'
+${xml}
+XML
+echo "Tests run: 2, Failures: ${exit}, Errors: 0, Skipped: 1"
+exit ${exit}
+`, ['mvn', 'test', '-Dtest=*#*{idu}'], 'tdd', 'red', 'TEST-CALC-001', '--characterization', 'fixture');
+  const skipped = runXml('<testsuite><testcase classname="probe.TargetTest" name="test_calc_001"><skipped/></testcase><testcase classname="probe.OtherTest" name="test_calc_001"/></testsuite>', 0);
+  assert.equal(skipped.code, 1, skipped.out);
+  assert.equal(fs.existsSync(path.join(reports, 'stale.xml')), false);
+  const passed = runXml('<testsuite><testcase classname="probe.TargetTest" name="test_calc_001"/><testcase classname="probe.OtherTest" name="test_calc_001"><failure>assertion failed</failure></testcase></testsuite>', 1);
+  assert.equal(passed.code, 1, passed.out);
+  assert.match(passed.out, /itself passes/);
+});
+
+test('#171 Cargo workspace siblings cannot supply a same-named target Red', { skip: !has130('cargo') }, () => {
+  const d = mk130({
+    'Cargo.toml': '[workspace]\nmembers=["owner", "sibling"]\nresolver="2"\n',
+    'owner/Cargo.toml': '[package]\nname="owner171"\nversion="0.1.0"\nedition="2021"\n',
+    'owner/src/lib.rs': '',
+    'owner/tests/target.rs': '// @id TEST-A-001 @verifies REQ-A-001\n#[test]\nfn test_a_001() { assert!(true); }\n',
+    'sibling/Cargo.toml': '[package]\nname="sibling171"\nversion="0.1.0"\nedition="2021"\n',
+    'sibling/src/lib.rs': '',
+    'sibling/tests/target.rs': '#[test]\nfn test_a_001() { assert!(false, "wrong package"); }\n',
+  });
+  const red = sdd(d, 'tdd', 'red', 'TEST-A-001');
+  assert.equal(red.code, 1, red.out);
+  assert.match(red.out, /test passed/);
+  assert.doesNotMatch(red.out, /wrong package/);
+});
+
+test('#172 out-of-line Rust modules retain exact module qualification', { skip: !has130('cargo') }, () => {
+  const d = mk130({
+    'Cargo.toml': '[package]\nname="modules172"\nversion="0.1.0"\nedition="2021"\n',
+    'src/lib.rs': '#[cfg(test)]\nmod tests;\n',
+    'src/tests.rs': '// @id TEST-A-001 @verifies REQ-A-001\n#[test]\nfn test_a_001() { assert!(false, "out of line target"); }\n',
+  });
+  const red = sdd(d, 'tdd', 'red', 'TEST-A-001');
+  assert.equal(red.code, 0, red.out);
+  assert.match(red.out, /out of line target/);
+});
+
+test('#172 C# character literals cannot pop enclosing class qualification', () => {
+  const d = batch2Source('T.cs', "namespace Fixture;\nclass Target {\nconst char Close = '}';\n// @id TEST-CALC-001 @verifies REQ-CALC-001\n[Test]\npublic void test_calc_001() { Assert.True(true); }\n}\n");
+  const r = batch2Run(d, 'dotnet', 'printf "%s\\n" "$@" > args.log\necho "Passed Fixture.Target.test_calc_001 [1 ms]"\necho "Total tests: 1"\necho "Passed: 1"\n', ['dotnet', 'test', '--filter', 'FullyQualifiedName~{idu}'], 'tdd', 'red', 'TEST-CALC-001', '--characterization', 'data');
+  assert.equal(r.code, 0, r.out);
+  assert.match(fs.readFileSync(path.join(d, 'args.log'), 'utf8'), /FullyQualifiedName=Fixture.Target.test_calc_001/);
+});
+
+for (const [name, output] of [
+  ['Cargo', 'running 0 tests\ntest result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out\n'],
+  ['VSTest minimal', 'Skipped! - Failed:     0, Passed:     0, Skipped:     1, Total:     1\n'],
+  ['VSTest normal', 'Skipped ignored [1 ms]\nTotal tests: 1\nSkipped: 1\n'],
+]) {
+  test(`#173 ${name} zero execution rejects evidence and full PASS`, () => {
+    const d = approved();
+    impl(d, '(a,b) => a+b');
+    fakeOut(d, 'AssertionError: target');
+    assert.equal(sdd(d, 'tdd', 'red', 'TEST-CALC-001').code, 0);
+    fakeOut(d, 'pass', 0);
+    assert.equal(sdd(d, 'tdd', 'green', 'TEST-CALC-001').code, 0);
+    fakeOut(d, output, 0, { checks: [{ name: 'test', cmd: ['node', '-e', `console.log(${JSON.stringify(output)})`] }] });
+    for (const sub of ['green', 'refactor']) assert.equal(sdd(d, 'tdd', sub, 'TEST-CALC-001').code, 1, name);
+    assert.equal(sdd(d, 'tdd', 'red', 'TEST-CALC-001', '--characterization', 'none').code, 1);
+    const gate = sdd(d, 'gate');
+    assert.equal(gate.code, 2, gate.out);
+    assert.match(gate.out, /INCOMPLETE/);
+  });
+}
+
+test('#173 a solution sibling no-match cannot override an executed NUnit target', () => {
+  const d = batch2Source('T.cs', 'namespace Fixture;\nclass Target {\n// @id TEST-CALC-001 @verifies REQ-CALC-001\n[Test]\npublic void test_calc_001() { Assert.True(false); }\n}\n');
+  fakeOut(d, 'Failed Fixture.Target.test_calc_001 [1 ms]\nExpected: True\nTotal tests: 1\nFailed: 1\nNo test matches the given testcase filter in Other.dll\n');
+  const red = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
+  assert.equal(red.code, 0, red.out);
+});
+
+for (const [ext, setup, testBody] of [
+  ['java', '@BeforeEach\nvoid prepareOracle() { oracle = 7; }', '@Test\nvoid test_calc_001() { assertEquals(oracle, value()); }'],
+  ['java', '@BeforeAll\nstatic void prepareOracle() { oracle = 7; }', '@Test\nvoid test_calc_001() { assertEquals(oracle, value()); }'],
+  ['php', 'protected function setUp(): void { $this->oracle = 7; }', 'public function test_calc_001(): void { self::assertSame($this->oracle, value()); }'],
+  ['php', 'public static function setUpBeforeClass(): void { self::$oracle = 7; }', 'public function test_calc_001(): void { self::assertSame(self::$oracle, value()); }'],
+  ['cs', '[TestInitialize]\npublic void Initialize() { oracle = 7; }', '[TestMethod]\npublic void test_calc_001() { Assert.AreEqual(oracle, value()); }'],
+  ['cs', '[SetUp]\npublic void Initialize() { oracle = 7; }', '[Test]\npublic void test_calc_001() { Assert.AreEqual(oracle, value()); }'],
+]) {
+  test(`#174 ${ext} lifecycle ${setup.split('\n')[0]} protects Red and Green hashes`, () => {
+    const body = `class Target {\n${setup}\n\n// @id TEST-CALC-001 @verifies REQ-CALC-001\n${testBody}\n}\n`;
+    const d = batch2Source(`T.${ext}`, body);
+    fakeOut(d, 'AssertionError: oracle');
+    assert.equal(sdd(d, 'tdd', 'red', 'TEST-CALC-001').code, 0);
+    fakeOut(d, 'pass', 0);
+    assert.equal(sdd(d, 'tdd', 'green', 'TEST-CALC-001').code, 0);
+    fs.writeFileSync(path.join(d, `T.${ext}`), body.replace('oracle = 7', 'oracle = 0'));
+    const green = sdd(d, 'tdd', 'green', 'TEST-CALC-001');
+    assert.equal(green.code, 1, green.out);
+    assert.match(green.out, /changed since Red/);
+    assert.match(sdd(d, 'gate', '--no-run').out, /test changed/);
+  });
+}
+
+for (const [name, ext, body] of [
+  ['C macro', 'c', '#define EXPECTED() expected()\n// @id TEST-CALC-001 @verifies REQ-CALC-001\nvoid test_calc_001(void) { CHECK(actual() == EXPECTED()); }\n\nint expected(void) { return 7; }\n'],
+  ['C callback data', 'c', 'int expected(void);\nint (*oracles[])(void) = { expected };\n// @id TEST-CALC-001 @verifies REQ-CALC-001\nvoid test_calc_001(void) { CHECK(actual() == oracles[0]()); }\n\nint expected(void) { return 7; }\n'],
+  ['PHP provider casing', 'php', "class Target {\n// @id TEST-CALC-001 @verifies REQ-CALC-001\n#[DataProviderExternal(Oracle::class, 'CASES')]\npublic function test_calc_001($n): void { self::assertSame($n, actual()); }\n}\nclass Oracle {\npublic static function cases(): array { return [[7]]; }\n}\n"],
+  ['Julia helper', 'jl', 'using Test\nfunction run_tests()\n# @id TEST-CALC-001 @verifies REQ-CALC-001\n@testset "TEST-CALC-001" begin\n@test actual() == oracle()\nend\nend\n\noracle() = 7\nrun_tests()\n'],
+  ['Julia shared data', 'jl', 'using Test\n# @id TEST-CALC-001 @verifies REQ-CALC-001\nfunction run_target()\n@testset "TEST-CALC-001" begin\n@test actual() == oracle()\nend\nend\n\nconst ORACLE = 7\noracle() = ORACLE\nrun_target()\n'],
+]) {
+  test(`#175 ${name} oracle dependencies protect Red and stale Green`, () => {
+    const d = batch2Source(`T.${ext}`, body);
+    fakeOut(d, 'AssertionError: oracle');
+    assert.equal(sdd(d, 'tdd', 'red', 'TEST-CALC-001').code, 0);
+    fakeOut(d, 'pass', 0);
+    assert.equal(sdd(d, 'tdd', 'green', 'TEST-CALC-001').code, 0);
+    fs.writeFileSync(path.join(d, `T.${ext}`), body.replace('7', '0'));
+    const green = sdd(d, 'tdd', 'green', 'TEST-CALC-001');
+    assert.equal(green.code, 1, green.out);
+    assert.match(green.out, /changed since Red/);
+    assert.match(sdd(d, 'gate', '--no-run').out, /test changed/);
+  });
+}
+
+test('#176 Java explicit imports do not conflate equal class basenames', () => {
+  const d = mk130({
+    'pom.xml': '<project/>',
+    'src/main/java/com/example/alpha/Service.java': 'package com.example.alpha;\npublic class Service {}\n',
+    'src/test/java/com/example/probe/TargetTest.java': 'package com.example.probe;\nimport com.example.beta.Service;\nclass TargetTest {\n// @id TEST-A-001 @verifies REQ-A-001\n@Test\npublic void test_a_001() { assertEquals(1, Service.answer()); }\n}\n',
+  });
+  const r = sdd(d, 'tdd', 'stub', 'TEST-A-001');
+  assert.equal(r.code, 0, r.out);
+  assert.match(rd130(d, 'src/main/java/com/example/beta/Service.java'), /package com.example.beta|answer/);
+  assert.equal(rd130(d, 'src/main/java/com/example/alpha/Service.java'), 'package com.example.alpha;\npublic class Service {}\n');
+  assert.doesNotMatch(r.out, /not stubbed.*alpha/);
+});
+
+test('#176 PHP aliases and absolute path repositories resolve to real PSR-4 ownership', { skip: !has130('php') }, () => {
+  for (const alias of [false, true]) {
+    const cls = alias ? 'AliasBox' : 'Box';
+    const d = mk130({
+      'composer.json': '{}',
+      'packages/gizmo/composer.json': '{"name":"fixture/gizmo","autoload":{"psr-4":{"Org\\\\Gizmo\\\\":"src/"}}}',
+      'tests/T.php': `<?php\nuse Org\\Gizmo\\Box${alias ? ' as AliasBox' : ''};\n// @id TEST-A-001 @verifies REQ-A-001\npublic function test_a_001() { self::assertSame(1, ${cls}::add()); }\n`,
+    });
+    fs.writeFileSync(path.join(d, 'composer.json'), JSON.stringify({ repositories: [{ type: 'path', url: path.join(d, 'packages/*') }] }));
+    const r = sdd(d, 'tdd', 'stub', 'TEST-A-001');
+    assert.equal(r.code, 0, r.out);
+    assert.match(rd130(d, 'packages/gizmo/src/Box.php'), /class Box|function add/);
+    assert.equal(fs.existsSync(path.join(d, 'packages/gizmo/src/AliasBox.php')), false);
+    assert.equal(fs.existsSync(path.join(d, 'src/Gizmo/Box.php')), false);
+  }
+});
+
+test('#176 Julia transitive includes preserve real exported bindings', { skip: !has130('julia') }, () => {
+  const d = mk130({
+    'Project.toml': 'name="Fixture"\n',
+    'src/Existing.jl': 'module Existing\nexport available\ninclude("inner.jl")\nend\n',
+    'src/inner.jl': 'include("deep.jl")\n',
+    'src/deep.jl': 'available() = 7\n',
+    'test/t.jl': 'using Test\ninclude("../src/Existing.jl")\ninclude("../src/Fresh.jl")\nusing .Existing, .Fresh\n# @id TEST-A-001 @verifies REQ-A-001\n@testset "TEST-A-001" begin\n@test available() == 7\n@test freshfn() == 1\nend\n',
+  });
+  const r = sdd(d, 'tdd', 'stub', 'TEST-A-001');
+  assert.equal(r.code, 0, r.out);
+  assert.match(rd130(d, 'src/Fresh.jl'), /freshfn/);
+  assert.doesNotMatch(rd130(d, 'src/Fresh.jl'), /available/);
+  assert.equal(rd130(d, 'src/deep.jl'), 'available() = 7\n');
+});
+
+test('#177 CTest registration aliases select a unique exact ID, not the C function', { skip: !has130('cmake') || !has130('ctest') }, () => {
+  const d = mk130({
+    'CMakeLists.txt': 'cmake_minimum_required(VERSION 3.10)\nproject(alias177 NONE)\nenable_testing()\nset(target test_a_001)\nadd_test(NAME ${target} COMMAND sh -c "echo CHECK failed: registration; exit 1")\nadd_test(NAME test_a_0011 COMMAND sh -c "echo sibling; exit 1")\n',
+    'tests/t.c': '// @id TEST-A-001 @verifies REQ-A-001\nvoid test_a_001_addition(void) { CHECK(0); }\n',
+  });
+  const r = sdd(d, 'tdd', 'red', 'TEST-A-001', '--expect', 'CHECK failed: registration');
+  assert.equal(r.code, 0, r.out);
+  assert.doesNotMatch(r.out, /sibling/);
+});
+
+test('#177 direct CTest discovery uses its cwd when no test directory is configured', () => {
+  const d = batch2Source('T.c', '// @id TEST-CALC-001 @verifies REQ-CALC-001\nvoid test_calc_001_addition(void) { CHECK(0); }\n');
+  const r = batch2Run(d, 'ctest', `if [ "$1" = "--show-only=json-v1" ]; then
+  echo '{"tests":[{"name":"test_calc_001"}]}'
+  exit 0
+fi
+printf "%s\\n" "$@" > args.log
+echo "1/1 Test #1: test_calc_001 ... ***Failed"
+echo "CHECK failed: target"
+exit 1
+`, ['ctest', '-R', '{idu}'], 'tdd', 'red', 'TEST-CALC-001');
+  assert.equal(r.code, 0, r.out);
+  assert.match(fs.readFileSync(path.join(d, 'args.log'), 'utf8'), /\^test_calc_001\$/);
+});
+
+test('#178 attributable standard C assert abort is strong Red, genuine crashes remain rejected', () => {
+  const d = batch2Source('T.c', '// @id TEST-CALC-001 @verifies REQ-CALC-001\nvoid test_calc_001(void) { assert(actual() == 7); }\n');
+  fakeOut(d, "1/1 Test #1: test_calc_001 ... Subprocess aborted***Exception: 0.1 sec\nT: T.c:3: test_calc_001: Assertion `actual() == 7' failed.\nThe following tests FAILED:\n1 - test_calc_001 (Subprocess aborted)\n");
+  const red = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
+  assert.equal(red.code, 0, red.out);
+  assert.doesNotMatch(red.out, /\[weak\]/);
+  for (const text of [
+    '1/1 Test #1: test_calc_001 ... ***Exception: SegFault\nAssertion failed in sibling\n',
+    '1/1 Test #1: test_calc_001 ... Subprocess aborted***Exception:\n',
+  ]) {
+    fakeOut(d, text);
+    assert.match(sdd(d, 'tdd', 'red', 'TEST-CALC-001', '--weak').out, /crashed/);
+  }
+});
+
+test('#178 a target assertion abort does not excuse a sibling segmentation fault', () => {
+  const d = batch2Source('T.c', '// @id TEST-CALC-001 @verifies REQ-CALC-001\nvoid test_calc_001(void) { assert(0); }\n');
+  fakeOut(d, "1/2 Test #1: test_calc_001 ... Subprocess aborted***Exception: 0.1 sec\nT: T.c:3: test_calc_001: Assertion `0' failed.\n2/2 Test #2: sibling ... ***Exception: SegFault 0.1 sec\n");
+  const red = sdd(d, 'tdd', 'red', 'TEST-CALC-001', '--weak');
+  assert.equal(red.code, 1, red.out);
+  assert.match(red.out, /crashed/);
+});
+
+test('#179 PHPUnit exact filters include newline dataset names', () => {
+  const d = batch2Source('T.php', '<?php\nclass Target {\n// @id TEST-CALC-001 @verifies REQ-CALC-001\npublic function test_calc_001(): void { self::assertTrue(true); }\n}\n');
+  const r = batch2Run(d, 'phpunit', 'printf "%s\\n" "$@" > args.log\necho "AssertionError: target"\nexit 1\n', ['phpunit', '--filter', '{idu}', '{file}'], 'tdd', 'red', 'TEST-CALC-001');
+  assert.equal(r.code, 0, r.out);
+  const args = fs.readFileSync(path.join(d, 'args.log'), 'utf8').split('\n');
+  const filter = args[args.indexOf('--filter') + 1];
+  const re = new RegExp(filter.slice(1, -1));
+  assert.ok(re.test('Target::test_calc_001 with data set "line\nbreak"'), filter);
+  assert.ok(!re.test('Target::test_calc_0011 with data set "line\nbreak"'), filter);
+});
+
+for (const dataset of ['#0', '@active']) {
+  test(`#179 PHPUnit 12 ${dataset} failure belongs to the exact method`, () => {
+    const d = batch2Source('T.php', '<?php\nclass Target {\n// @id TEST-CALC-001 @verifies REQ-CALC-001\npublic function test_calc_001($n): void { self::assertSame(3, actual()); }\n}\n');
+    fakeOut(d, `There was 1 failure:\n1) Target::test_calc_001${dataset} with data (false)\nFailed asserting that 0 is identical to 3.\nTests: 2, Assertions: 1, Failures: 1, Skipped: 1.\n`);
+    const red = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
+    assert.equal(red.code, 0, red.out);
+    fakeOut(d, `There was 1 failure:\n1) Target::test_calc_0011${dataset} with data (false)\nFailed asserting sibling\nTests: 2, Assertions: 2, Failures: 1.\n`);
+    assert.match(sdd(d, 'tdd', 'red', 'TEST-CALC-001').out, /itself passes/);
+  });
+}
+
+for (const attr of ['[TestCase(1, TestName = "One sample")]', '[DataRow(1, DisplayName = "One sample")]']) {
+  test(`#180 .NET custom case ${attr} retains method execution identity`, () => {
+    const d = batch2Source('T.cs', `namespace Fixture;\nclass Target {\n// @id TEST-CALC-001 @verifies REQ-CALC-001\n${attr}\npublic void test_calc_001(int x) { Assert.AreEqual(1, x); }\n}\n`);
+    fakeOut(d, 'Passed One sample [1 ms]\nTotal tests: 1\nPassed: 1\n', 0);
+    const red = sdd(d, 'tdd', 'red', 'TEST-CALC-001', '--characterization', 'data');
+    assert.equal(red.code, 0, red.out);
+    assert.equal(sdd(d, 'tdd', 'green', 'TEST-CALC-001').code, 0);
+    fakeOut(d, 'Failed One sample [1 ms]\nExpected: 99\nat Fixture.Target.test_calc_001(Int32 x)\nTotal tests: 1\nFailed: 1\n');
+    assert.equal(sdd(d, 'tdd', 'red', 'TEST-CALC-001').code, 0);
+    fakeOut(d, 'Passed Different sample [1 ms]\nTotal tests: 1\nPassed: 1\n', 0);
+    assert.equal(sdd(d, 'tdd', 'green', 'TEST-CALC-001').code, 1);
+  });
+}
+
+test('#180 default Julia runner exposes passing nested testsets without editing source', { skip: !has130('julia') }, () => {
+  const body = 'using Test\n@testset "outer" begin\n# @id TEST-A-001 @verifies REQ-A-001\n@testset "TEST-A-001" begin\n@test actual() == 2\nend\nend\n';
+  const d = mk130({ 'Project.toml': 'name="Fixture"\n', 'test/t.jl': 'include("../subject.jl")\n' + body, 'subject.jl': 'actual() = 0\n' });
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-A-001').code, 0);
+  fs.writeFileSync(path.join(d, 'subject.jl'), 'actual() = 2\n');
+  const green = sdd(d, 'tdd', 'green', 'TEST-A-001');
+  assert.equal(green.code, 0, green.out);
+  assert.equal(rd130(d, 'test/t.jl'), 'include("../subject.jl")\n' + body);
+});
+
 test('#163 Git-less changed gate falls back to full checks and evidence', () => {
   const d = approved();
   fs.rmSync(path.join(d, '.git'), { recursive: true });

@@ -79,10 +79,29 @@ function pythonTestSha(txt, id) {
   return sha(shared + '\u0000' + ls.slice(mine.start, mine.end).join('\n').trim());
 }
 const BRACE_TEST = /\.(rs|java|php|cs|c|cc|cpp|cxx)$/;
+const maskBraces = (txt, rust = false) => txt.replace(rust ? /\/\*[\s\S]*?\*\/|\/\/[^\n]*|"(?:\\[\s\S]|[^"\\])*"|'(?:\\.|[^'\\\n])'/g : /\/\*[\s\S]*?\*\/|\/\/[^\n]*|"(?:\\[\s\S]|[^"\\])*"|'(?:\\[\s\S]|[^'\\])*'/g, (s) => s.replace(/[^\n]/g, ' '));
+function sharedOutside(txt, ranges, start = 0) {
+  let shared = '', cursor = start;
+  for (const r of [...ranges].sort((a, b) => a.start - b.start)) {
+    if (r.end <= cursor) continue;
+    shared += txt.slice(cursor, Math.max(cursor, r.start));
+    cursor = r.end;
+  }
+  return (shared + txt.slice(cursor)).split('\n').filter((l) => l.trim()).join('\n').trim();
+}
+function protectedHelpers(mine, helpers, shared, insensitive = false) {
+  const selected = new Set();
+  let calls = mine.body + '\n' + shared;
+  for (;;) {
+    const next = helpers.filter((r) => !selected.has(r) && (r.implicit || new RegExp(`\\b${r.name}\\b`, insensitive ? 'i' : '').test(calls)));
+    if (!next.length) break;
+    for (const r of next) { selected.add(r); calls += '\n' + r.body; }
+  }
+  return [...selected].sort((a, b) => a.start - b.start).map((r) => r.body.trim()).join('\u0000');
+}
 // Protect shared oracles without including sibling tests or annotated implementation (#166/#170).
 function braceTestSha(txt, id, p) {
-  const literals = /\.rs$/.test(p) ? /\/\*[\s\S]*?\*\/|\/\/[^\n]*|"(?:\\[\s\S]|[^"\\])*"|'(?:\\.|[^'\\\n])'/g : /\/\*[\s\S]*?\*\/|\/\/[^\n]*|"(?:\\[\s\S]|[^"\\])*"|'(?:\\[\s\S]|[^'\\])*'/g;
-  const masked = txt.replace(literals, (s) => s.replace(/[^\n]/g, ' '));
+  const masked = maskBraces(txt, /\.rs$/.test(p));
   const ls = txt.split('\n'), offsets = [];
   let offset = 0;
   for (const l of ls) { offsets.push(offset); offset += l.length + 1; }
@@ -100,28 +119,36 @@ function braceTestSha(txt, id, p) {
     while (line > 0 && (!ls[line - 1].trim() || /^\s*(\/\/|\/\*|\*|#\[|@\w|\[)/.test(ls[line - 1]))) line--;
     const start = offsets[line];
     const body = txt.slice(start, end);
-    ranges.push({ start, end, name: m[1], body, test: /@id\s+TEST-|#\[test\]|@Test\b|\[(?:Fact|Theory|Test|TestCase|TestMethod|DataRow)\b/.test(body) || /^test_/.test(m[1]), code: /@id\s+CODE-/.test(body) });
+    const implicit = /\.java$/.test(p) ? /@(?:BeforeEach|BeforeAll|AfterEach|AfterAll|Before|After)\b/.test(body) : /\.cs$/.test(p) ? /\[(?:TestInitialize|TestCleanup|ClassInitialize|ClassCleanup|AssemblyInitialize|AssemblyCleanup|SetUp|TearDown|OneTimeSetUp|OneTimeTearDown)\b/.test(body) || /^(?:Dispose|DisposeAsync|InitializeAsync)$/.test(m[1]) : /\.php$/.test(p) && /^(?:setUp|tearDown|setUpBeforeClass|tearDownAfterClass|assertPreConditions|assertPostConditions)$/i.test(m[1]);
+    ranges.push({ start, end, name: m[1], body, implicit, test: /@id\s+TEST-|#\[test\]|@Test\b|\[(?:Fact|Theory|Test|TestCase|TestMethod|DataRow)\b/.test(body) || /^test_/.test(m[1]), code: /@id\s+CODE-/.test(body) });
   }
   const mine = ranges.find((r) => new RegExp(`@id\\s+${id}\\b`).test(r.body));
   if (!mine) return sha(txt);
   const inline = /\.rs$/.test(p) ? txt.indexOf('#[cfg(test)]') : -1;
   const helpers = ranges.filter((r) => !r.test && !r.code && (inline < 0 || r.start > inline));
-  const selected = new Set();
-  let calls = mine.body;
-  for (;;) {
-    const next = helpers.filter((r) => !selected.has(r) && new RegExp(`\\b${r.name}\\b`).test(calls));
-    if (!next.length) break;
-    for (const r of next) { selected.add(r); calls += '\n' + r.body; }
+  const shared = sharedOutside(txt, ranges, inline >= 0 ? inline : 0);
+  return sha(shared + '\u0000' + mine.body.trim() + '\u0000' + protectedHelpers(mine, helpers, shared, /\.php$/.test(p)));
+}
+function juliaTestSha(txt, id) {
+  const masked = txt.replace(/#[^\n]*|"""[\s\S]*?"""|"(?:\\[\s\S]|[^"\\])*"/g, (s) => s.replace(/[^\n]/g, ' '));
+  const ranges = [];
+  for (const a of txt.matchAll(/^[ \t]*#.*@id\s+((?:TEST|CODE)-[A-Z0-9-]+)[^\n]*\n/gm)) {
+    const start = a.index, from = start + a[0].length;
+    let depth = 0, end = from, found = false, brackets = 0;
+    for (const m of masked.slice(from).matchAll(/\b(?:function|begin|if|for|while|let|try|struct|module|baremodule|macro|quote|do|end)\b|[()[\]]/g)) {
+      if (/^[([]$/.test(m[0])) { brackets++; continue; }
+      if (/^[)\]]$/.test(m[0])) { brackets--; continue; }
+      if (brackets) continue;
+      if (m[0] === 'end') depth--;
+      else { depth++; found = true; }
+      if (found && depth === 0) { end = from + m.index + m[0].length; break; }
+    }
+    if (!found || end === from) return sha(txt);
+    ranges.push({ start, end, id: a[1], body: txt.slice(start, end) });
   }
-  let shared = '', cursor = inline >= 0 ? inline : 0;
-  for (const r of ranges) {
-    if (r.end <= cursor) continue;
-    shared += txt.slice(cursor, Math.max(cursor, r.start));
-    cursor = r.end;
-  }
-  shared += txt.slice(cursor);
-  shared = shared.split('\n').filter((l) => l.trim()).join('\n').trim();
-  return sha(shared + '\u0000' + mine.body.trim() + '\u0000' + [...selected].map((r) => r.body.trim()).join('\u0000'));
+  const mine = ranges.find((r) => r.id === id);
+  if (!mine) return sha(txt);
+  return sha(sharedOutside(txt, ranges) + '\u0000' + mine.body.trim());
 }
 // legacy=true: pre-#66 behaviour (no Python docstring scoping, whole-file @implements check)
 // cut (any test, not only the last: a helper or a new describe between tests is not part of the previous test, #144): the region stops where its own top-level construct ends (blank line or pure closer, then a non-closer line at the test's indent), so appended tests/comments/main() do not stale it (#73)
@@ -133,6 +160,7 @@ const testShaVariant = (p, id, trim, norm = false, legacy = false, cut = true, i
   const txt = eolNorm ? raw.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n') : raw;
   if (/\.py$/.test(p)) return pythonTestSha(txt, id);
   if (BRACE_TEST.test(p)) return braceTestSha(txt, id, p);
+  if (/\.jl$/.test(p)) return juliaTestSha(txt, id);
   const ls = txt.split('\n');
   // Python docstring-style `"""@id ..."""`: the `def` line and decorators before the docstring belong to that test (#66)
   const begin = (i) => {
@@ -168,7 +196,7 @@ const testShaVariant = (p, id, trim, norm = false, legacy = false, cut = true, i
   return sha((norm ? normImports(pre) : pre) + '\u0000' + region);
 };
 const testSha = (p, id) => { eolNorm = true; try { return testShaVariant(p, id, true, true); } finally { eolNorm = false; } };
-const shaMatches = (recorded, p, id) => /\.py$/.test(p) || BRACE_TEST.test(p) ? recorded === testSha(p, id) : shaMatchesRaw(recorded, p, id) || (() => { eolNorm = true; try { return shaMatchesRaw(recorded, p, id); } finally { eolNorm = false; } })();
+const shaMatches = (recorded, p, id) => /\.(?:py|jl)$/.test(p) || BRACE_TEST.test(p) ? recorded === testSha(p, id) : shaMatchesRaw(recorded, p, id) || (() => { eolNorm = true; try { return shaMatchesRaw(recorded, p, id); } finally { eolNorm = false; } })();
 const shaMatchesRaw = (recorded, p, id) => [true, false].some((cut) => [true, false].some((inl) => recorded === testShaVariant(p, id, true, true, false, cut, inl) || recorded === testShaVariant(p, id, true, false, false, cut, inl) || recorded === testShaVariant(p, id, false, false, false, cut, inl) || recorded === testShaVariant(p, id, true, true, true, cut, inl) || recorded === testShaVariant(p, id, true, false, true, cut, inl) || recorded === testShaVariant(p, id, false, false, true, cut, inl))) ||
   recorded === testSha(p, id) || recorded === testShaVariant(p, id, true) || recorded === testShaVariant(p, id, false) || recorded === testShaVariant(p, id, true, true, true) || recorded === testShaVariant(p, id, true, false, true) || recorded === testShaVariant(p, id, false, false, true) || recorded === sha(fs.readFileSync(path.join(ROOT, p)));
 const out = (s = '') => process.stdout.write(s + '\n');
@@ -483,10 +511,20 @@ function evidenceStatus(testId, testPath, entries) {
 
 // ---------- config / commands ----------
 // multi-project: a subproject without a match must not fail the build; print a per-task total so zero-match detection works
-const GRADLE_INIT = 'allprojects { tasks.withType(Test).configureEach { filter.failOnNoMatchingTests = false; afterSuite { d, r -> if (!d.parent) println("Tests run: " + r.testCount + ", Failures: " + r.failedTestCount + ", Skipped: " + r.skippedTestCount) } } }';
+const GRADLE_INIT = 'allprojects { tasks.withType(Test).configureEach { filter.failOnNoMatchingTests = false; afterTest { d, r -> println("SDD-TEST " + d.className + " " + d.name + " " + r.resultType) }; afterSuite { d, r -> if (!d.parent) println("Tests run: " + r.testCount + ", Failures: " + r.failedTestCount + ", Skipped: " + r.skippedTestCount) } } }';
 const R_TEST = 'testthat::test_file(commandArgs(TRUE)[1], reporter = "summary", stop_on_failure = TRUE)';
 // Pkg.test() needs a package registry even for stdlib test deps: offline it is an infra error, so fall back to running test/runtests.jl directly (#132)
 const JULIA_TEST = 'out=$(julia --project=. -e "using Pkg; Pkg.test()" 2>&1); r=$?; if [ $r -eq 0 ]; then printf "%s\\n" "$out"; exit 0; fi; if [ -f test/runtests.jl ] && printf "%s" "$out" | grep -qiE "to be registered|registry|could not resolve host|failed to (fetch|clone)|network|offline"; then echo "sdd: INFRA: Pkg.test() failed to resolve packages (no registry/network) — falling back to julia --project=. test/runtests.jl"; julia --project=. test/runtests.jl; exit $?; fi; printf "%s\\n" "$out"; exit $r';
+const JULIA_VERBOSE = `function sdd_verbose(ex)
+    ex isa Expr || return ex
+    if ex.head === :macrocall && (ex.args[1] === Symbol("@testset") || (ex.args[1] isa GlobalRef && ex.args[1].name === Symbol("@testset")))
+        filter!(a -> !(a isa Expr && a.head === :(=) && a.args[1] === :verbose), ex.args)
+        insert!(ex.args, 3, Expr(:(=), :verbose, true))
+    end
+    ex.args = map(sdd_verbose, ex.args)
+    ex
+end
+Base.include(sdd_verbose, Main, abspath(ARGS[1]))`;
 // `dotnet test` takes one project: run each affected test project in turn and fail if any fails (#135)
 const DOTNET_CHANGED = 'r=0; for p in "$@"; do dotnet test "$p" --nologo || r=1; done; exit $r';
 function detectConfig(base = ROOT) {
@@ -1266,7 +1304,13 @@ function stubJava(testPath, src, dir, add, made) {
   const pkgOf = new Map(imports.filter((i) => !i.st && /^[A-Z]/.test(i.n) && projPkg(i.p)).map((i) => [i.n, i.p]));
   const imported = new Set(imports.filter((i) => !pkgOf.has(i.n)).map((i) => i.n));
   const local = new Set([...src.matchAll(/\b(?:class|interface|enum|record)\s+(\w+)/g)].map((m) => m[1]));
-  const known = new Set(listFiles().filter((f) => { try { return !fs.readFileSync(path.join(ROOT, f), 'utf8').startsWith('// sdd-stub'); } catch { return true; } }).map((f) => path.basename(f).replace(/\.java$/, '')));
+  const javaFiles = new Map(listFiles().filter((f) => /\.java$/.test(f)).map((f) => {
+    const text = fs.readFileSync(path.join(ROOT, f), 'utf8');
+    const p = /^package\s+([\w.]+);/m.exec(text)?.[1];
+    return [[p, path.basename(f, '.java')].filter(Boolean).join('.'), { file: f, text }];
+  }));
+  const fqOf = (n) => [pkgOf.get(n) ?? pkg, n].filter(Boolean).join('.');
+  const known = { has: (n) => { const f = javaFiles.get(fqOf(n)); return f && !f.text.startsWith('// sdd-stub'); } };
   const JDK = /^(System|Math|String|Integer|Long|Double|Boolean|Character|Objects|Arrays|List|Map|Set|Collections|Optional|Thread|Assertions?|Assert|Files|Paths|Path|Instant|Duration|LocalDate|LocalDateTime|StringBuilder|Stream|Collectors|Pattern|UUID|BigDecimal|BigInteger)$/;
   // names that a java.*/javax.* wildcard import (or java.lang) already provides must never be stubbed into the project (#115)
   const wild = [...src.matchAll(/^import\s+((?:java|javax)[\w.]*)\.\*\s*;/gm)].map((m) => m[1]).concat('java.lang');
@@ -1346,9 +1390,8 @@ function stubJava(testPath, src, dir, add, made) {
     const c = m[1];
     if (!byClass.has(c) && !excs.has(c) && !imported.has(c) && !local.has(c) && !known.has(c) && !isJdk(c) && !/^(Object|Exception|Throwable|Integer|Long|Double|String|Boolean|Character)$/.test(c)) byClass.set(c, []);
   }
-  const existing = new Map(listFiles().filter((f) => /\.java$/.test(f)).map((f) => [path.basename(f, '.java'), f]));
   for (const cls of new Set([...src.matchAll(/(?<![\w.])([A-Z]\w*)\.[a-z]\w*\s*\(/g)].map((m) => m[1]))) {
-    const f = existing.get(cls);
+    const f = javaFiles.get(fqOf(cls))?.file;
     if (!f || local.has(cls)) continue;
     const text = fs.readFileSync(path.join(ROOT, f), 'utf8');
     if (text.startsWith('// sdd-stub')) continue;
@@ -1459,7 +1502,18 @@ function stubScript(lang, src, dir, add, made) {
     for (const m of code.matchAll(/^\s*(?:(?:const|local|global)\s+)?([A-Za-z_]\w*(?:\s*,\s*[A-Za-z_]\w*)*)\s*=(?![=>])/gm)) m[1].split(',').forEach((x) => defined.add(x.trim()));
   }
   const existingLoads = [...src.matchAll(loadRe)].map((m) => path.resolve(dir, m[1].replace(/^\/+/, ''))).filter((abs) => fs.existsSync(abs));
-  for (const abs of existingLoads) { const t = fs.readFileSync(abs, 'utf8'); for (const m of t.matchAll(/\bfunction\s+&?([A-Za-z_]\w*!?)|^\s*([A-Za-z_]\w*!?)\s*(?:<-\s*function|\(.*\)\s*=(?!=))|\b(?:struct|macro|abstract\s+type)\s+(\w+)/gm)) defined.add(m[1] ?? m[2] ?? m[3]); }
+  const visitedLoads = new Set();
+  const existingDefinitions = (abs) => {
+    if (visitedLoads.has(abs)) return;
+    visitedLoads.add(abs);
+    const t = fs.readFileSync(abs, 'utf8');
+    for (const m of t.matchAll(/\bfunction\s+&?([A-Za-z_]\w*!?)|^\s*([A-Za-z_]\w*!?)\s*(?:<-\s*function|\(.*\)\s*=(?!=))|\b(?:struct|macro|abstract\s+type)\s+(\w+)/gm)) defined.add(m[1] ?? m[2] ?? m[3]);
+    if (lang === 'jl') for (const m of t.matchAll(loadRe)) {
+      const next = path.resolve(path.dirname(abs), m[1]);
+      if (next.startsWith(ROOT + path.sep) && fs.existsSync(next) && fs.statSync(next).isFile()) existingDefinitions(next);
+    }
+  };
+  for (const abs of existingLoads) existingDefinitions(abs);
   // Julia mutating functions end in `!` (`next!(r)`) (#151)
   const called = [...new Set([...code.matchAll(/(?<![\w$@.>:\\])([A-Za-z_]\w*(?:!(?=\())?)\s*\(/g)].map((m) => m[1]))].filter((n) => !defined.has(n) && !/^(function|if|for|while|switch|catch|elseif|foreach|array|isset|empty|use|using|test_that|testset|require|require_once|include|include_once|source|library|describe|it|context|fn|match|list|new|echo|print|return|exit|die|unset|isset|empty|eval|declare|static|function|assert|try|throw)$/.test(n) && !/^(expect_|test|assert)/.test(n));
   // exception types the Julia test expects: `@test_throws X` => `struct X <: Exception end`
@@ -1511,10 +1565,10 @@ function stubScript(lang, src, dir, add, made) {
     try {
       const cj = JSON.parse(fs.readFileSync(path.join(ROOT, 'composer.json'), 'utf8'));
       for (const sec of [cj.autoload, cj['autoload-dev']]) for (const [k, v] of Object.entries(sec?.['psr-4'] ?? {})) psr4.push([k, [].concat(v)[0]]);
-      const paths = Object.values(cj.repositories ?? {}).filter((r) => r.type === 'path' && typeof r.url === 'string').map((r) => path.posix.normalize(r.url.replace(/\\/g, '/')));
+      const paths = Object.values(cj.repositories ?? {}).filter((r) => r.type === 'path' && typeof r.url === 'string').map((r) => path.resolve(ROOT, r.url).split(path.sep).join('/'));
       for (const manifest of workspaceFiles().filter((f) => /\/composer\.json$/.test(f))) {
         const dir = path.posix.dirname(manifest);
-        if (!paths.some((p) => new RegExp('^' + escapeRe(p).replace(/\\\*/g, '[^/]*').replace(/\\\?/g, '[^/]') + '$').test(dir))) continue;
+        if (!paths.some((p) => new RegExp('^' + escapeRe(p).replace(/\\\*/g, '[^/]*').replace(/\\\?/g, '[^/]') + '$').test(path.resolve(ROOT, dir).split(path.sep).join('/')))) continue;
         try {
           const pkg = JSON.parse(fs.readFileSync(path.join(ROOT, manifest), 'utf8'));
           for (const [k, v] of Object.entries(pkg.autoload?.['psr-4'] ?? {})) {
@@ -1529,11 +1583,11 @@ function stubScript(lang, src, dir, add, made) {
       try { if (r.status === 0) for (const [k, v] of Object.entries(JSON.parse(r.stdout))) if (v[0]) psr4.unshift([k, v[0]]); } catch {}
     }
     psr4.sort((a, b) => b[0].length - a[0].length);
-    for (const m of code.matchAll(/^\s*use\s+([A-Za-z_][\w\\]*\\)([A-Za-z_]\w*)\s*;/gm)) {
-      const ns = m[1].replace(/\\$/, ''), cls = m[2];
-      if (!phpClasses.has(cls) || /^(PHPUnit|Mockery|Prophecy|Pest)\\/.test(ns + '\\')) continue;
+    for (const [local, fq] of imported) {
+      const cls = fq.split('\\').pop(), ns = fq.slice(0, -cls.length - 1);
+      if (!phpClasses.has(local) || /^(PHPUnit|Mockery|Prophecy|Pest)\\/.test(ns + '\\')) continue;
       // vendor / already autoloadable classes are never stubbed (#131)
-      if (fs.existsSync(path.join(ROOT, 'vendor/autoload.php')) && spawnSync('php', ['-r', 'require "vendor/autoload.php"; exit(class_exists($argv[1]) || interface_exists($argv[1]) || trait_exists($argv[1]) ? 0 : 1);', '--', `${ns}\\${cls}`], { cwd: ROOT, stdio: 'ignore' }).status === 0) { phpClasses.delete(cls); continue; }
+      if (fs.existsSync(path.join(ROOT, 'vendor/autoload.php')) && spawnSync('php', ['-r', 'require "vendor/autoload.php"; exit(class_exists($argv[1]) || interface_exists($argv[1]) || trait_exists($argv[1]) ? 0 : 1);', '--', `${ns}\\${cls}`], { cwd: ROOT, stdio: 'ignore' }).status === 0) { phpClasses.delete(local); continue; }
       if (projFq.has(`${ns}\\${cls}`)) continue;
       const hit = psr4.find(([k]) => (ns + '\\').startsWith(k));
       const rest = hit ? (ns + '\\').slice(hit[0].length).split('\\').filter(Boolean) : ns.split('\\').slice(1);
@@ -1542,9 +1596,10 @@ function stubScript(lang, src, dir, add, made) {
       while (!fs.existsSync(existing) && path.dirname(existing) !== existing) existing = path.dirname(existing);
       home = path.resolve(fs.realpathSync(existing), path.relative(existing, home));
       const fileAbs = path.join(home, ...rest, cls + '.php');
-      if (!fileAbs.startsWith(ROOT + path.sep) || /(^|\/)vendor\//.test(rel(fileAbs))) { (made.notes ??= []).push(`${ns}\\${cls}: PSR-4 destination is outside project source — not stubbed`); phpClasses.delete(cls); continue; }
-      add(fileAbs, `<?php\n\nnamespace ${ns};\n\n${classBody(cls, phpClasses.get(cls) ?? new Set())}`);
-      phpClasses.delete(cls);
+      if (!fileAbs.startsWith(ROOT + path.sep) || /(^|\/)vendor\//.test(rel(fileAbs))) { (made.notes ??= []).push(`${ns}\\${cls}: PSR-4 destination is outside project source — not stubbed`); phpClasses.delete(local); continue; }
+      const body = classBody(local, phpClasses.get(local) ?? new Set()).replace(new RegExp(`^(class|enum) ${local}\\b`, 'm'), `$1 ${cls}`);
+      add(fileAbs, `<?php\n\nnamespace ${ns};\n\n${body}`);
+      phpClasses.delete(local);
       psrDone = true;
     }
   }
@@ -2340,11 +2395,51 @@ function juliaSiblingFail(plain, id) {
   return !mine.some((r) => r.bad) && rows.some((r) => r.bad) ? 'sibling' : null;
 }
 const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+function rustTarget(testPath, cwd = ROOT) {
+  const abs = path.resolve(ROOT, testPath);
+  let dir = path.dirname(abs), manifest;
+  while (dir.startsWith(ROOT)) {
+    if (fs.existsSync(path.join(dir, 'Cargo.toml'))) { manifest = path.join(dir, 'Cargo.toml'); break; }
+    if (dir === ROOT) break;
+    dir = path.dirname(dir);
+  }
+  if (!manifest) return null;
+  let metadata;
+  try { metadata = JSON.parse(cmdOut(['cargo', 'metadata', '--no-deps', '--format-version', '1', '--offline', '--manifest-path', manifest], cwd)); } catch { return null; }
+  const pkg = metadata.packages.find((p) => path.resolve(p.manifest_path) === path.resolve(manifest));
+  if (!pkg) return null;
+  const candidates = pkg.targets.filter((t) => t.test !== false && !t.kind.includes('custom-build')).map((t) => {
+    const entry = path.resolve(t.src_path), visited = new Set();
+    const find = (file, mods) => {
+      if (file === abs) return mods;
+      if (visited.has(file) || !fs.existsSync(file)) return null;
+      visited.add(file);
+      const text = fs.readFileSync(file, 'utf8');
+      const mask = maskBraces(text, true);
+      const scope = [];
+      for (const m of mask.matchAll(/\bmod\s+(\w+)\s*([;{])|[{}]/g)) {
+        if (m[1] && m[2] === '{') { scope.push(m[1]); continue; }
+        if (m[0] === '{') { scope.push(null); continue; }
+        if (m[0] === '}') { scope.pop(); continue; }
+        const parents = scope.filter(Boolean);
+        const base = path.basename(file) === 'mod.rs' || file === entry ? path.dirname(file) : file.slice(0, -3);
+        const home = path.join(base, ...parents);
+        const override = /#\[path\s*=\s*"([^"]+)"\]\s*$/.exec(text.slice(0, m.index))?.[1];
+        const paths = override ? [path.resolve(path.dirname(file), override)] : [path.join(home, m[1] + '.rs'), path.join(home, m[1], 'mod.rs')];
+        for (const next of paths) { const found = find(next, [...mods, ...parents, m[1]]); if (found) return found; }
+      }
+      return null;
+    };
+    const mods = find(entry, []);
+    return mods ? { package: pkg.name, dir: path.dirname(manifest), target: t.name, kind: t.kind, entry, mods } : null;
+  }).filter(Boolean);
+  return candidates.length === 1 ? candidates[0] : null;
+}
 function qualifiedTestName(testPath, id, rust = false) {
   const name = testName(testPath, id);
   const text = fs.readFileSync(path.join(ROOT, testPath), 'utf8');
   const at = text.search(new RegExp(`@id\\s+${id}\\b`));
-  const pre = text.slice(0, at).replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*|"(?:\\.|[^"\\])*"/g, '');
+  const pre = maskBraces(text.slice(0, at), rust);
   const stack = [];
   const re = rust ? /\bmod\s+(\w+)\s*\{|([{}])/g : /\b(namespace|class)\s+([\w.]+)[^{;]*([{;])|([{}])/g;
   let fileNs = '';
@@ -2354,30 +2449,70 @@ function qualifiedTestName(testPath, id, rust = false) {
     else if (m[4] === '{') stack.push(null);
     else stack.pop();
   }
-  return [fileNs, ...stack.filter(Boolean), name].filter(Boolean).join(rust ? '::' : '.');
+  const pkg = /\.java$/.test(testPath) ? /^package\s+([\w.]+);/m.exec(text)?.[1] : '';
+  const mods = rust ? rustTarget(testPath)?.mods ?? [] : [];
+  return [pkg, fileNs, ...mods, ...stack.filter(Boolean), name].filter(Boolean).join(rust ? '::' : '.');
 }
-function targetVerdict(plain, testPath, id) {
+function targetVerdict(plain, testPath, id, selectedName = null) {
   const name = testName(testPath, id), exact = escapeRe(name);
-  if (/\.rs$/.test(testPath) && /^test \S+ \.\.\. /m.test(plain)) {
+  if (/\.rs$/.test(testPath) && (/^test \S+ \.\.\. /m.test(plain) || /running \d+ tests|test result:/.test(plain))) {
     const full = qualifiedTestName(testPath, id, true);
-    const rows = [...plain.matchAll(/^test (\S+) \.\.\. (ok|FAILED|ignored)/gm)].filter((m) => m[1] === full || (full === name && m[1].endsWith('::' + name)));
+    const owner = rustTarget(testPath);
+    let belongs = true;
+    const rows = [];
+    for (const line of plain.split('\n')) {
+      const header = /^\s*Running\s+(.+?)\s+\(/.exec(line);
+      if (header) {
+        const entry = header[1].replace(/\\/g, '/');
+        belongs = owner ? entry === rel(owner.entry) || entry === path.relative(owner.dir, owner.entry).split(path.sep).join('/') : entry === testPath || entry.endsWith('/' + testPath);
+      }
+      const m = /^test (\S+) \.\.\. (ok|FAILED|ignored)/.exec(line);
+      if (belongs && m && (m[1] === full || (full === name && m[1].endsWith('::' + name)))) rows.push(m);
+    }
     return !rows.length ? 'notrun' : rows.some((m) => m[2] === 'FAILED') ? 'fail' : rows.some((m) => m[2] === 'ok') ? 'pass' : 'skip';
   }
   if (/^\s*\d+\/\d+ Test\s+#\d+:/m.test(plain)) {
-    const rows = [...plain.matchAll(/^\s*\d+\/\d+ Test\s+#\d+:\s+(\S+)\s+.*?(Passed|\*\*\*Failed|\*\*\*Skipped|\*\*\*Not Run|\*\*\*Exception)/gm)].filter((m) => m[1] === name || m[1] === id);
+    const rows = [...plain.matchAll(/^\s*\d+\/\d+ Test\s+#\d+:\s+(\S+)\s+.*?(Passed|\*\*\*Failed|\*\*\*Skipped|\*\*\*Not Run|\*\*\*Exception)/gm)].filter((m) => m[1] === (selectedName ?? name) || m[1] === id);
     return !rows.length ? 'notrun' : rows.some((m) => /Failed|Exception/.test(m[2])) ? 'fail' : rows.some((m) => m[2] === 'Passed') ? 'pass' : 'skip';
   }
   if (/\.php$/.test(testPath) && /There w(?:as|ere) \d+ (?:failure|error)s?:/.test(plain)) {
-    return new RegExp(`^\\d+\\) [^\\n]+::${exact}(?=\\s+with data set|\\s*$)`, 'm').test(plain) ? 'fail' : 'pass';
+    return new RegExp(`^\\d+\\) [^\\n]+::${exact}(?=[#@]|\\s+with data set|\\s*$)`, 'm').test(plain) ? 'fail' : 'pass';
+  }
+  if (/\.java$/.test(testPath)) {
+    const full = qualifiedTestName(testPath, id), cls = full.slice(0, -name.length - 1);
+    const rows = [...plain.matchAll(/^SDD-TEST (\S+) (.+?) (SUCCESS|FAILURE|SKIPPED)$/gm)].filter((m) => m[1] === cls && (m[2] === name || m[2].startsWith(name + '(') || m[2].startsWith(name + '[')));
+    if (rows.length) return rows.some((m) => m[3] === 'FAILURE') ? 'fail' : rows.some((m) => m[3] === 'SUCCESS') ? 'pass' : 'skip';
+    const xmlRows = [];
+    const dirs = [path.join(ROOT, 'target/surefire-reports'), path.join(ROOT, 'build/test-results/test'), ...workspaceFiles().filter((f) => /\/(?:pom.xml|build.gradle(?:.kts)?)$/.test(f)).flatMap((f) => [path.join(ROOT, path.dirname(f), 'target/surefire-reports'), path.join(ROOT, path.dirname(f), 'build/test-results/test')])];
+    for (const dir of new Set(dirs)) {
+      if (!fs.existsSync(dir)) continue;
+      for (const f of fs.readdirSync(dir).filter((f) => /\.xml$/.test(f))) {
+        const text = fs.readFileSync(path.join(dir, f), 'utf8');
+        for (const m of text.matchAll(/<testcase\b([^>]*?)(?:\/>|>([\s\S]*?)<\/testcase>)/g)) {
+          const attrs = Object.fromEntries([...m[1].matchAll(/(\w+)="([^"]*)"/g)].map((a) => [a[1], a[2]]));
+          if (attrs.classname === cls && (attrs.name === name || attrs.name?.startsWith(name + '(') || attrs.name?.startsWith(name + '['))) xmlRows.push(/<(failure|error)\b/.test(m[2] ?? '') ? 'fail' : /<skipped\b/.test(m[2] ?? '') ? 'skip' : 'pass');
+        }
+      }
+    }
+    if (xmlRows.length) return xmlRows.includes('fail') ? 'fail' : xmlRows.includes('pass') ? 'pass' : 'skip';
+    if (/^SDD-TEST /m.test(plain)) return 'notrun';
   }
   if (/\.cs$/.test(testPath) && /^\s*(Passed|Failed|Skipped)\s+\S+/m.test(plain)) {
     const full = qualifiedTestName(testPath, id);
-    const rows = [...plain.matchAll(/^\s*(Passed|Failed|Skipped)\s+([^\s(]+)(?:\(|\s)/gm)].filter((m) => m[2] === name || m[2] === full || (full === name && m[2].endsWith('.' + name)));
+    const body = testBody(testPath, id).join('\n').split(/\b(?:public|private|protected)\s+(?:async\s+)?(?:void|Task)\b/)[0];
+    const custom = [...body.matchAll(/\b(?:TestName|DisplayName)\s*=\s*"((?:\\.|[^"\\])*)"/g)].map((m) => m[1]);
+    const rows = [...plain.matchAll(/^\s*(Passed|Failed|Skipped)\s+(.+?)(?:\s+\[[^\n]*\]|\s*$)/gm)].filter((m) => m[2] === name || m[2] === full || m[2].startsWith(name + '(') || m[2].startsWith(full + '(') || custom.includes(m[2]) || (full === name && m[2].endsWith('.' + name)));
     return !rows.length ? 'notrun' : rows.some((m) => m[1] === 'Failed') ? 'fail' : rows.some((m) => m[1] === 'Passed') ? 'pass' : 'skip';
   }
   return null;
 }
 function noExecution(plain) {
+  const cargo = [...plain.matchAll(/test result: \w+\.\s*(\d+) passed;\s*(\d+) failed;/g)];
+  if (cargo.length) return cargo.every((m) => +m[1] + +m[2] === 0);
+  const dotnet = [...plain.matchAll(/(?:Passed|Failed|Skipped)!\s*-\s*Failed:\s*(\d+),\s*Passed:\s*(\d+),(?:\s*Skipped:\s*\d+,)?\s*Total:\s*\d+/g)];
+  if (dotnet.length) return dotnet.every((m) => +m[1] + +m[2] === 0);
+  if (/^Total tests:\s*\d+/m.test(plain) && !/^\s*(Passed|Failed):\s*[1-9]|\b(?:Passed|Failed)\s+\S+/m.test(plain)) return true;
+  if (/running 0 tests/.test(plain) && !/running [1-9]\d* tests|^test \S+ \.\.\. (ok|FAILED)/m.test(plain)) return true;
   if (ZERO_TESTS.test(plain) && !RAN_TESTS.test(plain)) return true;
   const junit = [...plain.matchAll(/Tests run:\s*(\d+), Failures:\s*(\d+),(?: Errors:\s*(\d+),)? Skipped:\s*(\d+)/g)];
   if (junit.length && junit.every((m) => +m[1] === +m[4] && +m[2] === 0 && +(m[3] ?? 0) === 0)) return true;
@@ -2388,7 +2523,7 @@ function noExecution(plain) {
   if (julia?.length && julia.every((r) => !r.executed)) return true;
   const php = [...plain.matchAll(/Tests:\s*(\d+), Assertions:\s*(\d+)([^\n]*)/g)];
   if (php.length && php.every((m) => +m[2] === 0 && !/(Errors|Failures):\s*[1-9]/.test(m[3]))) return true;
-  return /did not perform any assertions|Passed: 0,[^\n]*Skipped: [1-9]/i.test(plain);
+  return /did not perform any assertions|Passed:\s*0,[^\n]*Skipped:\s*[1-9]/i.test(plain);
 }
 
 function cmdTdd() {
@@ -2465,20 +2600,65 @@ function cmdTdd() {
   const proj = projectFor(t.path);
   const fileArg = proj ? path.posix.relative(proj.root, t.path) : t.path;
   const cmd = (proj?.testCmd ?? cfg.testCmd).map((a) => a.replaceAll('{id}', id).replaceAll('{idu}', testName(t.path, id)).replaceAll('{IDU}', id.toUpperCase().replaceAll('-', '_')).replaceAll('{file}', fileArg));
+  let selectedName = null;
   if (/\.rs$/.test(t.path) && cmd[0] === 'cargo' && cmd[1] === 'test') {
     const name = testName(t.path, id);
     const i = cmd.indexOf(name);
-    if (i >= 0) { cmd[i] = qualifiedTestName(t.path, id, true); if (!cmd.includes('--')) cmd.push('--'); if (!cmd.includes('--exact')) cmd.push('--exact'); }
+    if (i >= 0) {
+      const owner = rustTarget(t.path, path.resolve(ROOT, proj?.root ?? '.'));
+      cmd[i] = qualifiedTestName(t.path, id, true);
+      if (owner && !cmd.some((a) => /^(?:--test|--lib|--bin|--example|--all-targets)$/.test(a))) {
+        const selection = owner.kind.includes('test') ? ['--test', owner.target] : owner.kind.some((k) => /lib/.test(k)) ? ['--lib'] : owner.kind.includes('bin') ? ['--bin', owner.target] : ['--example', owner.target];
+        cmd.splice(2, 0, ...selection);
+      }
+      if (owner && !cmd.includes('-p') && !cmd.includes('--package')) cmd.splice(2, 0, '-p', owner.package);
+      if (!cmd.includes('--')) cmd.push('--');
+      if (!cmd.includes('--exact')) cmd.push('--exact');
+    }
+  }
+  if (/\.java$/.test(t.path)) {
+    const name = testName(t.path, id), full = qualifiedTestName(t.path, id), cls = full.slice(0, -name.length - 1);
+    for (let i = 0; i < cmd.length; i++) {
+      if (cmd[i] === '-Dtest=*#*' + name) cmd[i] = `-Dtest=${cls}#${name}`;
+      if (cmd[i].includes('--tests "*$0"') && cmd[i + 1] === name) { cmd[i] = cmd[i].replace('--tests "*$0"', '--tests "$0"'); cmd[i + 1] = full; }
+      if (cmd[i] === '--tests' && cmd[i + 1] === '*' + name) cmd[i + 1] = full;
+    }
+    const reportRoots = [path.resolve(ROOT, proj?.root ?? '.')];
+    for (const f of workspaceFiles().filter((f) => /(^|\/)(?:pom.xml|build.gradle(?:.kts)?)$/.test(f))) reportRoots.push(path.join(ROOT, path.dirname(f)));
+    for (const root of new Set(reportRoots)) for (const sub of ['target/surefire-reports', 'build/test-results/test']) {
+      const dir = path.join(root, sub);
+      if (fs.existsSync(dir)) for (const f of fs.readdirSync(dir).filter((f) => /\.xml$/.test(f))) fs.rmSync(path.join(dir, f));
+    }
   }
   if (/ctest/.test(cmd.join(' '))) {
+    const name = testName(t.path, id);
+    const shell = cmd.findIndex((a) => a.includes('ctest') && a.includes(' -R "$0"'));
+    const direct = cmd.indexOf('-R');
+    if ((shell >= 0 && cmd[shell + 1] === name) || (direct >= 0 && cmd[direct + 1] === name)) {
+      const cwd = path.resolve(ROOT, proj?.root ?? '.');
+      if (shell >= 0) run(['sh', '-c', cmd[shell].slice(0, cmd[shell].indexOf('ctest')).replace(/;\s*$/, '')], cfg.timeoutMs ?? 120000, proj?.root);
+      const testDir = shell >= 0 ? /ctest\s+--test-dir\s+(\S+)/.exec(cmd[shell])?.[1] : cmd.includes('--test-dir') ? cmd[cmd.indexOf('--test-dir') + 1] : null;
+      let tests;
+      try { tests = JSON.parse(cmdOut(['ctest', ...(testDir ? ['--test-dir', testDir] : []), '--show-only=json-v1'], cwd)).tests; } catch {}
+      if (tests) {
+        const exact = tests.filter((t) => t.name === name);
+        const token = id.toLowerCase().replaceAll('-', '_');
+        const candidates = exact.length ? exact : tests.filter((t) => new RegExp(`(?:^|_)${escapeRe(token)}(?:_|$)`, 'i').test(t.name) || t.name === id);
+        if (candidates.length !== 1) { out(`${sub.toUpperCase()} REJECTED ${id}: CTest registration is missing or ambiguous; configure an exact -R selector`); return 1; }
+        selectedName = candidates[0].name;
+        if (shell >= 0) cmd[shell + 1] = selectedName;
+        if (direct >= 0) cmd[direct + 1] = selectedName;
+      }
+    }
     const i = cmd.indexOf('-R');
-    if (i >= 0 && cmd[i + 1] === testName(t.path, id)) cmd[i + 1] = '^' + escapeRe(cmd[i + 1]) + '$';
-    for (let i = 0; i < cmd.length; i++) if (cmd[i].includes(' -R "$0"')) { cmd[i] = cmd[i].replace(' -R "$0"', ' -R "^$0$"'); if (cmd[i + 1] === testName(t.path, id)) cmd[i + 1] = escapeRe(cmd[i + 1]); }
+    if (i >= 0 && (cmd[i + 1] === name || cmd[i + 1] === selectedName)) cmd[i + 1] = '^' + escapeRe(cmd[i + 1]) + '$';
+    for (let i = 0; i < cmd.length; i++) if (cmd[i].includes(' -R "$0"')) { cmd[i] = cmd[i].replace(' -R "$0"', ' -R "^$0$"'); if (cmd[i + 1] === name || cmd[i + 1] === selectedName) cmd[i + 1] = escapeRe(cmd[i + 1]); }
   }
   if (/\.php$/.test(t.path) && /phpunit/.test(cmd.join(' '))) {
     const i = cmd.indexOf('--filter');
-    if (i >= 0 && cmd[i + 1] === testName(t.path, id)) cmd[i + 1] = '/::' + escapeRe(cmd[i + 1]) + '(?:\\s+with data set .*)?$/';
+    if (i >= 0 && cmd[i + 1] === testName(t.path, id)) cmd[i + 1] = '/::' + escapeRe(cmd[i + 1]) + '(?:\\s+with data set [\\s\\S]*)?$/';
   }
+  if (/\.jl$/.test(t.path) && cmd[0] === 'julia' && cmd.at(-1) === fileArg && !cmd.includes('-e')) cmd.splice(cmd.length - 1, 0, '-e', JULIA_VERBOSE);
   if (/\.cs$/.test(t.path) && cmd[0] === 'dotnet' && cmd[1] === 'test') {
     const i = cmd.indexOf('--filter');
     if (i >= 0 && cmd[i + 1] === 'FullyQualifiedName~' + testName(t.path, id)) {
@@ -2521,14 +2701,17 @@ function cmdTdd() {
   // Node >=22 can report a file-level pass: only an executed test result proves the ID matched (#154).
   const nodeNoMatch = res.exit === 0 && /(^|\n)\s*(ℹ tests \d+|# tests \d+)/.test(plain) && !nodeTestRan(plain, id, t.path);
   const goNoMatch = goRunner && !LOAD_ERR.test(plain) && (!goTarget || !goVerdict || goVerdict === 'skip');
-  const verdict = targetVerdict(plain, t.path, id);
-  const zero = (ZERO_TESTS.test(res.text) && !RAN_TESTS.test(res.text)) || NO_PASSED.test(plain) || pytestNoExecution(plain) || allSkipped || noAssert || nodeNoMatch || goNoMatch || verdict === 'notrun' || verdict === 'skip';
+  const verdict = targetVerdict(plain, t.path, id, selectedName);
+  const targetExecuted = verdict === 'pass' || verdict === 'fail';
+  const zero = (!targetExecuted && ((ZERO_TESTS.test(res.text) && !RAN_TESTS.test(res.text)) || allSkipped || noAssert)) || NO_PASSED.test(plain) || pytestNoExecution(plain) || nodeNoMatch || goNoMatch || verdict === 'notrun' || verdict === 'skip';
   const siblingFail = juliaSiblingFail(plain, id);
   const timeoutWhy = `the test run timed out after ${(res.ms / 1000).toFixed(0)}s (raise timeoutMs in .sdd/config.json or fix the hang); a timeout is neither Red nor Green`;
   // forked JVM / test host died: the test matched but the runner crashed (#143)
-  const crashed = res.exit !== 0 && (res.signal || /There was an error in the forked process|OutOfMemoryError|The forked VM terminated|Fatal error\. Internal CLR error|Test host process crashed|The active test run was aborted|Fatal Python error:|\*\*\*Exception:|\((?:SEGFAULT|ILLEGAL|NUMERICAL|OTHER_FAULT|INTERRUPT)\)/i.test(plain));
+  const cAssertionAbort = /\.(?:c|cc|cpp|cxx)$/.test(t.path) && new RegExp(`\\b${escapeRe(testName(t.path, id))}:\\s+Assertion\\b[^\\n]*failed\\.`).test(plain) && /Subprocess aborted/.test(plain);
+  const childCrash = plain.split('\n').some((line) => /\*\*\*Exception:/i.test(line) && !(cAssertionAbort && new RegExp(`Test\\s+#\\d+:\\s+${escapeRe(selectedName ?? testName(t.path, id))}\\s+.*Subprocess aborted\\*\\*\\*Exception:`).test(line)));
+  const crashed = res.exit !== 0 && (res.signal || /There was an error in the forked process|OutOfMemoryError|The forked VM terminated|Fatal error\. Internal CLR error|Test host process crashed|The active test run was aborted|Fatal Python error:|\((?:SEGFAULT|ILLEGAL|NUMERICAL|OTHER_FAULT|INTERRUPT)\)/i.test(plain) || childCrash);
   const crashWhy = `the test runner process crashed (${res.signal ?? 'fatal Python error / forked JVM / test host failure'}), so the test result is unknown; make the failure an assertion or fix the crash`;
-  const notRunWhy = `${id} never ran: an earlier top-level testset of the file failed and Julia aborted the file (whole-file runner); fix or Red/Green the earlier tests first`;
+  const notRunWhy = `${id} never ran or its summary is unobservable (whole-file runner): use verbose=true on enclosing Julia testsets, or the direct Julia runner which enables verbose summaries; an earlier failing testset may also abort the file`;
   let ok;
   let why = '';
   if (sub === 'red') {
