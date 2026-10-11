@@ -247,6 +247,8 @@ function phpLifecycle(body, txt) {
   return [...body.matchAll(/#\[([^\]]*)\]/g)].some((attr) => [...attr[1].matchAll(/(?:^|,)\s*(\\?[\w\\]+)/g)].some((m) => lifecycle.test((aliases.get(m[1].toLowerCase()) ?? m[1]).split('\\').at(-1))));
 }
 // Protect shared oracles without including sibling tests or annotated implementation (#166/#170).
+// evidence recorded before #236 hashed registration macros and comments as shared code
+let cLegacy = false;
 function braceTestSha(txt, id, p) {
   const ranges = braceFunctions(txt, p);
   if (!ranges) return sha(txt);
@@ -254,8 +256,24 @@ function braceTestSha(txt, id, p) {
   if (!mine) return sha(txt);
   const inline = /\.rs$/.test(p) ? rustTestRegion(txt) : -1;
   const helpers = ranges.filter((r) => !r.test && !r.code && (inline < 0 || r.start > inline));
-  const shared = sharedOutside(txt, ranges, inline >= 0 ? inline : 0);
-  return sha(shared + '\u0000' + mine.body.trim() + '\u0000' + protectedHelpers(mine, helpers, shared, /\.php$/.test(p)));
+  // file-scope registration macros (`REG(fn);`, `CASE(suite, fn);`) belong to the function they name, not to every sibling (#236)
+  const regs = !cLegacy && /\.(?:c|cc|cpp|cxx)$/.test(p) ? cRegistrations(txt, ranges) : [];
+  let shared = sharedOutside(txt, [...ranges, ...regs], inline >= 0 ? inline : 0);
+  // comments outside every function (a trailing note) are not an oracle in C/C++ (#236)
+  if (!cLegacy && /\.(?:c|cc|cpp|cxx)$/.test(p)) shared = shared.replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*|"(?:\\[\s\S]|[^"\\])*"|'(?:\\[\s\S]|[^'\\])*'/g, (c) => (c[0] === '/' ? '' : c)).split('\n').filter((l) => l.trim()).join('\n').trim();
+  const own = regs.filter((r) => r.target === mine.name).map((r) => r.body.trim()).join('\u0000');
+  return sha(shared + '\u0000' + mine.body.trim() + '\u0000' + protectedHelpers(mine, helpers, shared, /\.php$/.test(p)) + (own ? '\u0000' + own : ''));
+}
+function cRegistrations(txt, ranges) {
+  const names = new Set(ranges.map((r) => r.name));
+  const masked = maskBraces(txt);
+  const found = [];
+  for (const m of masked.matchAll(/^[ \t]*[A-Z][A-Z0-9_]*[ \t]*\(([^()\n]*)\)[ \t]*;?[ \t]*$/gm)) {
+    const target = [...m[1].matchAll(/[A-Za-z_]\w*/g)].map((x) => x[0]).reverse().find((n) => names.has(n));
+    if (!target || ranges.some((r) => r.start <= m.index && m.index < r.end)) continue;
+    found.push({ start: m.index, end: m.index + m[0].length, target, body: txt.slice(m.index, m.index + m[0].length) });
+  }
+  return found;
 }
 function rustTestRegion(text) {
   return maskBraces(text, true).search(/#\s*\[\s*cfg\s*\(\s*test\s*\)\s*\]/);
@@ -576,6 +594,13 @@ function siblingTestSha(file, text, raw) {
   const tests = ranges.filter((r) => /@id\s+TEST-/.test(r.body));
   return tests.length ? sha('tests-excluded\u0000' + sharedOutside(text, tests)) : sha(raw);
 }
+// a C/C++ header under include/ src/ lib/ (outside any test/fixture/data directory) is implementation, not oracle, unless it says `@oracle` (#236)
+function productionHeader(file, text) {
+  if (!/\.(?:h|hh|hpp|hxx|inl|ipp|tpp)$/i.test(file) || /@oracle\b/.test(text) || /@id\s+TEST-/.test(text)) return false;
+  const segs = rel(file).split('/').slice(0, -1);
+  const testLike = (d) => /^(?:tests?|spec|specs|fixtures?|testdata|test_data|support|vectors?|data|oracles?|mocks?|testing|testutil)$/i.test(d) || /^test_|_tests?$/i.test(d);
+  return segs.some((d) => /^(?:include|src|lib|inc)$/i.test(d)) && !segs.some(testLike);
+}
 function externalOracleSha(p, hash) {
   oracleDependencyFiles = [];
   oracleDependencyShas = {};
@@ -587,6 +612,7 @@ function externalOracleSha(p, hash) {
     try { raw = fs.readFileSync(file); text = raw.toString('utf8').replace(/^\uFEFF/, '').replace(/\r\n/g, '\n'); }
     catch { if (!rootFile) deps.set(rel(file), 'missing'); return; }
     if (!rootFile && /@id\s+CODE-/.test(text) && !/@id\s+TEST-/.test(text)) return;
+    if (!rootFile && compiler && productionHeader(file, text)) return;
     if (!rootFile) deps.set(rel(file), siblingTestSha(file, text, raw));
     const next = localSourceDependencies(file, text, rootFile, !!compiler, compiler);
     for (const dep of next) {
@@ -672,7 +698,7 @@ const testShaVariant = (p, id, trim, norm = false, legacy = false, cut = true, i
   return sha((norm ? normImports(pre) : pre) + '\u0000' + region);
 };
 const testSha = (p, id) => { eolNorm = true; try { return externalOracleSha(p, testShaVariant(p, id, true, true)); } finally { eolNorm = false; } };
-const shaMatches = (recorded, p, id) => /\.(?:py|jl)$/.test(p) || BRACE_TEST.test(p) ? recorded === testSha(p, id) : shaMatchesRaw(recorded, p, id) || (() => { eolNorm = true; try { return shaMatchesRaw(recorded, p, id); } finally { eolNorm = false; } })();
+const shaMatches = (recorded, p, id) => /\.(?:py|jl)$/.test(p) || BRACE_TEST.test(p) ? recorded === testSha(p, id) || (/\.(?:c|cc|cpp|cxx)$/.test(p) && (() => { cLegacy = true; try { return recorded === testSha(p, id); } finally { cLegacy = false; } })()) : shaMatchesRaw(recorded, p, id) || (() => { eolNorm = true; try { return shaMatchesRaw(recorded, p, id); } finally { eolNorm = false; } })();
 const shaMatchesRaw = (recorded, p, id) => [true, false].some((cut) => [true, false].some((inl) => recorded === testShaVariant(p, id, true, true, false, cut, inl) || recorded === testShaVariant(p, id, true, false, false, cut, inl) || recorded === testShaVariant(p, id, false, false, false, cut, inl) || recorded === testShaVariant(p, id, true, true, true, cut, inl) || recorded === testShaVariant(p, id, true, false, true, cut, inl) || recorded === testShaVariant(p, id, false, false, true, cut, inl))) ||
   recorded === testSha(p, id) || recorded === testShaVariant(p, id, true) || recorded === testShaVariant(p, id, false) || recorded === testShaVariant(p, id, true, true, true) || recorded === testShaVariant(p, id, true, false, true) || recorded === testShaVariant(p, id, false, false, true) || recorded === sha(fs.readFileSync(path.join(ROOT, p)));
 const out = (s = '') => process.stdout.write(s + '\n');

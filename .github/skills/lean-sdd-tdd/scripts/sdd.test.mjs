@@ -6018,3 +6018,33 @@ test('ExUnit tdd stub: a `use Mod` module gets a defmacro __using__/1 (also appe
   assert.match(fs.readFileSync(path.join(d, 'lib/a/case.ex'), 'utf8'), /defmacro __using__\(_opts\)[\s\S]*end\n$/);
   assert.match(fs.readFileSync(path.join(d, 'lib/a/case.ex'), 'utf8'), /def helper/);
 });
+
+test('#236 C/C++ header-only implementation under include/ is not a test oracle; @oracle and test dirs still are', () => {
+  const d = batch2Source('t.c', '#include "include/lib.h"\n#include "data/exp.h"\n// @id TEST-CALC-001 @verifies REQ-CALC-001\nvoid test_calc_001(void) { assert(twice(2) == EXPECTED); }\n');
+  writeAll(d, { 'include/lib.h': 'static inline int twice(int n) { (void)n; return 0; }\n', 'data/exp.h': '#define EXPECTED 4\n' });
+  fakeOut(d, 'AssertionError: twice');
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-CALC-001').code, 0);
+  fs.writeFileSync(path.join(d, 'include/lib.h'), 'static inline int twice(int n) { return n * 2; }\n');
+  fakeOut(d, 'pass', 0);
+  const g = sdd(d, 'tdd', 'green', 'TEST-CALC-001');
+  assert.equal(g.code, 0, g.out);
+  fs.writeFileSync(path.join(d, 'data/exp.h'), '#define EXPECTED 5\n');
+  assert.match(sdd(d, 'tdd', 'green', 'TEST-CALC-001').out, /changed since Red/);
+  fs.writeFileSync(path.join(d, 'data/exp.h'), '#define EXPECTED 4\n');
+  fs.writeFileSync(path.join(d, 'include/lib.h'), '// @oracle\nstatic inline int twice(int n) { return n * 2; }\n');
+  assert.match(sdd(d, 'tdd', 'green', 'TEST-CALC-001').out, /changed since Red/);
+});
+
+test('#236 C registration macros (`REG(fn);`) belong to the function they name, not to every sibling', () => {
+  const src = (extra = '', reg = 'REG(test_calc_001);') => '#include <assert.h>\n// @id TEST-CALC-001 @verifies REQ-CALC-001\nvoid test_calc_001(void) { assert(1 == 2); }\n' + reg + '\n\n// @id TEST-CALC-002 @verifies REQ-CALC-001\nvoid test_calc_002(void) { assert(1 == 1); }\nREG(test_calc_002);\n' + extra;
+  const d = batch2Source('t.c', src());
+  fakeOut(d, 'Assertion failed: 1 == 2');
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-CALC-001').code, 0);
+  fakeOut(d, 'pass', 0);
+  assert.equal(sdd(d, 'tdd', 'green', 'TEST-CALC-001').code, 0);
+  fs.writeFileSync(path.join(d, 't.c'), src('\n// @id TEST-CALC-003 @verifies REQ-CALC-001\nvoid test_calc_003(void) { }\nREG(test_calc_003);\n\nint main(void) { return 0; }\n// trailing\n'));
+  assert.doesNotMatch(sdd(d, 'gate', '--no-run').out, /TEST-CALC-001[^\n]*changed since last Green/);
+  fs.writeFileSync(path.join(d, 't.c'), src('', 'REG(test_calc_001); REG2(x);'));
+  fs.writeFileSync(path.join(d, 't.c'), src('', 'REGISTER(suite, test_calc_001);'));
+  assert.match(sdd(d, 'gate', '--no-run').out, /TEST-CALC-001[^\n]*changed since last Green/);
+});
