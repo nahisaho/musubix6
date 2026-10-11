@@ -2792,7 +2792,7 @@ function goTestTarget(testPath, id) {
     return clean.length;
   };
   const adjacent = (start) => start >= at.index && !clean.slice(at.index, start).trim();
-  const funcs = [...clean.matchAll(/^func\s+(Test\w+)\s*\([^)]*\)\s*\{/gm)].map((m) => ({ name: m[1], start: m.index, open: m.index + m[0].length - 1 }));
+  const funcs = [...clean.matchAll(/^func\s+((?:Test|Fuzz|Benchmark|Example)\w*)\s*\([^)]*\)\s*\{/gm)].map((m) => ({ name: m[1], start: m.index, open: m.index + m[0].length - 1 }));
   const fn = funcs.find((f) => adjacent(f.start)) ?? funcs.find((f) => f.open < at.index && close(f.open) > at.index);
   if (!fn) return null;
   const runs = [...src.matchAll(/\b\w+\.Run\s*\(\s*("(?:\\.|[^"\\])*"|`[^`]*`|[^,{}]+)\s*,\s*func\s*\([^)]*\)\s*\{/g)].filter((m) => clean.slice(m.index, m.index + 1).trim()).map((m) => {
@@ -2809,11 +2809,23 @@ function goTestTarget(testPath, id) {
   const parts = [fn.name, ...containers.map((r) => r.name)];
   return { name: parts.join('/'), pattern: parts.flatMap((n) => n.split('/')).map((n) => '^' + n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$').join('/') };
 }
+// positive custom tags of a `//go:build` constraint; GOOS/GOARCH/toolchain tags are provided by the toolchain itself
+function goBuildTags(src) {
+  const line = /^\/\/go:build\s+(.+)$/m.exec(src.split(/^package\s/m)[0])?.[1];
+  if (!line) return [];
+  const known = /^(linux|darwin|windows|freebsd|openbsd|netbsd|solaris|android|ios|js|wasip1|plan9|aix|dragonfly|illumos|unix|cgo|amd64|arm64|arm|386|riscv64|ppc64|ppc64le|s390x|wasm|mips\w*|gc|gccgo|race|msan|asan|ignore|go1\.\d+)$/;
+  const tags = [];
+  for (const m of line.matchAll(/(!?)\s*([A-Za-z_][\w.]*)/g)) if (!m[1] && !known.test(m[2]) && !tags.includes(m[2])) tags.push(m[2]);
+  return tags;
+}
 function goResult(text, target) {
   let result = null;
   for (const line of text.split('\n')) {
     const m = /^\s*--- (PASS|FAIL|SKIP):\s+(\S+)/.exec(line);
     if (m?.[2] === target) result = m[1].toLowerCase();
+    // a passing benchmark prints `BenchmarkX-8  1  123 ns/op` and no `--- PASS` row (#215)
+    const b = /^(Benchmark\w*?)(?:-\d+)?\s+\d+\s+[\d.]+\s+ns\/op/.exec(line);
+    if (b?.[1] === target && result !== 'fail') result = 'pass';
     if (line.startsWith('{')) {
       try { const e = JSON.parse(line); if (e.Test === target && /^(pass|fail|skip)$/.test(e.Action)) result = e.Action; } catch {}
     }
@@ -2834,7 +2846,7 @@ function testName(testPath, id) {
   if (/_test\.go$/.test(testPath)) {
     const target = goTestTarget(testPath, id);
     if (target) return target.name;
-    const name = /^func\s+(Test\w+)\s*\(/m.exec(testBody(testPath, id).join('\n'))?.[1];
+    const name = /^func\s+((?:Test|Fuzz|Benchmark|Example)\w*)\s*\(/m.exec(testBody(testPath, id).join('\n'))?.[1];
     if (name) return name;
   }
   if (/\.py$/.test(testPath)) {
@@ -3366,6 +3378,16 @@ function cmdTdd() {
     else if (cmd[ri] === '-run') cmd[ri + 1] = goTarget.pattern;
     else cmd[ri] = '-run=' + goTarget.pattern;
   }
+  if (goRunner && /^(Benchmark)/.test(goTarget?.name ?? '')) {
+    // `-run` never executes benchmarks: select this one explicitly, one iteration (#215)
+    const bi = cmd.findIndex((a) => a === '-bench' || a.startsWith('-bench='));
+    if (bi < 0) cmd.push('-bench', '^' + goTarget.name.split('/')[0] + '$', '-benchtime=1x'); 
+  }
+  // tests behind `//go:build tag` are invisible without -tags (#227)
+  if (goRunner && !cmd.some((a) => /^-tags(=|$)/.test(a))) {
+    const tags = goBuildTags(fs.readFileSync(path.join(ROOT, t.path), 'utf8'));
+    if (tags.length) { cmd.splice(2, 0, '-tags', tags.join(',')); out(`go: building with -tags ${tags.join(',')} (from //go:build in ${t.path})`); }
+  }
   const res = run(cmd, cfg.timeoutMs ?? 120000, proj?.root);
   const after = testSha(t.path, id);
   if (after !== before) { out(`REFUSED: ${t.path} changed while running (formatter/watch?)`); return 1; }
@@ -3413,7 +3435,7 @@ function cmdTdd() {
     else if (siblingFail === 'sibling') { ok = false; why = `${id} itself passes; the failure comes from another test of the same file (whole-file runner)`; }
     else if (verdict === 'pass' && res.exit !== 0) { ok = false; why = `${id} itself passes; the failure comes from another test or suite setup`; }
     else if (goRunner && goVerdict === 'pass' && res.exit !== 0) { ok = false; why = `${id} itself passes; the failure comes from its parent, a sibling or suite setup`; }
-    else if (zero || siblingFail === 'skip') { ok = false; why = 'no test matched the ID, or the test is skipped/todo (check @id vs test title/method name; skipped tests cannot give Red/Green)'; }
+    else if (zero || siblingFail === 'skip') { ok = false; why = 'no test matched the ID, or the test is skipped/todo (check @id vs test title/method name; skipped tests cannot give Red/Green)' + (goRunner && /\[no test files\]/.test(plain) ? '; go printed [no test files]: a //go:build constraint may hide this file (pass -tags in testCmd)' : ''); }
     else if (res.exit === 0 && retest) ok = true;
     else if (res.exit === 0 && typeof flags.characterization === 'string' && flags.characterization.trim()) ok = true;
     else if (res.exit === 0) { ok = false; why = 'test passed; Red needs a real failure (data-only / characterization test? record it explicitly: --characterization "<why no implementation can fail it>")'; }

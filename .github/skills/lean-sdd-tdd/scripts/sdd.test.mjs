@@ -5481,3 +5481,29 @@ test('#228 tdd red survives a tracked Java file deleted without git rm', () => {
   assert.doesNotMatch(r.out, /ENOENT|at .*\.mjs/, r.out);
   assert.equal(r.code, 0, r.out);
 });
+
+const goProject = (file, body, extra = {}) => {
+  const d = batch2Source(file, body);
+  writeAll(d, { 'go.mod': 'module example.org/m\n\ngo 1.21\n', 'calc.go': 'package m\n\nfunc Calc() int { return 2 }\n', ...extra });
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ testCmd: ['go', 'test', './...', '-run', '{IDU}(_|$)'], checks: [] }));
+  return d;
+};
+
+test('#215 Go Fuzz*, Benchmark* and Example* functions carry @id evidence', { skip: spawnSync('go', ['version']).status !== 0 }, () => {
+  const d = goProject('calc_test.go', 'package m\n\nimport "testing"\n\n// @id TEST-CALC-001 @verifies REQ-CALC-001\nfunc FuzzTEST_CALC_001_calc(f *testing.F) {\n\tf.Add(1)\n\tf.Fuzz(func(t *testing.T, x int) {\n\t\tif Calc() != 1 {\n\t\t\tt.Fatal("calc")\n\t\t}\n\t})\n}\n\n// @id TEST-CALC-002 @verifies REQ-CALC-001\nfunc BenchmarkTEST_CALC_002_calc(b *testing.B) {\n\tfor i := 0; i < b.N; i++ {\n\t\tif Calc() != 1 {\n\t\t\tb.Fatal("calc")\n\t\t}\n\t}\n}\n\n// @id TEST-CALC-003 @verifies REQ-CALC-001\nfunc ExampleCalc_test_calc_003() {\n\t// Output: 1\n}\n');
+  for (const id of ['TEST-CALC-001', 'TEST-CALC-002', 'TEST-CALC-003']) {
+    const r = sdd(d, 'tdd', 'red', id);
+    assert.equal(r.code, 0, id + r.out);
+  }
+  fs.writeFileSync(path.join(d, 'calc.go'), 'package m\n\nfunc Calc() int { return 1 }\n');
+  for (const id of ['TEST-CALC-001', 'TEST-CALC-002']) assert.equal(sdd(d, 'tdd', 'green', id).code, 0, id);
+});
+
+test('#227 Go tests behind a //go:build tag run with -tags automatically', () => {
+  const d = goProject('dbg_test.go', '//go:build dbg\n\npackage m\n\nimport "testing"\n\n// @id TEST-CALC-001 @verifies REQ-CALC-001\nfunc TestTEST_CALC_001_calc(t *testing.T) {\n\tif Calc() != 1 {\n\t\tt.Fatal("calc")\n\t}\n}\n');
+  const red = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
+  assert.equal(red.code, 0, red.out);
+  assert.match(red.out, /-tags dbg/);
+  fs.writeFileSync(path.join(d, 'calc.go'), 'package m\n\nfunc Calc() int { return 1 }\n');
+  assert.equal(sdd(d, 'tdd', 'green', 'TEST-CALC-001').code, 0);
+});
