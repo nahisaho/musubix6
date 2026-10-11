@@ -13,6 +13,11 @@ Follow the user's language. One zero-dependency script enforces the rules; the a
 - The script refuses `ai:` approvers on `approval: human` specs. Never forge a human name.
 - Blocked or ambiguous → pick the safest reasonable default, record it in the spec "Assumptions", continue. Ask only if the default is irreversible.
 
+## Preflight (once per repo)
+- `git config user.name` and `user.email` must be set, or commits fail with `Author identity unknown`. If unset, ask the user; when you cannot ask, set repo-local values (`git config user.name/user.email`) and say so. Never finish a task with uncommitted work because of this.
+- Test scripts: use `node --test` or a glob (`node --test test/*.test.mjs`), never a bare directory (`node --test test/` fails with `Cannot find module` on Node 24).
+- Updating an existing test because the spec changed its expected output is allowed for that spec's REQs only: edit the test, then `tdd red <TEST-ID> --retest "<reason>"` and `tdd green <TEST-ID>`. A gate failure `test changed since last Green` must be resolved this way, never left failing.
+
 ## 0. Tier (1 line, before reading code)
 - No spec yet and the request is vague ("〜を作りたい")? Use the `sdd-spec-interview` skill first: it asks the user one question at a time and writes the spec.
 - **T0** typo/docs/rename, no behavior change: edit → project checks. No spec, no ledger.
@@ -50,7 +55,7 @@ Batch: write all tests for a feature, then red each, implement, green each, **on
 - Without Git, `gate --changed` explicitly falls back to full evidence/checks; manifest discovery, impact and C# stubs use filesystem discovery.
 
 ## 4. Review without humans
-T2 only: parallel sub-agents by risk axis (security · correctness/state · contract · test adequacy), each diff-only, ≤200-word replies, findings to `.sdd/review.md` (one line each: id|sev|path:line|state). Re-review Open items + fix diff only; stop after two clean rounds, then lock/merge.
+T2 only: parallel sub-agents by risk axis (security · correctness/state · contract · test adequacy), each diff-only, ≤200-word replies, findings to one file per feature, `.sdd/review-<feature>.md` (never share one `review.md` across features: it goes stale when the next feature overwrites it) (one line each: id|sev|path:line|state). Re-review Open items + fix diff only; stop after two clean rounds, then lock/merge.
 
 ## 5. Token rules
 Read the spec and the specific files only; `view` ranges; quiet commands; one parallel batch for independent reads; no plan recaps; cite `path:line`. Suggest `/new` at boundaries. End with ≤8 lines: tier · REQs · gate verdict · open findings · next.
