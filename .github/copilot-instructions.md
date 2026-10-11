@@ -1,10 +1,10 @@
 # Repository instructions
 
-## AI credits (AIC) log
+## AI cost log (USD)
 
-- Consumption of AI credits for this project is recorded in `.sdd/aic-log.md`
-  (generated, cumulative across sessions; the file is committed).
-- At the start of work, read `.sdd/aic-log.md` to see the cumulative AIU.
-- After finishing a task (and before committing), run `python3 scripts/aic-log.py`
-  and include the updated `.sdd/aic-log.md` in the commit.
-- Never edit `.sdd/aic-log.md` by hand.
+- AI cost for this project is recorded in USD in `.sdd/cost-log.md`
+  (generated from AIU, cumulative across sessions; the file is committed).
+- At the start of work, read `.sdd/cost-log.md` to see the cumulative cost.
+- After finishing a task (and before committing), run `python3 scripts/cost-log.py`
+  and include the updated `.sdd/cost-log.md` in the commit.
+- Never edit `.sdd/cost-log.md` by hand.

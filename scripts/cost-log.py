@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Regenerate .sdd/aic-log.md: AI credits (AIU) consumed by Copilot CLI sessions
+"""Regenerate .sdd/cost-log.md: AI cost in USD (from AIU) of by Copilot CLI sessions
 whose working directory is this project. Idempotent: safe to run at any time and
 from any session, so the cumulative record survives session changes.
 
-Usage: python3 scripts/aic-log.py [project-dir]
+Usage: python3 scripts/cost-log.py [project-dir]
 """
 import os, sqlite3, subprocess, sys
 from datetime import datetime, timezone
@@ -37,34 +37,35 @@ def main():
         d = per_session.setdefault(sid, {'created': created, 'summary': summary, 'models': {}})
         d['models'][model] = (n, (nano or 0) / NANO, tin or 0, tout or 0)
 
-    total = sum(v[1] for d in per_session.values() for v in d['models'].values())
+    USD = 0.01  # 1 AIU = 1 AI credit = 0.01 USD
+    total = sum(v[1] for d in per_session.values() for v in d['models'].values()) * USD
     by_model = {}
     for d in per_session.values():
         for m, (n, aiu, tin, tout) in d['models'].items():
             t = by_model.setdefault(m, [0, 0.0, 0, 0])
-            t[0] += n; t[1] += aiu; t[2] += tin; t[3] += tout
+            t[0] += n; t[1] += aiu * USD; t[2] += tin; t[3] += tout
 
-    out = ['# AI credits log', '',
+    out = ['# AI cost log (USD)', '',
            f'- Project: `{root}`',
            f'- Updated: {datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M")} UTC',
            f'- Sessions: {len(per_session)}',
-           f'- **Total: {total:.3f} AIU ≈ {total*0.01:,.2f} USD**',
-           '- Definition: AIU = AI credit = 0.01 USD; the session store holds `total_nano_aiu` (1 AIU = 1e9 nano-AIU). Official docs define 1 AI credit = 0.01 USD (docs.github.com, usage-based billing); AIU/nano-AIU naming is not in the official docs and comes from the Copilot CLI event schema (see https://shinyay.github.io/getting-started-with-token-optimization/foundations/aiu-and-rate-cards/).',
-           '- Values are recorded estimates from the local session store; the GitHub billing dashboard is authoritative.',
-           '', 'Regenerate with `python3 scripts/aic-log.py`. Do not edit by hand.', '',
-           '## By model', '', '| Model | Calls | AIU | Input tokens | Output tokens |', '|---|---:|---:|---:|---:|']
-    for m, (n, aiu, tin, tout) in sorted(by_model.items(), key=lambda x: -x[1][1]):
-        out.append(f'| {m} | {n} | {aiu:.3f} | {tin} | {tout} |')
-    out += ['', '## By session', '', '| Started (UTC) | Session | Model | Calls | AIU | Summary |', '|---|---|---|---:|---:|---|']
+           f'- **Total: ${total:,.2f}**',
+           '- Basis: `total_nano_aiu` in the Copilot CLI session store / 1e9 = AIU; 1 AIU = 1 AI credit = 0.01 USD (docs.github.com, usage-based billing).',
+           '- Local-machine estimate; the GitHub billing dashboard is authoritative.',
+           '', 'Regenerate with `python3 scripts/cost-log.py`. Do not edit by hand.', '',
+           '## By model', '', '| Model | Calls | USD | Input tokens | Output tokens |', '|---|---:|---:|---:|---:|']
+    for m, (n, usd, tin, tout) in sorted(by_model.items(), key=lambda x: -x[1][1]):
+        out.append(f'| {m} | {n} | ${usd:,.2f} | {tin} | {tout} |')
+    out += ['', '## By session', '', '| Started (UTC) | Session | Model | Calls | USD | Summary |', '|---|---|---|---:|---:|---|']
     for sid, d in per_session.items():
         for m, (n, aiu, _, _) in d['models'].items():
             summ = d['summary'].replace('|', '/').replace('\n', ' ')[:60]
-            out.append(f'| {d["created"]} | `{sid[:8]}` | {m} | {n} | {aiu:.3f} | {summ} |')
+            out.append(f'| {d["created"]} | `{sid[:8]}` | {m} | {n} | ${aiu*USD:,.2f} | {summ} |')
     os.makedirs(os.path.join(root, '.sdd'), exist_ok=True)
-    path = os.path.join(root, '.sdd', 'aic-log.md')
+    path = os.path.join(root, '.sdd', 'cost-log.md')
     with open(path, 'w') as f:
         f.write('\n'.join(out) + '\n')
-    print(f'{path}: {len(per_session)} sessions, {total:.3f} AIU')
+    print(f'{path}: {len(per_session)} sessions, ${total:,.2f}')
 
 if __name__ == '__main__':
     main()
