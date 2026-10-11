@@ -1554,6 +1554,18 @@ function stubGo(testPath, src, dir, add, made) {
     if (r === 'any' && sv && new RegExp(`\\blen\\(\\s*${sv}\\s*\\)|\\brange\\s+${sv}\\b|\\b${sv}\\[`).test(src)) r = '[]any';
     return c.multi ? `(${r}, error)` : r;
   };
+  // `cannot use pkg.F(..) (value of interface type any) as *pkg.T value`: the test fixes F's result type (#215)
+  const typedResults = (out, strip, typeSet) => {
+    let grew = false;
+    for (const m of out.matchAll(/cannot use (?:[\w.]+\.)?(\w+)\(.*?\) \(value of (?:interface )?type any\) as (\S+) value/g)) {
+      const t = strip(m[2]);
+      if (retTypes.get(m[1]) === t || !/^[\w*\[\]]+$/.test(t)) continue;
+      retTypes.set(m[1], t);
+      for (const n of t.match(/\b[A-Z]\w*\b/g) ?? []) if (!typeSet.has(n)) typeSet.set(n, new Set());
+      grew = true;
+    }
+    return grew;
+  };
   // the compile errors cover the whole test file: whether a member is a method is decided from every test in it, not only the requested one (#215)
   const fullSrc = (() => { try { return fs.readFileSync(path.join(ROOT, testPath), 'utf8'); } catch { return src; } })();
   const calledAnywhere = (member) => new RegExp(`\\.${member}\\s*\\(`).test(fullSrc);
@@ -1644,6 +1656,7 @@ function stubGo(testPath, src, dir, add, made) {
         for (const m of out.matchAll(new RegExp(`unknown field (\\w+) in struct literal of type ${qualifier}\\.(\\w+)`, 'g'))) {
           if (e.types.has(m[2]) && !e.types.get(m[2]).has(m[1])) { e.types.get(m[2]).add(m[1]); grew = true; }
         }
+        if (typedResults(out, (x) => x.replace(new RegExp(`\\b${e.alias}\\.`, 'g'), ''), e.types)) grew = true;
         if (!grew) break;
         fs.writeFileSync(e.file, render());
       }
@@ -1692,6 +1705,7 @@ function stubGo(testPath, src, dir, add, made) {
     for (const m of out.matchAll(/unknown field (\w+) in struct literal of type (\w+)/g)) {
       if (types.has(m[2]) && !types.get(m[2]).has(m[1])) { types.get(m[2]).add(m[1]); grew = true; }
     }
+    if (typedResults(out, (x) => x, types)) grew = true;
     if (!grew) break;
     fs.writeFileSync(target, render());
   }

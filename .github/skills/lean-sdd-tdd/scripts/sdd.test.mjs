@@ -5973,3 +5973,32 @@ test('#219 JS tdd stub: require() of an existing CJS module gets the missing nam
   assert.doesNotMatch(cjs, /\bexport\b|function sub[\s\S]*function sub/);
   assert.equal(spawnSync('node', ['--check', path.join(d, 'src/add.cjs')]).status, 0);
 });
+
+test('#215 go tdd stub: a result the test passes as a concrete type (*ring.Ring, []*ring.Ring) is not left as any', { skip: spawnSync('which', ['go']).status !== 0 }, () => {
+  const spec = '---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | x shall hold. | TEST-A-001 |\n';
+  const ext = mini(spec, {
+    'go.mod': 'module example.com/kv/core\n\ngo 1.22\n',
+    'ring/ring_test.go': [
+      'package ring_test', '', 'import (', '\t"testing"', '', '\t"example.com/kv/core/ring"', ')', '',
+      'func build(t testing.TB) *ring.Ring {', '\treturn ring.Make(8)', '}', '',
+      'func many(n int) []*ring.Ring {', '\treturn ring.Many(n)', '}', '',
+      '// @id TEST-A-001', 'func TestA001(t *testing.T) {', '\tr := build(t)', '\t_ = r.Add("k")', '\t_ = many(2)', '}', '',
+    ].join('\n'),
+  });
+  const o = sdd(ext, 'tdd', 'stub', 'TEST-A-001').out;
+  const body = fs.readFileSync(path.join(ext, 'ring/ring.go'), 'utf8');
+  assert.match(body, /func Make\(a0 any\) \*Ring/);
+  assert.match(body, /func Many\(a0 any\) \[\]\*Ring/);
+  assert.match(o, /compile-checked/, o);
+  const inPkg = mini(spec, {
+    'go.mod': 'module example.com/kv/core\n\ngo 1.22\n',
+    'ring/ring_test.go': [
+      'package ring', '', 'import "testing"', '',
+      'func build(t testing.TB) *Ring {', '\treturn Make(8)', '}', '',
+      '// @id TEST-A-001', 'func TestA001(t *testing.T) {', '\t_ = build(t)', '}', '',
+    ].join('\n'),
+  });
+  const o2 = sdd(inPkg, 'tdd', 'stub', 'TEST-A-001').out;
+  assert.match(fs.readFileSync(path.join(inPkg, 'ring/ring.go'), 'utf8'), /func Make\(a0 any\) \*Ring/);
+  assert.match(o2, /compile-checked/, o2);
+});
