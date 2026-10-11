@@ -5959,3 +5959,28 @@ test('#233 tech-writer lint ignores an app named todo but flags TODO', () => {
   assert.equal((o.match(/placeholder/gi) ?? []).length >= 1, true);
   assert.doesNotMatch(o, /The todo app/, o);
 });
+
+test('#246 Elixir stub: multi-alias, alias-only empty module, umbrella sibling, pipe/keyword arity, test-local helper', () => {
+  const spec = '---\nfeature: m\ntier: T1\n---\n| REQ-M-001 | a shall hold. | TEST-M-001 |\n| REQ-M-002 | b shall hold. | TEST-M-002 |\n| REQ-M-003 | c shall hold. | TEST-M-003 |\n';
+  const mk = (n) => `  # @id TEST-M-00${n}\n  # @verifies REQ-M-00${n}\n`;
+  const d = mini(spec, {
+    'mix.exs': 'defmodule U.MixProject do\n  use Mix.Project\n  def project, do: [apps_path: "apps", deps: []]\nend\n',
+    'apps/core/mix.exs': 'defmodule Core.MixProject do\n  use Mix.Project\n  def project, do: [app: :core, version: "0.1.0", deps: []]\nend\n',
+    'apps/core/lib/store.ex': 'defmodule Core.Store do\n  def size(s), do: length(s)\nend\n',
+    'apps/web/mix.exs': 'defmodule Web.MixProject do\n  use Mix.Project\n  def project, do: [app: :web, version: "0.1.0", deps: []]\nend\n',
+    'apps/web/test/test_helper.exs': 'ExUnit.start()\n',
+    'apps/web/test/m_test.exs': `defmodule MTest do\n  use ExUnit.Case\n  alias Raft.{Election, Log}\n  alias Web.Helper, as: H\n  defmodule Web.Helper do\n    def x, do: 1\n  end\n\n${mk(1)}  test "a" do\n    assert Election.f(Log.new()) == 1\n  end\n\n${mk(2)}  test "b" do\n    assert [1] |> Core.Store.size() == 1\n    assert Web.Client.new(1, "c", a: 1, b: 2) == 1\n    assert H.x() == 1\n  end\n\n${mk(3)}  test "c" do\n    assert Election.g(1) == 1\n  end\nend\n`,
+  });
+  fs.rmSync(path.join(d, 'package.json'));
+  const r1 = sdd(d, 'tdd', 'stub', 'TEST-M-001'); assert.match(r1.out, /stubbed/, r1.out);
+  const w = (f) => path.join(d, 'apps/web', f);
+  assert.ok(fs.existsSync(w('lib/raft/election.ex')));
+  assert.ok(fs.existsSync(w('lib/raft/log.ex')));
+  assert.ok(!fs.existsSync(w('lib/raft.ex')));
+  const r2 = sdd(d, 'tdd', 'stub', 'TEST-M-002');
+  assert.ok(!fs.existsSync(w('lib/core/store.ex')), r2.out);
+  assert.ok(!fs.existsSync(w('lib/web/helper.ex')), r2.out);
+  assert.match(fs.readFileSync(w('lib/web/client.ex'), 'utf8'), /def new\(_a1, _a2, _a3\)/);
+  sdd(d, 'tdd', 'stub', 'TEST-M-003');
+  assert.match(fs.readFileSync(w('lib/raft/election.ex'), 'utf8'), /def g\(_a1\)/);
+});

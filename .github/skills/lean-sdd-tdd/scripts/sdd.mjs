@@ -2543,25 +2543,26 @@ function stubEx(testPath, scoped, add, made) {
   const mods = new Set();
   const resolve = (n) => (full.get(n.split('.')[0]) ? full.get(n.split('.')[0]) + n.slice(n.split('.')[0].length) : n);
   for (const m of code.matchAll(/\balias\s+([A-Z][\w.]*)\.\{([^}]*)\}/g)) for (const x of m[2].split(',')) { const k = x.trim().split('.'); full.set(k.at(-1), `${m[1]}.${x.trim()}`); mods.add(`${m[1]}.${x.trim()}`); }
-  for (const m of code.matchAll(/\balias\s+([A-Z][\w.]*)(?!\.\{)(?:\s*,\s*as:\s*([A-Z]\w*))?/g)) { full.set(m[2] ?? m[1].split('.').at(-1), m[1]); mods.add(m[1]); }
-  const imported = [];
-  for (const m of code.matchAll(/\b(?:import|use|require)\s+([A-Z][\w.]*)/g)) { mods.add(resolve(m[1])); if (m[0].startsWith('import')) imported.push(resolve(m[1])); }
+  for (const m of code.matchAll(/\balias\s+([A-Z][\w.]*)(?![\w]|\.\{)(?:\s*,\s*as:\s*([A-Z]\w*))?/g)) { full.set(m[2] ?? m[1].split('.').at(-1), m[1]); mods.add(m[1]); }
+  const imported = [], needed = new Set();
+  for (const m of code.matchAll(/\b(?:import|use|require)\s+([A-Z][\w.]*)/g)) { mods.add(resolve(m[1])); needed.add(resolve(m[1])); if (m[0].startsWith('import')) imported.push(resolve(m[1])); }
   const defs = new Map();
   const arityAt = (i) => {
-    let depth = 0, n = 0, any = false, q = '';
+    let depth = 0, n = 0, any = false, q = '', kw = false, itemStart = true;
     for (; i < code.length; i++) {
       const c = code[i];
+      if (!depth && !q && itemStart && !/\s/.test(c)) { kw = /^[a-z_]\w*:\s/.test(code.slice(i)); itemStart = false; }
       if (q) { if (c === '\\') i++; else if (c === q) q = ''; continue; }
       if (c === '"' || c === "'") { q = c; any = true; continue; }
       if (/[([{]/.test(c)) { depth++; any = true; continue; }
       if (/[)\]}]/.test(c)) { if (!depth) return any ? n + 1 : 0; depth--; continue; }
-      if (c === ',' && !depth) n++;
+      if (c === ',' && !depth) { if (!(kw && /^\s*[a-z_]\w*:\s/.test(code.slice(i + 1)))) n++; itemStart = true; }
       else if (!/\s/.test(c)) any = true;
     }
     return any ? n + 1 : 0;
   };
   const addDef = (mod, f, arity) => { mods.add(mod); if (!defs.has(mod)) defs.set(mod, new Map()); const d = defs.get(mod); d.set(`${f}/${arity}`, { f, arity }); };
-  for (const m of code.matchAll(/(?<![\w.:])([A-Z]\w*(?:\.[A-Z]\w*)*)\.([a-z_]\w*[!?]?)\(/g)) addDef(resolve(m[1]), m[2], arityAt(m.index + m[0].length));
+  for (const m of code.matchAll(/(?<![\w.:])([A-Z]\w*(?:\.[A-Z]\w*)*)\.([a-z_]\w*[!?]?)\(/g)) { needed.add(resolve(m[1])); addDef(resolve(m[1]), m[2], arityAt(m.index + m[0].length) + (/\|>\s*$/.test(code.slice(0, m.index)) ? 1 : 0)); }
   const local = new Set([...code.matchAll(/\bdef(?:p|macro)?\s+([a-z_]\w*[!?]?)/g)].map((m) => m[1]));
   const RESERVED = /^(?:assert|refute|assert_\w+|refute_\w+|test|describe|setup|setup_all|on_exit|doctest|def|defp|defmodule|defmacro|if|unless|case|cond|with|for|fn|raise|reraise|throw|catch|rescue|try|receive|quote|unquote|import|alias|use|require|elem|length|hd|tl|is_\w+|inspect|to_string|spawn\w*|send|self|apply|put_elem|abs|div|rem|round|trunc|max|min|not|and|or|struct|sigil_\w|tag|capture_\w+|start_supervised!?|stop_supervised!?|flunk|raise)$/;
   for (const mod of imported) for (const m of code.matchAll(/(?<![\w.:@&])([a-z_]\w*[!?]?)\(/g)) if (!RESERVED.test(m[1]) && !local.has(m[1])) addDef(mod, m[1], arityAt(m.index + m[0].length));
@@ -2569,17 +2570,25 @@ function stubEx(testPath, scoped, add, made) {
   const defined = new Map();
   const walk = (d) => { for (const e of fs.existsSync(d) ? fs.readdirSync(d, { withFileTypes: true }) : []) { const p = path.join(d, e.name); if (e.isDirectory()) { if (!/^(?:_build|deps|\.git|node_modules)$/.test(e.name)) walk(p); } else if (/\.exs?$/.test(e.name) && p !== path.join(ROOT, testPath)) for (const m of fs.readFileSync(p, 'utf8').matchAll(/\bdefmodule\s+([A-Z][\w.]*)/g)) defined.set(m[1], p); } };
   walk(root);
+  // umbrella: modules owned by a sibling app are defined too
+  for (let up = path.dirname(root); up.startsWith(ROOT) && up !== root; up = path.dirname(up)) {
+    const mx = path.join(up, 'mix.exs');
+    if (fs.existsSync(mx) && /apps_path/.test(fs.readFileSync(mx, 'utf8'))) { walk(path.join(up, 'apps')); break; }
+    if (up === ROOT) break;
+  }
+  const inTest = new Set([...fs.readFileSync(path.join(ROOT, testPath), 'utf8').matchAll(/\bdefmodule\s+([A-Z][\w.]*)/g)].map((m) => m[1]));
   const unresolved = [];
   for (const mod of mods) {
-    if (EX_STD.test(mod)) continue;
+    if (EX_STD.test(mod) || inTest.has(mod) || [...full].some(([k, v]) => v === mod && inTest.has(k))) continue;
     const want = [...(defs.get(mod)?.values() ?? [])];
+    if (!want.length && !needed.has(mod) && !defined.has(mod)) continue;
     const stubOf = ({ f, arity }) => `  def ${f}(${Array.from({ length: arity }, (_, i) => `_a${i + 1}`).join(', ')}), do: raise("not implemented: ${f}")\n`;
     if (defined.has(mod)) {
       const file = defined.get(mod), text = fs.readFileSync(file, 'utf8');
       const have = new Set([...text.matchAll(/\b(?:def|defp|defmacro|defdelegate)\s+([a-z_]\w*[!?]?)/g)].map((m) => m[1]));
       const missing = want.filter((d) => !have.has(d.f));
       if (!missing.length) continue;
-      if (/not implemented: /.test(text) && /\bend\s*$/.test(text)) { fs.writeFileSync(file, text.replace(/\bend\s*$/, `\n${missing.map(stubOf).join('')}end\n`)); made.push(rel(file)); }
+      if ((/not implemented: /.test(text) || (/@id CODE-\S*-STUB-/.test(text) && !/\bdef/.test(text))) && /\bend\s*$/.test(text)) { fs.writeFileSync(file, text.replace(/\bend\s*$/, `\n${missing.map(stubOf).join('')}end\n`)); made.push(rel(file)); }
       else unresolved.push(`${missing.map((d) => d.f).join(', ')} in ${rel(file)}`);
       continue;
     }
@@ -3442,14 +3451,14 @@ function cmdTdd() {
     else if (made.length) out(made.verified === 'ok' ? `stubbed (throwing, compile-checked): ${made.join(', ')} — now run: tdd red ${t.id}` : made.verified === 'fail' ? `stubbed (throwing): ${made.join(', ')} — ! the test still does not compile: ${made.verifyError}\n! could not fully stub ${t.id}: finish the stub by hand (types, struct fields, methods), then run: tdd red ${t.id}` : `stubbed (throwing; compile NOT verified${scripted ? '' : ' — no checker for this language'}): ${made.join(', ')} — now run: tdd red ${t.id}; if it reports a load/compile error, finish the stub by hand`);
     else if (made.verified === 'partial') out(`nothing was stubbed for ${t.id}: it has no compile errors of its own — NOT compile-checked`);
     else if (made.verified === 'fail') out(`nothing could be stubbed for ${t.id}: the test does not compile (${made.verifyError}) — write the missing code by hand`);
-    else out(scripted ? `no missing relative imports in ${t.path}` : made.verified === 'ok' ? `nothing to stub for ${t.id} in ${t.path} (compile-checked)` : `nothing to stub for ${t.id} in ${t.path} (stubs only cover what this generator supports for the language); if the test still does not compile, write the missing code by hand`);
+    else out(scripted ? `no missing relative imports in ${t.path}` : made.verified === 'ok' ? `nothing to stub for ${t.id} in ${t.path} (compile-checked)` : `nothing to stub for ${t.id} in ${t.path} (nothing new to generate: referenced code is already stubbed/defined, or the generator does not cover this construct); run tdd red, and if the test does not compile write the missing code by hand`);
     if (made.verified === 'partial') out(`! ${made.verifyError} — the requested test has no compile errors of its own; stub or implement the other tests (\`tdd stub <their ID>\`) before running the project's tests`);
     for (const n of [...new Set(made.notes ?? [])]) out(`! ${n}`);
     if (made.realMissing?.length) out(`! not stubbed: ${made.realMissing.join('; ')} — those modules hold real code, which stubs never edit: add the names by hand`);
     if (made.warnings?.length) out(`! not stubbed: ${[...new Set(made.warnings)].join('; ')} — add the exports by hand`);
     return made.verified === 'fail' && /\.(?:c|cc|cpp|cxx)$/.test(t.path) ? 1 : 0;
   }
-  if (!['red', 'green', 'refactor'].includes(sub)) { out('usage: tdd red|green|refactor <TEST-ID> [--req REQ] [--weak] | tdd stub <TEST-ID> | tdd check'); return 2; }
+  if (!['red', 'green', 'refactor'].includes(sub)) { out('usage: tdd red|green|refactor <TEST-ID> [--req REQ] [--weak] [--expect <text>] [--retest <why>] [--characterization <why>] [--allow-setup-red] | tdd stub <TEST-ID> | tdd check | tdd merge-ledger'); return 2; }
   if (!pos[2]) { out(`usage: tdd ${sub} <TEST-ID> [<TEST-ID>...] [--req REQ] [--weak]`); return 2; }
   if (flags.characterization === true) { out('usage: --characterization "<reason>" needs a reason text'); return 2; }
   // batch: run each ID in turn (flags such as --req/--characterization apply to every ID) (#126)
@@ -4464,7 +4473,7 @@ function importRev() {
       const body = src.replace(/#[^\n]*/g, '');
       const full = (n) => { const h = n.split('.')[0]; return al.has(h) ? al.get(h) + n.slice(h.length) : n; };
       for (const m of body.matchAll(/\balias\s+([A-Z][\w.]*)\.\{([^}]*)\}/g)) for (const x of m[2].split(',')) { const q = `${m[1]}.${x.trim()}`; al.set(q.split('.').at(-1), q); refs.add(q); refs.add(m[1]); }
-      for (const m of body.matchAll(/\balias\s+([A-Z][\w.]*)(?!\.\{)(?:\s*,\s*as:\s*([A-Z]\w*))?/g)) { al.set(m[2] ?? m[1].split('.').at(-1), m[1]); refs.add(m[1]); }
+      for (const m of body.matchAll(/\balias\s+([A-Z][\w.]*)(?![\w]|\.\{)(?:\s*,\s*as:\s*([A-Z]\w*))?/g)) { al.set(m[2] ?? m[1].split('.').at(-1), m[1]); refs.add(m[1]); }
       for (const m of body.matchAll(/\b(?:import|use|require)\s+([A-Z][\w.]*)/g)) refs.add(full(m[1]));
       for (const m of body.matchAll(/(?<![\w.:])([A-Z]\w*(?:\.[A-Z]\w*)*)/g)) refs.add(full(m[1]));
       for (const r of refs) (exMod.get(r) ?? []).forEach((t) => add(t, f));
