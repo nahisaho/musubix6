@@ -5848,3 +5848,15 @@ test('ExUnit: a missing module is a load error, a skipped/excluded test is not G
   const skipped = sdd(d, 'tdd', 'red', 'TEST-E-002');
   assert.match(skipped.out, /REJECTED[^\n]*no test matched|skipped/i, skipped.out);
 });
+
+test('#240 Julia stub resolves include(joinpath(@__DIR__, ...)); plan depends accepts whitespace separators', () => {
+  const spec = '---\nfeature: c\ntier: T1\n---\n| REQ-C-001 | When add, the system shall sum. | TEST-C-001 |\n';
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-'));
+  spawnSync('git', ['init', '-q'], { cwd: d });
+  for (const [f, body] of Object.entries({ 'Project.toml': 'name = "X"\n', '.sdd/specs/c.md': spec, 'test/t.jl': 'include(joinpath(@__DIR__, "..", "src", "C.jl"))\n# @id TEST-C-001 @verifies REQ-C-001\n@test c_add(1, 2) == 3\n' })) { fs.mkdirSync(path.dirname(path.join(d, f)), { recursive: true }); fs.writeFileSync(path.join(d, f), body); }
+  const r = sdd(d, 'tdd', 'stub', 'TEST-C-001');
+  assert.match(r.out, /src\/C\.jl/, r.out);
+  assert.match(fs.readFileSync(path.join(d, 'src/C.jl'), 'utf8'), /c_add\(args\.\.\.; kwargs\.\.\.\) = error/);
+  fs.writeFileSync(path.join(d, '.sdd/plan.md'), '| order | feature | depends | note |\n|---|---|---|---|\n| 1 | a | - | |\n| 2 | b | - | |\n| 3 | c | a b | |\n');
+  assert.doesNotMatch(sdd(d, 'plan').out, /unknown dependency/);
+});

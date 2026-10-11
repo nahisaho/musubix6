@@ -97,3 +97,4 @@ Absolute and root-relative review paths, including paths with spaces, identify t
 - C/C++ (#221): the first `tdd red/green` after a clean build no longer fails with "changed while running" when only the build-generated `compile_commands.json` context moved; an edit to the test file itself is still refused.
 - Julia (#223): a macro-generated `@test` (reported at the macro definition's line) is credited to the test whose body contains its call-site stack frame, so `fails with:` and `--expect` see it.
 - ExUnit: the oracle closure of a `*_test.exs` includes `test/test_helper.exs`, `test/support/**` and `Code.require_file`/`import_file` targets; `impact` follows `alias`/`import`/`use`/`require` (and aliased `Mod.fun` calls) to the files that `defmodule` the module.
+- plan.md (#240): the depends column is separated by commas and/or whitespace (`a, b` or `a b`).

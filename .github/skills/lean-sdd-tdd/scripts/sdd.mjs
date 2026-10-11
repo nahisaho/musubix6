@@ -2026,6 +2026,8 @@ function stubC(testPath, src, dir, add, made) {
 
 // php / julia / R: stub the file the test loads (require/include/source) with throwing functions for the unknown calls
 function stubScript(lang, src, dir, add, made) {
+  // Julia `include(joinpath(@__DIR__, "..", "src", "Q.jl"))` resolves like the literal relative path (#240)
+  if (lang === 'jl') src = src.replace(/\binclude\(\s*(?:Base\.)?joinpath\(\s*@__DIR__\s*,\s*((?:"[^"\n]*"\s*,?\s*)+)\)\s*\)/g, (m, parts) => `include("${[...parts.matchAll(/"([^"\n]*)"/g)].map((x) => x[1]).join('/')}")`);
   const loadRe = { php: /(?:require|include)(?:_once)?\s*\(?\s*(?:__DIR__\s*\.\s*)?['"]([^'"]+\.php)['"]/g, jl: /\binclude\(\s*"([^"]+\.jl)"/g, r: /\bsource\(\s*"([^"]+\.[Rr])"/g }[lang];
   const code = src.split('\n').filter((l) => !/^\s*(#|\/\/|\*|\/\*)/.test(l)).join('\n');
   const defined = new Set([...code.matchAll(/\bfunction\s+&?([A-Za-z_]\w*!?)|^\s*([A-Za-z_]\w*)\s*<-\s*function|^\s*([A-Za-z_]\w*!?)\(.*\)\s*=(?!=)/gm)].map((m) => m[1] ?? m[2] ?? m[3]));
@@ -4190,7 +4192,7 @@ function loadPlan() {
     const c = l.trim().replace(/^\||\|$/g, '').split('|').map((x) => x.trim());
     if (c.length >= 2 && l.trim().startsWith('|') && !/^\d+$/.test(c[0]) && !/^(order|no\.?|#|:?-+:?)$/i.test(c[0]) && c[1]) bad.push(`plan.md row ignored (order "${c[0]}" is not a number): ${c[1]}`);
     if (c.length < 2 || !/^\d+$/.test(c[0])) continue;
-    rows.push({ order: Number(c[0]), feature: c[1], deps: (c[2] ?? '').split(',').map((x) => x.trim()).filter((x) => x && !/^[-—–]$/.test(x)), note: c[3] ?? '' });
+    rows.push({ order: Number(c[0]), feature: c[1], deps: (c[2] ?? '').split(/[,\s]+/).map((x) => x.trim()).filter((x) => x && !/^[-—–]$/.test(x)), note: c[3] ?? '' });
   }
   return Object.assign(rows.sort((a, b) => a.order - b.order), { bad });
 }
