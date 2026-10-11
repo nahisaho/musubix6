@@ -132,7 +132,16 @@ function maskAttributes(masked) {
 }
 function phpImports(txt, kind = '') {
   const aliases = new Map();
-  for (const m of maskBraces(txt).matchAll(/\buse\s+([^;]+);/gi)) {
+  const masked = maskBraces(txt);
+  // `use Trait;` inside a class body is not an import (#222)
+  const bodyDepths = [], stack = [];
+  for (const t of masked.matchAll(/\bnamespace\s*[\w\\]*\s*\{|[{}]/g)) {
+    if (t[0] === '}') stack.pop(); else stack.push(t[0] === '{');
+    bodyDepths.push([t.index, stack.filter(Boolean).length]);
+  }
+  const insideBody = (index) => (bodyDepths.filter(([at]) => at < index).at(-1)?.[1] ?? 0) > 0;
+  for (const m of masked.matchAll(/\buse\s+([^;]+);/gi)) {
+    if (insideBody(m.index)) continue;
     const group = /^([^{}]+)\{([^{}]+)\}$/.exec(m[1].trim());
     const prefix = /^(?:(function|const)\s+)?(.*)$/i.exec((group?.[1] ?? '').trim());
     for (const item of (group?.[2] ?? m[1]).split(',')) {
@@ -517,6 +526,7 @@ function localSourceDependencies(file, text, rootFile = false, cFamily = false, 
     } else if (ext === '.php') {
       for (const m of text.matchAll(/\b(?:extends|implements)\s+([\\\w]+)/g)) references.add(m[1]);
       for (const [n] of phpImports(text)) references.add(n);
+      for (const m of text.matchAll(/^[ \t]+use\s+([\\\w][\\\w, \t]*?)\s*[;{]/gm)) for (const n of m[1].split(',')) references.add(n.trim());
       for (const m of maskBraces(text).matchAll(/(?<![\w\\])(\\?[\w\\]+)(?=\s*::)|\bnew\s+(\\?[\w\\]+)/g)) references.add(m[1] ?? m[2]);
       const functions = new Set(phpImports(text, 'function').values());
       if (functions.size) for (const f of workspaceFiles().filter((f) => f.endsWith('.php'))) {

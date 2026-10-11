@@ -5410,3 +5410,10 @@ test('#217 Rust macro_rules-generated tests resolve the first macro argument as 
   const r = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
   assert.equal(r.code, 0, r.out);
 });
+
+test('#222 PHP traits used by the test class are hashed oracles', () => {
+  const d = batch2Source('tests/CalcTest.php', '<?php\nnamespace Probe\\Tests;\nuse Probe\\Support\\RowsTrait;\nfinal class CalcTest {\n    use RowsTrait;\n    // @id TEST-CALC-001 @verifies REQ-CALC-001\n    public function test_calc_001() { self::assertSame(self::rows(), 4); }\n}\n');
+  writeAll(d, { 'tests/Support/RowsTrait.php': '<?php\nnamespace Probe\\Support;\ntrait RowsTrait { public static function rows(): int { return 5; } }\n' });
+  fakeOut(d, 'There was 1 failure:\n1) Probe\\Tests\\CalcTest::test_calc_001\nFailed asserting that 5 is identical to 4.\nTests: 1, Assertions: 1, Failures: 1.');
+  oracleDrift(d, 'TEST-CALC-001', () => writeAll(d, { 'tests/Support/RowsTrait.php': '<?php\nnamespace Probe\\Support;\ntrait RowsTrait { public static function rows(): int { return 4; } }\n' }));
+});
