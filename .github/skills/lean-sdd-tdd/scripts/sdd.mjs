@@ -3900,7 +3900,7 @@ function loadPlan() {
     const c = l.trim().replace(/^\||\|$/g, '').split('|').map((x) => x.trim());
     if (c.length >= 2 && l.trim().startsWith('|') && !/^\d+$/.test(c[0]) && !/^(order|no\.?|#|:?-+:?)$/i.test(c[0]) && c[1]) bad.push(`plan.md row ignored (order "${c[0]}" is not a number): ${c[1]}`);
     if (c.length < 2 || !/^\d+$/.test(c[0])) continue;
-    rows.push({ order: Number(c[0]), feature: c[1], deps: (c[2] ?? '').split(',').map((x) => x.trim()).filter((x) => x && x !== '-'), note: c[3] ?? '' });
+    rows.push({ order: Number(c[0]), feature: c[1], deps: (c[2] ?? '').split(',').map((x) => x.trim()).filter((x) => x && !/^[-—–]$/.test(x)), note: c[3] ?? '' });
   }
   return Object.assign(rows.sort((a, b) => a.order - b.order), { bad });
 }
@@ -4033,7 +4033,7 @@ function importRev() {
   }
   const csVisible = (f, g) => { const of = csOwner(f), og = csOwner(g); return !of.length || !og.length || of.some((a) => og.some((b) => csReach.get(a.file)?.has(b.file))); };
   for (const g of files) {
-    if (g.endsWith('.cs')) { const code = fs.readFileSync(path.join(ROOT, g), 'utf8'); const ns = /^\s*namespace\s+([\w.]+)/m.exec(code)?.[1]; if (ns) { const types = [...code.matchAll(/\b(?:class|record|struct|interface|enum)\s+(\w+)/g)].map((m) => m[1]); csNs.set(g, { ns, types }); } }
+    if (g.endsWith('.cs')) { const code = fs.readFileSync(path.join(ROOT, g), 'utf8'); const ns = /^\s*namespace\s+([\w.]+)/m.exec(code)?.[1]; if (ns) { const types = [...code.matchAll(/\b(?:class|record|struct|interface|enum)\s+(?:(?:struct|class)\s+)?(\w+)/g)].map((m) => m[1]); csNs.set(g, { ns, types }); } }
     else if (g.endsWith('.jl')) for (const m of fs.readFileSync(path.join(ROOT, g), 'utf8').matchAll(/^\s*module\s+(\w+)/gm)) { if (!jlMod.has(m[1])) jlMod.set(m[1], []); jlMod.get(m[1]).push(g); }
   }
   for (const f of files) {

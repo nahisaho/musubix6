@@ -5430,3 +5430,17 @@ test('#222 impact follows PHP `use function` / `use const` imports, including gr
   const reached = JSON.parse(sdd(d, 'impact', 'src/A/fn.php', '--json').out).reachedFiles;
   assert.ok(reached.includes('src/B/D.php') && reached.includes('src/C/E.php'), reached.join(','));
 });
+
+test('#218 plan accepts an em dash as "no dependency"; impact sees `record struct` types', () => {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-i218-'));
+  const w = (f, b) => { fs.mkdirSync(path.dirname(path.join(d, f)), { recursive: true }); fs.writeFileSync(path.join(d, f), b); };
+  spawnSync('git', ['init', '-q'], { cwd: d });
+  for (const f of ['a', 'b']) w(`.sdd/specs/${f}.md`, `---\nfeature: ${f}\ntier: T1\n---\n- REQ-${f.toUpperCase()}-001 x\n`);
+  w('.sdd/plan.md', '| order | feature | depends | note |\n|---|---|---|---|\n| 1 | a | — | x |\n| 2 | b | a | y |\n');
+  w('Geo/Pt.cs', 'namespace Lib.Geo;\n// @id CODE-A-001 @implements REQ-A-001\npublic readonly record struct Pt(int X, int Y);\n');
+  w('Route/Route.cs', 'using Lib.Geo;\nnamespace Lib.Route;\n// @id CODE-B-001 @implements REQ-B-001\npublic class Route { Pt p; }\n');
+  sdd(d, 'init');
+  const pl = sdd(d, 'plan');
+  assert.doesNotMatch(pl.out + pl.err, /unknown dependency/);
+  assert.ok(JSON.parse(sdd(d, 'impact', 'Geo/Pt.cs', '--json').out).reachedFiles.includes('Route/Route.cs'));
+});
