@@ -2253,6 +2253,13 @@ function stubCs(testPath, src, id, made) {
   const usingNs = (l) => /^\s*(?:global\s+)?using\s+(?:static\s+)?([\w.]+)\s*;/.exec(l)?.[1];
   const ownNs = /^\s*namespace\s+([\w.]+)/m.exec(src)?.[1];
   const usings = [...src.matchAll(/^\s*using\s+(?:static\s+)?([\w.]+)\s*;/gm)].map((m) => m[1]);
+  // `global using X;` in another file of the test project (GlobalUsings.cs) applies to this test too (#218)
+  const globalLines = new Map();
+  for (const f of gitFiles('*.cs')) { try {
+    if (f === testPath || !g.ownersOf(f)?.some((o) => o.file === testProj.file)) continue;
+    const ls = fs.readFileSync(path.join(ROOT, f), 'utf8').split('\n');
+    if (ls.some((l) => /^\s*global\s+using\s+(?:static\s+)?[\w.]+\s*;/.test(l))) { globalLines.set(f, ls); for (const l of ls) { const m = /^\s*global\s+using\s+(?:static\s+)?([\w.]+)\s*;/.exec(l); if (m) usings.push(m[1]); } }
+  } catch {} }
   const refProjs = [...g.deps(testProj.file)].filter((f) => f !== testProj.file).map((f) => g.projs.get(f)).filter((p) => !p.test);
   const pname = (p) => path.posix.basename(p.file).replace(/\.\w+proj$/, '');
   const ours = new Set();
@@ -2360,13 +2367,13 @@ function stubCs(testPath, src, id, made) {
   const handled = new Set();
   for (let round = 0; round < 8 && !res.ok; round++) {
     if (res.infra && !res.diags.some((d) => /^CS/.test(d.code))) { (made.notes ??= []).push(`dotnet build could not run (restore/infra): ${(res.raw.split('\n').find((l) => /error/.test(l)) ?? '').trim().slice(0, 160)} — nothing was compile-checked`); return made; }
-    const mine = res.diags.filter((d) => d.file === testPath && inScope(d.line - 1) && /^CS/.test(d.code));
+    const mine = res.diags.filter((d) => ((d.file === testPath && inScope(d.line - 1)) || (globalLines.has(d.file) && usingNs(globalLines.get(d.file)[d.line - 1] ?? ''))) && /^CS/.test(d.code));
     if (!mine.length) break;
     const cand = [];
     const missingTypes = new Map();
     const members = [];
     for (const d of mine) {
-      const l = lines[d.line - 1] ?? '';
+      const l = (d.file === testPath ? lines : globalLines.get(d.file) ?? [])[d.line - 1] ?? '';
       const un = usingNs(l);
       const n = q(d.msg)[0];
       if (un && /^CS(0246|0234|0400)$/.test(d.code)) { unresolved.add(un); if (!cand.includes(un)) cand.push(un); continue; }

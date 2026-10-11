@@ -5479,3 +5479,20 @@ test('#215 go tdd stub: a member called as a method anywhere in the file is neve
   assert.doesNotMatch(body, /^\tLocate any$/m);
   assert.doesNotMatch(sdd(d, 'tdd', 'stub', 'TEST-A-001').out, /same name/);
 });
+
+test('#218 C# tdd stub honours `global using` namespaces declared in another file of the test project', DN, (t) => {
+  const d = tree({
+    'src/Lib/Lib.csproj': libProj(),
+    'tests/T/T.csproj': testProj(XUNIT, ['..\\..\\src\\Lib\\Lib.csproj']),
+    'tests/T/GlobalUsings.cs': 'global using Xunit;\nglobal using Lib.Calc;\n',
+    'tests/T/CalcTests.cs': [
+      'namespace T;', '', 'public class CalcTests', '{', '    /** @id TEST-A-001 @verifies REQ-A-001 */', '    [Fact]', '    public void adds()', '    {',
+      '        Assert.Equal(3, Calculator.Add(1, 2));', '    }', '}', '',
+    ].join('\n'),
+  });
+  if (!restores(d, 'tests/T/T.csproj')) return t.skip('NuGet packages cannot be restored');
+  const r = sddRaw(d, 'tdd', 'stub', 'TEST-A-001');
+  assert.ok(fs.existsSync(path.join(d, 'src/Lib/Calculator.cs')), r.out);
+  assert.match(fs.readFileSync(path.join(d, 'src/Lib/Calculator.cs'), 'utf8'), /namespace Lib\.Calc;/);
+  assert.match(r.out, /compile-checked/);
+});
