@@ -2624,14 +2624,19 @@ function stubFor(testPath, id) {
     return hit ? path.join(ROOT, hit[1]) : null;
   };
   const imps = [...scoped.matchAll(/import\s+([^'";]*?)\s+from\s+['"]([^'"\n]+)['"]/g)].map((m) => ({ 1: m[1].replace(/\s+/g, ' ').trim(), 2: m[2] }));
-  for (const m of scoped.matchAll(/(?:(?:const|let|var)\s+(\{[^}]*\}|\w+)\s*=\s*)?await\s+import\(\s*['"](\.{1,2}\/[^'"]+)['"]\s*\)/g)) imps.push({ 1: m[1] && m[1].startsWith('{') ? m[1] : '', 2: m[2] });
+  // dynamic `import('<relative or package>')`: a bound namespace identifier means its members are used (#219)
+  for (const m of scoped.matchAll(/(?:(?:const|let|var)\s+(\{[^}]*\}|[\w$]+)\s*=\s*)?await\s+import\(\s*['"]([^'"\n]+)['"]\s*\)/g)) imps.push({ 1: m[1] ? (m[1].startsWith('{') ? m[1].replace(/\s*:\s*[\w$]+/g, '') : `* as ${m[1]}`) : '', 2: m[2] });
+  // CommonJS `require('<relative or package>')` gets a `module.exports` stub (#219)
+  for (const m of scoped.matchAll(/(?:(?:const|let|var)\s+(\{[^}]*\}|[\w$]+)\s*=\s*)?\brequire\(\s*['"]([^'"\n]+)['"]\s*\)/g)) imps.push({ 1: m[1] ? (m[1].startsWith('{') ? m[1].replace(/\s*:\s*[\w$]+/g, '') : `* as ${m[1]}`) : '', 2: m[2], cjs: true });
+  const toCjs = (b) => { const ex = []; const out = b.replace(/^export\s+(?:default\s+)?(class|function|const)\s+([\w$]+)/gm, (x, k, n) => { ex.push(n); return `${k} ${n}`; }); return `${out}\nmodule.exports = { ${ex.join(', ')} };\n`; };
   for (const m of imps) {
-    ts = testTs;
+    ts = testTs && !m.cjs;
     const spec = m[2];
+    const body = (c) => (m.cjs ? toCjs(newBody(c)) : newBody(c));
     if (!/^\.{1,2}\//.test(spec)) {
       if (/^(node:|data:|https?:)/.test(spec) || builtinModules.includes(spec)) continue;
       const entry = pkgEntry(spec);
-      if (entry) { ts = /\.[cm]?tsx?$/.test(entry); if (fs.existsSync(entry)) jsExisting(entry, m[1]); else add(entry, newBody(m[1])); continue; }
+      if (entry) { ts = /\.[cm]?tsx?$/.test(entry) && !m.cjs; if (fs.existsSync(entry)) { if (!m.cjs) jsExisting(entry, m[1]); } else add(entry, body(m[1])); continue; }
       const pkgName = spec.startsWith('@') ? spec.split('/').slice(0, 2).join('/') : spec.split('/')[0];
       let up = dir, installed = false;
       for (;; up = path.dirname(up)) { if (fs.existsSync(path.join(up, 'node_modules', pkgName))) { installed = true; break; } if (up === path.dirname(up)) break; }
@@ -2642,9 +2647,9 @@ function stubFor(testPath, id) {
     const exts = ['', '.ts', '.tsx', '.js', '.mjs', '.cjs', '.jsx', '/index.ts', '/index.js'];
     const stem = abs.replace(/\.[cm]?[jt]sx?$/, '');
     const found = exts.map((e) => (fs.existsSync(abs + e) && fs.statSync(abs + e).isFile() ? abs + e : fs.existsSync(stem + e) && fs.statSync(stem + e).isFile() ? stem + e : null)).find(Boolean);
-    if (found) { jsExisting(found, m[1]); continue; }
+    if (found) { if (!m.cjs) jsExisting(found, m[1]); continue; }
     const target = /\.[cm]?[jt]sx?$/.test(abs) ? (ts ? stem + '.ts' : abs) : abs + (ts ? '.ts' : '.js');
-    add(target, newBody(m[1]));
+    add(target, body(m[1]));
   }
   return made;
 }

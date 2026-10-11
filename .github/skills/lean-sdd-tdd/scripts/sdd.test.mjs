@@ -5496,3 +5496,23 @@ test('#218 C# tdd stub honours `global using` namespaces declared in another fil
   assert.match(fs.readFileSync(path.join(d, 'src/Lib/Calculator.cs'), 'utf8'), /namespace Lib\.Calc;/);
   assert.match(r.out, /compile-checked/);
 });
+
+test('#219 JS tdd stub: require() of a missing relative module and dynamic import of a workspace package', () => {
+  const d = jsStubProject({
+    'package.json': '{"name":"root","private":true,"workspaces":["packages/*"],"scripts":{"test":"true"}}',
+    'packages/lib/package.json': '{"name":"@x/lib","type":"module","main":"src/index.js"}',
+    'packages/lib/src/index.js': 'export const one = () => 1;\n',
+    'packages/app/test/a.test.cjs': "const { add } = require('../src/add.cjs');\n/** @id TEST-A-001 @verifies REQ-A-001 */\nit('TEST-A-001 adds', () => { add(1, 2); });\n",
+    'packages/app/test/b.test.js': "/** @id TEST-A-002 @verifies REQ-A-002 */\nit('TEST-A-002 dyn', async () => {\n  const m = await import('@x/lib');\n  m.three();\n});\n",
+  });
+  sdd(d, 'tdd', 'stub', 'TEST-A-001');
+  const cjs = fs.readFileSync(path.join(d, 'packages/app/src/add.cjs'), 'utf8');
+  assert.match(cjs, /function add\(/);
+  assert.match(cjs, /module\.exports = \{ add \}/);
+  assert.doesNotMatch(cjs, /\bexport\b/);
+  assert.equal(spawnSync('node', ['--check', path.join(d, 'packages/app/src/add.cjs')]).status, 0);
+  sdd(d, 'tdd', 'stub', 'TEST-A-002');
+  const lib = fs.readFileSync(path.join(d, 'packages/lib/src/index.js'), 'utf8');
+  assert.match(lib, /^export const one = \(\) => 1;\n/);
+  assert.match(lib, /three/);
+});
