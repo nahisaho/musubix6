@@ -5667,3 +5667,184 @@ test('#221 missing CTest registration hints at re-running cmake', { skip: !has13
   assert.equal(r.code, 1, r.out);
   assert.match(r.out, /CTest registration is missing or ambiguous.*re-run `cmake -S \. -B build`/);
 });
+test('#214 python tdd stub: namespace dir, __init__ re-exports and package-with-submodule layout', () => {
+  const spec = '---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | x shall hold. | TEST-A-001 |\n';
+  const t = (imports) => `${imports}\n\ndef test_a_001():\n    """@id TEST-A-001 @verifies REQ-A-001"""\n    assert Clock().tick() == 1\n`;
+  const d1 = mini(spec, { 'pyproject.toml': '[project]\nname="m"\nversion="0"\n', 'src/pkg/sub/leaf.py': 'X = 1\n', 'tests/test_a.py': t('from pkg import Clock') });
+  sdd(d1, 'tdd', 'stub', 'TEST-A-001');
+  assert.match(fs.readFileSync(path.join(d1, 'src/pkg/__init__.py'), 'utf8'), /class Clock/);
+  assert.ok(!fs.existsSync(path.join(d1, 'src/pkg.py')));
+  const d2 = mini(spec, { 'pyproject.toml': '[project]\nname="m"\nversion="0"\n', 'src/pkg/__init__.py': 'from .core import Clock\n', 'src/pkg/core.py': 'class Clock:\n    def tick(self):\n        return 1\n', 'tests/test_a.py': t('from pkg import Clock') });
+  const r2 = sdd(d2, 'tdd', 'stub', 'TEST-A-001');
+  assert.doesNotMatch(r2.out, /not stubbed/);
+  assert.equal(fs.readFileSync(path.join(d2, 'src/pkg/__init__.py'), 'utf8'), 'from .core import Clock\n');
+  const d3 = mini(spec, { 'pyproject.toml': '[project]\nname="m"\nversion="0"\n', 'src/pkg/__init__.py': '', 'tests/test_a.py': t('from pkg.sql import parse\nfrom pkg.sql.ast import Clock') });
+  sdd(d3, 'tdd', 'stub', 'TEST-A-001');
+  assert.ok(fs.existsSync(path.join(d3, 'src/pkg/sql/__init__.py')) && fs.existsSync(path.join(d3, 'src/pkg/sql/ast.py')));
+  assert.ok(!fs.existsSync(path.join(d3, 'src/pkg/sql.py')));
+  assert.match(fs.readFileSync(path.join(d3, 'src/pkg/sql/__init__.py'), 'utf8'), /def parse/);
+});
+
+test('#215 go tdd stub: a member called as a method anywhere in the file is never also emitted as a struct field', { skip: spawnSync('which', ['go']).status !== 0 }, () => {
+  const d = mini('---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | x shall hold. | TEST-A-001 |\n', {
+    'go.mod': 'module example.com/kv/core\n\ngo 1.22\n',
+    'ring/ring_test.go': [
+      'package ring_test', '', 'import (', '\t"testing"', '', '\t"example.com/kv/core/ring"', ')', '',
+      'func build(t testing.TB) *ring.Ring {', '\tt.Helper()', '\treturn ring.New(8)', '}', '',
+      '// @id TEST-A-001', 'func TestA001(t *testing.T) {', '\tr := build(t)', '\t_ = r.Locate', '}', '',
+      '// @id TEST-A-002', 'func TestA002(t *testing.T) {', '\tr := build(t)', '\t_, _ = r.Locate("k")', '}', '',
+    ].join('\n'),
+  });
+  sdd(d, 'tdd', 'stub', 'TEST-A-001');
+  const body = fs.readFileSync(path.join(d, 'ring/ring.go'), 'utf8');
+  assert.match(body, /func \(\*?Ring\) Locate/);
+  assert.doesNotMatch(body, /^\tLocate any$/m);
+  assert.doesNotMatch(sdd(d, 'tdd', 'stub', 'TEST-A-001').out, /same name/);
+});
+
+test('#218 C# tdd stub honours `global using` namespaces declared in another file of the test project', DN, (t) => {
+  const d = tree({
+    'src/Lib/Lib.csproj': libProj(),
+    'tests/T/T.csproj': testProj(XUNIT, ['..\\..\\src\\Lib\\Lib.csproj']),
+    'tests/T/GlobalUsings.cs': 'global using Xunit;\nglobal using Lib.Calc;\n',
+    'tests/T/CalcTests.cs': [
+      'namespace T;', '', 'public class CalcTests', '{', '    /** @id TEST-A-001 @verifies REQ-A-001 */', '    [Fact]', '    public void adds()', '    {',
+      '        Assert.Equal(3, Calculator.Add(1, 2));', '    }', '}', '',
+    ].join('\n'),
+  });
+  if (!restores(d, 'tests/T/T.csproj')) return t.skip('NuGet packages cannot be restored');
+  const r = sddRaw(d, 'tdd', 'stub', 'TEST-A-001');
+  assert.ok(fs.existsSync(path.join(d, 'src/Lib/Calculator.cs')), r.out);
+  assert.match(fs.readFileSync(path.join(d, 'src/Lib/Calculator.cs'), 'utf8'), /namespace Lib\.Calc;/);
+  assert.match(r.out, /compile-checked/);
+});
+
+test('#219 JS tdd stub: require() of a missing relative module and dynamic import of a workspace package', () => {
+  const d = jsStubProject({
+    'package.json': '{"name":"root","private":true,"workspaces":["packages/*"],"scripts":{"test":"true"}}',
+    'packages/lib/package.json': '{"name":"@x/lib","type":"module","main":"src/index.js"}',
+    'packages/lib/src/index.js': 'export const one = () => 1;\n',
+    'packages/app/test/a.test.cjs': "const { add } = require('../src/add.cjs');\n/** @id TEST-A-001 @verifies REQ-A-001 */\nit('TEST-A-001 adds', () => { add(1, 2); });\n",
+    'packages/app/test/b.test.js': "/** @id TEST-A-002 @verifies REQ-A-002 */\nit('TEST-A-002 dyn', async () => {\n  const m = await import('@x/lib');\n  m.three();\n});\n",
+  });
+  sdd(d, 'tdd', 'stub', 'TEST-A-001');
+  const cjs = fs.readFileSync(path.join(d, 'packages/app/src/add.cjs'), 'utf8');
+  assert.match(cjs, /function add\(/);
+  assert.match(cjs, /module\.exports = \{ add \}/);
+  assert.doesNotMatch(cjs, /\bexport\b/);
+  assert.equal(spawnSync('node', ['--check', path.join(d, 'packages/app/src/add.cjs')]).status, 0);
+  sdd(d, 'tdd', 'stub', 'TEST-A-002');
+  const lib = fs.readFileSync(path.join(d, 'packages/lib/src/index.js'), 'utf8');
+  assert.match(lib, /^export const one = \(\) => 1;\n/);
+  assert.match(lib, /three/);
+});
+
+test('#222 PHP tdd stub: enum cases with instance methods, `use function` / `use const` namespaced symbols', { skip: spawnSync('which', ['php']).status !== 0 }, () => {
+  const spec = '---\nfeature: k\ntier: T1\n---\n| REQ-K-001 | x shall hold. | TEST-K-001 |\n| REQ-K-002 | y shall hold. | TEST-K-002 |\n';
+  const d = mini(spec, {
+    'composer.json': '{"autoload":{"psr-4":{"Kernel\\\\":"src/"}}}',
+    'tests/KTest.php': [
+      '<?php', 'use PHPUnit\\Framework\\TestCase;', 'use function Kernel\\{clamp, stable_id};', 'use const Kernel\\MAX_NIGHTS;', 'use Kernel\\Level;', '',
+      'final class KTest extends TestCase', '{',
+      '    /** @id TEST-K-001 @verifies REQ-K-001 */',
+      "    public function test_k_001(): void { $this->assertSame(3, clamp(5, MAX_NIGHTS)); $this->assertSame('a', stable_id('a')); }",
+      '    /** @id TEST-K-002 @verifies REQ-K-002 */',
+      '    public function test_k_002(): void { $this->assertSame(2, Level::High->rank()); }', '}', '',
+    ].join('\n'),
+  });
+  sdd(d, 'tdd', 'stub', 'TEST-K-001');
+  const fns = fs.readFileSync(path.join(d, 'src/functions.php'), 'utf8');
+  assert.match(fns, /namespace Kernel;/);
+  assert.match(fns, /function clamp\(/);
+  assert.match(fns, /function stable_id\(/);
+  assert.match(fns, /const MAX_NIGHTS/);
+  assert.deepEqual(JSON.parse(fs.readFileSync(path.join(d, 'composer.json'), 'utf8')).autoload.files, ['src/functions.php']);
+  assert.equal(spawnSync('php', ['-l', path.join(d, 'src/functions.php')]).status, 0);
+  sdd(d, 'tdd', 'stub', 'TEST-K-002');
+  const en = fs.readFileSync(path.join(d, 'src/Level.php'), 'utf8');
+  assert.match(en, /enum Level/);
+  assert.match(en, /case High/);
+  assert.match(en, /public function rank\(/);
+  assert.doesNotMatch(en, /static function rank/);
+});
+
+test('#224 R tdd stub: testthat helper functions are not shadowed and missing functions are appended to an existing stub file', () => {
+  const spec = '---\nfeature: x\ntier: T1\n---\n| REQ-X-001 | x shall hold. | TEST-X-001 |\n| REQ-X-002 | y shall hold. | TEST-X-002 |\n';
+  const d = mini(spec, {
+    'DESCRIPTION': 'Package: x\nVersion: 0\n',
+    'tests/testthat/helper-data.R': 'sample_input <- function() c(1, 2, 3)\n',
+    'tests/testthat/test-x.R': 'source("../../R/x.R")\n\n# @id TEST-X-001\n# @verifies REQ-X-001\nstopifnot(identical(fx(sample_input()), 6))\n\n# @id TEST-X-002\n# @verifies REQ-X-002\nstopifnot(identical(fy(sample_input()), 3L))\n',
+  });
+  sdd(d, 'tdd', 'stub', 'TEST-X-001');
+  const first = fs.readFileSync(path.join(d, 'R/x.R'), 'utf8');
+  assert.match(first, /fx <- function/);
+  assert.doesNotMatch(first, /sample_input/);
+  sdd(d, 'tdd', 'stub', 'TEST-X-002');
+  const second = fs.readFileSync(path.join(d, 'R/x.R'), 'utf8');
+  assert.match(second, /^fx <- function/);
+  assert.match(second, /fy <- function/);
+  assert.doesNotMatch(second, /sample_input/);
+});
+
+test('#221 C++ stub: a namespace-qualified using-declaration places the class in that namespace', { skip: !has130('g++') }, () => {
+  const d = mk130({ 'tests/b.cpp': [
+    '#include "cq/arena.hpp"', 'namespace {', 'using cq::mem::Arena;', '}', '// @id TEST-A-001 @verifies REQ-A-001',
+    'int main() {', '  Arena a(1024);', '  a.reset();', '  return 0;', '}', '',
+  ].join('\n') });
+  const r = sdd(d, 'tdd', 'stub', 'TEST-A-001');
+  const h = fs.readdirSync(d, { recursive: true }).find((f) => /arena\.hpp$/.test(f));
+  const s = rd130(d, h);
+  assert.match(s, /namespace cq \{ namespace mem \{/, s);
+  assert.match(s, /class Arena/);
+  assert.match(r.out, /compile-checked/, r.out);
+});
+
+const HAS_MIX = spawnSync('mix', ['--version'], { encoding: 'utf8' }).status === 0;
+const exSpec = '---\nfeature: e\ntier: T1\n---\n| REQ-E-001 | add shall hold. | TEST-E-001 |\n| REQ-E-002 | sub shall hold. | TEST-E-002 |\n';
+const exFiles = {
+  'mix.exs': 'defmodule D.MixProject do\n  use Mix.Project\n  def project, do: [app: :d, version: "0.1.0", deps: []]\nend\n',
+  'test/test_helper.exs': 'ExUnit.start()\n',
+  'test/support/helpers.ex': 'defmodule D.Helpers do\n  def three, do: 3\nend\n',
+  'test/d_test.exs': 'defmodule DTest do\n  use ExUnit.Case, async: true\n  alias D.Calc\n\n  describe "math" do\n    # @id TEST-E-001\n    # @verifies REQ-E-001\n    test "adds" do\n      assert Calc.add(1, 2) == D.Helpers.three()\n    end\n\n    # @id TEST-E-002\n    # @verifies REQ-E-002\n    @tag :slow\n    test "subs" do\n      assert Calc.sub(3, 2) == 99\n    end\n  end\nend\n',
+};
+
+test('ExUnit: mix detection, tdd stub, Red/Green attribution by test, impact and oracle hashing', { skip: !HAS_MIX }, () => {
+  const d = mini(exSpec, exFiles);
+  fs.rmSync(path.join(d, 'package.json'));
+  fs.rmSync(path.join(d, '.sdd/config.json'));
+  sdd(d, 'init');
+  const cfg = JSON.parse(fs.readFileSync(path.join(d, '.sdd/config.json'), 'utf8'));
+  assert.deepEqual(cfg.testCmd, ['mix', 'test', '{file}']);
+  assert.deepEqual(cfg.checks.map((c) => c.cmd.join(' ')), ['mix test']);
+  const st = sdd(d, 'tdd', 'stub', 'TEST-E-001');
+  const lib = fs.readFileSync(path.join(d, 'lib/d/calc.ex'), 'utf8');
+  assert.match(lib, /defmodule D\.Calc do/, st.out);
+  assert.match(lib, /def add\(_a1, _a2\)/);
+  assert.doesNotMatch(lib, /three|sub/);
+  assert.match(lib, /^# @id CODE-E-001-STUB-001/, lib);
+  const red = sdd(d, 'tdd', 'red', 'TEST-E-001', '--allow-setup-red');
+  assert.match(red.out, /RED/i, red.out);
+  fs.writeFileSync(path.join(d, 'lib/d/calc.ex'), '# @id CODE-E-001-STUB-001 @implements REQ-E-001\ndefmodule D.Calc do\n  def add(a, b), do: a + b\n  def sub(a, b), do: a - b\nend\n');
+  const green = sdd(d, 'tdd', 'green', 'TEST-E-001');
+  assert.match(green.out, /GREEN/i, green.out);
+  // TEST-E-002 fails on its own assertion: attributed to it by file:line, not to TEST-E-001
+  const red2 = sdd(d, 'tdd', 'red', 'TEST-E-002');
+  assert.match(red2.out, /RED/i, red2.out);
+  const imp = sdd(d, 'impact', 'lib/d/calc.ex');
+  assert.match(imp.out, /test\/d_test\.exs/, imp.out);
+  const before = sdd(d, 'tdd', 'refactor', 'TEST-E-001').out;
+  fs.writeFileSync(path.join(d, 'test/support/helpers.ex'), 'defmodule D.Helpers do\n  def three, do: 4\nend\n');
+  const stale = sdd(d, 'tdd', 'green', 'TEST-E-001');
+  assert.match(stale.out, /REFUSED|REJECTED/, before + stale.out);
+});
+
+test('ExUnit: a missing module is a load error, a skipped/excluded test is not Green', { skip: !HAS_MIX }, () => {
+  const d = mini(exSpec, { ...exFiles, 'test/d_test.exs': exFiles['test/d_test.exs'].replace('@tag :slow', '@tag :skip') }, ['mix', 'test', '{file}']);
+  const r = sdd(d, 'tdd', 'red', 'TEST-E-001');
+  assert.match(r.out, /REJECTED[^\n]*load\/compile error/, r.out);
+  fs.mkdirSync(path.join(d, 'lib/d'), { recursive: true });
+  fs.writeFileSync(path.join(d, 'lib/d/calc.ex'), 'defmodule D.Calc do\n  def add(a, b), do: a + b\n  def sub(a, b), do: a - b\nend\n');
+  sdd(d, 'tdd', 'red', 'TEST-E-001', '--characterization', 'already implemented');
+  const skipped = sdd(d, 'tdd', 'red', 'TEST-E-002');
+  assert.match(skipped.out, /REJECTED[^\n]*no test matched|skipped/i, skipped.out);
+});
