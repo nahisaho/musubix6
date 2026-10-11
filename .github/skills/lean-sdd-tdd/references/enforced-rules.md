@@ -80,3 +80,10 @@ Absolute and root-relative review paths, including paths with spaces, identify t
 - PHP traits (#222): `use Trait;` inside a test class (or a local ancestor) joins the oracle closure like a parent class; such statements are no longer mistaken for namespace imports.
 - PHP impact (#222): `use function` / `use const` (plain, aliased and group forms) resolve to the files declaring the namespaced function/const.
 - plan.md (#218): `—`/`–` in the depends column means "none"; C# impact extracts `record struct`/`record class` type names.
+
+### Known limits not fixed in wave 3/4 (dogfood-7)
+- Impact: package.json `imports` (`#alias`) and `exports` wildcards, tsconfig `paths` to directory indexes, Rust `#[path]` modules, and R `source()` graph edges are not followed (#213, #217, #224); run `gate` without `--changed` when relying on them.
+- `merge-ledger` may rewrite the shared prefix (#213 F3).
+- Red/Green attribution: PHP provider/abstract/trait owners (#222 F1/F2), Java abstract-base `-Dtest` (#216), Go `Fuzz*`/`Benchmark`/`Example` ids (#215), C# file-scoped namespace with bodyless record (#218 F2), Julia macro-generated `@test` and C++ clean-build drift (#223): use `--weak` or name concrete classes explicitly.
+- Partial-class / appended-class sibling files may stale Green (#214 F6, app106 F5): re-run Red/Green after editing siblings.
+- `tdd stub` gaps: Python namespace dirs, Go field/method collision, C# `global using`, JS CJS `require`, PHP functions/enums, R helper shadowing, C++ using-declarations (#214, #215, #218, #219, #222, #223, #224).
