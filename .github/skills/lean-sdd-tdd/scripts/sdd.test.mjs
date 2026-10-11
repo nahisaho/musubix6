@@ -6084,3 +6084,19 @@ test('#247 impact <data file> names the projects whose dependsOn covers it, not 
   assert.deepEqual(j.projects, ['core', 'recon']);
   assert.deepEqual(j.impl, []);
 });
+
+test('#245 Go: `if err := sut(); err != nil` treats the initialised call as asserted (not a weak setup Red)', { skip: spawnSync('which', ['go']).status !== 0 }, () => {
+  const spec = '---\nfeature: r\ntier: T1\n---\n| REQ-R-001 | Import shall succeed. | TEST-R-001 |\n';
+  const d = mini(spec, {
+    'go.mod': 'module r\n\ngo 1.21\n',
+    'lib/lib.go': 'package lib\n\ntype S struct{}\n\nfunc New() *S { return &S{} }\n\nfunc (s *S) Import(n int) error { panic("not implemented") }\n',
+    'lib/lib_test.go': 'package lib\n\nimport "testing"\n\n// @id TEST-R-001 @verifies REQ-R-001\nfunc TestTEST_R_001(t *testing.T) {\n\tif err := New().Import(1); err != nil {\n\t\tt.Fatal(err)\n\t}\n}\n',
+  });
+  fs.rmSync(path.join(d, 'package.json'));
+  fs.rmSync(path.join(d, '.sdd/config.json'));
+  sdd(d, 'init');
+  sdd(d, 'approve', 'record', 'r', '--by', 'tester');
+  const r = sdd(d, 'tdd', 'red', 'TEST-R-001');
+  assert.match(r.out, /RED ok/, r.out);
+  assert.doesNotMatch(r.out, /setup call|\[weak\]/, r.out);
+});
