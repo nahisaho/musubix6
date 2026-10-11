@@ -84,8 +84,9 @@ Absolute and root-relative review paths, including paths with spaces, identify t
 ### Known limits not fixed in wave 3/4 (dogfood-7)
 - Impact: package.json `imports` (`#alias`) and `exports` wildcards, tsconfig `paths` to directory indexes, Rust `#[path]` modules, and R `source()` graph edges are not followed (#213, #217, #224); run `gate` without `--changed` when relying on them.
 - `merge-ledger` may rewrite the shared prefix (#213 F3).
-- Red/Green attribution: Java abstract-base `-Dtest` (#216), Go `Fuzz*`/`Benchmark`/`Example` ids (#215), C# file-scoped namespace with bodyless record (#218 F2) and Julia macro-generated `@test` (#223): use `--weak` or name concrete classes explicitly.
+- Red/Green attribution: Java abstract-base `-Dtest` (#216), Go `Fuzz*`/`Benchmark`/`Example` ids (#215), C# file-scoped namespace with bodyless record (#218 F2): use `--weak` or name concrete classes explicitly.
 - Partial-class / appended-class sibling files may stale Green (#214 F6, app106 F5): re-run Red/Green after editing siblings.
 - `tdd stub` gaps: Python namespace dirs, Go field/method collision, C# `global using`, JS CJS `require`, PHP functions/enums, R helper shadowing, C++ using-declarations (#214, #215, #218, #219, #222, #223, #224).
 - PHPUnit (#222): a sibling's broken data provider (`There was 1 PHPUnit error`) is not the target's Red; tests declared in an abstract class or trait run through the concrete subclass(es) that extend/use them (rejected when none exists).
 - C/C++ (#221): the first `tdd red/green` after a clean build no longer fails with "changed while running" when only the build-generated `compile_commands.json` context moved; an edit to the test file itself is still refused.
+- Julia (#223): a macro-generated `@test` (reported at the macro definition's line) is credited to the test whose body contains its call-site stack frame, so `fails with:` and `--expect` see it.

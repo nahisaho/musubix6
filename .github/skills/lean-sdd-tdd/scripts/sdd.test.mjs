@@ -5498,3 +5498,12 @@ test('#221 C++ first Red after a clean build is not refused as "changed while ru
   assert.match(r.out, /^RED ok TEST-C-001/);
   assert.doesNotMatch(sdd(d, 'gate', '--no-run').out, /changed since/);
 });
+
+test('#223 Julia macro-generated @test failure is attributed through its call-site stack frame', () => {
+  const d = batch2Source('T.jl', 'using Test\nmacro chk(x)\n    :(@testset "gen" begin @test $x == 2 end)\nend\n# @id TEST-CALC-001 @verifies REQ-CALC-001\n@testset "TEST-CALC-001 f" begin\n@chk(1)\nend\n# @id TEST-SIBLING-001 @verifies REQ-CALC-001\n@testset "TEST-SIBLING-001 g" begin\n@test 3 == 4\nend\n');
+  const file = path.join(d, 'T.jl');
+  fakeOut(d, `gen: Test Failed at ${file}:3\n  Expression: 1 == 2\n  Stacktrace:\n   [1] top-level scope\n     @ ${file}:7\n   [2] macro expansion\n     @ ${file}:3 [inlined]\nTEST-SIBLING-001 g: Test Failed at ${file}:11\n  Expression: 3 == 4\nTest Summary:       | Fail  Total  Time\nTEST-CALC-001 f     |    1      1  0.1s\n  gen               |    1      1  0.1s\nTEST-SIBLING-001 g  |    1      1  0.1s\n`);
+  const red = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
+  assert.equal(red.code, 0, red.out);
+  assert.match(red.out, /fails with: Expression: 1 == 2/);
+});

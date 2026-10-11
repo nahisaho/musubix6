@@ -2912,23 +2912,28 @@ function juliaSiblingFail(plain, id) {
 }
 const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 function juliaFailureOutput(plain, id, testPath) {
-  const lines = plain.split('\n'), mine = [], boundary = new RegExp(`(?<![\\w-])${escapeRe(id)}(?![\\w-])`, 'i');
+  const lines = plain.split('\n'), boundary = new RegExp(`(?<![\\w-])${escapeRe(id)}(?![\\w-])`, 'i');
   const txt = fs.readFileSync(path.join(ROOT, testPath), 'utf8');
   const range = juliaRanges(txt)?.find((r) => r.id === id);
   const start = range ? txt.slice(0, range.start).split('\n').length : 0;
   const end = range ? txt.slice(0, range.end).split('\n').length : 0;
-  let selected = false, found = false;
+  const blocks = [];
+  let found = false;
   for (const line of lines) {
     if (/^(?:.+?: )?(?:Test Failed|Error During Test) at\b/.test(line)) {
       found = true;
       const loc = / at (.*?):(\d+)(?::\d+)?\s*$/.exec(line);
       const ownLocation = loc && path.resolve(ROOT, loc[1]) === path.resolve(ROOT, testPath) && +loc[2] >= start && +loc[2] <= end;
-      selected = boundary.test(line.split(/: (?:Test Failed|Error During Test) at/)[0]) || !!ownLocation;
+      blocks.push({ selected: boundary.test(line.split(/: (?:Test Failed|Error During Test) at/)[0]) || !!ownLocation, lines: [line] });
     }
-    else if (/Test Summary:|^ERROR: LoadError:/.test(line)) selected = false;
-    if (selected) mine.push(line);
+    else if (/Test Summary:|^ERROR: LoadError:/.test(line)) blocks.push({ selected: false, lines: [] });
+    else blocks.at(-1)?.lines.push(line);
   }
-  return found ? mine.join('\n') : null;
+  // macro-generated @test reports the macro definition's line: the stack frame at the call site is inside this test (#223)
+  const inRange = (loc) => { const m = /^\s*@ (.+?):(\d+)\s*$/.exec(loc); return !!m && path.resolve(ROOT, m[1].replace(/^~(?=\/)/, os.homedir())) === path.resolve(ROOT, testPath) && +m[2] >= start && +m[2] <= end; };
+  for (const b of blocks) if (!b.selected && b.lines.length && range && b.lines.some(inRange)) b.selected = true;
+  const picked = blocks.filter((b) => b.selected).flatMap((b) => b.lines);
+  return found ? picked.join('\n') : null;
 }
 function juliaScriptIndex(cmd) {
   const values = new Set(['-J', '--sysimage', '-L', '--load', '-H', '--machine-file', '-C', '--cpu-target', '-t', '--threads', '-p', '--procs', '-O', '--optimize', '--compile', '--startup-file', '--history-file', '--color', '--depwarn', '--check-bounds', '--banner']);
