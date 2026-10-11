@@ -5545,3 +5545,21 @@ test('#222 PHP tdd stub: enum cases with instance methods, `use function` / `use
   assert.match(en, /public function rank\(/);
   assert.doesNotMatch(en, /static function rank/);
 });
+
+test('#224 R tdd stub: testthat helper functions are not shadowed and missing functions are appended to an existing stub file', () => {
+  const spec = '---\nfeature: x\ntier: T1\n---\n| REQ-X-001 | x shall hold. | TEST-X-001 |\n| REQ-X-002 | y shall hold. | TEST-X-002 |\n';
+  const d = mini(spec, {
+    'DESCRIPTION': 'Package: x\nVersion: 0\n',
+    'tests/testthat/helper-data.R': 'sample_input <- function() c(1, 2, 3)\n',
+    'tests/testthat/test-x.R': 'source("../../R/x.R")\n\n# @id TEST-X-001\n# @verifies REQ-X-001\nstopifnot(identical(fx(sample_input()), 6))\n\n# @id TEST-X-002\n# @verifies REQ-X-002\nstopifnot(identical(fy(sample_input()), 3L))\n',
+  });
+  sdd(d, 'tdd', 'stub', 'TEST-X-001');
+  const first = fs.readFileSync(path.join(d, 'R/x.R'), 'utf8');
+  assert.match(first, /fx <- function/);
+  assert.doesNotMatch(first, /sample_input/);
+  sdd(d, 'tdd', 'stub', 'TEST-X-002');
+  const second = fs.readFileSync(path.join(d, 'R/x.R'), 'utf8');
+  assert.match(second, /^fx <- function/);
+  assert.match(second, /fy <- function/);
+  assert.doesNotMatch(second, /sample_input/);
+});

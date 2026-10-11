@@ -2020,6 +2020,8 @@ function stubScript(lang, src, dir, add, made) {
     }
   };
   for (const abs of existingLoads) existingDefinitions(abs);
+  // testthat autoloads helper-*.R / setup-*.R before the test: what they define must not be shadowed by a stub (#224)
+  if (lang === 'r') for (const f of fs.existsSync(dir) ? fs.readdirSync(dir) : []) if (/^(?:helper|setup)[^/]*\.[Rr]$/i.test(f)) { existingDefinitions(path.join(dir, f)); for (const m of fs.readFileSync(path.join(dir, f), 'utf8').matchAll(/^\s*([A-Za-z_]\w*)\s*=\s*function\b/gm)) defined.add(m[1]); }
   // Julia mutating functions end in `!` (`next!(r)`) (#151)
   const called = [...new Set([...code.matchAll(/(?<![\w$@.>:\\])([A-Za-z_]\w*(?:!(?=\())?)\s*\(/g)].map((m) => m[1]))].filter((n) => !defined.has(n) && !/^(function|if|for|while|switch|catch|elseif|foreach|array|isset|empty|use|using|test_that|testset|require|require_once|include|include_once|source|library|describe|it|context|fn|match|list|new|echo|print|return|exit|die|unset|isset|empty|eval|declare|static|function|assert|try|throw)$/.test(n) && !/^(expect_|test|assert)/.test(n));
   // exception types the Julia test expects: `@test_throws X` => `struct X <: Exception end`
@@ -2184,6 +2186,15 @@ function stubScript(lang, src, dir, add, made) {
       } else t += (t.endsWith('\n') ? '\n' : '\n\n') + body;
       fs.writeFileSync(target, t); made.push(rel(target));
     } else if (existingLoads.length) (made.realMissing ??= []).push(`${unknown.join(', ')} in ${existingLoads.map(rel).join(', ')}`);
+  }
+  // R: every `source()`d file exists, so the missing functions are appended to a stub-only one (#224)
+  if (lang === 'r' && !loads.length && existingLoads.length && unknown.length) {
+    const target = existingLoads.find((f) => { const t = fs.readFileSync(f, 'utf8'); return /not implemented/.test(t) && !t.split('\n').some((l) => /<-\s*function\b|=\s*function\b/.test(l) && !/not implemented/.test(l)); });
+    if (target) {
+      const t = fs.readFileSync(target, 'utf8');
+      fs.appendFileSync(target, `${t.endsWith('\n') ? '\n' : '\n\n'}${unknown.map(fn).join('\n')}`);
+      made.push(rel(target));
+    } else (made.realMissing ??= []).push(`${unknown.join(', ')} in ${existingLoads.map(rel).join(', ')}`);
   }
   return made;
 }
