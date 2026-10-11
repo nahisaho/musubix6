@@ -5595,3 +5595,75 @@ test('#229 appending a test to a partial test-class sibling does not stale the o
   fs.writeFileSync(path.join(d, 'tests/MoneyTests.cs'), rd130(d, 'tests/MoneyTests.cs').replace('namespace Tests;', 'namespace Tests;\nusing Oracle;'));
   assert.equal(sdd(d, 'tdd', 'green', 'TEST-CALC-002').code, 1, 'shared sibling content is still an oracle');
 });
+const hasPhpunit = spawnSync('phpunit', ['--version'], { encoding: 'utf8' }).status === 0;
+function phpProject(files) {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-p222-'));
+  spawnSync('git', ['init', '-q'], { cwd: d });
+  const reqs = [1, 2, 3].map((n) => `| REQ-P-00${n} | The calc shall add ${n}. | TEST-P-00${n} |`).join('\n');
+  writeAll(d, { '.sdd/specs/p.md': `---\nfeature: p\ntier: T1\n---\n# p\n| ID | EARS requirement | Test |\n| --- | --- | --- |\n${reqs}\n`, 'phpunit.xml': '<phpunit bootstrap="boot.php"><testsuites><testsuite name="t"><directory>tests</directory></testsuite></testsuites></phpunit>', 'boot.php': "<?php\nspl_autoload_register(function ($c) { foreach (['tests/', 'src/'] as $b) { $f = __DIR__ . '/' . $b . basename(str_replace('\\\\', '/', $c)) . '.php'; if (is_file($f)) require_once $f; } });\n", ...files });
+  sdd(d, 'init');
+  return d;
+}
+
+test('#222 PHPUnit: a sibling test\'s broken data provider is not credited as the target\'s Red', { skip: !hasPhpunit }, () => {
+  const d = phpProject({ 'tests/PTest.php': "<?php\nnamespace T;\nuse PHPUnit\\Framework\\TestCase;\nuse PHPUnit\\Framework\\Attributes\\DataProvider;\nfinal class PTest extends TestCase\n{\n    public static function rows(): array { throw new \\LogicException('broken'); }\n    /** @id TEST-P-001 @verifies REQ-P-001 */\n    #[DataProvider('rows')]\n    public function test_p_001_sibling(int $x): void { $this->assertSame($x, $x); }\n    /** @id TEST-P-002 @verifies REQ-P-002 */\n    public function test_p_002_target(): void { $this->assertSame(4, 2 + 2); }\n}\n" });
+  const r = sdd(d, 'tdd', 'red', 'TEST-P-002');
+  assert.equal(r.code, 1, r.out);
+  assert.match(r.out, /REJECTED TEST-P-002: .*(?:itself passes|test passed)/);
+});
+
+test('#222 PHPUnit: tests declared in an abstract base class or trait run through the concrete subclass', { skip: !hasPhpunit }, () => {
+  const d = phpProject({
+    'src/Calc.php': '<?php\nnamespace Lib;\n// @id CODE-P-001 @implements REQ-P-001\nfinal class Calc { public function add(int $a, int $b): int { return $a + $b + 1; } }\n',
+    'tests/BaseTest.php': "<?php\nnamespace T;\nuse PHPUnit\\Framework\\TestCase;\nuse Lib\\Calc;\nabstract class BaseTest extends TestCase\n{\n    /** @id TEST-P-001 @verifies REQ-P-001 */\n    public function test_p_001_base(): void { $this->assertSame(5, (new Calc())->add(2, 3)); }\n}\n",
+    'tests/AddsTrait.php': "<?php\nnamespace T;\nuse Lib\\Calc;\ntrait AddsTrait\n{\n    /** @id TEST-P-002 @verifies REQ-P-002 */\n    public function test_p_002_trait(): void { $this->assertSame(5, (new Calc())->add(2, 3)); }\n}\n",
+    'tests/CalcTest.php': '<?php\nnamespace T;\nfinal class CalcTest extends BaseTest\n{\n    use AddsTrait;\n}\n',
+  });
+  for (const id of ['TEST-P-001', 'TEST-P-002']) {
+    const r = sdd(d, 'tdd', 'red', id);
+    assert.equal(r.code, 0, r.out);
+    assert.doesNotMatch(r.out, /abstract|cannot be found/);
+    assert.match(r.out, /^RED ok /);
+  }
+  fs.writeFileSync(path.join(d, 'src/Calc.php'), '<?php\nnamespace Lib;\n// @id CODE-P-001 @implements REQ-P-001\nfinal class Calc { public function add(int $a, int $b): int { return $a + $b; } }\n');
+  for (const id of ['TEST-P-001', 'TEST-P-002']) { const g = sdd(d, 'tdd', 'green', id); assert.equal(g.code, 0, g.out); }
+});
+
+test('#221 C++ first Red after a clean build is not refused as "changed while running"', () => {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-c221-'));
+  spawnSync('git', ['init', '-q'], { cwd: d });
+  const db = JSON.stringify([{ directory: '.', file: 'tests/t.cpp', arguments: ['c++', '-include', 'tests/oracle.hpp', '-c', 'tests/t.cpp'] }]);
+  writeAll(d, {
+    '.sdd/specs/c.md': '---\nfeature: c\ntier: T1\n---\n- REQ-C-001 x\n',
+    'tests/t.cpp': '// @id TEST-C-001 @verifies REQ-C-001\nstatic int test_c_001() { return 1; }\n',
+    'tests/oracle.hpp': '#define EXPECTED 7\n',
+  });
+  sdd(d, 'init');
+  const cfg = path.join(d, '.sdd/config.json');
+  const c = JSON.parse(fs.readFileSync(cfg, 'utf8'));
+  c.testCmd = ['sh', '-c', 'mkdir -p build && printf "%s" "$0" > build/compile_commands.json; echo "Assertion failed: x"; exit 1', db];
+  fs.writeFileSync(cfg, JSON.stringify(c));
+  const r = sdd(d, 'tdd', 'red', 'TEST-C-001');
+  assert.doesNotMatch(r.out, /changed while running/);
+  assert.match(r.out, /^RED ok TEST-C-001/);
+  assert.doesNotMatch(sdd(d, 'gate', '--no-run').out, /changed since/);
+});
+
+test('#223 Julia macro-generated @test failure is attributed through its call-site stack frame', () => {
+  const d = batch2Source('T.jl', 'using Test\nmacro chk(x)\n    :(@testset "gen" begin @test $x == 2 end)\nend\n# @id TEST-CALC-001 @verifies REQ-CALC-001\n@testset "TEST-CALC-001 f" begin\n@chk(1)\nend\n# @id TEST-SIBLING-001 @verifies REQ-CALC-001\n@testset "TEST-SIBLING-001 g" begin\n@test 3 == 4\nend\n');
+  const file = path.join(d, 'T.jl');
+  fakeOut(d, `gen: Test Failed at ${file}:3\n  Expression: 1 == 2\n  Stacktrace:\n   [1] top-level scope\n     @ ${file}:7\n   [2] macro expansion\n     @ ${file}:3 [inlined]\nTEST-SIBLING-001 g: Test Failed at ${file}:11\n  Expression: 3 == 4\nTest Summary:       | Fail  Total  Time\nTEST-CALC-001 f     |    1      1  0.1s\n  gen               |    1      1  0.1s\nTEST-SIBLING-001 g  |    1      1  0.1s\n`);
+  const red = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
+  assert.equal(red.code, 0, red.out);
+  assert.match(red.out, /fails with: Expression: 1 == 2/);
+});
+
+test('#221 missing CTest registration hints at re-running cmake', { skip: !has130('cmake') || !has130('ctest') }, () => {
+  const d = mk130({
+    'CMakeLists.txt': 'cmake_minimum_required(VERSION 3.10)\nproject(reg221 NONE)\nenable_testing()\nadd_test(NAME other COMMAND sh -c "exit 0")\n',
+    'tests/t.c': '// @id TEST-A-001 @verifies REQ-A-001\nvoid test_a_001_new(void) { CHECK(1); }\n',
+  });
+  const r = sdd(d, 'tdd', 'red', 'TEST-A-001');
+  assert.equal(r.code, 1, r.out);
+  assert.match(r.out, /CTest registration is missing or ambiguous.*re-run `cmake -S \. -B build`/);
+});

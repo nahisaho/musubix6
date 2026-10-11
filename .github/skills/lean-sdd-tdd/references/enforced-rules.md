@@ -87,11 +87,12 @@ Absolute and root-relative review paths, including paths with spaces, identify t
 
 ### Known limits not fixed in wave 3/4 (dogfood-7)
 - Impact: dynamic R `source()` arguments (non-literal paths, `here::here`) are not followed; run `gate` without `--changed` when relying on them.
-- Red/Green attribution: PHP provider/abstract/trait owners (#222 F1/F2), Java abstract-base `-Dtest` (#216), Go `Fuzz*`/`Benchmark`/`Example` ids (#215), C# file-scoped namespace with bodyless record (#218 F2), Julia macro-generated `@test` and C++ clean-build drift (#223): use `--weak` or name concrete classes explicitly.
-- Partial-class / appended-class sibling files may stale Green (#214 F6, app106 F5): re-run Red/Green after editing siblings.
 - `tdd stub` gaps: Python namespace dirs, Go field/method collision, C# `global using`, JS CJS `require`, PHP functions/enums, R helper shadowing, C++ using-declarations (#214, #215, #218, #219, #222, #223, #224).
 - Java (#216): a test declared in an `abstract class` runs through its single concrete subclass (`-Dtest=ImplTest#name`); zero or several concrete subclasses are refused as ambiguous/unresolved. A message-less exception (`java.lang.NullPointerException`) is shown as the `fails with:` reason.
 - Timeouts (#226): test commands run in their own process group; on `timeoutMs` the whole group (launcher and hung test binary) is killed and the run is rejected with "test timed out after N ms (hung test?)".
 - Workspace listing (#228): tracked files deleted from the working tree but not staged are dropped from the listing instead of crashing with ENOENT.
 - Go (#215, #227): `Fuzz*` (seed corpus), `Benchmark*` (run once with `-bench ^Name$ -benchtime=1x`) and `Example*` functions can carry `@id`. A test file with `//go:build tag` is run with `-tags tag` automatically unless `testCmd` already has `-tags`; `[no test files]` rejections hint at build constraints. Go `tdd stub` field/method collisions are handled by the stub work, not here.
 - Test-file siblings (#229): a sibling file that holds its own annotated tests (e.g. another part of a partial test class) contributes only its non-test content to the oracle hash, so appending a test there does not stale tests in this file; editing its shared content still does.
+- PHPUnit (#222): a sibling's broken data provider (`There was 1 PHPUnit error`) is not the target's Red; tests declared in an abstract class or trait run through the concrete subclass(es) that extend/use them (rejected when none exists).
+- C/C++ (#221): the first `tdd red/green` after a clean build no longer fails with "changed while running" when only the build-generated `compile_commands.json` context moved; an edit to the test file itself is still refused.
+- Julia (#223): a macro-generated `@test` (reported at the macro definition's line) is credited to the test whose body contains its call-site stack frame, so `fails with:` and `--expect` see it.

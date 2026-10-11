@@ -2941,23 +2941,28 @@ function juliaSiblingFail(plain, id) {
 }
 const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 function juliaFailureOutput(plain, id, testPath) {
-  const lines = plain.split('\n'), mine = [], boundary = new RegExp(`(?<![\\w-])${escapeRe(id)}(?![\\w-])`, 'i');
+  const lines = plain.split('\n'), boundary = new RegExp(`(?<![\\w-])${escapeRe(id)}(?![\\w-])`, 'i');
   const txt = fs.readFileSync(path.join(ROOT, testPath), 'utf8');
   const range = juliaRanges(txt)?.find((r) => r.id === id);
   const start = range ? txt.slice(0, range.start).split('\n').length : 0;
   const end = range ? txt.slice(0, range.end).split('\n').length : 0;
-  let selected = false, found = false;
+  const blocks = [];
+  let found = false;
   for (const line of lines) {
     if (/^(?:.+?: )?(?:Test Failed|Error During Test) at\b/.test(line)) {
       found = true;
       const loc = / at (.*?):(\d+)(?::\d+)?\s*$/.exec(line);
       const ownLocation = loc && path.resolve(ROOT, loc[1]) === path.resolve(ROOT, testPath) && +loc[2] >= start && +loc[2] <= end;
-      selected = boundary.test(line.split(/: (?:Test Failed|Error During Test) at/)[0]) || !!ownLocation;
+      blocks.push({ selected: boundary.test(line.split(/: (?:Test Failed|Error During Test) at/)[0]) || !!ownLocation, lines: [line] });
     }
-    else if (/Test Summary:|^ERROR: LoadError:/.test(line)) selected = false;
-    if (selected) mine.push(line);
+    else if (/Test Summary:|^ERROR: LoadError:/.test(line)) blocks.push({ selected: false, lines: [] });
+    else blocks.at(-1)?.lines.push(line);
   }
-  return found ? mine.join('\n') : null;
+  // macro-generated @test reports the macro definition's line: the stack frame at the call site is inside this test (#223)
+  const inRange = (loc) => { const m = /^\s*@ (.+?):(\d+)\s*$/.exec(loc); return !!m && path.resolve(ROOT, m[1].replace(/^~(?=\/)/, os.homedir())) === path.resolve(ROOT, testPath) && +m[2] >= start && +m[2] <= end; };
+  for (const b of blocks) if (!b.selected && b.lines.length && range && b.lines.some(inRange)) b.selected = true;
+  const picked = blocks.filter((b) => b.selected).flatMap((b) => b.lines);
+  return found ? picked.join('\n') : null;
 }
 function juliaScriptIndex(cmd) {
   const values = new Set(['-J', '--sysimage', '-L', '--load', '-H', '--machine-file', '-C', '--cpu-target', '-t', '--threads', '-p', '--procs', '-O', '--optimize', '--compile', '--startup-file', '--history-file', '--color', '--depwarn', '--check-bounds', '--banner']);
@@ -3024,6 +3029,36 @@ function qualifiedTestName(testPath, id, rust = false) {
   const scope = qualifiedTestScope(testPath, text, at, rust);
   return [/\.java$/.test(testPath) ? javaExecutionOwner(scope) : scope, name].filter(Boolean).join(rust ? '::' : '.');
 }
+// PHPUnit cannot run tests declared in an abstract class or trait: find the concrete test classes that inherit them (#222)
+let phpOwnerOverride = null;
+function phpConcreteOwners(testPath, owner) {
+  const short = owner.split('\\').pop();
+  const classes = [];
+  for (const f of gitFiles('*.php')) {
+    let text = '';
+    try { text = fs.readFileSync(path.join(ROOT, f), 'utf8'); } catch { continue; }
+    const code = maskBraces(text);
+    const ns = /^\s*namespace\s+([\w\\]+)\s*[;{]/m.exec(text)?.[1];
+    for (const m of code.matchAll(/^\s*((?:(?:final|abstract|readonly)\s+)*)(class|trait)\s+(\w+)(?:\s+extends\s+\\?([\w\\]+))?[^{]*\{/gm)) {
+      const start = m.index + m[0].length;
+      const body = text.slice(start, matchingBrace(code, start - 1));
+      const traits = [...body.matchAll(/^\s*use\s+([\w\\,\s]+?)\s*[;{]/gm)].flatMap((u) => u[1].split(',').map((x) => x.trim().split('\\').pop()));
+      classes.push({ file: f, name: m[3], fq: ns ? `${ns}\\${m[3]}` : m[3], abstract: /abstract/.test(m[1]) || m[2] === 'trait', parent: m[4]?.split('\\').pop() ?? null, traits });
+    }
+  }
+  const inherits = (c, seen = new Set()) => {
+    if (seen.has(c)) return false;
+    seen.add(c);
+    if (c.name === short) return true;
+    return [c.parent, ...c.traits].filter(Boolean).some((n) => classes.filter((x) => x.name === n).some((x) => inherits(x, seen)));
+  };
+  return classes.filter((c) => !c.abstract && c.name !== short && inherits(c));
+}
+function matchingBrace(text, open) {
+  let depth = 0;
+  for (let i = open; i < text.length; i++) { if (text[i] === '{') depth++; else if (text[i] === '}' && !--depth) return i; }
+  return text.length;
+}
 function javaExecutionOwner(scope) {
   const types = sourceTypes().filter((t) => t.ext === '.java');
   const declaration = types.find((t) => t.fq === scope);
@@ -3048,7 +3083,7 @@ function javaExecutionOwner(scope) {
 function qualifiedTestScope(testPath, text, at, rust = false) {
   const pre = maskBraces(text.slice(0, at), rust);
   const stack = [];
-  const re = rust ? /\bmod\s+((?:r#)?\w+)\s*\{|([{}])/g : /\b(namespace|class|interface|record(?:\s+(?:class|struct))?)\s+([\w.\\]+)[^{;]*([{;])|([{}])/g;
+  const re = rust ? /\bmod\s+((?:r#)?\w+)\s*\{|([{}])/g : /\b(namespace|class|interface|trait|record(?:\s+(?:class|struct))?)\s+([\w.\\]+)[^{;]*([{;])|([{}])/g;
   let fileNs = '';
   for (const m of pre.matchAll(re)) {
     if (rust) { if (m[1]) stack.push(m[1]); else if (m[2] === '{') stack.push(null); else stack.pop(); }
@@ -3125,10 +3160,11 @@ function targetVerdict(plain, testPath, id, selectedName = null, requireJavaResu
     const rows = ctestRows(plain).filter((r) => r.name === (selectedName ?? name) || r.name === id);
     return !rows.length ? 'notrun' : rows.some((r) => /Failed|Exception/.test(r.status)) ? 'fail' : rows.some((r) => /\bPassed\b/.test(r.status)) ? 'pass' : 'skip';
   }
-  if (/\.php$/.test(testPath) && /There w(?:as|ere) \d+ (?:failure|error)s?:/.test(plain)) {
-    const owner = qualifiedTestName(testPath, id).slice(0, -name.length - 1);
-    if (new RegExp(`^\\d+\\) ${owner ? escapeRe(owner) : '[^\\n]+'}::${exact}(?=[#@]|\\s+with data set|\\s*$)`, 'm').test(plain)) return 'fail';
-    return owner && !new RegExp(`^\\d+\\) ${escapeRe(owner)}::`, 'm').test(plain) ? 'notrun' : 'pass';
+  if (/\.php$/.test(testPath) && /There w(?:as|ere) \d+ (?:PHPUnit )?(?:failure|error)s?:/.test(plain)) {
+    const declaring = qualifiedTestName(testPath, id).slice(0, -name.length - 1);
+    const owner = phpOwnerOverride?.length ? `(?:${phpOwnerOverride.map(escapeRe).join('|')})` : declaring ? escapeRe(declaring) : '';
+    if (new RegExp(`^\\d+\\) ${owner || '[^\\n]+'}::${exact}(?=[#@]|\\s+with data set|\\s*$)`, 'm').test(plain)) return 'fail';
+    return owner && !new RegExp(`^\\d+\\) ${owner}::`, 'm').test(plain) ? 'notrun' : 'pass';
   }
   if (/\.java$/.test(testPath)) {
     const full = qualifiedTestName(testPath, id), cls = full.slice(0, -name.length - 1);
@@ -3246,6 +3282,7 @@ function cmdTdd() {
 
   const entries = readLedger();
   const before = testSha(t.path, id);
+  const rawBefore = sha(fs.readFileSync(path.join(ROOT, t.path)));
   const prior = entries.filter((e) => e.test === id);
   if (sub === 'green') {
     const r = prior.filter((e) => e.type === 'red').at(-1);
@@ -3321,7 +3358,7 @@ function cmdTdd() {
         const exact = tests.filter((t) => t.name === name);
         const token = id.toLowerCase().replaceAll('-', '_');
         const candidates = exact.length ? exact : tests.filter((t) => new RegExp(`(?:^|[^A-Za-z0-9])${escapeRe(token)}(?:[^A-Za-z0-9]|$)`, 'i').test(t.name) || t.name === id);
-        if (candidates.length !== 1) { out(`${sub.toUpperCase()} REJECTED ${id}: CTest registration is missing or ambiguous; configure an exact -R selector`); return 1; }
+        if (candidates.length !== 1) { out(`${sub.toUpperCase()} REJECTED ${id}: CTest registration is missing or ambiguous; configure an exact -R selector (a new test file or add_test not yet configured? re-run \`cmake -S . -B build\`)`); return 1; }
         selectedName = candidates[0].name;
         if (shell >= 0) cmd[shell + 1] = selectedName;
         if (direct >= 0) cmd[direct + 1] = selectedName;
@@ -3335,8 +3372,19 @@ function cmdTdd() {
   if (/\.php$/.test(t.path) && /phpunit/.test(cmd.join(' '))) {
     const i = cmd.indexOf('--filter');
     if (i >= 0 && cmd[i + 1] === testName(t.path, id)) {
-      const full = qualifiedTestName(t.path, id), name = testName(t.path, id), owner = full.slice(0, -name.length - 1);
-      cmd[i + 1] = '/' + (owner ? '^' + escapeRe(owner) : '') + '::' + escapeRe(name) + '(?:\\s+with data set [\\s\\S]*)?$/';
+      const full = qualifiedTestName(t.path, id), name = testName(t.path, id);
+      let owner = full.slice(0, -name.length - 1);
+      phpOwnerOverride = null;
+      const declared = new RegExp(`^\\s*(?:(?:final|readonly)\\s+)*((?:abstract\\s+)?class|trait)\\s+${escapeRe(owner.split('\\').pop())}\\b`, 'm').exec(maskBraces(fs.readFileSync(path.join(ROOT, t.path), 'utf8')));
+      if (owner && declared && /abstract|trait/.test(declared[1])) {
+        const concrete = phpConcreteOwners(t.path, owner);
+        if (!concrete.length) { out(`${sub.toUpperCase()} REJECTED ${id}: declared in ${declared[1].includes('trait') ? 'trait' : 'abstract class'} ${owner}, which PHPUnit cannot run, and no concrete test class extends/uses it; add one or set a custom testCmd`); return 1; }
+        phpOwnerOverride = concrete.map((c) => c.fq);
+        owner = phpOwnerOverride.length === 1 ? phpOwnerOverride[0] : `(?:${phpOwnerOverride.map(escapeRe).join('|')})`;
+        const fi = cmd.indexOf(fileArg, i + 2);
+        if (fi >= 0) { if (concrete.length === 1) cmd[fi] = proj ? path.posix.relative(proj.root, concrete[0].file) : concrete[0].file; else cmd.splice(fi, 1); }
+      }
+      cmd[i + 1] = '/' + (owner ? '^' + (phpOwnerOverride?.length > 1 ? owner : escapeRe(owner)) : '') + '::' + escapeRe(name) + '(?:\\s+with data set [\\s\\S]*)?$/';
     }
   }
   if (/\.jl$/.test(t.path) && cmd[0] === 'julia' && juliaScriptIndex(cmd) === cmd.length - 1 && cmd.at(-1) === fileArg) cmd.splice(cmd.at(-2) === '--' ? cmd.length - 2 : cmd.length - 1, 0, '-e', JULIA_VERBOSE);
@@ -3403,7 +3451,9 @@ function cmdTdd() {
   }
   const res = run(cmd, cfg.timeoutMs ?? 120000, proj?.root);
   const after = testSha(t.path, id);
-  if (after !== before) { out(`REFUSED: ${t.path} changed while running (formatter/watch?)`); return 1; }
+  // a clean C/C++ build writes compile_commands.json, which feeds the hash context; only a changed test file is a real edit (#221)
+  const buildContext = after !== before && /\.(?:c|cc|cpp|cxx)$/.test(t.path) && sha(fs.readFileSync(path.join(ROOT, t.path))) === rawBefore;
+  if (after !== before && !buildContext) { out(`REFUSED: ${t.path} changed while running (formatter/watch?)`); return 1; }
 
   const goVerdict = goRunner ? goResult(res.text, goTarget?.name ?? testName(t.path, id)) : null;
   if (goRunner) res.text = goOutput(res.text);
