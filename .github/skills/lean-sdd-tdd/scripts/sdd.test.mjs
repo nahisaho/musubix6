@@ -5417,3 +5417,16 @@ test('#222 PHP traits used by the test class are hashed oracles', () => {
   fakeOut(d, 'There was 1 failure:\n1) Probe\\Tests\\CalcTest::test_calc_001\nFailed asserting that 5 is identical to 4.\nTests: 1, Assertions: 1, Failures: 1.');
   oracleDrift(d, 'TEST-CALC-001', () => writeAll(d, { 'tests/Support/RowsTrait.php': '<?php\nnamespace Probe\\Support;\ntrait RowsTrait { public static function rows(): int { return 4; } }\n' }));
 });
+
+test('#222 impact follows PHP `use function` / `use const` imports, including groups', () => {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-i222-'));
+  const w = (f, b) => { fs.mkdirSync(path.dirname(path.join(d, f)), { recursive: true }); fs.writeFileSync(path.join(d, f), b); };
+  spawnSync('git', ['init', '-q'], { cwd: d });
+  for (const f of ['a', 'b', 'c']) w(`.sdd/specs/${f}.md`, `---\nfeature: ${f}\ntier: T1\n---\n- REQ-${f.toUpperCase()}-001 x\n`);
+  w('src/A/fn.php', '<?php\nnamespace A;\nconst LIMIT = 3;\n// @id CODE-A-001 @implements REQ-A-001\nfunction twice(int $x): int { return $x * 2; }\n');
+  w('src/B/D.php', '<?php\nnamespace B;\nuse function A\\twice;\nuse const A\\LIMIT;\n// @id CODE-B-001 @implements REQ-B-001\nclass D { function f() { return twice(LIMIT); } }\n');
+  w('src/C/E.php', '<?php\nnamespace C;\nuse function A\\{twice as dbl};\n// @id CODE-C-001 @implements REQ-C-001\nclass E { function f() { return dbl(1); } }\n');
+  sdd(d, 'init');
+  const reached = JSON.parse(sdd(d, 'impact', 'src/A/fn.php', '--json').out).reachedFiles;
+  assert.ok(reached.includes('src/B/D.php') && reached.includes('src/C/E.php'), reached.join(','));
+});

@@ -3993,6 +3993,8 @@ function importRev() {
     const code = fs.readFileSync(path.join(ROOT, g), 'utf8');
     const ns = /^\s*namespace\s+([\w\\]+)\s*;/m.exec(code)?.[1];
     if (ns) for (const m of code.matchAll(/^\s*(?:(?:abstract|final|readonly)\s+)*(?:class|interface|trait|enum)\s+(\w+)/gm)) { const q = `${ns}\\${m[1]}`; if (!phpDecl.has(q)) phpDecl.set(q, []); phpDecl.get(q).push(g); }
+    // namespaced functions/consts are imported with `use function` / `use const` (#222)
+    for (const [kind, re] of [['function', /^(?:function)\s+&?\s*(\w+)\s*\(/gm], ['const', /^const\s+(\w+)\s*=/gm]]) for (const m of maskBraces(code).matchAll(re)) { const q = `${kind}:${[ns, m[1]].filter(Boolean).join('\\')}`; if (!phpDecl.has(q)) phpDecl.set(q, []); phpDecl.get(q).push(g); }
   }
   const endsWith = (suffix) => files.filter((f) => f === suffix || f.endsWith('/' + suffix));
   // Rust cross-crate `use name::..` resolves by Cargo package name (`-` → `_`), not against every crate's lib.rs (#127)
@@ -4157,8 +4159,9 @@ function importRev() {
         const fqns = m[1] ? [m[1]] : m[3].split(',').map((x) => `${m[2]}\\${x.trim().split(/\s+as\s+/)[0]}`);
         for (const q of fqns) phpDecl.get(q.replace(/^\\/, ''))?.forEach((t) => add(t, f));
       }
+      for (const kind of ['function', 'const']) for (const q of phpImports(src, kind).values()) phpDecl.get(`${kind}:${q}`)?.forEach((t) => add(t, f));
       const ns = /^\s*namespace\s+([\w\\]+)\s*;/m.exec(src)?.[1];
-      if (ns) for (const [q, ts] of phpDecl) if (q.startsWith(ns + '\\') && !q.slice(ns.length + 1).includes('\\') && new RegExp(`\\b${q.split('\\').pop()}\\b`).test(src)) ts.forEach((t) => add(t, f));
+      if (ns) for (const [q, ts] of phpDecl) if (!q.includes(':') && q.startsWith(ns + '\\') && !q.slice(ns.length + 1).includes('\\') && new RegExp(`\\b${q.split('\\').pop()}\\b`).test(src)) ts.forEach((t) => add(t, f));
       for (const m of src.matchAll(/(?:require|include)(?:_once)?\s*\(?\s*(?:__DIR__\s*\.\s*)?['"]([^'"]+)['"]/g)) {
         const p = m[1].replace(/^\//, '');
         add(path.posix.normalize(path.posix.join(dir(f), p)), f);
