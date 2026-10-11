@@ -1844,6 +1844,21 @@ test('#79 ledger conflict markers give a clean message; merge-ledger repairs', (
   assert.doesNotMatch(sdd(d, 'tdd', 'check').out, /LEDGER (CONFLICT|CORRUPT)/);
 });
 
+test('#213 merge-ledger keeps the shared ledger prefix byte-identical', () => {
+  const d = mini(T1SPEC, { 'a.test.mjs': jsTest() }, FAIL);
+  sdd(d, 'tdd', 'red', 'TEST-A-001');
+  const f = path.join(d, '.sdd/tdd.jsonl');
+  const prefix = fs.readFileSync(f, 'utf8');
+  sdd(d, 'tdd', 'red', 'TEST-A-001', '--weak');
+  const next = fs.readFileSync(f, 'utf8').slice(prefix.length);
+  assert.ok(next.trim(), 'second entry recorded');
+  const other = next.replace(/"at":"[^"]*"/, '"at":"2999-01-01T00:00:00.000Z"');
+  fs.writeFileSync(f, `${prefix}<<<<<<< HEAD\n${next}=======\n${other}>>>>>>> other\n`);
+  assert.equal(sdd(d, 'tdd', 'merge-ledger').code, 0);
+  assert.ok(fs.readFileSync(f, 'utf8').startsWith(prefix), 'shared prefix rewritten');
+  assert.doesNotMatch(sdd(d, 'tdd', 'check').out, /LEDGER (CONFLICT|CORRUPT)|broken/);
+});
+
 test('#81 approve record refuses generic approver names for human approval', () => {
   const d = mini(T2SPEC, { 'a.test.mjs': jsTest() }, PASS);
   assert.notEqual(sdd(d, 'approve', 'record', 'a', '--by', 'bot').code, 0);

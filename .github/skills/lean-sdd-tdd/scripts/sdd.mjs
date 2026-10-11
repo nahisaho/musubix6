@@ -2867,21 +2867,26 @@ function mergeLedger() {
   if (!fs.existsSync(LEDGER)) { out('no ledger'); return 2; }
   const seen = new Set();
   const es = [];
+  // the leading run of intact, correctly chained lines is kept byte-identical (#213)
+  const kept = [];
+  let prefixOpen = true;
+  let prev = '';
   for (const l of fs.readFileSync(LEDGER, 'utf8').split('\n')) {
-    if (!l.trim() || /^(<{7}|={7}|>{7})/.test(l)) continue;
+    if (!l.trim() || /^(<{7}|={7}|>{7})/.test(l)) { if (l.trim()) prefixOpen = false; continue; }
     let e;
     try { e = JSON.parse(l); } catch { out(`LEDGER CORRUPT: cannot parse line: ${l.slice(0, 80)}`); return 2; }
-    const { seq, prev, hash, ...rest } = e;
+    const { seq, prev: pv, hash, ...rest } = e;
     const k = JSON.stringify(rest);
+    if (prefixOpen && pv === prev && seq === kept.length + 1 && hash === entryHash(e)) { kept.push(l); seen.add(k); prev = hash; continue; }
+    prefixOpen = false;
     if (seen.has(k)) continue;
     seen.add(k);
     es.push(rest);
   }
   es.sort((a, b) => String(a.at).localeCompare(String(b.at)));
-  let prev = '';
-  const outLines = es.map((e, i) => { const full = { v: 1, ...e, seq: i + 1, prev }; delete full.hash; full.hash = entryHash(full); prev = full.hash; return JSON.stringify(full); });
+  const outLines = [...kept, ...es.map((e, i) => { const full = { v: 1, seq: kept.length + i + 1, ...e, prev }; delete full.hash; full.hash = entryHash(full); prev = full.hash; return JSON.stringify(full); })];
   fs.writeFileSync(LEDGER, outLines.join('\n') + '\n');
-  out(`ledger merged: ${es.length} entries re-chained (review with git diff; tdd check)`);
+  out(`ledger merged: ${outLines.length} entries (${kept.length} unchanged, ${es.length} re-chained; review with git diff; tdd check)`);
   return 0;
 }
 
