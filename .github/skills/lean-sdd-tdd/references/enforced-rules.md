@@ -87,7 +87,7 @@ Absolute and root-relative review paths, including paths with spaces, identify t
 
 ### Known limits not fixed in wave 3/4 (dogfood-7)
 - Impact: dynamic R `source()` arguments (non-literal paths, `here::here`) are not followed; run `gate` without `--changed` when relying on them.
-- `tdd stub` gaps: Python namespace dirs, Go field/method collision, C# `global using`, JS CJS `require`, PHP functions/enums, R helper shadowing, C++ using-declarations (#214, #215, #218, #219, #222, #223, #224).
+- `tdd stub` gaps: Python namespace dirs, Go field/method collision, C# `global using`, PHP functions/enums, R helper shadowing, C++ using-declarations (#214, #215, #218, #222, #223, #224).
 - Java (#216): a test declared in an `abstract class` runs through its single concrete subclass (`-Dtest=ImplTest#name`); zero or several concrete subclasses are refused as ambiguous/unresolved. A message-less exception (`java.lang.NullPointerException`) is shown as the `fails with:` reason.
 - Timeouts (#226): test commands run in their own process group; on `timeoutMs` the whole group (launcher and hung test binary) is killed and the run is rejected with "test timed out after N ms (hung test?)".
 - Workspace listing (#228): tracked files deleted from the working tree but not staged are dropped from the listing instead of crashing with ENOENT.
@@ -102,3 +102,4 @@ Absolute and root-relative review paths, including paths with spaces, identify t
 - Java CSV oracles (#238): `@CsvFileSource(files=...)` resolves against the nearest `pom.xml`/`build.gradle` above the test (surefire cwd) even when `projects[].root` is the reactor; a `files=` path that does not exist is refused. Not covered: a runtime-opened data file (C `fopen(VECTORS_DIR "/x.csv")`) is invisible to the oracle hash and `projects[].dependsOn` only scopes `gate --changed`; `#include` a generated data header or run `tdd refactor` after vector edits.
 - PHPUnit (#237): the Red `fails with:` text skips stack `file.php:N` lines, so a helper/trait assertion still shows `Failed asserting that ...`; `Premature end of PHP process` and `Allowed memory size ... exhausted` count as a crashed runner (Red/Green REJECTED, like other host crashes). Set `memory_limit` in phpunit.xml for runaway-recursion tests; children are killed with the process group on timeout (#226).
 - node:test (#225): a Red where the only failing entry is the test file itself (module-level throw, nothing registered or executed) is recorded as a weak Red (load/setup), like a pytest collection error (#123); keep fixtures inside the test body or pass `--expect <text>`.
+- JS stub (#219): CommonJS `require('./x.cjs')` of an existing module appends missing names as throwing stubs plus `module.exports.x = x`.

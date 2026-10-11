@@ -5959,3 +5959,17 @@ test('#233 tech-writer lint ignores an app named todo but flags TODO', () => {
   assert.equal((o.match(/placeholder/gi) ?? []).length >= 1, true);
   assert.doesNotMatch(o, /The todo app/, o);
 });
+
+test('#219 JS tdd stub: require() of an existing CJS module gets the missing names appended', () => {
+  const d = jsStubProject({
+    'src/add.cjs': 'function sub(a, b) { return a - b; }\nmodule.exports = { sub };\n',
+    'test/a.test.cjs': "const { add, sub } = require('../src/add.cjs');\n/** @id TEST-A-001 @verifies REQ-A-001 */\nit('TEST-A-001 adds', () => { add(1, 2); sub(2, 1); });\n",
+  });
+  sdd(d, 'tdd', 'stub', 'TEST-A-001');
+  const cjs = fs.readFileSync(path.join(d, 'src/add.cjs'), 'utf8');
+  assert.match(cjs, /^function sub\(a, b\) \{ return a - b; \}\nmodule\.exports = \{ sub \};\n/);
+  assert.match(cjs, /function add\(/);
+  assert.match(cjs, /module\.exports\.add = add;/);
+  assert.doesNotMatch(cjs, /\bexport\b|function sub[\s\S]*function sub/);
+  assert.equal(spawnSync('node', ['--check', path.join(d, 'src/add.cjs')]).status, 0);
+});

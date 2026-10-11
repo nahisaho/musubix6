@@ -2776,6 +2776,16 @@ function stubFor(testPath, id) {
   // CommonJS `require('<relative or package>')` gets a `module.exports` stub (#219)
   for (const m of scoped.matchAll(/(?:(?:const|let|var)\s+(\{[^}]*\}|[\w$]+)\s*=\s*)?\brequire\(\s*['"]([^'"\n]+)['"]\s*\)/g)) imps.push({ 1: m[1] ? (m[1].startsWith('{') ? m[1].replace(/\s*:\s*[\w$]+/g, '') : `* as ${m[1]}`) : '', 2: m[2], cjs: true });
   const toCjs = (b) => { const ex = []; const out = b.replace(/^export\s+(?:default\s+)?(class|function|const)\s+([\w$]+)/gm, (x, k, n) => { ex.push(n); return `${k} ${n}`; }); return `${out}\nmodule.exports = { ${ex.join(', ')} };\n`; };
+  // an existing CommonJS module that lacks a required name: append throwing stubs plus `module.exports.x = x` lines, never touching existing code (#219)
+  const cjsExisting = (file, clause) => {
+    const { named, S } = prep(clause);
+    const cur = fs.readFileSync(file, 'utf8');
+    const miss = named.filter((n) => !new RegExp(`\\b(?:function|class|const|let|var)\\s+${n}\\b|\\bexports\\.${n}\\b|\\bmodule\\.exports\\s*=\\s*\\{[^}]*\\b${n}\\b|\\b${n}\\s*:`).test(cur));
+    if (!miss.length) return;
+    const body = miss.map((n) => `${exportOf(n, S).replace(/^export\s+(?:default\s+)?/gm, '')}module.exports.${n} = ${n};\n`).join('\n');
+    fs.writeFileSync(file, cur + (cur.endsWith('\n') ? '\n' : '\n\n') + body);
+    made.push(rel(file));
+  };
   for (const m of imps) {
     ts = testTs && !m.cjs;
     const spec = m[2];
@@ -2794,7 +2804,7 @@ function stubFor(testPath, id) {
     const exts = ['', '.ts', '.tsx', '.js', '.mjs', '.cjs', '.jsx', '/index.ts', '/index.js'];
     const stem = abs.replace(/\.[cm]?[jt]sx?$/, '');
     const found = exts.map((e) => (fs.existsSync(abs + e) && fs.statSync(abs + e).isFile() ? abs + e : fs.existsSync(stem + e) && fs.statSync(stem + e).isFile() ? stem + e : null)).find(Boolean);
-    if (found) { if (!m.cjs) jsExisting(found, m[1]); continue; }
+    if (found) { if (m.cjs) cjsExisting(found, m[1]); else jsExisting(found, m[1]); continue; }
     const target = /\.[cm]?[jt]sx?$/.test(abs) ? (ts ? stem + '.ts' : abs) : abs + (ts ? '.ts' : '.js');
     add(target, body(m[1]));
   }
