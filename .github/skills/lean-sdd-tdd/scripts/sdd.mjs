@@ -36,7 +36,7 @@ const sha = (b) => createHash('sha256').update(b).digest('hex');
 const rel = (p) => path.relative(ROOT, p).split(path.sep).join('/');
 const readJson = (p, d) => { try { return JSON.parse(fs.readFileSync(p, 'utf8')); } catch { return d; } };
 const writeJson = (p, v) => { fs.mkdirSync(path.dirname(p), { recursive: true }); fs.writeFileSync(p, JSON.stringify(v, null, 2) + '\n'); };
-const fileSha = (p) => sha(fs.readFileSync(path.join(ROOT, p)));
+const fileSha = (p) => sha(fs.readFileSync(path.resolve(ROOT, p)));
 // BOM and CRLF are not content: lock hashes ignore them (#72); older locks hold the raw hash, which is still accepted
 const artifactSha = (p) => sha(fs.readFileSync(path.join(ROOT, p), 'utf8').replace(/^\uFEFF/, '').replace(/\r\n/g, '\n'));
 // Evidence is keyed to the test's own @id region (+ the preamble before the first @id: imports/helpers), so editing one test does not invalidate its siblings (#38).
@@ -96,17 +96,107 @@ function reachableHelpers(mine, helpers, shared, insensitive = false) {
   const selected = new Set();
   let calls = mine.body + '\n' + shared;
   for (;;) {
-    const next = helpers.filter((r) => !selected.has(r) && (r.implicit || new RegExp(`\\b${r.name}\\b`, insensitive ? 'i' : '').test(calls)));
+    const next = helpers.filter((r) => !selected.has(r) && (r.implicit && ownerApplies(mine, r) || new RegExp(`\\b${r.name}\\b`, insensitive ? 'i' : '').test(calls)));
     if (!next.length) break;
     for (const r of next) { selected.add(r); calls += '\n' + r.body; }
   }
+  function ownerApplies(mine, helper) {
+    if (!helper.owner || !mine.owner || mine.owner === helper.owner || mine.owner.startsWith(helper.owner + '$') || mine.owner.startsWith(helper.owner + '+')) return true;
+    const seen = new Set();
+    const inherited = (owner) => {
+      if (seen.has(owner)) return false;
+      seen.add(owner);
+      for (const t of sourceTypes().filter((t) => t.ext === path.extname(mine.file) && (t.fq === owner || owner.endsWith('$' + t.name) || owner.endsWith('+' + t.name)))) {
+        const declaration = new RegExp(`\\b(?:class|record)\\s+${t.name}(?:<[^>]+>)?\\s*(?:extends|:)\\s*([\\w.\\\\]+)`).exec(t.text);
+        if (!declaration) continue;
+        for (const f of localTypeFiles(path.join(ROOT, t.file), t.text, declaration[1])) {
+          for (const base of sourceTypes().filter((b) => path.join(ROOT, b.file) === f && b.name === declaration[1].split(/[.\\]/).at(-1))) if (base.fq === helper.owner || inherited(base.fq)) return true;
+        }
+      }
+      return false;
+    };
+    return inherited(mine.owner);
+  }
   return [...selected].sort((a, b) => a.start - b.start);
+}
+function maskAttributes(masked) {
+  for (const m of [...masked.matchAll(/^[ \t]*(?:#\[|\[(?=[A-Za-z_]))/gm)].reverse()) {
+    let end = m.index + m[0].length, depth = 1;
+    for (; end < masked.length && depth; end++) {
+      if (masked[end] === '[') depth++;
+      else if (masked[end] === ']') depth--;
+    }
+    masked = masked.slice(0, m.index) + masked.slice(m.index, end).replace(/[^\n]/g, ' ') + masked.slice(end);
+  }
+  return masked;
+}
+function phpImports(txt) {
+  const aliases = new Map();
+  for (const m of txt.matchAll(/\buse\s+([^;]+);/gi)) {
+    const group = /^([^{}]+)\{([^{}]+)\}$/.exec(m[1].trim());
+    for (const item of (group?.[2] ?? m[1]).split(',')) {
+      const use = /^\s*(\\?[\w\\]+)(?:\s+as\s+(\w+))?\s*$/i.exec(item);
+      if (use) aliases.set(use[2] ?? use[1].split('\\').at(-1), ((group?.[1] ?? '') + use[1]).replace(/^\\/, ''));
+    }
+  }
+  return aliases;
+}
+let localTypes;
+function sourceTypes() {
+  return localTypes ??= workspaceFiles().filter((f) => /\.(java|php|cs)$/.test(f)).flatMap((file) => {
+    const text = fs.readFileSync(path.join(ROOT, file), 'utf8'), ext = path.extname(file);
+    const ns = ext === '.java' ? /\bpackage\s+([\w.]+)\s*;/.exec(text)?.[1] : /\bnamespace\s+([\w.\\]+)/.exec(text)?.[1];
+    return [...text.matchAll(/\b(?:class|interface|trait|record|struct|enum)\s+(\w+)/g)].map((m) => {
+      const scope = qualifiedTestScope(file, text, m.index);
+      const namespace = ext === '.php' ? ns ?? '' : [ns].filter(Boolean).join('.');
+      const nested = scope && scope !== namespace;
+      const fq = [scope || namespace, m[1]].filter(Boolean).join(ext === '.php' ? '\\' : nested ? ext === '.java' ? '$' : '+' : '.');
+      return { file, text, ext, ns: ns ?? '', name: m[1], fq };
+    });
+  });
+}
+function localTypeFiles(file, text, name) {
+  const ext = path.extname(file), separator = ext === '.php' ? '\\' : '.';
+  let ns = ext === '.java' ? /\bpackage\s+([\w.]+)\s*;/.exec(text)?.[1] : /\bnamespace\s+([\w.\\]+)/.exec(text)?.[1];
+  const aliases = ext === '.php' ? phpImports(text) : new Map([...text.matchAll(ext === '.java' ? /\bimport\s+(?!static\b)([\w.]+)\s*;/g : /\busing\s+(\w+)\s*=\s*(?:global::)?([\w.]+)\s*;/g)].map((m) => ext === '.java' ? [m[1].split('.').at(-1), m[1]] : [m[1], m[2]]));
+  const names = new Set([aliases.get(name) ?? [ns, name].filter(Boolean).join(separator), name.replace(/^\\|^global::/, '')]);
+  for (const t of sourceTypes()) if (t.file === rel(file) && t.name === name) names.add(t.fq);
+  if (ext !== '.php') for (const m of text.matchAll(ext === '.java' ? /\bimport\s+([\w.]+)\.\*\s*;/g : /\busing\s+([\w.]+)\s*;/g)) names.add(m[1] + '.' + name);
+  let matches = sourceTypes().filter((t) => t.ext === ext && names.has(t.fq));
+  if (!matches.length && !ns && !aliases.has(name)) matches = sourceTypes().filter((t) => t.ext === ext && t.name === name);
+  if (ext === '.cs') {
+    const graph = dotnetGraph(ROOT), owners = graph.ownersOf(rel(file));
+    if (owners.length) matches = matches.filter((t) => graph.ownersOf(t.file).some((o) => owners.some((owner) => graph.deps(owner.file).has(o.file))));
+  }
+  return [...new Set(matches.map((t) => path.join(ROOT, t.file)))];
+}
+function lifecycleAttribute(body, txt, p) {
+  if (/\.php$/.test(p)) return phpLifecycle(body, txt);
+  const cs = /\.cs$/.test(p);
+  const builtins = cs ? /^(?:TestInitialize|TestCleanup|ClassInitialize|ClassCleanup|AssemblyInitialize|AssemblyCleanup|SetUp|TearDown|OneTimeSetUp|OneTimeTearDown)$/ : /^(?:BeforeEach|BeforeAll|AfterEach|AfterAll|Before|After)$/;
+  const aliases = cs ? new Map([...txt.matchAll(/\busing\s+(\w+)\s*=\s*(?:global::)?([\w.]+)\s*;/g)].map((m) => [m[1], m[2]])) : new Map();
+  const names = cs ? [...body.matchAll(/\[([\s\S]*?)\]/g)].flatMap((m) => [...m[1].matchAll(/(?:^|,)\s*((?:global::)?[\w.]+)/g)].map((n) => n[1])) : [...body.matchAll(/@([\w.]+)/g)].map((m) => m[1]);
+  const seen = new Set();
+  const lifecycle = (name) => {
+    name = (aliases.get(name) ?? name).split('.').at(-1).replace(cs ? /Attribute$/ : /$^/, '');
+    if (builtins.test(name)) return true;
+    if (cs || seen.has(name)) return false;
+    seen.add(name);
+    const definitions = sourceTypes().filter((t) => t.ext === '.java' && t.name === name && new RegExp(`@interface\\s+${name}\\b`).test(t.text));
+    if (!definitions.length) return !/^(?:Override|SuppressWarnings|SafeVarargs|Deprecated|Test|ParameterizedTest|RepeatedTest|TestFactory|TestTemplate|Nested|Order|DisplayName|Timeout|Disabled|Tag|ExtendWith|TestInstance|Retention|Target|Documented|Inherited)$/.test(name);
+    return definitions.some((t) => {
+      const at = t.text.search(new RegExp(`@interface\\s+${name}\\b`));
+      const pre = t.text.slice(Math.max(t.text.lastIndexOf('}', at) + 1, t.text.lastIndexOf(';', at) + 1), at);
+      return [...pre.matchAll(/@([\w.]+)/g)].some((m) => lifecycle(m[1]));
+    });
+  };
+  return names.some(lifecycle);
 }
 function braceFunctions(txt, p) {
   let masked = maskBraces(txt, /\.rs$/.test(p));
   const blank = (s) => s.replace(/[^\n]/g, ' ');
   if (/\.java$/.test(p)) masked = masked.replace(/@[\w.]+(?:\([^)]*\))?/g, blank);
-  if (/\.(?:php|cs)$/.test(p)) masked = masked.replace(/^[ \t]*(?:#?\[[^\]\n]*\][ \t]*)+/gm, blank);
+  if (/\.(?:php|cs)$/.test(p)) masked = maskAttributes(masked);
   const ls = txt.split('\n'), offsets = [];
   let offset = 0;
   for (const l of ls) { offsets.push(offset); offset += l.length + 1; }
@@ -121,23 +211,17 @@ function braceFunctions(txt, p) {
       if (depth) return null;
     }
     let line = offsets.findLastIndex((o) => o <= m.index + m[0].search(/\S/));
-    while (line > 0 && offsets[line - 1] >= (ranges.at(-1)?.end ?? 0) && (!ls[line - 1].trim() || /^\s*(\/\/|\/\*|\*|#\[|@\w|\[)/.test(ls[line - 1]))) line--;
+    while (line > 0 && offsets[line - 1] >= (ranges.at(-1)?.end ?? 0) && (!masked.slice(offsets[line - 1], offsets[line] - 1).trim() || /^\s*(\/\/|\/\*|\*|#\[|@\w|\[)/.test(ls[line - 1]))) line--;
     const start = offsets[line];
     const body = txt.slice(start, end);
-    const implicit = /\.java$/.test(p) ? /@(?:[\w.]+\.)?(?:BeforeEach|BeforeAll|AfterEach|AfterAll|Before|After)\b/.test(body) : /\.cs$/.test(p) ? /\[(?:TestInitialize|TestCleanup|ClassInitialize|ClassCleanup|AssemblyInitialize|AssemblyCleanup|SetUp|TearDown|OneTimeSetUp|OneTimeTearDown)\b/.test(body) || /^(?:Dispose|DisposeAsync|InitializeAsync)$/.test(m[1]) : /\.php$/.test(p) && (/^(?:setUp|tearDown|setUpBeforeClass|tearDownAfterClass|assertPreConditions|assertPostConditions)$/i.test(m[1]) || phpLifecycle(body, txt));
-    ranges.push({ start, end, name: m[1], body, implicit, test: /@id\s+TEST-|#\[test\]|@(?:[\w.]+\.)?(?:Test|ParameterizedTest|RepeatedTest|TestFactory|TestTemplate)\b|\[(?:Fact|Theory|Test|TestCase|TestMethod|DataRow)\b/.test(body) || /^test_/.test(m[1]), code: /@id\s+CODE-/.test(body) });
+    const implicit = /\.(?:java|cs|php)$/.test(p) && (lifecycleAttribute(body, txt, p) || (/\.cs$/.test(p) && /^(?:Dispose|DisposeAsync|InitializeAsync)$/.test(m[1])) || (/\.php$/.test(p) && /^(?:setUp|tearDown|setUpBeforeClass|tearDownAfterClass|assertPreConditions|assertPostConditions)$/i.test(m[1])));
+    const namedTest = /^test_/.test(m[1]) && (!/\.php$/.test(p) || !/\b(?:private|protected)\s+(?:static\s+)?function\b/.test(body));
+    ranges.push({ start, end, name: m[1], body, implicit, file: p, owner: /\.(?:java|cs|php)$/.test(p) ? qualifiedTestScope(p, txt, open) : '', test: /@id\s+TEST-|#\[test\]|@(?:[\w.]+\.)?(?:Test|ParameterizedTest|RepeatedTest|TestFactory|TestTemplate)\b|\[(?:Fact|Theory|Test|TestCase|TestMethod|DataRow)\b/.test(body) || namedTest, code: /@id\s+CODE-/.test(body) });
   }
   return ranges;
 }
 function phpLifecycle(body, txt) {
-  const aliases = new Map();
-  for (const m of txt.matchAll(/\buse\s+([^;\n]+);/gi)) {
-    const group = /^([^{}]+)\{([^{}]+)\}$/.exec(m[1].trim());
-    for (const item of (group?.[2] ?? m[1]).split(',')) {
-      const use = /^\s*(\\?[\w\\]+)(?:\s+as\s+(\w+))?\s*$/i.exec(item);
-      if (use) aliases.set((use[2] ?? use[1].split('\\').at(-1)).toLowerCase(), (group?.[1] ?? '') + use[1]);
-    }
-  }
+  const aliases = new Map([...phpImports(txt)].map(([a, b]) => [a.toLowerCase(), b]));
   const lifecycle = /^(?:Before|After|BeforeClass|AfterClass|PreCondition|PostCondition)$/i;
   return [...body.matchAll(/#\[([^\]]*)\]/g)].some((attr) => [...attr[1].matchAll(/(?:^|,)\s*(\\?[\w\\]+)/g)].some((m) => lifecycle.test((aliases.get(m[1].toLowerCase()) ?? m[1]).split('\\').at(-1))));
 }
@@ -161,40 +245,100 @@ function rustLocalModules(file, txt, entry = file) {
     const parents = scope.filter(Boolean);
     const base = path.basename(file) === 'mod.rs' || file === entry ? path.dirname(file) : file.slice(0, -3);
     const home = path.join(base, ...parents);
-    const override = /#\[path\s*=\s*"([^"]+)"\]\s*$/.exec(txt.slice(0, m.index))?.[1];
-    const candidates = override ? [path.resolve(path.dirname(file), override)] : [path.join(home, m[1] + '.rs'), path.join(home, m[1], 'mod.rs')];
+    const attribute = /#\[path\s*=\s*(r#*"[\s\S]*?"#*|"(?:\\.|[^"\\])*")\]\s*$/.exec(txt.slice(0, m.index))?.[1];
+    const override = attribute ? rustIncludeValue(attribute, file) : null;
+    const candidates = override !== null ? [path.resolve(parents.length ? home : path.dirname(file), override)] : [path.join(home, m[1] + '.rs'), path.join(home, m[1], 'mod.rs')];
     paths.push({ file: candidates.find((p) => fs.existsSync(p)) ?? candidates[0], mods: [...parents, m[1]] });
   }
   return paths;
 }
+function rustIncludeValue(expression, file) {
+  const e = expression.trim().replace(/,\s*$/, '');
+  const raw = /^r(#+)?"([\s\S]*)"\1$/.exec(e);
+  if (raw) return raw[2];
+  if (/^"(?:\\.|[^"\\])*"$/.test(e)) {
+    try { return JSON.parse(e); } catch { return null; }
+  }
+  const concat = /^concat!\s*\(([\s\S]*)\)$/.exec(e);
+  if (concat) {
+    const mask = maskBraces(concat[1], true), parts = [];
+    let depth = 0, start = 0;
+    for (let i = 0; i < mask.length; i++) {
+      if (mask[i] === '(') depth++;
+      else if (mask[i] === ')') depth--;
+      else if (mask[i] === ',' && !depth) { parts.push(concat[1].slice(start, i)); start = i + 1; }
+    }
+    parts.push(concat[1].slice(start));
+    const values = parts.filter((p) => p.trim()).map((p) => rustIncludeValue(p, file));
+    return values.every((v) => v !== null) ? values.join('') : null;
+  }
+  const env = /^env!\s*\(\s*"CARGO_MANIFEST_DIR"\s*\)$/.test(e);
+  if (env) {
+    for (let d = path.dirname(file); d.startsWith(ROOT); d = path.dirname(d)) {
+      if (fs.existsSync(path.join(d, 'Cargo.toml'))) return d;
+      if (d === ROOT) break;
+    }
+  }
+  return null;
+}
+function localSourceDependencies(file, text, rootFile = false) {
+  const next = [], ext = path.extname(file);
+  const suffix = (name) => workspaceFiles().filter((f) => f === name || f.endsWith('/' + name)).map((f) => path.join(ROOT, f));
+  if (ext === '.rs') {
+    const inline = rootFile ? text.indexOf('#[cfg(test)]') : -1;
+    const input = inline >= 0 ? ' '.repeat(inline) + text.slice(inline) : text;
+    const entry = /(?:^|\/)(?:lib|main|mod)\.rs$|(?:^|\/)(?:tests|benches|examples)\/[^/]+\.rs$/.test(rel(file)) ? file : '';
+    next.push(...rustLocalModules(file, input, entry).map((m) => m.file));
+    const mask = maskBraces(input, true);
+    for (const m of mask.matchAll(/\binclude(?:_str|_bytes)?!\s*\(/g)) {
+      const start = m.index + m[0].length;
+      let end = start, depth = 1;
+      for (; end < mask.length && depth; end++) { if (mask[end] === '(') depth++; else if (mask[end] === ')') depth--; }
+      const value = rustIncludeValue(input.slice(start, end - 1), file);
+      if (value === null) throw new Error(`REFUSED: unresolved Rust include oracle in ${rel(file)} — use a local literal/concat!(env!("CARGO_MANIFEST_DIR"), ...) path`);
+      next.push(path.resolve(path.dirname(file), value));
+    }
+  } else if (/\.(?:c|h|cc|cpp|cxx|hpp|hh)$/.test(ext)) {
+    for (const m of text.matchAll(/^\s*#\s*include\s+([<"])([^>"]+)[>"]/gm)) {
+      const local = path.resolve(path.dirname(file), m[2]);
+      const matches = suffix(m[2]);
+      next.push(...(m[1] === '"' && fs.existsSync(local) ? [local] : matches.length ? matches : m[1] === '"' ? [local] : []));
+    }
+  } else if (ext === '.jl') {
+    for (const m of text.matchAll(/\binclude\s*\(\s*"([^"]+)"\s*\)/g)) next.push(path.resolve(path.dirname(file), m[1]));
+  } else if (['.java', '.php', '.cs'].includes(ext)) {
+    if (ext === '.php') for (const m of text.matchAll(/\b(?:require|include)(?:_once)?\s*\(?\s*(?:__DIR__\s*\.\s*)?['"]([^'"]+)['"]/g)) next.push(path.resolve(path.dirname(file), m[1].replace(/^\//, '')));
+    const references = new Set();
+    if (ext === '.java') {
+      for (const m of text.matchAll(/\b(?:extends|implements)\s+([\w., ]+)/g)) for (const n of m[1].split(',')) references.add(n.trim().split(/\s/)[0]);
+      for (const m of text.matchAll(/\bimport\s+(?:static\s+)?([\w.]+)\s*;/g)) {
+        const parts = m[1].split('.');
+        references.add(parts.at(-1));
+        references.add(parts.slice(0, -1).join('.'));
+      }
+      for (const m of text.matchAll(/@([\w.]+)/g)) references.add(m[1]);
+    } else if (ext === '.php') {
+      for (const m of text.matchAll(/\b(?:extends|implements)\s+([\\\w]+)/g)) references.add(m[1]);
+      for (const [n] of phpImports(text)) references.add(n);
+    } else {
+      for (const m of text.matchAll(/\b(?:class|record|struct)\s+\w+(?:<[^>]*>)?\s*:\s*([^{\n]+)/g)) for (const n of m[1].split(',')) references.add(n.trim().split(/[<\s]/)[0]);
+      for (const m of text.matchAll(/\b(?:[A-Z]\w*)\b/g)) references.add(m[0]);
+    }
+    for (const name of references) next.push(...localTypeFiles(file, text, name));
+  }
+  return [...new Set(next)];
+}
 // Local test-support dependencies are conservative oracles; annotated production is not (#181).
 function externalOracleSha(p, hash) {
-  if (!/\.(?:rs|c|cc|cpp|cxx)$/.test(p)) return hash;
+  if (!/\.(?:rs|c|cc|cpp|cxx|java|php|cs|jl)$/.test(p)) return hash;
   const root = path.join(ROOT, p), seen = new Set([root]), deps = new Map();
-  let all;
   const visit = (file, rootFile = false) => {
     let text, raw;
     try { raw = fs.readFileSync(file); text = raw.toString('utf8').replace(/^\uFEFF/, '').replace(/\r\n/g, '\n'); }
     catch { if (!rootFile) deps.set(rel(file), 'missing'); return; }
-    if (!rootFile && /\.(?:rs|c|h|cc|cpp|cxx|hpp|hh)$/.test(file) && /@id\s+CODE-/.test(text) && !/@id\s+TEST-/.test(text)) return;
+    if (!rootFile && /@id\s+CODE-/.test(text) && !/@id\s+TEST-/.test(text)) return;
     if (!rootFile) deps.set(rel(file), sha(raw));
-    const next = [];
-    if (/\.rs$/.test(file)) {
-      const inline = rootFile ? text.indexOf('#[cfg(test)]') : -1;
-      const input = inline >= 0 ? ' '.repeat(inline) + text.slice(inline) : text;
-      const entry = /(?:^|\/)(?:lib|main|mod)\.rs$|(?:^|\/)(?:tests|benches|examples)\/[^/]+\.rs$/.test(rel(file)) ? file : '';
-      next.push(...rustLocalModules(file, input, entry).map((m) => m.file));
-      for (const m of input.matchAll(/\binclude(?:_str|_bytes)?!\s*\(\s*"([^"]+)"/g)) next.push(path.resolve(path.dirname(file), m[1]));
-    } else {
-      for (const m of text.matchAll(/^\s*#\s*include\s+([<"])([^>"]+)[>"]/gm)) {
-        const local = path.resolve(path.dirname(file), m[2]);
-        if (m[1] === '"' && fs.existsSync(local)) { next.push(local); continue; }
-        if (m[1] === '<' && !m[2].includes('/')) continue;
-        all ??= workspaceFiles();
-        const matches = all.filter((f) => f === m[2] || f.endsWith('/' + m[2])).map((f) => path.join(ROOT, f));
-        next.push(...(matches.length ? matches : m[1] === '"' ? [local] : []));
-      }
-    }
+    const next = localSourceDependencies(file, text, rootFile);
     for (const dep of next) {
       if (!dep.startsWith(ROOT + path.sep) || seen.has(dep)) continue;
       seen.add(dep);
@@ -205,7 +349,7 @@ function externalOracleSha(p, hash) {
   return deps.size ? sha(hash + '\u0000' + [...deps].sort(([a], [b]) => a.localeCompare(b)).map(([f, h]) => f + '\u0000' + h).join('\u0000')) : hash;
 }
 function juliaRanges(txt) {
-  const masked = txt.replace(/#[^\n]*|"""[\s\S]*?"""|"(?:\\[\s\S]|[^"\\])*"/g, (s) => s.replace(/[^\n]/g, ' '));
+  const masked = txt.replace(/#[^\n]*|"""[\s\S]*?"""|"(?:\\[\s\S]|[^"\\])*"|(?<![:\w]):(?:begin|end|if|for|while|let|try|struct|module|baremodule|macro|quote|do|function)\b/g, (s) => s.replace(/[^\n]/g, ' '));
   const ranges = [];
   for (const a of txt.matchAll(/^[ \t]*#.*@id\s+((?:TEST|CODE)-[A-Z0-9-]+)[^\n]*\n/gm)) {
     const start = a.index, from = start + a[0].length;
@@ -521,7 +665,7 @@ function approvalState(spec) {
     if (!fs.existsSync(path.join(ROOT, p)) || ![fileSha(p), artifactSha(p)].includes(a.artifacts?.[p])) return 'stale';
   }
   // the cited review file is part of the lock: deleted or edited after record => stale (#122)
-  if (a.kind === 'ai' && a.review && a.reviewSha && (!fs.existsSync(path.join(ROOT, a.review)) || fileSha(a.review) !== a.reviewSha)) return 'stale';
+  if (a.kind === 'ai' && a.review && a.reviewSha && (!fs.existsSync(path.resolve(ROOT, a.review)) || fileSha(a.review) !== a.reviewSha)) return 'stale';
   return 'ok';
 }
 
@@ -597,8 +741,9 @@ const R_TEST = 'testthat::test_file(commandArgs(TRUE)[1], reporter = "summary", 
 const JULIA_TEST = 'out=$(julia --project=. -e "using Pkg; Pkg.test()" 2>&1); r=$?; if [ $r -eq 0 ]; then printf "%s\\n" "$out"; exit 0; fi; if [ -f test/runtests.jl ] && printf "%s" "$out" | grep -qiE "to be registered|registry|could not resolve host|failed to (fetch|clone)|network|offline"; then echo "sdd: INFRA: Pkg.test() failed to resolve packages (no registry/network) — falling back to julia --project=. test/runtests.jl"; julia --project=. test/runtests.jl; exit $?; fi; printf "%s\\n" "$out"; exit $r';
 const JULIA_VERBOSE = `function sdd_verbose(ex)
     ex isa Expr || return ex
-    if ex.head === :macrocall && (ex.args[1] === Symbol("@testset") || (ex.args[1] isa GlobalRef && ex.args[1].name === Symbol("@testset")))
-        compatible(a) = a isa AbstractString || a === :DefaultTestSet || (a isa Expr && a.head in (:(=), :string)) || (a isa GlobalRef && a.name === :DefaultTestSet)
+    standard(a, name) = a === name || (a isa GlobalRef && a.mod === Test && a.name === name) || (a isa Expr && a.head === :. && length(a.args) == 2 && a.args[1] === :Test && a.args[2] isa QuoteNode && a.args[2].value === name)
+    if ex.head === :macrocall && standard(ex.args[1], Symbol("@testset"))
+        compatible(a) = a isa AbstractString || standard(a, :DefaultTestSet) || (a isa Expr && a.head in (:(=), :string))
         if all(compatible, ex.args[3:end-1])
             filter!(a -> !(a isa Expr && a.head === :(=) && a.args[1] === :verbose), ex.args)
             insert!(ex.args, 3, Expr(:(=), :verbose, true))
@@ -982,8 +1127,8 @@ function cmdReview() {
     if (!a || typeof flags.feature !== 'string') { out('usage: review check <file> --feature <feature> (both required)'); return 2; }
     const spec = loadSpecs().find((x) => x.feature === flags.feature);
     if (!spec) { out(`unknown feature "${flags.feature}" (known: ${loadSpecs().map((x) => x.feature).join(', ') || 'none'})`); return 2; }
-    if (!fs.existsSync(path.join(ROOT, a)) || !fs.statSync(path.join(ROOT, a)).isFile()) { out(`review file not found: ${a}`); return 2; }
-    const probs = reviewProblems(fs.readFileSync(path.join(ROOT, a), 'utf8'), fileSha(spec.path));
+    if (!fs.existsSync(path.resolve(ROOT, a)) || !fs.statSync(path.resolve(ROOT, a)).isFile()) { out(`review file not found: ${a}`); return 2; }
+    const probs = reviewProblems(fs.readFileSync(path.resolve(ROOT, a), 'utf8'), fileSha(spec.path));
     out(probs.length ? `REVIEW INVALID: ${a}\n${probs.map((x) => '  ' + x).join('\n')}` : `REVIEW OK: ${a}`);
     return probs.length ? 1 : 0;
   }
@@ -1029,11 +1174,12 @@ function cmdApprove() {
     if (dp) { out(`REFUSED: ${dp}`); return 1; }
     const review = typeof flags.review === 'string' ? flags.review.trim() : '';
     if (isAi && (/^ai:\s*(self)?$/i.test(flags.by) || !review)) { out(`REFUSED: ai approver needs a named reviewer (not ai:self) and --review <path-or-summary>, e.g. approve record ${spec.feature} --by ai:<reviewer> --review .sdd/review.md (template: review template ${spec.feature})`); return 1; }
-    const reviewIsFile = !!review && fs.existsSync(path.join(ROOT, review)) && fs.statSync(path.join(ROOT, review)).isFile();
-    if (isAi && !reviewIsFile && /^[^\s]+\.(md|markdown|txt)$/i.test(review)) { out(`REFUSED: --review ${review} looks like a file path but does not exist (a free-text summary must contain spaces)`); return 1; }
+    const reviewPath = path.resolve(ROOT, review);
+    const reviewIsFile = !!review && fs.existsSync(reviewPath) && fs.statSync(reviewPath).isFile();
+    if (isAi && !reviewIsFile && (path.isAbsolute(review) || /^\.{1,2}[/\\]/.test(review) || /[/\\].*\.(?:md|markdown|txt)$/i.test(review) || /^[^\s]+\.(md|markdown|txt)$/i.test(review))) { out(`REFUSED: --review ${review} looks like a file path but does not exist (a free-text summary must contain spaces)`); return 1; }
     if (isAi && !reviewIsFile && loadConfig().requireReviewFile) { out('REFUSED: config requireReviewFile — --review must be a file (e.g. .sdd/review.md)'); return 1; }
     if (isAi && reviewIsFile) {
-      const probs = reviewProblems(fs.readFileSync(path.join(ROOT, review), 'utf8'), fileSha(spec.path));
+      const probs = reviewProblems(fs.readFileSync(reviewPath, 'utf8'), fileSha(spec.path));
       if (probs.length) { out(`REFUSED: ${review} is not an acceptable review file`); probs.slice(0, 6).forEach((x) => out(`  ${x}`)); out('  see: review template <feature>'); return 1; }
     }
     if (spec.approval === 'human') {
@@ -1042,7 +1188,7 @@ function cmdApprove() {
       if (prep !== artifactSha(spec.path)) { out(`REFUSED: no matching \`approve prepare ${spec.feature}\` for the current spec — run it, show the human the exact paths/hashes, then record (after any spec/design edit, prepare again)`); return 1; }
     }
     const all = readJson(APPROVALS, {});
-    all[spec.feature] = { by: flags.by, kind: isAi ? 'ai' : 'human', review: review || undefined, reviewSha: review && fs.existsSync(path.join(ROOT, review)) && fs.statSync(path.join(ROOT, review)).isFile() ? fileSha(review) : undefined, at: new Date().toISOString(), artifacts: Object.fromEntries(spec.artifacts.map((p) => [p, artifactSha(p)])), tier: spec.tier, requireHuman: spec.approval === 'human', code: spec.approval === 'human' ? implFileShas(spec) : undefined };
+    all[spec.feature] = { by: flags.by, kind: isAi ? 'ai' : 'human', review: review || undefined, reviewSha: reviewIsFile ? fileSha(review) : undefined, at: new Date().toISOString(), artifacts: Object.fromEntries(spec.artifacts.map((p) => [p, artifactSha(p)])), tier: spec.tier, requireHuman: spec.approval === 'human', code: spec.approval === 'human' ? implFileShas(spec) : undefined };
     writeJson(APPROVALS, all);
     out(needsLock(spec) ? `locked ${spec.feature} by ${flags.by}: ${spec.artifacts.join(', ')}` : `recorded ${spec.feature} by ${flags.by}: ${spec.artifacts.join(', ')} — note: ${spec.tier} specs without approval: human are NOT lock-enforced (only T2 / approval: human are verified by gate)`);
     return 0;
@@ -1392,6 +1538,14 @@ function stubJava(testPath, src, dir, add, made) {
     const p = /^package\s+([\w.]+);/m.exec(text)?.[1];
     return [[p, path.basename(f, '.java')].filter(Boolean).join('.'), { file: f, text }];
   }));
+  const projectWild = [...src.matchAll(/\bimport\s+([\w.]+)\.\*\s*;/g)].map((m) => m[1]);
+  for (const m of src.matchAll(/\b[A-Z]\w*\b/g)) {
+    const n = m[0];
+    if (pkgOf.has(n) || imported.has(n) || local.has(n) || javaFiles.has([pkg, n].filter(Boolean).join('.'))) continue;
+    const matches = projectWild.filter((p) => javaFiles.has(p + '.' + n));
+    if (matches.length === 1) pkgOf.set(n, matches[0]);
+    else if (matches.length > 1) { imported.add(n); (made.notes ??= []).push(`${n}: ambiguous project wildcard imports — not shadowed by a stub`); }
+  }
   const fqOf = (n) => [pkgOf.get(n) ?? pkg, n].filter(Boolean).join('.');
   const known = { has: (n) => { const f = javaFiles.get(fqOf(n)); return f && !f.text.startsWith('// sdd-stub'); } };
   const JDK = /^(System|Math|String|Integer|Long|Double|Boolean|Character|Objects|Arrays|List|Map|Set|Collections|Optional|Thread|Assertions?|Assert|Files|Paths|Path|Instant|Duration|LocalDate|LocalDateTime|StringBuilder|Stream|Collectors|Pattern|UUID|BigDecimal|BigInteger)$/;
@@ -1503,11 +1657,38 @@ function stubC(testPath, src, dir, add, made) {
   const missing = [...src.matchAll(/#include\s+"([^"]+)"/g)].map((m) => m[1]).filter((h) => !fs.existsSync(path.resolve(dir, h)) && !fs.existsSync(path.resolve(ROOT, h)));
   const cc = cpp ? 'c++' : 'cc';
   const incs = [dir, ...['include', 'src'].map((d) => path.join(ROOT, d)), ROOT].flatMap((d) => ['-I', d]);
+  let standard = [];
+  for (let d = dir; d.startsWith(ROOT); d = path.dirname(d)) {
+    try {
+      const cmake = fs.readFileSync(path.join(d, 'CMakeLists.txt'), 'utf8');
+      const levels = [...cmake.matchAll(cpp ? /CMAKE_CXX_STANDARD\s+(\d+)|cxx_std_(\d+)/g : /CMAKE_C_STANDARD\s+(\d+)|c_std_(\d+)/g)].map((m) => +(m[1] ?? m[2]));
+      if (levels.length) { standard = [`-std=${cpp ? 'c++' : 'c'}${Math.max(...levels)}`]; break; }
+    } catch {}
+    if (d === ROOT) break;
+  }
+  let compile = { cc, args: [...standard, ...incs], cwd: dir };
+  for (const home of new Set([dir, ROOT, path.join(ROOT, 'build')])) {
+    const commands = readJson(path.join(home, 'compile_commands.json'), []);
+    const entry = commands.find((e) => path.resolve(e.directory ?? home, e.file ?? '') === path.resolve(ROOT, testPath));
+    if (!entry) continue;
+    const args = entry.arguments ?? entry.command?.match(/(?:[^\s"'\\]|\\.|"(?:\\.|[^"\\])*"|'[^']*')+/g)?.map((a) => a.replace(/^(['"])([\s\S]*)\1$/, '$2'));
+    if (!args?.length) continue;
+    const cwd = path.resolve(home, entry.directory ?? '.');
+    const options = [];
+    for (let i = 1; i < args.length; i++) {
+      if (['-o', '-MF', '-MT', '-MQ'].includes(args[i])) { i++; continue; }
+      if (['-c', '-MD', '-MMD'].includes(args[i]) || path.resolve(cwd, args[i]) === path.resolve(ROOT, testPath)) continue;
+      options.push(args[i]);
+    }
+    compile = { cc: args[0], args: options, cwd };
+    break;
+  }
   // compile-check the result: an honest verdict instead of an assumed "Red-safe" (#130)
-  const verified = () => { const o = probe(cc, ['-fsyntax-only', ...incs, path.join(ROOT, testPath)], dir); const e = /^[^\n]*\berror:.*$/m.exec(o); return e ? { verified: 'fail', verifyError: e[0].replace(ROOT + '/', '').slice(0, 200) } : { verified: 'ok' }; };
+  const syntax = () => probe(compile.cc, ['-fsyntax-only', ...compile.args, path.join(ROOT, testPath)], compile.cwd);
+  const verified = () => { const o = syntax(); const e = /^[^\n]*\berror:.*$/m.exec(o); return e ? { verified: 'fail', verifyError: e[0].replace(ROOT + '/', '').slice(0, 200) } : { verified: 'ok' }; };
   if (!missing.length) return Object.assign(made, verified());
   for (const h of missing) { fs.mkdirSync(path.dirname(path.resolve(dir, h)), { recursive: true }); fs.writeFileSync(path.resolve(dir, h), ''); }
-  const out = probe(cpp ? 'c++' : 'cc', ['-fsyntax-only', '-I', dir, path.join(ROOT, testPath)], dir);
+  const out = syntax();
   // anything an already-present project header declares must not be redeclared (#96)
   const present = gitFiles('*.h').concat(gitFiles('*.hpp')).map((f) => { try { return fs.readFileSync(path.join(ROOT, f), 'utf8'); } catch { return ''; } }).join('\n');
   const declared = (n) => new RegExp(`\\b${n}\\s*\\(`).test(present);
@@ -1637,7 +1818,7 @@ function stubScript(lang, src, dir, add, made) {
     // classes already defined in the project, or built into PHP, are never stubbed (#95)
     const projFq = phpProjectFqcns();
     // `use Ns\Cls;` binds the short name to a FQCN: a same-named class in another namespace is not this one (#150)
-    const imported = new Map([...code.matchAll(/^\s*use\s+([A-Za-z_][\w\\]*\\[A-Za-z_]\w*)(?:\s+as\s+(\w+))?\s*;/gm)].map((m) => [m[2] ?? m[1].split('\\').pop(), m[1]]));
+    const imported = phpImports(code);
     const names = [...phpClasses.keys()];
     const bi = names.length ? spawnSync('php', ['-r', 'foreach (array_slice($argv, 1) as $n) if (class_exists($n, false) || interface_exists($n, false)) echo $n, "\n";', '--', ...names], { encoding: 'utf8' }) : null;
     const builtin = new Set(bi?.status === 0 ? bi.stdout.split('\n').filter(Boolean) : []);
@@ -1836,7 +2017,14 @@ function stubCs(testPath, src, id, made) {
   const typeFile = new Map();
   const findType = (n) => {
     if (typeFile.has(n)) return typeFile.get(n);
-    for (const f of gitFiles('*.cs')) { try { const c = fs.readFileSync(path.join(ROOT, f), 'utf8'); if (new RegExp(`\\b(?:class|record|struct|interface|enum)\\s+${n}\\b`).test(c)) { const r = { file: f, marked: c.includes(CS_MARK) }; typeFile.set(n, r); return r; } } catch {}
+    const visible = g.deps(testProj.file);
+    const namespaces = new Set([ownNs, ...usings, ...unresolved, pickNs(n, [...unresolved])].filter(Boolean));
+    for (const f of gitFiles('*.cs')) { try {
+      if (!g.ownersOf(f).some((o) => visible.has(o.file))) continue;
+      const c = fs.readFileSync(path.join(ROOT, f), 'utf8'), ns = /^\s*namespace\s+([\w.]+)/m.exec(c)?.[1];
+      if (ns && !namespaces.has(ns)) continue;
+      if (new RegExp(`\\b(?:class|record|struct|interface|enum)\\s+${n}\\b`).test(c)) { const r = { file: f, marked: c.includes(CS_MARK) }; typeFile.set(n, r); return r; }
+    } catch {}
     }
     return null;
   };
@@ -1869,7 +2057,9 @@ function stubCs(testPath, src, id, made) {
     const own = tpn.replace(/\.(?:Unit|Integration)?Tests?$/, '');
     const byProj = cand.filter((c) => own === c || own.startsWith(c + '.')).sort((a, b) => b.length - a.length)[0];
     const parentUse = usings.find((u) => refProjs.some((p) => pname(p) === u || pname(p).startsWith(u + '.')));
-    return cand.find((c) => n.includes(l(c)) || l(c).includes(n)) ?? byProj ?? cand[0] ?? usings.find((u) => refProjs.some((p) => u === pname(p) || u.startsWith(pname(p) + '.'))) ?? parentUse ?? ownNs?.replace(/\.(?:Unit|Integration)?Tests?$/, '');
+    const referencedUse = usings.find((u) => g.files.some((f) => f.endsWith('.cs') && g.ownersOf(f).some((o) => refProjs.some((p) => p.file === o.file)) && new RegExp(`\\bnamespace\\s+${escapeRe(u)}(?:[.;\\s{]|$)`).test(fs.readFileSync(path.join(ROOT, f), 'utf8'))));
+    const projectUses = usings.filter((u) => !/^(?:System|Microsoft|Xunit|NUnit|Moq|FluentAssertions)(?:\.|$)/.test(u));
+    return cand.find((c) => n.includes(l(c)) || l(c).includes(n)) ?? byProj ?? cand[0] ?? usings.find((u) => refProjs.some((p) => u === pname(p) || u.startsWith(pname(p) + '.'))) ?? parentUse ?? referencedUse ?? (refProjs.length === 1 && projectUses.length === 1 ? projectUses[0] : undefined) ?? ownNs?.replace(/\.(?:Unit|Integration)?Tests?$/, '');
   };
   const classify = (n) => {
     if (/Exception$/.test(n) || new RegExp(`(?:Throws|ThrowsAsync|ThrowsException|ThrowsExceptionAsync|Catch)\\s*<\\s*${esc(n)}\\b|catch\\s*\\(\\s*${esc(n)}\\b`).test(text)) return 'exception';
@@ -2546,7 +2736,7 @@ function qualifiedTestName(testPath, id, rust = false) {
 function qualifiedTestScope(testPath, text, at, rust = false) {
   const pre = maskBraces(text.slice(0, at), rust);
   const stack = [];
-  const re = rust ? /\bmod\s+(\w+)\s*\{|([{}])/g : /\b(namespace|class|record(?:\s+(?:class|struct))?)\s+([\w.]+)[^{;]*([{;])|([{}])/g;
+  const re = rust ? /\bmod\s+(\w+)\s*\{|([{}])/g : /\b(namespace|class|record(?:\s+(?:class|struct))?)\s+([\w.\\]+)[^{;]*([{;])|([{}])/g;
   let fileNs = '';
   for (const m of pre.matchAll(re)) {
     if (rust) { if (m[1]) stack.push(m[1]); else if (m[2] === '{') stack.push(null); else stack.pop(); }
@@ -2559,7 +2749,12 @@ function qualifiedTestScope(testPath, text, at, rust = false) {
   if (rust) return [...mods, ...stack.filter(Boolean)].join('::');
   const namespaces = stack.filter((s) => s?.kind === 'namespace').map((s) => s.name);
   const classes = stack.filter((s) => s && s.kind !== 'namespace').map((s) => s.name);
+  if (/\.php$/.test(testPath)) return [fileNs, ...namespaces, classes.at(-1)].filter(Boolean).join('\\');
   return [pkg, fileNs, ...namespaces, classes.join(/\.java$/.test(testPath) ? '$' : '+')].filter(Boolean).join('.');
+}
+function ctestRows(plain) {
+  const starts = [...plain.matchAll(/^\s*\d+\/\d+ Test\s+#\d+:\s+(.+?)\s+\.{2,}([^\n]*)/gm)];
+  return starts.map((m, i) => ({ name: m[1], status: m[2], block: plain.slice(m.index, starts[i + 1]?.index ?? plain.length) }));
 }
 function ambiguousJavaMethod(testPath, id) {
   const txt = fs.readFileSync(path.join(ROOT, testPath), 'utf8'), name = testName(testPath, id);
@@ -2573,7 +2768,23 @@ function javaCaseMatches(caseName, testPath, id) {
   const noArgs = new RegExp(`\\b${escapeRe(name)}\\s*\\(\\s*\\)`).test(testBody(testPath, id).join('\n'));
   return caseName === name || caseName?.startsWith(name + '[') || (noArgs ? new RegExp(`^${escapeRe(name)}\\(\\)(?:\\[|$)`).test(caseName ?? '') : caseName?.startsWith(name + '('));
 }
-function targetVerdict(plain, testPath, id, selectedName = null, requireJavaResult = false) {
+function dotnetResult(file, testPath, id, exactSelection = false) {
+  if (!file || !fs.existsSync(file)) return null;
+  const text = fs.readFileSync(file, 'utf8'), methods = new Map();
+  const attr = (t, key) => new RegExp(`\\b${key}="([^"]*)"`).exec(t)?.[1]?.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+  for (const m of text.matchAll(/<UnitTest\b([^>]*)>([\s\S]*?)<\/UnitTest>/g)) {
+    const method = /<TestMethod\b([^>]*)/.exec(m[2])?.[1];
+    if (method) methods.set(attr(m[1], 'id'), { cls: attr(method, 'className'), name: attr(method, 'name') });
+  }
+  const name = testName(testPath, id), cls = qualifiedTestName(testPath, id).slice(0, -name.length - 1);
+  const normalize = (s) => s?.replace(/<[^<>]*(?:<[^<>]*>[^<>]*)*>|\[[\s\S]*\]|`\d+/g, '').split(',')[0];
+  const rows = [...text.matchAll(/<UnitTestResult\b([^>]*)/g)].filter((m) => {
+    const method = methods.get(attr(m[1], 'testId'));
+    return (method?.name === name || exactSelection) && normalize(method?.cls) === cls;
+  }).map((m) => attr(m[1], 'outcome'));
+  return !rows.length ? 'notrun' : rows.includes('Failed') ? 'fail' : rows.includes('Passed') ? 'pass' : 'skip';
+}
+function targetVerdict(plain, testPath, id, selectedName = null, requireJavaResult = false, exactDotnetSelection = false) {
   const name = testName(testPath, id), exact = escapeRe(name);
   if (/\.jl$/.test(testPath)) {
     const rows = juliaSummaryRows(plain);
@@ -2599,11 +2810,13 @@ function targetVerdict(plain, testPath, id, selectedName = null, requireJavaResu
     return !rows.length ? 'notrun' : rows.some((m) => m[2] === 'FAILED') ? 'fail' : rows.some((m) => m[2] === 'ok') ? 'pass' : 'skip';
   }
   if (/^\s*\d+\/\d+ Test\s+#\d+:/m.test(plain)) {
-    const rows = [...plain.matchAll(/^\s*\d+\/\d+ Test\s+#\d+:\s+(\S+)\s+.*?(Passed|\*\*\*Failed|\*\*\*Skipped|\*\*\*Not Run|\*\*\*Exception)/gm)].filter((m) => m[1] === (selectedName ?? name) || m[1] === id);
-    return !rows.length ? 'notrun' : rows.some((m) => /Failed|Exception/.test(m[2])) ? 'fail' : rows.some((m) => m[2] === 'Passed') ? 'pass' : 'skip';
+    const rows = ctestRows(plain).filter((r) => r.name === (selectedName ?? name) || r.name === id);
+    return !rows.length ? 'notrun' : rows.some((r) => /Failed|Exception/.test(r.status)) ? 'fail' : rows.some((r) => /\bPassed\b/.test(r.status)) ? 'pass' : 'skip';
   }
   if (/\.php$/.test(testPath) && /There w(?:as|ere) \d+ (?:failure|error)s?:/.test(plain)) {
-    return new RegExp(`^\\d+\\) [^\\n]+::${exact}(?=[#@]|\\s+with data set|\\s*$)`, 'm').test(plain) ? 'fail' : 'pass';
+    const owner = qualifiedTestName(testPath, id).slice(0, -name.length - 1);
+    if (new RegExp(`^\\d+\\) ${owner ? escapeRe(owner) : '[^\\n]+'}::${exact}(?=[#@]|\\s+with data set|\\s*$)`, 'm').test(plain)) return 'fail';
+    return owner && !new RegExp(`^\\d+\\) ${escapeRe(owner)}::`, 'm').test(plain) ? 'notrun' : 'pass';
   }
   if (/\.java$/.test(testPath)) {
     const full = qualifiedTestName(testPath, id), cls = full.slice(0, -name.length - 1);
@@ -2628,7 +2841,7 @@ function targetVerdict(plain, testPath, id, selectedName = null, requireJavaResu
     const full = qualifiedTestName(testPath, id);
     const body = testBody(testPath, id).join('\n').split(/\b(?:public|private|protected)\s+(?:async\s+)?(?:void|Task)\b/)[0];
     const custom = [...body.matchAll(/\b(?:TestName|DisplayName)\s*=\s*"((?:\\.|[^"\\])*)"/g)].map((m) => m[1]);
-    const rows = [...plain.matchAll(/^\s*(Passed|Failed|Skipped)\s+(.+?)(?:\s+\[[^\n]*\]|\s*$)/gm)].filter((m) => m[2] === name || m[2] === full || m[2].startsWith(name + '(') || m[2].startsWith(full + '(') || custom.includes(m[2]) || (full === name && m[2].endsWith('.' + name)));
+    const rows = [...plain.matchAll(/^\s*(Passed|Failed|Skipped)\s+(.+?)(?:\s+\[[^\n]*\]|\s*$)/gm)].filter((m) => exactDotnetSelection || m[2] === name || m[2] === full || m[2].startsWith(name + '(') || m[2].startsWith(full + '(') || custom.includes(m[2]) || (full === name && m[2].endsWith('.' + name)));
     return !rows.length ? 'notrun' : rows.some((m) => m[1] === 'Failed') ? 'fail' : rows.some((m) => m[1] === 'Passed') ? 'pass' : 'skip';
   }
   return null;
@@ -2676,7 +2889,7 @@ function cmdTdd() {
     else if (made.length) out(made.verified === 'ok' ? `stubbed (throwing, compile-checked): ${made.join(', ')} — now run: tdd red ${t.id}` : made.verified === 'fail' ? `stubbed (throwing): ${made.join(', ')} — ! the test still does not compile: ${made.verifyError}\n! could not fully stub ${t.id}: finish the stub by hand (types, struct fields, methods), then run: tdd red ${t.id}` : `stubbed (throwing; compile NOT verified${scripted ? '' : ' — no checker for this language'}): ${made.join(', ')} — now run: tdd red ${t.id}; if it reports a load/compile error, finish the stub by hand`);
     else if (made.verified === 'partial') out(`nothing was stubbed for ${t.id}: it has no compile errors of its own — NOT compile-checked`);
     else if (made.verified === 'fail') out(`nothing could be stubbed for ${t.id}: the test does not compile (${made.verifyError}) — write the missing code by hand`);
-    else out(scripted ? `no missing relative imports in ${t.path}` : `nothing to stub for ${t.id} in ${t.path} (stubs only cover what this generator supports for the language); if the test still does not compile, write the missing code by hand`);
+    else out(scripted ? `no missing relative imports in ${t.path}` : made.verified === 'ok' ? `nothing to stub for ${t.id} in ${t.path} (compile-checked)` : `nothing to stub for ${t.id} in ${t.path} (stubs only cover what this generator supports for the language); if the test still does not compile, write the missing code by hand`);
     if (made.verified === 'partial') out(`! ${made.verifyError} — the requested test has no compile errors of its own; stub or implement the other tests (\`tdd stub <their ID>\`) before running the project's tests`);
     for (const n of [...new Set(made.notes ?? [])]) out(`! ${n}`);
     if (made.realMissing?.length) out(`! not stubbed: ${made.realMissing.join('; ')} — those modules hold real code, which stubs never edit: add the names by hand`);
@@ -2728,6 +2941,7 @@ function cmdTdd() {
   const fileArg = proj ? path.posix.relative(proj.root, t.path) : t.path;
   const cmd = (proj?.testCmd ?? cfg.testCmd).map((a) => a.replaceAll('{id}', id).replaceAll('{idu}', testName(t.path, id)).replaceAll('{IDU}', id.toUpperCase().replaceAll('-', '_')).replaceAll('{file}', fileArg));
   let selectedName = null;
+  let dotnetReport = null, exactDotnetSelection = false, genericDotnetSelection = false;
   if (/\.rs$/.test(t.path) && cmd[0] === 'cargo' && cmd[1] === 'test') {
     const name = testName(t.path, id);
     const i = cmd.indexOf(name);
@@ -2779,12 +2993,16 @@ function cmdTdd() {
       }
     }
     const i = cmd.indexOf('-R');
+    if (i >= 0 && !selectedName && !/[\\^$.*+?()[\]{}|]/.test(cmd[i + 1])) selectedName = cmd[i + 1];
     if (i >= 0 && (cmd[i + 1] === name || cmd[i + 1] === selectedName)) cmd[i + 1] = '^' + escapeRe(cmd[i + 1]) + '$';
     for (let i = 0; i < cmd.length; i++) if (cmd[i].includes(' -R "$0"')) { cmd[i] = cmd[i].replace(' -R "$0"', ' -R "^$0$"'); if (cmd[i + 1] === name || cmd[i + 1] === selectedName) cmd[i + 1] = escapeRe(cmd[i + 1]); }
   }
   if (/\.php$/.test(t.path) && /phpunit/.test(cmd.join(' '))) {
     const i = cmd.indexOf('--filter');
-    if (i >= 0 && cmd[i + 1] === testName(t.path, id)) cmd[i + 1] = '/::' + escapeRe(cmd[i + 1]) + '(?:\\s+with data set [\\s\\S]*)?$/';
+    if (i >= 0 && cmd[i + 1] === testName(t.path, id)) {
+      const full = qualifiedTestName(t.path, id), name = testName(t.path, id), owner = full.slice(0, -name.length - 1);
+      cmd[i + 1] = '/' + (owner ? '^' + escapeRe(owner) : '') + '::' + escapeRe(name) + '(?:\\s+with data set [\\s\\S]*)?$/';
+    }
   }
   if (/\.jl$/.test(t.path) && cmd[0] === 'julia' && juliaScriptIndex(cmd) === cmd.length - 1 && cmd.at(-1) === fileArg) cmd.splice(cmd.at(-2) === '--' ? cmd.length - 2 : cmd.length - 1, 0, '-e', JULIA_VERBOSE);
   if (/\.cs$/.test(t.path) && cmd[0] === 'dotnet' && cmd[1] === 'test') {
@@ -2801,9 +3019,22 @@ function cmdTdd() {
     const i = cmd.indexOf('--filter');
     if (i >= 0 && cmd[i + 1] === 'FullyQualifiedName~' + testName(t.path, id)) {
       const full = qualifiedTestName(t.path, id);
-      if (full.includes('.')) cmd[i + 1] = 'FullyQualifiedName=' + full;
+      const text = fs.readFileSync(path.join(ROOT, t.path), 'utf8');
+      const at = text.search(new RegExp(`@id\\s+${id}\\b`));
+      const scope = full.slice(0, -testName(t.path, id).length - 1);
+      genericDotnetSelection = [...text.slice(0, at).matchAll(/\b(?:class|record)\s+(\w+)\s*</g)].some((m) => scope.split(/[.+]/).includes(m[1]));
+      if (full.includes('.')) {
+        cmd[i + 1] = genericDotnetSelection ? `FullyQualifiedName~${scope}&FullyQualifiedName~.${testName(t.path, id)}` : 'FullyQualifiedName=' + full;
+        exactDotnetSelection = !genericDotnetSelection;
+      }
       if (!cmd.includes('--logger')) cmd.push('--logger', 'console;verbosity=normal');
     }
+    exactDotnetSelection ||= i >= 0 && cmd[i + 1] === 'FullyQualifiedName=' + qualifiedTestName(t.path, id);
+    const resultDir = path.join(SDD, 'results');
+    fs.mkdirSync(resultDir, { recursive: true });
+    dotnetReport = path.join(resultDir, 'sdd-target.trx');
+    fs.rmSync(dotnetReport, { force: true });
+    cmd.push('--logger', 'trx;LogFileName=sdd-target.trx', '--results-directory', resultDir);
   }
   // pytest -k is a substring match: exclude longer test names that extend this one (test_x_007 vs test_x_0071) (#98)
   const ki = cmd.indexOf('-k');
@@ -2840,7 +3071,9 @@ function cmdTdd() {
   const nodeNoMatch = res.exit === 0 && /(^|\n)\s*(ℹ tests \d+|# tests \d+)/.test(plain) && !nodeTestRan(plain, id, t.path);
   const goNoMatch = goRunner && !LOAD_ERR.test(plain) && (!goTarget || !goVerdict || goVerdict === 'skip');
   const javaRunner = /\.java$/.test(t.path) && /(?:^|[/\s])(?:mvn|mvnw|gradle|gradlew)(?:\s|$)/.test(cmd.join(' '));
-  const verdict = targetVerdict(plain, t.path, id, selectedName, javaRunner);
+  const runtimeVerdict = dotnetResult(dotnetReport, t.path, id, exactDotnetSelection);
+  if (genericDotnetSelection && !runtimeVerdict && !LOAD_ERR.test(plain)) { out(`${sub.toUpperCase()} REJECTED ${id}: generic .NET fixtures require observable TRX method ownership; the runner did not emit sdd-target.trx`); return 1; }
+  const verdict = runtimeVerdict ?? targetVerdict(plain, t.path, id, selectedName, javaRunner, exactDotnetSelection);
   const targetExecuted = verdict === 'pass' || verdict === 'fail';
   const zero = (!targetExecuted && ((ZERO_TESTS.test(res.text) && !RAN_TESTS.test(res.text)) || allSkipped || noAssert)) || NO_PASSED.test(plain) || pytestNoExecution(plain) || nodeNoMatch || goNoMatch || verdict === 'notrun' || verdict === 'skip';
   const siblingFail = juliaSiblingFail(plain, id);
@@ -2853,8 +3086,8 @@ function cmdTdd() {
     const text = fs.readFileSync(path.join(ROOT, t.path), 'utf8'), ranges = braceFunctions(text, t.path) ?? [];
     const mine = ranges.find((r) => new RegExp(`@id\\s+${id}(?![\\w-])`).test(r.body));
     const called = mine ? [mine, ...reachableHelpers(mine, ranges.filter((r) => !r.test && !r.code), sharedOutside(text, ranges))].map((r) => r.name) : [testName(t.path, id)];
-    const targetBlock = [...plain.matchAll(/^\s*\d+\/\d+ Test\s+#\d+:\s+(\S+)[^\n]*(?:\n(?!\s*\d+\/\d+ Test\s+#\d+:)[^\n]*)*/gm)].find((m) => m[1] === (selectedName ?? testName(t.path, id)))?.[0] ?? '';
-    cAssertionAbort = /Subprocess aborted/.test(targetBlock) && called.some((name) => new RegExp(`\\b${escapeRe(name)}:\\s+Assertion\\b[^\\n]*failed\\.`).test(targetBlock));
+    const targetBlock = ctestRows(plain).find((r) => r.name === (selectedName ?? testName(t.path, id)))?.block ?? '';
+    cAssertionAbort = /Subprocess aborted/.test(targetBlock) && called.some((name) => new RegExp(`\\b${escapeRe(name)}\\s*(?:\\([^\\n:]*\\))?(?:\\s+(?:const|noexcept))*:\\s+Assertion\\b[^\\n]*failed\\.`).test(targetBlock));
   }
   const childCrash = plain.split('\n').some((line) => /\*\*\*Exception:/i.test(line) && !(cAssertionAbort && new RegExp(`Test\\s+#\\d+:\\s+${escapeRe(selectedName ?? testName(t.path, id))}\\s+.*Subprocess aborted\\*\\*\\*Exception:`).test(line)));
   const crashed = res.exit !== 0 && (res.signal || /There was an error in the forked process|OutOfMemoryError|The forked VM terminated|Fatal error\. Internal CLR error|Test host process crashed|The active test run was aborted|Fatal Python error:|\((?:SEGFAULT|ILLEGAL|NUMERICAL|OTHER_FAULT|INTERRUPT)\)/i.test(plain) || childCrash);
@@ -3455,12 +3688,30 @@ function importRev() {
   const endsWith = (suffix) => files.filter((f) => f === suffix || f.endsWith('/' + suffix));
   // Rust cross-crate `use name::..` resolves by Cargo package name (`-` → `_`), not against every crate's lib.rs (#127)
   const crateBySrc = new Map();
+  const cargoPackages = [];
   for (const g of gitFiles('*Cargo.toml')) if (/(^|\/)Cargo\.toml$/.test(g)) {
     const toml = fs.readFileSync(path.join(ROOT, g), 'utf8');
     const pkgName = /^\[package\][^[]*?^\s*name\s*=\s*"([^"]+)"/ms.exec(toml)?.[1];
     const libName = /^\[lib\][^[]*?^\s*name\s*=\s*"([^"]+)"/ms.exec(toml)?.[1];
     const sd = dir(g) === '.' ? 'src' : dir(g) + '/src';
+    cargoPackages.push({ dir: dir(g), src: sd, name: pkgName, toml });
     for (const n of new Set([pkgName?.replace(/-/g, '_'), libName].filter(Boolean))) if (set.has(sd + '/lib.rs')) crateBySrc.set(n, [...(crateBySrc.get(n) ?? []), sd]);
+  }
+  const cargoAliases = new Map();
+  for (const pkg of cargoPackages) {
+    const aliases = new Map();
+    for (const section of pkg.toml.matchAll(/^\[([^\]\n]+)\][^\n]*\n([\s\S]*?)(?=^\[|$(?![\s\S]))/gm)) {
+      if (!/(?:^|\.)(?:dependencies|dev-dependencies|build-dependencies)(?:\.|$)/.test(section[1])) continue;
+      const tableAlias = /(?:^|\.)(?:dependencies|dev-dependencies|build-dependencies)\.([\w-]+)$/.exec(section[1])?.[1];
+      const bindings = tableAlias ? [[tableAlias, section[2]]] : [...section[2].matchAll(/^\s*([\w-]+)\s*=\s*\{([^}]+)\}/gm)].map((m) => [m[1], m[2]]);
+      for (const [alias, fields] of bindings) {
+        const p = /\bpath\s*=\s*"([^"]+)"/.exec(fields)?.[1];
+        const name = /\bpackage\s*=\s*"([^"]+)"/.exec(fields)?.[1];
+        const target = p ? cargoPackages.find((q) => q.dir === path.posix.normalize(path.posix.join(pkg.dir, p))) : cargoPackages.find((q) => q.name === (name ?? alias));
+        if (target) aliases.set(alias.replace(/-/g, '_'), [target.src]);
+      }
+    }
+    cargoAliases.set(pkg.dir, aliases);
   }
   const stem = (x) => path.posix.basename(x).replace(/\.\w+$/, '');
   const goMods = gitFiles('*go.mod').filter((g) => /(^|\/)go\.mod$/.test(g)).map((g) => {
@@ -3556,7 +3807,7 @@ function importRev() {
       const srcDir = (x) => (crateSrc(x) ? crateSrc(x) + '/src' : 'src');
       for (const m of src.matchAll(/^\s*(?:pub\s+)?use\s+(\w+)::([^;]+);/gms)) {
         const root = m[1];
-        const bases = root === 'crate' || root === 'self' || root === 'super' ? [srcDir(f)] : (crateBySrc.get(root) ?? []);
+        const bases = root === 'crate' || root === 'self' || root === 'super' ? [srcDir(f)] : (cargoAliases.get(crateSrc(f) || '.')?.get(root) ?? crateBySrc.get(root) ?? []);
         const paths = [];
         const rest = m[2].trim();
         if (rest.startsWith('{')) { let d = 0, cur = ''; for (const ch of rest.slice(1, rest.lastIndexOf('}'))) { if (ch === '{') d++; if (ch === '}') d--; if (ch === ',' && d === 0) { paths.push(cur.trim()); cur = ''; } else cur += ch; } if (cur.trim()) paths.push(cur.trim()); } else paths.push(rest);
@@ -3587,7 +3838,6 @@ function importRev() {
         const rel0 = path.posix.normalize(path.posix.join(dir(f), m[2]));
         if (m[1] === '"' && set.has(rel0)) { add(rel0, f); continue; }
         const inc = m[2].replace(/^(\.\/|\.\.\/)+/, '');
-        if (m[1] === '<' && !inc.includes('/')) continue;
         endsWith(inc).forEach((t) => add(t, f));
       }
       if (/\.h(pp|h)?$/.test(f)) for (const x of files) if (/\.(c|cc|cpp|cxx)$/.test(x) && cPair(f, x)) add(f, x);
@@ -3600,7 +3850,12 @@ function importRev() {
       for (const [g, d] of csNs) if (g !== f && usings.has(d.ns) && csVisible(f, g) && d.types.some((t) => new RegExp(`\\b${t}\\b`).test(src))) add(g, f);
     } else if (/\.jl$/.test(f)) {
       for (const m of src.matchAll(/^\s*include\(\s*"([^"]+)"\s*\)/gm)) add(path.posix.normalize(path.posix.join(dir(f), m[1])), f);
-      for (const m of src.matchAll(/^\s*(?:using|import)\s+\.*(\w+)/gm)) (jlMod.get(m[1]) ?? []).forEach((t) => add(t, f));
+      for (const m of src.matchAll(/^\s*(?:using|import)\s+([^\n;]+)/gm)) {
+        for (const item of m[1].split(':')[0].split(',')) {
+          const name = /^\s*\.*(\w+)/.exec(item)?.[1];
+          (jlMod.get(name) ?? []).forEach((t) => add(t, f));
+        }
+      }
     } else if (/\.php$/.test(f)) {
       // `use Ns\Class;`, group uses and same-namespace references resolve through declared namespace + class name (#111)
       for (const m of src.matchAll(/^\s*use\s+(?:function\s+|const\s+)?([\w\\]+?)(?:\s+as\s+\w+)?\s*;|^\s*use\s+([\w\\]+)\\\{([^}]*)\}\s*;/gm)) {
@@ -3717,4 +3972,9 @@ if (!fn) {
   out('usage: sdd.mjs init | review template <feature> | review check <file> --feature <f> | approve prepare|record <feature> | guard | tdd red|green|refactor <TEST-ID> | tdd stub <TEST-ID> | tdd check | trace [--baseline] | gate [--changed] [--no-run] | status | plan | impact <REQ|TEST|CODE|file> [--json]   [--root dir]\n  tdd red: tdd red --characterization "<reason>" records a data-only/characterization test that cannot fail without implementation (weak Red); --expect <text> requires that text in the failure; --allow-setup-red accepts a stub-in-setup Red; --retest "<reason>" re-records a weak Red after correcting a wrong test expectation (needs a previous Red/Green and a changed test); --missing-module accepts a Red caused by the test own not-yet-created import (non-weak); approve record --by ai:<reviewer> needs --review <path|summary>');
   process.exit(2);
 }
-process.exit(fn() ?? 0);
+try { process.exit(fn() ?? 0); }
+catch (error) {
+  if (!error.message.startsWith('REFUSED: unresolved Rust include oracle')) throw error;
+  out(error.message);
+  process.exit(1);
+}
