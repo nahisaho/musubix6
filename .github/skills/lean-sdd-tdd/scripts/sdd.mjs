@@ -691,7 +691,7 @@ const specificReason = (rl) => {
   }
   // PHPUnit: first message line below `There was 1 failure:` / `1) Class::test` (#143)
   const pu = rl.findIndex((l) => /^There w(?:as|ere) \d+ failures?:/.test(l));
-  if (pu >= 0) { const m = rl.slice(pu + 1, pu + 8).findIndex((l) => /^\d+\) /.test(l)); const msg = m >= 0 ? rl.slice(pu + 2 + m, pu + 6 + m).find((l) => l && !/^(Failed asserting|-|\+|@@)/.test(l)) : undefined; if (msg) return msg; }
+  if (pu >= 0) { const m = rl.slice(pu + 1, pu + 8).findIndex((l) => /^\d+\) /.test(l)); const win = m >= 0 ? rl.slice(pu + 2 + m, pu + 6 + m).filter((l) => l && !/^(-|\+|@@)/.test(l) && !/^(?:[A-Za-z]:)?[^\s:]+\.php:\d+$/.test(l)) : []; const msg = win.find((l) => !/^Failed asserting/.test(l)) ?? win[0]; if (msg) return msg; }
   const i = rl.findIndex((l) => /^Test Failed at\b/.test(l));
   if (i >= 0) return rl.slice(i + 1, i + 4).find((l) => /^Expression:/.test(l)) ?? rl[i];
   return rl.find((l) => REASON_KEY.test(l) && !/^\d+\s*\|/.test(l));
@@ -3683,7 +3683,7 @@ function cmdTdd() {
     cAssertionAbort = /Subprocess aborted/.test(targetBlock) && called.some((name) => new RegExp(`\\b${escapeRe(name)}\\s*(?:\\([^\\n:]*\\))?(?:\\s+(?:const|noexcept))*:\\s+Assertion\\b[^\\n]*failed\\.`).test(targetBlock));
   }
   const childCrash = plain.split('\n').some((line) => /\*\*\*Exception:/i.test(line) && !(cAssertionAbort && new RegExp(`Test\\s+#\\d+:\\s+${escapeRe(selectedName ?? testName(t.path, id))}\\s+.*Subprocess aborted\\*\\*\\*Exception:`).test(line)));
-  const crashed = res.exit !== 0 && (res.signal || /There was an error in the forked process|OutOfMemoryError|The forked VM terminated|Fatal error\. Internal CLR error|Test host process crashed|The active test run was aborted|Fatal Python error:|process didn't exit successfully:[^\n]*\((?:signal: \d+|exit (?:status|code): (?!101\))\d+)|\((?:SEGFAULT|ILLEGAL|NUMERICAL|OTHER_FAULT|INTERRUPT)\)/i.test(plain) || childCrash);
+  const crashed = res.exit !== 0 && (res.signal || /There was an error in the forked process|OutOfMemoryError|The forked VM terminated|Fatal error\. Internal CLR error|Test host process crashed|The active test run was aborted|Fatal Python error:|Premature end of PHP process|Allowed memory size of \d+ bytes exhausted|process didn't exit successfully:[^\n]*\((?:signal: \d+|exit (?:status|code): (?!101\))\d+)|\((?:SEGFAULT|ILLEGAL|NUMERICAL|OTHER_FAULT|INTERRUPT)\)/i.test(plain) || childCrash);
   const crashWhy = `the test runner process crashed (${res.signal ?? 'fatal Python error / forked JVM / test host failure'}), so the test result is unknown; make the failure an assertion or fix the crash`;
   const notRunWhy = `${id} never ran or its summary is unobservable (whole-file runner): use verbose=true on enclosing Julia testsets, or the direct Julia runner which enables verbose summaries; an earlier failing testset may also abort the file`;
   let ok;

@@ -5897,3 +5897,16 @@ test('#238 Java @CsvFileSource(files=) resolves against the owning module even w
   fs.rmSync(path.join(d, 'data/x.csv'));
   assert.equal(sdd(d, 'tdd', 'green', 'TEST-CALC-001').code, 1);
 });
+
+test('#237 PHPUnit helper-assertion failure keeps its message; a crashed/OOM PHP process is not a Red', () => {
+  const d = batch2Source('T.php', '<?php\nclass Target {\n// @id TEST-CALC-001 @verifies REQ-CALC-001\npublic function test_calc_001(): void { $this->assertSum(5, 2, 3); }\n}\n');
+  fakeOut(d, 'There was 1 failure:\n\n1) Target::test_calc_001\nFailed asserting that 0 is identical to 5.\n\n/w/tests/Support/Check.php:8\n/w/T.php:4\n\nFAILURES!\nTests: 1, Assertions: 1, Failures: 1.\n');
+  const red = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
+  assert.equal(red.code, 0, red.out);
+  assert.match(red.out, /fails with: Failed asserting that 0 is identical to 5\./, red.out);
+  const e = batch2Source('T.php', '<?php\nclass Target {\n// @id TEST-CALC-001 @verifies REQ-CALC-001\npublic function test_calc_001(): void { deep(); }\n}\n');
+  fakeOut(e, 'There was 1 error:\n\n1) Target::test_calc_001\nFatal error: Premature end of PHP process when running Target::test_calc_001.\n\nERRORS!\nTests: 1, Assertions: 0, Errors: 1.\n', 255);
+  const crash = sdd(e, 'tdd', 'red', 'TEST-CALC-001');
+  assert.equal(crash.code, 1, crash.out);
+  assert.match(crash.out, /REJECTED.*crashed/, crash.out);
+});
