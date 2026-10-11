@@ -5444,3 +5444,17 @@ test('#218 plan accepts an em dash as "no dependency"; impact sees `record struc
   assert.doesNotMatch(pl.out + pl.err, /unknown dependency/);
   assert.ok(JSON.parse(sdd(d, 'impact', 'Geo/Pt.cs', '--json').out).reachedFiles.includes('Route/Route.cs'));
 });
+
+test('#216 JUnit abstract base-class tests resolve to the single concrete subclass owner', () => {
+  const d = batch2Source('tests/probe/BaseContract.java', 'package probe;\nabstract class BaseContract {\n// @id TEST-CALC-001 @verifies REQ-CALC-001\n@Test\nvoid test_calc_001() { assertEquals(1, 2); }\n}\n');
+  writeAll(d, { 'tests/probe/ImplTest.java': 'package probe;\nclass ImplTest extends BaseContract {}\n' });
+  const red = batch2Run(d, 'mvn', 'printf "%s\\n" "$@" > args.txt\necho "SDD-TEST probe.ImplTest test_calc_001 FAILURE"\necho "AssertionError: base"\nexit 1\n', ['mvn', 'test', '-Dtest={idu}'], 'tdd', 'red', 'TEST-CALC-001');
+  assert.equal(red.code, 0, red.out);
+  assert.match(rd130(d, 'args.txt'), /-Dtest=probe.ImplTest#test_calc_001/);
+});
+
+test('#216 message-less Java exceptions show the exception class in "fails with"', () => {
+  const d = batch2Source('tests/probe/NpeTest.java', 'package probe;\nclass NpeTest {\n// @id TEST-CALC-001 @verifies REQ-CALC-001\n@Test\nvoid test_calc_001() { assertTrue(true); }\n}\n');
+  const r = batch2Run(d, 'mvn', 'echo "SDD-TEST probe.NpeTest test_calc_001 FAILURE"\necho "java.lang.NullPointerException"\necho "	at probe.Prod.find(Prod.java:3)"\necho "[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException"\nexit 1\n', ['mvn', 'test', '-Dtest={idu}'], 'tdd', 'red', 'TEST-CALC-001');
+  assert.match(r.out, /fails with: java\.lang\.NullPointerException/, r.out);
+});
