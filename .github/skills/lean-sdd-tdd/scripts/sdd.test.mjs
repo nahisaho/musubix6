@@ -6054,3 +6054,16 @@ test('#246 ExUnit Red excerpt comes from the target test failure block, not a co
   assert.match(r.out, /RED ok/, r.out);
   assert.doesNotMatch(r.out, /fails with:.*W\.b\(\) == 2/, r.out);
 });
+
+test('#246 review template and review check accept the feature positionally or via --feature', () => {
+  const d = project();
+  const t1 = sdd(d, 'review', 'template', 'calc');
+  const t2 = sdd(d, 'review', 'template', '--feature', 'calc');
+  assert.equal(t1.code, 0, t1.out);
+  assert.equal(t2.out, t1.out);
+  fs.writeFileSync(path.join(d, 'rv.md'), t1.out);
+  const c1 = sdd(d, 'review', 'check', 'rv.md', '--feature', 'calc');
+  const c2 = sdd(d, 'review', 'check', 'rv.md', 'calc');
+  assert.equal(c2.out, c1.out);
+  assert.doesNotMatch(c2.out, /usage|unknown feature/, c2.out);
+});

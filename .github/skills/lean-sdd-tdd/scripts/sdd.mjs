@@ -1389,23 +1389,27 @@ function reviewProblems(text, specHash) {
   return probs;
 }
 function cmdReview() {
-  const [sub, a] = pos.slice(1);
+  const [sub, a0] = pos.slice(1);
+  // `review template <feature>` and `review template --feature <f>`; `review check <file> --feature <f>` or `review check <file> <feature>` (#246)
+  const featArg = typeof flags.feature === 'string' ? flags.feature : null;
+  const a = sub === 'template' ? (featArg ?? a0) : a0;
   if (sub === 'template') {
     const spec = loadSpecs().find((x) => x.feature === a);
-    if (!a || !spec) { out(`${a ? `unknown feature "${a}"` : 'feature required'}: review template <feature> (known: ${loadSpecs().map((x) => x.feature).join(', ') || 'none'})`); return 2; }
+    if (!a || !spec) { out(`${a ? `unknown feature "${a}"` : 'feature required'}: review template <feature> | --feature <feature> (known: ${loadSpecs().map((x) => x.feature).join(', ') || 'none'})`); return 2; }
     out(`<!-- save as .sdd/review-${spec.feature}.md (one file per feature; a shared review.md goes stale when the next feature changes it) -->\nspec: sha256:${spec ? fileSha(spec.path) : '<spec sha256>'}\nverdict: pending\nopen: 0\n\n## Findings\n| ID | Severity | Where | Status |\n|----|----------|-------|--------|\n(add one row per finding with Status Open or Closed, then set verdict: pass|fail)`);
     return 0;
   }
   if (sub === 'check') {
-    if (!a || typeof flags.feature !== 'string') { out('usage: review check <file> --feature <feature> (both required)'); return 2; }
-    const spec = loadSpecs().find((x) => x.feature === flags.feature);
-    if (!spec) { out(`unknown feature "${flags.feature}" (known: ${loadSpecs().map((x) => x.feature).join(', ') || 'none'})`); return 2; }
+    const cf = featArg ?? pos[3];
+    if (!a || !cf) { out('usage: review check <file> --feature <feature> | review check <file> <feature> (both required)'); return 2; }
+    const spec = loadSpecs().find((x) => x.feature === cf);
+    if (!spec) { out(`unknown feature "${cf}" (known: ${loadSpecs().map((x) => x.feature).join(', ') || 'none'})`); return 2; }
     if (!fs.existsSync(path.resolve(ROOT, a)) || !fs.statSync(path.resolve(ROOT, a)).isFile()) { out(`review file not found: ${a}`); return 2; }
     const probs = reviewProblems(fs.readFileSync(path.resolve(ROOT, a), 'utf8'), fileSha(spec.path));
     out(probs.length ? `REVIEW INVALID: ${a}\n${probs.map((x) => '  ' + x).join('\n')}` : `REVIEW OK: ${a}`);
     return probs.length ? 1 : 0;
   }
-  out('usage: review template <feature> | review check <file> --feature <feature>');
+  out('usage: review template <feature|--feature f> | review check <file> --feature <feature|feature>');
   return 2;
 }
 function cmdApprove() {
@@ -4627,7 +4631,7 @@ if (fn && badFlags.length) {
   process.exit(2);
 }
 if (!fn) {
-  out('usage: sdd.mjs init | review template <feature> | review check <file> --feature <f> | approve prepare|record <feature> | guard | tdd red|green|refactor <TEST-ID> | tdd stub <TEST-ID> | tdd check | trace [--baseline] | gate [--changed] [--no-run] | status | plan | impact <REQ|TEST|CODE|file> [--json]   [--root dir]\n  tdd red: tdd red --characterization "<reason>" records a data-only/characterization test that cannot fail without implementation (weak Red); --expect <text> requires that text in the failure; --allow-setup-red accepts a stub-in-setup Red; --retest "<reason>" re-records a weak Red after correcting a wrong test expectation (needs a previous Red/Green and a changed test); --missing-module accepts a Red caused by the test own not-yet-created import (non-weak); approve record --by ai:<reviewer> needs --review <path|summary>');
+  out('usage: sdd.mjs init | review template <feature|--feature f> | review check <file> --feature <f> (or positional feature) | approve prepare|record <feature> | guard | tdd red|green|refactor <TEST-ID> | tdd stub <TEST-ID> | tdd check | trace [--baseline] | gate [--changed] [--no-run] | status | plan | impact <REQ|TEST|CODE|file> [--json]   [--root dir]\n  tdd red: tdd red --characterization "<reason>" records a data-only/characterization test that cannot fail without implementation (weak Red); --expect <text> requires that text in the failure; --allow-setup-red accepts a stub-in-setup Red; --retest "<reason>" re-records a weak Red after correcting a wrong test expectation (needs a previous Red/Green and a changed test); --missing-module accepts a Red caused by the test own not-yet-created import (non-weak); approve record --by ai:<reviewer> needs --review <path|summary>');
   process.exit(2);
 }
 try { process.exit(fn() ?? 0); }
