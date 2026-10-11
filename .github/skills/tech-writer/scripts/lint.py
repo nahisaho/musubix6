@@ -196,6 +196,9 @@ def check_placeholders(lines: list, fence_mask: list) -> list:
             continue
         checked = strip_inline_code(line)
         for m in PLACEHOLDER_RE.finditer(checked):
+            # a lower-case/Title-case "todo" is an app or project name (todo-cli), not a marker
+            if m.group(1).lower() == "todo" and not m.group(1).isupper() and checked[m.end():m.end() + 1] != ":":
+                continue
             # A justified/tracked marker like "TODO(#123): ..." documents a
             # reason and a tracking reference, which is exactly what this
             # skill's own guidance asks for — don't flag that form. An empty
