@@ -5462,3 +5462,20 @@ test('#214 python tdd stub: namespace dir, __init__ re-exports and package-with-
   assert.ok(!fs.existsSync(path.join(d3, 'src/pkg/sql.py')));
   assert.match(fs.readFileSync(path.join(d3, 'src/pkg/sql/__init__.py'), 'utf8'), /def parse/);
 });
+
+test('#215 go tdd stub: a member called as a method anywhere in the file is never also emitted as a struct field', { skip: spawnSync('which', ['go']).status !== 0 }, () => {
+  const d = mini('---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | x shall hold. | TEST-A-001 |\n', {
+    'go.mod': 'module example.com/kv/core\n\ngo 1.22\n',
+    'ring/ring_test.go': [
+      'package ring_test', '', 'import (', '\t"testing"', '', '\t"example.com/kv/core/ring"', ')', '',
+      'func build(t testing.TB) *ring.Ring {', '\tt.Helper()', '\treturn ring.New(8)', '}', '',
+      '// @id TEST-A-001', 'func TestA001(t *testing.T) {', '\tr := build(t)', '\t_ = r.Locate', '}', '',
+      '// @id TEST-A-002', 'func TestA002(t *testing.T) {', '\tr := build(t)', '\t_, _ = r.Locate("k")', '}', '',
+    ].join('\n'),
+  });
+  sdd(d, 'tdd', 'stub', 'TEST-A-001');
+  const body = fs.readFileSync(path.join(d, 'ring/ring.go'), 'utf8');
+  assert.match(body, /func \(\*?Ring\) Locate/);
+  assert.doesNotMatch(body, /^\tLocate any$/m);
+  assert.doesNotMatch(sdd(d, 'tdd', 'stub', 'TEST-A-001').out, /same name/);
+});

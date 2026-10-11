@@ -1520,6 +1520,9 @@ function stubGo(testPath, src, dir, add, made) {
     if (r === 'any' && sv && new RegExp(`\\blen\\(\\s*${sv}\\s*\\)|\\brange\\s+${sv}\\b|\\b${sv}\\[`).test(src)) r = '[]any';
     return c.multi ? `(${r}, error)` : r;
   };
+  // the compile errors cover the whole test file: whether a member is a method is decided from every test in it, not only the requested one (#215)
+  const fullSrc = (() => { try { return fs.readFileSync(path.join(ROOT, testPath), 'utf8'); } catch { return src; } })();
+  const calledAnywhere = (member) => new RegExp(`\\.${member}\\s*\\(`).test(fullSrc);
   const funcs = new Set();
   // constructors (`New`, `NewX`) return a zero value so setup never panics: the Red then comes from the behaviour under test (#129)
   const fbody = (f, r) => {
@@ -1535,7 +1538,7 @@ function stubGo(testPath, src, dir, add, made) {
   for (let n = 1; fs.existsSync(target); n++) target = path.join(dir, `${base}_stub${n > 1 ? n : ''}.go`);
   const render = () => {
     const parts = [];
-    for (const [t, fields] of types) parts.push(`type ${t} struct {\n${[...fields].map((f) => `\t${f} any\n`).join('')}}\n`);
+    for (const [t, fields] of types) parts.push(`type ${t} struct {\n${[...fields].filter((f) => !methods.get(t)?.has(f)).map((f) => `\t${f} any\n`).join('')}}\n`);
     for (const f of funcs) { const c = callInfo(src, f); const ctor = /^New([A-Z]\w*)$/.exec(f)?.[1]; const r = ctor ? (c.multi ? `(*${ctor}, error)` : `*${ctor}`) : retOf(c, f); parts.push(`func ${f}(${params(c)}) ${r} {\n\t${fbody(f, r)}\n}\n`); }
     for (const [t, ms] of methods) for (const m of ms) { const c = callInfo(src.replace(new RegExp(`\\b\\w+\\([^()]*\\)\\.${m}\\(`, 'g'), `${m}(`).replace(new RegExp(`[\\w.]+\\.${m}\\(`, 'g'), `${m}(`), m); parts.push(`func (*${t}) ${m}(${params(c)}) ${retOf(c, m)} {\n\tpanic("not implemented: ${t}.${m}")\n}\n`); }
     for (const e of errs) parts.unshift(`var ${e} = errors.New("${e}")\n`);
@@ -1568,7 +1571,7 @@ function stubGo(testPath, src, dir, add, made) {
       const qualifier = `(?:${e.alias}|${e.packageName}|"${e.importPath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}")`;
       const render = () => {
         const parts = [];
-        for (const [t, fields] of e.types) parts.push(`type ${t} struct {\n${[...fields].map((f) => `\t${f} any\n`).join('')}}\n`);
+        for (const [t, fields] of e.types) parts.push(`type ${t} struct {\n${[...fields].filter((f) => !e.methods.get(t)?.has(f)).map((f) => `\t${f} any\n`).join('')}}\n`);
         for (const f of e.funcs) { const c = callInfo(q(src), f); const ctor = /^New([A-Z]\w*)$/.exec(f)?.[1]; const r = ctor ? (c.multi ? `(*${ctor}, error)` : `*${ctor}`) : retOf(c, f); parts.push(`func ${f}(${params(c)}) ${r} {\n\t${fbody(f, r)}\n}\n`); }
         for (const [t, ms] of e.methods) for (const m of ms) { const c = callInfo(q(src).replace(new RegExp(`\\b\\w+\\([^()]*\\)\\.${m}\\(`, 'g'), `${m}(`).replace(new RegExp(`[\\w.]+\\.${m}\\(`, 'g'), `${m}(`), m); parts.push(`func (*${t}) ${m}(${params(c)}) ${retOf(c, m)} {\n\tpanic("not implemented: ${t}.${m}")\n}\n`); }
         for (const x of e.errs) parts.unshift(`var ${x} = errors.New("${x}")\n`);
@@ -1600,7 +1603,7 @@ function stubGo(testPath, src, dir, add, made) {
         for (const m of out.matchAll(new RegExp(`(\\S+)\\.(\\w+) undefined \\(type \\*?${qualifier}\\.(\\w+) has no field or method`, 'g'))) {
           const [, recv, member, t] = m;
           if (!new RegExp(`\\.${member}\\b`).test(src)) continue;
-          if (new RegExp(`${recv.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\.${member}\\s*\\(`).test(src)) { if (!e.methods.has(t)) e.methods.set(t, new Set()); if (e.methods.get(t).has(member)) continue; e.methods.get(t).add(member); }
+          if (new RegExp(`${recv.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\.${member}\\s*\\(`).test(src) || calledAnywhere(member)) { if (!e.methods.has(t)) e.methods.set(t, new Set()); if (e.methods.get(t).has(member)) continue; e.methods.get(t).add(member); }
           else { if (!e.types.has(t) || e.types.get(t).has(member)) continue; e.types.get(t).add(member); }
           grew = true;
         }
@@ -1637,7 +1640,7 @@ function stubGo(testPath, src, dir, add, made) {
     for (const m of [...out.matchAll(/(\S+)\.(\w+) undefined \(type \*?(\w+) has no field or method \w+\)/g)].map((x) => Object.assign([x[0], x[2], x[3]], { recv: x[1] }))) {
       const [, member, t] = m;
       if (t === 'any' || !new RegExp(`\\.${member}\\b`).test(src)) continue;
-      const isCall = new RegExp(`\\.${member}\\s*\\(`).test(src) && !(m.recv && !new RegExp(`${m.recv.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\.${member}\\s*\\(`).test(src));
+      const isCall = new RegExp(`\\.${member}\\s*\\(`).test(src) && !(m.recv && !new RegExp(`${m.recv.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\.${member}\\s*\\(`).test(src)) || calledAnywhere(member);
       if (isCall) { if (!methods.has(t)) methods.set(t, new Set()); if (methods.get(t).has(member)) continue; methods.get(t).add(member); }
       else { if (!types.has(t)) continue; if (types.get(t).has(member)) continue; types.get(t).add(member); }
       grew = true;
