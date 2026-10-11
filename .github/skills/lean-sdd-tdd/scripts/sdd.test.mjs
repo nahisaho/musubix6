@@ -5878,3 +5878,22 @@ test('#236 #239 stale/refused messages name the changed oracle dependency; --ret
   const gate = sdd(d, 'gate', '--no-run', '--verbose').out;
   assert.match(gate, /test changed since last Green\/Refactor — oracle dependency changed: helper\.mjs/, gate);
 });
+
+test('#238 Java @CsvFileSource(files=) resolves against the owning module even with a configured reactor root; a missing file is refused', () => {
+  const body = 'package probe;\nclass T {\n// @id TEST-CALC-001 @verifies REQ-CALC-001\n@CsvFileSource(files="../../data/x.csv")\n@Test\nvoid test_calc_001() { assertTrue(true); }\n}\n';
+  const d = batch2Source('java/m1/src/test/java/probe/T.java', body);
+  writeAll(d, { 'java/pom.xml': '<project/>', 'java/m1/pom.xml': '<project/>', 'data/x.csv': '7,7\n' });
+  const cmd = ['sh', '-c', `cat ${d}/out.txt; exit $(cat ${d}/code.txt)`, 'x'];
+  const setup = (text, code) => { fs.writeFileSync(path.join(d, 'out.txt'), text); fs.writeFileSync(path.join(d, 'code.txt'), String(code)); };
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ schemaVersion: 1, testCmd: cmd, projects: [{ root: 'java', testCmd: cmd, checks: [] }] }));
+  setup('AssertionError: oracle', 1);
+  const red = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
+  assert.equal(red.code, 0, red.out);
+  setup('pass', 0);
+  const green = sdd(d, 'tdd', 'green', 'TEST-CALC-001');
+  assert.equal(green.code, 0, green.out);
+  fs.writeFileSync(path.join(d, 'data/x.csv'), '7,7\n8,8\n');
+  assert.match(sdd(d, 'gate', '--no-run').out, /test changed since last Green/);
+  fs.rmSync(path.join(d, 'data/x.csv'));
+  assert.equal(sdd(d, 'tdd', 'green', 'TEST-CALC-001').code, 1);
+});

@@ -402,13 +402,13 @@ function cCompilerInputs(file) {
   }), macros };
 }
 function javaModuleRoot(file) {
-  const configured = projectFor(rel(file));
-  if (configured) return path.resolve(ROOT, configured.root);
+  // the owning module (surefire's cwd) wins over a configured reactor root (#238)
   for (let dir = path.dirname(file); dir.startsWith(ROOT); dir = path.dirname(dir)) {
     if (['pom.xml', 'build.gradle', 'build.gradle.kts'].some((f) => fs.existsSync(path.join(dir, f)))) return dir;
     if (dir === ROOT) break;
   }
-  return ROOT;
+  const configured = projectFor(rel(file));
+  return configured ? path.resolve(ROOT, configured.root) : ROOT;
 }
 // Test-support files are oracles; production files (annotated CODE-, or outside test-like locations) are not (#181, #214, #219, #224).
 const testSupportPath = (f) => /(^|\/)(?:tests?|__tests__|specs?|fixtures?|__fixtures__|__mocks__|testdata|test-data|testthat|e2e|support|helpers?)\//i.test(rel(f)) || /(?:^|[/.-])(?:test|spec|helper|fixture|oracle|setup|mock)s?[^/]*$/i.test(rel(f));
@@ -527,6 +527,7 @@ function localSourceDependencies(file, text, rootFile = false, cFamily = false, 
             try { value = JSON.parse(expression); } catch { throw new Error(`REFUSED: unresolved Java CSV oracle in ${rel(file)}`); }
             if (typeof value !== 'string') throw new Error(`REFUSED: unresolved Java CSV oracle in ${rel(file)}`);
             const matches = binding[1] === 'resources' ? suffix(value.replace(/^\//, '')).filter((f) => /(?:^|\/)resources\//.test(rel(f))) : [path.resolve(javaModuleRoot(file), value)];
+            if (binding[1] === 'files' && !fs.existsSync(matches[0])) throw new Error(`REFUSED: Java CSV oracle ${value} in ${rel(file)} resolves to ${rel(matches[0])}, which does not exist (files= is relative to the Maven/Gradle module)`);
             next.push(...(matches.length ? matches : [path.resolve(ROOT, 'src/test/resources', value.replace(/^\//, ''))]));
           }
         }
