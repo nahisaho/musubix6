@@ -5347,3 +5347,19 @@ test('#213 gate --changed still runs workspace-wide root tooling (typecheck) whe
   assert.match(t, /cmd test: all changed files are inside nested projects \(worker\/\) — root test check skipped/);
   assert.doesNotMatch(t, /other\//);
 });
+
+test('#217 Rust `should panic` rows count and a crashed test host is not a Red', () => {
+  const d = batch2Source('tests/t.rs', '// @id TEST-CALC-001 @verifies REQ-CALC-001\n#[test]\n#[should_panic]\nfn test_calc_001() { boom(); }\n');
+  writeAll(d, { 'Cargo.toml': '[package]\nname="p"\nversion="0.1.0"\nedition="2021"\n', 'src/lib.rs': 'pub fn boom() {}\n' });
+  fakeOut(d, '     Running tests/t.rs (target/debug/deps/t-abc)\n\nrunning 1 test\ntest test_calc_001 - should panic ... FAILED\n\nfailures:\n\n---- test_calc_001 stdout ----\nnote: test did not panic as expected\n\ntest result: FAILED. 0 passed; 1 failed; 0 ignored;\nerror: test failed, to rerun pass `--test t`\n\nCaused by:\n  process didn\'t exit successfully: `target/debug/deps/t-abc` (exit status: 101)\n');
+  const ok = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
+  assert.equal(ok.code, 0, ok.out);
+  const d2 = batch2Source('tests/t.rs', '// @id TEST-CALC-001 @verifies REQ-CALC-001\n#[test]\nfn test_calc_001() { deep(0); }\n');
+  writeAll(d2, { 'Cargo.toml': '[package]\nname="p"\nversion="0.1.0"\nedition="2021"\n', 'src/lib.rs': 'pub fn deep(n: u64) -> u64 { deep(n) }\n' });
+  for (const why of ['(signal: 6, SIGABRT: process abort signal)', '(exit status: 3)']) {
+    fakeOut(d2, `     Running tests/t.rs (target/debug/deps/t-abc)\n\nrunning 1 test\nerror: test failed, to rerun pass \`--test t\`\n\nCaused by:\n  process didn't exit successfully: \`target/debug/deps/t-abc\` ${why}\n`);
+    const r = sdd(d2, 'tdd', 'red', 'TEST-CALC-001', '--weak');
+    assert.equal(r.code, 1, r.out);
+    assert.match(r.out, /crashed/);
+  }
+});

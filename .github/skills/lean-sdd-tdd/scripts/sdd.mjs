@@ -3062,7 +3062,7 @@ function targetVerdict(plain, testPath, id, selectedName = null, requireJavaResu
         const entry = header[1].replace(/\\/g, '/');
         belongs = owner ? entry === rel(owner.entry) || entry === path.relative(owner.dir, owner.entry).split(path.sep).join('/') : entry === testPath || entry.endsWith('/' + testPath);
       }
-      const m = /^test (\S+) \.\.\. (ok|FAILED|ignored)/.exec(line);
+      const m = /^test (\S+)(?: - should panic)? \.\.\. (ok|FAILED|ignored)/.exec(line);
       if (belongs && m && (m[1] === full || (full === name && m[1].endsWith('::' + name)))) rows.push(m);
     }
     return !rows.length ? 'notrun' : rows.some((m) => m[2] === 'FAILED') ? 'fail' : rows.some((m) => m[2] === 'ok') ? 'pass' : 'skip';
@@ -3371,7 +3371,7 @@ function cmdTdd() {
     cAssertionAbort = /Subprocess aborted/.test(targetBlock) && called.some((name) => new RegExp(`\\b${escapeRe(name)}\\s*(?:\\([^\\n:]*\\))?(?:\\s+(?:const|noexcept))*:\\s+Assertion\\b[^\\n]*failed\\.`).test(targetBlock));
   }
   const childCrash = plain.split('\n').some((line) => /\*\*\*Exception:/i.test(line) && !(cAssertionAbort && new RegExp(`Test\\s+#\\d+:\\s+${escapeRe(selectedName ?? testName(t.path, id))}\\s+.*Subprocess aborted\\*\\*\\*Exception:`).test(line)));
-  const crashed = res.exit !== 0 && (res.signal || /There was an error in the forked process|OutOfMemoryError|The forked VM terminated|Fatal error\. Internal CLR error|Test host process crashed|The active test run was aborted|Fatal Python error:|\((?:SEGFAULT|ILLEGAL|NUMERICAL|OTHER_FAULT|INTERRUPT)\)/i.test(plain) || childCrash);
+  const crashed = res.exit !== 0 && (res.signal || /There was an error in the forked process|OutOfMemoryError|The forked VM terminated|Fatal error\. Internal CLR error|Test host process crashed|The active test run was aborted|Fatal Python error:|process didn't exit successfully:[^\n]*\((?:signal: \d+|exit (?:status|code): (?!101\))\d+)|\((?:SEGFAULT|ILLEGAL|NUMERICAL|OTHER_FAULT|INTERRUPT)\)/i.test(plain) || childCrash);
   const crashWhy = `the test runner process crashed (${res.signal ?? 'fatal Python error / forked JVM / test host failure'}), so the test result is unknown; make the failure an assertion or fix the crash`;
   const notRunWhy = `${id} never ran or its summary is unobservable (whole-file runner): use verbose=true on enclosing Julia testsets, or the direct Julia runner which enables verbose summaries; an earlier failing testset may also abort the file`;
   let ok;
