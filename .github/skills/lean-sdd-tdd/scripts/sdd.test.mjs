@@ -5478,3 +5478,23 @@ test('#222 PHPUnit: tests declared in an abstract base class or trait run throug
   fs.writeFileSync(path.join(d, 'src/Calc.php'), '<?php\nnamespace Lib;\n// @id CODE-P-001 @implements REQ-P-001\nfinal class Calc { public function add(int $a, int $b): int { return $a + $b; } }\n');
   for (const id of ['TEST-P-001', 'TEST-P-002']) { const g = sdd(d, 'tdd', 'green', id); assert.equal(g.code, 0, g.out); }
 });
+
+test('#221 C++ first Red after a clean build is not refused as "changed while running"', () => {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-c221-'));
+  spawnSync('git', ['init', '-q'], { cwd: d });
+  const db = JSON.stringify([{ directory: '.', file: 'tests/t.cpp', arguments: ['c++', '-include', 'tests/oracle.hpp', '-c', 'tests/t.cpp'] }]);
+  writeAll(d, {
+    '.sdd/specs/c.md': '---\nfeature: c\ntier: T1\n---\n- REQ-C-001 x\n',
+    'tests/t.cpp': '// @id TEST-C-001 @verifies REQ-C-001\nstatic int test_c_001() { return 1; }\n',
+    'tests/oracle.hpp': '#define EXPECTED 7\n',
+  });
+  sdd(d, 'init');
+  const cfg = path.join(d, '.sdd/config.json');
+  const c = JSON.parse(fs.readFileSync(cfg, 'utf8'));
+  c.testCmd = ['sh', '-c', 'mkdir -p build && printf "%s" "$0" > build/compile_commands.json; echo "Assertion failed: x"; exit 1', db];
+  fs.writeFileSync(cfg, JSON.stringify(c));
+  const r = sdd(d, 'tdd', 'red', 'TEST-C-001');
+  assert.doesNotMatch(r.out, /changed while running/);
+  assert.match(r.out, /^RED ok TEST-C-001/);
+  assert.doesNotMatch(sdd(d, 'gate', '--no-run').out, /changed since/);
+});

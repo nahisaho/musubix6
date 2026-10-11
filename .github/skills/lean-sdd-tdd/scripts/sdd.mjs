@@ -3248,6 +3248,7 @@ function cmdTdd() {
 
   const entries = readLedger();
   const before = testSha(t.path, id);
+  const rawBefore = sha(fs.readFileSync(path.join(ROOT, t.path)));
   const prior = entries.filter((e) => e.test === id);
   if (sub === 'green') {
     const r = prior.filter((e) => e.type === 'red').at(-1);
@@ -3406,7 +3407,9 @@ function cmdTdd() {
   }
   const res = run(cmd, cfg.timeoutMs ?? 120000, proj?.root);
   const after = testSha(t.path, id);
-  if (after !== before) { out(`REFUSED: ${t.path} changed while running (formatter/watch?)`); return 1; }
+  // a clean C/C++ build writes compile_commands.json, which feeds the hash context; only a changed test file is a real edit (#221)
+  const buildContext = after !== before && /\.(?:c|cc|cpp|cxx)$/.test(t.path) && sha(fs.readFileSync(path.join(ROOT, t.path))) === rawBefore;
+  if (after !== before && !buildContext) { out(`REFUSED: ${t.path} changed while running (formatter/watch?)`); return 1; }
 
   const goVerdict = goRunner ? goResult(res.text, goTarget?.name ?? testName(t.path, id)) : null;
   if (goRunner) res.text = goOutput(res.text);
