@@ -5995,3 +5995,15 @@ test('#247 Java stub: test-file upper-case field is not a class; chained .size()
   assert.ok(!fs.existsSync(path.join(d, 'src/main/java/p/CONTRACT.java')));
   const o = sdd(d, 'tdd', 'stub', 'TEST-S-001').out; assert.match(fs.readdirSync(path.join(d, 'src/main/java/p')).join(), /Parser/, o); assert.match(fs.readFileSync(path.join(d, 'src/main/java/p/ParseResult.java'), 'utf8'), /ArrayList/);
 });
+
+test('#248 C stub: includes/build of a project subdirectory are searched, not only the repo root', { skip: spawnSync('which', ['cc']).status !== 0 }, () => {
+  const spec = '---\nfeature: r\ntier: T1\n---\n| REQ-R-001 | f shall hold. | TEST-R-001 |\n';
+  const d = mini(spec, {
+    'c/CMakeLists.txt': 'project(c C)\n',
+    'c/include/rx.h': '#pragma once\nint rx_f(int a);\n',
+    'c/tests/t.c': '#include "rx.h"\n// @id TEST-R-001 @verifies REQ-R-001\nint main(void) { return rx_f(1) == 1 ? 0 : 1; }\n',
+  });
+  const out = sdd(d, 'tdd', 'stub', 'TEST-R-001').out;
+  assert.doesNotMatch(out, /No such file/, out);
+  assert.match(out, /compile-checked|nothing to stub/, out);
+});

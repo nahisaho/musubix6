@@ -1931,9 +1931,16 @@ function stubJava(testPath, src, dir, add, made) {
 
 function stubC(testPath, src, dir, add, made) {
   const cpp = /\.(cc|cpp|cxx)$/.test(testPath);
-  const missing = [...src.matchAll(/#include\s+"([^"]+)"/g)].map((m) => m[1]).filter((h) => !fs.existsSync(path.resolve(dir, h)) && !fs.existsSync(path.resolve(ROOT, h)));
+  // in a `projects` monorepo the C project root (nearest CMakeLists/compile_commands) holds include/ and build/ (#248)
+  let projRoot = ROOT;
+  for (let d = dir; d.startsWith(ROOT); d = path.dirname(d)) {
+    if (['CMakeLists.txt', 'compile_commands.json', 'build/compile_commands.json'].some((f) => fs.existsSync(path.join(d, f)))) { projRoot = d; break; }
+    if (d === ROOT) break;
+  }
+  const roots = [...new Set([projRoot, ROOT])];
+  const missing = [...src.matchAll(/#include\s+"([^"]+)"/g)].map((m) => m[1]).filter((h) => !fs.existsSync(path.resolve(dir, h)) && !roots.some((b) => ['', 'include', 'src'].some((x) => fs.existsSync(path.resolve(b, x, h)))));
   const cc = cpp ? 'c++' : 'cc';
-  const incs = [dir, ...['include', 'src'].map((d) => path.join(ROOT, d)), ROOT].flatMap((d) => ['-I', d]);
+  const incs = [dir, ...roots.flatMap((b) => [...['include', 'src'].map((d) => path.join(b, d)), b])].flatMap((d) => ['-I', d]);
   let standard = [];
   for (let d = dir; d.startsWith(ROOT); d = path.dirname(d)) {
     try {
@@ -1944,7 +1951,7 @@ function stubC(testPath, src, dir, add, made) {
     if (d === ROOT) break;
   }
   let compile = { cc, args: [...standard, ...incs], cwd: dir };
-  for (const home of new Set([dir, ROOT, path.join(ROOT, 'build')])) {
+  for (const home of new Set([dir, projRoot, path.join(projRoot, 'build'), ROOT, path.join(ROOT, 'build')])) {
     const commands = readJson(path.join(home, 'compile_commands.json'), []);
     const entry = commands.find((e) => path.resolve(e.directory ?? home, e.file ?? '') === path.resolve(ROOT, testPath));
     if (!entry) continue;
@@ -2032,7 +2039,7 @@ function stubC(testPath, src, dir, add, made) {
   }).join('\n');
   const head = cpp ? '#pragma once\n#include <stdexcept>\n#include <string>\n\n' : '#pragma once\n#include <stdio.h>\n#include <stdlib.h>\n\n';
   // a missing header belongs next to the production code (include/ or src/), not in tests/ where it would shadow it (#76)
-  const home = ['include', 'src'].map((d) => path.join(ROOT, d)).find((d) => fs.existsSync(d) && !path.resolve(dir).startsWith(d));
+  const home = roots.flatMap((b) => ['include', 'src'].map((d) => path.join(b, d))).find((d) => fs.existsSync(d) && !path.resolve(dir).startsWith(d));
   for (const h of missing) { fs.rmSync(path.resolve(dir, h)); add(home ? path.join(home, h) : path.resolve(dir, h), head + body); }
   return Object.assign(made, verified());
 }
