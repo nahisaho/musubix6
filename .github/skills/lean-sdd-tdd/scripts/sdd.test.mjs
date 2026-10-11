@@ -5303,3 +5303,23 @@ test('#224 R source()/helper/data oracles are hashed', () => {
   fakeOut(d, 'Failure (test-a.R:4:3): a\nf() not equal to 3\n');
   oracleDrift(d, 'TEST-CALC-001', () => writeAll(d, { 'tests/testthat/helper-x.R': 'helper_v <- function() 2\n' }));
 });
+
+test('#214 Red is not a load error just because a test names SqlSyntaxError; a real SyntaxError still is', () => {
+  const d = batch2Source('tests/test_a.py', 'import pytest\ndef test_calc_001():\n    # @id TEST-CALC-001 @verifies REQ-CALC-001\n    with pytest.raises(SqlSyntaxError):\n        parse("x")\n');
+  fakeOut(d, '    with pytest.raises(SqlSyntaxError):\n>       parse("x")\nE       Failed: DID NOT RAISE <class \'SqlSyntaxError\'>\nFAILED tests/test_a.py::test_calc_001\n1 failed');
+  const ok = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
+  assert.equal(ok.code, 0, ok.out);
+  const d2 = batch2Source('tests/test_a.py', 'def test_calc_001():\n    # @id TEST-CALC-001 @verifies REQ-CALC-001\n    assert 1 == 2\n');
+  fakeOut(d2, 'E     File "tests/test_a.py", line 1\nE   SyntaxError: invalid syntax\n1 error');
+  assert.match(sdd(d2, 'tdd', 'red', 'TEST-CALC-001').out, /REJECTED/);
+});
+
+test('#224 R parse errors and runner load failures are load errors, not Red', () => {
+  const d = batch2Source('tests/testthat/test-a.R', 'test_that("a", {\n  # @id TEST-CALC-001 @verifies REQ-CALC-001\n  stopifnot(1 == 1))\n})\n');
+  for (const text of ['Error: unexpected \')\' in "  stopifnot(1 == 1))"\nExecution halted', 'Error in dyn.load(file, DLLpath = DLLpath, ...) :\n  unable to load shared object \'rlang.so\'\nExecution halted']) {
+    fakeOut(d, text);
+    const r = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
+    assert.equal(r.code, 1, r.out);
+    assert.match(r.out, /REJECTED/);
+  }
+});
