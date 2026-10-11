@@ -6048,3 +6048,18 @@ test('#236 C registration macros (`REG(fn);`) belong to the function they name, 
   fs.writeFileSync(path.join(d, 't.c'), src('', 'REGISTER(suite, test_calc_001);'));
   assert.match(sdd(d, 'gate', '--no-run').out, /TEST-CALC-001[^\n]*changed since last Green/);
 });
+
+test('#239 tdd refactor names a changed oracle dependency instead of claiming the test body changed', () => {
+  const d = project();
+  fs.writeFileSync(path.join(d, '.sdd/specs/calc.md'), fs.readFileSync(path.join(d, '.sdd/specs/calc.md'), 'utf8').replace('tier: T2', 'tier: T1'));
+  fs.writeFileSync(path.join(d, 'helper.mjs'), 'export const one = 1;\n');
+  fs.writeFileSync(path.join(d, 'add.test.mjs'), fs.readFileSync(path.join(d, 'add.test.mjs'), 'utf8').replace("import { add }", "import { one } from './helper.mjs';\nimport { add }").replace('add(1, 2)', 'add(one, 2)'));
+  impl(d, '(a, b) => { throw new Error("nope"); }');
+  sdd(d, 'tdd', 'red', 'TEST-CALC-001');
+  impl(d, '(a, b) => a + b');
+  assert.match(sdd(d, 'tdd', 'green', 'TEST-CALC-001').out, /GREEN ok/);
+  fs.writeFileSync(path.join(d, 'helper.mjs'), 'export const one = 1; // edited\n');
+  const r = sdd(d, 'tdd', 'refactor', 'TEST-CALC-001').out;
+  assert.match(r, /oracle dependency changed since the last Green: helper\.mjs/, r);
+  assert.doesNotMatch(r, /test body changed/, r);
+});
