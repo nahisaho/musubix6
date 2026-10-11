@@ -5860,3 +5860,21 @@ test('#240 Julia stub resolves include(joinpath(@__DIR__, ...)); plan depends ac
   fs.writeFileSync(path.join(d, '.sdd/plan.md'), '| order | feature | depends | note |\n|---|---|---|---|\n| 1 | a | - | |\n| 2 | b | - | |\n| 3 | c | a b | |\n');
   assert.doesNotMatch(sdd(d, 'plan').out, /unknown dependency/);
 });
+
+test('#236 #239 stale/refused messages name the changed oracle dependency; --retest hint; gate --verbose accepted', () => {
+  const d = project();
+  fs.writeFileSync(path.join(d, '.sdd/specs/calc.md'), fs.readFileSync(path.join(d, '.sdd/specs/calc.md'), 'utf8').replace('tier: T2', 'tier: T1'));
+  fs.writeFileSync(path.join(d, 'helper.mjs'), 'export const one = 1;\n');
+  fs.writeFileSync(path.join(d, 'add.test.mjs'), fs.readFileSync(path.join(d, 'add.test.mjs'), 'utf8').replace("import { add }", "import { one } from './helper.mjs';\nimport { add }").replace('add(1, 2)', 'add(one, 2)'));
+  impl(d, '(a, b) => { throw new Error("nope"); }');
+  assert.match(sdd(d, 'tdd', 'red', 'TEST-CALC-001').out, /RED ok/);
+  fs.writeFileSync(path.join(d, 'helper.mjs'), 'export const one = 1; // edited\n');
+  impl(d, '(a, b) => a + b');
+  const refused = sdd(d, 'tdd', 'green', 'TEST-CALC-001').out;
+  assert.match(refused, /REFUSED: test file changed since Red[^\n]*helper\.mjs[^\n]*--retest/, refused);
+  fs.writeFileSync(path.join(d, 'helper.mjs'), 'export const one = 1;\n');
+  assert.match(sdd(d, 'tdd', 'green', 'TEST-CALC-001').out, /GREEN ok/);
+  fs.writeFileSync(path.join(d, 'helper.mjs'), 'export const one = 1; // again\n');
+  const gate = sdd(d, 'gate', '--no-run', '--verbose').out;
+  assert.match(gate, /test changed since last Green\/Refactor — oracle dependency changed: helper\.mjs/, gate);
+});

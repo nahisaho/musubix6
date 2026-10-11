@@ -8,7 +8,7 @@ import os from 'node:os';
 import { builtinModules } from 'node:module';
 import path from 'node:path';
 
-const BOOL = new Set(['allow-setup-red', 'missing-module', 'baseline', 'weak', 'changed', 'json', 'no-run', 'help']);
+const BOOL = new Set(['allow-setup-red', 'missing-module', 'baseline', 'weak', 'changed', 'json', 'no-run', 'verbose', 'help']);
 function parseArgs(argv) {
   const pos = [];
   const flags = {};
@@ -566,6 +566,7 @@ function localSourceDependencies(file, text, rootFile = false, cFamily = false, 
 }
 // Local test-support dependencies are conservative oracles; annotated production is not (#181).
 let oracleDependencyFiles = [];
+let oracleDependencyShas = {};
 // a sibling file that holds its own annotated tests (partial test class, shared test module): only its non-test content is an oracle, so adding a test there does not stale this one (#229)
 function siblingTestSha(file, text, raw) {
   if (!BRACE_TEST.test(file) || !/@id\s+TEST-/.test(text)) return sha(raw);
@@ -576,6 +577,7 @@ function siblingTestSha(file, text, raw) {
 }
 function externalOracleSha(p, hash) {
   oracleDependencyFiles = [];
+  oracleDependencyShas = {};
   if (!/\.(?:rs|c|cc|cpp|cxx|java|php|cs|jl|py|exs?|[cm]?[jt]s|[jt]sx|[rR])$/.test(p)) return hash;
   const root = path.join(ROOT, p), seen = new Set([root]), deps = new Map();
   const compiler = /\.(?:c|cc|cpp|cxx)$/.test(p) ? cCompilerInputs(root) : null;
@@ -594,6 +596,7 @@ function externalOracleSha(p, hash) {
   };
   visit(root, true);
   oracleDependencyFiles = [...deps.keys()].sort();
+  oracleDependencyShas = Object.fromEntries(deps);
   return deps.size ? sha(hash + '\u0000' + [...deps].sort(([a], [b]) => a.localeCompare(b)).map(([f, h]) => f + '\u0000' + h).join('\u0000')) : hash;
 }
 function juliaRanges(txt) {
@@ -967,6 +970,14 @@ function reqShaOf(id) {
 }
 // ledgers written before NFKC hashing carry the raw-text hash (#83)
 const reqShaSame = (id, rsha) => { const c = REQ_SHA?.get(id); return !c || c.sha === rsha || c.raw === rsha; };
+// names the oracle dependency files whose content differs from what a ledger entry recorded (#236, #239)
+function changedOracleDeps(entry, p, id) {
+  if (!entry?.oracleShas) return [];
+  try { testSha(p, id); } catch { return []; }
+  const now = oracleDependencyShas, was = entry.oracleShas;
+  return [...new Set([...Object.keys(was), ...Object.keys(now)])].filter((f) => was[f] !== now[f]).sort();
+}
+const oracleNote = (names) => names.length ? ` — oracle dependency changed: ${names.slice(0, 4).join(', ')}${names.length > 4 ? `, … +${names.length - 4}` : ''}` : '';
 function evidenceStatus(testId, testPath, entries) {
   const es = entries.filter((e) => e.test === testId);
   const g = es.filter((e) => e.type === 'green').at(-1);
@@ -974,7 +985,7 @@ function evidenceStatus(testId, testPath, entries) {
   const r = es.filter((e) => e.type === 'red' && e.seq < g.seq && e.fileSha === g.fileSha).at(-1);
   if (!r) return { ok: false, why: 'no Red preceding Green with same test hash' };
   const last = es.filter((e) => e.type === 'green' || e.type === 'refactor').at(-1);
-  if (!shaMatches(last.fileSha, testPath, testId)) return { ok: false, why: 'test changed since last Green/Refactor' };
+  if (!shaMatches(last.fileSha, testPath, testId)) return { ok: false, why: 'test changed since last Green/Refactor' + oracleNote(changedOracleDeps(last, testPath, testId)) };
   // every verified REQ is hash-tracked (reqShas); older entries carry only the first one
   for (const [rid, rsha] of Object.entries(last.reqShas ?? { [last.req]: last.reqSha })) {
     if (rsha && reqShaOf(rid) && !reqShaSame(rid, rsha)) return { ok: false, why: `${rid} changed in the spec since last Green/Refactor: re-verify with tdd refactor (wording only) or tdd red/green (behaviour changed)` };
@@ -3472,7 +3483,7 @@ function cmdTdd() {
       const promoted = (r.protectedFiles ?? []).filter((f) => {
         try { const text = fs.readFileSync(path.join(ROOT, f), 'utf8'); return /@id\s+CODE-/.test(text) && !/@id\s+TEST-/.test(text); } catch { return false; }
       });
-      out(promoted.length ? `REFUSED: production ownership changed since Red (${promoted.join(', ')}), not necessarily a test edit. Annotate handwritten production subjects before Red; restore annotated failing code, record a fresh Red, then implement and Green` : `REFUSED: test file changed since Red (${t.path}). revert test edits to a recorded Red's content, or record a new Red`);
+      out(promoted.length ? `REFUSED: production ownership changed since Red (${promoted.join(', ')}), not necessarily a test edit. Annotate handwritten production subjects before Red; restore annotated failing code, record a fresh Red, then implement and Green` : `REFUSED: test file changed since Red (${t.path}; checked per test ${id}${oracleNote(changedOracleDeps(r, t.path, id)) || ', its own region or a local include/header it depends on'}). revert test edits to a recorded Red's content, or record a new Red; if the test expectation itself was wrong, run: tdd red ${id} --retest "<reason>"`);
       return 1;
     }
   }
@@ -3710,7 +3721,7 @@ function cmdTdd() {
   // human-approved code baseline follows the first implementation: refresh until the feature is fully Green (#92)
   const humanSpecs = sub === 'red' ? [] : loadSpecs().filter((x) => x.approval === 'human' && x.reqs.some((q) => t.refs.verifies.includes(q.id)));
   const wasDone = new Map(humanSpecs.map((x) => [x.feature, featureGreen(x)]));
-  appendLedger({ type: sub, test: id, req, reqSha: reqShaOf(req), reqShas: Object.fromEntries([...new Set([req, ...t.refs.verifies])].map((r) => [r, reqShaOf(r)]).filter(([, v]) => v)), file: t.path, fileSha: after, protectedFiles: oracleDependencyFiles, cmdSha: sha(cmd.join('\0')), exit: res.exit, ms: res.ms, weak: weakRed ? true : undefined, weakWhy: setupSym ? `setup:${setupSym}` : charac ? 'characterization' : retestWeak ? 'retest' : undefined, characterization: charac || undefined, retest: retestWeak ? retest : undefined, priorStrongRed: retestWeak && prior.some((e) => e.type === 'red' && !e.weak && !e.retest) ? true : undefined });
+  appendLedger({ type: sub, test: id, req, reqSha: reqShaOf(req), reqShas: Object.fromEntries([...new Set([req, ...t.refs.verifies])].map((r) => [r, reqShaOf(r)]).filter(([, v]) => v)), file: t.path, fileSha: after, protectedFiles: oracleDependencyFiles, oracleShas: oracleDependencyFiles.length ? oracleDependencyShas : undefined, cmdSha: sha(cmd.join('\0')), exit: res.exit, ms: res.ms, weak: weakRed ? true : undefined, weakWhy: setupSym ? `setup:${setupSym}` : charac ? 'characterization' : retestWeak ? 'retest' : undefined, characterization: charac || undefined, retest: retestWeak ? retest : undefined, priorStrongRed: retestWeak && prior.some((e) => e.type === 'red' && !e.weak && !e.retest) ? true : undefined });
   for (const x of humanSpecs) if (!wasDone.get(x.feature)) {
     const all = readJson(APPROVALS, {});
     if (all[x.feature]?.code) { all[x.feature].code = implFileShas(x); writeJson(APPROVALS, all); }
@@ -4056,7 +4067,7 @@ function cmdGate() {
       if (s.ok) { covered++; if (s.weak) { weak++; if (!s.charac && !s.retest) weakIds.push(e.id); } if (s.charac) charac++; if (s.retest) { retestN++; retestIds.push(e.id); if (s.retestSuperseded) retestSupersededN++; } } else problems.push(`${e.id} (${id}): ${s.why}`);
     }
   }
-  add(!problems.length, `tdd evidence${flags.changed ? ' (changed scope)' : ''}: ${covered}/${total} tests Red→Green${weak ? `, ${weak} weak Red${weak > charac + retestN ? ' — Red came from setup/load, not the asserted behaviour (before implementing: `tdd red <ID> --expect <text>`; after Green: keep as weak, or temporarily break the implementation to re-record Red): ' + weakIds.slice(0, 8).join(', ') + (weakIds.length > 8 ? `, … +${weakIds.length - 8}` : '') : ''}${charac ? ` (${charac} characterization: passed without a failing Red)` : ''}${retestN ? ` (${retestN} retest: Red re-recorded with --retest, passed without a failing Red${retestSupersededN ? `; ${retestSupersededN} superseded an earlier strong Red — re-record a failing Red by temporarily breaking the implementation if that evidence matters` : ''}: ${retestIds.slice(0, 8).join(', ')}${retestIds.length > 8 ? `, … +${retestIds.length - 8}` : ''})` : ''}` : ''}`, [...problems.slice(0, 6), ...(problems.length > 6 ? [`… +${problems.length - 6} more`] : [])]);
+  add(!problems.length, `tdd evidence${flags.changed ? ' (changed scope)' : ''}: ${covered}/${total} tests Red→Green${weak ? `, ${weak} weak Red${weak > charac + retestN ? ' — Red came from setup/load, not the asserted behaviour (before implementing: `tdd red <ID> --expect <text>`; after Green: keep as weak, or temporarily break the implementation to re-record Red): ' + weakIds.slice(0, 8).join(', ') + (weakIds.length > 8 ? `, … +${weakIds.length - 8}` : '') : ''}${charac ? ` (${charac} characterization: passed without a failing Red)` : ''}${retestN ? ` (${retestN} retest: Red re-recorded with --retest, passed without a failing Red${retestSupersededN ? `; ${retestSupersededN} superseded an earlier strong Red — re-record a failing Red by temporarily breaking the implementation if that evidence matters` : ''}: ${retestIds.slice(0, 8).join(', ')}${retestIds.length > 8 ? `, … +${retestIds.length - 8}` : ''})` : ''}` : ''}`, [...problems.slice(0, flags.verbose ? problems.length : 6), ...(problems.length > 6 && !flags.verbose ? [`… +${problems.length - 6} more (all: gate --verbose)`] : [])]);
 
   const cfg = loadConfig();
   if (cfg.prepare && !flags['no-run']) {
