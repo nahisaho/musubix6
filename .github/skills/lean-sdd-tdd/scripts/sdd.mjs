@@ -2950,6 +2950,8 @@ function setupOrigin(line, testPath, id, text = '') {
     if (hit.some(({ i }) => inA[i])) return null;
     // `match f(..).unwrap() { .. }` / `match Regex::new(..) { .. }`: the scrutinee is the behaviour under test (#110)
     if (hit.some(({ l }) => /^\s*(?:match|switch)\b/.test(l))) return null;
+    // Go `if err := sut(..); err != nil {` tests the call it initializes (#245)
+    if (hit.some(({ l }) => /^\s*if\s+[\w\s,]+:?=[^;]*;/.test(l))) return null;
     const firstAssert = inA.findIndex((v, i) => v && i >= start);
     const prevStmt = (() => { for (let k = firstAssert - 1; k > start; k--) if (all[k].trim() && !/^\s*(\/\/|#)/.test(all[k])) return k; return -1; })();
     if (hit.some(({ i, l }) => i === prevStmt && /\.(unwrap|expect)\s*\(/.test(l))) return null;
@@ -3013,17 +3015,21 @@ function goBuildTags(src) {
   return tags;
 }
 function goResult(text, target) {
-  let result = null;
+  let result = null, lastRun = null;
   for (const line of text.split('\n')) {
+    const run = /^=== (?:RUN|CONT)\s+(\S+)/.exec(line);
+    if (run) lastRun = run[1];
     const m = /^\s*--- (PASS|FAIL|SKIP):\s+(\S+)/.exec(line);
     if (m?.[2] === target) result = m[1].toLowerCase();
     // a passing benchmark prints `BenchmarkX-8  1  123 ns/op` and no `--- PASS` row (#215)
     const b = /^(Benchmark\w*?)(?:-\d+)?\s+\d+\s+[\d.]+\s+ns\/op/.exec(line);
     if (b?.[1] === target && result !== 'fail') result = 'pass';
     if (line.startsWith('{')) {
-      try { const e = JSON.parse(line); if (e.Test === target && /^(pass|fail|skip)$/.test(e.Action)) result = e.Action; } catch {}
+      try { const e = JSON.parse(line); if (e.Test === target && /^(pass|fail|skip)$/.test(e.Action)) result = e.Action; if (e.Test && /^(run|cont)$/.test(e.Action)) lastRun = e.Test; } catch {}
     }
   }
+  // an unrecovered panic (e.g. in a goroutine) kills the test binary before any `--- FAIL`: the test that was running failed
+  if (!result && lastRun === target && /(?:^|"Output":")panic: /m.test(text) && /(?:^|\n|")FAIL\s/.test(text)) result = 'fail';
   return result;
 }
 function goOutput(text) {
@@ -3722,7 +3728,7 @@ function cmdTdd() {
     else if (zero || siblingFail === 'skip') { ok = false; why = 'no test matched the ID, or the test is skipped/todo (check @id vs test title/method name; skipped tests cannot give Red/Green)' + (goRunner && /\[no test files\]/.test(plain) ? '; go printed [no test files]: a //go:build constraint may hide this file (pass -tags in testCmd)' : ''); }
     else if (res.exit === 0 && retest) ok = true;
     else if (res.exit === 0 && typeof flags.characterization === 'string' && flags.characterization.trim()) ok = true;
-    else if (res.exit === 0) { ok = false; why = 'test passed; Red needs a real failure (data-only / characterization test? record it explicitly: --characterization "<why no implementation can fail it>")'; }
+    else if (res.exit === 0) { ok = false; why = 'test passed; Red needs a real failure (data-only / characterization test? record it explicitly: --characterization "<why no implementation can fail it>"; amending a wrong expectation after Red: --retest "<reason>")'; }
     else if (LOAD_ERR.test(res.text) && !flags.weak && !(flags['missing-module'] && declaredMissingModule(res.text, t.path))) { ok = false; why = 'load/compile error, not an assertion failure. new module? run `tdd stub <ID>` once (or `--missing-module`); if stub already ran or found nothing, add the missing code by hand; or --weak to record as weak Red'; }
     else if (typeof flags.expect === 'string' && !(juliaSummaryRows(plain) ? targetOutput ?? '' : res.text).includes(flags.expect)) { ok = false; why = `failure output does not contain --expect "${flags.expect}" (Red for the wrong reason?)`; }
     else ok = true;

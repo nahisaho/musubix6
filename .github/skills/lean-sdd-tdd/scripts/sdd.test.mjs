@@ -6021,3 +6021,19 @@ test('#244 weak Red: a stub reached through nested helpers is asserted when the 
   const r = spawnSync('node', [SDD, '--root', d, 'tdd', 'red', 'TEST-A-001'], { encoding: 'utf8', env: ENV });
   assert.doesNotMatch(r.stdout, /setup call|\[weak\]/, r.stdout);
 });
+
+test('#245 Go: a goroutine panic aborting the test binary is a failing run, not "no test matched"', { skip: spawnSync('which', ['go']).status !== 0 }, () => {
+  const spec = '---\nfeature: r\ntier: T1\n---\n| REQ-R-001 | F shall hold. | TEST-R-001 |\n';
+  const d = mini(spec, {
+    'go.mod': 'module r\n\ngo 1.21\n',
+    'lib/lib.go': 'package lib\n\nfunc F() int { panic("not implemented") }\n',
+    'lib/lib_test.go': 'package lib\n\nimport "testing"\n\n// @id TEST-R-001 @verifies REQ-R-001\nfunc TestTEST_R_001_goroutine(t *testing.T) {\n\tdone := make(chan int)\n\tgo func() { done <- F() }()\n\tif <-done != 1 {\n\t\tt.Fatal("x")\n\t}\n}\n',
+  });
+  fs.rmSync(path.join(d, 'package.json'));
+  fs.rmSync(path.join(d, '.sdd/config.json'));
+  sdd(d, 'init');
+  sdd(d, 'approve', 'record', 'r', '--by', 'tester');
+  const r = sdd(d, 'tdd', 'red', 'TEST-R-001');
+  assert.doesNotMatch(r.out, /no test matched/, r.out);
+  assert.match(r.out, /RED ok/, r.out);
+});
