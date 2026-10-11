@@ -1,9 +1,11 @@
 # AI credits log
 
 - Project: `/home/nahisaho/GitHub/musubix6`
-- Updated: 2026-10-11 21:22 UTC
+- Updated: 2026-10-11 21:23 UTC
 - Sessions: 9
-- **Total: 33409.271 AIU** (`total_nano_aiu` / 1e9 from the Copilot CLI session store)
+- **Total: 33520.034 AIU ≈ 335.20 USD**
+- Definition: AIU = AI credit = 0.01 USD; the session store holds `total_nano_aiu` (1 AIU = 1e9 nano-AIU). Official docs define 1 AI credit = 0.01 USD (docs.github.com, usage-based billing); AIU/nano-AIU naming is not in the official docs and comes from the Copilot CLI event schema (see https://shinyay.github.io/getting-started-with-token-optimization/foundations/aiu-and-rate-cards/).
+- Values are recorded estimates from the local session store; the GitHub billing dashboard is authoritative.
 
 Regenerate with `python3 scripts/aic-log.py`. Do not edit by hand.
 
@@ -11,7 +13,7 @@ Regenerate with `python3 scripts/aic-log.py`. Do not edit by hand.
 
 | Model | Calls | AIU | Input tokens | Output tokens |
 |---|---:|---:|---:|---:|
-| claude-sonnet-5.5 | 9349 | 24577.871 | 788298587 | 8921477 |
+| claude-sonnet-5.5 | 9379 | 24688.634 | 790587276 | 8978868 |
 | gpt-6.1-sol | 6637 | 8798.253 | 265367995 | 3352958 |
 | gpt-5.6-terra | 26 | 32.515 | 412537 | 9674 |
 | gpt-5.6-luna | 8 | 0.633 | 47460 | 2438 |
@@ -29,7 +31,7 @@ Regenerate with `python3 scripts/aic-log.py`. Do not edit by hand.
 | 2026-10-10T09:21 | `9919902f` | gpt-5.6-luna | 8 | 0.633 | Create dockfood-6 Directory |
 | 2026-10-10T12:46 | `84cb428d` | claude-sonnet-5.5 | 246 | 1804.027 | Check SKILL.md Size |
 | 2026-10-10T12:46 | `84cb428d` | gpt-6.1-sol | 6637 | 8798.253 | Check SKILL.md Size |
-| 2026-10-11T15:53 | `069072a9` | claude-sonnet-5.5 | 2167 | 6094.165 | Advanced Application Development |
-| 2026-10-11T17:33 | `88999767` | claude-sonnet-5.5 | 292 | 1169.363 | Create Musubix6 Application Tutorial |
+| 2026-10-11T15:53 | `069072a9` | claude-sonnet-5.5 | 2191 | 6182.524 | Advanced Application Development |
+| 2026-10-11T17:33 | `88999767` | claude-sonnet-5.5 | 293 | 1182.084 | Create Musubix6 Application Tutorial |
 | 2026-10-11T17:33 | `88999767` | gpt-5.6-terra | 7 | 9.870 | Create Musubix6 Application Tutorial |
-| 2026-10-11T20:52 | `b1cb9b0b` | claude-sonnet-5.5 | 38 | 77.508 | 修正 WSL Container 設定 |
+| 2026-10-11T20:52 | `b1cb9b0b` | claude-sonnet-5.5 | 43 | 87.191 | 修正 WSL Container 設定 |

@@ -48,7 +48,9 @@ def main():
            f'- Project: `{root}`',
            f'- Updated: {datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M")} UTC',
            f'- Sessions: {len(per_session)}',
-           f'- **Total: {total:.3f} AIU** (`total_nano_aiu` / 1e9 from the Copilot CLI session store)',
+           f'- **Total: {total:.3f} AIU ≈ {total*0.01:,.2f} USD**',
+           '- Definition: AIU = AI credit = 0.01 USD; the session store holds `total_nano_aiu` (1 AIU = 1e9 nano-AIU). Official docs define 1 AI credit = 0.01 USD (docs.github.com, usage-based billing); AIU/nano-AIU naming is not in the official docs and comes from the Copilot CLI event schema (see https://shinyay.github.io/getting-started-with-token-optimization/foundations/aiu-and-rate-cards/).',
+           '- Values are recorded estimates from the local session store; the GitHub billing dashboard is authoritative.',
            '', 'Regenerate with `python3 scripts/aic-log.py`. Do not edit by hand.', '',
            '## By model', '', '| Model | Calls | AIU | Input tokens | Output tokens |', '|---|---:|---:|---:|---:|']
     for m, (n, aiu, tin, tout) in sorted(by_model.items(), key=lambda x: -x[1][1]):
