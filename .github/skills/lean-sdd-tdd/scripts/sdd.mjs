@@ -3782,7 +3782,9 @@ function cmdGate() {
     if (!c.cwd && flags.changed && pRoots.length) {
       const chg = [...changedFiles()].filter((f) => !f.startsWith('.sdd/'));
       const outside = chg.filter((f) => !pRoots.some((r) => f.startsWith(r)));
-      if (chg.length && !outside.length) { lines.push(`! cmd ${c.name}: all changed files are inside nested projects (${pRoots.join(', ')}) — root check skipped`); continue; }
+      const testLike = /\b(?:tests?|spec|jest|vitest|pytest|mocha|unit)\b/i.test(`${c.name} ${(c.cmd ?? []).join(' ')}`);
+      if (chg.length && !outside.length && testLike) { lines.push(`! cmd ${c.name}: all changed files are inside nested projects (${pRoots.filter((r) => chg.some((f) => f.startsWith(r))).join(', ')}) — root test check skipped`); continue; }
+      if (chg.length && !outside.length) lines.push(`! cmd ${c.name}: changes are inside nested projects but this root check is workspace-wide tooling — running it`);
     }
     const ownChanged = !flags.changed || !base || [...changedFiles()].some((f) => f.startsWith(base));
     let scoped = false;

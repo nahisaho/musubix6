@@ -1250,18 +1250,18 @@ test('#39/#40 gate --changed: root checks skip when only a nested project change
   sdd(d, 'init');
   const cfgPath = path.join(d, '.sdd/config.json');
   const cfg = JSON.parse(fs.readFileSync(cfgPath, 'utf8'));
-  cfg.checks = [{ name: 'root', cmd: ['node', '-e', '0'], changedCmd: ['node', '-e', '0'] }];
+  cfg.checks = [{ name: 'test', cmd: ['node', '-e', '0'], changedCmd: ['node', '-e', '0'] }];
   cfg.projects = [{ root: 'worker', checks: [{ name: 't', cmd: ['node', '-e', '0'], changedCmd: ['node', '-e', '0'] }] }];
   fs.writeFileSync(cfgPath, JSON.stringify(cfg));
   git('add', '-A'); git('commit', '-qm', 'base');
   w('worker/a.py', 'x = 2\n');
   const a = sdd(d, 'gate', '--changed').out;
-  assert.match(a, /cmd root: all changed files are inside nested projects/);
+  assert.match(a, /cmd test: all changed files are inside nested projects/);
   assert.match(a, /✓ cmd worker:t/);
   git('commit', '-qam', 'a');
   w('contract/s.json', '["x"]\n');
   const b = sdd(d, 'gate', '--changed').out;
-  assert.match(b, /✓ cmd root/);
+  assert.match(b, /✓ cmd test/);
   assert.match(b, /worker:t: no changed files/);
   assert.match(b, /add the path to its `dependsOn`/);
   cfg.projects[0].dependsOn = ['contract'];
@@ -5322,4 +5322,28 @@ test('#224 R parse errors and runner load failures are load errors, not Red', ()
     assert.equal(r.code, 1, r.out);
     assert.match(r.out, /REJECTED/);
   }
+});
+
+test('#213 gate --changed still runs workspace-wide root tooling (typecheck) when only a nested project changed', () => {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-nest-'));
+  const git = (...a) => spawnSync('git', a, { cwd: d });
+  const w = (f, c) => { fs.mkdirSync(path.dirname(path.join(d, f)), { recursive: true }); fs.writeFileSync(path.join(d, f), c); };
+  git('init', '-q'); git('config', 'user.email', 'a@b'); git('config', 'user.name', 't');
+  w('package.json', '{"name":"r"}'); w('worker/pyproject.toml', '[project]\nname="w"\nversion="0"\n'); w('worker/a.py', 'x = 1\n'); w('other/pyproject.toml', '[project]\nname="o"\nversion="0"\n');
+  sdd(d, 'init');
+  const cfgPath = path.join(d, '.sdd/config.json');
+  const cfg = JSON.parse(fs.readFileSync(cfgPath, 'utf8'));
+  cfg.checks = [{ name: 'typecheck', cmd: ['node', '-e', 'process.exit(1)'], changedCmd: ['node', '-e', 'process.exit(1)'] }];
+  cfg.projects = [{ root: 'worker', checks: [] }, { root: 'other', checks: [] }];
+  fs.writeFileSync(cfgPath, JSON.stringify(cfg));
+  git('add', '-A'); git('commit', '-qm', 'base');
+  w('worker/a.py', 'x = 2\n');
+  const r = sdd(d, 'gate', '--changed');
+  assert.match(r.out, /✗ cmd typecheck/);
+  assert.notEqual(r.code, 0);
+  cfg.checks[0].name = 'test';
+  fs.writeFileSync(cfgPath, JSON.stringify(cfg));
+  const t = sdd(d, 'gate', '--changed').out;
+  assert.match(t, /cmd test: all changed files are inside nested projects \(worker\/\) — root test check skipped/);
+  assert.doesNotMatch(t, /other\//);
 });
