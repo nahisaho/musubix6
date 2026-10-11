@@ -6067,3 +6067,20 @@ test('#246 review template and review check accept the feature positionally or v
   assert.equal(c2.out, c1.out);
   assert.doesNotMatch(c2.out, /usage|unknown feature/, c2.out);
 });
+
+test('#247 impact <data file> names the projects whose dependsOn covers it, not itself as impl', () => {
+  const d = project();
+  fs.mkdirSync(path.join(d, 'contract'), { recursive: true });
+  fs.writeFileSync(path.join(d, 'contract/golden.csv'), 'a,b\n1,2\n');
+  const cp = path.join(d, '.sdd/config.json');
+  const c = fs.existsSync(cp) ? JSON.parse(fs.readFileSync(cp, 'utf8')) : {};
+  c.projects = [{ root: 'core', dependsOn: ['./contract'], testCmd: ['true'], checks: [] }, { root: 'recon', dependsOn: ['contract/golden.csv'], testCmd: ['true'], checks: [] }, { root: 'other', testCmd: ['true'], checks: [] }];
+  fs.writeFileSync(cp, JSON.stringify(c));
+  const r = sdd(d, 'impact', 'contract/golden.csv');
+  assert.doesNotMatch(r.out, /impl: contract/, r.out);
+  assert.match(r.out, /dependent projects.*core, recon/, r.out);
+  assert.doesNotMatch(r.out, /other/, r.out);
+  const j = JSON.parse(sdd(d, 'impact', 'contract/golden.csv', '--json').out);
+  assert.deepEqual(j.projects, ['core', 'recon']);
+  assert.deepEqual(j.impl, []);
+});

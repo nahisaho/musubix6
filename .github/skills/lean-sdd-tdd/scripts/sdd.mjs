@@ -4563,7 +4563,7 @@ function cmdImpact() {
   const reqFeature = new Map();
   for (const sp of specs) for (const r of sp.reqs) reqFeature.set(r.id, sp.feature);
   const all = [...ents.values()];
-  let seeds; let reqs;
+  let seeds; let reqs; let dataFile = false;
   if (/^REQ-/.test(target)) {
     if (!reqFeature.has(target)) { out(`IMPACT: unknown REQ ${target}`); return 1; }
     reqs = [target];
@@ -4575,9 +4575,14 @@ function cmdImpact() {
     if (!seeds.length || e.kind === 'CODE') seeds = [...new Set([e.path, ...seeds])];
   } else if (fs.existsSync(path.join(ROOT, target))) {
     seeds = [target.replace(/^\.\//, '')];
+    dataFile = !EXT.test(seeds[0]) && !all.some((e) => e.path === seeds[0]);
     reqs = [...new Set(all.filter((e) => e.path === seeds[0]).flatMap((e) => [...e.refs.implements, ...e.refs.verifies]))];
   } else { out(`IMPACT: unknown target ${target}`); return 1; }
+  // a shared data file is outside the import graph: name the projects that list it (or a parent dir) in dependsOn (#247)
   const rev = importRev();
+  dataFile = dataFile && !(rev.get(seeds[0])?.size ?? rev.get(seeds[0])?.length);
+  const depProjects = dataFile ? (loadConfig().projects ?? []).filter((p) => (p.dependsOn ?? []).some((d) => { const x = normDep(d); return seeds[0] === x || seeds[0].startsWith(x + '/'); })).map((p) => p.root) : [];
+  if (dataFile) seeds = [];
   const via = new Map(seeds.map((f) => [f, null]));
   const queue = [...seeds];
   while (queue.length) { const f = queue.shift(); for (const d of rev.get(f) ?? []) if (!via.has(d)) { via.set(d, f); queue.push(d); } }
@@ -4599,7 +4604,7 @@ function cmdImpact() {
   for (const r of sameFeature) affected.delete(r);
   const chain = (f) => { const c = [f]; while (via.get(c[c.length - 1])) c.push(via.get(c[c.length - 1])); return c.join(' ← '); };
   const result = {
-    target, reqs, impl: seeds, verifiedBy: verifiers.map((e) => e.id), reachedFiles: reached,
+    target, reqs, impl: seeds, ...(dataFile ? { dataFile: true, projects: depProjects } : {}), verifiedBy: verifiers.map((e) => e.id), reachedFiles: reached,
     sameFeatureReqs: sameFeature,
     otherReqs: [...affected].map(([r, v]) => ({ req: r, feature: reqFeature.get(r) ?? null, via: [...v] })),
     reachedTests: reached.filter((f) => entsIn(f).some((e) => e.refs.verifies.length) || TEST_FILE.test(f)),
@@ -4608,9 +4613,10 @@ function cmdImpact() {
   const cap = (a, n = 8) => a.slice(0, n).join(', ') + (a.length > n ? `, … +${a.length - n} more` : '');
   out(`IMPACT ${target}${reqs.length && target !== reqs[0] ? ` (${cap(reqs)})` : ''}`);
   const seedIsTest = seeds.length > 0 && seeds.every((s) => TEST_FILE.test(s) || (entsIn(s).length > 0 && entsIn(s).every((e) => e.kind === 'TEST')));
-  out(`  ${seedIsTest ? 'test' : 'impl'}: ${seeds.join(', ') || '(none)'}`);
+  if (dataFile) out(`  data file (outside the import graph); dependent projects (dependsOn): ${depProjects.join(', ') || '(none)'}`);
+  else out(`  ${seedIsTest ? 'test' : 'impl'}: ${seeds.join(', ') || '(none)'}`);
   if (verifiers.length) out(`  verified by: ${cap(verifiers.map((e) => e.id))}`);
-  out(`  reaches ${reached.length} file(s) via imports${result.reachedTests.length ? `; tests: ${cap(result.reachedTests)}` : ''}`);
+  if (!dataFile) out(`  reaches ${reached.length} file(s) via imports${result.reachedTests.length ? `; tests: ${cap(result.reachedTests)}` : ''}`);
   if (sameFeature.length) out(`  same feature: ${sameFeature.length} other REQ(s) (${sameFeature.slice(0, 4).join(', ')}${sameFeature.length > 4 ? ', …' : ''})`);
   const perFeature = new Map();
   for (const o of result.otherReqs) perFeature.set(o.feature ?? '?', (perFeature.get(o.feature ?? '?') ?? 0) + 1);
