@@ -3700,7 +3700,9 @@ function cmdTdd() {
   const zero = (!targetExecuted && ((ZERO_TESTS.test(res.text) && !RAN_TESTS.test(res.text)) || allSkipped || noAssert)) || NO_PASSED.test(plain) || pytestNoExecution(plain) || nodeNoMatch || goNoMatch || verdict === 'notrun' || verdict === 'skip';
   const siblingFail = juliaSiblingFail(plain, id);
   const targetPassed = verdict ? verdict === 'pass' : goVerdict ? goVerdict === 'pass' : siblingFail === 'sibling' || res.exit === 0;
-  const targetOutput = juliaSummaryRows(plain) ? juliaFailureOutput(plain, id, t.path) : null;
+  // ExUnit: the excerpt comes from the `N) test ...` failure block, not from compile-warning code frames printed before it (#246)
+  const exBlock = /\.exs$/.test(t.path) ? (/^\s*\d+\) test [^\n]*\n[\s\S]*?(?=^Finished in |^\s*\d+\) test |(?![\s\S]))/m.exec(plain)?.[0] ?? null) : null;
+  const targetOutput = juliaSummaryRows(plain) ? juliaFailureOutput(plain, id, t.path) : exBlock;
   const timeoutWhy = `the test run timed out after ${(res.ms / 1000).toFixed(0)}s (raise timeoutMs in .sdd/config.json or fix the hang); a timeout is neither Red nor Green`;
   // forked JVM / test host died: the test matched but the runner crashed (#143)
   let cAssertionAbort = false;

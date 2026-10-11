@@ -6037,3 +6037,20 @@ test('#245 Go: a goroutine panic aborting the test binary is a failing run, not 
   assert.doesNotMatch(r.out, /no test matched/, r.out);
   assert.match(r.out, /RED ok/, r.out);
 });
+
+test('#246 ExUnit Red excerpt comes from the target test failure block, not a compile-warning frame of another test', { skip: spawnSync('which', ['mix']).status !== 0 }, () => {
+  const spec = '---\nfeature: w\ntier: T1\n---\n| REQ-W-001 | a shall hold. | TEST-W-001 |\n| REQ-W-002 | b shall hold. | TEST-W-002 |\n';
+  const d = mini(spec, {
+    'mix.exs': 'defmodule W.MixProject do\n  use Mix.Project\n  def project, do: [app: :w, version: "0.1.0", deps: []]\nend\n',
+    'lib/w.ex': 'defmodule W do\n  def a, do: raise("nope")\n  def b, do: :ok\nend\n',
+    'test/test_helper.exs': 'ExUnit.start()\n',
+    'test/w_test.exs': 'defmodule WTest do\n  use ExUnit.Case\n\n  # @id TEST-W-001\n  # @verifies REQ-W-001\n  test "a" do\n    W.a()\n  end\n\n  # @id TEST-W-002\n  # @verifies REQ-W-002\n  test "b" do\n    assert W.b() == 2\n  end\nend\n',
+  });
+  fs.rmSync(path.join(d, 'package.json'));
+  fs.rmSync(path.join(d, '.sdd/config.json'));
+  sdd(d, 'init');
+  sdd(d, 'approve', 'record', 'w', '--by', 'tester');
+  const r = sdd(d, 'tdd', 'red', 'TEST-W-001');
+  assert.match(r.out, /RED ok/, r.out);
+  assert.doesNotMatch(r.out, /fails with:.*W\.b\(\) == 2/, r.out);
+});
