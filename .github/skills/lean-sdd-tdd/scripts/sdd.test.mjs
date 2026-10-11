@@ -1844,6 +1844,21 @@ test('#79 ledger conflict markers give a clean message; merge-ledger repairs', (
   assert.doesNotMatch(sdd(d, 'tdd', 'check').out, /LEDGER (CONFLICT|CORRUPT)/);
 });
 
+test('#213 merge-ledger keeps the shared ledger prefix byte-identical', () => {
+  const d = mini(T1SPEC, { 'a.test.mjs': jsTest() }, FAIL);
+  sdd(d, 'tdd', 'red', 'TEST-A-001');
+  const f = path.join(d, '.sdd/tdd.jsonl');
+  const prefix = fs.readFileSync(f, 'utf8');
+  sdd(d, 'tdd', 'red', 'TEST-A-001', '--weak');
+  const next = fs.readFileSync(f, 'utf8').slice(prefix.length);
+  assert.ok(next.trim(), 'second entry recorded');
+  const other = next.replace(/"at":"[^"]*"/, '"at":"2999-01-01T00:00:00.000Z"');
+  fs.writeFileSync(f, `${prefix}<<<<<<< HEAD\n${next}=======\n${other}>>>>>>> other\n`);
+  assert.equal(sdd(d, 'tdd', 'merge-ledger').code, 0);
+  assert.ok(fs.readFileSync(f, 'utf8').startsWith(prefix), 'shared prefix rewritten');
+  assert.doesNotMatch(sdd(d, 'tdd', 'check').out, /LEDGER (CONFLICT|CORRUPT)|broken/);
+});
+
 test('#81 approve record refuses generic approver names for human approval', () => {
   const d = mini(T2SPEC, { 'a.test.mjs': jsTest() }, PASS);
   assert.notEqual(sdd(d, 'approve', 'record', 'a', '--by', 'bot').code, 0);
@@ -3611,6 +3626,62 @@ for (const binding of ['shared.workspace=true', 'shared={workspace=true}', '[dep
     assert.ok(impact.otherReqs.some((o) => o.req === 'REQ-CLIENT-001'), result.out);
   });
 }
+
+test('#213 impact follows package imports, exports wildcards and tsconfig paths to directory indexes', () => {
+  const d = approved();
+  const pkg = (n, o) => JSON.stringify({ name: n, type: 'module', ...o });
+  writeAll(d, {
+    'package.json': '{"name":"r","private":true,"workspaces":["packages/*"]}',
+    'tsconfig.json': '{"compilerOptions":{"baseUrl":".","paths":{"@c/*":["packages/core/src/*"]}}}',
+    'packages/core/package.json': pkg('@r/core', { exports: { '.': './src/index.ts', './*': './src/*.ts' }, imports: { '#util/*': './src/util/*.ts' } }),
+    'packages/core/src/index.ts': 'export const x = 1;\n',
+    'packages/core/src/util/str.ts': '// @id CODE-CALC-001 @implements REQ-CALC-001\nexport const s = 1;\n',
+    'packages/core/src/title.ts': '// @id CODE-CALC-002 @implements REQ-CALC-001\nexport const t = 1;\n',
+    'packages/core/src/hash.ts': 'import "#util/str";\n// @id CODE-A-001 @implements REQ-A-001\nexport const h = 1;\n',
+    'packages/app/package.json': pkg('@r/app', { exports: './src/index.ts' }),
+    'packages/app/src/index.ts': 'import "@r/core/title";\n// @id CODE-B-001 @implements REQ-B-001\nexport const a = 1;\n',
+    'packages/app2/package.json': pkg('@r/app2', { exports: './src/index.ts' }),
+    'packages/app2/src/index.ts': 'import "@c/title";\n// @id CODE-C-001 @implements REQ-C-001\nexport const b = 1;\n',
+    '.sdd/specs/a.md': '---\nfeature: a\ntier: T1\n---\nREQ-A-001: When called, the system shall hash.\n',
+    '.sdd/specs/b.md': '---\nfeature: b\ntier: T1\n---\nREQ-B-001: When called, the system shall app.\n',
+    '.sdd/specs/c.md': '---\nfeature: c\ntier: T1\n---\nREQ-C-001: When called, the system shall app2.\n',
+  });
+  const reach = (f) => JSON.parse(sdd(d, 'impact', f, '--json').out).reachedFiles;
+  assert.ok(reach('packages/core/src/util/str.ts').includes('packages/core/src/hash.ts'));
+  assert.ok(reach('packages/core/src/title.ts').includes('packages/app/src/index.ts'));
+  assert.ok(reach('packages/core/src/title.ts').includes('packages/app2/src/index.ts'));
+});
+
+test('#224 R impact follows literal source() edges', () => {
+  const d = approved();
+  writeAll(d, {
+    'R/dataio.R': '# @id CODE-CALC-001 @implements REQ-CALC-001\nsurv_data <- function() 1\n',
+    'R/km.R': '# source("R/ignored.R")\nsource("R/dataio.R")\n# @id CODE-KM-001 @implements REQ-KM-001\nkm <- function() surv_data()\n',
+    'tests/testthat/test-cox.R': 'source(file.path("..", "..", "R", "dataio.R"))\n# @id TEST-KM-001 @verifies REQ-KM-001\ntest_that("x", { expect_equal(surv_data(), 1) })\n',
+    '.sdd/specs/km.md': '---\nfeature: km\ntier: T1\n---\nREQ-KM-001: When called, the system shall fit.\n',
+  });
+  const result = sdd(d, 'impact', 'R/dataio.R', '--json');
+  const impact = JSON.parse(result.out);
+  assert.ok(impact.reachedFiles.includes('R/km.R'), result.out);
+  assert.ok(impact.reachedFiles.includes('tests/testthat/test-cox.R'), result.out);
+  assert.ok(impact.otherReqs.some((o) => o.req === 'REQ-KM-001'), result.out);
+});
+
+test('#217 Rust impact honors #[path] modules for crate:: importers', () => {
+  const d = approved();
+  writeAll(d, {
+    'Cargo.toml': '[package]\nname="pathimp"\nversion="0.1.0"\n',
+    'src/lib.rs': '#[path = "model/value.rs"]\nmod value;\nmod session;\n',
+    'src/model/value.rs': '// @id CODE-CALC-001 @implements REQ-CALC-001\npub struct V(pub i64);\n',
+    'src/session.rs': 'use crate::value::V;\n// @id CODE-CLIENT-001 @implements REQ-CLIENT-001\npub fn run() -> i64 { V(1).0 }\n',
+    '.sdd/specs/client.md': '---\nfeature: client\ntier: T1\n---\nREQ-CLIENT-001: When called, the system shall run.\n',
+  });
+  const result = sdd(d, 'impact', 'src/model/value.rs', '--json');
+  assert.equal(result.code, 0, result.out);
+  const impact = JSON.parse(result.out);
+  assert.ok(impact.reachedFiles.includes('src/session.rs'), result.out);
+  assert.ok(impact.otherReqs.some((o) => o.req === 'REQ-CLIENT-001'), result.out);
+});
 
 test('#207 Rust raw identifier modules retain exact scopes and ordinary module filenames', { skip: !has130('cargo') }, () => {
   const d = batch2Source('src/type.rs', '// @id TEST-CALC-001 @verifies REQ-CALC-001\n#[test]\nfn test_calc_001() { assert_eq!(crate::answer(), 7); }\n');

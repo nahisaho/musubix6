@@ -2891,21 +2891,26 @@ function mergeLedger() {
   if (!fs.existsSync(LEDGER)) { out('no ledger'); return 2; }
   const seen = new Set();
   const es = [];
+  // the leading run of intact, correctly chained lines is kept byte-identical (#213)
+  const kept = [];
+  let prefixOpen = true;
+  let prev = '';
   for (const l of fs.readFileSync(LEDGER, 'utf8').split('\n')) {
-    if (!l.trim() || /^(<{7}|={7}|>{7})/.test(l)) continue;
+    if (!l.trim() || /^(<{7}|={7}|>{7})/.test(l)) { if (l.trim()) prefixOpen = false; continue; }
     let e;
     try { e = JSON.parse(l); } catch { out(`LEDGER CORRUPT: cannot parse line: ${l.slice(0, 80)}`); return 2; }
-    const { seq, prev, hash, ...rest } = e;
+    const { seq, prev: pv, hash, ...rest } = e;
     const k = JSON.stringify(rest);
+    if (prefixOpen && pv === prev && seq === kept.length + 1 && hash === entryHash(e)) { kept.push(l); seen.add(k); prev = hash; continue; }
+    prefixOpen = false;
     if (seen.has(k)) continue;
     seen.add(k);
     es.push(rest);
   }
   es.sort((a, b) => String(a.at).localeCompare(String(b.at)));
-  let prev = '';
-  const outLines = es.map((e, i) => { const full = { v: 1, ...e, seq: i + 1, prev }; delete full.hash; full.hash = entryHash(full); prev = full.hash; return JSON.stringify(full); });
+  const outLines = [...kept, ...es.map((e, i) => { const full = { v: 1, seq: kept.length + i + 1, ...e, prev }; delete full.hash; full.hash = entryHash(full); prev = full.hash; return JSON.stringify(full); })];
   fs.writeFileSync(LEDGER, outLines.join('\n') + '\n');
-  out(`ledger merged: ${es.length} entries re-chained (review with git diff; tdd check)`);
+  out(`ledger merged: ${outLines.length} entries (${kept.length} unchanged, ${es.length} re-chained; review with git diff; tdd check)`);
   return 0;
 }
 
@@ -3600,6 +3605,16 @@ function aliasMap(set, allowMissing = false) {
     const f = pick(dir, root) ?? pick(dir, 'src/index');
     if (f) map.push([pkg.name, f, false]);
     for (const [k, v] of Object.entries(ex)) if (k.startsWith('./') && !k.includes('*')) { const t = pick(dir, entry(v)); if (t) map.push([`${pkg.name}/${k.slice(2)}`, t, false]); }
+    // wildcard subpaths: "./*" or "./feat/*" -> "./src/*.ts" (#213)
+    const wild = (v) => { const e = entry(v); const i = typeof e === 'string' ? e.indexOf('*') : -1; if (i < 0) return null; const n = path.posix.normalize(path.posix.join(dir, e.slice(0, i))).replace(/\/+$/, '').replace(/^\.$/, ''); return { pre: n + (n && /\/$/.test(e.slice(0, i)) ? '/' : ''), suf: e.slice(i + 1) }; };
+    for (const [k, v] of Object.entries(ex)) if (k.startsWith('./') && /^\.\/(?:[^*]*\/)?\*$/.test(k) && wild(v)) map.push([k === './*' ? pkg.name : `${pkg.name}/${k.slice(2, -2)}`, dir === '.' ? '' : dir, true, { wild: wild(v) }]);
+    // package.json "imports" (#alias) apply only inside this package (#213)
+    for (const [k, v] of Object.entries(pkg.imports ?? {})) {
+      if (!k.startsWith('#')) continue;
+      const scope = dir === '.' ? '' : dir;
+      if (!k.includes('*')) { const t = pick(dir, entry(v)); if (t) map.push([k, t, false, { scope }]); }
+      else if (/\/\*$/.test(k) && wild(v)) map.push([k.slice(0, -2), scope, true, { scope, wild: wild(v) }]);
+    }
     map.push([pkg.name, dir === '.' ? '' : dir, true]);
   }
   for (const tf of gitFiles('*tsconfig*.json')) {
@@ -3608,7 +3623,7 @@ function aliasMap(set, allowMissing = false) {
     const base = path.posix.join(dir, co?.compilerOptions?.baseUrl ?? '.');
     for (const [k, vs] of Object.entries(co?.compilerOptions?.paths ?? {})) {
       const star = k.endsWith('/*');
-      const t = pick(base, String(vs[0]).replace(/\/\*$/, ''), allowMissing && !star);
+      const t = star ? null : pick(base, String(vs[0]).replace(/\/\*$/, ''), allowMissing);
       map.push([star ? k.slice(0, -2) : k, t ?? path.posix.join(base, String(vs[0]).replace(/\/\*$/, '')), star || !t]);
     }
   }
@@ -3691,10 +3706,17 @@ function jsRev(files) {
     return null;
   };
   const aliases = aliasMap(set);
-  const resolveBare = (spec) => {
-    for (const [name, target, isDir] of aliases) {
+  const resolveBare = (spec, from = '') => {
+    for (const [name, target, isDir, extra] of aliases) {
+      if (extra?.scope !== undefined && extra.scope && !from.startsWith(extra.scope + '/')) continue;
       if (spec === name && !isDir) return target;
-      if (isDir && (spec === name || spec.startsWith(name + '/'))) {
+      if (extra?.wild && spec.startsWith(name + '/')) {
+        const b = extra.wild.pre + spec.slice(name.length + 1) + extra.wild.suf;
+        const stem = b.replace(/\.[cm]?[jt]sx?$/, '');
+        for (const c of [b, stem.replace(/^((?:.*\/)?)(dist|build|lib)\//, '$1src/') + '.ts', ...['.ts', '.tsx', '.js', '.mjs', '.jsx', '/index.ts', '/index.js'].map((e) => stem + e)]) if (set.has(c)) return c;
+        continue;
+      }
+      if (isDir && !extra?.wild && (spec === name || spec.startsWith(name + '/'))) {
         const sub = spec === name ? '' : spec.slice(name.length + 1);
         const base = path.posix.join(target, sub);
         const stem = base.replace(/\.[cm]?[jt]sx?$/, '');
@@ -3710,7 +3732,7 @@ function jsRev(files) {
       .replace(/\bimport\s+type\b[^;'"]*?from\s*['"][^'"\n]+['"]/g, '')
       .replace(/\bimport\s*\{([^}]*)\}\s*from\s*(['"][^'"\n]+['"])/g, (all, specs, q) => (specs.trim() && specs.split(',').filter((x) => x.trim()).every((x) => /^\s*type\s/.test(x)) ? '' : all));
     for (const m of src.matchAll(/(?:from\s+|import\s*\(?\s*|require\(\s*)['"]([^'"\n]+)['"]/g)) {
-      const t = m[1].startsWith('.') ? resolve(f, m[1]) : resolveBare(m[1]);
+      const t = m[1].startsWith('.') ? resolve(f, m[1]) : resolveBare(m[1], f);
       if (t) { if (!rev.has(t)) rev.set(t, []); rev.get(t).push(f); }
     }
   }
@@ -4044,6 +4066,12 @@ function importRev() {
   }
   const cargoAliases = new Map();
   for (const pkg of cargoSources()) cargoAliases.set(pkg.dir, new Map([...pkg.bindings].map(([alias, target]) => [alias, [path.posix.dirname(target.lib)]])));
+  // `#[path = "x.rs"] mod name;` maps module `name` of the declaring module to that file (#217)
+  const rsPathMods = new Map();
+  for (const g of files) if (g.endsWith('.rs')) for (const m of fs.readFileSync(path.join(ROOT, g), 'utf8').matchAll(/#\[\s*path\s*=\s*"([^"\n]+)"\s*\]\s*(?:#\[[^\]\n]*\]\s*)*(?:pub(?:\([^)]*\))?\s+)?mod\s+(\w+)\s*;/g)) {
+    const t = path.posix.normalize(path.posix.join(dir(g), m[1]));
+    rsPathMods.set(`${/(?:^|\/)(?:lib|main|mod)\.rs$/.test(g) ? dir(g) : g.replace(/\.rs$/, '')}/${m[2]}`, t);
+  }
   const stem = (x) => path.posix.basename(x).replace(/\.\w+$/, '');
   const goMods = gitFiles('*go.mod').filter((g) => /(^|\/)go\.mod$/.test(g)).map((g) => {
     const text = fs.readFileSync(path.join(ROOT, g), 'utf8');
@@ -4146,7 +4174,7 @@ function importRev() {
           const segs = p.replace(/\{.*$/s, '').split('::').map((x) => x.trim()).filter((x) => /^\w+$/.test(x));
           for (const b of bases) {
             let cur = b; let hit = false;
-            for (const sg of segs) { const c = [`${cur}/${sg}.rs`, `${cur}/${sg}/mod.rs`].find((x) => set.has(x)); if (!c) break; add(c, f); hit = true; cur = c.endsWith('/mod.rs') ? dir(c) : c.replace(/\.rs$/, ''); }
+            for (const sg of segs) { const c = [rsPathMods.get(`${cur}/${sg}`), `${cur}/${sg}.rs`, `${cur}/${sg}/mod.rs`].find((x) => x && set.has(x)); if (!c) break; add(c, f); hit = true; cur = c.endsWith('/mod.rs') ? dir(c) : c.replace(/\.rs$/, ''); }
             // an item re-exported from the crate root: link to the file that declares it
             if (!hit && segs.length) for (const x of files) if (x.startsWith(b + '/') && x.endsWith('.rs') && new RegExp(`\\bpub(?:\\([\\w:]+\\))?\\s+(?:fn|struct|enum|trait|const|type|static)\\s+${segs[0]}\\b`).test(fs.readFileSync(path.join(ROOT, x), 'utf8'))) add(x, f);
             if (p.includes('*')) for (const x of files) if (x.endsWith('.rs') && (x.startsWith((hit ? cur : b) + '/') || x === cur + '.rs')) add(x, f);
@@ -4186,6 +4214,12 @@ function importRev() {
           const name = /^\s*\.*(\w+)/.exec(item)?.[1];
           (jlMod.get(name) ?? []).forEach((t) => add(t, f));
         }
+      }
+    } else if (/\.[rR]$/.test(f)) {
+      // literal `source("x.R")` / `sys.source(file.path("a", "x.R"))`: relative to the file (testthat) or the project root (#224)
+      for (const m of src.replace(/^\s*#.*$/gm, '').matchAll(/\b(?:sys\.)?source\(\s*(?:file\s*=\s*)?(?:file\.path\(\s*((?:["'][^"'\n]*["']\s*,?\s*)+)\)|["']([^"'\n]+)["'])/g)) {
+        const p = m[2] ?? [...m[1].matchAll(/["']([^"'\n]*)["']/g)].map((x) => x[1]).join('/');
+        for (const c of [path.posix.join(dir(f), p), p]) add(path.posix.normalize(c), f);
       }
     } else if (/\.php$/.test(f)) {
       // `use Ns\Class;`, group uses and same-namespace references resolve through declared namespace + class name (#111)
