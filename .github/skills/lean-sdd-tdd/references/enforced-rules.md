@@ -10,6 +10,12 @@ Human-approved specs: `approve record` stores the shas of the `@implements` file
 
 Not enforced (agent discipline): test quality, mutation, security review. Do not claim them.
 
+## Wave-2b oracle and ownership refinements (#199–#205)
+- Oracle closure includes Rust Unicode `#[path]` escapes/intervening attributes; C/C++ object-like literal include macros, compiler-forced includes and fragments of any extension; Java same-package support and `CsvFileSource` local resources/files; PHP same-namespace static/new class references; xUnit string collection definitions/fixtures; NUnit ancestor-namespace and assembly `SetUpFixture`; Julia literal/module-qualified and `joinpath(@__DIR__, …)` includes. Unsupported C/Julia/Java oracle expressions are refused rather than omitted; deleted local inputs invalidate evidence.
+- Cargo source `include!` ownership preserves lexical modules. Shared annotations across executables are refused unless the runner chooses a target explicitly. Generic NUnit verdicts aggregate argument-suffixed TRX methods without accepting longer sibling methods.
+- Java/PHP/C#/Julia generated subjects are annotated production before Red. Handwritten subjects need CODE/@implements before Red; later promotion cannot silently remove a protected oracle and receives a recovery diagnostic. See `stubs.md`.
+- Git-less Rust stubs discover imported Cargo members; PHP readonly declarations retain impact edges. Julia character literals do not corrupt sibling isolation, and standard `Test` module aliases receive automatic nested-summary visibility. PHPUnit 13.4+ autodetection avoids its deprecated result-cache option.
+
 ## Review file schema
 If `--review` is a file (e.g. `.sdd/review.md`) it must follow the schema from `$S review template <feature>`: one matching `spec: sha256:<hash>` header (12–64 hex chars, all supplied characters must match; legacy `spec <hash>` is accepted), `verdict: pass` (the template starts as `pending` and is rejected until edited), `open: <n>`; findings carry an explicit status (table cell, `- [ ]`, `state: open`, `**Open**`). A hash elsewhere in prose does not qualify. Explanatory suffixes such as `Open (awaiting fix)` remain Open. `open:` must equal the Open lines found and be 0. Validate with `$S review check <file> --feature <f>`.
 Absolute and root-relative review paths, including paths with spaces, identify the same file and receive the same validation and subsequent hash freshness checks. Explicit absolute/path-shaped missing files are refused, not treated as summaries (#196).

@@ -3534,6 +3534,239 @@ const batch2Run = (d, runner, body, cmd, ...args) => {
   return { code: r.status, out: r.stdout + r.stderr };
 };
 
+for (const [label, file, pre, deps, changed] of [
+  ['Rust Unicode path', 'tests/t.rs', '#[path = "expected\\u{2e}rs"] mod oracle;', { 'tests/expected.rs': 'pub fn expected() -> i32 { 7 }\n' }, 'tests/expected.rs'],
+  ['Rust intervening attribute', 'tests/t.rs', '#[path = "expected.rs"]\n#[allow(dead_code)]\nmod oracle;', { 'tests/expected.rs': 'pub fn expected() -> i32 { 7 }\n' }, 'tests/expected.rs'],
+  ['C++ macro', 'tests/t.cpp', '#define ORACLE_FILE "oracle.hpp"\n#include ORACLE_FILE', { 'tests/oracle.hpp': '#define EXPECTED 7\n' }, 'tests/oracle.hpp'],
+  ['C++ fragment', 'tests/t.cpp', '#include "support.inc"', { 'tests/support.inc': '#include "oracle.hpp"\n', 'tests/oracle.hpp': '#define EXPECTED 7\n' }, 'tests/oracle.hpp'],
+  ['C++ forced include', 'tests/t.cpp', '', { 'build/compile_commands.json': JSON.stringify([{ directory: '.', file: 'tests/t.cpp', arguments: ['c++', '-include', 'tests/oracle.hpp', '-c', 'tests/t.cpp'] }]), 'tests/oracle.hpp': '#define EXPECTED 7\n' }, 'tests/oracle.hpp'],
+  ['C++ include-path forced fragment', 'tests/t.cpp', '', { 'build/compile_commands.json': JSON.stringify([{ directory: '.', file: 'tests/t.cpp', arguments: ['c++', '-I', 'headers', '-include', 'support.inc', '-c', 'tests/t.cpp'] }]), 'headers/support.inc': '#include "oracle.hpp"\n', 'headers/oracle.hpp': '#define EXPECTED 7\n' }, 'headers/oracle.hpp'],
+  ['Java same package', 'src/test/java/probe/T.java', 'package probe;\nclass T {\nOracle expected;', { 'src/test/java/probe/Oracle.java': 'package probe;\nclass Oracle { int expected() { return 7; } }\n' }, 'src/test/java/probe/Oracle.java'],
+  ['Java CSV resource', 'src/test/java/probe/T.java', 'package probe;\nclass T {\n@CsvFileSource(resources = "/oracle.csv")', { 'src/test/resources/oracle.csv': '7,7\n' }, 'src/test/resources/oracle.csv'],
+  ['Java CSV file', 'src/test/java/probe/T.java', 'package probe;\nclass T {\n@CsvFileSource(files = "oracle.csv")', { 'oracle.csv': '7,7\n' }, 'oracle.csv'],
+  ['PHP same namespace', 'tests/T.php', '<?php\nnamespace Probe;\nclass T {\npublic function helper() { return Oracle::expected(); }', { 'tests/Oracle.php': '<?php\nnamespace Probe;\nclass Oracle { public static function expected() { return 7; } }\n' }, 'tests/Oracle.php'],
+  ['xUnit string collection', 'tests/T.cs', 'namespace Probe;\n[Collection("billing")]\nclass T {', { 'tests/Fixture.cs': 'namespace Probe;\n[CollectionDefinition("billing")]\nclass Billing : ICollectionFixture<Setup> {}\nclass Setup { int oracle = 7; }\n' }, 'tests/Fixture.cs'],
+  ['NUnit namespace setup', 'tests/T.cs', 'namespace Probe.Inner;\nclass T {', { 'tests/Fixture.cs': 'namespace Probe;\n[SetUpFixture]\nclass Setup { [OneTimeSetUp] void Init() { int oracle = 7; } }\n' }, 'tests/Fixture.cs'],
+  ['Julia joinpath', 'test/t.jl', 'include(joinpath(@__DIR__, "support", "oracle.jl"))', { 'test/support/oracle.jl': 'expected() = 7\n' }, 'test/support/oracle.jl'],
+  ['Julia qualified include', 'test/t.jl', 'Base.include(@__MODULE__, "oracle.jl")', { 'test/oracle.jl': 'expected() = 7\n' }, 'test/oracle.jl'],
+]) {
+  test(`#199 ${label} protects changed and deleted oracle dependencies`, () => {
+    const target = file.endsWith('.jl') ? '# @id TEST-CALC-001 @verifies REQ-CALC-001\n@testset "TEST-CALC-001" begin\n@test value() == expected()\nend\n'
+      : '// @id TEST-CALC-001 @verifies REQ-CALC-001\n' + (file.endsWith('.rs') ? '#[test]\nfn test_calc_001() { assert!(true); }\n' : file.endsWith('.php') ? 'public function test_calc_001(): void { self::assertTrue(true); }\n}\n' : file.endsWith('.java') ? '@Test\nvoid test_calc_001() { assertTrue(true); }\n}\n' : file.endsWith('.cs') ? '[Test]\nvoid test_calc_001() { Assert.True(true); }\n}\n' : 'void test_calc_001() { CHECK(1); }\n');
+    const d = batch2Source(file, pre + '\n' + target);
+    writeAll(d, deps);
+    fakeOut(d, 'AssertionError: oracle');
+    const red = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
+    assert.equal(red.code, 0, red.out);
+    fakeOut(d, 'pass', 0);
+    assert.equal(sdd(d, 'tdd', 'green', 'TEST-CALC-001').code, 0);
+    fs.writeFileSync(path.join(d, changed), deps[changed].replace('7', '2'));
+    assert.match(sdd(d, 'tdd', 'green', 'TEST-CALC-001').out, /changed since Red/);
+    assert.match(sdd(d, 'gate', '--no-run').out, /test changed/);
+    fs.rmSync(path.join(d, changed));
+    assert.equal(sdd(d, 'tdd', 'green', 'TEST-CALC-001').code, 1);
+  });
+}
+
+for (const [file, pre] of [['t.cpp', '#include ORACLE_UNKNOWN'], ['t.jl', 'include(oracle_path())'], ['T.java', 'class T {\n@CsvFileSource(resources = RESOURCE)']]) {
+  test(`#199 ${file} unresolved oracle input refuses evidence`, () => {
+    const target = file.endsWith('.jl') ? '# @id TEST-CALC-001 @verifies REQ-CALC-001\n@testset "TEST-CALC-001" begin\n@test true\nend\n' : '// @id TEST-CALC-001 @verifies REQ-CALC-001\nvoid test_calc_001() {}\n';
+    const d = batch2Source(file, pre + '\n' + target);
+    fakeOut(d, 'AssertionError: oracle');
+    const red = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
+    assert.equal(red.code, 1, red.out);
+    assert.match(red.out, /unresolved.*oracle/i);
+    assert.equal(fs.existsSync(path.join(d, '.sdd/tdd.jsonl')), false);
+  });
+}
+
+test('#204 Julia character literals preserve sibling isolation and selected-body protection', () => {
+  const body = "# @id TEST-CALC-001 @verifies REQ-CALC-001\n@testset \"TEST-CALC-001\" begin\n@test '(' == '('\n@test '\\'' == '\\''\n@test value() == 2\nend\n# @id TEST-OTHER-001 @verifies REQ-CALC-001\n@testset \"TEST-OTHER-001\" begin\n@test 4 == 4\nend\n";
+  const d = batch2Source('t.jl', body);
+  fakeOut(d, 'AssertionError: target');
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-CALC-001').code, 0);
+  fs.writeFileSync(path.join(d, 't.jl'), body.replace('4 == 4', '5 == 5'));
+  fakeOut(d, 'pass', 0);
+  assert.equal(sdd(d, 'tdd', 'green', 'TEST-CALC-001').code, 0);
+  fs.writeFileSync(path.join(d, 't.jl'), body.replace('value() == 2', 'value() == 3'));
+  assert.match(sdd(d, 'tdd', 'green', 'TEST-CALC-001').out, /changed since Red/);
+});
+
+test('#203 PHP readonly classes retain cross-feature impact edges', () => {
+  const d = approved();
+  writeAll(d, {
+    'src/Value.php': '<?php\nnamespace Probe;\n// @id CODE-VALUE-001 @implements REQ-CALC-001\nfinal readonly class Value {}\n',
+    'src/Reader.php': '<?php\nnamespace Client;\nuse Probe\\Value;\nclass Reader {}\n',
+  });
+  const result = sdd(d, 'impact', 'src/Value.php', '--json');
+  assert.equal(result.code, 0, result.out);
+  assert.ok(JSON.parse(result.out).reachedFiles.includes('src/Reader.php'), result.out);
+});
+
+test('#205 generic NUnit parameterized TRX rows aggregate without accepting longer siblings', () => {
+  const d = batch2Source('T.cs', 'namespace Probe;\n[TestFixture(typeof(int))]\nclass Generic<T> {\n// @id TEST-CALC-001 @verifies REQ-CALC-001\n[TestCase(1)]\n[TestCase(2)]\npublic void test_calc_001(int value) { Assert.AreEqual(value, Actual(value)); }\n}\n');
+  writeAll(d, { 'T.csproj': '<Project/>' });
+  const trx = (outcome) => `<TestRun><TestDefinitions><UnitTest id="one"><TestMethod className="Probe.Generic&lt;System.Int32&gt;" name="test_calc_001(1)"/></UnitTest><UnitTest id="two"><TestMethod className="Probe.Generic&lt;System.Int32&gt;" name="test_calc_001(2)"/></UnitTest><UnitTest id="sibling"><TestMethod className="Probe.Generic&lt;System.Int32&gt;" name="test_calc_001_extra(2)"/></UnitTest></TestDefinitions><Results><UnitTestResult testId="one" outcome="Passed"/><UnitTestResult testId="two" outcome="${outcome}"/><UnitTestResult testId="sibling" outcome="Failed"/></Results></TestRun>`;
+  const run = (outcome, exit, ...args) => batch2Run(d, 'dotnet', `mkdir -p .sdd/results\nprintf '%s' '${trx(outcome)}' > .sdd/results/sdd-target.trx\necho "Expected is <2>"\nexit ${exit}\n`, ['dotnet', 'test', '--filter', 'FullyQualifiedName~{idu}'], ...args);
+  const red = run('Failed', 1, 'tdd', 'red', 'TEST-CALC-001');
+  assert.equal(red.code, 0, red.out);
+  assert.equal(run('Failed', 1, 'tdd', 'green', 'TEST-CALC-001').code, 1);
+  assert.equal(run('Passed', 0, 'tdd', 'green', 'TEST-CALC-001').code, 0);
+  assert.equal(run('Failed', 1, 'tdd', 'refactor', 'TEST-CALC-001').code, 1);
+});
+
+test('#200 Rust include-owned tests retain lexical modules and reject ambiguous executables', { skip: !has130('cargo') }, () => {
+  const body = '// @id TEST-CALC-001 @verifies REQ-CALC-001\n#[test]\nfn test_calc_001() { assert_eq!(crate::answer(), 7); }\n';
+  const d = batch2Source('support/cases.rs', body);
+  writeAll(d, {
+    'Cargo.toml': '[package]\nname="include-probe"\nversion="0.1.0"\nedition="2021"\n',
+    'src/lib.rs': '// @id CODE-CALC-001 @implements REQ-CALC-001\npub fn answer() -> i32 { 0 }\n#[cfg(test)] mod embedded { include!("../support/cases.rs"); }\n',
+  });
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ testCmd: ['cargo', 'test', '{idu}'], checks: [] }));
+  const red = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
+  assert.equal(red.code, 0, red.out);
+  const entry = JSON.parse(rd130(d, '.sdd/tdd.jsonl').trim().split('\n')[0]);
+  assert.equal(entry.weak, undefined);
+  writeAll(d, { 'src/main.rs': 'fn main() {}\nfn answer() -> i32 { 8 }\n#[cfg(test)] mod embedded { include!("../support/cases.rs"); }\n' });
+  const ambiguous = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
+  assert.equal(ambiguous.code, 1, ambiguous.out);
+  assert.match(ambiguous.out, /ownership is ambiguous/);
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ testCmd: ['cargo', 'test', '--lib', '{idu}'], checks: [] }));
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-CALC-001').code, 0);
+  fs.writeFileSync(path.join(d, 'src/lib.rs'), rd130(d, 'src/lib.rs').replace('{ 0 }', '{ 7 }'));
+  const green = sdd(d, 'tdd', 'green', 'TEST-CALC-001');
+  assert.equal(green.code, 0, green.out);
+});
+
+test('#202 Git-less Cargo members receive imported missing-module stubs without replacing libraries', { skip: !has130('cargo') }, () => {
+  const d = batch2Source('consumer/tests/probe.rs', 'use subject::fresh::count;\n// @id TEST-CALC-001 @verifies REQ-CALC-001\n#[test]\nfn test_calc_001() { assert_eq!(count(), 3); }\n');
+  writeAll(d, {
+    'Cargo.toml': '[workspace]\nmembers=["subject","consumer"]\nresolver="2"\n',
+    'subject/Cargo.toml': '[package]\nname="subject"\nversion="0.1.0"\nedition="2021"\n',
+    'subject/src/lib.rs': 'pub fn existing() -> i32 { 1 }\n',
+    'consumer/Cargo.toml': '[package]\nname="consumer"\nversion="0.1.0"\nedition="2021"\n[dependencies]\nsubject={path="../subject"}\n',
+    'consumer/src/lib.rs': 'pub fn preserved() -> i32 { 2 }\n',
+  });
+  fs.rmSync(path.join(d, '.git'), { recursive: true });
+  const stub = sdd(d, 'tdd', 'stub', 'TEST-CALC-001');
+  assert.equal(stub.code, 0, stub.out);
+  assert.match(rd130(d, 'subject/src/fresh.rs'), /pub fn count/);
+  assert.match(rd130(d, 'subject/src/lib.rs'), /pub fn existing[\s\S]*pub mod fresh;/);
+  assert.equal(rd130(d, 'consumer/src/lib.rs'), 'pub fn preserved() -> i32 { 2 }\n');
+});
+
+test('#200 workspace-root included annotations resolve through package and target selection', { skip: !has130('cargo') }, () => {
+  const d = batch2Source('support/cases.rs', '// @id TEST-CALC-001 @verifies REQ-CALC-001\n#[test]\nfn test_calc_001() { assert_eq!(crate::answer(), 7); }\n');
+  writeAll(d, {
+    'Cargo.toml': '[workspace]\nmembers=["one","two"]\nresolver="2"\n',
+    'one/Cargo.toml': '[package]\nname="one"\nversion="0.1.0"\nedition="2021"\n',
+    'two/Cargo.toml': '[package]\nname="two"\nversion="0.1.0"\nedition="2021"\n',
+    'one/src/lib.rs': '// @id CODE-CALC-001 @implements REQ-CALC-001\npub fn answer() -> i32 { 7 }\n#[cfg(test)] mod embedded { include!("../../support/cases.rs"); }\n',
+    'two/src/lib.rs': 'pub fn answer() -> i32 { 0 }\n#[cfg(test)] mod embedded { include!("../../support/cases.rs"); }\n',
+  });
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ testCmd: ['cargo', 'test', '{idu}'], checks: [] }));
+  const ambiguous = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
+  assert.equal(ambiguous.code, 1, ambiguous.out);
+  assert.match(ambiguous.out, /ownership is ambiguous/);
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ testCmd: ['cargo', 'test', '-p', 'one', '--lib', '{idu}'], checks: [] }));
+  const passing = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
+  assert.equal(passing.code, 1, passing.out);
+  assert.match(passing.out, /test passed/);
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ testCmd: ['cargo', 'test', '-p', 'two', '--lib', '{idu}'], checks: [] }));
+  const failing = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
+  assert.equal(failing.code, 0, failing.out);
+});
+
+for (const [version, option] of [['12.5.38', '--do-not-cache-result'], ['13.3.9', '--do-not-cache-result'], ['13.4.1', '--do-not-record-test-run-history'], ['14.0.0', '--do-not-record-test-run-history']]) {
+  test(`#203 PHPUnit ${version} autodetect uses compatible result-history option`, () => {
+    const d = approved();
+    writeAll(d, { 'composer.json': '{}', 'vendor/bin/phpunit': `#!/bin/sh\necho 'PHPUnit ${version}'\n` });
+    fs.chmodSync(path.join(d, 'vendor/bin/phpunit'), 0o755);
+    const init = sdd(d, 'init');
+    assert.equal(init.code, 0, init.out);
+    const cfg = JSON.parse(rd130(d, '.sdd/config.json'));
+    assert.ok(cfg.testCmd.includes(option));
+    assert.ok(cfg.checks[0].cmd.includes(option));
+  });
+}
+
+test('#204 aliased standard Julia nested testsets expose passing and failing targets', { skip: !has130('julia') }, () => {
+  const body = 'import Test as JT\nJT.@testset "outer" begin\n# @id TEST-CALC-001 @verifies REQ-CALC-001\nJT.@testset "TEST-CALC-001" begin\nJT.@test 1 == 2\nend\nend\n';
+  const d = batch2Source('t.jl', body);
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ testCmd: ['julia', '--compile=min', '--project=.', '{file}'], checks: [] }));
+  const red = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
+  assert.equal(red.code, 0, red.out);
+  // Characterization proves passing nested visibility independently of assertion-body changes.
+  fs.writeFileSync(path.join(d, 't.jl'), body.replace('1 == 2', '2 == 2'));
+  const passing = sdd(d, 'tdd', 'red', 'TEST-CALC-001', '--characterization', 'alias visibility');
+  assert.equal(passing.code, 0, passing.out);
+  const green = sdd(d, 'tdd', 'green', 'TEST-CALC-001');
+  assert.equal(green.code, 0, green.out);
+});
+
+for (const [file, pre, subject, stub, implementation] of [
+  ['src/test/java/probe/T.java', 'package probe;\nimport static probe.Subject.value;\nclass T {', 'src/main/java/probe/Subject.java', 'package probe;\npublic class Subject { public static int value() { return 0; } }\n', 'package probe;\n// @id CODE-CALC-001 @implements REQ-CALC-001\npublic class Subject { public static int value() { return 7; } }\n'],
+  ['test/t.jl', 'include("../src/answer.jl")', 'src/answer.jl', 'value() = 0\n', '# @id CODE-CALC-001 @implements REQ-CALC-001\nvalue() = 7\n'],
+]) {
+  test(`#201 ${file} handwritten subject promotion diagnoses ownership, never silently drops an oracle`, () => {
+    const target = file.endsWith('.jl') ? '# @id TEST-CALC-001 @verifies REQ-CALC-001\n@testset "TEST-CALC-001" begin\n@test value() == 7\nend\n' : '// @id TEST-CALC-001 @verifies REQ-CALC-001\nvoid test_calc_001() { value(); }\n}\n';
+    const d = batch2Source(file, pre + '\n' + target);
+    writeAll(d, { [subject]: stub });
+    fakeOut(d, 'AssertionError: subject');
+    assert.equal(sdd(d, 'tdd', 'red', 'TEST-CALC-001').code, 0);
+    fs.writeFileSync(path.join(d, subject), implementation);
+    fakeOut(d, 'pass', 0);
+    const rejected = sdd(d, 'tdd', 'green', 'TEST-CALC-001');
+    assert.equal(rejected.code, 1, rejected.out);
+    assert.match(rejected.out, /production ownership changed since Red/);
+    assert.match(rejected.out, /Annotate handwritten production subjects before Red/);
+    fs.writeFileSync(path.join(d, subject), implementation.replace('7', '0'));
+    fakeOut(d, 'AssertionError: subject');
+    assert.equal(sdd(d, 'tdd', 'red', 'TEST-CALC-001').code, 0);
+    fs.writeFileSync(path.join(d, subject), implementation);
+    fakeOut(d, 'pass', 0);
+    assert.equal(sdd(d, 'tdd', 'green', 'TEST-CALC-001').code, 0);
+  });
+}
+
+for (const [label, file, body, manifests, subject, implementation] of [
+  ['Java', 'src/test/java/probe/T.java', 'package probe;\nimport probe.Subject;\nclass T {\n// @id TEST-CALC-001 @verifies REQ-CALC-001\nvoid test_calc_001() { Subject.value(); }\n}\n', {}, 'src/main/java/probe/Subject.java', 'package probe;\n// @id CODE-CALC-001 @implements REQ-CALC-001\npublic class Subject { public static int value() { return 7; } }\n'],
+  ['PHP', 'tests/T.php', '<?php\nuse Probe\\Subject;\nclass T {\n// @id TEST-CALC-001 @verifies REQ-CALC-001\npublic function test_calc_001(): void { Subject::value(); }\n}\n', { 'composer.json': JSON.stringify({ autoload: { 'psr-4': { 'Probe\\': 'src/' } } }) }, 'src/Subject.php', '<?php\nnamespace Probe;\n// @id CODE-CALC-001 @implements REQ-CALC-001\nclass Subject { public static function value() { return 7; } }\n'],
+  ['Julia', 'test/t.jl', 'include("../src/answer.jl")\n# @id TEST-CALC-001 @verifies REQ-CALC-001\n@testset "TEST-CALC-001" begin\n@test value() == 7\nend\n', {}, 'src/answer.jl', '# @id CODE-CALC-001 @implements REQ-CALC-001\nvalue() = 7\n'],
+]) {
+  test(`#201 generated ${label} subjects are production before Red and survive implementation`, () => {
+    const d = batch2Source(file, body);
+    writeAll(d, manifests);
+    const stub = sdd(d, 'tdd', 'stub', 'TEST-CALC-001');
+    assert.equal(stub.code, 0, stub.out);
+    assert.match(rd130(d, subject), /@id CODE-CALC-001-STUB-\d+ @implements REQ-CALC-001/);
+    fakeOut(d, 'AssertionError: not implemented');
+    assert.equal(sdd(d, 'tdd', 'red', 'TEST-CALC-001').code, 0);
+    fs.writeFileSync(path.join(d, subject), implementation);
+    fakeOut(d, 'pass', 0);
+    const green = sdd(d, 'tdd', 'green', 'TEST-CALC-001');
+    assert.equal(green.code, 0, green.out);
+    assert.equal(rd130(d, file), body);
+  });
+}
+
+test('#201 generated C# subject replacement preserves evidence and actual test contents', () => {
+  const body = 'using Good;\nnamespace Tests;\nclass T {\n// @id TEST-CALC-001 @verifies REQ-CALC-001\nvoid test_calc_001() { var t = new Token(); }\n}\n';
+  const d = batch2Source('Tests/T.cs', body);
+  writeAll(d, { 'Core/Core.csproj': '<Project/>', 'Tests/Tests.csproj': '<Project><ItemGroup><ProjectReference Include="../Core/Core.csproj"/></ItemGroup></Project>' });
+  const diagnostic = 'Tests/T.cs(4,47): error CS0246: The type or namespace name \'Token\' could not be found';
+  const stub = batch2Run(d, 'dotnet', `if [ "$1" = "--version" ]; then echo 10.0; exit 0; fi\nif [ -f Core/Token.cs ]; then exit 0; fi\necho "${diagnostic}"\nexit 1\n`, ['true'], 'tdd', 'stub', 'TEST-CALC-001');
+  assert.equal(stub.code, 0, stub.out);
+  assert.match(rd130(d, 'Core/Token.cs'), /@id CODE-CALC-001-STUB-\d+ @implements REQ-CALC-001/);
+  fakeOut(d, 'AssertionError: not implemented');
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-CALC-001').code, 0);
+  fs.writeFileSync(path.join(d, 'Core/Token.cs'), 'namespace Good;\n// @id CODE-CALC-001 @implements REQ-CALC-001\npublic class Token {}\n');
+  fakeOut(d, 'pass', 0);
+  const green = sdd(d, 'tdd', 'green', 'TEST-CALC-001');
+  assert.equal(green.code, 0, green.out);
+  assert.equal(rd130(d, 'Tests/T.cs'), body);
+});
+
 for (const [label, file, body, deps, changed] of [
   ['Rust raw string', 'tests/t.rs', 'const ORACLE: &str = include_str!(r#"oracle.txt"#);', { 'tests/oracle.txt': '7' }, 'tests/oracle.txt'],
   ['Rust concat manifest env', 'tests/t.rs', 'const ORACLE: &str = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/oracle.txt"));', { 'Cargo.toml': '[package]\nname="probe"\nversion="0.1.0"\n', 'oracle.txt': '7' }, 'oracle.txt'],
