@@ -5444,3 +5444,37 @@ test('#218 plan accepts an em dash as "no dependency"; impact sees `record struc
   assert.doesNotMatch(pl.out + pl.err, /unknown dependency/);
   assert.ok(JSON.parse(sdd(d, 'impact', 'Geo/Pt.cs', '--json').out).reachedFiles.includes('Route/Route.cs'));
 });
+
+const hasPhpunit = spawnSync('phpunit', ['--version'], { encoding: 'utf8' }).status === 0;
+function phpProject(files) {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-p222-'));
+  spawnSync('git', ['init', '-q'], { cwd: d });
+  const reqs = [1, 2, 3].map((n) => `| REQ-P-00${n} | The calc shall add ${n}. | TEST-P-00${n} |`).join('\n');
+  writeAll(d, { '.sdd/specs/p.md': `---\nfeature: p\ntier: T1\n---\n# p\n| ID | EARS requirement | Test |\n| --- | --- | --- |\n${reqs}\n`, 'phpunit.xml': '<phpunit bootstrap="boot.php"><testsuites><testsuite name="t"><directory>tests</directory></testsuite></testsuites></phpunit>', 'boot.php': "<?php\nspl_autoload_register(function ($c) { foreach (['tests/', 'src/'] as $b) { $f = __DIR__ . '/' . $b . basename(str_replace('\\\\', '/', $c)) . '.php'; if (is_file($f)) require_once $f; } });\n", ...files });
+  sdd(d, 'init');
+  return d;
+}
+
+test('#222 PHPUnit: a sibling test\'s broken data provider is not credited as the target\'s Red', { skip: !hasPhpunit }, () => {
+  const d = phpProject({ 'tests/PTest.php': "<?php\nnamespace T;\nuse PHPUnit\\Framework\\TestCase;\nuse PHPUnit\\Framework\\Attributes\\DataProvider;\nfinal class PTest extends TestCase\n{\n    public static function rows(): array { throw new \\LogicException('broken'); }\n    /** @id TEST-P-001 @verifies REQ-P-001 */\n    #[DataProvider('rows')]\n    public function test_p_001_sibling(int $x): void { $this->assertSame($x, $x); }\n    /** @id TEST-P-002 @verifies REQ-P-002 */\n    public function test_p_002_target(): void { $this->assertSame(4, 2 + 2); }\n}\n" });
+  const r = sdd(d, 'tdd', 'red', 'TEST-P-002');
+  assert.equal(r.code, 1, r.out);
+  assert.match(r.out, /REJECTED TEST-P-002: .*(?:itself passes|test passed)/);
+});
+
+test('#222 PHPUnit: tests declared in an abstract base class or trait run through the concrete subclass', { skip: !hasPhpunit }, () => {
+  const d = phpProject({
+    'src/Calc.php': '<?php\nnamespace Lib;\n// @id CODE-P-001 @implements REQ-P-001\nfinal class Calc { public function add(int $a, int $b): int { return $a + $b + 1; } }\n',
+    'tests/BaseTest.php': "<?php\nnamespace T;\nuse PHPUnit\\Framework\\TestCase;\nuse Lib\\Calc;\nabstract class BaseTest extends TestCase\n{\n    /** @id TEST-P-001 @verifies REQ-P-001 */\n    public function test_p_001_base(): void { $this->assertSame(5, (new Calc())->add(2, 3)); }\n}\n",
+    'tests/AddsTrait.php': "<?php\nnamespace T;\nuse Lib\\Calc;\ntrait AddsTrait\n{\n    /** @id TEST-P-002 @verifies REQ-P-002 */\n    public function test_p_002_trait(): void { $this->assertSame(5, (new Calc())->add(2, 3)); }\n}\n",
+    'tests/CalcTest.php': '<?php\nnamespace T;\nfinal class CalcTest extends BaseTest\n{\n    use AddsTrait;\n}\n',
+  });
+  for (const id of ['TEST-P-001', 'TEST-P-002']) {
+    const r = sdd(d, 'tdd', 'red', id);
+    assert.equal(r.code, 0, r.out);
+    assert.doesNotMatch(r.out, /abstract|cannot be found/);
+    assert.match(r.out, /^RED ok /);
+  }
+  fs.writeFileSync(path.join(d, 'src/Calc.php'), '<?php\nnamespace Lib;\n// @id CODE-P-001 @implements REQ-P-001\nfinal class Calc { public function add(int $a, int $b): int { return $a + $b; } }\n');
+  for (const id of ['TEST-P-001', 'TEST-P-002']) { const g = sdd(d, 'tdd', 'green', id); assert.equal(g.code, 0, g.out); }
+});

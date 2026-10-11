@@ -2995,6 +2995,36 @@ function qualifiedTestName(testPath, id, rust = false) {
   const scope = qualifiedTestScope(testPath, text, at, rust);
   return [/\.java$/.test(testPath) ? javaExecutionOwner(scope) : scope, name].filter(Boolean).join(rust ? '::' : '.');
 }
+// PHPUnit cannot run tests declared in an abstract class or trait: find the concrete test classes that inherit them (#222)
+let phpOwnerOverride = null;
+function phpConcreteOwners(testPath, owner) {
+  const short = owner.split('\\').pop();
+  const classes = [];
+  for (const f of gitFiles('*.php')) {
+    let text = '';
+    try { text = fs.readFileSync(path.join(ROOT, f), 'utf8'); } catch { continue; }
+    const code = maskBraces(text);
+    const ns = /^\s*namespace\s+([\w\\]+)\s*[;{]/m.exec(text)?.[1];
+    for (const m of code.matchAll(/^\s*((?:(?:final|abstract|readonly)\s+)*)(class|trait)\s+(\w+)(?:\s+extends\s+\\?([\w\\]+))?[^{]*\{/gm)) {
+      const start = m.index + m[0].length;
+      const body = text.slice(start, matchingBrace(code, start - 1));
+      const traits = [...body.matchAll(/^\s*use\s+([\w\\,\s]+?)\s*[;{]/gm)].flatMap((u) => u[1].split(',').map((x) => x.trim().split('\\').pop()));
+      classes.push({ file: f, name: m[3], fq: ns ? `${ns}\\${m[3]}` : m[3], abstract: /abstract/.test(m[1]) || m[2] === 'trait', parent: m[4]?.split('\\').pop() ?? null, traits });
+    }
+  }
+  const inherits = (c, seen = new Set()) => {
+    if (seen.has(c)) return false;
+    seen.add(c);
+    if (c.name === short) return true;
+    return [c.parent, ...c.traits].filter(Boolean).some((n) => classes.filter((x) => x.name === n).some((x) => inherits(x, seen)));
+  };
+  return classes.filter((c) => !c.abstract && c.name !== short && inherits(c));
+}
+function matchingBrace(text, open) {
+  let depth = 0;
+  for (let i = open; i < text.length; i++) { if (text[i] === '{') depth++; else if (text[i] === '}' && !--depth) return i; }
+  return text.length;
+}
 function javaExecutionOwner(scope) {
   const types = sourceTypes().filter((t) => t.ext === '.java');
   const declaration = types.find((t) => t.fq === scope);
@@ -3019,7 +3049,7 @@ function javaExecutionOwner(scope) {
 function qualifiedTestScope(testPath, text, at, rust = false) {
   const pre = maskBraces(text.slice(0, at), rust);
   const stack = [];
-  const re = rust ? /\bmod\s+((?:r#)?\w+)\s*\{|([{}])/g : /\b(namespace|class|interface|record(?:\s+(?:class|struct))?)\s+([\w.\\]+)[^{;]*([{;])|([{}])/g;
+  const re = rust ? /\bmod\s+((?:r#)?\w+)\s*\{|([{}])/g : /\b(namespace|class|interface|trait|record(?:\s+(?:class|struct))?)\s+([\w.\\]+)[^{;]*([{;])|([{}])/g;
   let fileNs = '';
   for (const m of pre.matchAll(re)) {
     if (rust) { if (m[1]) stack.push(m[1]); else if (m[2] === '{') stack.push(null); else stack.pop(); }
@@ -3096,10 +3126,11 @@ function targetVerdict(plain, testPath, id, selectedName = null, requireJavaResu
     const rows = ctestRows(plain).filter((r) => r.name === (selectedName ?? name) || r.name === id);
     return !rows.length ? 'notrun' : rows.some((r) => /Failed|Exception/.test(r.status)) ? 'fail' : rows.some((r) => /\bPassed\b/.test(r.status)) ? 'pass' : 'skip';
   }
-  if (/\.php$/.test(testPath) && /There w(?:as|ere) \d+ (?:failure|error)s?:/.test(plain)) {
-    const owner = qualifiedTestName(testPath, id).slice(0, -name.length - 1);
-    if (new RegExp(`^\\d+\\) ${owner ? escapeRe(owner) : '[^\\n]+'}::${exact}(?=[#@]|\\s+with data set|\\s*$)`, 'm').test(plain)) return 'fail';
-    return owner && !new RegExp(`^\\d+\\) ${escapeRe(owner)}::`, 'm').test(plain) ? 'notrun' : 'pass';
+  if (/\.php$/.test(testPath) && /There w(?:as|ere) \d+ (?:PHPUnit )?(?:failure|error)s?:/.test(plain)) {
+    const declaring = qualifiedTestName(testPath, id).slice(0, -name.length - 1);
+    const owner = phpOwnerOverride?.length ? `(?:${phpOwnerOverride.map(escapeRe).join('|')})` : declaring ? escapeRe(declaring) : '';
+    if (new RegExp(`^\\d+\\) ${owner || '[^\\n]+'}::${exact}(?=[#@]|\\s+with data set|\\s*$)`, 'm').test(plain)) return 'fail';
+    return owner && !new RegExp(`^\\d+\\) ${owner}::`, 'm').test(plain) ? 'notrun' : 'pass';
   }
   if (/\.java$/.test(testPath)) {
     const full = qualifiedTestName(testPath, id), cls = full.slice(0, -name.length - 1);
@@ -3306,8 +3337,19 @@ function cmdTdd() {
   if (/\.php$/.test(t.path) && /phpunit/.test(cmd.join(' '))) {
     const i = cmd.indexOf('--filter');
     if (i >= 0 && cmd[i + 1] === testName(t.path, id)) {
-      const full = qualifiedTestName(t.path, id), name = testName(t.path, id), owner = full.slice(0, -name.length - 1);
-      cmd[i + 1] = '/' + (owner ? '^' + escapeRe(owner) : '') + '::' + escapeRe(name) + '(?:\\s+with data set [\\s\\S]*)?$/';
+      const full = qualifiedTestName(t.path, id), name = testName(t.path, id);
+      let owner = full.slice(0, -name.length - 1);
+      phpOwnerOverride = null;
+      const declared = new RegExp(`^\\s*(?:(?:final|readonly)\\s+)*((?:abstract\\s+)?class|trait)\\s+${escapeRe(owner.split('\\').pop())}\\b`, 'm').exec(maskBraces(fs.readFileSync(path.join(ROOT, t.path), 'utf8')));
+      if (owner && declared && /abstract|trait/.test(declared[1])) {
+        const concrete = phpConcreteOwners(t.path, owner);
+        if (!concrete.length) { out(`${sub.toUpperCase()} REJECTED ${id}: declared in ${declared[1].includes('trait') ? 'trait' : 'abstract class'} ${owner}, which PHPUnit cannot run, and no concrete test class extends/uses it; add one or set a custom testCmd`); return 1; }
+        phpOwnerOverride = concrete.map((c) => c.fq);
+        owner = phpOwnerOverride.length === 1 ? phpOwnerOverride[0] : `(?:${phpOwnerOverride.map(escapeRe).join('|')})`;
+        const fi = cmd.indexOf(fileArg, i + 2);
+        if (fi >= 0) { if (concrete.length === 1) cmd[fi] = proj ? path.posix.relative(proj.root, concrete[0].file) : concrete[0].file; else cmd.splice(fi, 1); }
+      }
+      cmd[i + 1] = '/' + (owner ? '^' + (phpOwnerOverride?.length > 1 ? owner : escapeRe(owner)) : '') + '::' + escapeRe(name) + '(?:\\s+with data set [\\s\\S]*)?$/';
     }
   }
   if (/\.jl$/.test(t.path) && cmd[0] === 'julia' && juliaScriptIndex(cmd) === cmd.length - 1 && cmd.at(-1) === fileArg) cmd.splice(cmd.at(-2) === '--' ? cmd.length - 2 : cmd.length - 1, 0, '-e', JULIA_VERBOSE);
