@@ -1939,16 +1939,21 @@ function stubC(testPath, src, dir, add, made) {
   const cppVars = new Set();
   if (cpp) {
     const lit = { int: 'int', float: 'double', str: 'std::string', bool: 'bool' };
+    // `using cq::mem::Arena;` places the unqualified `Arena` in `cq::mem` (#221)
+    const usingOf = new Map([...src.matchAll(/^\s*using\s+((?:[A-Za-z_]\w*::)+)([A-Z]\w*)\s*;/gm)].filter((m) => !/^std::/.test(m[1])).map((m) => [m[2], m[1]]));
+    const nsOf = (ns, c) => ns || usingOf.get(c) || '';
     const get = (ns, c) => { const k = ns + c; if (!cppCls.has(k)) cppCls.set(k, { ns: ns.replace(/::$/, ''), c, ms: new Map() }); return cppCls.get(k); };
     const present0 = gitFiles('*.h').concat(gitFiles('*.hpp')).map((f) => { try { return fs.readFileSync(path.join(ROOT, f), 'utf8'); } catch { return ''; } }).join('\n');
     for (const m of src.matchAll(/(?<![\w:<])((?:[a-z_]\w*::)*)([A-Z]\w*)\s+(\w+)\s*(?:\([^;]*\)|\{[^;]*\})?\s*;/g)) {
       if (/^std::/.test(m[1]) || /^(?:return|delete|new|throw|case)$/.test(m[2]) || new RegExp(`\\b(?:class|struct)\\s+${m[2]}\\b`).test(present0)) continue;
+      m[1] = nsOf(m[1], m[2]);
       get(m[1], m[2]);
       cppVars.add(m[3]);
       const mine = [...src.matchAll(new RegExp(`(?<![\\w.>])${m[3]}\\s*\\.\\s*(\\w+)\\s*\\(`, 'g'))];
       for (const u of mine) { const c = callInfo(src.replace(new RegExp(`(?<![\\w.>])${m[3]}\\s*\\.\\s*`, 'g'), ''), u[1]); get(m[1], m[2]).ms.set(u[1], { ret: lit[c.ret] ?? 'int', st: false }); }
     }
     for (const m of src.matchAll(/(?<![\w:<])((?:[a-z_]\w*::)*)([A-Z]\w*)::([a-z_]\w*)\s*\(/g)) {
+      m[1] = nsOf(m[1], m[2]);
       if (!cppCls.has(m[1] + m[2])) continue;
       const o = get(m[1], m[2]);
       if (!o.ms.has(m[3])) o.ms.set(m[3], { ret: new RegExp(`\\b${m[2]}\\s+\\w+\\s*=\\s*(?:[\\w:]*::)?${m[2]}::${m[3]}\\s*\\(`).test(src) ? m[2] : 'int', st: true });

@@ -5563,3 +5563,16 @@ test('#224 R tdd stub: testthat helper functions are not shadowed and missing fu
   assert.match(second, /fy <- function/);
   assert.doesNotMatch(second, /sample_input/);
 });
+
+test('#221 C++ stub: a namespace-qualified using-declaration places the class in that namespace', { skip: !has130('g++') }, () => {
+  const d = mk130({ 'tests/b.cpp': [
+    '#include "cq/arena.hpp"', 'namespace {', 'using cq::mem::Arena;', '}', '// @id TEST-A-001 @verifies REQ-A-001',
+    'int main() {', '  Arena a(1024);', '  a.reset();', '  return 0;', '}', '',
+  ].join('\n') });
+  const r = sdd(d, 'tdd', 'stub', 'TEST-A-001');
+  const h = fs.readdirSync(d, { recursive: true }).find((f) => /arena\.hpp$/.test(f));
+  const s = rd130(d, h);
+  assert.match(s, /namespace cq \{ namespace mem \{/, s);
+  assert.match(s, /class Arena/);
+  assert.match(r.out, /compile-checked/, r.out);
+});
