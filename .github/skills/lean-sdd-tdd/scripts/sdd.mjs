@@ -2559,7 +2559,8 @@ function stubEx(testPath, scoped, add, made) {
   for (const m of code.matchAll(/\balias\s+([A-Z][\w.]*)\.\{([^}]*)\}/g)) for (const x of m[2].split(',')) { const k = x.trim().split('.'); full.set(k.at(-1), `${m[1]}.${x.trim()}`); mods.add(`${m[1]}.${x.trim()}`); }
   for (const m of code.matchAll(/\balias\s+([A-Z][\w.]*)(?!\.\{)(?:\s*,\s*as:\s*([A-Z]\w*))?/g)) { full.set(m[2] ?? m[1].split('.').at(-1), m[1]); mods.add(m[1]); }
   const imported = [];
-  for (const m of code.matchAll(/\b(?:import|use|require)\s+([A-Z][\w.]*)/g)) { mods.add(resolve(m[1])); if (m[0].startsWith('import')) imported.push(resolve(m[1])); }
+  const used = new Set();
+  for (const m of code.matchAll(/\b(?:import|use|require)\s+([A-Z][\w.]*)/g)) { mods.add(resolve(m[1])); if (m[0].startsWith('import')) imported.push(resolve(m[1])); if (m[0].startsWith('use')) used.add(resolve(m[1])); }
   const defs = new Map();
   const arityAt = (i) => {
     let depth = 0, n = 0, any = false, q = '';
@@ -2587,7 +2588,9 @@ function stubEx(testPath, scoped, add, made) {
   for (const mod of mods) {
     if (EX_STD.test(mod)) continue;
     const want = [...(defs.get(mod)?.values() ?? [])];
-    const stubOf = ({ f, arity }) => `  def ${f}(${Array.from({ length: arity }, (_, i) => `_a${i + 1}`).join(', ')}), do: raise("not implemented: ${f}")\n`;
+    // `use Mod` calls Mod.__using__/1, so the module needs that macro to compile (#214)
+    if (used.has(mod)) want.push({ f: '__using__', arity: 1, macro: true });
+    const stubOf = ({ f, arity, macro }) => macro ? `  defmacro ${f}(_opts) do\n    quote do\n    end\n  end\n` : `  def ${f}(${Array.from({ length: arity }, (_, i) => `_a${i + 1}`).join(', ')}), do: raise("not implemented: ${f}")\n`;
     if (defined.has(mod)) {
       const file = defined.get(mod), text = fs.readFileSync(file, 'utf8');
       const have = new Set([...text.matchAll(/\b(?:def|defp|defmacro|defdelegate)\s+([a-z_]\w*[!?]?)/g)].map((m) => m[1]));

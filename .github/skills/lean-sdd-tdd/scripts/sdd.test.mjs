@@ -6002,3 +6002,19 @@ test('#215 go tdd stub: a result the test passes as a concrete type (*ring.Ring,
   assert.match(fs.readFileSync(path.join(inPkg, 'ring/ring.go'), 'utf8'), /func Make\(a0 any\) \*Ring/);
   assert.match(o2, /compile-checked/, o2);
 });
+
+test('ExUnit tdd stub: a `use Mod` module gets a defmacro __using__/1 (also appended to an existing stub)', () => {
+  const spec = '---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | x shall hold. | TEST-A-001 |\n';
+  const d = mini(spec, {
+    'mix.exs': 'defmodule A.MixProject do\nend\n',
+    'test/a_test.exs': ['defmodule ATest do', '  use ExUnit.Case', '  use A.Case', '', '  # @id TEST-A-001 @verifies REQ-A-001', '  test "TEST-A-001 x" do', '    assert A.Thing.run(1) == 2', '  end', 'end', ''].join('\n'),
+  });
+  sdd(d, 'tdd', 'stub', 'TEST-A-001');
+  const c = fs.readFileSync(path.join(d, 'lib/a/case.ex'), 'utf8');
+  assert.match(c, /defmodule A\.Case do/);
+  assert.match(c, /defmacro __using__\(_opts\) do\n    quote do\n    end\n  end/);
+  fs.writeFileSync(path.join(d, 'lib/a/case.ex'), 'defmodule A.Case do\n  def helper(_a1), do: raise("not implemented: helper")\nend\n');
+  sdd(d, 'tdd', 'stub', 'TEST-A-001');
+  assert.match(fs.readFileSync(path.join(d, 'lib/a/case.ex'), 'utf8'), /defmacro __using__\(_opts\)[\s\S]*end\n$/);
+  assert.match(fs.readFileSync(path.join(d, 'lib/a/case.ex'), 'utf8'), /def helper/);
+});

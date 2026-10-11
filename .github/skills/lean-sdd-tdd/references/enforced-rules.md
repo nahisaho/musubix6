@@ -104,3 +104,4 @@ Absolute and root-relative review paths, including paths with spaces, identify t
 - node:test (#225): a Red where the only failing entry is the test file itself (module-level throw, nothing registered or executed) is recorded as a weak Red (load/setup), like a pytest collection error (#123); keep fixtures inside the test body or pass `--expect <text>`.
 - JS stub (#219): CommonJS `require('./x.cjs')` of an existing module appends missing names as throwing stubs plus `module.exports.x = x`.
 - Go stub (#215): when the compiler reports `cannot use F(..) (value of interface type any) as *pkg.T value`, the stub's F returns that type (also `[]*T`), creating the type when missing.
+- ExUnit stub: a module the test `use`s gets `defmacro __using__(_opts)` (appended to an existing stub-only module), so `use MyApp.Case` compiles.
