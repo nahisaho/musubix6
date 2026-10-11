@@ -3329,7 +3329,7 @@ function cmdTdd() {
         const exact = tests.filter((t) => t.name === name);
         const token = id.toLowerCase().replaceAll('-', '_');
         const candidates = exact.length ? exact : tests.filter((t) => new RegExp(`(?:^|[^A-Za-z0-9])${escapeRe(token)}(?:[^A-Za-z0-9]|$)`, 'i').test(t.name) || t.name === id);
-        if (candidates.length !== 1) { out(`${sub.toUpperCase()} REJECTED ${id}: CTest registration is missing or ambiguous; configure an exact -R selector`); return 1; }
+        if (candidates.length !== 1) { out(`${sub.toUpperCase()} REJECTED ${id}: CTest registration is missing or ambiguous; configure an exact -R selector (a new test file or add_test not yet configured? re-run \`cmake -S . -B build\`)`); return 1; }
         selectedName = candidates[0].name;
         if (shell >= 0) cmd[shell + 1] = selectedName;
         if (direct >= 0) cmd[direct + 1] = selectedName;

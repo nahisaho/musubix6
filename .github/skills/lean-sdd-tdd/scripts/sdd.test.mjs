@@ -5507,3 +5507,13 @@ test('#223 Julia macro-generated @test failure is attributed through its call-si
   assert.equal(red.code, 0, red.out);
   assert.match(red.out, /fails with: Expression: 1 == 2/);
 });
+
+test('#221 missing CTest registration hints at re-running cmake', { skip: !has130('cmake') || !has130('ctest') }, () => {
+  const d = mk130({
+    'CMakeLists.txt': 'cmake_minimum_required(VERSION 3.10)\nproject(reg221 NONE)\nenable_testing()\nadd_test(NAME other COMMAND sh -c "exit 0")\n',
+    'tests/t.c': '// @id TEST-A-001 @verifies REQ-A-001\nvoid test_a_001_new(void) { CHECK(1); }\n',
+  });
+  const r = sdd(d, 'tdd', 'red', 'TEST-A-001');
+  assert.equal(r.code, 1, r.out);
+  assert.match(r.out, /CTest registration is missing or ambiguous.*re-run `cmake -S \. -B build`/);
+});
