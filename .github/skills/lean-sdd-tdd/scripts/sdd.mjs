@@ -1440,23 +1440,27 @@ function reviewProblems(text, specHash) {
   return probs;
 }
 function cmdReview() {
-  const [sub, a] = pos.slice(1);
+  const [sub, a0] = pos.slice(1);
+  // `review template <feature>` and `review template --feature <f>`; `review check <file> --feature <f>` or `review check <file> <feature>` (#246)
+  const featArg = typeof flags.feature === 'string' ? flags.feature : null;
+  const a = sub === 'template' ? (featArg ?? a0) : a0;
   if (sub === 'template') {
     const spec = loadSpecs().find((x) => x.feature === a);
-    if (!a || !spec) { out(`${a ? `unknown feature "${a}"` : 'feature required'}: review template <feature> (known: ${loadSpecs().map((x) => x.feature).join(', ') || 'none'})`); return 2; }
+    if (!a || !spec) { out(`${a ? `unknown feature "${a}"` : 'feature required'}: review template <feature> | --feature <feature> (known: ${loadSpecs().map((x) => x.feature).join(', ') || 'none'})`); return 2; }
     out(`<!-- save as .sdd/review-${spec.feature}.md (one file per feature; a shared review.md goes stale when the next feature changes it) -->\nspec: sha256:${spec ? fileSha(spec.path) : '<spec sha256>'}\nverdict: pending\nopen: 0\n\n## Findings\n| ID | Severity | Where | Status |\n|----|----------|-------|--------|\n(add one row per finding with Status Open or Closed, then set verdict: pass|fail)`);
     return 0;
   }
   if (sub === 'check') {
-    if (!a || typeof flags.feature !== 'string') { out('usage: review check <file> --feature <feature> (both required)'); return 2; }
-    const spec = loadSpecs().find((x) => x.feature === flags.feature);
-    if (!spec) { out(`unknown feature "${flags.feature}" (known: ${loadSpecs().map((x) => x.feature).join(', ') || 'none'})`); return 2; }
+    const cf = featArg ?? pos[3];
+    if (!a || !cf) { out('usage: review check <file> --feature <feature> | review check <file> <feature> (both required)'); return 2; }
+    const spec = loadSpecs().find((x) => x.feature === cf);
+    if (!spec) { out(`unknown feature "${cf}" (known: ${loadSpecs().map((x) => x.feature).join(', ') || 'none'})`); return 2; }
     if (!fs.existsSync(path.resolve(ROOT, a)) || !fs.statSync(path.resolve(ROOT, a)).isFile()) { out(`review file not found: ${a}`); return 2; }
     const probs = reviewProblems(fs.readFileSync(path.resolve(ROOT, a), 'utf8'), fileSha(spec.path));
     out(probs.length ? `REVIEW INVALID: ${a}\n${probs.map((x) => '  ' + x).join('\n')}` : `REVIEW OK: ${a}`);
     return probs.length ? 1 : 0;
   }
-  out('usage: review template <feature> | review check <file> --feature <feature>');
+  out('usage: review template <feature|--feature f> | review check <file> --feature <feature|feature>');
   return 2;
 }
 function cmdApprove() {
@@ -1873,7 +1877,8 @@ function stubJava(testPath, src, dir, add, made) {
   const projPkg = (p) => pkg && p.split('.').slice(0, 2).join('.') === pkg.split('.').slice(0, 2).join('.');
   const pkgOf = new Map(imports.filter((i) => !i.st && /^[A-Z]/.test(i.n) && projPkg(i.p)).map((i) => [i.n, i.p]));
   const imported = new Set(imports.filter((i) => !pkgOf.has(i.n)).map((i) => i.n));
-  const local = new Set([...src.matchAll(/\b(?:class|interface|enum|record)\s+(\w+)/g)].map((m) => m[1]));
+  // upper-case fields declared in the test (`static final Path CONTRACT = ..`) are not classes
+  const local = new Set([...[...src.matchAll(/\b(?:class|interface|enum|record)\s+(\w+)/g)].map((m) => m[1]), ...[...src.matchAll(/\b[\w<>\[\],.]+\s+([A-Z][A-Z0-9_]*)\s*=/g)].map((m) => m[1])]);
   const javaFiles = new Map(listFiles().filter((f) => /\.java$/.test(f)).map((f) => {
     const text = fs.readFileSync(path.join(ROOT, f), 'utf8');
     const p = /^package\s+([\w.]+);/m.exec(text)?.[1];
@@ -1937,7 +1942,7 @@ function stubJava(testPath, src, dir, add, made) {
     return undefined;
   };
   const enumCmp = (n) => new RegExp(`assert(?:Equals|Same)\\(\\s*([A-Z]\\w*)\\.[A-Z][A-Z0-9_]*\\s*,\\s*[\\w.()",\\s]*?\\.${n}\\s*\\(`).exec(src)?.[1];
-  const chain = (n) => new RegExp(`\\.${n}\\s*\\((?:[^()]|\\([^()]*\\))*\\)\\s*\\.\\s*([a-z]\\w*)\\s*\\(`).exec(src)?.[1];
+  const chain = (n) => new RegExp(`\\.${n}\\s*\\((?:[^()]|\\((?:[^()]|\\([^()]*\\))*\\))*\\)\\s*\\.\\s*([a-z]\\w*)\\s*\\(`).exec(src)?.[1];
   const arities = (n, text, st) => { const re = new RegExp(`(?<![\\w${st ? '.' : ''}])${n}\\s*\\(`, 'g'); const seen = new Map(); let m; while ((m = re.exec(text))) { const c = callInfo(text.slice(Math.max(0, m.index - 60)), n); if (!seen.has(c.args.length)) seen.set(c.args.length, c); else if (!seen.get(c.args.length).ret && c.ret) seen.set(c.args.length, c); } return [...seen.values()]; };
   const chainClasses = new Map();
   const retOf = (cls, n, c, isStatic, text) => {
@@ -1946,7 +1951,7 @@ function stubJava(testPath, src, dir, add, made) {
     const e = enumCmp(n);
     if (e) return e;
     const ch = chain(n);
-    if (ch && !(isStatic && /^(of|create|from|zero|empty|parse|valueOf|none|one|default\w*|new\w*|with\w*|unit)$/.test(n))) { const rc = n[0].toUpperCase() + n.slice(1) + 'Result'; chainClasses.set(rc, [...new Set([...(chainClasses.get(rc) ?? []), ch])]); return rc; }
+    if (ch && !(isStatic && !/^(size|isEmpty|stream|iterator|forEach)$/.test(ch) && /^(of|create|from|zero|empty|parse|valueOf|none|one|default\w*|new\w*|with\w*|unit)$/.test(n))) { const rc = n[0].toUpperCase() + n.slice(1) + 'Result'; chainClasses.set(rc, [...new Set([...(chainClasses.get(rc) ?? []), ch])]); return rc; }
     if (isStatic && /^(of|create|from|zero|empty|parse|valueOf|none|one|default\w*|new\w*|with\w*|unit)$/.test(n) && !c.ret) return cls;
     return c.ret && !c.chained ? (T[c.ret] ?? 'int') : 'int';
   };
@@ -1995,9 +2000,16 @@ function stubJava(testPath, src, dir, add, made) {
 
 function stubC(testPath, src, dir, add, made) {
   const cpp = /\.(cc|cpp|cxx)$/.test(testPath);
-  const missing = [...src.matchAll(/#include\s+"([^"]+)"/g)].map((m) => m[1]).filter((h) => !fs.existsSync(path.resolve(dir, h)) && !fs.existsSync(path.resolve(ROOT, h)));
+  // in a `projects` monorepo the C project root (nearest CMakeLists/compile_commands) holds include/ and build/ (#248)
+  let projRoot = ROOT;
+  for (let d = dir; d.startsWith(ROOT); d = path.dirname(d)) {
+    if (['CMakeLists.txt', 'compile_commands.json', 'build/compile_commands.json'].some((f) => fs.existsSync(path.join(d, f)))) { projRoot = d; break; }
+    if (d === ROOT) break;
+  }
+  const roots = [...new Set([projRoot, ROOT])];
+  const missing = [...src.matchAll(/#include\s+"([^"]+)"/g)].map((m) => m[1]).filter((h) => !fs.existsSync(path.resolve(dir, h)) && !roots.some((b) => ['', 'include', 'src'].some((x) => fs.existsSync(path.resolve(b, x, h)))));
   const cc = cpp ? 'c++' : 'cc';
-  const incs = [dir, ...['include', 'src'].map((d) => path.join(ROOT, d)), ROOT].flatMap((d) => ['-I', d]);
+  const incs = [dir, ...roots.flatMap((b) => [...['include', 'src'].map((d) => path.join(b, d)), b])].flatMap((d) => ['-I', d]);
   let standard = [];
   for (let d = dir; d.startsWith(ROOT); d = path.dirname(d)) {
     try {
@@ -2008,7 +2020,7 @@ function stubC(testPath, src, dir, add, made) {
     if (d === ROOT) break;
   }
   let compile = { cc, args: [...standard, ...incs], cwd: dir };
-  for (const home of new Set([dir, ROOT, path.join(ROOT, 'build')])) {
+  for (const home of new Set([dir, projRoot, path.join(projRoot, 'build'), ROOT, path.join(ROOT, 'build')])) {
     const commands = readJson(path.join(home, 'compile_commands.json'), []);
     const entry = commands.find((e) => path.resolve(e.directory ?? home, e.file ?? '') === path.resolve(ROOT, testPath));
     if (!entry) continue;
@@ -2096,7 +2108,7 @@ function stubC(testPath, src, dir, add, made) {
   }).join('\n');
   const head = cpp ? '#pragma once\n#include <stdexcept>\n#include <string>\n\n' : '#pragma once\n#include <stdio.h>\n#include <stdlib.h>\n\n';
   // a missing header belongs next to the production code (include/ or src/), not in tests/ where it would shadow it (#76)
-  const home = ['include', 'src'].map((d) => path.join(ROOT, d)).find((d) => fs.existsSync(d) && !path.resolve(dir).startsWith(d));
+  const home = roots.flatMap((b) => ['include', 'src'].map((d) => path.join(b, d))).find((d) => fs.existsSync(d) && !path.resolve(dir).startsWith(d));
   for (const h of missing) { fs.rmSync(path.resolve(dir, h)); add(home ? path.join(home, h) : path.resolve(dir, h), head + body); }
   return Object.assign(made, verified());
 }
@@ -2608,26 +2620,26 @@ function stubEx(testPath, scoped, add, made) {
   const mods = new Set();
   const resolve = (n) => (full.get(n.split('.')[0]) ? full.get(n.split('.')[0]) + n.slice(n.split('.')[0].length) : n);
   for (const m of code.matchAll(/\balias\s+([A-Z][\w.]*)\.\{([^}]*)\}/g)) for (const x of m[2].split(',')) { const k = x.trim().split('.'); full.set(k.at(-1), `${m[1]}.${x.trim()}`); mods.add(`${m[1]}.${x.trim()}`); }
-  for (const m of code.matchAll(/\balias\s+([A-Z][\w.]*)(?!\.\{)(?:\s*,\s*as:\s*([A-Z]\w*))?/g)) { full.set(m[2] ?? m[1].split('.').at(-1), m[1]); mods.add(m[1]); }
-  const imported = [];
-  const used = new Set();
-  for (const m of code.matchAll(/\b(?:import|use|require)\s+([A-Z][\w.]*)/g)) { mods.add(resolve(m[1])); if (m[0].startsWith('import')) imported.push(resolve(m[1])); if (m[0].startsWith('use')) used.add(resolve(m[1])); }
+  for (const m of code.matchAll(/\balias\s+([A-Z][\w.]*)(?![\w]|\.\{)(?:\s*,\s*as:\s*([A-Z]\w*))?/g)) { full.set(m[2] ?? m[1].split('.').at(-1), m[1]); mods.add(m[1]); }
+  const imported = [], needed = new Set(), used = new Set();
+  for (const m of code.matchAll(/\b(?:import|use|require)\s+([A-Z][\w.]*)/g)) { mods.add(resolve(m[1])); needed.add(resolve(m[1])); if (m[0].startsWith('import')) imported.push(resolve(m[1])); if (m[0].startsWith('use')) used.add(resolve(m[1])); }
   const defs = new Map();
   const arityAt = (i) => {
-    let depth = 0, n = 0, any = false, q = '';
+    let depth = 0, n = 0, any = false, q = '', kw = false, itemStart = true;
     for (; i < code.length; i++) {
       const c = code[i];
+      if (!depth && !q && itemStart && !/\s/.test(c)) { kw = /^[a-z_]\w*:\s/.test(code.slice(i)); itemStart = false; }
       if (q) { if (c === '\\') i++; else if (c === q) q = ''; continue; }
       if (c === '"' || c === "'") { q = c; any = true; continue; }
       if (/[([{]/.test(c)) { depth++; any = true; continue; }
       if (/[)\]}]/.test(c)) { if (!depth) return any ? n + 1 : 0; depth--; continue; }
-      if (c === ',' && !depth) n++;
+      if (c === ',' && !depth) { if (!(kw && /^\s*[a-z_]\w*:\s/.test(code.slice(i + 1)))) n++; itemStart = true; }
       else if (!/\s/.test(c)) any = true;
     }
     return any ? n + 1 : 0;
   };
   const addDef = (mod, f, arity) => { mods.add(mod); if (!defs.has(mod)) defs.set(mod, new Map()); const d = defs.get(mod); d.set(`${f}/${arity}`, { f, arity }); };
-  for (const m of code.matchAll(/(?<![\w.:])([A-Z]\w*(?:\.[A-Z]\w*)*)\.([a-z_]\w*[!?]?)\(/g)) addDef(resolve(m[1]), m[2], arityAt(m.index + m[0].length));
+  for (const m of code.matchAll(/(?<![\w.:])([A-Z]\w*(?:\.[A-Z]\w*)*)\.([a-z_]\w*[!?]?)\(/g)) { needed.add(resolve(m[1])); addDef(resolve(m[1]), m[2], arityAt(m.index + m[0].length) + (/\|>\s*$/.test(code.slice(0, m.index)) ? 1 : 0)); }
   const local = new Set([...code.matchAll(/\bdef(?:p|macro)?\s+([a-z_]\w*[!?]?)/g)].map((m) => m[1]));
   const RESERVED = /^(?:assert|refute|assert_\w+|refute_\w+|test|describe|setup|setup_all|on_exit|doctest|def|defp|defmodule|defmacro|if|unless|case|cond|with|for|fn|raise|reraise|throw|catch|rescue|try|receive|quote|unquote|import|alias|use|require|elem|length|hd|tl|is_\w+|inspect|to_string|spawn\w*|send|self|apply|put_elem|abs|div|rem|round|trunc|max|min|not|and|or|struct|sigil_\w|tag|capture_\w+|start_supervised!?|stop_supervised!?|flunk|raise)$/;
   for (const mod of imported) for (const m of code.matchAll(/(?<![\w.:@&])([a-z_]\w*[!?]?)\(/g)) if (!RESERVED.test(m[1]) && !local.has(m[1])) addDef(mod, m[1], arityAt(m.index + m[0].length));
@@ -2635,19 +2647,27 @@ function stubEx(testPath, scoped, add, made) {
   const defined = new Map();
   const walk = (d) => { for (const e of fs.existsSync(d) ? fs.readdirSync(d, { withFileTypes: true }) : []) { const p = path.join(d, e.name); if (e.isDirectory()) { if (!/^(?:_build|deps|\.git|node_modules)$/.test(e.name)) walk(p); } else if (/\.exs?$/.test(e.name) && p !== path.join(ROOT, testPath)) for (const m of fs.readFileSync(p, 'utf8').matchAll(/\bdefmodule\s+([A-Z][\w.]*)/g)) defined.set(m[1], p); } };
   walk(root);
+  // umbrella: modules owned by a sibling app are defined too
+  for (let up = path.dirname(root); up.startsWith(ROOT) && up !== root; up = path.dirname(up)) {
+    const mx = path.join(up, 'mix.exs');
+    if (fs.existsSync(mx) && /apps_path/.test(fs.readFileSync(mx, 'utf8'))) { walk(path.join(up, 'apps')); break; }
+    if (up === ROOT) break;
+  }
+  const inTest = new Set([...fs.readFileSync(path.join(ROOT, testPath), 'utf8').matchAll(/\bdefmodule\s+([A-Z][\w.]*)/g)].map((m) => m[1]));
   const unresolved = [];
   for (const mod of mods) {
-    if (EX_STD.test(mod)) continue;
+    if (EX_STD.test(mod) || inTest.has(mod) || [...full].some(([k, v]) => v === mod && inTest.has(k))) continue;
     const want = [...(defs.get(mod)?.values() ?? [])];
     // `use Mod` calls Mod.__using__/1, so the module needs that macro to compile (#214)
     if (used.has(mod)) want.push({ f: '__using__', arity: 1, macro: true });
+    if (!want.length && !needed.has(mod) && !defined.has(mod)) continue;
     const stubOf = ({ f, arity, macro }) => macro ? `  defmacro ${f}(_opts) do\n    quote do\n    end\n  end\n` : `  def ${f}(${Array.from({ length: arity }, (_, i) => `_a${i + 1}`).join(', ')}), do: raise("not implemented: ${f}")\n`;
     if (defined.has(mod)) {
       const file = defined.get(mod), text = fs.readFileSync(file, 'utf8');
       const have = new Set([...text.matchAll(/\b(?:def|defp|defmacro|defdelegate)\s+([a-z_]\w*[!?]?)/g)].map((m) => m[1]));
       const missing = want.filter((d) => !have.has(d.f));
       if (!missing.length) continue;
-      if (/not implemented: /.test(text) && /\bend\s*$/.test(text)) { fs.writeFileSync(file, text.replace(/\bend\s*$/, `\n${missing.map(stubOf).join('')}end\n`)); made.push(rel(file)); }
+      if ((/not implemented: /.test(text) || (/@id CODE-\S*-STUB-/.test(text) && !/\bdef/.test(text))) && /\bend\s*$/.test(text)) { fs.writeFileSync(file, text.replace(/\bend\s*$/, `\n${missing.map(stubOf).join('')}end\n`)); made.push(rel(file)); }
       else unresolved.push(`${missing.map((d) => d.f).join(', ')} in ${rel(file)}`);
       continue;
     }
@@ -2983,7 +3003,13 @@ function setupOrigin(line, testPath, id, text = '') {
     const DEF = /^\s*(?:pub\s+)?(?:async\s+)?(?:fn|def|function|func)\s+(\w+)|^\s*(?:const|let)\s+(\w+)\s*=\s*(?:async\s*)?\(/;
     const defs = all.map((l, i) => ({ i, n: DEF.exec(l) })).filter((d) => d.n).map((d) => ({ i: d.i, name: d.n[1] ?? d.n[2] }));
     const bodyOf = (d, k) => all.slice(d.i, k + 1 < defs.length ? defs[k + 1].i : all.length);
-    const helpers = defs.filter((d, k) => (d.i < start || d.i >= end) && bodyOf(d, k).some((l) => re.test(l)) && !/^test/i.test(d.name)).map((d) => d.name);
+    const outside = defs.filter((d) => (d.i < start || d.i >= end) && !/^test/i.test(d.name));
+    const helpers = outside.filter((d) => bodyOf(d, defs.indexOf(d)).some((l) => re.test(l))).map((d) => d.name);
+    // helpers that reach the stub only through other helpers (`check_same` -> `inl` -> stub) are setup/act wrappers too (#244)
+    for (let grew = true; grew;) {
+      grew = false;
+      for (const d of outside) if (!helpers.includes(d.name) && bodyOf(d, defs.indexOf(d)).some((l) => helpers.some((h) => new RegExp(`(?<![\\w$])${h}\\s*\\(`).test(l)))) { helpers.push(d.name); grew = true; }
+    }
     const bl = testBody(testPath, id), bf = markAsserts(bl);
     for (const h of helpers) {
       const hre = new RegExp(`(?<![\\w$])${h}\\s*\\(`);
@@ -3005,6 +3031,8 @@ function setupOrigin(line, testPath, id, text = '') {
     if (hit.some(({ i }) => inA[i])) return null;
     // `match f(..).unwrap() { .. }` / `match Regex::new(..) { .. }`: the scrutinee is the behaviour under test (#110)
     if (hit.some(({ l }) => /^\s*(?:match|switch)\b/.test(l))) return null;
+    // Go `if err := sut(..); err != nil {` tests the call it initializes (#245)
+    if (hit.some(({ l }) => /^\s*if\s+[\w\s,]+:?=[^;]*;/.test(l))) return null;
     const firstAssert = inA.findIndex((v, i) => v && i >= start);
     const prevStmt = (() => { for (let k = firstAssert - 1; k > start; k--) if (all[k].trim() && !/^\s*(\/\/|#)/.test(all[k])) return k; return -1; })();
     if (hit.some(({ i, l }) => i === prevStmt && /\.(unwrap|expect)\s*\(/.test(l))) return null;
@@ -3068,17 +3096,21 @@ function goBuildTags(src) {
   return tags;
 }
 function goResult(text, target) {
-  let result = null;
+  let result = null, lastRun = null;
   for (const line of text.split('\n')) {
+    const run = /^=== (?:RUN|CONT)\s+(\S+)/.exec(line);
+    if (run) lastRun = run[1];
     const m = /^\s*--- (PASS|FAIL|SKIP):\s+(\S+)/.exec(line);
     if (m?.[2] === target) result = m[1].toLowerCase();
     // a passing benchmark prints `BenchmarkX-8  1  123 ns/op` and no `--- PASS` row (#215)
     const b = /^(Benchmark\w*?)(?:-\d+)?\s+\d+\s+[\d.]+\s+ns\/op/.exec(line);
     if (b?.[1] === target && result !== 'fail') result = 'pass';
     if (line.startsWith('{')) {
-      try { const e = JSON.parse(line); if (e.Test === target && /^(pass|fail|skip)$/.test(e.Action)) result = e.Action; } catch {}
+      try { const e = JSON.parse(line); if (e.Test === target && /^(pass|fail|skip)$/.test(e.Action)) result = e.Action; if (e.Test && /^(run|cont)$/.test(e.Action)) lastRun = e.Test; } catch {}
     }
   }
+  // an unrecovered panic (e.g. in a goroutine) kills the test binary before any `--- FAIL`: the test that was running failed
+  if (!result && lastRun === target && /(?:^|"Output":")panic: /m.test(text) && /(?:^|\n|")FAIL\s/.test(text)) result = 'fail';
   return result;
 }
 function goOutput(text) {
@@ -3520,14 +3552,14 @@ function cmdTdd() {
     else if (made.length) out(made.verified === 'ok' ? `stubbed (throwing, compile-checked): ${made.join(', ')} — now run: tdd red ${t.id}` : made.verified === 'fail' ? `stubbed (throwing): ${made.join(', ')} — ! the test still does not compile: ${made.verifyError}\n! could not fully stub ${t.id}: finish the stub by hand (types, struct fields, methods), then run: tdd red ${t.id}` : `stubbed (throwing; compile NOT verified${scripted ? '' : ' — no checker for this language'}): ${made.join(', ')} — now run: tdd red ${t.id}; if it reports a load/compile error, finish the stub by hand`);
     else if (made.verified === 'partial') out(`nothing was stubbed for ${t.id}: it has no compile errors of its own — NOT compile-checked`);
     else if (made.verified === 'fail') out(`nothing could be stubbed for ${t.id}: the test does not compile (${made.verifyError}) — write the missing code by hand`);
-    else out(scripted ? `no missing relative imports in ${t.path}` : made.verified === 'ok' ? `nothing to stub for ${t.id} in ${t.path} (compile-checked)` : `nothing to stub for ${t.id} in ${t.path} (stubs only cover what this generator supports for the language); if the test still does not compile, write the missing code by hand`);
+    else out(scripted ? `no missing relative imports in ${t.path}` : made.verified === 'ok' ? `nothing to stub for ${t.id} in ${t.path} (compile-checked)` : `nothing to stub for ${t.id} in ${t.path} (nothing new to generate: referenced code is already stubbed/defined, or the generator does not cover this construct); run tdd red, and if the test does not compile write the missing code by hand`);
     if (made.verified === 'partial') out(`! ${made.verifyError} — the requested test has no compile errors of its own; stub or implement the other tests (\`tdd stub <their ID>\`) before running the project's tests`);
     for (const n of [...new Set(made.notes ?? [])]) out(`! ${n}`);
     if (made.realMissing?.length) out(`! not stubbed: ${made.realMissing.join('; ')} — those modules hold real code, which stubs never edit: add the names by hand`);
     if (made.warnings?.length) out(`! not stubbed: ${[...new Set(made.warnings)].join('; ')} — add the exports by hand`);
     return made.verified === 'fail' && /\.(?:c|cc|cpp|cxx)$/.test(t.path) ? 1 : 0;
   }
-  if (!['red', 'green', 'refactor'].includes(sub)) { out('usage: tdd red|green|refactor <TEST-ID> [--req REQ] [--weak] | tdd stub <TEST-ID> | tdd check'); return 2; }
+  if (!['red', 'green', 'refactor'].includes(sub)) { out('usage: tdd red|green|refactor <TEST-ID> [--req REQ] [--weak] [--expect <text>] [--retest <why>] [--characterization <why>] [--allow-setup-red] | tdd stub <TEST-ID> | tdd check | tdd merge-ledger'); return 2; }
   if (!pos[2]) { out(`usage: tdd ${sub} <TEST-ID> [<TEST-ID>...] [--req REQ] [--weak]`); return 2; }
   if (flags.characterization === true) { out('usage: --characterization "<reason>" needs a reason text'); return 2; }
   // batch: run each ID in turn (flags such as --req/--characterization apply to every ID) (#126)
@@ -3749,7 +3781,9 @@ function cmdTdd() {
   const zero = (!targetExecuted && ((ZERO_TESTS.test(res.text) && !RAN_TESTS.test(res.text)) || allSkipped || noAssert)) || NO_PASSED.test(plain) || pytestNoExecution(plain) || nodeNoMatch || goNoMatch || verdict === 'notrun' || verdict === 'skip';
   const siblingFail = juliaSiblingFail(plain, id);
   const targetPassed = verdict ? verdict === 'pass' : goVerdict ? goVerdict === 'pass' : siblingFail === 'sibling' || res.exit === 0;
-  const targetOutput = juliaSummaryRows(plain) ? juliaFailureOutput(plain, id, t.path) : null;
+  // ExUnit: the excerpt comes from the `N) test ...` failure block, not from compile-warning code frames printed before it (#246)
+  const exBlock = /\.exs$/.test(t.path) ? (/^\s*\d+\) test [^\n]*\n[\s\S]*?(?=^Finished in |^\s*\d+\) test |(?![\s\S]))/m.exec(plain)?.[0] ?? null) : null;
+  const targetOutput = juliaSummaryRows(plain) ? juliaFailureOutput(plain, id, t.path) : exBlock;
   const timeoutWhy = `the test run timed out after ${(res.ms / 1000).toFixed(0)}s (raise timeoutMs in .sdd/config.json or fix the hang); a timeout is neither Red nor Green`;
   // forked JVM / test host died: the test matched but the runner crashed (#143)
   let cAssertionAbort = false;
@@ -3777,7 +3811,7 @@ function cmdTdd() {
     else if (zero || siblingFail === 'skip') { ok = false; why = 'no test matched the ID, or the test is skipped/todo (check @id vs test title/method name; skipped tests cannot give Red/Green)' + (goRunner && /\[no test files\]/.test(plain) ? '; go printed [no test files]: a //go:build constraint may hide this file (pass -tags in testCmd)' : ''); }
     else if (res.exit === 0 && retest) ok = true;
     else if (res.exit === 0 && typeof flags.characterization === 'string' && flags.characterization.trim()) ok = true;
-    else if (res.exit === 0) { ok = false; why = 'test passed; Red needs a real failure (data-only / characterization test? record it explicitly: --characterization "<why no implementation can fail it>")'; }
+    else if (res.exit === 0) { ok = false; why = 'test passed; Red needs a real failure (data-only / characterization test? record it explicitly: --characterization "<why no implementation can fail it>"; amending a wrong expectation after Red: --retest "<reason>")'; }
     else if (LOAD_ERR.test(res.text) && !flags.weak && !(flags['missing-module'] && declaredMissingModule(res.text, t.path))) { ok = false; why = 'load/compile error, not an assertion failure. new module? run `tdd stub <ID>` once (or `--missing-module`); if stub already ran or found nothing, add the missing code by hand; or --weak to record as weak Red'; }
     else if (typeof flags.expect === 'string' && !(juliaSummaryRows(plain) ? targetOutput ?? '' : res.text).includes(flags.expect)) { ok = false; why = `failure output does not contain --expect "${flags.expect}" (Red for the wrong reason?)`; }
     else ok = true;
@@ -4544,7 +4578,7 @@ function importRev() {
       const body = src.replace(/#[^\n]*/g, '');
       const full = (n) => { const h = n.split('.')[0]; return al.has(h) ? al.get(h) + n.slice(h.length) : n; };
       for (const m of body.matchAll(/\balias\s+([A-Z][\w.]*)\.\{([^}]*)\}/g)) for (const x of m[2].split(',')) { const q = `${m[1]}.${x.trim()}`; al.set(q.split('.').at(-1), q); refs.add(q); refs.add(m[1]); }
-      for (const m of body.matchAll(/\balias\s+([A-Z][\w.]*)(?!\.\{)(?:\s*,\s*as:\s*([A-Z]\w*))?/g)) { al.set(m[2] ?? m[1].split('.').at(-1), m[1]); refs.add(m[1]); }
+      for (const m of body.matchAll(/\balias\s+([A-Z][\w.]*)(?![\w]|\.\{)(?:\s*,\s*as:\s*([A-Z]\w*))?/g)) { al.set(m[2] ?? m[1].split('.').at(-1), m[1]); refs.add(m[1]); }
       for (const m of body.matchAll(/\b(?:import|use|require)\s+([A-Z][\w.]*)/g)) refs.add(full(m[1]));
       for (const m of body.matchAll(/(?<![\w.:])([A-Z]\w*(?:\.[A-Z]\w*)*)/g)) refs.add(full(m[1]));
       for (const r of refs) (exMod.get(r) ?? []).forEach((t) => add(t, f));
@@ -4608,7 +4642,7 @@ function cmdImpact() {
   const reqFeature = new Map();
   for (const sp of specs) for (const r of sp.reqs) reqFeature.set(r.id, sp.feature);
   const all = [...ents.values()];
-  let seeds; let reqs;
+  let seeds; let reqs; let dataFile = false;
   if (/^REQ-/.test(target)) {
     if (!reqFeature.has(target)) { out(`IMPACT: unknown REQ ${target}`); return 1; }
     reqs = [target];
@@ -4620,9 +4654,14 @@ function cmdImpact() {
     if (!seeds.length || e.kind === 'CODE') seeds = [...new Set([e.path, ...seeds])];
   } else if (fs.existsSync(path.join(ROOT, target))) {
     seeds = [target.replace(/^\.\//, '')];
+    dataFile = !EXT.test(seeds[0]) && !all.some((e) => e.path === seeds[0]);
     reqs = [...new Set(all.filter((e) => e.path === seeds[0]).flatMap((e) => [...e.refs.implements, ...e.refs.verifies]))];
   } else { out(`IMPACT: unknown target ${target}`); return 1; }
+  // a shared data file is outside the import graph: name the projects that list it (or a parent dir) in dependsOn (#247)
   const rev = importRev();
+  dataFile = dataFile && !(rev.get(seeds[0])?.size ?? rev.get(seeds[0])?.length);
+  const depProjects = dataFile ? (loadConfig().projects ?? []).filter((p) => (p.dependsOn ?? []).some((d) => { const x = normDep(d); return seeds[0] === x || seeds[0].startsWith(x + '/'); })).map((p) => p.root) : [];
+  if (dataFile) seeds = [];
   const via = new Map(seeds.map((f) => [f, null]));
   const queue = [...seeds];
   while (queue.length) { const f = queue.shift(); for (const d of rev.get(f) ?? []) if (!via.has(d)) { via.set(d, f); queue.push(d); } }
@@ -4644,7 +4683,7 @@ function cmdImpact() {
   for (const r of sameFeature) affected.delete(r);
   const chain = (f) => { const c = [f]; while (via.get(c[c.length - 1])) c.push(via.get(c[c.length - 1])); return c.join(' ← '); };
   const result = {
-    target, reqs, impl: seeds, verifiedBy: verifiers.map((e) => e.id), reachedFiles: reached,
+    target, reqs, impl: seeds, ...(dataFile ? { dataFile: true, projects: depProjects } : {}), verifiedBy: verifiers.map((e) => e.id), reachedFiles: reached,
     sameFeatureReqs: sameFeature,
     otherReqs: [...affected].map(([r, v]) => ({ req: r, feature: reqFeature.get(r) ?? null, via: [...v] })),
     reachedTests: reached.filter((f) => entsIn(f).some((e) => e.refs.verifies.length) || TEST_FILE.test(f)),
@@ -4653,9 +4692,10 @@ function cmdImpact() {
   const cap = (a, n = 8) => a.slice(0, n).join(', ') + (a.length > n ? `, … +${a.length - n} more` : '');
   out(`IMPACT ${target}${reqs.length && target !== reqs[0] ? ` (${cap(reqs)})` : ''}`);
   const seedIsTest = seeds.length > 0 && seeds.every((s) => TEST_FILE.test(s) || (entsIn(s).length > 0 && entsIn(s).every((e) => e.kind === 'TEST')));
-  out(`  ${seedIsTest ? 'test' : 'impl'}: ${seeds.join(', ') || '(none)'}`);
+  if (dataFile) out(`  data file (outside the import graph); dependent projects (dependsOn): ${depProjects.join(', ') || '(none)'}`);
+  else out(`  ${seedIsTest ? 'test' : 'impl'}: ${seeds.join(', ') || '(none)'}`);
   if (verifiers.length) out(`  verified by: ${cap(verifiers.map((e) => e.id))}`);
-  out(`  reaches ${reached.length} file(s) via imports${result.reachedTests.length ? `; tests: ${cap(result.reachedTests)}` : ''}`);
+  if (!dataFile) out(`  reaches ${reached.length} file(s) via imports${result.reachedTests.length ? `; tests: ${cap(result.reachedTests)}` : ''}`);
   if (sameFeature.length) out(`  same feature: ${sameFeature.length} other REQ(s) (${sameFeature.slice(0, 4).join(', ')}${sameFeature.length > 4 ? ', …' : ''})`);
   const perFeature = new Map();
   for (const o of result.otherReqs) perFeature.set(o.feature ?? '?', (perFeature.get(o.feature ?? '?') ?? 0) + 1);
@@ -4676,7 +4716,7 @@ if (fn && badFlags.length) {
   process.exit(2);
 }
 if (!fn) {
-  out('usage: sdd.mjs init | review template <feature> | review check <file> --feature <f> | approve prepare|record <feature> | guard | tdd red|green|refactor <TEST-ID> | tdd stub <TEST-ID> | tdd check | trace [--baseline] | gate [--changed] [--no-run] | status | plan | impact <REQ|TEST|CODE|file> [--json]   [--root dir]\n  tdd red: tdd red --characterization "<reason>" records a data-only/characterization test that cannot fail without implementation (weak Red); --expect <text> requires that text in the failure; --allow-setup-red accepts a stub-in-setup Red; --retest "<reason>" re-records a weak Red after correcting a wrong test expectation (needs a previous Red/Green and a changed test); --missing-module accepts a Red caused by the test own not-yet-created import (non-weak); approve record --by ai:<reviewer> needs --review <path|summary>');
+  out('usage: sdd.mjs init | review template <feature|--feature f> | review check <file> --feature <f> (or positional feature) | approve prepare|record <feature> | guard | tdd red|green|refactor <TEST-ID> | tdd stub <TEST-ID> | tdd check | trace [--baseline] | gate [--changed] [--no-run] | status | plan | impact <REQ|TEST|CODE|file> [--json]   [--root dir]\n  tdd red: tdd red --characterization "<reason>" records a data-only/characterization test that cannot fail without implementation (weak Red); --expect <text> requires that text in the failure; --allow-setup-red accepts a stub-in-setup Red; --retest "<reason>" re-records a weak Red after correcting a wrong test expectation (needs a previous Red/Green and a changed test); --missing-module accepts a Red caused by the test own not-yet-created import (non-weak); approve record --by ai:<reviewer> needs --review <path|summary>');
   process.exit(2);
 }
 try { process.exit(fn() ?? 0); }
