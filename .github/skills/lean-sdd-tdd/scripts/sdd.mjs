@@ -941,7 +941,7 @@ function evidenceStatus(testId, testPath, entries) {
   for (const [rid, rsha] of Object.entries(last.reqShas ?? { [last.req]: last.reqSha })) {
     if (rsha && reqShaOf(rid) && !reqShaSame(rid, rsha)) return { ok: false, why: `${rid} changed in the spec since last Green/Refactor: re-verify with tdd refactor (wording only) or tdd red/green (behaviour changed)` };
   }
-  return { ok: true, weak: !!r.weak, charac: !!r.characterization, retest: !!r.retest };
+  return { ok: true, weak: !!r.weak, charac: !!r.characterization, retest: !!r.retest, retestSuperseded: !!(r.retest && r.priorStrongRed) };
 }
 
 // ---------- config / commands ----------
@@ -3410,7 +3410,7 @@ function cmdTdd() {
   // human-approved code baseline follows the first implementation: refresh until the feature is fully Green (#92)
   const humanSpecs = sub === 'red' ? [] : loadSpecs().filter((x) => x.approval === 'human' && x.reqs.some((q) => t.refs.verifies.includes(q.id)));
   const wasDone = new Map(humanSpecs.map((x) => [x.feature, featureGreen(x)]));
-  appendLedger({ type: sub, test: id, req, reqSha: reqShaOf(req), reqShas: Object.fromEntries([...new Set([req, ...t.refs.verifies])].map((r) => [r, reqShaOf(r)]).filter(([, v]) => v)), file: t.path, fileSha: after, protectedFiles: oracleDependencyFiles, cmdSha: sha(cmd.join('\0')), exit: res.exit, ms: res.ms, weak: weakRed ? true : undefined, weakWhy: setupSym ? `setup:${setupSym}` : charac ? 'characterization' : retestWeak ? 'retest' : undefined, characterization: charac || undefined, retest: retestWeak ? retest : undefined });
+  appendLedger({ type: sub, test: id, req, reqSha: reqShaOf(req), reqShas: Object.fromEntries([...new Set([req, ...t.refs.verifies])].map((r) => [r, reqShaOf(r)]).filter(([, v]) => v)), file: t.path, fileSha: after, protectedFiles: oracleDependencyFiles, cmdSha: sha(cmd.join('\0')), exit: res.exit, ms: res.ms, weak: weakRed ? true : undefined, weakWhy: setupSym ? `setup:${setupSym}` : charac ? 'characterization' : retestWeak ? 'retest' : undefined, characterization: charac || undefined, retest: retestWeak ? retest : undefined, priorStrongRed: retestWeak && prior.some((e) => e.type === 'red' && !e.weak && !e.retest) ? true : undefined });
   for (const x of humanSpecs) if (!wasDone.get(x.feature)) {
     const all = readJson(APPROVALS, {});
     if (all[x.feature]?.code) { all[x.feature].code = implFileShas(x); writeJson(APPROVALS, all); }
@@ -3418,6 +3418,7 @@ function cmdTdd() {
   const lastGreen = prior.filter((e) => e.type === 'green' || e.type === 'refactor').at(-1);
   if (sub === 'refactor' && lastGreen && lastGreen.fileSha !== after) out(`⚠ ${id}: test body changed since the last Green (includes the file preamble: imports/includes/helpers); a refactor does not prove the new assertions can fail (no Red). If behaviour/assertions changed, use tdd red/green instead (#118)`);
   out(`${sub.toUpperCase()} ok ${id} (${req}) ${res.ms}ms${reason ? ` — fails with: ${reason}` : ''}${charac ? ` — characterization: ${charac} (test passed)` : retestWeak ? ` — retest: ${retest} (test passed)` : ''}${weakRed ? ' [weak]' : ''}${setupSym ? ` ⚠ Red comes from setup call "${setupSym}", not the asserted behaviour (use --expect <text> or --allow-setup-red)` : ''}`);
+  if (retestWeak && prior.some((e) => e.type === 'red' && !e.weak && !e.retest)) out(`! --retest passed against the current implementation, so the earlier strong Red of ${id} is superseded by a weak Red; to keep failing-Red evidence, temporarily break the implementation and re-run \`tdd red ${id} --retest\``);
   return 0;
 }
 
@@ -3723,7 +3724,7 @@ function cmdGate() {
   let weak = 0;
   const weakIds = [];
   let charac = 0;
-  let retestN = 0;
+  let retestN = 0, retestSupersededN = 0;
   const retestIds = [];
   let total = 0;
   const seenTests = new Set();
@@ -3735,10 +3736,10 @@ function cmdGate() {
       seenTests.add(e.id);
       total++;
       const s = evidenceStatus(e.id, e.path, entries);
-      if (s.ok) { covered++; if (s.weak) { weak++; if (!s.charac && !s.retest) weakIds.push(e.id); } if (s.charac) charac++; if (s.retest) { retestN++; retestIds.push(e.id); } } else problems.push(`${e.id} (${id}): ${s.why}`);
+      if (s.ok) { covered++; if (s.weak) { weak++; if (!s.charac && !s.retest) weakIds.push(e.id); } if (s.charac) charac++; if (s.retest) { retestN++; retestIds.push(e.id); if (s.retestSuperseded) retestSupersededN++; } } else problems.push(`${e.id} (${id}): ${s.why}`);
     }
   }
-  add(!problems.length, `tdd evidence${flags.changed ? ' (changed scope)' : ''}: ${covered}/${total} tests Red→Green${weak ? `, ${weak} weak Red${weak > charac + retestN ? ' — Red came from setup/load, not the asserted behaviour (before implementing: `tdd red <ID> --expect <text>`; after Green: keep as weak, or temporarily break the implementation to re-record Red): ' + weakIds.slice(0, 8).join(', ') + (weakIds.length > 8 ? `, … +${weakIds.length - 8}` : '') : ''}${charac ? ` (${charac} characterization: passed without a failing Red)` : ''}${retestN ? ` (${retestN} retest: Red re-recorded with --retest, passed without a failing Red: ${retestIds.slice(0, 8).join(', ')}${retestIds.length > 8 ? `, … +${retestIds.length - 8}` : ''})` : ''}` : ''}`, [...problems.slice(0, 6), ...(problems.length > 6 ? [`… +${problems.length - 6} more`] : [])]);
+  add(!problems.length, `tdd evidence${flags.changed ? ' (changed scope)' : ''}: ${covered}/${total} tests Red→Green${weak ? `, ${weak} weak Red${weak > charac + retestN ? ' — Red came from setup/load, not the asserted behaviour (before implementing: `tdd red <ID> --expect <text>`; after Green: keep as weak, or temporarily break the implementation to re-record Red): ' + weakIds.slice(0, 8).join(', ') + (weakIds.length > 8 ? `, … +${weakIds.length - 8}` : '') : ''}${charac ? ` (${charac} characterization: passed without a failing Red)` : ''}${retestN ? ` (${retestN} retest: Red re-recorded with --retest, passed without a failing Red${retestSupersededN ? `; ${retestSupersededN} superseded an earlier strong Red — re-record a failing Red by temporarily breaking the implementation if that evidence matters` : ''}: ${retestIds.slice(0, 8).join(', ')}${retestIds.length > 8 ? `, … +${retestIds.length - 8}` : ''})` : ''}` : ''}`, [...problems.slice(0, 6), ...(problems.length > 6 ? [`… +${problems.length - 6} more`] : [])]);
 
   const cfg = loadConfig();
   if (cfg.prepare && !flags['no-run']) {

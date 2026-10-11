@@ -5363,3 +5363,15 @@ test('#217 Rust `should panic` rows count and a crashed test host is not a Red',
     assert.match(r.out, /crashed/);
   }
 });
+
+test('#221 --retest over a strong Red warns and the gate reports the superseded strong Red', () => {
+  const d = batch2Source('test/a.test.js', "// @id TEST-CALC-001 @verifies REQ-CALC-001\ntest('a', () => { assert.equal(add(1, 2), 4); });\n");
+  fakeOut(d, 'AssertionError: 3 !== 4');
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-CALC-001').code, 0);
+  fakeOut(d, 'pass', 0);
+  writeAll(d, { 'test/a.test.js': "// @id TEST-CALC-001 @verifies REQ-CALC-001\ntest('a', () => { assert.equal(add(1, 2), 3); });\n" });
+  const r = sdd(d, 'tdd', 'red', 'TEST-CALC-001', '--retest', 'typo in expectation');
+  assert.match(r.out, /earlier strong Red .* superseded/);
+  assert.equal(sdd(d, 'tdd', 'green', 'TEST-CALC-001').code, 0);
+  assert.match(sdd(d, 'gate', '--no-run').out, /superseded an earlier strong Red/);
+});
