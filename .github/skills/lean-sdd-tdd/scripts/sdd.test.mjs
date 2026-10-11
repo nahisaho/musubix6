@@ -5910,3 +5910,19 @@ test('#237 PHPUnit helper-assertion failure keeps its message; a crashed/OOM PHP
   assert.equal(crash.code, 1, crash.out);
   assert.match(crash.out, /REJECTED.*crashed/, crash.out);
 });
+
+test('#225 node:test module-level throw from a stub is a weak Red (no test executed)', () => {
+  const d = approved();
+  fs.writeFileSync(path.join(d, 'add.test.mjs'), [
+    "import { test } from 'node:test';",
+    "import assert from 'node:assert/strict';",
+    "import { add } from './add.mjs';",
+    'const fixture = add(1, 2);',
+    '/** @id TEST-CALC-001 @verifies REQ-CALC-001 */',
+    "test('TEST-CALC-001 adds', () => assert.equal(fixture, 3));", '',
+  ].join('\n'));
+  impl(d, '(a, b) => { throw new Error("not implemented"); }');
+  const red = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
+  assert.equal(red.code, 0, red.out);
+  assert.match(red.out, /weak/i, red.out);
+});
