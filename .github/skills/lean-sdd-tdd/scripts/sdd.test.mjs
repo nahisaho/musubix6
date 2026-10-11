@@ -5926,3 +5926,36 @@ test('#225 node:test module-level throw from a stub is a weak Red (no test execu
   assert.equal(red.code, 0, red.out);
   assert.match(red.out, /weak/i, red.out);
 });
+test('#230 review template names a per-feature file; #231 stale-test message shows the retest path', () => {
+  const d = project();
+  assert.match(sdd(d, 'review', 'template', 'calc').out, /\.sdd\/review-calc\.md/);
+  const t = sdd(d, 'review', 'template', 'calc').out.replace('verdict: pending', 'verdict: pass');
+  fs.writeFileSync(path.join(d, '.sdd/review-calc.md'), t);
+  assert.match(sdd(d, 'review', 'check', '.sdd/review-calc.md', '--feature', 'calc').out, /REVIEW OK/);
+  const ev = evidenceStatusProbe(d);
+  assert.match(ev, /--retest/);
+});
+function evidenceStatusProbe(d) {
+  const w = (a, c) => fs.writeFileSync(path.join(d, 'add.test.mjs'), [
+    "import test from 'node:test'; import assert from 'node:assert'; import { add } from './add.mjs';",
+    '/** @id TEST-CALC-001 @verifies REQ-CALC-001 */',
+    `test('TEST-CALC-001 adds', () => assert.equal(${a}, 3));`, ''].join('\n'));
+  w('add(1, 2)'); impl(d, '(a, b) => a - b');
+  sdd(d, 'approve', 'record', 'calc', '--by', 'tester');
+  sdd(d, 'tdd', 'red', 'TEST-CALC-001');
+  impl(d, '(a, b) => a + b');
+  sdd(d, 'tdd', 'green', 'TEST-CALC-001');
+  w('add(1, 2) + 0');
+  return sdd(d, 'gate', '--no-run').out;
+}
+
+test('#233 tech-writer lint ignores an app named todo but flags TODO', () => {
+  const lint = path.join(path.dirname(fileURLToPath(import.meta.url)), '../../tech-writer/scripts/lint.py');
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), 'lint-'));
+  fs.writeFileSync(path.join(d, 'a.md'), '# todo-cli\n\nThe todo app lists tasks. Use todo add.\n\nTODO finish this.\n');
+  const r = spawnSync('python3', [lint, path.join(d, 'a.md')], { encoding: 'utf8' });
+  const o = r.stdout + r.stderr;
+  assert.match(o, /placeholder/i, o);
+  assert.equal((o.match(/placeholder/gi) ?? []).length >= 1, true);
+  assert.doesNotMatch(o, /The todo app/, o);
+});

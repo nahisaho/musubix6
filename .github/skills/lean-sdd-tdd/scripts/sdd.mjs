@@ -986,7 +986,7 @@ function evidenceStatus(testId, testPath, entries) {
   const r = es.filter((e) => e.type === 'red' && e.seq < g.seq && e.fileSha === g.fileSha).at(-1);
   if (!r) return { ok: false, why: 'no Red preceding Green with same test hash' };
   const last = es.filter((e) => e.type === 'green' || e.type === 'refactor').at(-1);
-  if (!shaMatches(last.fileSha, testPath, testId)) return { ok: false, why: 'test changed since last Green/Refactor' + oracleNote(changedOracleDeps(last, testPath, testId)) };
+  if (!shaMatches(last.fileSha, testPath, testId)) return { ok: false, why: `test changed since last Green/Refactor${oracleNote(changedOracleDeps(last, testPath, testId))} (if the spec changes the expected output, update the test and re-record: tdd red ${testId} --retest "<reason>", then tdd green; otherwise revert the test)` };
   // every verified REQ is hash-tracked (reqShas); older entries carry only the first one
   for (const [rid, rsha] of Object.entries(last.reqShas ?? { [last.req]: last.reqSha })) {
     if (rsha && reqShaOf(rid) && !reqShaSame(rid, rsha)) return { ok: false, why: `${rid} changed in the spec since last Green/Refactor: re-verify with tdd refactor (wording only) or tdd red/green (behaviour changed)` };
@@ -1393,7 +1393,7 @@ function cmdReview() {
   if (sub === 'template') {
     const spec = loadSpecs().find((x) => x.feature === a);
     if (!a || !spec) { out(`${a ? `unknown feature "${a}"` : 'feature required'}: review template <feature> (known: ${loadSpecs().map((x) => x.feature).join(', ') || 'none'})`); return 2; }
-    out(`spec: sha256:${spec ? fileSha(spec.path) : '<spec sha256>'}\nverdict: pending\nopen: 0\n\n## Findings\n| ID | Severity | Where | Status |\n|----|----------|-------|--------|\n(add one row per finding with Status Open or Closed, then set verdict: pass|fail)`);
+    out(`<!-- save as .sdd/review-${spec.feature}.md (one file per feature; a shared review.md goes stale when the next feature changes it) -->\nspec: sha256:${spec ? fileSha(spec.path) : '<spec sha256>'}\nverdict: pending\nopen: 0\n\n## Findings\n| ID | Severity | Where | Status |\n|----|----------|-------|--------|\n(add one row per finding with Status Open or Closed, then set verdict: pass|fail)`);
     return 0;
   }
   if (sub === 'check') {
@@ -1446,7 +1446,7 @@ function cmdApprove() {
     const dp = designProblem(spec);
     if (dp) { out(`REFUSED: ${dp}`); return 1; }
     const review = typeof flags.review === 'string' ? flags.review.trim() : '';
-    if (isAi && (/^ai:\s*(self)?$/i.test(flags.by) || !review)) { out(`REFUSED: ai approver needs a named reviewer (not ai:self) and --review <path-or-summary>, e.g. approve record ${spec.feature} --by ai:<reviewer> --review .sdd/review.md (template: review template ${spec.feature})`); return 1; }
+    if (isAi && (/^ai:\s*(self)?$/i.test(flags.by) || !review)) { out(`REFUSED: ai approver needs a named reviewer (not ai:self) and --review <path-or-summary>, e.g. approve record ${spec.feature} --by ai:<reviewer> --review .sdd/review-${spec.feature}.md (template: review template ${spec.feature})`); return 1; }
     const reviewPath = path.resolve(ROOT, review);
     const reviewIsFile = !!review && fs.existsSync(reviewPath) && fs.statSync(reviewPath).isFile();
     if (isAi && !reviewIsFile && (path.isAbsolute(review) || /^\.{1,2}[/\\]/.test(review) || /[/\\].*\.(?:md|markdown|txt)$/i.test(review) || /^[^\s]+\.(md|markdown|txt)$/i.test(review))) { out(`REFUSED: --review ${review} looks like a file path but does not exist (a free-text summary must contain spaces)`); return 1; }
