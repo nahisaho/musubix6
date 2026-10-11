@@ -1099,9 +1099,12 @@ function run(cmd, timeoutMs, cwd = '.') {
 }
 function run1(cmd, timeoutMs, cwd = '.') {
   const t0 = Date.now();
-  const r = spawnSync(cmd[0], cmd.slice(1), { cwd: path.resolve(ROOT, cwd), encoding: 'utf8', timeout: timeoutMs, maxBuffer: 64e6 });
-  const text = (r.stdout ?? '') + (r.stderr ?? '') + (r.error ? String(r.error.message) : '');
-  return { exit: r.status ?? (r.error ? 127 : 1), signal: r.signal, text, ms: Date.now() - t0, timedOut: r.error?.code === 'ETIMEDOUT' };
+  const r = spawnSync(cmd[0], cmd.slice(1), { cwd: path.resolve(ROOT, cwd), encoding: 'utf8', timeout: timeoutMs, maxBuffer: 64e6, detached: true });
+  const timedOut = r.error?.code === 'ETIMEDOUT';
+  // spawnSync's timeout signals only the launcher (cargo, npm, mvn); the detached group also holds the hung test binary (#225)
+  if (timedOut && r.pid) { try { process.kill(-r.pid, 'SIGKILL'); } catch { /* group already gone */ } }
+  const text = (r.stdout ?? '') + (r.stderr ?? '') + (timedOut ? `test timed out after ${timeoutMs} ms (hung test? the whole process group was killed)` : r.error ? String(r.error.message) : '');
+  return { exit: r.status ?? (r.error ? 127 : 1), signal: r.signal, text, ms: Date.now() - t0, timedOut };
 }
 // Scope placeholders for changedCmd. An empty result means "cannot scope" and the caller falls back to the full check.
 function cmdOut(cmd, cwd) {

@@ -5458,3 +5458,15 @@ test('#216 message-less Java exceptions show the exception class in "fails with"
   const r = batch2Run(d, 'mvn', 'echo "SDD-TEST probe.NpeTest test_calc_001 FAILURE"\necho "java.lang.NullPointerException"\necho "	at probe.Prod.find(Prod.java:3)"\necho "[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException"\nexit 1\n', ['mvn', 'test', '-Dtest={idu}'], 'tdd', 'red', 'TEST-CALC-001');
   assert.match(r.out, /fails with: java\.lang\.NullPointerException/, r.out);
 });
+
+test('#226 a timed-out run kills the whole process group, not only the launcher', () => {
+  const d = approved();
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ schemaVersion: 1, testCmd: ['sh', '-c', 'sleep 47 & echo $! > child.pid; wait', 'x'], timeoutMs: 600 }));
+  const r = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
+  assert.equal(r.code, 1, r.out);
+  assert.match(r.out, /timed out after 600 ms \(hung test/, r.out);
+  const pid = Number(fs.readFileSync(path.join(d, 'child.pid'), 'utf8'));
+  let alive = true;
+  for (let i = 0; i < 20 && alive; i++) { try { process.kill(pid, 0); spawnSync('sleep', ['0.1']); } catch { alive = false; } }
+  assert.equal(alive, false, 'orphaned test process survived the timeout');
+});
