@@ -706,7 +706,8 @@ function dotnetOutputFilter(files) {
 function workspaceFiles(base = ROOT) {
   const r = spawnSync('git', ['ls-files', '-co', '--exclude-standard'], { cwd: base, encoding: 'utf8', maxBuffer: 64e6 });
   let files;
-  if (r.status === 0) files = r.stdout.split('\n').filter(Boolean);
+  // tracked files deleted from the working tree but not staged are still listed by git (#228)
+  if (r.status === 0) files = r.stdout.split('\n').filter((f) => f && fs.existsSync(path.join(base, f)));
   else {
     files = [];
     const walk = (d) => {

@@ -5470,3 +5470,14 @@ test('#226 a timed-out run kills the whole process group, not only the launcher'
   for (let i = 0; i < 20 && alive; i++) { try { process.kill(pid, 0); spawnSync('sleep', ['0.1']); } catch { alive = false; } }
   assert.equal(alive, false, 'orphaned test process survived the timeout');
 });
+
+test('#228 tdd red survives a tracked Java file deleted without git rm', () => {
+  const d = batch2Source('tests/probe/CalcTest.java', 'package probe;\nclass CalcTest {\n// @id TEST-CALC-001 @verifies REQ-CALC-001\n@Test\nvoid test_calc_001() { assertEquals(1, 2); }\n}\n');
+  writeAll(d, { 'src/Old.java': 'package probe;\nclass Old {}\n' });
+  spawnSync('git', ['init', '-q'], { cwd: d });
+  spawnSync('git', ['add', '-A'], { cwd: d });
+  fs.rmSync(path.join(d, 'src/Old.java'));
+  const r = batch2Run(d, 'mvn', 'echo "SDD-TEST probe.CalcTest test_calc_001 FAILURE"\necho "AssertionError: x"\nexit 1\n', ['mvn', 'test', '-Dtest={idu}'], 'tdd', 'red', 'TEST-CALC-001');
+  assert.doesNotMatch(r.out, /ENOENT|at .*\.mjs/, r.out);
+  assert.equal(r.code, 0, r.out);
+});

@@ -89,3 +89,4 @@ Absolute and root-relative review paths, including paths with spaces, identify t
 - `tdd stub` gaps: Python namespace dirs, Go field/method collision, C# `global using`, JS CJS `require`, PHP functions/enums, R helper shadowing, C++ using-declarations (#214, #215, #218, #219, #222, #223, #224).
 - Java (#216): a test declared in an `abstract class` runs through its single concrete subclass (`-Dtest=ImplTest#name`); zero or several concrete subclasses are refused as ambiguous/unresolved. A message-less exception (`java.lang.NullPointerException`) is shown as the `fails with:` reason.
 - Timeouts (#226): test commands run in their own process group; on `timeoutMs` the whole group (launcher and hung test binary) is killed and the run is rejected with "test timed out after N ms (hung test?)".
+- Workspace listing (#228): tracked files deleted from the working tree but not staged are dropped from the listing instead of crashing with ENOENT.
