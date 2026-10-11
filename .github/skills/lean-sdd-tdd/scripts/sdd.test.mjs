@@ -3652,6 +3652,21 @@ test('#213 impact follows package imports, exports wildcards and tsconfig paths 
   assert.ok(reach('packages/core/src/title.ts').includes('packages/app2/src/index.ts'));
 });
 
+test('#224 R impact follows literal source() edges', () => {
+  const d = approved();
+  writeAll(d, {
+    'R/dataio.R': '# @id CODE-CALC-001 @implements REQ-CALC-001\nsurv_data <- function() 1\n',
+    'R/km.R': '# source("R/ignored.R")\nsource("R/dataio.R")\n# @id CODE-KM-001 @implements REQ-KM-001\nkm <- function() surv_data()\n',
+    'tests/testthat/test-cox.R': 'source(file.path("..", "..", "R", "dataio.R"))\n# @id TEST-KM-001 @verifies REQ-KM-001\ntest_that("x", { expect_equal(surv_data(), 1) })\n',
+    '.sdd/specs/km.md': '---\nfeature: km\ntier: T1\n---\nREQ-KM-001: When called, the system shall fit.\n',
+  });
+  const result = sdd(d, 'impact', 'R/dataio.R', '--json');
+  const impact = JSON.parse(result.out);
+  assert.ok(impact.reachedFiles.includes('R/km.R'), result.out);
+  assert.ok(impact.reachedFiles.includes('tests/testthat/test-cox.R'), result.out);
+  assert.ok(impact.otherReqs.some((o) => o.req === 'REQ-KM-001'), result.out);
+});
+
 test('#217 Rust impact honors #[path] modules for crate:: importers', () => {
   const d = approved();
   writeAll(d, {

@@ -81,11 +81,12 @@ Absolute and root-relative review paths, including paths with spaces, identify t
 - PHP impact (#222): `use function` / `use const` (plain, aliased and group forms) resolve to the files declaring the namespaced function/const.
 - JS/TS impact (#213): package.json `imports` (`#alias`, `#alias/*`, scoped to their package), `exports` wildcard subpaths (`./*`, `./feat/*`) and tsconfig `paths` star aliases to directories containing `index.ts` resolve to real files.
 - `tdd merge-ledger` (#213): the leading intact, chained ledger lines stay byte-identical; only entries after the conflict are re-chained (same key order as normal appends).
+- R impact (#224): literal `source("x.R")`, `sys.source(...)` and `source(file.path("a", "x.R"))` edges (relative to the file or the project root) are import-graph edges.
 - Rust impact (#217): `#[path = "x.rs"] mod name;` maps `crate::name` importers to the real file.
 - plan.md (#218): `—`/`–` in the depends column means "none"; C# impact extracts `record struct`/`record class` type names.
 
 ### Known limits not fixed in wave 3/4 (dogfood-7)
-- Impact: R `source()` graph edges are not followed (#213, #224); run `gate` without `--changed` when relying on them.
+- Impact: dynamic R `source()` arguments (non-literal paths, `here::here`) are not followed; run `gate` without `--changed` when relying on them.
 - Red/Green attribution: PHP provider/abstract/trait owners (#222 F1/F2), Java abstract-base `-Dtest` (#216), Go `Fuzz*`/`Benchmark`/`Example` ids (#215), C# file-scoped namespace with bodyless record (#218 F2), Julia macro-generated `@test` and C++ clean-build drift (#223): use `--weak` or name concrete classes explicitly.
 - Partial-class / appended-class sibling files may stale Green (#214 F6, app106 F5): re-run Red/Green after editing siblings.
 - `tdd stub` gaps: Python namespace dirs, Go field/method collision, C# `global using`, JS CJS `require`, PHP functions/enums, R helper shadowing, C++ using-declarations (#214, #215, #218, #219, #222, #223, #224).

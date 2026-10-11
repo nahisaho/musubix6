@@ -4181,6 +4181,12 @@ function importRev() {
           (jlMod.get(name) ?? []).forEach((t) => add(t, f));
         }
       }
+    } else if (/\.[rR]$/.test(f)) {
+      // literal `source("x.R")` / `sys.source(file.path("a", "x.R"))`: relative to the file (testthat) or the project root (#224)
+      for (const m of src.replace(/^\s*#.*$/gm, '').matchAll(/\b(?:sys\.)?source\(\s*(?:file\s*=\s*)?(?:file\.path\(\s*((?:["'][^"'\n]*["']\s*,?\s*)+)\)|["']([^"'\n]+)["'])/g)) {
+        const p = m[2] ?? [...m[1].matchAll(/["']([^"'\n]*)["']/g)].map((x) => x[1]).join('/');
+        for (const c of [path.posix.join(dir(f), p), p]) add(path.posix.normalize(c), f);
+      }
     } else if (/\.php$/.test(f)) {
       // `use Ns\Class;`, group uses and same-namespace references resolve through declared namespace + class name (#111)
       for (const m of src.matchAll(/^\s*use\s+(?:function\s+|const\s+)?([\w\\]+?)(?:\s+as\s+\w+)?\s*;|^\s*use\s+([\w\\]+)\\\{([^}]*)\}\s*;/gm)) {
