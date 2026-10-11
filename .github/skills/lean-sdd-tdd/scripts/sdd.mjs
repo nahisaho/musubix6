@@ -1808,7 +1808,8 @@ function stubJava(testPath, src, dir, add, made) {
   const projPkg = (p) => pkg && p.split('.').slice(0, 2).join('.') === pkg.split('.').slice(0, 2).join('.');
   const pkgOf = new Map(imports.filter((i) => !i.st && /^[A-Z]/.test(i.n) && projPkg(i.p)).map((i) => [i.n, i.p]));
   const imported = new Set(imports.filter((i) => !pkgOf.has(i.n)).map((i) => i.n));
-  const local = new Set([...src.matchAll(/\b(?:class|interface|enum|record)\s+(\w+)/g)].map((m) => m[1]));
+  // upper-case fields declared in the test (`static final Path CONTRACT = ..`) are not classes
+  const local = new Set([...[...src.matchAll(/\b(?:class|interface|enum|record)\s+(\w+)/g)].map((m) => m[1]), ...[...src.matchAll(/\b[\w<>\[\],.]+\s+([A-Z][A-Z0-9_]*)\s*=/g)].map((m) => m[1])]);
   const javaFiles = new Map(listFiles().filter((f) => /\.java$/.test(f)).map((f) => {
     const text = fs.readFileSync(path.join(ROOT, f), 'utf8');
     const p = /^package\s+([\w.]+);/m.exec(text)?.[1];
@@ -1872,7 +1873,7 @@ function stubJava(testPath, src, dir, add, made) {
     return undefined;
   };
   const enumCmp = (n) => new RegExp(`assert(?:Equals|Same)\\(\\s*([A-Z]\\w*)\\.[A-Z][A-Z0-9_]*\\s*,\\s*[\\w.()",\\s]*?\\.${n}\\s*\\(`).exec(src)?.[1];
-  const chain = (n) => new RegExp(`\\.${n}\\s*\\((?:[^()]|\\([^()]*\\))*\\)\\s*\\.\\s*([a-z]\\w*)\\s*\\(`).exec(src)?.[1];
+  const chain = (n) => new RegExp(`\\.${n}\\s*\\((?:[^()]|\\((?:[^()]|\\([^()]*\\))*\\))*\\)\\s*\\.\\s*([a-z]\\w*)\\s*\\(`).exec(src)?.[1];
   const arities = (n, text, st) => { const re = new RegExp(`(?<![\\w${st ? '.' : ''}])${n}\\s*\\(`, 'g'); const seen = new Map(); let m; while ((m = re.exec(text))) { const c = callInfo(text.slice(Math.max(0, m.index - 60)), n); if (!seen.has(c.args.length)) seen.set(c.args.length, c); else if (!seen.get(c.args.length).ret && c.ret) seen.set(c.args.length, c); } return [...seen.values()]; };
   const chainClasses = new Map();
   const retOf = (cls, n, c, isStatic, text) => {
@@ -1881,7 +1882,7 @@ function stubJava(testPath, src, dir, add, made) {
     const e = enumCmp(n);
     if (e) return e;
     const ch = chain(n);
-    if (ch && !(isStatic && /^(of|create|from|zero|empty|parse|valueOf|none|one|default\w*|new\w*|with\w*|unit)$/.test(n))) { const rc = n[0].toUpperCase() + n.slice(1) + 'Result'; chainClasses.set(rc, [...new Set([...(chainClasses.get(rc) ?? []), ch])]); return rc; }
+    if (ch && !(isStatic && !/^(size|isEmpty|stream|iterator|forEach)$/.test(ch) && /^(of|create|from|zero|empty|parse|valueOf|none|one|default\w*|new\w*|with\w*|unit)$/.test(n))) { const rc = n[0].toUpperCase() + n.slice(1) + 'Result'; chainClasses.set(rc, [...new Set([...(chainClasses.get(rc) ?? []), ch])]); return rc; }
     if (isStatic && /^(of|create|from|zero|empty|parse|valueOf|none|one|default\w*|new\w*|with\w*|unit)$/.test(n) && !c.ret) return cls;
     return c.ret && !c.chained ? (T[c.ret] ?? 'int') : 'int';
   };

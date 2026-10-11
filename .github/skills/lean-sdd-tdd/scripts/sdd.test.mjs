@@ -5984,3 +5984,14 @@ test('#246 Elixir stub: multi-alias, alias-only empty module, umbrella sibling, 
   sdd(d, 'tdd', 'stub', 'TEST-M-003');
   assert.match(fs.readFileSync(w('lib/raft/election.ex'), 'utf8'), /def g\(_a1\)/);
 });
+
+test('#247 Java stub: test-file upper-case field is not a class; chained .size() gets a list-like result', () => {
+  const spec = '---\nfeature: s\ntier: T1\n---\n| REQ-S-001 | parse shall hold. | TEST-S-001 |\n';
+  const d = mini(spec, {
+    'pom.xml': '<project/>',
+    'src/test/java/p/ParserTest.java': 'package p;\nimport java.nio.file.*;\nimport org.junit.jupiter.api.Test;\nimport static org.junit.jupiter.api.Assertions.*;\nclass ParserTest {\n  static final Path CONTRACT = Paths.get("c");\n  // @id TEST-S-001\n  // @verifies REQ-S-001\n  @Test void parses() throws Exception {\n    assertEquals(1, Parser.parse(Files.readString(CONTRACT.resolve("a.csv"))).size());\n  }\n}\n',
+  });
+  sdd(d, 'tdd', 'stub', 'TEST-S-001');
+  assert.ok(!fs.existsSync(path.join(d, 'src/main/java/p/CONTRACT.java')));
+  const o = sdd(d, 'tdd', 'stub', 'TEST-S-001').out; assert.match(fs.readdirSync(path.join(d, 'src/main/java/p')).join(), /Parser/, o); assert.match(fs.readFileSync(path.join(d, 'src/main/java/p/ParseResult.java'), 'utf8'), /ArrayList/);
+});
