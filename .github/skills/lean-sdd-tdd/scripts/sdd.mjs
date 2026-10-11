@@ -8,7 +8,7 @@ import os from 'node:os';
 import { builtinModules } from 'node:module';
 import path from 'node:path';
 
-const BOOL = new Set(['allow-setup-red', 'missing-module', 'baseline', 'weak', 'changed', 'json', 'no-run', 'help']);
+const BOOL = new Set(['allow-setup-red', 'missing-module', 'baseline', 'weak', 'changed', 'json', 'no-run', 'verbose', 'help']);
 function parseArgs(argv) {
   const pos = [];
   const flags = {};
@@ -247,6 +247,8 @@ function phpLifecycle(body, txt) {
   return [...body.matchAll(/#\[([^\]]*)\]/g)].some((attr) => [...attr[1].matchAll(/(?:^|,)\s*(\\?[\w\\]+)/g)].some((m) => lifecycle.test((aliases.get(m[1].toLowerCase()) ?? m[1]).split('\\').at(-1))));
 }
 // Protect shared oracles without including sibling tests or annotated implementation (#166/#170).
+// evidence recorded before #236 hashed registration macros and comments as shared code
+let cLegacy = false;
 function braceTestSha(txt, id, p) {
   const ranges = braceFunctions(txt, p);
   if (!ranges) return sha(txt);
@@ -254,8 +256,24 @@ function braceTestSha(txt, id, p) {
   if (!mine) return sha(txt);
   const inline = /\.rs$/.test(p) ? rustTestRegion(txt) : -1;
   const helpers = ranges.filter((r) => !r.test && !r.code && (inline < 0 || r.start > inline));
-  const shared = sharedOutside(txt, ranges, inline >= 0 ? inline : 0);
-  return sha(shared + '\u0000' + mine.body.trim() + '\u0000' + protectedHelpers(mine, helpers, shared, /\.php$/.test(p)));
+  // file-scope registration macros (`REG(fn);`, `CASE(suite, fn);`) belong to the function they name, not to every sibling (#236)
+  const regs = !cLegacy && /\.(?:c|cc|cpp|cxx)$/.test(p) ? cRegistrations(txt, ranges) : [];
+  let shared = sharedOutside(txt, [...ranges, ...regs], inline >= 0 ? inline : 0);
+  // comments outside every function (a trailing note) are not an oracle in C/C++ (#236)
+  if (!cLegacy && /\.(?:c|cc|cpp|cxx)$/.test(p)) shared = shared.replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*|"(?:\\[\s\S]|[^"\\])*"|'(?:\\[\s\S]|[^'\\])*'/g, (c) => (c[0] === '/' ? '' : c)).split('\n').filter((l) => l.trim()).join('\n').trim();
+  const own = regs.filter((r) => r.target === mine.name).map((r) => r.body.trim()).join('\u0000');
+  return sha(shared + '\u0000' + mine.body.trim() + '\u0000' + protectedHelpers(mine, helpers, shared, /\.php$/.test(p)) + (own ? '\u0000' + own : ''));
+}
+function cRegistrations(txt, ranges) {
+  const names = new Set(ranges.map((r) => r.name));
+  const masked = maskBraces(txt);
+  const found = [];
+  for (const m of masked.matchAll(/^[ \t]*[A-Z][A-Z0-9_]*[ \t]*\(([^()\n]*)\)[ \t]*;?[ \t]*$/gm)) {
+    const target = [...m[1].matchAll(/[A-Za-z_]\w*/g)].map((x) => x[0]).reverse().find((n) => names.has(n));
+    if (!target || ranges.some((r) => r.start <= m.index && m.index < r.end)) continue;
+    found.push({ start: m.index, end: m.index + m[0].length, target, body: txt.slice(m.index, m.index + m[0].length) });
+  }
+  return found;
 }
 function rustTestRegion(text) {
   return maskBraces(text, true).search(/#\s*\[\s*cfg\s*\(\s*test\s*\)\s*\]/);
@@ -402,13 +420,13 @@ function cCompilerInputs(file) {
   }), macros };
 }
 function javaModuleRoot(file) {
-  const configured = projectFor(rel(file));
-  if (configured) return path.resolve(ROOT, configured.root);
+  // the owning module (surefire's cwd) wins over a configured reactor root (#238)
   for (let dir = path.dirname(file); dir.startsWith(ROOT); dir = path.dirname(dir)) {
     if (['pom.xml', 'build.gradle', 'build.gradle.kts'].some((f) => fs.existsSync(path.join(dir, f)))) return dir;
     if (dir === ROOT) break;
   }
-  return ROOT;
+  const configured = projectFor(rel(file));
+  return configured ? path.resolve(ROOT, configured.root) : ROOT;
 }
 // Test-support files are oracles; production files (annotated CODE-, or outside test-like locations) are not (#181, #214, #219, #224).
 const testSupportPath = (f) => /(^|\/)(?:tests?|__tests__|specs?|fixtures?|__fixtures__|__mocks__|testdata|test-data|testthat|e2e|support|helpers?)\//i.test(rel(f)) || /(?:^|[/.-])(?:test|spec|helper|fixture|oracle|setup|mock)s?[^/]*$/i.test(rel(f));
@@ -527,6 +545,7 @@ function localSourceDependencies(file, text, rootFile = false, cFamily = false, 
             try { value = JSON.parse(expression); } catch { throw new Error(`REFUSED: unresolved Java CSV oracle in ${rel(file)}`); }
             if (typeof value !== 'string') throw new Error(`REFUSED: unresolved Java CSV oracle in ${rel(file)}`);
             const matches = binding[1] === 'resources' ? suffix(value.replace(/^\//, '')).filter((f) => /(?:^|\/)resources\//.test(rel(f))) : [path.resolve(javaModuleRoot(file), value)];
+            if (binding[1] === 'files' && !fs.existsSync(matches[0])) throw new Error(`REFUSED: Java CSV oracle ${value} in ${rel(file)} resolves to ${rel(matches[0])}, which does not exist (files= is relative to the Maven/Gradle module)`);
             next.push(...(matches.length ? matches : [path.resolve(ROOT, 'src/test/resources', value.replace(/^\//, ''))]));
           }
         }
@@ -566,6 +585,7 @@ function localSourceDependencies(file, text, rootFile = false, cFamily = false, 
 }
 // Local test-support dependencies are conservative oracles; annotated production is not (#181).
 let oracleDependencyFiles = [];
+let oracleDependencyShas = {};
 // a sibling file that holds its own annotated tests (partial test class, shared test module): only its non-test content is an oracle, so adding a test there does not stale this one (#229)
 function siblingTestSha(file, text, raw) {
   if (!BRACE_TEST.test(file) || !/@id\s+TEST-/.test(text)) return sha(raw);
@@ -574,8 +594,16 @@ function siblingTestSha(file, text, raw) {
   const tests = ranges.filter((r) => /@id\s+TEST-/.test(r.body));
   return tests.length ? sha('tests-excluded\u0000' + sharedOutside(text, tests)) : sha(raw);
 }
+// a C/C++ header under include/ src/ lib/ (outside any test/fixture/data directory) is implementation, not oracle, unless it says `@oracle` (#236)
+function productionHeader(file, text) {
+  if (!/\.(?:h|hh|hpp|hxx|inl|ipp|tpp)$/i.test(file) || /@oracle\b/.test(text) || /@id\s+TEST-/.test(text)) return false;
+  const segs = rel(file).split('/').slice(0, -1);
+  const testLike = (d) => /^(?:tests?|spec|specs|fixtures?|testdata|test_data|support|vectors?|data|oracles?|mocks?|testing|testutil)$/i.test(d) || /^test_|_tests?$/i.test(d);
+  return segs.some((d) => /^(?:include|src|lib|inc)$/i.test(d)) && !segs.some(testLike);
+}
 function externalOracleSha(p, hash) {
   oracleDependencyFiles = [];
+  oracleDependencyShas = {};
   if (!/\.(?:rs|c|cc|cpp|cxx|java|php|cs|jl|py|exs?|[cm]?[jt]s|[jt]sx|[rR])$/.test(p)) return hash;
   const root = path.join(ROOT, p), seen = new Set([root]), deps = new Map();
   const compiler = /\.(?:c|cc|cpp|cxx)$/.test(p) ? cCompilerInputs(root) : null;
@@ -584,6 +612,7 @@ function externalOracleSha(p, hash) {
     try { raw = fs.readFileSync(file); text = raw.toString('utf8').replace(/^\uFEFF/, '').replace(/\r\n/g, '\n'); }
     catch { if (!rootFile) deps.set(rel(file), 'missing'); return; }
     if (!rootFile && /@id\s+CODE-/.test(text) && !/@id\s+TEST-/.test(text)) return;
+    if (!rootFile && compiler && productionHeader(file, text)) return;
     if (!rootFile) deps.set(rel(file), siblingTestSha(file, text, raw));
     const next = localSourceDependencies(file, text, rootFile, !!compiler, compiler);
     for (const dep of next) {
@@ -593,7 +622,30 @@ function externalOracleSha(p, hash) {
     }
   };
   visit(root, true);
+  // runtime data the test reads (`// @data vectors/crc16.csv` in the test or an oracle file, or `oracleData` in config) is part of the oracle (#238)
+  const dataSpecs = new Set(Array.isArray((readJson(CONFIG, null) ?? {}).oracleData) ? readJson(CONFIG, null).oracleData.map((x) => [x, ROOT]) : []);
+  const own = [root, ...[...deps.keys()].map((f) => path.join(ROOT, f))];
+  for (const f of own) {
+    let text = '';
+    try { text = fs.readFileSync(f, 'utf8'); } catch { continue; }
+    for (const m of text.matchAll(/@data\s+([^\s*]+(?:\s*,\s*[^\s*,]+)*)/g)) for (const x of m[1].split(',')) dataSpecs.add([x.trim(), path.dirname(f)]);
+  }
+  const dataHash = (abs) => {
+    const st = fs.statSync(abs);
+    if (!st.isDirectory()) return sha(fs.readFileSync(abs));
+    const parts = [];
+    const walkData = (d) => { for (const e of fs.readdirSync(d, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) { if (/^(?:\.git|node_modules)$/.test(e.name)) continue; const q = path.join(d, e.name); if (e.isDirectory()) walkData(q); else parts.push(rel(q) + '\u0000' + sha(fs.readFileSync(q))); } };
+    walkData(abs);
+    return sha(parts.join('\u0000'));
+  };
+  for (const [spec, base] of dataSpecs) {
+    const cands = [path.resolve(base, spec), path.resolve(ROOT, spec)];
+    const abs = cands.find((c) => c.startsWith(ROOT) && fs.existsSync(c)) ?? cands.find((c) => c.startsWith(ROOT));
+    if (!abs) continue;
+    try { deps.set(rel(abs), fs.existsSync(abs) ? 'data:' + dataHash(abs) : 'missing'); } catch { deps.set(rel(abs), 'missing'); }
+  }
   oracleDependencyFiles = [...deps.keys()].sort();
+  oracleDependencyShas = Object.fromEntries(deps);
   return deps.size ? sha(hash + '\u0000' + [...deps].sort(([a], [b]) => a.localeCompare(b)).map(([f, h]) => f + '\u0000' + h).join('\u0000')) : hash;
 }
 function juliaRanges(txt) {
@@ -668,7 +720,7 @@ const testShaVariant = (p, id, trim, norm = false, legacy = false, cut = true, i
   return sha((norm ? normImports(pre) : pre) + '\u0000' + region);
 };
 const testSha = (p, id) => { eolNorm = true; try { return externalOracleSha(p, testShaVariant(p, id, true, true)); } finally { eolNorm = false; } };
-const shaMatches = (recorded, p, id) => /\.(?:py|jl)$/.test(p) || BRACE_TEST.test(p) ? recorded === testSha(p, id) : shaMatchesRaw(recorded, p, id) || (() => { eolNorm = true; try { return shaMatchesRaw(recorded, p, id); } finally { eolNorm = false; } })();
+const shaMatches = (recorded, p, id) => /\.(?:py|jl)$/.test(p) || BRACE_TEST.test(p) ? recorded === testSha(p, id) || (/\.(?:c|cc|cpp|cxx)$/.test(p) && (() => { cLegacy = true; try { return recorded === testSha(p, id); } finally { cLegacy = false; } })()) : shaMatchesRaw(recorded, p, id) || (() => { eolNorm = true; try { return shaMatchesRaw(recorded, p, id); } finally { eolNorm = false; } })();
 const shaMatchesRaw = (recorded, p, id) => [true, false].some((cut) => [true, false].some((inl) => recorded === testShaVariant(p, id, true, true, false, cut, inl) || recorded === testShaVariant(p, id, true, false, false, cut, inl) || recorded === testShaVariant(p, id, false, false, false, cut, inl) || recorded === testShaVariant(p, id, true, true, true, cut, inl) || recorded === testShaVariant(p, id, true, false, true, cut, inl) || recorded === testShaVariant(p, id, false, false, true, cut, inl))) ||
   recorded === testSha(p, id) || recorded === testShaVariant(p, id, true) || recorded === testShaVariant(p, id, false) || recorded === testShaVariant(p, id, true, true, true) || recorded === testShaVariant(p, id, true, false, true) || recorded === testShaVariant(p, id, false, false, true) || recorded === sha(fs.readFileSync(path.join(ROOT, p)));
 const out = (s = '') => process.stdout.write(s + '\n');
@@ -687,7 +739,7 @@ const specificReason = (rl) => {
   }
   // PHPUnit: first message line below `There was 1 failure:` / `1) Class::test` (#143)
   const pu = rl.findIndex((l) => /^There w(?:as|ere) \d+ failures?:/.test(l));
-  if (pu >= 0) { const m = rl.slice(pu + 1, pu + 8).findIndex((l) => /^\d+\) /.test(l)); const msg = m >= 0 ? rl.slice(pu + 2 + m, pu + 6 + m).find((l) => l && !/^(Failed asserting|-|\+|@@)/.test(l)) : undefined; if (msg) return msg; }
+  if (pu >= 0) { const m = rl.slice(pu + 1, pu + 8).findIndex((l) => /^\d+\) /.test(l)); const win = m >= 0 ? rl.slice(pu + 2 + m, pu + 6 + m).filter((l) => l && !/^(-|\+|@@)/.test(l) && !/^(?:[A-Za-z]:)?[^\s:]+\.php:\d+$/.test(l)) : []; const msg = win.find((l) => !/^Failed asserting/.test(l)) ?? win[0]; if (msg) return msg; }
   const i = rl.findIndex((l) => /^Test Failed at\b/.test(l));
   if (i >= 0) return rl.slice(i + 1, i + 4).find((l) => /^Expression:/.test(l)) ?? rl[i];
   return rl.find((l) => REASON_KEY.test(l) && !/^\d+\s*\|/.test(l));
@@ -967,6 +1019,14 @@ function reqShaOf(id) {
 }
 // ledgers written before NFKC hashing carry the raw-text hash (#83)
 const reqShaSame = (id, rsha) => { const c = REQ_SHA?.get(id); return !c || c.sha === rsha || c.raw === rsha; };
+// names the oracle dependency files whose content differs from what a ledger entry recorded (#236, #239)
+function changedOracleDeps(entry, p, id) {
+  if (!entry?.oracleShas) return [];
+  try { testSha(p, id); } catch { return []; }
+  const now = oracleDependencyShas, was = entry.oracleShas;
+  return [...new Set([...Object.keys(was), ...Object.keys(now)])].filter((f) => was[f] !== now[f]).sort();
+}
+const oracleNote = (names) => names.length ? ` — oracle dependency changed: ${names.slice(0, 4).join(', ')}${names.length > 4 ? `, … +${names.length - 4}` : ''}` : '';
 function evidenceStatus(testId, testPath, entries) {
   const es = entries.filter((e) => e.test === testId);
   const g = es.filter((e) => e.type === 'green').at(-1);
@@ -974,7 +1034,7 @@ function evidenceStatus(testId, testPath, entries) {
   const r = es.filter((e) => e.type === 'red' && e.seq < g.seq && e.fileSha === g.fileSha).at(-1);
   if (!r) return { ok: false, why: 'no Red preceding Green with same test hash' };
   const last = es.filter((e) => e.type === 'green' || e.type === 'refactor').at(-1);
-  if (!shaMatches(last.fileSha, testPath, testId)) return { ok: false, why: 'test changed since last Green/Refactor' };
+  if (!shaMatches(last.fileSha, testPath, testId)) return { ok: false, why: `test changed since last Green/Refactor${oracleNote(changedOracleDeps(last, testPath, testId))} (if the spec changes the expected output, update the test and re-record: tdd red ${testId} --retest "<reason>", then tdd green; otherwise revert the test)` };
   // every verified REQ is hash-tracked (reqShas); older entries carry only the first one
   for (const [rid, rsha] of Object.entries(last.reqShas ?? { [last.req]: last.reqSha })) {
     if (rsha && reqShaOf(rid) && !reqShaSame(rid, rsha)) return { ok: false, why: `${rid} changed in the spec since last Green/Refactor: re-verify with tdd refactor (wording only) or tdd red/green (behaviour changed)` };
@@ -1118,7 +1178,10 @@ function run(cmd, timeoutMs, cwd = '.') {
 }
 function run1(cmd, timeoutMs, cwd = '.') {
   const t0 = Date.now();
-  const r = spawnSync(cmd[0], cmd.slice(1), { cwd: path.resolve(ROOT, cwd), encoding: 'utf8', timeout: timeoutMs, maxBuffer: 64e6, detached: true });
+  // PHPUnit/Pest runaway tests can outlive a killed sdd (the group is detached, so nothing signals it): a watchdog in the group kills it once this process is gone (#237)
+  const guarded = process.platform !== 'win32' && /phpunit|\bpest\b/.test(cmd.join(' '));
+  const argv = guarded ? ['sh', '-c', 'G=$$; P=$1; shift; ( while kill -0 "$P" 2>/dev/null && kill -0 "$G" 2>/dev/null; do sleep 1; done; kill -0 "$P" 2>/dev/null || kill -s KILL -- "-$G" 2>/dev/null ) </dev/null >/dev/null 2>&1 & exec "$@"', 'sdd-watchdog', String(process.pid), ...cmd] : cmd;
+  const r = spawnSync(argv[0], argv.slice(1), { cwd: path.resolve(ROOT, cwd), encoding: 'utf8', timeout: timeoutMs, maxBuffer: 64e6, detached: true });
   const timedOut = r.error?.code === 'ETIMEDOUT';
   // spawnSync's timeout signals only the launcher (cargo, npm, mvn); the detached group also holds the hung test binary (#225)
   if (timedOut && r.pid) { try { process.kill(-r.pid, 'SIGKILL'); } catch { /* group already gone */ } }
@@ -1377,23 +1440,27 @@ function reviewProblems(text, specHash) {
   return probs;
 }
 function cmdReview() {
-  const [sub, a] = pos.slice(1);
+  const [sub, a0] = pos.slice(1);
+  // `review template <feature>` and `review template --feature <f>`; `review check <file> --feature <f>` or `review check <file> <feature>` (#246)
+  const featArg = typeof flags.feature === 'string' ? flags.feature : null;
+  const a = sub === 'template' ? (featArg ?? a0) : a0;
   if (sub === 'template') {
     const spec = loadSpecs().find((x) => x.feature === a);
-    if (!a || !spec) { out(`${a ? `unknown feature "${a}"` : 'feature required'}: review template <feature> (known: ${loadSpecs().map((x) => x.feature).join(', ') || 'none'})`); return 2; }
-    out(`spec: sha256:${spec ? fileSha(spec.path) : '<spec sha256>'}\nverdict: pending\nopen: 0\n\n## Findings\n| ID | Severity | Where | Status |\n|----|----------|-------|--------|\n(add one row per finding with Status Open or Closed, then set verdict: pass|fail)`);
+    if (!a || !spec) { out(`${a ? `unknown feature "${a}"` : 'feature required'}: review template <feature> | --feature <feature> (known: ${loadSpecs().map((x) => x.feature).join(', ') || 'none'})`); return 2; }
+    out(`<!-- save as .sdd/review-${spec.feature}.md (one file per feature; a shared review.md goes stale when the next feature changes it) -->\nspec: sha256:${spec ? fileSha(spec.path) : '<spec sha256>'}\nverdict: pending\nopen: 0\n\n## Findings\n| ID | Severity | Where | Status |\n|----|----------|-------|--------|\n(add one row per finding with Status Open or Closed, then set verdict: pass|fail)`);
     return 0;
   }
   if (sub === 'check') {
-    if (!a || typeof flags.feature !== 'string') { out('usage: review check <file> --feature <feature> (both required)'); return 2; }
-    const spec = loadSpecs().find((x) => x.feature === flags.feature);
-    if (!spec) { out(`unknown feature "${flags.feature}" (known: ${loadSpecs().map((x) => x.feature).join(', ') || 'none'})`); return 2; }
+    const cf = featArg ?? pos[3];
+    if (!a || !cf) { out('usage: review check <file> --feature <feature> | review check <file> <feature> (both required)'); return 2; }
+    const spec = loadSpecs().find((x) => x.feature === cf);
+    if (!spec) { out(`unknown feature "${cf}" (known: ${loadSpecs().map((x) => x.feature).join(', ') || 'none'})`); return 2; }
     if (!fs.existsSync(path.resolve(ROOT, a)) || !fs.statSync(path.resolve(ROOT, a)).isFile()) { out(`review file not found: ${a}`); return 2; }
     const probs = reviewProblems(fs.readFileSync(path.resolve(ROOT, a), 'utf8'), fileSha(spec.path));
     out(probs.length ? `REVIEW INVALID: ${a}\n${probs.map((x) => '  ' + x).join('\n')}` : `REVIEW OK: ${a}`);
     return probs.length ? 1 : 0;
   }
-  out('usage: review template <feature> | review check <file> --feature <feature>');
+  out('usage: review template <feature|--feature f> | review check <file> --feature <feature|feature>');
   return 2;
 }
 function cmdApprove() {
@@ -1434,7 +1501,7 @@ function cmdApprove() {
     const dp = designProblem(spec);
     if (dp) { out(`REFUSED: ${dp}`); return 1; }
     const review = typeof flags.review === 'string' ? flags.review.trim() : '';
-    if (isAi && (/^ai:\s*(self)?$/i.test(flags.by) || !review)) { out(`REFUSED: ai approver needs a named reviewer (not ai:self) and --review <path-or-summary>, e.g. approve record ${spec.feature} --by ai:<reviewer> --review .sdd/review.md (template: review template ${spec.feature})`); return 1; }
+    if (isAi && (/^ai:\s*(self)?$/i.test(flags.by) || !review)) { out(`REFUSED: ai approver needs a named reviewer (not ai:self) and --review <path-or-summary>, e.g. approve record ${spec.feature} --by ai:<reviewer> --review .sdd/review-${spec.feature}.md (template: review template ${spec.feature})`); return 1; }
     const reviewPath = path.resolve(ROOT, review);
     const reviewIsFile = !!review && fs.existsSync(reviewPath) && fs.statSync(reviewPath).isFile();
     if (isAi && !reviewIsFile && (path.isAbsolute(review) || /^\.{1,2}[/\\]/.test(review) || /[/\\].*\.(?:md|markdown|txt)$/i.test(review) || /^[^\s]+\.(md|markdown|txt)$/i.test(review))) { out(`REFUSED: --review ${review} looks like a file path but does not exist (a free-text summary must contain spaces)`); return 1; }
@@ -1542,6 +1609,18 @@ function stubGo(testPath, src, dir, add, made) {
     if (r === 'any' && sv && new RegExp(`\\blen\\(\\s*${sv}\\s*\\)|\\brange\\s+${sv}\\b|\\b${sv}\\[`).test(src)) r = '[]any';
     return c.multi ? `(${r}, error)` : r;
   };
+  // `cannot use pkg.F(..) (value of interface type any) as *pkg.T value`: the test fixes F's result type (#215)
+  const typedResults = (out, strip, typeSet) => {
+    let grew = false;
+    for (const m of out.matchAll(/cannot use (?:[\w.]+\.)?(\w+)\(.*?\) \(value of (?:interface )?type any\) as (\S+) value/g)) {
+      const t = strip(m[2]);
+      if (retTypes.get(m[1]) === t || !/^[\w*\[\]]+$/.test(t)) continue;
+      retTypes.set(m[1], t);
+      for (const n of t.match(/\b[A-Z]\w*\b/g) ?? []) if (!typeSet.has(n)) typeSet.set(n, new Set());
+      grew = true;
+    }
+    return grew;
+  };
   // the compile errors cover the whole test file: whether a member is a method is decided from every test in it, not only the requested one (#215)
   const fullSrc = (() => { try { return fs.readFileSync(path.join(ROOT, testPath), 'utf8'); } catch { return src; } })();
   const calledAnywhere = (member) => new RegExp(`\\.${member}\\s*\\(`).test(fullSrc);
@@ -1632,6 +1711,7 @@ function stubGo(testPath, src, dir, add, made) {
         for (const m of out.matchAll(new RegExp(`unknown field (\\w+) in struct literal of type ${qualifier}\\.(\\w+)`, 'g'))) {
           if (e.types.has(m[2]) && !e.types.get(m[2]).has(m[1])) { e.types.get(m[2]).add(m[1]); grew = true; }
         }
+        if (typedResults(out, (x) => x.replace(new RegExp(`\\b${e.alias}\\.`, 'g'), ''), e.types)) grew = true;
         if (!grew) break;
         fs.writeFileSync(e.file, render());
       }
@@ -1680,6 +1760,7 @@ function stubGo(testPath, src, dir, add, made) {
     for (const m of out.matchAll(/unknown field (\w+) in struct literal of type (\w+)/g)) {
       if (types.has(m[2]) && !types.get(m[2]).has(m[1])) { types.get(m[2]).add(m[1]); grew = true; }
     }
+    if (typedResults(out, (x) => x, types)) grew = true;
     if (!grew) break;
     fs.writeFileSync(target, render());
   }
@@ -1796,7 +1877,8 @@ function stubJava(testPath, src, dir, add, made) {
   const projPkg = (p) => pkg && p.split('.').slice(0, 2).join('.') === pkg.split('.').slice(0, 2).join('.');
   const pkgOf = new Map(imports.filter((i) => !i.st && /^[A-Z]/.test(i.n) && projPkg(i.p)).map((i) => [i.n, i.p]));
   const imported = new Set(imports.filter((i) => !pkgOf.has(i.n)).map((i) => i.n));
-  const local = new Set([...src.matchAll(/\b(?:class|interface|enum|record)\s+(\w+)/g)].map((m) => m[1]));
+  // upper-case fields declared in the test (`static final Path CONTRACT = ..`) are not classes
+  const local = new Set([...[...src.matchAll(/\b(?:class|interface|enum|record)\s+(\w+)/g)].map((m) => m[1]), ...[...src.matchAll(/\b[\w<>\[\],.]+\s+([A-Z][A-Z0-9_]*)\s*=/g)].map((m) => m[1])]);
   const javaFiles = new Map(listFiles().filter((f) => /\.java$/.test(f)).map((f) => {
     const text = fs.readFileSync(path.join(ROOT, f), 'utf8');
     const p = /^package\s+([\w.]+);/m.exec(text)?.[1];
@@ -1860,7 +1942,7 @@ function stubJava(testPath, src, dir, add, made) {
     return undefined;
   };
   const enumCmp = (n) => new RegExp(`assert(?:Equals|Same)\\(\\s*([A-Z]\\w*)\\.[A-Z][A-Z0-9_]*\\s*,\\s*[\\w.()",\\s]*?\\.${n}\\s*\\(`).exec(src)?.[1];
-  const chain = (n) => new RegExp(`\\.${n}\\s*\\((?:[^()]|\\([^()]*\\))*\\)\\s*\\.\\s*([a-z]\\w*)\\s*\\(`).exec(src)?.[1];
+  const chain = (n) => new RegExp(`\\.${n}\\s*\\((?:[^()]|\\((?:[^()]|\\([^()]*\\))*\\))*\\)\\s*\\.\\s*([a-z]\\w*)\\s*\\(`).exec(src)?.[1];
   const arities = (n, text, st) => { const re = new RegExp(`(?<![\\w${st ? '.' : ''}])${n}\\s*\\(`, 'g'); const seen = new Map(); let m; while ((m = re.exec(text))) { const c = callInfo(text.slice(Math.max(0, m.index - 60)), n); if (!seen.has(c.args.length)) seen.set(c.args.length, c); else if (!seen.get(c.args.length).ret && c.ret) seen.set(c.args.length, c); } return [...seen.values()]; };
   const chainClasses = new Map();
   const retOf = (cls, n, c, isStatic, text) => {
@@ -1869,7 +1951,7 @@ function stubJava(testPath, src, dir, add, made) {
     const e = enumCmp(n);
     if (e) return e;
     const ch = chain(n);
-    if (ch && !(isStatic && /^(of|create|from|zero|empty|parse|valueOf|none|one|default\w*|new\w*|with\w*|unit)$/.test(n))) { const rc = n[0].toUpperCase() + n.slice(1) + 'Result'; chainClasses.set(rc, [...new Set([...(chainClasses.get(rc) ?? []), ch])]); return rc; }
+    if (ch && !(isStatic && !/^(size|isEmpty|stream|iterator|forEach)$/.test(ch) && /^(of|create|from|zero|empty|parse|valueOf|none|one|default\w*|new\w*|with\w*|unit)$/.test(n))) { const rc = n[0].toUpperCase() + n.slice(1) + 'Result'; chainClasses.set(rc, [...new Set([...(chainClasses.get(rc) ?? []), ch])]); return rc; }
     if (isStatic && /^(of|create|from|zero|empty|parse|valueOf|none|one|default\w*|new\w*|with\w*|unit)$/.test(n) && !c.ret) return cls;
     return c.ret && !c.chained ? (T[c.ret] ?? 'int') : 'int';
   };
@@ -1918,9 +2000,16 @@ function stubJava(testPath, src, dir, add, made) {
 
 function stubC(testPath, src, dir, add, made) {
   const cpp = /\.(cc|cpp|cxx)$/.test(testPath);
-  const missing = [...src.matchAll(/#include\s+"([^"]+)"/g)].map((m) => m[1]).filter((h) => !fs.existsSync(path.resolve(dir, h)) && !fs.existsSync(path.resolve(ROOT, h)));
+  // in a `projects` monorepo the C project root (nearest CMakeLists/compile_commands) holds include/ and build/ (#248)
+  let projRoot = ROOT;
+  for (let d = dir; d.startsWith(ROOT); d = path.dirname(d)) {
+    if (['CMakeLists.txt', 'compile_commands.json', 'build/compile_commands.json'].some((f) => fs.existsSync(path.join(d, f)))) { projRoot = d; break; }
+    if (d === ROOT) break;
+  }
+  const roots = [...new Set([projRoot, ROOT])];
+  const missing = [...src.matchAll(/#include\s+"([^"]+)"/g)].map((m) => m[1]).filter((h) => !fs.existsSync(path.resolve(dir, h)) && !roots.some((b) => ['', 'include', 'src'].some((x) => fs.existsSync(path.resolve(b, x, h)))));
   const cc = cpp ? 'c++' : 'cc';
-  const incs = [dir, ...['include', 'src'].map((d) => path.join(ROOT, d)), ROOT].flatMap((d) => ['-I', d]);
+  const incs = [dir, ...roots.flatMap((b) => [...['include', 'src'].map((d) => path.join(b, d)), b])].flatMap((d) => ['-I', d]);
   let standard = [];
   for (let d = dir; d.startsWith(ROOT); d = path.dirname(d)) {
     try {
@@ -1931,7 +2020,7 @@ function stubC(testPath, src, dir, add, made) {
     if (d === ROOT) break;
   }
   let compile = { cc, args: [...standard, ...incs], cwd: dir };
-  for (const home of new Set([dir, ROOT, path.join(ROOT, 'build')])) {
+  for (const home of new Set([dir, projRoot, path.join(projRoot, 'build'), ROOT, path.join(ROOT, 'build')])) {
     const commands = readJson(path.join(home, 'compile_commands.json'), []);
     const entry = commands.find((e) => path.resolve(e.directory ?? home, e.file ?? '') === path.resolve(ROOT, testPath));
     if (!entry) continue;
@@ -2019,13 +2108,15 @@ function stubC(testPath, src, dir, add, made) {
   }).join('\n');
   const head = cpp ? '#pragma once\n#include <stdexcept>\n#include <string>\n\n' : '#pragma once\n#include <stdio.h>\n#include <stdlib.h>\n\n';
   // a missing header belongs next to the production code (include/ or src/), not in tests/ where it would shadow it (#76)
-  const home = ['include', 'src'].map((d) => path.join(ROOT, d)).find((d) => fs.existsSync(d) && !path.resolve(dir).startsWith(d));
+  const home = roots.flatMap((b) => ['include', 'src'].map((d) => path.join(b, d))).find((d) => fs.existsSync(d) && !path.resolve(dir).startsWith(d));
   for (const h of missing) { fs.rmSync(path.resolve(dir, h)); add(home ? path.join(home, h) : path.resolve(dir, h), head + body); }
   return Object.assign(made, verified());
 }
 
 // php / julia / R: stub the file the test loads (require/include/source) with throwing functions for the unknown calls
 function stubScript(lang, src, dir, add, made) {
+  // Julia `include(joinpath(@__DIR__, "..", "src", "Q.jl"))` resolves like the literal relative path (#240)
+  if (lang === 'jl') src = src.replace(/\binclude\(\s*(?:Base\.)?joinpath\(\s*@__DIR__\s*,\s*((?:"[^"\n]*"\s*,?\s*)+)\)\s*\)/g, (m, parts) => `include("${[...parts.matchAll(/"([^"\n]*)"/g)].map((x) => x[1]).join('/')}")`);
   const loadRe = { php: /(?:require|include)(?:_once)?\s*\(?\s*(?:__DIR__\s*\.\s*)?['"]([^'"]+\.php)['"]/g, jl: /\binclude\(\s*"([^"]+\.jl)"/g, r: /\bsource\(\s*"([^"]+\.[Rr])"/g }[lang];
   const code = src.split('\n').filter((l) => !/^\s*(#|\/\/|\*|\/\*)/.test(l)).join('\n');
   const defined = new Set([...code.matchAll(/\bfunction\s+&?([A-Za-z_]\w*!?)|^\s*([A-Za-z_]\w*)\s*<-\s*function|^\s*([A-Za-z_]\w*!?)\(.*\)\s*=(?!=)/gm)].map((m) => m[1] ?? m[2] ?? m[3]));
@@ -2529,25 +2620,26 @@ function stubEx(testPath, scoped, add, made) {
   const mods = new Set();
   const resolve = (n) => (full.get(n.split('.')[0]) ? full.get(n.split('.')[0]) + n.slice(n.split('.')[0].length) : n);
   for (const m of code.matchAll(/\balias\s+([A-Z][\w.]*)\.\{([^}]*)\}/g)) for (const x of m[2].split(',')) { const k = x.trim().split('.'); full.set(k.at(-1), `${m[1]}.${x.trim()}`); mods.add(`${m[1]}.${x.trim()}`); }
-  for (const m of code.matchAll(/\balias\s+([A-Z][\w.]*)(?!\.\{)(?:\s*,\s*as:\s*([A-Z]\w*))?/g)) { full.set(m[2] ?? m[1].split('.').at(-1), m[1]); mods.add(m[1]); }
-  const imported = [];
-  for (const m of code.matchAll(/\b(?:import|use|require)\s+([A-Z][\w.]*)/g)) { mods.add(resolve(m[1])); if (m[0].startsWith('import')) imported.push(resolve(m[1])); }
+  for (const m of code.matchAll(/\balias\s+([A-Z][\w.]*)(?![\w]|\.\{)(?:\s*,\s*as:\s*([A-Z]\w*))?/g)) { full.set(m[2] ?? m[1].split('.').at(-1), m[1]); mods.add(m[1]); }
+  const imported = [], needed = new Set(), used = new Set();
+  for (const m of code.matchAll(/\b(?:import|use|require)\s+([A-Z][\w.]*)/g)) { mods.add(resolve(m[1])); needed.add(resolve(m[1])); if (m[0].startsWith('import')) imported.push(resolve(m[1])); if (m[0].startsWith('use')) used.add(resolve(m[1])); }
   const defs = new Map();
   const arityAt = (i) => {
-    let depth = 0, n = 0, any = false, q = '';
+    let depth = 0, n = 0, any = false, q = '', kw = false, itemStart = true;
     for (; i < code.length; i++) {
       const c = code[i];
+      if (!depth && !q && itemStart && !/\s/.test(c)) { kw = /^[a-z_]\w*:\s/.test(code.slice(i)); itemStart = false; }
       if (q) { if (c === '\\') i++; else if (c === q) q = ''; continue; }
       if (c === '"' || c === "'") { q = c; any = true; continue; }
       if (/[([{]/.test(c)) { depth++; any = true; continue; }
       if (/[)\]}]/.test(c)) { if (!depth) return any ? n + 1 : 0; depth--; continue; }
-      if (c === ',' && !depth) n++;
+      if (c === ',' && !depth) { if (!(kw && /^\s*[a-z_]\w*:\s/.test(code.slice(i + 1)))) n++; itemStart = true; }
       else if (!/\s/.test(c)) any = true;
     }
     return any ? n + 1 : 0;
   };
   const addDef = (mod, f, arity) => { mods.add(mod); if (!defs.has(mod)) defs.set(mod, new Map()); const d = defs.get(mod); d.set(`${f}/${arity}`, { f, arity }); };
-  for (const m of code.matchAll(/(?<![\w.:])([A-Z]\w*(?:\.[A-Z]\w*)*)\.([a-z_]\w*[!?]?)\(/g)) addDef(resolve(m[1]), m[2], arityAt(m.index + m[0].length));
+  for (const m of code.matchAll(/(?<![\w.:])([A-Z]\w*(?:\.[A-Z]\w*)*)\.([a-z_]\w*[!?]?)\(/g)) { needed.add(resolve(m[1])); addDef(resolve(m[1]), m[2], arityAt(m.index + m[0].length) + (/\|>\s*$/.test(code.slice(0, m.index)) ? 1 : 0)); }
   const local = new Set([...code.matchAll(/\bdef(?:p|macro)?\s+([a-z_]\w*[!?]?)/g)].map((m) => m[1]));
   const RESERVED = /^(?:assert|refute|assert_\w+|refute_\w+|test|describe|setup|setup_all|on_exit|doctest|def|defp|defmodule|defmacro|if|unless|case|cond|with|for|fn|raise|reraise|throw|catch|rescue|try|receive|quote|unquote|import|alias|use|require|elem|length|hd|tl|is_\w+|inspect|to_string|spawn\w*|send|self|apply|put_elem|abs|div|rem|round|trunc|max|min|not|and|or|struct|sigil_\w|tag|capture_\w+|start_supervised!?|stop_supervised!?|flunk|raise)$/;
   for (const mod of imported) for (const m of code.matchAll(/(?<![\w.:@&])([a-z_]\w*[!?]?)\(/g)) if (!RESERVED.test(m[1]) && !local.has(m[1])) addDef(mod, m[1], arityAt(m.index + m[0].length));
@@ -2555,17 +2647,27 @@ function stubEx(testPath, scoped, add, made) {
   const defined = new Map();
   const walk = (d) => { for (const e of fs.existsSync(d) ? fs.readdirSync(d, { withFileTypes: true }) : []) { const p = path.join(d, e.name); if (e.isDirectory()) { if (!/^(?:_build|deps|\.git|node_modules)$/.test(e.name)) walk(p); } else if (/\.exs?$/.test(e.name) && p !== path.join(ROOT, testPath)) for (const m of fs.readFileSync(p, 'utf8').matchAll(/\bdefmodule\s+([A-Z][\w.]*)/g)) defined.set(m[1], p); } };
   walk(root);
+  // umbrella: modules owned by a sibling app are defined too
+  for (let up = path.dirname(root); up.startsWith(ROOT) && up !== root; up = path.dirname(up)) {
+    const mx = path.join(up, 'mix.exs');
+    if (fs.existsSync(mx) && /apps_path/.test(fs.readFileSync(mx, 'utf8'))) { walk(path.join(up, 'apps')); break; }
+    if (up === ROOT) break;
+  }
+  const inTest = new Set([...fs.readFileSync(path.join(ROOT, testPath), 'utf8').matchAll(/\bdefmodule\s+([A-Z][\w.]*)/g)].map((m) => m[1]));
   const unresolved = [];
   for (const mod of mods) {
-    if (EX_STD.test(mod)) continue;
+    if (EX_STD.test(mod) || inTest.has(mod) || [...full].some(([k, v]) => v === mod && inTest.has(k))) continue;
     const want = [...(defs.get(mod)?.values() ?? [])];
-    const stubOf = ({ f, arity }) => `  def ${f}(${Array.from({ length: arity }, (_, i) => `_a${i + 1}`).join(', ')}), do: raise("not implemented: ${f}")\n`;
+    // `use Mod` calls Mod.__using__/1, so the module needs that macro to compile (#214)
+    if (used.has(mod)) want.push({ f: '__using__', arity: 1, macro: true });
+    if (!want.length && !needed.has(mod) && !defined.has(mod)) continue;
+    const stubOf = ({ f, arity, macro }) => macro ? `  defmacro ${f}(_opts) do\n    quote do\n    end\n  end\n` : `  def ${f}(${Array.from({ length: arity }, (_, i) => `_a${i + 1}`).join(', ')}), do: raise("not implemented: ${f}")\n`;
     if (defined.has(mod)) {
       const file = defined.get(mod), text = fs.readFileSync(file, 'utf8');
       const have = new Set([...text.matchAll(/\b(?:def|defp|defmacro|defdelegate)\s+([a-z_]\w*[!?]?)/g)].map((m) => m[1]));
       const missing = want.filter((d) => !have.has(d.f));
       if (!missing.length) continue;
-      if (/not implemented: /.test(text) && /\bend\s*$/.test(text)) { fs.writeFileSync(file, text.replace(/\bend\s*$/, `\n${missing.map(stubOf).join('')}end\n`)); made.push(rel(file)); }
+      if ((/not implemented: /.test(text) || (/@id CODE-\S*-STUB-/.test(text) && !/\bdef/.test(text))) && /\bend\s*$/.test(text)) { fs.writeFileSync(file, text.replace(/\bend\s*$/, `\n${missing.map(stubOf).join('')}end\n`)); made.push(rel(file)); }
       else unresolved.push(`${missing.map((d) => d.f).join(', ')} in ${rel(file)}`);
       continue;
     }
@@ -2762,6 +2864,16 @@ function stubFor(testPath, id) {
   // CommonJS `require('<relative or package>')` gets a `module.exports` stub (#219)
   for (const m of scoped.matchAll(/(?:(?:const|let|var)\s+(\{[^}]*\}|[\w$]+)\s*=\s*)?\brequire\(\s*['"]([^'"\n]+)['"]\s*\)/g)) imps.push({ 1: m[1] ? (m[1].startsWith('{') ? m[1].replace(/\s*:\s*[\w$]+/g, '') : `* as ${m[1]}`) : '', 2: m[2], cjs: true });
   const toCjs = (b) => { const ex = []; const out = b.replace(/^export\s+(?:default\s+)?(class|function|const)\s+([\w$]+)/gm, (x, k, n) => { ex.push(n); return `${k} ${n}`; }); return `${out}\nmodule.exports = { ${ex.join(', ')} };\n`; };
+  // an existing CommonJS module that lacks a required name: append throwing stubs plus `module.exports.x = x` lines, never touching existing code (#219)
+  const cjsExisting = (file, clause) => {
+    const { named, S } = prep(clause);
+    const cur = fs.readFileSync(file, 'utf8');
+    const miss = named.filter((n) => !new RegExp(`\\b(?:function|class|const|let|var)\\s+${n}\\b|\\bexports\\.${n}\\b|\\bmodule\\.exports\\s*=\\s*\\{[^}]*\\b${n}\\b|\\b${n}\\s*:`).test(cur));
+    if (!miss.length) return;
+    const body = miss.map((n) => `${exportOf(n, S).replace(/^export\s+(?:default\s+)?/gm, '')}module.exports.${n} = ${n};\n`).join('\n');
+    fs.writeFileSync(file, cur + (cur.endsWith('\n') ? '\n' : '\n\n') + body);
+    made.push(rel(file));
+  };
   for (const m of imps) {
     ts = testTs && !m.cjs;
     const spec = m[2];
@@ -2780,7 +2892,7 @@ function stubFor(testPath, id) {
     const exts = ['', '.ts', '.tsx', '.js', '.mjs', '.cjs', '.jsx', '/index.ts', '/index.js'];
     const stem = abs.replace(/\.[cm]?[jt]sx?$/, '');
     const found = exts.map((e) => (fs.existsSync(abs + e) && fs.statSync(abs + e).isFile() ? abs + e : fs.existsSync(stem + e) && fs.statSync(stem + e).isFile() ? stem + e : null)).find(Boolean);
-    if (found) { if (!m.cjs) jsExisting(found, m[1]); continue; }
+    if (found) { if (m.cjs) cjsExisting(found, m[1]); else jsExisting(found, m[1]); continue; }
     const target = /\.[cm]?[jt]sx?$/.test(abs) ? (ts ? stem + '.ts' : abs) : abs + (ts ? '.ts' : '.js');
     add(target, body(m[1]));
   }
@@ -2891,7 +3003,13 @@ function setupOrigin(line, testPath, id, text = '') {
     const DEF = /^\s*(?:pub\s+)?(?:async\s+)?(?:fn|def|function|func)\s+(\w+)|^\s*(?:const|let)\s+(\w+)\s*=\s*(?:async\s*)?\(/;
     const defs = all.map((l, i) => ({ i, n: DEF.exec(l) })).filter((d) => d.n).map((d) => ({ i: d.i, name: d.n[1] ?? d.n[2] }));
     const bodyOf = (d, k) => all.slice(d.i, k + 1 < defs.length ? defs[k + 1].i : all.length);
-    const helpers = defs.filter((d, k) => (d.i < start || d.i >= end) && bodyOf(d, k).some((l) => re.test(l)) && !/^test/i.test(d.name)).map((d) => d.name);
+    const outside = defs.filter((d) => (d.i < start || d.i >= end) && !/^test/i.test(d.name));
+    const helpers = outside.filter((d) => bodyOf(d, defs.indexOf(d)).some((l) => re.test(l))).map((d) => d.name);
+    // helpers that reach the stub only through other helpers (`check_same` -> `inl` -> stub) are setup/act wrappers too (#244)
+    for (let grew = true; grew;) {
+      grew = false;
+      for (const d of outside) if (!helpers.includes(d.name) && bodyOf(d, defs.indexOf(d)).some((l) => helpers.some((h) => new RegExp(`(?<![\\w$])${h}\\s*\\(`).test(l)))) { helpers.push(d.name); grew = true; }
+    }
     const bl = testBody(testPath, id), bf = markAsserts(bl);
     for (const h of helpers) {
       const hre = new RegExp(`(?<![\\w$])${h}\\s*\\(`);
@@ -2913,6 +3031,8 @@ function setupOrigin(line, testPath, id, text = '') {
     if (hit.some(({ i }) => inA[i])) return null;
     // `match f(..).unwrap() { .. }` / `match Regex::new(..) { .. }`: the scrutinee is the behaviour under test (#110)
     if (hit.some(({ l }) => /^\s*(?:match|switch)\b/.test(l))) return null;
+    // Go `if err := sut(..); err != nil {` tests the call it initializes (#245)
+    if (hit.some(({ l }) => /^\s*if\s+[\w\s,]+:?=[^;]*;/.test(l))) return null;
     const firstAssert = inA.findIndex((v, i) => v && i >= start);
     const prevStmt = (() => { for (let k = firstAssert - 1; k > start; k--) if (all[k].trim() && !/^\s*(\/\/|#)/.test(all[k])) return k; return -1; })();
     if (hit.some(({ i, l }) => i === prevStmt && /\.(unwrap|expect)\s*\(/.test(l))) return null;
@@ -2976,17 +3096,21 @@ function goBuildTags(src) {
   return tags;
 }
 function goResult(text, target) {
-  let result = null;
+  let result = null, lastRun = null;
   for (const line of text.split('\n')) {
+    const run = /^=== (?:RUN|CONT)\s+(\S+)/.exec(line);
+    if (run) lastRun = run[1];
     const m = /^\s*--- (PASS|FAIL|SKIP):\s+(\S+)/.exec(line);
     if (m?.[2] === target) result = m[1].toLowerCase();
     // a passing benchmark prints `BenchmarkX-8  1  123 ns/op` and no `--- PASS` row (#215)
     const b = /^(Benchmark\w*?)(?:-\d+)?\s+\d+\s+[\d.]+\s+ns\/op/.exec(line);
     if (b?.[1] === target && result !== 'fail') result = 'pass';
     if (line.startsWith('{')) {
-      try { const e = JSON.parse(line); if (e.Test === target && /^(pass|fail|skip)$/.test(e.Action)) result = e.Action; } catch {}
+      try { const e = JSON.parse(line); if (e.Test === target && /^(pass|fail|skip)$/.test(e.Action)) result = e.Action; if (e.Test && /^(run|cont)$/.test(e.Action)) lastRun = e.Test; } catch {}
     }
   }
+  // an unrecovered panic (e.g. in a goroutine) kills the test binary before any `--- FAIL`: the test that was running failed
+  if (!result && lastRun === target && /(?:^|"Output":")panic: /m.test(text) && /(?:^|\n|")FAIL\s/.test(text)) result = 'fail';
   return result;
 }
 function goOutput(text) {
@@ -3428,14 +3552,14 @@ function cmdTdd() {
     else if (made.length) out(made.verified === 'ok' ? `stubbed (throwing, compile-checked): ${made.join(', ')} — now run: tdd red ${t.id}` : made.verified === 'fail' ? `stubbed (throwing): ${made.join(', ')} — ! the test still does not compile: ${made.verifyError}\n! could not fully stub ${t.id}: finish the stub by hand (types, struct fields, methods), then run: tdd red ${t.id}` : `stubbed (throwing; compile NOT verified${scripted ? '' : ' — no checker for this language'}): ${made.join(', ')} — now run: tdd red ${t.id}; if it reports a load/compile error, finish the stub by hand`);
     else if (made.verified === 'partial') out(`nothing was stubbed for ${t.id}: it has no compile errors of its own — NOT compile-checked`);
     else if (made.verified === 'fail') out(`nothing could be stubbed for ${t.id}: the test does not compile (${made.verifyError}) — write the missing code by hand`);
-    else out(scripted ? `no missing relative imports in ${t.path}` : made.verified === 'ok' ? `nothing to stub for ${t.id} in ${t.path} (compile-checked)` : `nothing to stub for ${t.id} in ${t.path} (stubs only cover what this generator supports for the language); if the test still does not compile, write the missing code by hand`);
+    else out(scripted ? `no missing relative imports in ${t.path}` : made.verified === 'ok' ? `nothing to stub for ${t.id} in ${t.path} (compile-checked)` : `nothing to stub for ${t.id} in ${t.path} (nothing new to generate: referenced code is already stubbed/defined, or the generator does not cover this construct); run tdd red, and if the test does not compile write the missing code by hand`);
     if (made.verified === 'partial') out(`! ${made.verifyError} — the requested test has no compile errors of its own; stub or implement the other tests (\`tdd stub <their ID>\`) before running the project's tests`);
     for (const n of [...new Set(made.notes ?? [])]) out(`! ${n}`);
     if (made.realMissing?.length) out(`! not stubbed: ${made.realMissing.join('; ')} — those modules hold real code, which stubs never edit: add the names by hand`);
     if (made.warnings?.length) out(`! not stubbed: ${[...new Set(made.warnings)].join('; ')} — add the exports by hand`);
     return made.verified === 'fail' && /\.(?:c|cc|cpp|cxx)$/.test(t.path) ? 1 : 0;
   }
-  if (!['red', 'green', 'refactor'].includes(sub)) { out('usage: tdd red|green|refactor <TEST-ID> [--req REQ] [--weak] | tdd stub <TEST-ID> | tdd check'); return 2; }
+  if (!['red', 'green', 'refactor'].includes(sub)) { out('usage: tdd red|green|refactor <TEST-ID> [--req REQ] [--weak] [--expect <text>] [--retest <why>] [--characterization <why>] [--allow-setup-red] | tdd stub <TEST-ID> | tdd check | tdd merge-ledger'); return 2; }
   if (!pos[2]) { out(`usage: tdd ${sub} <TEST-ID> [<TEST-ID>...] [--req REQ] [--weak]`); return 2; }
   if (flags.characterization === true) { out('usage: --characterization "<reason>" needs a reason text'); return 2; }
   // batch: run each ID in turn (flags such as --req/--characterization apply to every ID) (#126)
@@ -3470,7 +3594,7 @@ function cmdTdd() {
       const promoted = (r.protectedFiles ?? []).filter((f) => {
         try { const text = fs.readFileSync(path.join(ROOT, f), 'utf8'); return /@id\s+CODE-/.test(text) && !/@id\s+TEST-/.test(text); } catch { return false; }
       });
-      out(promoted.length ? `REFUSED: production ownership changed since Red (${promoted.join(', ')}), not necessarily a test edit. Annotate handwritten production subjects before Red; restore annotated failing code, record a fresh Red, then implement and Green` : `REFUSED: test file changed since Red (${t.path}). revert test edits to a recorded Red's content, or record a new Red`);
+      out(promoted.length ? `REFUSED: production ownership changed since Red (${promoted.join(', ')}), not necessarily a test edit. Annotate handwritten production subjects before Red; restore annotated failing code, record a fresh Red, then implement and Green` : `REFUSED: test file changed since Red (${t.path}; checked per test ${id}${oracleNote(changedOracleDeps(r, t.path, id)) || ', its own region or a local include/header it depends on'}). revert test edits to a recorded Red's content, or record a new Red; if the test expectation itself was wrong, run: tdd red ${id} --retest "<reason>"`);
       return 1;
     }
   }
@@ -3657,7 +3781,9 @@ function cmdTdd() {
   const zero = (!targetExecuted && ((ZERO_TESTS.test(res.text) && !RAN_TESTS.test(res.text)) || allSkipped || noAssert)) || NO_PASSED.test(plain) || pytestNoExecution(plain) || nodeNoMatch || goNoMatch || verdict === 'notrun' || verdict === 'skip';
   const siblingFail = juliaSiblingFail(plain, id);
   const targetPassed = verdict ? verdict === 'pass' : goVerdict ? goVerdict === 'pass' : siblingFail === 'sibling' || res.exit === 0;
-  const targetOutput = juliaSummaryRows(plain) ? juliaFailureOutput(plain, id, t.path) : null;
+  // ExUnit: the excerpt comes from the `N) test ...` failure block, not from compile-warning code frames printed before it (#246)
+  const exBlock = /\.exs$/.test(t.path) ? (/^\s*\d+\) test [^\n]*\n[\s\S]*?(?=^Finished in |^\s*\d+\) test |(?![\s\S]))/m.exec(plain)?.[0] ?? null) : null;
+  const targetOutput = juliaSummaryRows(plain) ? juliaFailureOutput(plain, id, t.path) : exBlock;
   const timeoutWhy = `the test run timed out after ${(res.ms / 1000).toFixed(0)}s (raise timeoutMs in .sdd/config.json or fix the hang); a timeout is neither Red nor Green`;
   // forked JVM / test host died: the test matched but the runner crashed (#143)
   let cAssertionAbort = false;
@@ -3669,7 +3795,7 @@ function cmdTdd() {
     cAssertionAbort = /Subprocess aborted/.test(targetBlock) && called.some((name) => new RegExp(`\\b${escapeRe(name)}\\s*(?:\\([^\\n:]*\\))?(?:\\s+(?:const|noexcept))*:\\s+Assertion\\b[^\\n]*failed\\.`).test(targetBlock));
   }
   const childCrash = plain.split('\n').some((line) => /\*\*\*Exception:/i.test(line) && !(cAssertionAbort && new RegExp(`Test\\s+#\\d+:\\s+${escapeRe(selectedName ?? testName(t.path, id))}\\s+.*Subprocess aborted\\*\\*\\*Exception:`).test(line)));
-  const crashed = res.exit !== 0 && (res.signal || /There was an error in the forked process|OutOfMemoryError|The forked VM terminated|Fatal error\. Internal CLR error|Test host process crashed|The active test run was aborted|Fatal Python error:|process didn't exit successfully:[^\n]*\((?:signal: \d+|exit (?:status|code): (?!101\))\d+)|\((?:SEGFAULT|ILLEGAL|NUMERICAL|OTHER_FAULT|INTERRUPT)\)/i.test(plain) || childCrash);
+  const crashed = res.exit !== 0 && (res.signal || /There was an error in the forked process|OutOfMemoryError|The forked VM terminated|Fatal error\. Internal CLR error|Test host process crashed|The active test run was aborted|Fatal Python error:|Premature end of PHP process|Allowed memory size of \d+ bytes exhausted|process didn't exit successfully:[^\n]*\((?:signal: \d+|exit (?:status|code): (?!101\))\d+)|\((?:SEGFAULT|ILLEGAL|NUMERICAL|OTHER_FAULT|INTERRUPT)\)/i.test(plain) || childCrash);
   const crashWhy = `the test runner process crashed (${res.signal ?? 'fatal Python error / forked JVM / test host failure'}), so the test result is unknown; make the failure an assertion or fix the crash`;
   const notRunWhy = `${id} never ran or its summary is unobservable (whole-file runner): use verbose=true on enclosing Julia testsets, or the direct Julia runner which enables verbose summaries; an earlier failing testset may also abort the file`;
   let ok;
@@ -3685,7 +3811,7 @@ function cmdTdd() {
     else if (zero || siblingFail === 'skip') { ok = false; why = 'no test matched the ID, or the test is skipped/todo (check @id vs test title/method name; skipped tests cannot give Red/Green)' + (goRunner && /\[no test files\]/.test(plain) ? '; go printed [no test files]: a //go:build constraint may hide this file (pass -tags in testCmd)' : ''); }
     else if (res.exit === 0 && retest) ok = true;
     else if (res.exit === 0 && typeof flags.characterization === 'string' && flags.characterization.trim()) ok = true;
-    else if (res.exit === 0) { ok = false; why = 'test passed; Red needs a real failure (data-only / characterization test? record it explicitly: --characterization "<why no implementation can fail it>")'; }
+    else if (res.exit === 0) { ok = false; why = 'test passed; Red needs a real failure (data-only / characterization test? record it explicitly: --characterization "<why no implementation can fail it>"; amending a wrong expectation after Red: --retest "<reason>")'; }
     else if (LOAD_ERR.test(res.text) && !flags.weak && !(flags['missing-module'] && declaredMissingModule(res.text, t.path))) { ok = false; why = 'load/compile error, not an assertion failure. new module? run `tdd stub <ID>` once (or `--missing-module`); if stub already ran or found nothing, add the missing code by hand; or --weak to record as weak Red'; }
     else if (typeof flags.expect === 'string' && !(juliaSummaryRows(plain) ? targetOutput ?? '' : res.text).includes(flags.expect)) { ok = false; why = `failure output does not contain --expect "${flags.expect}" (Red for the wrong reason?)`; }
     else ok = true;
@@ -3700,7 +3826,9 @@ function cmdTdd() {
   if (!ok) { out(`${sub.toUpperCase()} REJECTED ${id}: ${why}`); out(rejectTail(res.text)); return 1; }
   const rl = (targetOutput ?? plain).split('\n').map((l) => l.trim());
   const reason = sub === 'red' && res.exit !== 0 && !(retest && targetPassed) ? (rl.find((l) => /^E\s+\S/.test(l) && !/\d+ \/ \d+ \(\d+%\)|^E\s+\[\s*\d+%\]/.test(l))?.replace(/^E\s+/, '') ?? (() => { const i = rl.findIndex((l) => /panicked at/.test(l)); return i >= 0 && rl[i + 1] && !/^note:/.test(rl[i + 1]) ? rl[i + 1] : undefined; })() ?? rl.find((l) => /^(?:\[ERROR\]\s+)?(?:[\w$]+\.)+[\w$]*(?:Exception|Error)\s*$/.test(l))?.replace(/^\[ERROR\]\s+/, '') ?? specificReason(rl) ?? rl.find((l) => /not implemented/i.test(l) && !/^\d+\s*\|/.test(l)) ?? rl.find((l) => /(--- FAIL|AssertionError|Error:|assert |Failed asserting|FAILED|panicked|expected|\(Failed\)|not implemented|Test Failed|Error During Test|\w*Exception:|^Error in )/.test(l) && !/^(FAIL|❯|> Task|The following tests)/.test(l) && !/^\d+\s*\|/.test(l)) ?? rl.find((l) => /^(FAIL|not ok)\s+\S+$/.test(l)) ?? [...rl].reverse().find((l) => l && !/^(npm |note: |error: test failed|test result:|Failed!|Passed!)/.test(l)) ?? '').slice(0, 110) : '';
-  const loadWeak = sub === 'red' && LOAD_ERR.test(res.text) && !(flags['missing-module'] && declaredMissingModule(res.text, t.path));
+  // node:test: the file itself failed to load (module-level throw), so no test was registered or executed (#225)
+  const nodeLoadFail = sub === 'red' && /^ℹ tests \d+/m.test(plain) && (() => { const tops = plain.split('\n').filter((l) => /^[✖✔﹣]\s/.test(l) && !/^✖ failing tests:/.test(l)); return tops.length > 0 && tops.every((l) => new RegExp(`^✖ ${escapeRe(path.basename(t.path))} \\(`).test(l)); })();
+  const loadWeak = sub === 'red' && (LOAD_ERR.test(res.text) || nodeLoadFail) && !(flags['missing-module'] && declaredMissingModule(res.text, t.path));
   const setupSym = sub === 'red' && !flags['allow-setup-red'] && typeof flags.expect !== 'string' ? setupOrigin(rl.find((l) => /^E\s+.*(not implemented|NotImplementedError|unimplemented|is not a function|has no attribute)/i.test(l)) ?? rl.find((l) => /not implemented|NotImplementedError|unimplemented|is not a function|has no attribute/i.test(l) && !/^\d+\s*\|/.test(l)) ?? reason, t.path, id, res.text) : null;
   const charac = sub === 'red' && res.exit === 0 && !retest ? String(flags.characterization).trim() : '';
   const retestWeak = sub === 'red' && targetPassed && !!retest;
@@ -3708,13 +3836,15 @@ function cmdTdd() {
   // human-approved code baseline follows the first implementation: refresh until the feature is fully Green (#92)
   const humanSpecs = sub === 'red' ? [] : loadSpecs().filter((x) => x.approval === 'human' && x.reqs.some((q) => t.refs.verifies.includes(q.id)));
   const wasDone = new Map(humanSpecs.map((x) => [x.feature, featureGreen(x)]));
-  appendLedger({ type: sub, test: id, req, reqSha: reqShaOf(req), reqShas: Object.fromEntries([...new Set([req, ...t.refs.verifies])].map((r) => [r, reqShaOf(r)]).filter(([, v]) => v)), file: t.path, fileSha: after, protectedFiles: oracleDependencyFiles, cmdSha: sha(cmd.join('\0')), exit: res.exit, ms: res.ms, weak: weakRed ? true : undefined, weakWhy: setupSym ? `setup:${setupSym}` : charac ? 'characterization' : retestWeak ? 'retest' : undefined, characterization: charac || undefined, retest: retestWeak ? retest : undefined, priorStrongRed: retestWeak && prior.some((e) => e.type === 'red' && !e.weak && !e.retest) ? true : undefined });
+  appendLedger({ type: sub, test: id, req, reqSha: reqShaOf(req), reqShas: Object.fromEntries([...new Set([req, ...t.refs.verifies])].map((r) => [r, reqShaOf(r)]).filter(([, v]) => v)), file: t.path, fileSha: after, protectedFiles: oracleDependencyFiles, oracleShas: oracleDependencyFiles.length ? oracleDependencyShas : undefined, cmdSha: sha(cmd.join('\0')), exit: res.exit, ms: res.ms, weak: weakRed ? true : undefined, weakWhy: setupSym ? `setup:${setupSym}` : charac ? 'characterization' : retestWeak ? 'retest' : undefined, characterization: charac || undefined, retest: retestWeak ? retest : undefined, priorStrongRed: retestWeak && prior.some((e) => e.type === 'red' && !e.weak && !e.retest) ? true : undefined });
   for (const x of humanSpecs) if (!wasDone.get(x.feature)) {
     const all = readJson(APPROVALS, {});
     if (all[x.feature]?.code) { all[x.feature].code = implFileShas(x); writeJson(APPROVALS, all); }
   }
   const lastGreen = prior.filter((e) => e.type === 'green' || e.type === 'refactor').at(-1);
-  if (sub === 'refactor' && lastGreen && lastGreen.fileSha !== after) out(`⚠ ${id}: test body changed since the last Green (includes the file preamble: imports/includes/helpers); a refactor does not prove the new assertions can fail (no Red). If behaviour/assertions changed, use tdd red/green instead (#118)`);
+  const movedDeps = sub === 'refactor' && lastGreen && lastGreen.fileSha !== after ? changedOracleDeps(lastGreen, t.path, id) : [];
+  if (movedDeps.length) out(`⚠ ${id}: oracle dependency changed since the last Green${oracleNote(movedDeps).replace(/^ — oracle dependency changed/, '')} (the test's own region may be unchanged); a refactor does not prove the changed oracle can fail (no Red). If expectations changed, use tdd red/green instead (#239)`);
+  else if (sub === 'refactor' && lastGreen && lastGreen.fileSha !== after) out(`⚠ ${id}: test body changed since the last Green (includes the file preamble: imports/includes/helpers); a refactor does not prove the new assertions can fail (no Red). If behaviour/assertions changed, use tdd red/green instead (#118)`);
   out(`${sub.toUpperCase()} ok ${id} (${req}) ${res.ms}ms${reason ? ` — fails with: ${reason}` : ''}${charac ? ` — characterization: ${charac} (test passed)` : retestWeak ? ` — retest: ${retest} (test passed)` : ''}${weakRed ? ' [weak]' : ''}${setupSym ? ` ⚠ Red comes from setup call "${setupSym}", not the asserted behaviour (use --expect <text> or --allow-setup-red)` : ''}`);
   if (retestWeak && prior.some((e) => e.type === 'red' && !e.weak && !e.retest)) out(`! --retest passed against the current implementation, so the earlier strong Red of ${id} is superseded by a weak Red; to keep failing-Red evidence, temporarily break the implementation and re-run \`tdd red ${id} --retest\``);
   return 0;
@@ -4054,7 +4184,7 @@ function cmdGate() {
       if (s.ok) { covered++; if (s.weak) { weak++; if (!s.charac && !s.retest) weakIds.push(e.id); } if (s.charac) charac++; if (s.retest) { retestN++; retestIds.push(e.id); if (s.retestSuperseded) retestSupersededN++; } } else problems.push(`${e.id} (${id}): ${s.why}`);
     }
   }
-  add(!problems.length, `tdd evidence${flags.changed ? ' (changed scope)' : ''}: ${covered}/${total} tests Red→Green${weak ? `, ${weak} weak Red${weak > charac + retestN ? ' — Red came from setup/load, not the asserted behaviour (before implementing: `tdd red <ID> --expect <text>`; after Green: keep as weak, or temporarily break the implementation to re-record Red): ' + weakIds.slice(0, 8).join(', ') + (weakIds.length > 8 ? `, … +${weakIds.length - 8}` : '') : ''}${charac ? ` (${charac} characterization: passed without a failing Red)` : ''}${retestN ? ` (${retestN} retest: Red re-recorded with --retest, passed without a failing Red${retestSupersededN ? `; ${retestSupersededN} superseded an earlier strong Red — re-record a failing Red by temporarily breaking the implementation if that evidence matters` : ''}: ${retestIds.slice(0, 8).join(', ')}${retestIds.length > 8 ? `, … +${retestIds.length - 8}` : ''})` : ''}` : ''}`, [...problems.slice(0, 6), ...(problems.length > 6 ? [`… +${problems.length - 6} more`] : [])]);
+  add(!problems.length, `tdd evidence${flags.changed ? ' (changed scope)' : ''}: ${covered}/${total} tests Red→Green${weak ? `, ${weak} weak Red${weak > charac + retestN ? ' — Red came from setup/load, not the asserted behaviour (before implementing: `tdd red <ID> --expect <text>`; after Green: keep as weak, or temporarily break the implementation to re-record Red): ' + weakIds.slice(0, 8).join(', ') + (weakIds.length > 8 ? `, … +${weakIds.length - 8}` : '') : ''}${charac ? ` (${charac} characterization: passed without a failing Red)` : ''}${retestN ? ` (${retestN} retest: Red re-recorded with --retest, passed without a failing Red${retestSupersededN ? `; ${retestSupersededN} superseded an earlier strong Red — re-record a failing Red by temporarily breaking the implementation if that evidence matters` : ''}: ${retestIds.slice(0, 8).join(', ')}${retestIds.length > 8 ? `, … +${retestIds.length - 8}` : ''})` : ''}` : ''}`, [...problems.slice(0, flags.verbose ? problems.length : 6), ...(problems.length > 6 && !flags.verbose ? [`… +${problems.length - 6} more (all: gate --verbose)`] : [])]);
 
   const cfg = loadConfig();
   if (cfg.prepare && !flags['no-run']) {
@@ -4190,7 +4320,7 @@ function loadPlan() {
     const c = l.trim().replace(/^\||\|$/g, '').split('|').map((x) => x.trim());
     if (c.length >= 2 && l.trim().startsWith('|') && !/^\d+$/.test(c[0]) && !/^(order|no\.?|#|:?-+:?)$/i.test(c[0]) && c[1]) bad.push(`plan.md row ignored (order "${c[0]}" is not a number): ${c[1]}`);
     if (c.length < 2 || !/^\d+$/.test(c[0])) continue;
-    rows.push({ order: Number(c[0]), feature: c[1], deps: (c[2] ?? '').split(',').map((x) => x.trim()).filter((x) => x && !/^[-—–]$/.test(x)), note: c[3] ?? '' });
+    rows.push({ order: Number(c[0]), feature: c[1], deps: (c[2] ?? '').split(/[,\s]+/).map((x) => x.trim()).filter((x) => x && !/^[-—–]$/.test(x)), note: c[3] ?? '' });
   }
   return Object.assign(rows.sort((a, b) => a.order - b.order), { bad });
 }
@@ -4448,7 +4578,7 @@ function importRev() {
       const body = src.replace(/#[^\n]*/g, '');
       const full = (n) => { const h = n.split('.')[0]; return al.has(h) ? al.get(h) + n.slice(h.length) : n; };
       for (const m of body.matchAll(/\balias\s+([A-Z][\w.]*)\.\{([^}]*)\}/g)) for (const x of m[2].split(',')) { const q = `${m[1]}.${x.trim()}`; al.set(q.split('.').at(-1), q); refs.add(q); refs.add(m[1]); }
-      for (const m of body.matchAll(/\balias\s+([A-Z][\w.]*)(?!\.\{)(?:\s*,\s*as:\s*([A-Z]\w*))?/g)) { al.set(m[2] ?? m[1].split('.').at(-1), m[1]); refs.add(m[1]); }
+      for (const m of body.matchAll(/\balias\s+([A-Z][\w.]*)(?![\w]|\.\{)(?:\s*,\s*as:\s*([A-Z]\w*))?/g)) { al.set(m[2] ?? m[1].split('.').at(-1), m[1]); refs.add(m[1]); }
       for (const m of body.matchAll(/\b(?:import|use|require)\s+([A-Z][\w.]*)/g)) refs.add(full(m[1]));
       for (const m of body.matchAll(/(?<![\w.:])([A-Z]\w*(?:\.[A-Z]\w*)*)/g)) refs.add(full(m[1]));
       for (const r of refs) (exMod.get(r) ?? []).forEach((t) => add(t, f));
@@ -4512,7 +4642,7 @@ function cmdImpact() {
   const reqFeature = new Map();
   for (const sp of specs) for (const r of sp.reqs) reqFeature.set(r.id, sp.feature);
   const all = [...ents.values()];
-  let seeds; let reqs;
+  let seeds; let reqs; let dataFile = false;
   if (/^REQ-/.test(target)) {
     if (!reqFeature.has(target)) { out(`IMPACT: unknown REQ ${target}`); return 1; }
     reqs = [target];
@@ -4524,9 +4654,14 @@ function cmdImpact() {
     if (!seeds.length || e.kind === 'CODE') seeds = [...new Set([e.path, ...seeds])];
   } else if (fs.existsSync(path.join(ROOT, target))) {
     seeds = [target.replace(/^\.\//, '')];
+    dataFile = !EXT.test(seeds[0]) && !all.some((e) => e.path === seeds[0]);
     reqs = [...new Set(all.filter((e) => e.path === seeds[0]).flatMap((e) => [...e.refs.implements, ...e.refs.verifies]))];
   } else { out(`IMPACT: unknown target ${target}`); return 1; }
+  // a shared data file is outside the import graph: name the projects that list it (or a parent dir) in dependsOn (#247)
   const rev = importRev();
+  dataFile = dataFile && !(rev.get(seeds[0])?.size ?? rev.get(seeds[0])?.length);
+  const depProjects = dataFile ? (loadConfig().projects ?? []).filter((p) => (p.dependsOn ?? []).some((d) => { const x = normDep(d); return seeds[0] === x || seeds[0].startsWith(x + '/'); })).map((p) => p.root) : [];
+  if (dataFile) seeds = [];
   const via = new Map(seeds.map((f) => [f, null]));
   const queue = [...seeds];
   while (queue.length) { const f = queue.shift(); for (const d of rev.get(f) ?? []) if (!via.has(d)) { via.set(d, f); queue.push(d); } }
@@ -4548,7 +4683,7 @@ function cmdImpact() {
   for (const r of sameFeature) affected.delete(r);
   const chain = (f) => { const c = [f]; while (via.get(c[c.length - 1])) c.push(via.get(c[c.length - 1])); return c.join(' ← '); };
   const result = {
-    target, reqs, impl: seeds, verifiedBy: verifiers.map((e) => e.id), reachedFiles: reached,
+    target, reqs, impl: seeds, ...(dataFile ? { dataFile: true, projects: depProjects } : {}), verifiedBy: verifiers.map((e) => e.id), reachedFiles: reached,
     sameFeatureReqs: sameFeature,
     otherReqs: [...affected].map(([r, v]) => ({ req: r, feature: reqFeature.get(r) ?? null, via: [...v] })),
     reachedTests: reached.filter((f) => entsIn(f).some((e) => e.refs.verifies.length) || TEST_FILE.test(f)),
@@ -4557,9 +4692,10 @@ function cmdImpact() {
   const cap = (a, n = 8) => a.slice(0, n).join(', ') + (a.length > n ? `, … +${a.length - n} more` : '');
   out(`IMPACT ${target}${reqs.length && target !== reqs[0] ? ` (${cap(reqs)})` : ''}`);
   const seedIsTest = seeds.length > 0 && seeds.every((s) => TEST_FILE.test(s) || (entsIn(s).length > 0 && entsIn(s).every((e) => e.kind === 'TEST')));
-  out(`  ${seedIsTest ? 'test' : 'impl'}: ${seeds.join(', ') || '(none)'}`);
+  if (dataFile) out(`  data file (outside the import graph); dependent projects (dependsOn): ${depProjects.join(', ') || '(none)'}`);
+  else out(`  ${seedIsTest ? 'test' : 'impl'}: ${seeds.join(', ') || '(none)'}`);
   if (verifiers.length) out(`  verified by: ${cap(verifiers.map((e) => e.id))}`);
-  out(`  reaches ${reached.length} file(s) via imports${result.reachedTests.length ? `; tests: ${cap(result.reachedTests)}` : ''}`);
+  if (!dataFile) out(`  reaches ${reached.length} file(s) via imports${result.reachedTests.length ? `; tests: ${cap(result.reachedTests)}` : ''}`);
   if (sameFeature.length) out(`  same feature: ${sameFeature.length} other REQ(s) (${sameFeature.slice(0, 4).join(', ')}${sameFeature.length > 4 ? ', …' : ''})`);
   const perFeature = new Map();
   for (const o of result.otherReqs) perFeature.set(o.feature ?? '?', (perFeature.get(o.feature ?? '?') ?? 0) + 1);
@@ -4580,7 +4716,7 @@ if (fn && badFlags.length) {
   process.exit(2);
 }
 if (!fn) {
-  out('usage: sdd.mjs init | review template <feature> | review check <file> --feature <f> | approve prepare|record <feature> | guard | tdd red|green|refactor <TEST-ID> | tdd stub <TEST-ID> | tdd check | trace [--baseline] | gate [--changed] [--no-run] | status | plan | impact <REQ|TEST|CODE|file> [--json]   [--root dir]\n  tdd red: tdd red --characterization "<reason>" records a data-only/characterization test that cannot fail without implementation (weak Red); --expect <text> requires that text in the failure; --allow-setup-red accepts a stub-in-setup Red; --retest "<reason>" re-records a weak Red after correcting a wrong test expectation (needs a previous Red/Green and a changed test); --missing-module accepts a Red caused by the test own not-yet-created import (non-weak); approve record --by ai:<reviewer> needs --review <path|summary>');
+  out('usage: sdd.mjs init | review template <feature|--feature f> | review check <file> --feature <f> (or positional feature) | approve prepare|record <feature> | guard | tdd red|green|refactor <TEST-ID> | tdd stub <TEST-ID> | tdd check | trace [--baseline] | gate [--changed] [--no-run] | status | plan | impact <REQ|TEST|CODE|file> [--json]   [--root dir]\n  tdd red: tdd red --characterization "<reason>" records a data-only/characterization test that cannot fail without implementation (weak Red); --expect <text> requires that text in the failure; --allow-setup-red accepts a stub-in-setup Red; --retest "<reason>" re-records a weak Red after correcting a wrong test expectation (needs a previous Red/Green and a changed test); --missing-module accepts a Red caused by the test own not-yet-created import (non-weak); approve record --by ai:<reviewer> needs --review <path|summary>');
   process.exit(2);
 }
 try { process.exit(fn() ?? 0); }

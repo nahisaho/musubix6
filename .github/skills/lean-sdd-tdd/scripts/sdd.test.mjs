@@ -5848,3 +5848,396 @@ test('ExUnit: a missing module is a load error, a skipped/excluded test is not G
   const skipped = sdd(d, 'tdd', 'red', 'TEST-E-002');
   assert.match(skipped.out, /REJECTED[^\n]*no test matched|skipped/i, skipped.out);
 });
+
+test('#240 Julia stub resolves include(joinpath(@__DIR__, ...)); plan depends accepts whitespace separators', () => {
+  const spec = '---\nfeature: c\ntier: T1\n---\n| REQ-C-001 | When add, the system shall sum. | TEST-C-001 |\n';
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-'));
+  spawnSync('git', ['init', '-q'], { cwd: d });
+  for (const [f, body] of Object.entries({ 'Project.toml': 'name = "X"\n', '.sdd/specs/c.md': spec, 'test/t.jl': 'include(joinpath(@__DIR__, "..", "src", "C.jl"))\n# @id TEST-C-001 @verifies REQ-C-001\n@test c_add(1, 2) == 3\n' })) { fs.mkdirSync(path.dirname(path.join(d, f)), { recursive: true }); fs.writeFileSync(path.join(d, f), body); }
+  const r = sdd(d, 'tdd', 'stub', 'TEST-C-001');
+  assert.match(r.out, /src\/C\.jl/, r.out);
+  assert.match(fs.readFileSync(path.join(d, 'src/C.jl'), 'utf8'), /c_add\(args\.\.\.; kwargs\.\.\.\) = error/);
+  fs.writeFileSync(path.join(d, '.sdd/plan.md'), '| order | feature | depends | note |\n|---|---|---|---|\n| 1 | a | - | |\n| 2 | b | - | |\n| 3 | c | a b | |\n');
+  assert.doesNotMatch(sdd(d, 'plan').out, /unknown dependency/);
+});
+
+test('#236 #239 stale/refused messages name the changed oracle dependency; --retest hint; gate --verbose accepted', () => {
+  const d = project();
+  fs.writeFileSync(path.join(d, '.sdd/specs/calc.md'), fs.readFileSync(path.join(d, '.sdd/specs/calc.md'), 'utf8').replace('tier: T2', 'tier: T1'));
+  fs.writeFileSync(path.join(d, 'helper.mjs'), 'export const one = 1;\n');
+  fs.writeFileSync(path.join(d, 'add.test.mjs'), fs.readFileSync(path.join(d, 'add.test.mjs'), 'utf8').replace("import { add }", "import { one } from './helper.mjs';\nimport { add }").replace('add(1, 2)', 'add(one, 2)'));
+  impl(d, '(a, b) => { throw new Error("nope"); }');
+  assert.match(sdd(d, 'tdd', 'red', 'TEST-CALC-001').out, /RED ok/);
+  fs.writeFileSync(path.join(d, 'helper.mjs'), 'export const one = 1; // edited\n');
+  impl(d, '(a, b) => a + b');
+  const refused = sdd(d, 'tdd', 'green', 'TEST-CALC-001').out;
+  assert.match(refused, /REFUSED: test file changed since Red[^\n]*helper\.mjs[^\n]*--retest/, refused);
+  fs.writeFileSync(path.join(d, 'helper.mjs'), 'export const one = 1;\n');
+  assert.match(sdd(d, 'tdd', 'green', 'TEST-CALC-001').out, /GREEN ok/);
+  fs.writeFileSync(path.join(d, 'helper.mjs'), 'export const one = 1; // again\n');
+  const gate = sdd(d, 'gate', '--no-run', '--verbose').out;
+  assert.match(gate, /test changed since last Green\/Refactor — oracle dependency changed: helper\.mjs/, gate);
+});
+
+test('#238 Java @CsvFileSource(files=) resolves against the owning module even with a configured reactor root; a missing file is refused', () => {
+  const body = 'package probe;\nclass T {\n// @id TEST-CALC-001 @verifies REQ-CALC-001\n@CsvFileSource(files="../../data/x.csv")\n@Test\nvoid test_calc_001() { assertTrue(true); }\n}\n';
+  const d = batch2Source('java/m1/src/test/java/probe/T.java', body);
+  writeAll(d, { 'java/pom.xml': '<project/>', 'java/m1/pom.xml': '<project/>', 'data/x.csv': '7,7\n' });
+  const cmd = ['sh', '-c', `cat ${d}/out.txt; exit $(cat ${d}/code.txt)`, 'x'];
+  const setup = (text, code) => { fs.writeFileSync(path.join(d, 'out.txt'), text); fs.writeFileSync(path.join(d, 'code.txt'), String(code)); };
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ schemaVersion: 1, testCmd: cmd, projects: [{ root: 'java', testCmd: cmd, checks: [] }] }));
+  setup('AssertionError: oracle', 1);
+  const red = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
+  assert.equal(red.code, 0, red.out);
+  setup('pass', 0);
+  const green = sdd(d, 'tdd', 'green', 'TEST-CALC-001');
+  assert.equal(green.code, 0, green.out);
+  fs.writeFileSync(path.join(d, 'data/x.csv'), '7,7\n8,8\n');
+  assert.match(sdd(d, 'gate', '--no-run').out, /test changed since last Green/);
+  fs.rmSync(path.join(d, 'data/x.csv'));
+  assert.equal(sdd(d, 'tdd', 'green', 'TEST-CALC-001').code, 1);
+});
+
+test('#237 PHPUnit helper-assertion failure keeps its message; a crashed/OOM PHP process is not a Red', () => {
+  const d = batch2Source('T.php', '<?php\nclass Target {\n// @id TEST-CALC-001 @verifies REQ-CALC-001\npublic function test_calc_001(): void { $this->assertSum(5, 2, 3); }\n}\n');
+  fakeOut(d, 'There was 1 failure:\n\n1) Target::test_calc_001\nFailed asserting that 0 is identical to 5.\n\n/w/tests/Support/Check.php:8\n/w/T.php:4\n\nFAILURES!\nTests: 1, Assertions: 1, Failures: 1.\n');
+  const red = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
+  assert.equal(red.code, 0, red.out);
+  assert.match(red.out, /fails with: Failed asserting that 0 is identical to 5\./, red.out);
+  const e = batch2Source('T.php', '<?php\nclass Target {\n// @id TEST-CALC-001 @verifies REQ-CALC-001\npublic function test_calc_001(): void { deep(); }\n}\n');
+  fakeOut(e, 'There was 1 error:\n\n1) Target::test_calc_001\nFatal error: Premature end of PHP process when running Target::test_calc_001.\n\nERRORS!\nTests: 1, Assertions: 0, Errors: 1.\n', 255);
+  const crash = sdd(e, 'tdd', 'red', 'TEST-CALC-001');
+  assert.equal(crash.code, 1, crash.out);
+  assert.match(crash.out, /REJECTED.*crashed/, crash.out);
+});
+
+test('#225 node:test module-level throw from a stub is a weak Red (no test executed)', () => {
+  const d = approved();
+  fs.writeFileSync(path.join(d, 'add.test.mjs'), [
+    "import { test } from 'node:test';",
+    "import assert from 'node:assert/strict';",
+    "import { add } from './add.mjs';",
+    'const fixture = add(1, 2);',
+    '/** @id TEST-CALC-001 @verifies REQ-CALC-001 */',
+    "test('TEST-CALC-001 adds', () => assert.equal(fixture, 3));", '',
+  ].join('\n'));
+  impl(d, '(a, b) => { throw new Error("not implemented"); }');
+  const red = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
+  assert.equal(red.code, 0, red.out);
+  assert.match(red.out, /weak/i, red.out);
+});
+test('#230 review template names a per-feature file; #231 stale-test message shows the retest path', () => {
+  const d = project();
+  assert.match(sdd(d, 'review', 'template', 'calc').out, /\.sdd\/review-calc\.md/);
+  const t = sdd(d, 'review', 'template', 'calc').out.replace('verdict: pending', 'verdict: pass');
+  fs.writeFileSync(path.join(d, '.sdd/review-calc.md'), t);
+  assert.match(sdd(d, 'review', 'check', '.sdd/review-calc.md', '--feature', 'calc').out, /REVIEW OK/);
+  const ev = evidenceStatusProbe(d);
+  assert.match(ev, /--retest/);
+});
+function evidenceStatusProbe(d) {
+  const w = (a, c) => fs.writeFileSync(path.join(d, 'add.test.mjs'), [
+    "import test from 'node:test'; import assert from 'node:assert'; import { add } from './add.mjs';",
+    '/** @id TEST-CALC-001 @verifies REQ-CALC-001 */',
+    `test('TEST-CALC-001 adds', () => assert.equal(${a}, 3));`, ''].join('\n'));
+  w('add(1, 2)'); impl(d, '(a, b) => a - b');
+  sdd(d, 'approve', 'record', 'calc', '--by', 'tester');
+  sdd(d, 'tdd', 'red', 'TEST-CALC-001');
+  impl(d, '(a, b) => a + b');
+  sdd(d, 'tdd', 'green', 'TEST-CALC-001');
+  w('add(1, 2) + 0');
+  return sdd(d, 'gate', '--no-run').out;
+}
+
+test('#233 tech-writer lint ignores an app named todo but flags TODO', () => {
+  const lint = path.join(path.dirname(fileURLToPath(import.meta.url)), '../../tech-writer/scripts/lint.py');
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), 'lint-'));
+  fs.writeFileSync(path.join(d, 'a.md'), '# todo-cli\n\nThe todo app lists tasks. Use todo add.\n\nTODO finish this.\n');
+  const r = spawnSync('python3', [lint, path.join(d, 'a.md')], { encoding: 'utf8' });
+  const o = r.stdout + r.stderr;
+  assert.match(o, /placeholder/i, o);
+  assert.equal((o.match(/placeholder/gi) ?? []).length >= 1, true);
+  assert.doesNotMatch(o, /The todo app/, o);
+});
+
+test('#219 JS tdd stub: require() of an existing CJS module gets the missing names appended', () => {
+  const d = jsStubProject({
+    'src/add.cjs': 'function sub(a, b) { return a - b; }\nmodule.exports = { sub };\n',
+    'test/a.test.cjs': "const { add, sub } = require('../src/add.cjs');\n/** @id TEST-A-001 @verifies REQ-A-001 */\nit('TEST-A-001 adds', () => { add(1, 2); sub(2, 1); });\n",
+  });
+  sdd(d, 'tdd', 'stub', 'TEST-A-001');
+  const cjs = fs.readFileSync(path.join(d, 'src/add.cjs'), 'utf8');
+  assert.match(cjs, /^function sub\(a, b\) \{ return a - b; \}\nmodule\.exports = \{ sub \};\n/);
+  assert.match(cjs, /function add\(/);
+  assert.match(cjs, /module\.exports\.add = add;/);
+  assert.doesNotMatch(cjs, /\bexport\b|function sub[\s\S]*function sub/);
+  assert.equal(spawnSync('node', ['--check', path.join(d, 'src/add.cjs')]).status, 0);
+});
+
+test('#215 go tdd stub: a result the test passes as a concrete type (*ring.Ring, []*ring.Ring) is not left as any', { skip: spawnSync('which', ['go']).status !== 0 }, () => {
+  const spec = '---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | x shall hold. | TEST-A-001 |\n';
+  const ext = mini(spec, {
+    'go.mod': 'module example.com/kv/core\n\ngo 1.22\n',
+    'ring/ring_test.go': [
+      'package ring_test', '', 'import (', '\t"testing"', '', '\t"example.com/kv/core/ring"', ')', '',
+      'func build(t testing.TB) *ring.Ring {', '\treturn ring.Make(8)', '}', '',
+      'func many(n int) []*ring.Ring {', '\treturn ring.Many(n)', '}', '',
+      '// @id TEST-A-001', 'func TestA001(t *testing.T) {', '\tr := build(t)', '\t_ = r.Add("k")', '\t_ = many(2)', '}', '',
+    ].join('\n'),
+  });
+  const o = sdd(ext, 'tdd', 'stub', 'TEST-A-001').out;
+  const body = fs.readFileSync(path.join(ext, 'ring/ring.go'), 'utf8');
+  assert.match(body, /func Make\(a0 any\) \*Ring/);
+  assert.match(body, /func Many\(a0 any\) \[\]\*Ring/);
+  assert.match(o, /compile-checked/, o);
+  const inPkg = mini(spec, {
+    'go.mod': 'module example.com/kv/core\n\ngo 1.22\n',
+    'ring/ring_test.go': [
+      'package ring', '', 'import "testing"', '',
+      'func build(t testing.TB) *Ring {', '\treturn Make(8)', '}', '',
+      '// @id TEST-A-001', 'func TestA001(t *testing.T) {', '\t_ = build(t)', '}', '',
+    ].join('\n'),
+  });
+  const o2 = sdd(inPkg, 'tdd', 'stub', 'TEST-A-001').out;
+  assert.match(fs.readFileSync(path.join(inPkg, 'ring/ring.go'), 'utf8'), /func Make\(a0 any\) \*Ring/);
+  assert.match(o2, /compile-checked/, o2);
+});
+
+test('ExUnit tdd stub: a `use Mod` module gets a defmacro __using__/1 (also appended to an existing stub)', () => {
+  const spec = '---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | x shall hold. | TEST-A-001 |\n';
+  const d = mini(spec, {
+    'mix.exs': 'defmodule A.MixProject do\nend\n',
+    'test/a_test.exs': ['defmodule ATest do', '  use ExUnit.Case', '  use A.Case', '', '  # @id TEST-A-001 @verifies REQ-A-001', '  test "TEST-A-001 x" do', '    assert A.Thing.run(1) == 2', '  end', 'end', ''].join('\n'),
+  });
+  sdd(d, 'tdd', 'stub', 'TEST-A-001');
+  const c = fs.readFileSync(path.join(d, 'lib/a/case.ex'), 'utf8');
+  assert.match(c, /defmodule A\.Case do/);
+  assert.match(c, /defmacro __using__\(_opts\) do\n    quote do\n    end\n  end/);
+  fs.writeFileSync(path.join(d, 'lib/a/case.ex'), 'defmodule A.Case do\n  def helper(_a1), do: raise("not implemented: helper")\nend\n');
+  sdd(d, 'tdd', 'stub', 'TEST-A-001');
+  assert.match(fs.readFileSync(path.join(d, 'lib/a/case.ex'), 'utf8'), /defmacro __using__\(_opts\)[\s\S]*end\n$/);
+  assert.match(fs.readFileSync(path.join(d, 'lib/a/case.ex'), 'utf8'), /def helper/);
+});
+
+test('#236 C/C++ header-only implementation under include/ is not a test oracle; @oracle and test dirs still are', () => {
+  const d = batch2Source('t.c', '#include "include/lib.h"\n#include "data/exp.h"\n// @id TEST-CALC-001 @verifies REQ-CALC-001\nvoid test_calc_001(void) { assert(twice(2) == EXPECTED); }\n');
+  writeAll(d, { 'include/lib.h': 'static inline int twice(int n) { (void)n; return 0; }\n', 'data/exp.h': '#define EXPECTED 4\n' });
+  fakeOut(d, 'AssertionError: twice');
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-CALC-001').code, 0);
+  fs.writeFileSync(path.join(d, 'include/lib.h'), 'static inline int twice(int n) { return n * 2; }\n');
+  fakeOut(d, 'pass', 0);
+  const g = sdd(d, 'tdd', 'green', 'TEST-CALC-001');
+  assert.equal(g.code, 0, g.out);
+  fs.writeFileSync(path.join(d, 'data/exp.h'), '#define EXPECTED 5\n');
+  assert.match(sdd(d, 'tdd', 'green', 'TEST-CALC-001').out, /changed since Red/);
+  fs.writeFileSync(path.join(d, 'data/exp.h'), '#define EXPECTED 4\n');
+  fs.writeFileSync(path.join(d, 'include/lib.h'), '// @oracle\nstatic inline int twice(int n) { return n * 2; }\n');
+  assert.match(sdd(d, 'tdd', 'green', 'TEST-CALC-001').out, /changed since Red/);
+});
+
+test('#236 C registration macros (`REG(fn);`) belong to the function they name, not to every sibling', () => {
+  const src = (extra = '', reg = 'REG(test_calc_001);') => '#include <assert.h>\n// @id TEST-CALC-001 @verifies REQ-CALC-001\nvoid test_calc_001(void) { assert(1 == 2); }\n' + reg + '\n\n// @id TEST-CALC-002 @verifies REQ-CALC-001\nvoid test_calc_002(void) { assert(1 == 1); }\nREG(test_calc_002);\n' + extra;
+  const d = batch2Source('t.c', src());
+  fakeOut(d, 'Assertion failed: 1 == 2');
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-CALC-001').code, 0);
+  fakeOut(d, 'pass', 0);
+  assert.equal(sdd(d, 'tdd', 'green', 'TEST-CALC-001').code, 0);
+  fs.writeFileSync(path.join(d, 't.c'), src('\n// @id TEST-CALC-003 @verifies REQ-CALC-001\nvoid test_calc_003(void) { }\nREG(test_calc_003);\n\nint main(void) { return 0; }\n// trailing\n'));
+  assert.doesNotMatch(sdd(d, 'gate', '--no-run').out, /TEST-CALC-001[^\n]*changed since last Green/);
+  fs.writeFileSync(path.join(d, 't.c'), src('', 'REG(test_calc_001); REG2(x);'));
+  fs.writeFileSync(path.join(d, 't.c'), src('', 'REGISTER(suite, test_calc_001);'));
+  assert.match(sdd(d, 'gate', '--no-run').out, /TEST-CALC-001[^\n]*changed since last Green/);
+});
+
+test('#239 tdd refactor names a changed oracle dependency instead of claiming the test body changed', () => {
+  const d = project();
+  fs.writeFileSync(path.join(d, '.sdd/specs/calc.md'), fs.readFileSync(path.join(d, '.sdd/specs/calc.md'), 'utf8').replace('tier: T2', 'tier: T1'));
+  fs.writeFileSync(path.join(d, 'helper.mjs'), 'export const one = 1;\n');
+  fs.writeFileSync(path.join(d, 'add.test.mjs'), fs.readFileSync(path.join(d, 'add.test.mjs'), 'utf8').replace("import { add }", "import { one } from './helper.mjs';\nimport { add }").replace('add(1, 2)', 'add(one, 2)'));
+  impl(d, '(a, b) => { throw new Error("nope"); }');
+  sdd(d, 'tdd', 'red', 'TEST-CALC-001');
+  impl(d, '(a, b) => a + b');
+  assert.match(sdd(d, 'tdd', 'green', 'TEST-CALC-001').out, /GREEN ok/);
+  fs.writeFileSync(path.join(d, 'helper.mjs'), 'export const one = 1; // edited\n');
+  const r = sdd(d, 'tdd', 'refactor', 'TEST-CALC-001').out;
+  assert.match(r, /oracle dependency changed since the last Green: helper\.mjs/, r);
+  assert.doesNotMatch(r, /test body changed/, r);
+});
+
+test('#238 `@data <path>` and config `oracleData` hash runtime data files (and directories) into the test oracle', () => {
+  const d = batch2Source('tests/t.c', '// @data ../vectors/crc16.csv\n#include <assert.h>\n// @id TEST-CALC-001 @verifies REQ-CALC-001\nvoid test_calc_001(void) { assert(0); }\n');
+  writeAll(d, { 'vectors/crc16.csv': '1,2\n', 'vectors2/a.csv': 'x\n' });
+  fakeOut(d, 'Assertion failed: 0');
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-CALC-001').code, 0);
+  fakeOut(d, 'pass', 0);
+  assert.equal(sdd(d, 'tdd', 'green', 'TEST-CALC-001').code, 0);
+  assert.doesNotMatch(sdd(d, 'gate', '--no-run').out, /test changed since last Green/);
+  fs.appendFileSync(path.join(d, 'vectors/crc16.csv'), '3,4\n');
+  const g = sdd(d, 'gate', '--no-run').out;
+  assert.match(g, /test changed since last Green\/Refactor — oracle dependency changed: vectors\/crc16\.csv/, g);
+  fs.rmSync(path.join(d, 'vectors/crc16.csv'));
+  assert.match(sdd(d, 'gate', '--no-run').out, /oracle dependency changed: vectors\/crc16\.csv/);
+  fs.writeFileSync(path.join(d, 'vectors/crc16.csv'), '1,2\n');
+  assert.doesNotMatch(sdd(d, 'gate', '--no-run').out, /test changed since last Green/);
+  fakeOut(d, 'pass', 0, { oracleData: ['vectors2'] });
+  assert.equal(sdd(d, 'tdd', 'refactor', 'TEST-CALC-001').code, 0);
+  assert.doesNotMatch(sdd(d, 'gate', '--no-run').out, /test changed since last Green/);
+  fs.writeFileSync(path.join(d, 'vectors2/b.csv'), 'y\n');
+  assert.match(sdd(d, 'gate', '--no-run').out, /oracle dependency changed: vectors2/);
+});
+
+test('#237 a PHPUnit run does not outlive a killed sdd (watchdog kills its process group)', { skip: process.platform === 'win32' }, async () => {
+  const d = batch2Source('T.php', '<?php\nclass Target {\n// @id TEST-CALC-001 @verifies REQ-CALC-001\npublic function test_calc_001(): void { }\n}\n');
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ schemaVersion: 1, testCmd: ['sh', '-c', 'echo $$ > pid.txt; exec sleep 60', 'phpunit'], timeoutMs: 120000 }));
+  const child = spawn('node', [SDD, '--root', d, 'tdd', 'red', 'TEST-CALC-001'], { stdio: 'ignore' });
+  const pidFile = path.join(d, 'pid.txt');
+  for (let i = 0; i < 50 && !fs.existsSync(pidFile); i++) await new Promise((r) => setTimeout(r, 100));
+  const pid = Number(fs.readFileSync(pidFile, 'utf8'));
+  assert.ok(pid > 0);
+  child.kill('SIGKILL');
+  const alive = () => { try { process.kill(pid, 0); return true; } catch { return false; } };
+  for (let i = 0; i < 50 && alive(); i++) await new Promise((r) => setTimeout(r, 100));
+  const left = alive();
+  if (left) process.kill(pid, 'SIGKILL');
+  assert.equal(left, false);
+});
+test('#246 Elixir stub: multi-alias, alias-only empty module, umbrella sibling, pipe/keyword arity, test-local helper', () => {
+  const spec = '---\nfeature: m\ntier: T1\n---\n| REQ-M-001 | a shall hold. | TEST-M-001 |\n| REQ-M-002 | b shall hold. | TEST-M-002 |\n| REQ-M-003 | c shall hold. | TEST-M-003 |\n';
+  const mk = (n) => `  # @id TEST-M-00${n}\n  # @verifies REQ-M-00${n}\n`;
+  const d = mini(spec, {
+    'mix.exs': 'defmodule U.MixProject do\n  use Mix.Project\n  def project, do: [apps_path: "apps", deps: []]\nend\n',
+    'apps/core/mix.exs': 'defmodule Core.MixProject do\n  use Mix.Project\n  def project, do: [app: :core, version: "0.1.0", deps: []]\nend\n',
+    'apps/core/lib/store.ex': 'defmodule Core.Store do\n  def size(s), do: length(s)\nend\n',
+    'apps/web/mix.exs': 'defmodule Web.MixProject do\n  use Mix.Project\n  def project, do: [app: :web, version: "0.1.0", deps: []]\nend\n',
+    'apps/web/test/test_helper.exs': 'ExUnit.start()\n',
+    'apps/web/test/m_test.exs': `defmodule MTest do\n  use ExUnit.Case\n  alias Raft.{Election, Log}\n  alias Web.Helper, as: H\n  defmodule Web.Helper do\n    def x, do: 1\n  end\n\n${mk(1)}  test "a" do\n    assert Election.f(Log.new()) == 1\n  end\n\n${mk(2)}  test "b" do\n    assert [1] |> Core.Store.size() == 1\n    assert Web.Client.new(1, "c", a: 1, b: 2) == 1\n    assert H.x() == 1\n  end\n\n${mk(3)}  test "c" do\n    assert Election.g(1) == 1\n  end\nend\n`,
+  });
+  fs.rmSync(path.join(d, 'package.json'));
+  const r1 = sdd(d, 'tdd', 'stub', 'TEST-M-001'); assert.match(r1.out, /stubbed/, r1.out);
+  const w = (f) => path.join(d, 'apps/web', f);
+  assert.ok(fs.existsSync(w('lib/raft/election.ex')));
+  assert.ok(fs.existsSync(w('lib/raft/log.ex')));
+  assert.ok(!fs.existsSync(w('lib/raft.ex')));
+  const r2 = sdd(d, 'tdd', 'stub', 'TEST-M-002');
+  assert.ok(!fs.existsSync(w('lib/core/store.ex')), r2.out);
+  assert.ok(!fs.existsSync(w('lib/web/helper.ex')), r2.out);
+  assert.match(fs.readFileSync(w('lib/web/client.ex'), 'utf8'), /def new\(_a1, _a2, _a3\)/);
+  sdd(d, 'tdd', 'stub', 'TEST-M-003');
+  assert.match(fs.readFileSync(w('lib/raft/election.ex'), 'utf8'), /def g\(_a1\)/);
+});
+
+test('#247 Java stub: test-file upper-case field is not a class; chained .size() gets a list-like result', () => {
+  const spec = '---\nfeature: s\ntier: T1\n---\n| REQ-S-001 | parse shall hold. | TEST-S-001 |\n';
+  const d = mini(spec, {
+    'pom.xml': '<project/>',
+    'src/test/java/p/ParserTest.java': 'package p;\nimport java.nio.file.*;\nimport org.junit.jupiter.api.Test;\nimport static org.junit.jupiter.api.Assertions.*;\nclass ParserTest {\n  static final Path CONTRACT = Paths.get("c");\n  // @id TEST-S-001\n  // @verifies REQ-S-001\n  @Test void parses() throws Exception {\n    assertEquals(1, Parser.parse(Files.readString(CONTRACT.resolve("a.csv"))).size());\n  }\n}\n',
+  });
+  sdd(d, 'tdd', 'stub', 'TEST-S-001');
+  assert.ok(!fs.existsSync(path.join(d, 'src/main/java/p/CONTRACT.java')));
+  const o = sdd(d, 'tdd', 'stub', 'TEST-S-001').out; assert.match(fs.readdirSync(path.join(d, 'src/main/java/p')).join(), /Parser/, o); assert.match(fs.readFileSync(path.join(d, 'src/main/java/p/ParseResult.java'), 'utf8'), /ArrayList/);
+});
+
+test('#248 C stub: includes/build of a project subdirectory are searched, not only the repo root', { skip: spawnSync('which', ['cc']).status !== 0 }, () => {
+  const spec = '---\nfeature: r\ntier: T1\n---\n| REQ-R-001 | f shall hold. | TEST-R-001 |\n';
+  const d = mini(spec, {
+    'c/CMakeLists.txt': 'project(c C)\n',
+    'c/include/rx.h': '#pragma once\nint rx_f(int a);\n',
+    'c/tests/t.c': '#include "rx.h"\n// @id TEST-R-001 @verifies REQ-R-001\nint main(void) { return rx_f(1) == 1 ? 0 : 1; }\n',
+  });
+  const out = sdd(d, 'tdd', 'stub', 'TEST-R-001').out;
+  assert.doesNotMatch(out, /No such file/, out);
+  assert.match(out, /compile-checked|nothing to stub/, out);
+});
+
+test('#244 weak Red: a stub reached through nested helpers is asserted when the result is asserted', () => {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-js-'));
+  fs.mkdirSync(path.join(d, '.sdd/specs'), { recursive: true });
+  fs.writeFileSync(path.join(d, 'package.json'), '{}');
+  spawnSync('git', ['init', '-q'], { cwd: d });
+  fs.writeFileSync(path.join(d, '.sdd/specs/a.md'), T1SPEC);
+  fs.writeFileSync(path.join(d, 'a.test.mjs'), "import assert from 'node:assert';\nimport { make } from './lib.mjs';\nfunction inner() {\n  return make();\n}\nfunction outer() {\n  const r = inner();\n  return r;\n}\n// @id TEST-A-001 @verifies REQ-A-001\ntest('TEST-A-001', () => {\n  const r = outer();\n  assert.equal(r.n, 1);\n});\n");
+  fs.writeFileSync(path.join(d, 'lib.mjs'), "export function make() { throw new Error('not implemented: make'); }\n");
+  sdd(d, 'init');
+  setCmd(d, ['node', '-e', "const e=new Error('not implemented: make');e.stack='Error: '+e.message+'\\n    at x (a.test.mjs:4:1)';console.log(e.stack);process.exit(1)"]);
+  const r = spawnSync('node', [SDD, '--root', d, 'tdd', 'red', 'TEST-A-001'], { encoding: 'utf8', env: ENV });
+  assert.doesNotMatch(r.stdout, /setup call|\[weak\]/, r.stdout);
+});
+
+test('#245 Go: a goroutine panic aborting the test binary is a failing run, not "no test matched"', { skip: spawnSync('which', ['go']).status !== 0 }, () => {
+  const spec = '---\nfeature: r\ntier: T1\n---\n| REQ-R-001 | F shall hold. | TEST-R-001 |\n';
+  const d = mini(spec, {
+    'go.mod': 'module r\n\ngo 1.21\n',
+    'lib/lib.go': 'package lib\n\nfunc F() int { panic("not implemented") }\n',
+    'lib/lib_test.go': 'package lib\n\nimport "testing"\n\n// @id TEST-R-001 @verifies REQ-R-001\nfunc TestTEST_R_001_goroutine(t *testing.T) {\n\tdone := make(chan int)\n\tgo func() { done <- F() }()\n\tif <-done != 1 {\n\t\tt.Fatal("x")\n\t}\n}\n',
+  });
+  fs.rmSync(path.join(d, 'package.json'));
+  fs.rmSync(path.join(d, '.sdd/config.json'));
+  sdd(d, 'init');
+  sdd(d, 'approve', 'record', 'r', '--by', 'tester');
+  const r = sdd(d, 'tdd', 'red', 'TEST-R-001');
+  assert.doesNotMatch(r.out, /no test matched/, r.out);
+  assert.match(r.out, /RED ok/, r.out);
+});
+
+test('#246 ExUnit Red excerpt comes from the target test failure block, not a compile-warning frame of another test', { skip: spawnSync('which', ['mix']).status !== 0 }, () => {
+  const spec = '---\nfeature: w\ntier: T1\n---\n| REQ-W-001 | a shall hold. | TEST-W-001 |\n| REQ-W-002 | b shall hold. | TEST-W-002 |\n';
+  const d = mini(spec, {
+    'mix.exs': 'defmodule W.MixProject do\n  use Mix.Project\n  def project, do: [app: :w, version: "0.1.0", deps: []]\nend\n',
+    'lib/w.ex': 'defmodule W do\n  def a, do: raise("nope")\n  def b, do: :ok\nend\n',
+    'test/test_helper.exs': 'ExUnit.start()\n',
+    'test/w_test.exs': 'defmodule WTest do\n  use ExUnit.Case\n\n  # @id TEST-W-001\n  # @verifies REQ-W-001\n  test "a" do\n    W.a()\n  end\n\n  # @id TEST-W-002\n  # @verifies REQ-W-002\n  test "b" do\n    assert W.b() == 2\n  end\nend\n',
+  });
+  fs.rmSync(path.join(d, 'package.json'));
+  fs.rmSync(path.join(d, '.sdd/config.json'));
+  sdd(d, 'init');
+  sdd(d, 'approve', 'record', 'w', '--by', 'tester');
+  const r = sdd(d, 'tdd', 'red', 'TEST-W-001');
+  assert.match(r.out, /RED ok/, r.out);
+  assert.doesNotMatch(r.out, /fails with:.*W\.b\(\) == 2/, r.out);
+});
+
+test('#246 review template and review check accept the feature positionally or via --feature', () => {
+  const d = project();
+  const t1 = sdd(d, 'review', 'template', 'calc');
+  const t2 = sdd(d, 'review', 'template', '--feature', 'calc');
+  assert.equal(t1.code, 0, t1.out);
+  assert.equal(t2.out, t1.out);
+  fs.writeFileSync(path.join(d, 'rv.md'), t1.out);
+  const c1 = sdd(d, 'review', 'check', 'rv.md', '--feature', 'calc');
+  const c2 = sdd(d, 'review', 'check', 'rv.md', 'calc');
+  assert.equal(c2.out, c1.out);
+  assert.doesNotMatch(c2.out, /usage|unknown feature/, c2.out);
+});
+
+test('#247 impact <data file> names the projects whose dependsOn covers it, not itself as impl', () => {
+  const d = project();
+  fs.mkdirSync(path.join(d, 'contract'), { recursive: true });
+  fs.writeFileSync(path.join(d, 'contract/golden.csv'), 'a,b\n1,2\n');
+  const cp = path.join(d, '.sdd/config.json');
+  const c = fs.existsSync(cp) ? JSON.parse(fs.readFileSync(cp, 'utf8')) : {};
+  c.projects = [{ root: 'core', dependsOn: ['./contract'], testCmd: ['true'], checks: [] }, { root: 'recon', dependsOn: ['contract/golden.csv'], testCmd: ['true'], checks: [] }, { root: 'other', testCmd: ['true'], checks: [] }];
+  fs.writeFileSync(cp, JSON.stringify(c));
+  const r = sdd(d, 'impact', 'contract/golden.csv');
+  assert.doesNotMatch(r.out, /impl: contract/, r.out);
+  assert.match(r.out, /dependent projects.*core, recon/, r.out);
+  assert.doesNotMatch(r.out, /other/, r.out);
+  const j = JSON.parse(sdd(d, 'impact', 'contract/golden.csv', '--json').out);
+  assert.deepEqual(j.projects, ['core', 'recon']);
+  assert.deepEqual(j.impl, []);
+});
+
+test('#245 Go: `if err := sut(); err != nil` treats the initialised call as asserted (not a weak setup Red)', { skip: spawnSync('which', ['go']).status !== 0 }, () => {
+  const spec = '---\nfeature: r\ntier: T1\n---\n| REQ-R-001 | Import shall succeed. | TEST-R-001 |\n';
+  const d = mini(spec, {
+    'go.mod': 'module r\n\ngo 1.21\n',
+    'lib/lib.go': 'package lib\n\ntype S struct{}\n\nfunc New() *S { return &S{} }\n\nfunc (s *S) Import(n int) error { panic("not implemented") }\n',
+    'lib/lib_test.go': 'package lib\n\nimport "testing"\n\n// @id TEST-R-001 @verifies REQ-R-001\nfunc TestTEST_R_001(t *testing.T) {\n\tif err := New().Import(1); err != nil {\n\t\tt.Fatal(err)\n\t}\n}\n',
+  });
+  fs.rmSync(path.join(d, 'package.json'));
+  fs.rmSync(path.join(d, '.sdd/config.json'));
+  sdd(d, 'init');
+  sdd(d, 'approve', 'record', 'r', '--by', 'tester');
+  const r = sdd(d, 'tdd', 'red', 'TEST-R-001');
+  assert.match(r.out, /RED ok/, r.out);
+  assert.doesNotMatch(r.out, /setup call|\[weak\]/, r.out);
+});
