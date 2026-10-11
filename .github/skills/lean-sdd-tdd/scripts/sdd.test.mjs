@@ -3612,6 +3612,22 @@ for (const binding of ['shared.workspace=true', 'shared={workspace=true}', '[dep
   });
 }
 
+test('#217 Rust impact honors #[path] modules for crate:: importers', () => {
+  const d = approved();
+  writeAll(d, {
+    'Cargo.toml': '[package]\nname="pathimp"\nversion="0.1.0"\n',
+    'src/lib.rs': '#[path = "model/value.rs"]\nmod value;\nmod session;\n',
+    'src/model/value.rs': '// @id CODE-CALC-001 @implements REQ-CALC-001\npub struct V(pub i64);\n',
+    'src/session.rs': 'use crate::value::V;\n// @id CODE-CLIENT-001 @implements REQ-CLIENT-001\npub fn run() -> i64 { V(1).0 }\n',
+    '.sdd/specs/client.md': '---\nfeature: client\ntier: T1\n---\nREQ-CLIENT-001: When called, the system shall run.\n',
+  });
+  const result = sdd(d, 'impact', 'src/model/value.rs', '--json');
+  assert.equal(result.code, 0, result.out);
+  const impact = JSON.parse(result.out);
+  assert.ok(impact.reachedFiles.includes('src/session.rs'), result.out);
+  assert.ok(impact.otherReqs.some((o) => o.req === 'REQ-CLIENT-001'), result.out);
+});
+
 test('#207 Rust raw identifier modules retain exact scopes and ordinary module filenames', { skip: !has130('cargo') }, () => {
   const d = batch2Source('src/type.rs', '// @id TEST-CALC-001 @verifies REQ-CALC-001\n#[test]\nfn test_calc_001() { assert_eq!(crate::answer(), 7); }\n');
   writeAll(d, { 'Cargo.toml': '[package]\nname="raw-probe"\nversion="0.1.0"\nedition="2021"\n', 'src/lib.rs': '// @id CODE-CALC-001 @implements REQ-CALC-001\npub fn answer() -> i32 { 0 }\n#[cfg(test)] mod r#type;\n' });

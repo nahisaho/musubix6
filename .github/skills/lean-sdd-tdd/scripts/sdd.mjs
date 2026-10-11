@@ -4010,6 +4010,12 @@ function importRev() {
   }
   const cargoAliases = new Map();
   for (const pkg of cargoSources()) cargoAliases.set(pkg.dir, new Map([...pkg.bindings].map(([alias, target]) => [alias, [path.posix.dirname(target.lib)]])));
+  // `#[path = "x.rs"] mod name;` maps module `name` of the declaring module to that file (#217)
+  const rsPathMods = new Map();
+  for (const g of files) if (g.endsWith('.rs')) for (const m of fs.readFileSync(path.join(ROOT, g), 'utf8').matchAll(/#\[\s*path\s*=\s*"([^"\n]+)"\s*\]\s*(?:#\[[^\]\n]*\]\s*)*(?:pub(?:\([^)]*\))?\s+)?mod\s+(\w+)\s*;/g)) {
+    const t = path.posix.normalize(path.posix.join(dir(g), m[1]));
+    rsPathMods.set(`${/(?:^|\/)(?:lib|main|mod)\.rs$/.test(g) ? dir(g) : g.replace(/\.rs$/, '')}/${m[2]}`, t);
+  }
   const stem = (x) => path.posix.basename(x).replace(/\.\w+$/, '');
   const goMods = gitFiles('*go.mod').filter((g) => /(^|\/)go\.mod$/.test(g)).map((g) => {
     const text = fs.readFileSync(path.join(ROOT, g), 'utf8');
@@ -4112,7 +4118,7 @@ function importRev() {
           const segs = p.replace(/\{.*$/s, '').split('::').map((x) => x.trim()).filter((x) => /^\w+$/.test(x));
           for (const b of bases) {
             let cur = b; let hit = false;
-            for (const sg of segs) { const c = [`${cur}/${sg}.rs`, `${cur}/${sg}/mod.rs`].find((x) => set.has(x)); if (!c) break; add(c, f); hit = true; cur = c.endsWith('/mod.rs') ? dir(c) : c.replace(/\.rs$/, ''); }
+            for (const sg of segs) { const c = [rsPathMods.get(`${cur}/${sg}`), `${cur}/${sg}.rs`, `${cur}/${sg}/mod.rs`].find((x) => x && set.has(x)); if (!c) break; add(c, f); hit = true; cur = c.endsWith('/mod.rs') ? dir(c) : c.replace(/\.rs$/, ''); }
             // an item re-exported from the crate root: link to the file that declares it
             if (!hit && segs.length) for (const x of files) if (x.startsWith(b + '/') && x.endsWith('.rs') && new RegExp(`\\bpub(?:\\([\\w:]+\\))?\\s+(?:fn|struct|enum|trait|const|type|static)\\s+${segs[0]}\\b`).test(fs.readFileSync(path.join(ROOT, x), 'utf8'))) add(x, f);
             if (p.includes('*')) for (const x of files) if (x.endsWith('.rs') && (x.startsWith((hit ? cur : b) + '/') || x === cur + '.rs')) add(x, f);
