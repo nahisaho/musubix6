@@ -6085,3 +6085,19 @@ test('#238 `@data <path>` and config `oracleData` hash runtime data files (and d
   fs.writeFileSync(path.join(d, 'vectors2/b.csv'), 'y\n');
   assert.match(sdd(d, 'gate', '--no-run').out, /oracle dependency changed: vectors2/);
 });
+
+test('#237 a PHPUnit run does not outlive a killed sdd (watchdog kills its process group)', { skip: process.platform === 'win32' }, async () => {
+  const d = batch2Source('T.php', '<?php\nclass Target {\n// @id TEST-CALC-001 @verifies REQ-CALC-001\npublic function test_calc_001(): void { }\n}\n');
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ schemaVersion: 1, testCmd: ['sh', '-c', 'echo $$ > pid.txt; exec sleep 60', 'phpunit'], timeoutMs: 120000 }));
+  const child = spawn('node', [SDD, '--root', d, 'tdd', 'red', 'TEST-CALC-001'], { stdio: 'ignore' });
+  const pidFile = path.join(d, 'pid.txt');
+  for (let i = 0; i < 50 && !fs.existsSync(pidFile); i++) await new Promise((r) => setTimeout(r, 100));
+  const pid = Number(fs.readFileSync(pidFile, 'utf8'));
+  assert.ok(pid > 0);
+  child.kill('SIGKILL');
+  const alive = () => { try { process.kill(pid, 0); return true; } catch { return false; } };
+  for (let i = 0; i < 50 && alive(); i++) await new Promise((r) => setTimeout(r, 100));
+  const left = alive();
+  if (left) process.kill(pid, 'SIGKILL');
+  assert.equal(left, false);
+});

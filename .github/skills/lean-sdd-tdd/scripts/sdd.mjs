@@ -1178,7 +1178,10 @@ function run(cmd, timeoutMs, cwd = '.') {
 }
 function run1(cmd, timeoutMs, cwd = '.') {
   const t0 = Date.now();
-  const r = spawnSync(cmd[0], cmd.slice(1), { cwd: path.resolve(ROOT, cwd), encoding: 'utf8', timeout: timeoutMs, maxBuffer: 64e6, detached: true });
+  // PHPUnit/Pest runaway tests can outlive a killed sdd (the group is detached, so nothing signals it): a watchdog in the group kills it once this process is gone (#237)
+  const guarded = process.platform !== 'win32' && /phpunit|\bpest\b/.test(cmd.join(' '));
+  const argv = guarded ? ['sh', '-c', 'G=$$; P=$1; shift; ( while kill -0 "$P" 2>/dev/null && kill -0 "$G" 2>/dev/null; do sleep 1; done; kill -0 "$P" 2>/dev/null || kill -s KILL -- "-$G" 2>/dev/null ) </dev/null >/dev/null 2>&1 & exec "$@"', 'sdd-watchdog', String(process.pid), ...cmd] : cmd;
+  const r = spawnSync(argv[0], argv.slice(1), { cwd: path.resolve(ROOT, cwd), encoding: 'utf8', timeout: timeoutMs, maxBuffer: 64e6, detached: true });
   const timedOut = r.error?.code === 'ETIMEDOUT';
   // spawnSync's timeout signals only the launcher (cargo, npm, mvn); the detached group also holds the hung test binary (#225)
   if (timedOut && r.pid) { try { process.kill(-r.pid, 'SIGKILL'); } catch { /* group already gone */ } }
