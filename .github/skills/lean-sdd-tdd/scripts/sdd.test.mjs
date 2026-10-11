@@ -3612,6 +3612,31 @@ for (const binding of ['shared.workspace=true', 'shared={workspace=true}', '[dep
   });
 }
 
+test('#213 impact follows package imports, exports wildcards and tsconfig paths to directory indexes', () => {
+  const d = approved();
+  const pkg = (n, o) => JSON.stringify({ name: n, type: 'module', ...o });
+  writeAll(d, {
+    'package.json': '{"name":"r","private":true,"workspaces":["packages/*"]}',
+    'tsconfig.json': '{"compilerOptions":{"baseUrl":".","paths":{"@c/*":["packages/core/src/*"]}}}',
+    'packages/core/package.json': pkg('@r/core', { exports: { '.': './src/index.ts', './*': './src/*.ts' }, imports: { '#util/*': './src/util/*.ts' } }),
+    'packages/core/src/index.ts': 'export const x = 1;\n',
+    'packages/core/src/util/str.ts': '// @id CODE-CALC-001 @implements REQ-CALC-001\nexport const s = 1;\n',
+    'packages/core/src/title.ts': '// @id CODE-CALC-002 @implements REQ-CALC-001\nexport const t = 1;\n',
+    'packages/core/src/hash.ts': 'import "#util/str";\n// @id CODE-A-001 @implements REQ-A-001\nexport const h = 1;\n',
+    'packages/app/package.json': pkg('@r/app', { exports: './src/index.ts' }),
+    'packages/app/src/index.ts': 'import "@r/core/title";\n// @id CODE-B-001 @implements REQ-B-001\nexport const a = 1;\n',
+    'packages/app2/package.json': pkg('@r/app2', { exports: './src/index.ts' }),
+    'packages/app2/src/index.ts': 'import "@c/title";\n// @id CODE-C-001 @implements REQ-C-001\nexport const b = 1;\n',
+    '.sdd/specs/a.md': '---\nfeature: a\ntier: T1\n---\nREQ-A-001: When called, the system shall hash.\n',
+    '.sdd/specs/b.md': '---\nfeature: b\ntier: T1\n---\nREQ-B-001: When called, the system shall app.\n',
+    '.sdd/specs/c.md': '---\nfeature: c\ntier: T1\n---\nREQ-C-001: When called, the system shall app2.\n',
+  });
+  const reach = (f) => JSON.parse(sdd(d, 'impact', f, '--json').out).reachedFiles;
+  assert.ok(reach('packages/core/src/util/str.ts').includes('packages/core/src/hash.ts'));
+  assert.ok(reach('packages/core/src/title.ts').includes('packages/app/src/index.ts'));
+  assert.ok(reach('packages/core/src/title.ts').includes('packages/app2/src/index.ts'));
+});
+
 test('#217 Rust impact honors #[path] modules for crate:: importers', () => {
   const d = approved();
   writeAll(d, {

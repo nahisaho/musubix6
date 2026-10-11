@@ -3566,6 +3566,16 @@ function aliasMap(set, allowMissing = false) {
     const f = pick(dir, root) ?? pick(dir, 'src/index');
     if (f) map.push([pkg.name, f, false]);
     for (const [k, v] of Object.entries(ex)) if (k.startsWith('./') && !k.includes('*')) { const t = pick(dir, entry(v)); if (t) map.push([`${pkg.name}/${k.slice(2)}`, t, false]); }
+    // wildcard subpaths: "./*" or "./feat/*" -> "./src/*.ts" (#213)
+    const wild = (v) => { const e = entry(v); const i = typeof e === 'string' ? e.indexOf('*') : -1; if (i < 0) return null; const n = path.posix.normalize(path.posix.join(dir, e.slice(0, i))).replace(/\/+$/, '').replace(/^\.$/, ''); return { pre: n + (n && /\/$/.test(e.slice(0, i)) ? '/' : ''), suf: e.slice(i + 1) }; };
+    for (const [k, v] of Object.entries(ex)) if (k.startsWith('./') && /^\.\/(?:[^*]*\/)?\*$/.test(k) && wild(v)) map.push([k === './*' ? pkg.name : `${pkg.name}/${k.slice(2, -2)}`, dir === '.' ? '' : dir, true, { wild: wild(v) }]);
+    // package.json "imports" (#alias) apply only inside this package (#213)
+    for (const [k, v] of Object.entries(pkg.imports ?? {})) {
+      if (!k.startsWith('#')) continue;
+      const scope = dir === '.' ? '' : dir;
+      if (!k.includes('*')) { const t = pick(dir, entry(v)); if (t) map.push([k, t, false, { scope }]); }
+      else if (/\/\*$/.test(k) && wild(v)) map.push([k.slice(0, -2), scope, true, { scope, wild: wild(v) }]);
+    }
     map.push([pkg.name, dir === '.' ? '' : dir, true]);
   }
   for (const tf of gitFiles('*tsconfig*.json')) {
@@ -3574,7 +3584,7 @@ function aliasMap(set, allowMissing = false) {
     const base = path.posix.join(dir, co?.compilerOptions?.baseUrl ?? '.');
     for (const [k, vs] of Object.entries(co?.compilerOptions?.paths ?? {})) {
       const star = k.endsWith('/*');
-      const t = pick(base, String(vs[0]).replace(/\/\*$/, ''), allowMissing && !star);
+      const t = star ? null : pick(base, String(vs[0]).replace(/\/\*$/, ''), allowMissing);
       map.push([star ? k.slice(0, -2) : k, t ?? path.posix.join(base, String(vs[0]).replace(/\/\*$/, '')), star || !t]);
     }
   }
@@ -3657,10 +3667,17 @@ function jsRev(files) {
     return null;
   };
   const aliases = aliasMap(set);
-  const resolveBare = (spec) => {
-    for (const [name, target, isDir] of aliases) {
+  const resolveBare = (spec, from = '') => {
+    for (const [name, target, isDir, extra] of aliases) {
+      if (extra?.scope !== undefined && extra.scope && !from.startsWith(extra.scope + '/')) continue;
       if (spec === name && !isDir) return target;
-      if (isDir && (spec === name || spec.startsWith(name + '/'))) {
+      if (extra?.wild && spec.startsWith(name + '/')) {
+        const b = extra.wild.pre + spec.slice(name.length + 1) + extra.wild.suf;
+        const stem = b.replace(/\.[cm]?[jt]sx?$/, '');
+        for (const c of [b, stem.replace(/^((?:.*\/)?)(dist|build|lib)\//, '$1src/') + '.ts', ...['.ts', '.tsx', '.js', '.mjs', '.jsx', '/index.ts', '/index.js'].map((e) => stem + e)]) if (set.has(c)) return c;
+        continue;
+      }
+      if (isDir && !extra?.wild && (spec === name || spec.startsWith(name + '/'))) {
         const sub = spec === name ? '' : spec.slice(name.length + 1);
         const base = path.posix.join(target, sub);
         const stem = base.replace(/\.[cm]?[jt]sx?$/, '');
@@ -3676,7 +3693,7 @@ function jsRev(files) {
       .replace(/\bimport\s+type\b[^;'"]*?from\s*['"][^'"\n]+['"]/g, '')
       .replace(/\bimport\s*\{([^}]*)\}\s*from\s*(['"][^'"\n]+['"])/g, (all, specs, q) => (specs.trim() && specs.split(',').filter((x) => x.trim()).every((x) => /^\s*type\s/.test(x)) ? '' : all));
     for (const m of src.matchAll(/(?:from\s+|import\s*\(?\s*|require\(\s*)['"]([^'"\n]+)['"]/g)) {
-      const t = m[1].startsWith('.') ? resolve(f, m[1]) : resolveBare(m[1]);
+      const t = m[1].startsWith('.') ? resolve(f, m[1]) : resolveBare(m[1], f);
       if (t) { if (!rev.has(t)) rev.set(t, []); rev.get(t).push(f); }
     }
   }
