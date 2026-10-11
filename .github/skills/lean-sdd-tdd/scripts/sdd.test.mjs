@@ -5375,3 +5375,38 @@ test('#221 --retest over a strong Red warns and the gate reports the superseded 
   assert.equal(sdd(d, 'tdd', 'green', 'TEST-CALC-001').code, 0);
   assert.match(sdd(d, 'gate', '--no-run').out, /superseded an earlier strong Red/);
 });
+
+test('#220 #223 C/C++ `TEST(name) {}` macro tests get isolated hash regions', () => {
+  const src = (bodyB) => `#define TEST(n) static int n(void)\n/** @id CODE-CALC-001 @implements REQ-CALC-001 */\nint impl(void) { return 0; }\n// @id TEST-CALC-001 @verifies REQ-CALC-001\nTEST(test_calc_001) { return impl() == 1; }\n// @id TEST-CALC-002 @verifies REQ-CALC-001\nTEST(test_calc_002) { return ${bodyB}; }\n`;
+  const d = batch2Source('t.c', src('2 == 2'));
+  fakeOut(d, 'assertion failed: test_calc_001');
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-CALC-001').code, 0);
+  fakeOut(d, 'pass', 0);
+  writeAll(d, { 't.c': src('3 == 3') });
+  assert.equal(sdd(d, 'tdd', 'green', 'TEST-CALC-001').code, 0);
+  writeAll(d, { 't.c': src('3 == 3').replace('return impl() == 1', 'return impl() == 2') });
+  assert.match(sdd(d, 'tdd', 'green', 'TEST-CALC-001').out, /changed since Red/);
+  const g = batch2Source('t.cpp', '#include <gtest/gtest.h>\n// @id TEST-CALC-001 @verifies REQ-CALC-001\nTEST(Suite, one) { EXPECT_EQ(1, 2); }\n// @id TEST-CALC-002 @verifies REQ-CALC-001\nTEST_F(Fix, two) { EXPECT_EQ(2, 2); }\n');
+  fakeOut(g, 'Failure');
+  assert.equal(sdd(g, 'tdd', 'red', 'TEST-CALC-001').code, 0);
+  fakeOut(g, 'pass', 0);
+  writeAll(g, { 't.cpp': '#include <gtest/gtest.h>\n// @id TEST-CALC-001 @verifies REQ-CALC-001\nTEST(Suite, one) { EXPECT_EQ(1, 2); }\n// @id TEST-CALC-002 @verifies REQ-CALC-001\nTEST_F(Fix, two) { EXPECT_EQ(2, 3); }\n// @id TEST-CALC-003 @verifies REQ-CALC-001\nTEST(Suite, three) { EXPECT_EQ(3, 3); }\n' });
+  const gg = sdd(g, 'tdd', 'green', 'TEST-CALC-001'); assert.equal(gg.code, 0, gg.out);
+});
+
+test('#223 #220 macro-declared C tests use the macro argument as the exact CTest name', { skip: !has130('cmake') }, () => {
+  const d = batch2Source('t.c', '#include <string.h>\n#define TEST(n) static int n(void)\n/** @id TEST-CALC-001 @verifies REQ-CALC-001 */\nTEST(test_calc_001) { return 0; }\nTEST(test_calc_001_extra) { return 1; }\nint main(int c, char **v) {\n  if (c > 1 && !strcmp(v[1], "test_calc_001")) return test_calc_001() ? 0 : 1;\n  if (c > 1 && !strcmp(v[1], "test_calc_001_extra")) return test_calc_001_extra() ? 0 : 1;\n  return 2;\n}\n');
+  writeAll(d, { 'CMakeLists.txt': 'cmake_minimum_required(VERSION 3.16)\nproject(r C)\nenable_testing()\nadd_executable(t t.c)\nadd_test(NAME test_calc_001 COMMAND t test_calc_001)\nadd_test(NAME test_calc_001_extra COMMAND t test_calc_001_extra)\n' });
+  fs.rmSync(path.join(d, '.sdd/config.json'), { force: true });
+  assert.equal(sdd(d, 'init').code, 0);
+  const r = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
+  assert.equal(r.code, 0, r.out);
+});
+
+test('#217 Rust macro_rules-generated tests resolve the first macro argument as the test name', () => {
+  const d = batch2Source('tests/t.rs', '// @id TEST-CALC-001 @verifies REQ-CALC-001\ncase!(test_calc_001_one, { assert_eq!(1, 2) });\n');
+  writeAll(d, { 'Cargo.toml': '[package]\nname="p"\nversion="0.1.0"\nedition="2021"\n' });
+  fakeOut(d, 'running 1 test\ntest test_calc_001_one ... FAILED\n\nfailures:\n---- test_calc_001_one stdout ----\nassertion `left == right` failed\n\ntest result: FAILED. 0 passed; 1 failed;');
+  const r = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
+  assert.equal(r.code, 0, r.out);
+});

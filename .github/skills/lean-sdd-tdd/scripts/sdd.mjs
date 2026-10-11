@@ -203,7 +203,18 @@ function braceFunctions(txt, p) {
   for (const l of ls) { offsets.push(offset); offset += l.length + 1; }
   const ranges = [];
   const decl = /^\s*(?:(?:pub(?:\([^)]*\))?|public|private|protected|static|final|async|virtual|override|inline|unsafe|extern|abstract|sealed|partial)\s+)*(?:fn\s+|function\s+|[A-Za-z_][\w:<>\[\],.?*& \t]*\s+)([A-Za-z_]\w*)\s*\([^;{}]*\)\s*(?::\s*[\w\\?]+|->\s*[^{};\n]+|throws\s+[^{};\n]+)?\s*(\{|=>)/gm;
-  for (const m of masked.matchAll(decl)) {
+  const heads = [...masked.matchAll(decl)];
+  if (/\.(?:c|cc|cpp|cxx)$/.test(p)) {
+    // top-level `TEST(suite, name) {` style macros declare a function: give each its own region (#220/#223)
+    const depthAt = (index) => { let depth = 0; for (let i = 0; i < index; i++) { if (masked[i] === '{') depth++; else if (masked[i] === '}') depth--; } return depth; };
+    for (const m of masked.matchAll(/^[ \t]*([A-Z][A-Z0-9_]*)[ \t]*\(([^()]*)\)\s*(\{)/gm)) {
+      if (/^(?:IF|FOR|WHILE|SWITCH|RETURN|ELSE)$/.test(m[1]) || depthAt(m.index)) continue;
+      const names = [...m[2].matchAll(/[A-Za-z_]\w*/g)].map((n) => n[0]);
+      heads.push(Object.assign([m[0], names.at(-1) ?? m[1], m[3]], { index: m.index }));
+    }
+    heads.sort((a, b) => a.index - b.index);
+  }
+  for (const m of heads) {
     const open = m.index + m[0].length - m[2].length;
     let end = open, depth = 0;
     if (m[2] === '=>') { end = masked.indexOf(';', open); if (end < 0) return null; end++; }
@@ -2819,6 +2830,10 @@ function testName(testPath, id) {
   }
   if (BRACE_TEST.test(testPath)) {
     const body = testBody(testPath, id).join('\n').replace(/^\s*(?:#\[[^\n]*\]|@\w+(?:\([^\n]*\))?|\[[^\n]*\])\s*/gm, '');
+    // `TEST(name) {`, `TEST(suite, name) {`, `DEFINE_X(name, ...)` and Rust `case!(name, ...)` invocations below the annotation name the test (#217/#220/#223)
+    const first = body.split('\n').find((l) => l.trim() && !/^\s*(?:\/\/|\/\*|\*|#\[|@|\[)/.test(l)) ?? '';
+    const call = /^\s*([A-Za-z_]\w*)\s*(!?)\s*\(\s*([A-Za-z_]\w*)\s*(?:,\s*([A-Za-z_]\w*))?/.exec(first);
+    if (call && (call[2] || (/\.(?:c|cc|cpp|cxx)$/.test(testPath) && /^[A-Z][A-Z0-9_]*$/.test(call[1]))) && !/^(?:if|for|while|switch|return|assert\w*)$/i.test(call[1])) return /^(?:TEST|TEST_F|TEST_P|TYPED_TEST|TYPED_TEST_P|SCENARIO)$/.test(call[1]) && call[4] ? call[4] : call[3];
     const name = /\b(?:fn|function)\s+(\w+)\s*\(|^\s*(?:[\w:<>\[\].?*&]+\s+)+(\w+)\s*\(/m.exec(body);
     if (name) return name[1] ?? name[2];
   }
