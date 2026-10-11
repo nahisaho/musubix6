@@ -622,6 +622,28 @@ function externalOracleSha(p, hash) {
     }
   };
   visit(root, true);
+  // runtime data the test reads (`// @data vectors/crc16.csv` in the test or an oracle file, or `oracleData` in config) is part of the oracle (#238)
+  const dataSpecs = new Set(Array.isArray((readJson(CONFIG, null) ?? {}).oracleData) ? readJson(CONFIG, null).oracleData.map((x) => [x, ROOT]) : []);
+  const own = [root, ...[...deps.keys()].map((f) => path.join(ROOT, f))];
+  for (const f of own) {
+    let text = '';
+    try { text = fs.readFileSync(f, 'utf8'); } catch { continue; }
+    for (const m of text.matchAll(/@data\s+([^\s*]+(?:\s*,\s*[^\s*,]+)*)/g)) for (const x of m[1].split(',')) dataSpecs.add([x.trim(), path.dirname(f)]);
+  }
+  const dataHash = (abs) => {
+    const st = fs.statSync(abs);
+    if (!st.isDirectory()) return sha(fs.readFileSync(abs));
+    const parts = [];
+    const walkData = (d) => { for (const e of fs.readdirSync(d, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) { if (/^(?:\.git|node_modules)$/.test(e.name)) continue; const q = path.join(d, e.name); if (e.isDirectory()) walkData(q); else parts.push(rel(q) + '\u0000' + sha(fs.readFileSync(q))); } };
+    walkData(abs);
+    return sha(parts.join('\u0000'));
+  };
+  for (const [spec, base] of dataSpecs) {
+    const cands = [path.resolve(base, spec), path.resolve(ROOT, spec)];
+    const abs = cands.find((c) => c.startsWith(ROOT) && fs.existsSync(c)) ?? cands.find((c) => c.startsWith(ROOT));
+    if (!abs) continue;
+    try { deps.set(rel(abs), fs.existsSync(abs) ? 'data:' + dataHash(abs) : 'missing'); } catch { deps.set(rel(abs), 'missing'); }
+  }
   oracleDependencyFiles = [...deps.keys()].sort();
   oracleDependencyShas = Object.fromEntries(deps);
   return deps.size ? sha(hash + '\u0000' + [...deps].sort(([a], [b]) => a.localeCompare(b)).map(([f, h]) => f + '\u0000' + h).join('\u0000')) : hash;

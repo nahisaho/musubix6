@@ -6063,3 +6063,25 @@ test('#239 tdd refactor names a changed oracle dependency instead of claiming th
   assert.match(r, /oracle dependency changed since the last Green: helper\.mjs/, r);
   assert.doesNotMatch(r, /test body changed/, r);
 });
+
+test('#238 `@data <path>` and config `oracleData` hash runtime data files (and directories) into the test oracle', () => {
+  const d = batch2Source('tests/t.c', '// @data ../vectors/crc16.csv\n#include <assert.h>\n// @id TEST-CALC-001 @verifies REQ-CALC-001\nvoid test_calc_001(void) { assert(0); }\n');
+  writeAll(d, { 'vectors/crc16.csv': '1,2\n', 'vectors2/a.csv': 'x\n' });
+  fakeOut(d, 'Assertion failed: 0');
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-CALC-001').code, 0);
+  fakeOut(d, 'pass', 0);
+  assert.equal(sdd(d, 'tdd', 'green', 'TEST-CALC-001').code, 0);
+  assert.doesNotMatch(sdd(d, 'gate', '--no-run').out, /test changed since last Green/);
+  fs.appendFileSync(path.join(d, 'vectors/crc16.csv'), '3,4\n');
+  const g = sdd(d, 'gate', '--no-run').out;
+  assert.match(g, /test changed since last Green\/Refactor — oracle dependency changed: vectors\/crc16\.csv/, g);
+  fs.rmSync(path.join(d, 'vectors/crc16.csv'));
+  assert.match(sdd(d, 'gate', '--no-run').out, /oracle dependency changed: vectors\/crc16\.csv/);
+  fs.writeFileSync(path.join(d, 'vectors/crc16.csv'), '1,2\n');
+  assert.doesNotMatch(sdd(d, 'gate', '--no-run').out, /test changed since last Green/);
+  fakeOut(d, 'pass', 0, { oracleData: ['vectors2'] });
+  assert.equal(sdd(d, 'tdd', 'refactor', 'TEST-CALC-001').code, 0);
+  assert.doesNotMatch(sdd(d, 'gate', '--no-run').out, /test changed since last Green/);
+  fs.writeFileSync(path.join(d, 'vectors2/b.csv'), 'y\n');
+  assert.match(sdd(d, 'gate', '--no-run').out, /oracle dependency changed: vectors2/);
+});
