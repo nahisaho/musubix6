@@ -6241,3 +6241,14 @@ test('#245 Go: `if err := sut(); err != nil` treats the initialised call as asse
   assert.match(r.out, /RED ok/, r.out);
   assert.doesNotMatch(r.out, /setup call|\[weak\]/, r.out);
 });
+
+test('#252 an assertion/panic failure line outranks an incidental "No such file" LOAD_ERR match', () => {
+  const d = mini(T1SPEC, { 'a.test.mjs': jsTest() }, ['sh', '-c', "printf \"thread 'x' panicked at tests/r.rs:4:5:\\nassertion \\`left == right\\` failed\\n  left: 0\\n right: 1\\nNo such file or directory\\n\"; exit 101"]);
+  const r = sdd(d, 'tdd', 'red', 'TEST-A-001');
+  assert.match(r.out, /RED ok/, r.out);
+  assert.doesNotMatch(r.out, /\[weak\]|REJECTED/, r.out);
+  setCmd(d, ['sh', '-c', 'echo "error: No such file or directory"; exit 1']);
+  const f = path.join(d, 'a.test.mjs');
+  fs.writeFileSync(f, fs.readFileSync(f, 'utf8').replace('assert.ok(1)', 'assert.ok(2)'));
+  assert.match(sdd(d, 'tdd', 'red', 'TEST-A-001').out, /REJECTED|weak/, 'genuine load error still rejected');
+});
