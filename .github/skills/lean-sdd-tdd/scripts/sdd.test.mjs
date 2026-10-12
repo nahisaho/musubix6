@@ -8245,3 +8245,40 @@ test('#309 specEditPolicy reapprove: T1 refactor after a row edit needs --wordin
   assert.match(sdd(d, 'gate', '--no-run').out, /changed in the spec/);
   assert.equal(sdd(d, 'tdd', 'refactor', 'TEST-CALC-001', '--wording', 'reworded only').code, 0);
 });
+
+test('#309 artifactStaleness: editing a declared artifact a test references by name stales its evidence (opt-in)', () => {
+  const spec = '---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | x shall hold. | TEST-A-001 |\n';
+  const run = (on) => {
+    const d = mini(spec, { 'a.test.mjs': "// @id TEST-A-001 @verifies REQ-A-001\n// reads 'data/golden.json'\n", 'data/golden.json': '[1]\n' }, FAIL);
+    const cp = path.join(d, '.sdd/config.json');
+    const c = JSON.parse(fs.readFileSync(cp, 'utf8'));
+    c.artifacts = { 'data/golden.json': ['src/impl.mjs'] };
+    if (on) c.artifactStaleness = true;
+    fs.writeFileSync(cp, JSON.stringify(c));
+    assert.equal(sdd(d, 'tdd', 'red', 'TEST-A-001').code, 0);
+    setCmd(d, PASS);
+    assert.equal(sdd(d, 'tdd', 'green', 'TEST-A-001').code, 0);
+    fs.writeFileSync(path.join(d, 'data/golden.json'), '[2]\n');
+    return d;
+  };
+  const out = sdd(run(true), 'gate', '--no-run').out;
+  assert.match(out, /artifact data\/golden\.json changed[^\n]*tdd refactor/, out);
+  assert.doesNotMatch(sdd(run(false), 'gate', '--no-run').out, /artifact data\/golden\.json changed/);
+});
+
+test('#309 artifactStaleness: tdd refactor re-records the artifact hash and clears the stale evidence', () => {
+  const spec = '---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | x shall hold. | TEST-A-001 |\n';
+  const d = mini(spec, { 'a.test.mjs': "// @id TEST-A-001 @verifies REQ-A-001\n// reads 'data/golden.json'\n", 'data/golden.json': '[1]\n' }, FAIL);
+  const cp = path.join(d, '.sdd/config.json');
+  const c = JSON.parse(fs.readFileSync(cp, 'utf8'));
+  c.artifacts = { 'data/golden.json': ['src/impl.mjs'] };
+  c.artifactStaleness = true;
+  fs.writeFileSync(cp, JSON.stringify(c));
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-A-001').code, 0);
+  setCmd(d, PASS);
+  assert.equal(sdd(d, 'tdd', 'green', 'TEST-A-001').code, 0);
+  fs.writeFileSync(path.join(d, 'data/golden.json'), '[2]\n');
+  assert.match(sdd(d, 'gate', '--no-run').out, /artifact data\/golden\.json changed/);
+  assert.equal(sdd(d, 'tdd', 'refactor', 'TEST-A-001').code, 0);
+  assert.doesNotMatch(sdd(d, 'gate', '--no-run').out, /artifact data\/golden\.json changed/);
+});

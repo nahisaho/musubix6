@@ -125,3 +125,4 @@ Absolute and root-relative review paths, including paths with spaces, identify t
 ## Spec-edit re-approval and `--review` (#309)
 - `specEditPolicy: "reapprove"` (config.md): T1 `tdd refactor` of a REQ whose row changed since its Green needs `--wording <why>`; default is the old warning.
 - `approve record --review`: an empty value is refused for every approver; a value that looks like a file path (absolute, `./`, or `*.md/.markdown/.txt`) but does not exist is refused for humans as well as AI. Free-text summaries (e.g. `no findings`) and omitting the flag for humans still work.
+- Tracker #309 artifact staleness (opt-in `artifactStaleness: true`): a declared `artifacts` file referenced by name from a test is hashed into Green/Refactor evidence; a later change makes `gate` report the evidence stale naming the artifact. Older entries (no `artifactShas`) are unaffected.

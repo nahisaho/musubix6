@@ -1076,6 +1076,25 @@ function changedOracleDeps(entry, p, id) {
   const now = oracleDependencyShas, was = entry.oracleShas ?? {};
   return [...new Set([...Object.keys(was), ...Object.keys(now)])].filter((f) => was[f] !== now[f]).sort();
 }
+// opt-in `artifactStaleness`: config `artifacts` files the test file names (path or basename) are hashed into Green/Refactor evidence (#309)
+function artifactShasFor(p) {
+  const cfg = readJson(CONFIG, null) ?? {};
+  if (cfg.artifactStaleness !== true || !cfg.artifacts || typeof cfg.artifacts !== 'object') return undefined;
+  let text = '';
+  try { text = fs.readFileSync(path.join(ROOT, p), 'utf8'); } catch { return undefined; }
+  const out = {};
+  for (const a of Object.keys(cfg.artifacts)) {
+    const n = normDep(a), abs = path.join(ROOT, n);
+    if (!text.includes(n) && !text.includes(path.basename(n))) continue;
+    try { out[n] = fs.statSync(abs).isDirectory() ? 'dir' : fileSha(n); } catch { out[n] = 'missing'; }
+  }
+  return Object.keys(out).length ? out : undefined;
+}
+function changedArtifacts(entry) {
+  const was = entry?.artifactShas;
+  if (!was) return [];
+  return Object.keys(was).filter((n) => { let now; try { now = fs.statSync(path.join(ROOT, n)).isDirectory() ? 'dir' : fileSha(n); } catch { now = 'missing'; } return now !== was[n]; }).sort();
+}
 // a support file that replaced an annotated stub without keeping its `@id CODE-` marker becomes part of the oracle (#265)
 const unannotatedHint = (names) => { const bad = names.filter((f) => { try { return !/@id\s+CODE-/.test(fs.readFileSync(path.join(ROOT, f), 'utf8')); } catch { return false; } }); return bad.length ? `; if ${bad.slice(0, 3).join(', ')} is production code, annotate it \`@id CODE-... @implements REQ-...\`` : ''; };
 const oracleNote = (names) => names.length ? ` — oracle dependency changed: ${names.slice(0, 4).join(', ')}${names.length > 4 ? `, … +${names.length - 4}` : ''}` : '';
@@ -1104,6 +1123,8 @@ function evidenceStatus(testId, testPath, entries) {
   for (const [rid, rsha] of Object.entries(last.reqShas ?? { [last.req]: last.reqSha })) {
     if (rsha && reqShaOf(rid) && !reqShaSame(rid, rsha)) return { ok: false, why: `${rid} changed in the spec since last Green/Refactor: re-verify with tdd refactor (wording only) or tdd red/green (behaviour changed)` };
   }
+  const stale = changedArtifacts(last);
+  if (stale.length) return { ok: false, why: `artifact ${stale.join(', ')} changed since last Green/Refactor: re-verify with tdd refactor ${testId} (data change keeps behaviour) or tdd red ${testId} --retest "<reason>" then tdd green (expected output changed)` };
   return { ok: true, weak: !!r.weak, charac: !!r.characterization, retest: !!r.retest, retestSuperseded: !!(r.retest && r.priorStrongRed), blessed: !!last.moved };
 }
 
@@ -4638,7 +4659,7 @@ function cmdTdd() {
   // human-approved code baseline follows the first implementation: refresh until the feature is fully Green (#92)
   const humanSpecs = sub === 'red' ? [] : loadSpecs().filter((x) => x.approval === 'human' && x.reqs.some((q) => t.refs.verifies.includes(q.id)));
   const wasDone = new Map(humanSpecs.map((x) => [x.feature, featureGreen(x)]));
-  appendLedger({ type: sub, test: id, req, reqSha: reqShaOf(req), reqShas: Object.fromEntries([...new Set([req, ...t.refs.verifies])].map((r) => [r, reqShaOf(r)]).filter(([, v]) => v)), file: t.path, fileSha: after, protectedFiles: oracleDependencyFiles, oracleShas: oracleDependencyFiles.length ? oracleDependencyShas : undefined, cmdSha: sha(cmd.join('\0')), exit: res.exit, ms: res.ms, testSha0: sub === 'red' ? testOwnSha(t.path, id) : undefined, regSha: testRegionSha(t.path, id), rebaselined: rebaselined || undefined, weak: weakRed ? true : undefined, weakWhy: setupSym ? `setup:${setupSym}` : charac ? 'characterization' : retestWeak ? 'retest' : undefined, characterization: charac || undefined, retest: retestWeak || rebaselined ? retest : undefined, priorStrongRed: retestWeak && prior.some((e) => e.type === 'red' && !e.weak && !e.retest) ? true : undefined, implBlocks: sub === 'red' ? undefined : Object.fromEntries([...ents.values()].filter((c) => c.kind === 'CODE' && c.refs.implements.some((r) => t.refs.verifies.includes(r))).map((c) => [`${c.path}:${c.id}`, implRegionSha(c)]).filter(([, v]) => v)), moved: sub === 'refactor' && prior.filter((e) => e.type === 'green' || e.type === 'refactor').at(-1)?.fileSha !== after && prior.some((e) => e.type === 'green' || e.type === 'refactor') ? true : undefined });
+  appendLedger({ type: sub, test: id, req, reqSha: reqShaOf(req), reqShas: Object.fromEntries([...new Set([req, ...t.refs.verifies])].map((r) => [r, reqShaOf(r)]).filter(([, v]) => v)), file: t.path, fileSha: after, protectedFiles: oracleDependencyFiles, oracleShas: oracleDependencyFiles.length ? oracleDependencyShas : undefined, artifactShas: sub === 'red' ? undefined : artifactShasFor(t.path), cmdSha: sha(cmd.join('\0')), exit: res.exit, ms: res.ms, testSha0: sub === 'red' ? testOwnSha(t.path, id) : undefined, regSha: testRegionSha(t.path, id), rebaselined: rebaselined || undefined, weak: weakRed ? true : undefined, weakWhy: setupSym ? `setup:${setupSym}` : charac ? 'characterization' : retestWeak ? 'retest' : undefined, characterization: charac || undefined, retest: retestWeak || rebaselined ? retest : undefined, priorStrongRed: retestWeak && prior.some((e) => e.type === 'red' && !e.weak && !e.retest) ? true : undefined, implBlocks: sub === 'red' ? undefined : Object.fromEntries([...ents.values()].filter((c) => c.kind === 'CODE' && c.refs.implements.some((r) => t.refs.verifies.includes(r))).map((c) => [`${c.path}:${c.id}`, implRegionSha(c)]).filter(([, v]) => v)), moved: sub === 'refactor' && prior.filter((e) => e.type === 'green' || e.type === 'refactor').at(-1)?.fileSha !== after && prior.some((e) => e.type === 'green' || e.type === 'refactor') ? true : undefined });
   for (const x of humanSpecs) if (!wasDone.get(x.feature)) {
     const all = readJson(APPROVALS, {});
     if (all[x.feature]?.code) { all[x.feature].code = implFileShas(x); writeJson(APPROVALS, all); }
