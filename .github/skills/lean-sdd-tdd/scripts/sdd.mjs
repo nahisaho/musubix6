@@ -2425,6 +2425,15 @@ function stubJava(testPath, src, dir, add, made) {
     consts.set(m[1], [...new Set([...(consts.get(m[1]) ?? []), m[2]])]);
     if (!byClass.has(m[1])) byClass.set(m[1], []);
   }
+  // `Outer.Inner` (Inner not a constant) is a nested type of the stubbed Outer: an enum when `Outer.Inner.K` is used, else a static class (#309)
+  const nested = new Map();
+  for (const m of src.matchAll(/(?<![\w.])([A-Z]\w*)\.([A-Z]\w*[a-z]\w*)\b(?!\s*\()/g)) {
+    const [, o, i] = m;
+    if (imported.has(o) || local.has(o) || known.has(o) || isJdk(o) || local.has(i) || /(Exception|Error)$/.test(i)) continue;
+    if (!byClass.has(o)) byClass.set(o, []);
+    const ks = [...new Set([...src.matchAll(new RegExp(`\\b${o}\\.${i}\\.([A-Z][A-Z0-9_]*)\\b(?!\\s*\\()`, 'g'))].map((x) => x[1]))];
+    nested.set(o, { ...(nested.get(o) ?? {}), [i]: ks });
+  }
   // exceptions used in assertThrows / catch / expected= / `new X(..)` / `X.class` become RuntimeException subclasses (#130)
   const excs = new Set();
   for (const m of src.matchAll(/\b(?:assertThrows|assertThatThrownBy|expected\s*=|catch\s*\(|new|extends)\s*\(?\s*([A-Z]\w*(?:Exception|Error))\b|\b([A-Z]\w*(?:Exception|Error))\.class\b/g)) {
@@ -2448,6 +2457,17 @@ function stubJava(testPath, src, dir, add, made) {
   const enumCmp = (n) => new RegExp(`assert(?:Equals|Same)\\(\\s*([A-Z]\\w*)\\.[A-Z][A-Z0-9_]*\\s*,\\s*[\\w.()",\\s]*?\\.${n}\\s*\\(`).exec(src)?.[1];
   const chain = (n) => new RegExp(`\\.${n}\\s*\\((?:[^()]|\\((?:[^()]|\\([^()]*\\))*\\))*\\)\\s*\\.\\s*([a-z]\\w*)\\s*\\(`).exec(src)?.[1];
   const arities = (n, text, st) => { const re = new RegExp(`(?<![\\w${st ? '.' : ''}])${n}\\s*\\(`, 'g'); const seen = new Map(); let m; while ((m = re.exec(text))) { const c = callInfo(text.slice(Math.max(0, m.index - 60)), n); if (!seen.has(c.args.length)) seen.set(c.args.length, c); else if (!seen.get(c.args.length).ret && c.ret) seen.set(c.args.length, c); } return [...seen.values()]; };
+  // same-arity calls whose declared result types differ (`int a = c.f(1); String b = c.f("x")`) need typed overloads, not one Object signature (#309)
+  const typedOverloads = (n, text, st) => {
+    const re = new RegExp(`(?<![\\w${st ? '.' : ''}])${n}\\s*\\(`, 'g'), byAr = new Map(); let m;
+    while ((m = re.exec(text))) {
+      const decl = /\b(int|long|double|boolean|String)\s+\w+\s*=\s*(?:[\w.()"]*\.)?$/.exec(text.slice(Math.max(0, m.index - 80), m.index))?.[1];
+      const c = callInfo(text.slice(m.index), n), key = c.args.join(',') + '>' + decl;
+      if (!decl || c.chained) continue;
+      byAr.set(c.args.length, [...(byAr.get(c.args.length) ?? []), { c, decl, key }]);
+    }
+    return [...byAr.values()].filter((v) => new Set(v.map((x) => x.decl)).size > 1).map((v) => [v[0].c.args.length, [...new Map(v.map((x) => [x.key, x])).values()]]);
+  };
   const chainClasses = new Map();
   const retOf = (cls, n, c, isStatic, text) => {
     const d = allDecl(n, isStatic, cls);
@@ -2459,7 +2479,7 @@ function stubJava(testPath, src, dir, add, made) {
     if (isStatic && /^(of|create|from|zero|empty|parse|valueOf|none|one|default\w*|new\w*|with\w*|unit)$/.test(n) && !c.ret) return cls;
     return c.ret && !c.chained ? (T[c.ret] ?? 'int') : 'int';
   };
-  const sigs = (cls, n, text, isStatic) => arities(n, text, isStatic).map((c) => `    public ${isStatic ? 'static ' : ''}${retOf(cls, n, c, isStatic, text)} ${n}(${c.args.map((_, i) => `Object a${i}`).join(', ')}) {\n        throw new UnsupportedOperationException("not implemented: ${isStatic ? '' : cls + '.'}${n}");\n    }\n`).join('\n');
+  const sigs = (cls, n, text, isStatic) => { const ty = new Map(typedOverloads(n, text, isStatic)); return arities(n, text, isStatic).flatMap((c) => ty.has(c.args.length) ? ty.get(c.args.length).map(({ c: v, decl }) => ({ ...v, decl })) : [c]).map((c) => c.decl ? `    public ${isStatic ? 'static ' : ''}${c.decl} ${n}(${c.args.map((t, i) => `${T[t] ?? 'Object'} a${i}`).join(', ')}) {\n        throw new UnsupportedOperationException("not implemented: ${isStatic ? '' : cls + '.'}${n}");\n    }\n` : `    public ${isStatic ? 'static ' : ''}${retOf(cls, n, c, isStatic, text)} ${n}(${c.args.map((_, i) => `Object a${i}`).join(', ')}) {\n        throw new UnsupportedOperationException("not implemented: ${isStatic ? '' : cls + '.'}${n}");\n    }\n`).join('\n'); };
   // receivers: `new Cls(..).m(`, variables built from Cls, variables declared `Cls v`, and `Cls.factory(..).m(`
   const instOf = (cls) => {
     const ms = new Set(methodsOf(src, cls));
@@ -2502,11 +2522,12 @@ function stubJava(testPath, src, dir, add, made) {
     if (consts.has(cls) && !ms.length && !ctors.has(cls)) { add(fileOf(cls), `${pkgLine(cls)}public enum ${cls} {\n    ${consts.get(cls).join(', ')}\n}\n`); continue; }
     const cc = consts.get(cls)?.map((k) => `    public static final int ${k} = 0;\n`).join('') ?? '';
     const ctorSrc = ctors.has(cls) ? callInfo(src.replace(new RegExp(`\\bnew\\s+${cls}\\s*\\(`, 'g'), `${cls}(`), cls) : null;
-    const ctorDecl = ctorSrc ? `    public ${cls}(${ctorSrc.args.map((t, i) => `${T[t] ?? 'Object'} a${i}`).join(', ')}) {}\n` : '';
+    const ctorDecl = ctorSrc ? `    public ${cls}(${ctorSrc.args.map((t, i) => `${T[t] ?? 'Object'} a${i}`).join(', ')}) {${throwCtor() ? `\n        throw new UnsupportedOperationException("not implemented: ${cls}");\n    ` : ''}}\n` : '';
     const body = [...new Set(ms)].map((n) => sigs(cls, n, src.replace(new RegExp(`\\b${cls}\\.`, 'g'), ''), true)).join('\n');
     const inst = instOf(cls).filter((n) => !ms.includes(n)).map((n) => sigs(cls, n, src.replace(/\b\w+\./g, '').replace(/\)\s*\.\s*/g, ') '), false)).join('\n');
     const all = [body, inst].filter(Boolean).join('\n');
-    add(fileOf(cls), `${pkgLine(cls)}${/<|\bList\b|\bMap\b/.test(all) ? 'import java.util.*;\n\n' : ''}public class ${cls} {\n${cc}${ctorDecl}${(cc || ctorDecl) && all ? '\n' : ''}${all}}\n`);
+    const nest = Object.entries(nested.get(cls) ?? {}).map(([i, ks]) => ks.length ? `    public enum ${i} { ${ks.join(', ')} }\n` : `    public static class ${i} {}\n`).join('');
+    add(fileOf(cls), `${pkgLine(cls)}${/<|\bList\b|\bMap\b/.test(all) ? 'import java.util.*;\n\n' : ''}public class ${cls} {\n${cc}${ctorDecl}${nest}${(cc || ctorDecl || nest) && all ? '\n' : ''}${all}}\n`);
   }
   // `foo().bar()` results get their own class so the chain compiles
   // a chained result that is iterated/streamed (`.stream()`, `.get(0)`, `.size()`) is a list so the chain compiles (#149)
@@ -3197,17 +3218,30 @@ function stubEx(testPath, scoped, add, made) {
     if (up === ROOT) break;
   }
   const inTest = new Set([...fs.readFileSync(path.join(ROOT, testPath), 'utf8').matchAll(/\bdefmodule\s+([A-Z][\w.]*)/g)].map((m) => m[1]));
-  const unresolved = [];
+  const unresolved = [], usingImport = new Set();
   for (const mod of mods) {
     if (EX_STD.test(mod) || inTest.has(mod) || [...full].some(([k, v]) => v === mod && inTest.has(k))) continue;
     const want = [...(defs.get(mod)?.values() ?? [])];
     // `use Mod` calls Mod.__using__/1, so the module needs that macro to compile (#214)
     if (used.has(mod)) want.push({ f: '__using__', arity: 1, macro: true });
+    // paren-less DSL calls the test makes after `use Mod` (`rule :a do .. end`) are macros of that module, which defines them and `import`s itself (#309)
+    if (used.has(mod) && !defined.has(mod)) {
+      const dsl = new Map();
+      for (const m of code.matchAll(/^[ \t]*([a-z_]\w*[!?]?)[ \t]+(?=[:"'\w@%{\[])(.*?)(?:[ \t]+(do))?[ \t]*$/gm)) {
+        const [, f, rest, blk] = m;
+        if (RESERVED.test(f) || local.has(f) || /^(?:end|else|do|after|rescue|catch|flunk|when|in|and|or|not|nil|true|false|pipe|then)$/.test(f) || /^\s*(?:=|\|>|<-)/.test(rest) || dsl.has(f)) continue;
+        let depth = 0, q = '', n = rest.trim() ? 1 : 0;
+        for (let i = 0; i < rest.length; i++) { const c = rest[i]; if (q) { if (c === '\\') i++; else if (c === q) q = ''; } else if (c === '"' || c === "'") q = c; else if ('([{'.includes(c)) depth++; else if (')]}'.includes(c)) depth--; else if (c === ',' && !depth) n++; }
+        dsl.set(f, n + (blk ? 1 : 0));
+      }
+      for (const [f, arity] of dsl) want.push({ f, arity, macro: true, dsl: true });
+      if (dsl.size) usingImport.add(mod);
+    }
     if (!want.length && !needed.has(mod) && !supervised.has(mod) && !defined.has(mod) && !structs.has(mod)) continue;
     const fields = structs.get(mod);
     if (supervised.has(mod) && !want.some((d) => d.f === 'start_link')) want.push({ f: 'start_link', arity: 1 });
     const structDef = fields ? `  defstruct [${[...fields].map((k) => `:${k}`).join(', ')}]\n` : '';
-    const stubOf = ({ f, arity, macro }) => !macro && fields && f === 'new' ? `  def new(${Array.from({ length: arity }, (_, i) => `_a${i + 1}`).join(', ')}), do: %__MODULE__{}\n` : macro ? `  defmacro ${f}(_opts) do\n    quote do\n    end\n  end\n` : `  def ${f}(${Array.from({ length: arity }, (_, i) => `_a${i + 1}`).join(', ')}), do: raise("not implemented: ${f}")\n`;
+    const stubOf = ({ f, arity, macro, dsl }) => !macro && fields && f === 'new' ? `  def new(${Array.from({ length: arity }, (_, i) => `_a${i + 1}`).join(', ')}), do: %__MODULE__{}\n` : macro ? (dsl ? `  defmacro ${f}(${Array.from({ length: arity }, (_, i) => `_a${i + 1}`).join(', ')}) do\n    quote do\n      raise "not implemented: ${f}"\n    end\n  end\n` : `  defmacro ${f}(_opts) do\n    quote do\n${usingImport.has(mod) ? `      import ${mod}\n` : ''}    end\n  end\n`) : `  def ${f}(${Array.from({ length: arity }, (_, i) => `_a${i + 1}`).join(', ')}), do: raise("not implemented: ${f}")\n`;
     if (defined.has(mod)) {
       const file = defined.get(mod), text = fs.readFileSync(file, 'utf8');
       const have = new Set([...text.matchAll(/\b(?:def|defp|defmacro|defdelegate)\s+([a-z_]\w*[!?]?)/g)].map((m) => m[1]));
@@ -3231,6 +3265,8 @@ function stubEx(testPath, scoped, add, made) {
   }
   return Object.assign([...new Set(made)], { realMissing: unresolved.length ? unresolved : undefined });
 }
+// opt-in (`.sdd/config.json` stubThrowingConstructors): JS/TS and Java class stubs throw from the constructor; default constructors stay non-throwing (#309)
+const throwCtor = () => !!(readJson(CONFIG, null) ?? {}).stubThrowingConstructors;
 function stubFor(testPath, id) {
   const src = fs.readFileSync(path.join(ROOT, testPath), 'utf8');
   const ids = [].concat(id ?? []);
@@ -3283,11 +3319,19 @@ function stubFor(testPath, id) {
   const mth = (n, k, stat) => `\n  ${stat ? 'static ' : ''}${k}(..._args${ts ? ': any[]): any' : ')'} {\n    throw new Error('not implemented: ${n}.${k}');\n  }\n`;
   // a name the test never calls is a value (`CONFIG.max`, `initialState`): any use fails deliberately instead of reading `undefined`
   const valueStub = (n) => `export const ${n}${ts ? ': any' : ''} = new Proxy(function () {}, {\n  get(_t${ts ? ': any' : ''}, p${ts ? ': any' : ''}) { if (typeof p === 'string' && p !== 'then') throw new Error(\`not implemented: ${n}.\${p}\`); },\n  apply() { throw new Error('not implemented: ${n}'); },\n});\n`;
-  const exportOf = (n, S, dflt) => {
+  // the generic base (`AppError`) of an error the test asserts instanceof on the same subject, from the same module (#309)
+  const errSubjects = (S, n) => new Set([...S.matchAll(new RegExp(`expect\\(([^()]+)\\)\\.toBeInstanceOf\\(\\s*${n}\\s*\\)|([\\w$.]+)\\s+instanceof\\s+${n}\\b`, 'g'))].map((m) => (m[1] ?? m[2]).trim()));
+  const GENERIC = /^(|App|Base|Domain|Api|Http|Custom|Service|Core|Sdk|Application|Client|Server|Db|Database|Generic)$/;
+  const errParent = (S, n, peers) => {
+    const stem = (x) => x.replace(/(Error|Exception)$/, ''), mine = errSubjects(S, n);
+    return peers.find((p) => p !== n && isError(S, p) && [...errSubjects(S, p)].some((x) => mine.has(x)) && stem(p).length < stem(n).length && (GENERIC.test(stem(p)) || stem(n).endsWith(stem(p))));
+  };
+  const errFirst = (S, names) => names.slice().sort((a, b) => { const depth = (x) => { let d = 0; for (let p = errParent(S, x, names); p && d < 9; p = errParent(S, p, names)) d++; return d; }; return depth(a) - depth(b); });
+  const exportOf = (n, S, dflt, peers = []) => {
     const fnBody = ts ? `(..._args: any[]): any {\n  throw new Error('not implemented: ${n}');\n}\n` : `() {\n  throw new Error('not implemented: ${n}');\n}\n`;
     // error types (`FooError`, `toThrow(Foo)`, `instanceof`-checked names ending in Error/Exception) extend Error so `new Foo()` and `instanceof` behave (#151)
-    if (isError(S, n)) return `export ${dflt ? 'default ' : ''}class ${n} extends Error {\n  constructor(..._args${ts ? ': any[]' : ''}) {\n    super(typeof _args[0] === 'string' ? _args[0] : undefined);\n    this.name = '${n}';\n  }\n${[...staticsOf(S, n).map((k) => mth(n, k, true)), ...methodsOf(S, n).map((k) => mth(n, k))].join('')}}\n`;
-    if (isCls(S, n)) return `export ${dflt ? 'default ' : ''}class ${n} {\n  constructor(..._args${ts ? ': any[]' : ''}) {}\n${[...staticsOf(S, n).map((k) => mth(n, k, true)), ...methodsOf(S, n).map((k) => mth(n, k))].join('')}}\n`;
+    if (isError(S, n)) return `export ${dflt ? 'default ' : ''}class ${n} extends ${errParent(S, n, peers) ?? 'Error'} {\n  constructor(..._args${ts ? ': any[]' : ''}) {\n    super(typeof _args[0] === 'string' ? _args[0] : undefined);\n    this.name = '${n}';\n  }\n${[...staticsOf(S, n).map((k) => mth(n, k, true)), ...methodsOf(S, n).map((k) => mth(n, k))].join('')}}\n`;
+    if (isCls(S, n)) return `export ${dflt ? 'default ' : ''}class ${n} {\n  constructor(..._args${ts ? ': any[]' : ''}) {${throwCtor() ? `\n    throw new Error('not implemented: ${n}');\n  ` : ''}}\n${[...staticsOf(S, n).map((k) => mth(n, k, true)), ...methodsOf(S, n).map((k) => mth(n, k))].join('')}}\n`;
     if (dflt) return `export default function ${n}${fnBody}`;
     if (new RegExp(`(?<![\\w$.])${n.replace(/\$/g, '\\$')}\\s*\\(`).test(S)) return `export function ${n}${fnBody}`;
     const plainConst = /^[A-Z][A-Z0-9_]+$/.test(n) && !new RegExp(`(?<![\\w$.])${n}\\s*[.\\[]`).test(S);
@@ -3403,7 +3447,7 @@ function stubFor(testPath, id) {
   let ts = testTs;
   const newBody = (clause) => {
     const { named, def, types, S } = prep(clause);
-    let body = named.map((n) => exportOf(n, S)).join('\n');
+    let body = errFirst(S, named).map((n) => exportOf(n, S, false, named)).join('\n');
     if (ts && types.length) body += (body ? '\n' : '') + types.map((n) => `export type ${n} = any;\n`).join('\n');
     if (def) body += (body ? '\n' : '') + exportOf(def, S, true);
     return body || 'export {};\n';

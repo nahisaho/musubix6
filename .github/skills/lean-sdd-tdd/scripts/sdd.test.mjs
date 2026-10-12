@@ -8099,3 +8099,57 @@ test('#308 gate --changed: a root Cargo workspace manifest belongs to the projec
   assert.match(o, /✓ cmd rs:ok/, o);
   assert.doesNotMatch(o, /root-owned data\/config changes/, o);
 });
+
+// ---- r21c (#309 Stubs) ----
+const jr21 = (src) => mk130({ 'src/test/java/CalcTest.java': src.join('\n') + '\n' });
+const jc21 = (d) => { const files = ['src/test/java/CalcTest.java', ...fs.readdirSync(path.join(d, 'src/main/java')).map((f) => `src/main/java/${f}`)]; return spawnSync('javac', ['-d', path.join(d, 'out'), ...files.map((f) => path.join(d, f))], { encoding: 'utf8' }); };
+
+test('#309 Java: same-arity calls with different literal/return types get typed overloads that compile', { skip: !has130('javac') }, () => {
+  const d = jr21(['public class CalcTest {', '  // @id TEST-A-001 @verifies REQ-A-001', '  static void t() {', '    Calc c = new Calc();', '    int a = c.apply(1);', '    String b = c.apply("x");', '  }', '}']);
+  sdd(d, 'tdd', 'stub', 'TEST-A-001');
+  const r = jc21(d);
+  assert.equal(r.status, 0, r.stderr);
+});
+
+test('#309 Java: nested types (Calc.Mode) become nested members of the outer stub', { skip: !has130('javac') }, () => {
+  const d = jr21(['public class CalcTest {', '  // @id TEST-A-001 @verifies REQ-A-001', '  static void t() {', '    Calc c = new Calc();', '    Calc.Mode m = Calc.Mode.FAST;', '    c.run(m);', '  }', '}']);
+  sdd(d, 'tdd', 'stub', 'TEST-A-001');
+  const r = jc21(d);
+  assert.equal(r.status, 0, r.stderr);
+});
+
+test('#309 TS stub: an error subclass the test asserts instanceof together with a generic base extends that base', () => {
+  const d = stub10({
+    'sdk.test.ts': "import { NotFoundError, AppError, mapError } from './sdk';\n\n// @id TEST-S-001\n// @verifies REQ-S-001\ntest('s', () => {\n  const e = mapError(404);\n  expect(e).toBeInstanceOf(NotFoundError);\n  expect(e).toBeInstanceOf(AppError);\n});\n",
+  }, 'TEST-S-001');
+  const s = fs.readFileSync(path.join(d, 'sdk.ts'), 'utf8');
+  assert.match(s, /class AppError extends Error/, s);
+  assert.match(s, /class NotFoundError extends AppError/, s);
+  assert.ok(s.indexOf('class AppError') < s.indexOf('class NotFoundError'), 'parent is declared first');
+});
+
+test('#309 stubThrowingConstructors (opt-in) makes JS/TS and Java class constructors throw; default stays non-throwing', { skip: !has130('javac') }, () => {
+  const tsFiles = { 'sdk.test.ts': "import { Widget } from './sdk';\n\n// @id TEST-S-001\n// @verifies REQ-S-001\ntest('s', () => {\n  const w = new Widget(1);\n});\n" };
+  const off = stub10(tsFiles, 'TEST-S-001');
+  assert.match(fs.readFileSync(path.join(off, 'sdk.ts'), 'utf8'), /constructor\(\.\.\._args: any\[\]\) \{\}/);
+  const on = stub10({ ...tsFiles, '.sdd/config.json': JSON.stringify({ stubThrowingConstructors: true }) }, 'TEST-S-001');
+  assert.match(fs.readFileSync(path.join(on, 'sdk.ts'), 'utf8'), /constructor\(\.\.\._args: any\[\]\) \{\n    throw new Error\('not implemented: Widget'\)/);
+  const j = mk130({ '.sdd/config.json': JSON.stringify({ stubThrowingConstructors: true }), 'src/test/java/CalcTest.java': 'public class CalcTest {\n  // @id TEST-A-001 @verifies REQ-A-001\n  static void t() { Calc c = new Calc(1); }\n}\n' });
+  sdd(j, 'tdd', 'stub', 'TEST-A-001');
+  assert.match(rd130(j, 'src/main/java/Calc.java'), /public Calc\(int a0\) \{\n\s+throw new UnsupportedOperationException\("not implemented: Calc"\)/);
+});
+
+test('#309 ExUnit: DSL macros of a `use`d support module are stubbed as throwing macros and the test compiles', { skip: !HAS_MIX }, () => {
+  const d = stub10({
+    'mix.exs': 'defmodule D.MixProject do\n  use Mix.Project\n  def project, do: [app: :d, version: "0.1.0", deps: []]\nend\n',
+    'test/test_helper.exs': 'ExUnit.start()\n',
+    'test/d_test.exs': 'defmodule DTest do\n  use ExUnit.Case\n  use D.Dsl\n\n  # @id TEST-E-001\n  # @verifies REQ-E-001\n  test "dsl" do\n    rule :a do\n      1\n    end\n    check_ok 1, 2\n  end\nend\n',
+    '.sdd/specs/e.md': '---\nfeature: e\ntier: T1\n---\n| REQ-E-001 | dsl shall hold. | TEST-E-001 |\n',
+  }, 'TEST-E-001');
+  const lib = fs.readFileSync(path.join(d, 'lib/d/dsl.ex'), 'utf8');
+  assert.match(lib, /defmacro rule\(_a1, _a2\)/, lib);
+  assert.match(lib, /defmacro check_ok\(_a1, _a2\)/, lib);
+  const r = spawnSync('mix', ['test', 'test/d_test.exs'], { cwd: d, encoding: 'utf8', timeout: 120000 });
+  assert.doesNotMatch(r.stdout + r.stderr, /undefined function|CompileError/, r.stdout + r.stderr);
+  assert.match(r.stdout + r.stderr, /not implemented: rule/, r.stdout + r.stderr);
+});
