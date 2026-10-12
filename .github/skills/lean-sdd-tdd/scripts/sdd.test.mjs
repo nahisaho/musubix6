@@ -8171,3 +8171,47 @@ test('#309 trace validates [src:] ranges, blank lines and anchors', () => {
   assert.match(r.out, /lib\/a\.ts:1\] anchor `foo` not found/, r.out);
   assert.doesNotMatch(r.out, /lib\/a\.ts:1-2\]/, r.out);
 });
+
+function r22aProject(header) {
+  const d = t1project();
+  fs.writeFileSync(path.join(d, 'add.test.mjs'), ["import { test } from 'node:test';", "import assert from 'node:assert/strict';", "import { add } from './add.mjs';", header, '/** @id TEST-CALC-001 @verifies REQ-CALC-001 */', "test('TEST-CALC-001 adds', () => assert.equal(add(1, 2), 3));", ''].join('\n'));
+  return d;
+}
+const r22aHeader = (d, h) => fs.writeFileSync(path.join(d, 'add.test.mjs'), fs.readFileSync(path.join(d, 'add.test.mjs'), 'utf8').replace(/^\/\/ \w$/m, h));
+
+test('#309 r22a: T1 stale hint for a header-only edit after Green names --wording (a bare refactor would be REFUSED)', () => {
+  const d = r22aProject('// a');
+  impl(d, '(a, b) => a + b');
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-CALC-001', '--characterization', 'pins').code, 0);
+  assert.equal(sdd(d, 'tdd', 'green', 'TEST-CALC-001').code, 0);
+  r22aHeader(d, '// b');
+  const g = sdd(d, 'gate');
+  assert.match(g.out, /tdd refactor TEST-CALC-001 --wording/, g.out);
+  assert.equal(sdd(d, 'tdd', 'refactor', 'TEST-CALC-001').code, 1);
+  const r = sdd(d, 'tdd', 'refactor', 'TEST-CALC-001', '--wording', 'header comment');
+  assert.equal(r.code, 0, r.out);
+});
+
+test('#309 r22a: tdd green refusal after a header-only edit does not suggest --retest', () => {
+  const d = r22aProject('// a');
+  fs.writeFileSync(path.join(d, 'add.mjs'), 'export const add = () => { throw new Error("x"); };\n');
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-CALC-001').code, 0);
+  r22aHeader(d, '// b');
+  const r = sdd(d, 'tdd', 'green', 'TEST-CALC-001');
+  assert.match(r.out, /REFUSED/, r.out);
+  assert.match(r.out, /only shared test-file content/, r.out);
+  assert.doesNotMatch(r.out, /--retest/, r.out);
+});
+
+test('#309 r22a: T1 refactor refusal after a test-body edit offers --retest; empty --wording is called out', () => {
+  const d = r22aProject('// a');
+  impl(d, '(a, b) => a + b');
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-CALC-001', '--characterization', 'pins').code, 0);
+  assert.equal(sdd(d, 'tdd', 'green', 'TEST-CALC-001').code, 0);
+  fs.writeFileSync(path.join(d, 'add.test.mjs'), fs.readFileSync(path.join(d, 'add.test.mjs'), 'utf8').replace('add(1, 2), 3', 'add(2, 2), 4'));
+  const r = sdd(d, 'tdd', 'refactor', 'TEST-CALC-001', '--wording', ' ');
+  assert.equal(r.code, 1, r.out);
+  assert.match(r.out, /--wording needs a non-empty reason/, r.out);
+  assert.match(r.out, /tdd red TEST-CALC-001 --retest/, r.out);
+  assert.doesNotMatch(r.out, /Only shared test-file content/, r.out);
+});
