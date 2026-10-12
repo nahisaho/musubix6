@@ -4868,7 +4868,7 @@ function cmdPlan(args) {
 }
 
 // best-effort reverse import graph (target -> importers) for impact; JS/TS precise, others heuristic (#91)
-function importRev() {
+function importRev(noParity = false) {
   const files = listFiles();
   const set = new Set(files);
   // JSON files are graph nodes only as targets of static JS/TS imports (a shared contract), #145
@@ -5091,7 +5091,7 @@ function importRev() {
   // non-code artifacts declared in .sdd/config.json `artifacts` ({"contract/x.json": ["src/a.ts"]} = files that depend on it) are impact edges (#242)
   for (const [a, users] of Object.entries(loadConfig().artifacts ?? {})) for (const u of [].concat(users)) { const t = normDep(a), f = normDep(u); if (t !== f && fs.existsSync(path.join(ROOT, t)) && fs.existsSync(path.join(ROOT, f))) { if (!rev.has(t)) rev.set(t, []); if (!rev.get(t).includes(f)) rev.get(t).push(f); } }
   // `parity`: [["rust/hash.rs", "elixir/hash.ex"]] = two implementations of one algorithm; a change to either reaches the other (#266)
-  for (const pr of loadConfig().parity ?? []) for (const [x, y] of [[pr[0], pr[1]], [pr[1], pr[0]]]) { const t = x && normDep(x), f = y && normDep(y); if (t && f && t !== f && fs.existsSync(path.join(ROOT, t)) && fs.existsSync(path.join(ROOT, f))) { if (!rev.has(t)) rev.set(t, []); if (!rev.get(t).includes(f)) rev.get(t).push(f); } }
+  if (!noParity) for (const pr of loadConfig().parity ?? []) for (const [x, y] of [[pr[0], pr[1]], [pr[1], pr[0]]]) { const t = x && normDep(x), f = y && normDep(y); if (t && f && t !== f && fs.existsSync(path.join(ROOT, t)) && fs.existsSync(path.join(ROOT, f))) { if (!rev.has(t)) rev.set(t, []); if (!rev.get(t).includes(f)) rev.get(t).push(f); } }
   return rev;
 }
 
@@ -5114,7 +5114,7 @@ function crossImpact(changed) {
 
 function cmdImpact() {
   const target = pos[1];
-  if (!target) { out('usage: impact <REQ-ID|TEST-ID|CODE-ID|file> [--json]'); return 2; }
+  if (!target) { out('usage: impact <REQ-ID|TEST-ID|CODE-ID|file> [--json] [--all]'); return 2; }
   const specs = loadSpecs();
   const { ents } = scanEntities(listFiles());
   const reqFeature = new Map();
@@ -5137,7 +5137,7 @@ function cmdImpact() {
     reqs = [...new Set(all.filter((e) => e.path === seeds[0]).flatMap((e) => [...e.refs.implements, ...e.refs.verifies]))];
   } else { out(`IMPACT: unknown target ${target}`); return 1; }
   // a shared data file is outside the import graph: name the projects that list it (or a parent dir) in dependsOn (#247)
-  const rev = importRev();
+  const rev = importRev(true);
   dataFile = dataFile && !(rev.get(seeds[0])?.size ?? rev.get(seeds[0])?.length);
   const projs = loadConfig().projects ?? [];
   const hits = (p, t) => (p.dependsOn ?? []).some((d) => { const x = normDep(d); return t === x || t.startsWith(x + '/'); });
@@ -5155,6 +5155,10 @@ function cmdImpact() {
   const via = new Map(seeds.map((f) => [f, null]));
   const queue = [...seeds];
   while (queue.length) { const f = queue.shift(); for (const d of rev.get(f) ?? []) if (!via.has(d)) { via.set(d, f); queue.push(d); } }
+  // parity is one hop (#294): the counterpart and its feature are reached, not the counterpart's importers
+  for (const pr of loadConfig().parity ?? []) for (const [x, y] of [[pr[0], pr[1]], [pr[1], pr[0]]]) { const a = x && normDep(x), b = y && normDep(y); if (a && b && seeds.includes(a) && !via.has(b) && fs.existsSync(path.join(ROOT, b))) via.set(b, a); }
+  // producers of a generated artifact: build.rs / codegen / writer files that name it (#294)
+  const producers = nonCode ? listFiles().filter((f) => { if (f === seeds0) return false; try { const txt = fs.readFileSync(path.join(ROOT, f), 'utf8'); if (!txt.includes(path.posix.basename(seeds0))) return false; return /(^|\/)build\.rs$|codegen|generat/i.test(f) || /\b(writeFile(Sync)?|write_text|fs::write|File::create|json\.dump|WriteFile)\b|\bcodegen\b/.test(txt); } catch { return false; } }) : [];
   const reached = [...via.keys()].filter((f) => !seeds.includes(f));
   const entsIn = (f) => all.filter((e) => e.path === f);
   const verifiers = all.filter((e) => e.refs.verifies.some((r) => reqs.includes(r)));
@@ -5176,11 +5180,13 @@ function cmdImpact() {
   const result = {
     target, reqs, impl: seeds, ...(dataFile ? { dataFile: true, projects: depProjects } : {}), verifiedBy: verifiers.map((e) => e.id), reachedFiles: reached,
     sameFeatureReqs: sameFeature,
+    ...(nonCode ? { producers } : {}),
     otherReqs: [...affected].map(([r, v]) => ({ req: r, feature: reqFeature.get(r) ?? null, via: [...v] })),
     reachedTests: reached.filter((f) => entsIn(f).some((e) => e.refs.verifies.length) || TEST_FILE.test(f)),
   };
   if (flags.json) { out(JSON.stringify(result)); return 0; }
-  const cap = (a, n = 8) => a.slice(0, n).join(', ') + (a.length > n ? `, … +${a.length - n} more` : '');
+  const lim = flags.all ? Infinity : 8;
+  const cap = (a, n = lim) => a.slice(0, n).join(', ') + (a.length > n ? `, … +${a.length - n} more` : '');
   out(`IMPACT ${target}${reqs.length && target !== reqs[0] ? ` (${cap(reqs)})` : ''}`);
   const seedIsTest = seeds.length > 0 && seeds.every((s) => TEST_FILE.test(s) || (entsIn(s).length > 0 && entsIn(s).every((e) => e.kind === 'TEST')));
   if (dataFile || result.otherReqs.length || sameFeature.length) out('  note: impact is file-granular — every REQ annotated in a reached file is listed, even if only one test/function uses the changed file; dependsOn edges are per project, not per language');
@@ -5193,14 +5199,15 @@ function cmdImpact() {
     if (!bare.length) out(`  ! no @implements ${target} found — annotate the implementing code (@id CODE-… @implements ${target}), then run trace`);
     if (bare.length) out(`  ! ${target} is only mentioned in a bare comment (${cap(bare, 3)}) — impact follows \`@id CODE-… @implements ${target}\` markers; add one so its implementation is found`);
   }
+  if (nonCode) out(`  producers: ${producers.length ? cap(producers) : '(none found — name the generator in a build.rs/codegen file or a writer that mentions the artifact)'}`);
   if (verifiers.length) out(`  verified by: ${cap(verifiers.map((e) => e.id))}`);
   if (!dataFile) out(`  reaches ${reached.length} file(s) via imports${result.reachedTests.length ? `; tests: ${cap(result.reachedTests)}` : ''}`);
   if (sameFeature.length) out(`  same feature: ${sameFeature.length} other REQ(s) (${sameFeature.slice(0, 4).join(', ')}${sameFeature.length > 4 ? ', …' : ''})`);
   const perFeature = new Map();
   for (const o of result.otherReqs) perFeature.set(o.feature ?? '?', (perFeature.get(o.feature ?? '?') ?? 0) + 1);
   if (perFeature.size) out(`  other features: ${[...perFeature].map(([f, n]) => `${f} (${n})`).join(', ')}`);
-  for (const o of result.otherReqs.slice(0, 8)) out(`  ! other feature ${o.req}${o.feature ? ` [${o.feature}]` : ''}: ${o.via.slice(0, 3).join(', ')} — chain ${chain(o.via[0].replace(/^.*\((.*)\)$/, '$1'))}`);
-  if (result.otherReqs.length > 8) out(`  … +${result.otherReqs.length - 8} more`);
+  for (const o of result.otherReqs.slice(0, lim)) out(`  ! other feature ${o.req}${o.feature ? ` [${o.feature}]` : ''}: ${o.via.slice(0, 3).join(', ')} — chain ${chain(o.via[0].replace(/^.*\((.*)\)$/, '$1'))}`);
+  if (result.otherReqs.length > lim) out(`  … +${result.otherReqs.length - lim} more (all: impact --all)`);
   return 0;
 }
 

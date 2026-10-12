@@ -7318,3 +7318,46 @@ test('#288 subprocess-subject test: stub prints a note; Red works without --weak
   assert.equal(r.code, 0, r.out);
   assert.doesNotMatch(r.out, /weak/i, r.out);
 });
+
+// ---- wave 12 (#294): impact parity one hop, producers, --all ----
+test('#294 impact: parity reaches the counterpart but not its importers', () => {
+  const d = mini('---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | x shall work. | TEST-A-001 |\n', {
+    '.sdd/specs/b.md': '---\nfeature: b\ntier: T1\n---\n| REQ-B-001 | y shall work. | TEST-B-001 |\n',
+    '.sdd/specs/c.md': '---\nfeature: c\ntier: T1\n---\n| REQ-C-001 | z shall work. | TEST-C-001 |\n',
+    'ts/u.ts': '// @id CODE-A-001 @implements REQ-A-001\nexport const u = 1;\n',
+    'py/u.py': '# @id CODE-B-001 @implements REQ-B-001\nu = 1\n',
+    'py/user.py': '# @id CODE-C-001 @implements REQ-C-001\nfrom u import u\n',
+  });
+  const cp = path.join(d, '.sdd/config.json');
+  const c = JSON.parse(fs.readFileSync(cp, 'utf8'));
+  c.parity = [['ts/u.ts', 'py/u.py']];
+  fs.writeFileSync(cp, JSON.stringify(c));
+  const r = sdd(d, 'impact', 'ts/u.ts');
+  assert.match(r.out, /REQ-B-001/, r.out);
+  assert.doesNotMatch(r.out, /REQ-C-001/, r.out);
+});
+
+test('#294 impact: artifact file lists its producers', () => {
+  const d = mini('---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | x shall work. | TEST-A-001 |\n', {
+    'contract/f.json': '{}\n',
+    'rust/build.rs': 'fn main() { std::fs::write("contract/f.json", "{}").unwrap(); }\n',
+  });
+  const r = sdd(d, 'impact', 'contract/f.json');
+  assert.match(r.out, /producers: .*rust\/build\.rs/, r.out);
+});
+
+test('#294 impact --all disables the +N more truncation', () => {
+  const files = { 'src/a.ts': '// @id CODE-A-001 @implements REQ-A-001\nexport const a = 1;\n' };
+  let spec = '---\nfeature: b\ntier: T1\n---\n';
+  for (let i = 1; i <= 12; i++) {
+    const n = String(i).padStart(3, '0');
+    spec += `| REQ-B-${n} | y shall work. | TEST-B-${n} |\n`;
+    files[`src/m${i}.ts`] = `// @id CODE-B-${n} @implements REQ-B-${n}\nimport { a } from './a';\nexport const m${i} = a;\n`;
+  }
+  files['.sdd/specs/b.md'] = spec;
+  const d = mini('---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | x shall work. | TEST-A-001 |\n', files);
+  assert.match(sdd(d, 'impact', 'src/a.ts').out, /\+\d+ more/);
+  const all = sdd(d, 'impact', 'src/a.ts', '--all').out;
+  assert.doesNotMatch(all, /\+\d+ more/, all);
+  assert.match(all, /REQ-B-012/, all);
+});
