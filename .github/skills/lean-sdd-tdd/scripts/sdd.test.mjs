@@ -7878,3 +7878,33 @@ test('#298 Rust stub: an empty-collection / None argument is typed instead of an
   assert.match(lib, /fn pick<A1>\(_a0: Option<i64>, _a1: A1\)/, lib);
   ok17(out);
 });
+
+test('#304 Rust stub: several IDs (or --all) are stubbed in one run; a single ID still stubs only its own test', has268, () => {
+  const t = (n, body) => `// @id TEST-H-00${n} @verifies REQ-H-00${n}\n#[test]\nfn test_h_00${n}() {\n${body}\n}\n`;
+  const body = 'use hist::{alpha, beta, gamma};\n\n' + t(1, '    assert_eq!(alpha(1), 2);') + '\n' + t(2, '    assert_eq!(beta(1), 3);') + '\n' + t(3, '    assert_eq!(gamma(1), 4);');
+  const mk = () => rs268({ 'src/lib.rs': '', 'tests/x.rs': body }, ['TEST-H-001', 'TEST-H-002', 'TEST-H-003']);
+  const one = mk();
+  sdd(one, 'tdd', 'stub', 'TEST-H-001');
+  assert.doesNotMatch(fs.readFileSync(path.join(one, 'src/lib.rs'), 'utf8'), /fn beta/);
+  const two = mk();
+  const r = sdd(two, 'tdd', 'stub', 'TEST-H-001', 'TEST-H-002');
+  const lib = fs.readFileSync(path.join(two, 'src/lib.rs'), 'utf8');
+  assert.match(lib, /fn alpha/, r.out);
+  assert.match(lib, /fn beta/, r.out);
+  assert.doesNotMatch(lib, /fn gamma/);
+  const all = mk();
+  sdd(all, 'tdd', 'stub', 'TEST-H-001', '--all');
+  assert.match(fs.readFileSync(path.join(all, 'src/lib.rs'), 'utf8'), /fn gamma/);
+});
+
+test('#304 Rust stub: consts/tables compared or iterated by the test are typed (tuples, Option, slices), not i64', has268, () => {
+  const d = rs288('use hist::{LIMIT, PAIR, MAYBE, TABLE, CASES, NAME};\n\n' + t288('    assert_eq!(LIMIT, 5u8);\n    assert_eq!(PAIR, (1, "a"));\n    assert_eq!(MAYBE, Some(2.5));\n    assert_eq!(TABLE[0], (1, 2));\n    for (a, b) in CASES {\n        assert_eq!(a, b);\n    }\n    assert_eq!(NAME, "x");'));
+  const { out, lib } = stub288(d);
+  assert.match(lib, /const LIMIT: u8 = 0;/, lib);
+  assert.match(lib, /const PAIR: \(i64, &str\) = \(0, ""\);/, lib);
+  assert.match(lib, /const MAYBE: Option<f64> = None;/, lib);
+  assert.match(lib, /const TABLE: &\[\(i64, i64\)\] = &\[\];/, lib);
+  assert.match(lib, /const CASES: &\[\(i64, i64\)\] = &\[\];/, lib);
+  assert.match(lib, /const NAME: &str/, lib);
+  ok17(out);
+});

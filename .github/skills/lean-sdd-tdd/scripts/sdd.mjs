@@ -2113,7 +2113,23 @@ function stubRust(testPath, src, dir, made) {
     const ga = fields.length ? null : genericArgs(n), gn = ga && genNames(ga);
     return fields.length ? `#[derive(Debug, Clone, Default, PartialEq)]\npub struct ${n} {\n${fields.map(([f, t]) => `    pub ${f}: ${t},\n`).join('')}}\n${rustImpl(n, null, crate_)}` : gn ? `#[derive(Debug, Clone, PartialEq)]\npub struct ${n}<${gn.join(', ')}>(pub std::marker::PhantomData<(${gn.map((x) => x.startsWith("'") ? `&${x} ()` : x).join(', ')},)>);\n${rustImpl(n, gn, crate_)}` : `#[derive(Debug, Clone, Default, PartialEq)]\npub struct ${n};\n${rustImpl(n, null, crate_)}`;
   };
-  const itemStub = (n, crate_ = ownPkg) => { if (/^[A-Z][A-Z0-9_]+$/.test(n)) { const str = new RegExp(`\\b${n}\\s*(?:\\.\\s*(?:len|chars|as_str|is_empty)\\b|[!=]=\\s*\"|,\\s*\")`).test(srcNoUse); return `pub const ${n}: ${str ? '&str' : 'i64'} = ${str ? '""' : '0'};\n`; } if (/^[A-Z]/.test(n)) return traitStub(n) ?? typeStub(n, crate_); const c = callInfo(src, n); c.ret ??= viaVar(`(?<![\\w.])(?:\\w+::)*${n}`); const ga = genericArgs(n, true)?.filter((a) => !a.startsWith("'")), pty = ga ? [] : argTypes(`(?<![\\w.])(?:\\w+::)*${n}`), g = ga ? genNames(ga) : c.args.map((_, i) => `A${i}`).filter((_, i) => !pty[i]); const rr = rustRet(`(?<![\\w.])(?:\\w+::)*${n}`, crate_); return `pub fn ${n}${g.length ? `<${g.join(', ')}>` : ''}(${c.args.map((_, i) => `_a${i}: ${ga ? 'impl Sized' : pty[i] ?? `A${i}`}`).join(', ')}) -> ${rr ?? (c.ret?.startsWith('opt:') ? `Option<${c.ret.slice(4)}>` : T[c.ret] ?? 'i64')} {\n    unimplemented!("${n}")\n}\n`; };
+  // const / static tables: the type comes from what the test compares or iterates them with (tuples, Option, slices), else i64
+  const constStub = (n, crate_) => {
+    const str = new RegExp(`\\b${n}\\s*(?:\\.\\s*(?:len|chars|as_str|is_empty)\\b|[!=]=\\s*"|,\\s*")`).test(srcNoUse);
+    const dflt = (ty) => ty === '&str' || ty === "&'static str" ? '""' : ty === 'f64' || ty === 'f32' ? '0.0' : ty === 'bool' ? 'false' : ty === 'char' ? "'\\0'" : ty === 'String' ? 'String::new()' : /^Option</.test(ty) ? 'None' : /^Vec</.test(ty) ? 'Vec::new()' : /^&\[/.test(ty) ? '&[]' : /^\(/.test(ty) ? `(${splitTop(ty.slice(1, -1).replace(/,\s*$/, '')).map(dflt).join(', ')}${splitTop(ty.slice(1, -1).replace(/,\s*$/, '')).length === 1 ? ',' : ''})` : /^\[/.test(ty) ? `[${dflt(/^\[(.*);/.exec(ty)[1])}; ${/;\s*(\w+)\]$/.exec(ty)[1]}]` : /^[iu](?:8|16|32|64|128|size)$/.test(ty) ? '0' : null;
+    const fit = (ty, wrap) => { const t = ty?.replace(/&'static str/g, '&str'); const v = t && dflt(t); return v === null || v == null ? null : `pub const ${n}: ${wrap ? `&[${t}]` : t} = ${wrap ? '&[]' : v};\n`; };
+    const cmp = new RegExp(`\\b${n}\\s*(?:==|!=)\\s*([^;{}]*?)\\s*[);{]|assert(?:_eq|_ne)?!\\(\\s*${n}\\s*,\\s*`).exec(srcNoUse);
+    const rhs = (after) => takeExpr(after);
+    const direct = (() => { const m = new RegExp(`assert(?:_eq|_ne)?!\\(\\s*${n}\\s*,\\s*`).exec(srcNoUse); const e = m ? rhs(srcNoUse.slice(m.index + m[0].length)) : cmp?.[1]; const mm = new RegExp(`assert(?:_eq|_ne)?!\\(\\s*([^;]*?),\\s*${n}\\s*[,)]`).exec(srcNoUse); return (e && exprType(e, crate_, false)) || (mm && exprType(takeExpr(mm[1]), crate_, false)) || null; })();
+    const idx = (() => { const m = new RegExp(`\\b${n}\\s*\\[[^\\]]*\\]\\s*(?:==|!=)\\s*`).exec(srcNoUse) ?? new RegExp(`assert(?:_eq|_ne)?!\\(\\s*${n}\\s*\\[[^\\]]*\\]\\s*,\\s*`).exec(srcNoUse); return m ? exprType(takeExpr(srcNoUse.slice(m.index + m[0].length)), crate_, false) : null; })();
+    const loop = new RegExp(`\\bfor\\s+(\\(([^)]*)\\)|\\w+)\\s+in\\s+&?${n}\\b`).exec(srcNoUse);
+    if (str) return `pub const ${n}: &str = "";\n`;
+    if (idx) return fit(idx, true);
+    if (loop) return fit(loop[2] ? `(${loop[2].split(',').map(() => 'i64').join(', ')}${loop[2].split(',').length === 1 ? ',' : ''})` : 'i64', true);
+    if (direct) return fit(direct);
+    return new RegExp(`\\b${n}\\s*\\.\\s*(?:len|iter|is_empty)\\b|\\b${n}\\s*\\[`).test(srcNoUse) ? `pub const ${n}: &[i64] = &[];\n` : null;
+  };
+  const itemStub = (n, crate_ = ownPkg) => { if (/^[A-Z][A-Z0-9_]+$/.test(n)) return constStub(n, crate_) ?? `pub const ${n}: i64 = 0;\n`; if (/^[A-Z]/.test(n)) return traitStub(n) ?? typeStub(n, crate_); const c = callInfo(src, n); c.ret ??= viaVar(`(?<![\\w.])(?:\\w+::)*${n}`); const ga = genericArgs(n, true)?.filter((a) => !a.startsWith("'")), pty = ga ? [] : argTypes(`(?<![\\w.])(?:\\w+::)*${n}`), g = ga ? genNames(ga) : c.args.map((_, i) => `A${i}`).filter((_, i) => !pty[i]); const rr = rustRet(`(?<![\\w.])(?:\\w+::)*${n}`, crate_); return `pub fn ${n}${g.length ? `<${g.join(', ')}>` : ''}(${c.args.map((_, i) => `_a${i}: ${ga ? 'impl Sized' : pty[i] ?? `A${i}`}`).join(', ')}) -> ${rr ?? (c.ret?.startsWith('opt:') ? `Option<${c.ret.slice(4)}>` : T[c.ret] ?? 'i64')} {\n    unimplemented!("${n}")\n}\n`; };
   // `use <crate>::a::b::{X, f};` => missing modules `a`, `a/b` (declared in the parent) holding the imported items (#69). Existing modules are never touched.
   const pkgName = (toml) => /\[package\][^[]*?^\s*name\s*=\s*"([^"]+)"/ms.exec(fs.readFileSync(toml, 'utf8'))?.[1]?.replace(/-/g, '_');
   // every workspace member crate by name, so `use other_crate::a::X` is stubbed in that crate (#76)
@@ -3147,8 +3163,9 @@ function stubEx(testPath, scoped, add, made) {
 }
 function stubFor(testPath, id) {
   const src = fs.readFileSync(path.join(ROOT, testPath), 'utf8');
+  const ids = [].concat(id ?? []);
   // the requested test only: shared preamble (before the first @id) + that test's own body (#130)
-  const scoped = (() => { if (!id) return src; const ls = src.split('\n'); const first = ls.findIndex((l) => /@id\s/.test(l)); const body = testBody(testPath, id); return first < 0 || !body.length ? src : ls.slice(0, first).concat(body).join('\n'); })();
+  const scoped = (() => { if (!ids.length) return src; const ls = src.split('\n'); const first = ls.findIndex((l) => /@id\s/.test(l)); const body = ids.flatMap((x) => testBody(testPath, x)); return first < 0 || !body.length ? src : ls.slice(0, first).concat(body).join('\n'); })();
   const dir = path.resolve(ROOT, path.dirname(testPath));
   const made = [];
   const add = (abs, body) => { if (fs.existsSync(abs)) return; fs.mkdirSync(path.dirname(abs), { recursive: true }); fs.writeFileSync(abs, body); made.push(rel(abs)); };
@@ -4148,11 +4165,17 @@ function cmdTdd() {
   if (sub === 'stub') {
     const t = ents.get(pos[2]);
     if (!t || t.kind !== 'TEST') { out(`${pos[2]} not found as "@id TEST-..." annotation in source`); return 2; }
+    // several IDs (or --all: every test of that file) are stubbed in one run (#304)
+    const group = flags.all ? [...ents.values()].filter((e) => e.kind === 'TEST' && e.path === t.path) : pos.slice(2).map((x) => ents.get(x));
+    const bad = group.find((e) => !e || e.kind !== 'TEST' || e.path !== t.path);
+    if (bad !== undefined) { out(`${pos.slice(2).find((x) => !ents.get(x) || ents.get(x).kind !== 'TEST' || ents.get(x).path !== t.path) ?? pos[2]} is not a TEST in ${t.path}: tdd stub takes IDs of one test file`); return 2; }
+    if (!group.includes(t)) group.unshift(t);
     const allSpecs = loadSpecs();
+    t.refs = { ...t.refs, verifies: [...new Set(group.flatMap((e) => e.refs.verifies))] };
     const unknownReq = allSpecs.length ? t.refs.verifies.filter((r) => !allSpecs.some((sp) => sp.reqs.some((q) => q.id === r))) : [];
     if (unknownReq.length) { out(`REFUSED: ${t.id} verifies ${unknownReq.join(', ')} which no spec defines — write the spec first`); return 1; }
     const priorFiles = new Set(workspaceFiles());
-    const made = stubFor(t.path, t.id);
+    const made = stubFor(t.path, group.map((e) => e.id));
     let annotationIndex = 0;
     for (const file of [...new Set(made)]) {
       if (priorFiles.has(file) || !/\.(?:java|php|cs|jl|rs|py|exs?|[cm]?[jt]sx?)$/.test(file)) continue;
@@ -4177,7 +4200,7 @@ function cmdTdd() {
     if (made.warnings?.length) out(`! not stubbed: ${[...new Set(made.warnings)].join('; ')} — add the exports by hand`);
     return made.verified === 'fail' && /\.(?:c|cc|cpp|cxx)$/.test(t.path) ? 1 : 0;
   }
-  if (!['red', 'green', 'refactor'].includes(sub)) { out('usage: tdd red|green|refactor <TEST-ID> [--req REQ] [--weak] [--expect <text>] [--retest <why>] [--characterization <why>] [--allow-setup-red] [--wording <why> (refactor on T1 after a test change)] | tdd stub <TEST-ID> | tdd check | tdd merge-ledger'); return 2; }
+  if (!['red', 'green', 'refactor'].includes(sub)) { out('usage: tdd red|green|refactor <TEST-ID> [--req REQ] [--weak] [--expect <text>] [--retest <why>] [--characterization <why>] [--allow-setup-red] [--wording <why> (refactor on T1 after a test change)] | tdd stub <TEST-ID> [<TEST-ID>... | --all] | tdd check | tdd merge-ledger'); return 2; }
   if (!pos[2]) { out(`usage: tdd ${sub} <TEST-ID> [<TEST-ID>...] [--req REQ] [--weak]`); return 2; }
   if (flags.characterization === true) { out('usage: --characterization "<reason>" needs a reason text'); return 2; }
   // batch: run each ID in turn (flags such as --req/--characterization apply to every ID) (#126)
