@@ -8498,3 +8498,71 @@ test('#314 a flaky gate pass says the ledger was appended', () => {
   const r = sdd(flakyProject({ policy: 'warn' }, FLAKY_ONCE), 'gate');
   assert.match(r.out, /appended to \.sdd\/tdd\.jsonl/, r.out);
 });
+
+// ---- r24a (design 3.1 scope confidence) ----
+function scopeProj(extra = {}, files = {}) {
+  const d = mini('---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | x shall hold. | TEST-A-001 |\n', { 'app/package.json': '{}', 'app/x.mjs': 'export {};\n', ...files });
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ testCmd: PASS, checks: [], projects: [{ root: 'app', testCmd: PASS, checks: [{ name: 'ok', cmd: ['node', '-e', '0'] }] }], ...extra }));
+  spawnSync('git', ['add', '-A'], { cwd: d });
+  spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'i'], { cwd: d });
+  return d;
+}
+test('r24a gate --changed prints a scope summary line and exposes it in --json', () => {
+  const d = scopeProj();
+  fs.appendFileSync(path.join(d, 'app/x.mjs'), '// c\n');
+  assert.match(sdd(d, 'gate', '--changed').out, /^scope: exact=1 widened=0 unknown=0$/m);
+  assert.deepEqual(JSON.parse(sdd(d, 'gate', '--changed', '--json').out).scope.exact, 1);
+});
+test('r24a an unclaimed changed file warns by default and fails under scopePolicy strict; allow-list waives', () => {
+  const d = scopeProj({}, { 'misc/data.bin': 'a' });
+  fs.appendFileSync(path.join(d, 'misc/data.bin'), 'b');
+  const w = sdd(d, 'gate', '--changed');
+  assert.match(w.out, /! scope: 1 changed file\(s\) not claimed.*misc\/data\.bin/, w.out);
+  assert.match(w.out, /unknown=1/, w.out);
+  assert.doesNotMatch(w.out, /✗ scope/, w.out);
+  const cp = path.join(d, '.sdd/config.json');
+  const c = JSON.parse(fs.readFileSync(cp, 'utf8'));
+  fs.writeFileSync(cp, JSON.stringify({ ...c, scopePolicy: 'strict' }));
+  const s = sdd(d, 'gate', '--changed');
+  assert.equal(s.code, 1, s.out);
+  assert.match(s.out, /✗ scope:.*misc\/data\.bin/, s.out);
+  assert.doesNotMatch(sdd(d, "gate", "--changed", "--allow-unscoped", "misc/**").out, /✗ scope/);
+  assert.match(fs.readFileSync(path.join(d, '.sdd/tdd.jsonl'), 'utf8'), /scope-waiver/);
+  fs.writeFileSync(cp, JSON.stringify({ ...c, scopePolicy: 'strict', unscoped: ['misc/**'] }));
+  const u = sdd(d, 'gate', '--changed');
+  assert.doesNotMatch(u.out, /✗ scope/, u.out);
+  assert.match(u.out, /unscoped by config/, u.out);
+});
+test('r24a default ignore globs (docs, .github, LICENSE) never count as unscoped', () => {
+  const d = scopeProj({ scopePolicy: 'strict' }, { 'docs/a.md': 'a', LICENSE: 'a', '.github/w.yml': 'a' });
+  for (const f of ['docs/a.md', 'LICENSE', '.github/w.yml']) fs.appendFileSync(path.join(d, f), 'b');
+  const o = sdd(d, 'gate', '--changed').out;
+  assert.match(o, /unknown=0/, o);
+  assert.doesNotMatch(o, /✗ scope/, o);
+});
+test('r24a a root package.json / Cargo.toml change widens to every project of that ecosystem', () => {
+  const d = scopeProj({}, { 'package.json': '{"private":true}\n', 'Cargo.toml': '[package]\nname="r"\n', 'rs/Cargo.toml': '[package]\nname="b"\n' });
+  const cp = path.join(d, '.sdd/config.json');
+  const c = JSON.parse(fs.readFileSync(cp, 'utf8'));
+  c.projects.push({ root: 'rs', testCmd: PASS, checks: [{ name: 'ok', cmd: ['node', '-e', '0'] }] });
+  fs.writeFileSync(cp, JSON.stringify(c));
+  spawnSync('git', ['add', '-A'], { cwd: d });
+  spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'p'], { cwd: d });
+  fs.appendFileSync(path.join(d, 'package.json'), ' \n');
+  const o = sdd(d, 'gate', '--changed').out;
+  assert.match(o, /✓ cmd app:ok/, o);
+  assert.doesNotMatch(o, /✓ cmd rs:ok/, o);
+  fs.appendFileSync(path.join(d, 'Cargo.toml'), '# c\n');
+  const o2 = sdd(d, 'gate', '--changed').out;
+  assert.match(o2, /✓ cmd rs:ok/, o2);
+});
+test('r24a init writes scopePolicy strict for a new config only', () => {
+  const d = mini('---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | x shall hold. | TEST-A-001 |\n');
+  const cp = path.join(d, '.sdd/config.json');
+  assert.equal(JSON.parse(fs.readFileSync(cp, 'utf8')).scopePolicy, 'strict');
+  const c = JSON.parse(fs.readFileSync(cp, 'utf8'));
+  delete c.scopePolicy;
+  fs.writeFileSync(cp, JSON.stringify(c));
+  sdd(d, 'init');
+  assert.equal(JSON.parse(fs.readFileSync(cp, 'utf8')).scopePolicy, undefined);
+});

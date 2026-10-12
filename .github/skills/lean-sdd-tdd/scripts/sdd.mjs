@@ -1555,7 +1555,7 @@ function cmdInit() {
   const projects = detectProjects(new Set(rootManifests.map(ecoOf)));
   if (projects.length) { cfg.projects = projects; if (!rootManifests.length) cfg.checks = []; }
   const kept = fs.existsSync(CONFIG);
-  if (!kept) writeJson(CONFIG, cfg);
+  if (!kept) writeJson(CONFIG, { ...cfg, scopePolicy: 'strict' });
   const shown = kept ? { ...cfg, ...readJson(CONFIG, {}) } : cfg;
   fs.mkdirSync(SPECS, { recursive: true });
   if (cfg.projects?.length) out(`${rootManifests.length ? 'root + ' : ''}projects: ${cfg.projects.map((p) => `${p.root} (${p.testCmd.slice(0, 2).join(' ')})`).join(', ')} — each test runs in its project directory`);
@@ -4866,6 +4866,14 @@ function changedFiles() {
 const TEST_FILE = /\.(test|spec)\.[cm]?[jt]sx?$|(^|\/)test_[^/]*\.py$|_test\.(py|go|exs)$/;
 // dependsOn entries: `./contract`, `contract\\` and `contract/` all name the same repo-relative path (#146)
 const normDep = (d) => path.posix.normalize(String(d).replace(/\\/g, '/')).replace(/^\.\//, '').replace(/\/+$/, '');
+// scope confidence (design 3.1): globs for `unscoped` / --allow-unscoped / default ignores (matched with globRe)
+const SCOPE_IGNORE = ['**/*.md', '.github/**', 'LICENSE', '.sdd/**'];
+// workspace-root files that affect every member of an ecosystem: [file pattern, manifests identifying a member]
+const WORKSPACE_ROOT = [
+  [/^(Cargo\.(toml|lock)|rust-toolchain(\.toml)?|\.cargo\/config(\.toml)?)$/, ['Cargo.toml']],
+  [/^(package\.json|package-lock\.json|npm-shrinkwrap\.json|pnpm-lock\.yaml|pnpm-workspace\.yaml|yarn\.lock|bun\.lockb?)$/, ['package.json']],
+  [/^(pyproject\.toml|requirements[^/]*\.txt|uv\.lock|poetry\.lock)$/, ['pyproject.toml', 'requirements.txt', 'pytest.ini']],
+];
 function gitFiles(glob) {
   const r = spawnSync('git', ['ls-files', '-co', '--exclude-standard', glob], { cwd: ROOT, encoding: 'utf8' });
   const re = new RegExp('^' + glob.replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*').replace(/\?/g, '.') + '$');
@@ -5156,7 +5164,10 @@ function cmdGate() {
   // a changed config `artifacts` file is in scope for the project that holds one of its consumers (#308)
   // a root Cargo.toml/Cargo.lock of a workspace whose members live under a project dir belongs to that project (#308)
   const cargoOwned = cargoMembersOf;
-  const artConsumers = (f) => { const u = Object.entries(cfg.artifacts ?? {}).find(([a]) => normDep(a) === f)?.[1]; return [...(u === undefined ? [] : [].concat(u).map(normDep)), ...cargoOwned(f)]; };
+  // a root manifest/lockfile/toolchain file widens to every project of that ecosystem (design 3.1)
+  const widenOwned = (f) => { const w = WORKSPACE_ROOT.find(([re]) => re.test(f)); return w ? (cfg.projects ?? []).filter((p) => w[1].some((m) => fs.existsSync(path.join(ROOT, p.root, m)))).map((p) => normDep(p.root)) : []; };
+  const artConsumers = (f) => { const u = Object.entries(cfg.artifacts ?? {}).find(([a]) => normDep(a) === f)?.[1]; return [...(u === undefined ? [] : [].concat(u).map(normDep)), ...cargoOwned(f), ...widenOwned(f)]; };
+  const scopeCount = { exact: 0, widened: 0, unknown: 0 };
   const allChecks = [...(cfg.checks ?? []), ...(cfg.projects ?? []).flatMap((p) => (p.checks ?? []).map((c) => ({ ...c, name: `${p.root}:${c.name}`, cwd: p.root, dependsOn: depClosure(p) })))];
   let sharedHinted = false;
   // a changed spec puts the projects holding that feature's tests/code in scope; the project check then runs in full
@@ -5177,7 +5188,7 @@ function cmdGate() {
     let cmd = c.cmd;
     const base = c.cwd ? c.cwd.replace(/\/$/, '') + '/' : '';
     const inDeps = (f) => (c.dependsOn ?? []).some((d) => { const x = normDep(d); return f === x || f.startsWith(x + '/'); }) || (!!base && artConsumers(f).some((u) => (u + '/').startsWith(base)));
-    if (c.cwd && flags.changed && !specOwned(c.cwd) && ![...changedFiles()].some((f) => f.startsWith(base) || inDeps(f))) { lines.push(`! cmd ${c.name}: no changed files in ${c.cwd}${c.dependsOn?.length ? ` or its dependencies (${c.dependsOn.join(', ')})` : ''} — skipped`); continue; }
+    if (c.cwd && flags.changed && !specOwned(c.cwd) && ![...changedFiles()].some((f) => f.startsWith(base) || inDeps(f))) { lines.push(`! cmd ${c.name}: no changed files in ${c.cwd}${c.dependsOn?.length ? ` or its dependencies (${c.dependsOn.join(', ')})` : ''} — skipped (input closure: ${c.cwd} + ${(c.dependsOn ?? []).length} dependsOn, disjoint from ${changedFiles().size} changed path(s))`); continue; }
     const pRoots = (cfg.projects ?? []).map((p) => p.root.replace(/\/$/, '') + '/');
     if (!c.cwd && flags.changed && pRoots.length) {
       const chg = [...changedFiles()].filter((f) => !f.startsWith('.sdd/'));
@@ -5188,10 +5199,11 @@ function cmdGate() {
     }
     const ownChanged = !flags.changed || !base || [...changedFiles()].some((f) => f.startsWith(base));
     let scoped = false;
+    let widened = false;
     if (flags.changed && c.changedCmd && ownChanged) {
       const ch = [...changedFiles()].filter((f) => !f.startsWith('.sdd/') && fs.existsSync(path.join(ROOT, f)) && fs.statSync(path.join(ROOT, f)).isFile());
       const tests = ch.filter((f) => /\.(test|spec)\.[cm]?[jt]sx?$|(^|\/)test_[^/]*\.py$|_test\.(py|go|exs)$/.test(f));
-      if (!ch.length) { lines.push(`! cmd ${c.name}: no changed files — skipped`); continue; }
+      if (!ch.length) { lines.push(`! cmd ${c.name}: no changed files (input closure computed from ${changedFiles().size} changed path(s): none is an existing non-.sdd file) — skipped`); continue; }
       const scopes = [...new Set(ch.filter((f) => !tests.includes(f)).map((f) => /^(packages|apps|libs)\/[^/]+/.exec(f)?.[0] ?? path.posix.dirname(f)))];
       const rel2 = relatedTests(ch);
       const limit = c.hubThreshold ?? cfg.hubThreshold ?? 0.25;
@@ -5235,8 +5247,10 @@ function cmdGate() {
     if (scoped && r.exit === 0 && !r.timedOut && ((ZERO_TESTS.test(r.text) && !RAN_TESTS.test(r.text)) || NO_PASSED.test(r.text) || pytestNoExecution(r.text) || noExecution(r.text))) {
       lines.push(`! cmd ${c.name}: scoped run matched no tests — running the full check instead`);
       scoped = false;
+      widened = true;
       r = run(c.cmd, c.timeoutMs ?? cfg.timeoutMs ?? 120000, c.cwd);
     }
+    if (flags.changed) scopeCount[scoped || (!widened && !c.changedCmd && base && [...changedFiles()].some((f) => f.startsWith(base))) ? 'exact' : 'widened']++;
     if (r.timedOut) { add(false, `cmd ${c.name} TIMEOUT after ${(r.ms / 1000).toFixed(0)}s ${scoped ? '— narrow changedCmd (e.g. {changedTests} {changedScopes}) or raise changedTimeoutMs; run full gate (no --changed) before merge' : '— raise timeoutMs in .sdd/config.json'}`); continue; }
     if (r.exit === 0 && (NO_PASSED.test(r.text) || pytestNoExecution(r.text) || noExecution(r.text))) { lines.push(`! cmd ${c.name}: ${ZERO_TESTS.test(r.text) && !NO_PASSED.test(r.text) ? 'no tests found or ran' : 'all tests skipped/todo/xfail'} — INCOMPLETE, no passing assertions`); incomplete = true; continue; }
     if (r.exit !== 0 && ZERO_TESTS.test(r.text) && !RAN_TESTS.test(r.text)) { lines.push(`! cmd ${c.name}: no tests exist yet (runner exit ${r.exit}) — INCOMPLETE, not a failure`); incomplete = true; continue; }
@@ -5260,8 +5274,42 @@ function cmdGate() {
   }
   if (!flags['no-run'] && !allChecks.length) { lines.push('! commands: none configured — nothing was run'); incomplete = true; }
 
+  let scopeJson;
+  if (flags.changed) {
+    const pr = (cfg.projects ?? []).map((p) => normDep(p.root) + '/');
+    const flagGlobs = typeof flags['allow-unscoped'] === 'string' ? flags['allow-unscoped'].split(',').map((x) => x.trim()).filter(Boolean) : [];
+    const cfgGlobs = [].concat(cfg.unscoped ?? []).map(String);
+    const reDefault = SCOPE_IGNORE.map((g) => globRe(g)), reCfg = cfgGlobs.map((g) => globRe(normDep(g))), reFlag = flagGlobs.map((g) => globRe(normDep(g)));
+    const hasRoot = (cfg.checks ?? []).length > 0;
+    const claimed = (f) => pr.some((r) => f.startsWith(r)) || artConsumers(f).length > 0
+      || (cfg.projects ?? []).some((p) => depClosure(p).some((d) => { const x = normDep(d); return f === x || f.startsWith(x + '/'); }))
+      || (hasRoot && (!pr.length || EXT.test(f) || WORKSPACE_ROOT.some(([re]) => re.test(f)) || MANIFESTS.test(f)));
+    const unscoped = [];
+    const waived = { config: [], flag: [] };
+    if (allChecks.length) for (const f of changedFiles()) {
+      if (claimed(f) || reDefault.some((re) => re.test(f))) continue;
+      if (reFlag.some((re) => re.test(f))) waived.flag.push(f);
+      else if (reCfg.some((re) => re.test(f))) waived.config.push(f);
+      else unscoped.push(f);
+    }
+    scopeCount.unknown = unscoped.length;
+    const list = (a) => `${a.slice(0, 6).join(', ')}${a.length > 6 ? `, … (+${a.length - 6})` : ''}`;
+    if (unscoped.length) {
+      const strict = cfg.scopePolicy === 'strict';
+      const msg = `scope: ${unscoped.length} changed file(s) not claimed by any check/project: ${list(unscoped)} — add them to a project/dependsOn, or waive with \`unscoped\` in .sdd/config.json / --allow-unscoped <glob>`;
+      if (strict) add(false, `${msg} (scopePolicy strict)`);
+      else lines.push(`! ${msg} (scopePolicy warn: set "scopePolicy": "strict" to fail)`);
+    }
+    if (waived.config.length) lines.push(`! scope: unscoped by config (${list(waived.config)})`);
+    if (waived.flag.length) {
+      lines.push(`! scope: waived by --allow-unscoped ${flagGlobs.join(',')} (${list(waived.flag)})`);
+      appendLedger({ type: 'scope-waiver', globs: flagGlobs, files: waived.flag.slice(0, 50) });
+    }
+    lines.push(`scope: exact=${scopeCount.exact} widened=${scopeCount.widened} unknown=${scopeCount.unknown}`);
+    scopeJson = { ...scopeCount, policy: cfg.scopePolicy === 'strict' ? 'strict' : 'warn', unscoped, waived };
+  }
   const verdict = fail ? 'FAIL' : incomplete ? 'INCOMPLETE' : 'PASS';
-  if (flags.json) out(JSON.stringify({ verdict, lines }));
+  if (flags.json) out(JSON.stringify({ verdict, lines, ...(scopeJson ? { scope: scopeJson } : {}) }));
   else { out(`SDD GATE ${verdict}`); lines.forEach((l) => out(l)); }
   return fail ? 1 : incomplete ? 2 : 0;
 }
