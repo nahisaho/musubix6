@@ -980,7 +980,7 @@ function loadSpecs() {
       let body = raw;
       // continuation lines of a list/prose requirement belong to its wording (#65)
       if (!m[1].includes('|')) for (let j = i + 1; j < lines.length && /^\s+\S/.test(lines[j]) && !/^\s*(?:[|#>*-]|REQ-)/.test(lines[j]); j++) body += ' ' + lines[j];
-      reqs.push({ id: m[2], table: m[1].includes('|'), srcs: [...l.matchAll(/\[src:\s*([^\]\s:]+):(\d+)/g)].map((x) => [x[1], +x[2]]), line: i + 1, tests: m[1].includes('|') ? [...new Set(l.match(/\bTEST-[A-Z0-9]+(?:-[A-Z0-9]+)*/g) ?? [])] : [], sha: sha(body.normalize('NFKC').replace(/\[src:[^\]]*\]/g, '').replace(/\s+/g, ' ').trim()), rawSha: sha(body.replace(/\s+/g, ' ').trim()), srcSha: sha(body.normalize('NFKC').replace(/\s+/g, ' ').trim()), deferred: hasMarker(body.normalize('NFKC'), 'deferred'), testOnly: hasMarker(body.normalize('NFKC'), 'test-only') });
+      reqs.push({ id: m[2], table: m[1].includes('|'), srcs: [...l.matchAll(/\[src:\s*([^\]\s:]+):(\d+)(?:-(\d+))?([^\]]*)\]/g)].map((x) => [x[1], +x[2], x[3] ? +x[3] : undefined, /`([^`]+)`/.exec(x[4])?.[1]]), line: i + 1, tests: m[1].includes('|') ? [...new Set(l.match(/\bTEST-[A-Z0-9]+(?:-[A-Z0-9]+)*/g) ?? [])] : [], sha: sha(body.normalize('NFKC').replace(/\[src:[^\]]*\]/g, '').replace(/\s+/g, ' ').trim()), rawSha: sha(body.replace(/\s+/g, ' ').trim()), srcSha: sha(body.normalize('NFKC').replace(/\s+/g, ' ').trim()), deferred: hasMarker(body.normalize('NFKC'), 'deferred'), testOnly: hasMarker(body.normalize('NFKC'), 'test-only') || hasMarker(body.normalize('NFKC'), 'characterization') });
     });
     const extra = fm.artifacts ? fm.artifacts.split(',').map((s) => s.trim()).filter(Boolean) : [];
     const tl = lines;
@@ -4700,11 +4700,15 @@ function traceCheck(ents, dups, specs) {
     }
     if (!implemented.has(r.id) && !r.testOnly) warnings.push(`${r.id} has no @implements code`);
     // reverse-spec `[src: path:line]` must point at an existing line (#276)
-    for (const [f, n] of r.srcs ?? []) {
-      let len = -1;
-      try { len = fs.readFileSync(path.join(ROOT, f), 'utf8').split('\n').length; } catch {}
-      if (len < 0) warnings.push(`${r.id}: [src: ${f}:${n}] file does not exist`);
-      else if (n > len) warnings.push(`${r.id}: [src: ${f}:${n}] line is beyond the end of the file (${len} lines)`);
+    for (const [f, n, end, anchor] of r.srcs ?? []) {
+      let lines = null;
+      try { lines = fs.readFileSync(path.join(ROOT, f), 'utf8').split('\n'); } catch {}
+      const len = lines ? lines.length : -1, label = `[src: ${f}:${n}${end ? '-' + end : ''}]`;
+      if (len < 0) warnings.push(`${r.id}: ${label} file does not exist`);
+      else if (n > len) warnings.push(`${r.id}: ${label} line is beyond the end of the file (${len} lines)`);
+      else if (end && (end < n || end > len)) warnings.push(`${r.id}: ${label} line range does not resolve (file has ${len} lines)`);
+      else if (!lines.slice(n - 1, end ?? n).some((x) => x.trim())) warnings.push(`${r.id}: ${label} cites only blank lines`);
+      else if (anchor && !lines.slice(n - 1, end ?? n).some((x) => x.includes(anchor))) warnings.push(`${r.id}: ${label} anchor \`${anchor}\` not found in the cited lines`);
     }
   }
   return { errors, warnings, reqs, tested };
