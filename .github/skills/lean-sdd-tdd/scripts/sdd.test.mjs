@@ -6253,6 +6253,7 @@ test('#251 weak Red: value derived from the stubbed call via a filtered comprehe
     assert.match(r.out, /RED ok/, r.out);
     assert.doesNotMatch(r.out, /\[weak\]|setup call/, r.out);
   }
+});
 
 test('#252 an assertion/panic failure line outranks an incidental "No such file" LOAD_ERR match', () => {
   const d = mini(T1SPEC, { 'a.test.mjs': jsTest() }, ['sh', '-c', "printf \"thread 'x' panicked at tests/r.rs:4:5:\\nassertion \\`left == right\\` failed\\n  left: 0\\n right: 1\\nNo such file or directory\\n\"; exit 101"]);
@@ -6284,4 +6285,32 @@ test('#249 tdd red --retest on 2+ tests updates only those tests and keeps other
   const led = fs.readFileSync(path.join(d, '.sdd/tdd.jsonl'), 'utf8').trim().split('\n').map((l) => JSON.parse(l));
   assert.equal(led.filter((e) => e.test === 'TEST-A-003').length, 2);
   assert.equal(led.filter((e) => e.type === 'red' && !e.weak).length, 3);
+});
+
+test('#241 gate --changed: dependsOn is transitive across projects', () => {
+  const d = mini('---\nfeature: r\ntier: T1\n---\n| REQ-R-001 | x shall work. | TEST-R-001 |\n', { 'contract/c.json': '{}', 'lib/a.txt': 'a', 'app/b.txt': 'b' });
+  const cp = path.join(d, '.sdd/config.json');
+  const c = JSON.parse(fs.readFileSync(cp, 'utf8'));
+  c.projects = [
+    { root: 'lib', dependsOn: ['contract'], testCmd: ['true'], checks: [{ name: 'test', cmd: ['true'] }] },
+    { root: 'app', dependsOn: ['lib'], testCmd: ['true'], checks: [{ name: 'test', cmd: ['true'] }] },
+  ];
+  fs.writeFileSync(cp, JSON.stringify(c));
+  spawnSync('git', ['add', '-A'], { cwd: d });
+  spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'i'], { cwd: d });
+  fs.writeFileSync(path.join(d, 'contract/c.json'), '{"a":1}');
+  const r = sdd(d, 'gate', '--changed');
+  assert.doesNotMatch(r.out, /cmd app:test: no changed files/, r.out);
+  assert.doesNotMatch(r.out, /cmd lib:test: no changed files/, r.out);
+});
+
+test('#242 impact traverses non-code artifacts declared in config.artifacts', () => {
+  const spec = '---\nfeature: r\ntier: T1\n---\n| REQ-R-001 | x shall work. | TEST-R-001 |\n';
+  const d = mini(spec, { 'contract/c.json': '{"a":1}', 'src/a.ts': '// @id CODE-R-001 @implements REQ-R-001\nexport const a = 1;\n' });
+  const cp = path.join(d, '.sdd/config.json');
+  const c = JSON.parse(fs.readFileSync(cp, 'utf8'));
+  c.artifacts = { 'contract/c.json': ['src/a.ts'] };
+  fs.writeFileSync(cp, JSON.stringify(c));
+  const j = JSON.parse(sdd(d, 'impact', 'contract/c.json', '--json').out);
+  assert.ok(j.reachedFiles.includes('src/a.ts'), JSON.stringify(j));
 });
