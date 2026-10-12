@@ -7318,3 +7318,46 @@ test('#288 subprocess-subject test: stub prints a note; Red works without --weak
   assert.equal(r.code, 0, r.out);
   assert.doesNotMatch(r.out, /weak/i, r.out);
 });
+
+test('#291 python stub: `from pkg import mod` used as mod.f() stubs pkg/mod.py, not def mod in the package', () => {
+  const d = mini(R13SPEC, {
+    'pyproject.toml': '[tool.pytest.ini_options]\npythonpath = ["src"]\n',
+    'tests/test_w.py': 'from lsmtool import codec\n\n\n# @id TEST-W-001 @verifies REQ-W-001\ndef test_w_001():\n    assert codec.encode(1) == 1\n',
+  });
+  sdd(d, 'tdd', 'stub', 'TEST-W-001');
+  const f = path.join(d, 'src/lsmtool/codec.py');
+  assert.ok(fs.existsSync(f), 'codec.py missing');
+  assert.match(fs.readFileSync(f, 'utf8'), /def encode/);
+  const init = path.join(d, 'src/lsmtool/__init__.py');
+  assert.ok(!fs.existsSync(init) || !/def codec/.test(fs.readFileSync(init, 'utf8')));
+  assert.ok(!fs.existsSync(path.join(d, 'src/lsmtool.py')));
+});
+
+test('#291 python stub: a collection-time (parametrize) stub failure gets an actionable hint', () => {
+  const d = mini(R13SPEC, {
+    'tests/test_w.py': 'import pytest\nfrom shapes import square\n\n\n# @id TEST-W-001 @verifies REQ-W-001\n@pytest.mark.parametrize("v,w", [(square(2), 4)])\ndef test_w_001(v, w):\n    assert v == w\n',
+  }, ['python3', '-m', 'pytest', '-q', '{file}', '-k', '{idu}']);
+  sdd(d, 'tdd', 'stub', 'TEST-W-001');
+  const r = sdd(d, 'tdd', 'red', 'TEST-W-001');
+  assert.notEqual(r.code, 0, r.out);
+  assert.match(r.out, /parametrize/i, r.out);
+  assert.match(r.out, /inside the test/i, r.out);
+});
+
+test('#291 python stub: a helper module next to the test file is not duplicated under src/', () => {
+  const d = mini(R13SPEC, {
+    'pyproject.toml': '[tool.pytest.ini_options]\npythonpath = ["src", "tools"]\n',
+    'tests/helper_io.py': 'def make(x):\n    return x\n',
+    'tests/test_w.py': 'from helper_io import make\n\n\n# @id TEST-W-001 @verifies REQ-W-001\ndef test_w_001():\n    assert make(1) == 1\n',
+  });
+  sdd(d, 'tdd', 'stub', 'TEST-W-001');
+  assert.ok(!fs.existsSync(path.join(d, 'src/helper_io.py')));
+});
+
+test('#291 python stub files carry a CODE-…-STUB-001 @implements annotation', () => {
+  const d = mini(R13SPEC, {
+    'tests/test_w.py': 'from netsim.rng import Rng\n\n\n# @id TEST-W-001 @verifies REQ-W-001\ndef test_w_001():\n    assert Rng().x() == 1\n',
+  });
+  sdd(d, 'tdd', 'stub', 'TEST-W-001');
+  assert.match(fs.readFileSync(path.join(d, 'netsim/rng.py'), 'utf8'), /^# @id CODE-W-001-STUB-001 @implements REQ-W-001\n/);
+});

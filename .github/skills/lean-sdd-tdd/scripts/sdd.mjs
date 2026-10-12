@@ -3047,6 +3047,8 @@ function stubFor(testPath, id) {
       const ppDir = ppDirs[0] ?? null;
       // a package that already lives on any configured pythonpath entry (`../core/src`) is real code: never shadowed by a stub (#279)
       const ppHit = mod.startsWith('.') ? null : ppDirs.map((d) => path.resolve(proot, d)).find((d) => has(d));
+      // a helper module that already sits next to the test file is importable as-is (#291)
+      if (!mod.startsWith('.') && dir !== proot && has(dir)) continue;
       const base = mod.startsWith('.') ? dir : ppHit ?? (ppDir && !has(proot) ? path.join(proot, ppDir) : srcLayout ? path.join(proot, 'src') : proot);
       const abs = path.join(base, ...mod.replace(/^\.+/, '').split('.')) + '.py';
       // `from pkg import x` where pkg/ is a namespace package: never create pkg.py next to it
@@ -3062,10 +3064,15 @@ function stubFor(testPath, id) {
       // a name used only as an annotation (never called, no attribute access) is a typing.Protocol (#288)
       const isProto = (n) => /^[A-Z]/.test(n) && !isExc(n) && !isConst(n) && new RegExp(`(?::|->|\\[|\\|)\\s*${n}\\b`).test(scan) && !new RegExp(`(?<![\\w.])${n}\\s*[(.]|\\bisinstance\\([^)]*\\b${n}\\b|\\(\\s*${n}\\s*[,)]\\s*:?`).test(scan.replace(new RegExp(`^\\s*from[^\\n]*\\bimport[^\\n]*`, 'gm'), ''));
       const stubOf = (n) => isProto(n) ? `class ${n}(Protocol):\n${methodsOf(scoped, n).map((k) => `    def ${k}(self, *a, **k): ...\n`).join('') || '    ...\n'}` : isExc(n) ? `class ${n}(Exception):\n    pass\n` : isConst(n) ? `${n} = ${new RegExp(`parametrize\\([^\\n]*\\b${n}\\b|\\bin\\s+${n}\\b|\\b${n}\\s*\\[`).test(scoped) ? '[]' : 'None'}\n` : /^[A-Z]/.test(n) ? `class ${n}:\n    def __init__(self, *a, **k):\n        pass\n${methodsOf(scoped, n).map((k) => `\n    def ${k}(self, *a, **k):\n        raise NotImplementedError("${k}")\n`).join('')}` : `def ${n}(*a, **k):\n    raise NotImplementedError("${n}")\n`;
+      // `from pkg import mod` used only as `mod.f(...)` is a submodule: stub pkg/mod.py, never `def mod` in the package (#291)
+      const isSub = (n) => !mod.startsWith('.') && /^[a-z_]\w*$/.test(n) && new RegExp(`\\b${localOf(n)}\\.\\w`).test(scoped) && !new RegExp(`(?<![\\w.])${localOf(n)}\\s*\\(`).test(scoped);
+      const subBody = (n) => [...new Set([...scoped.matchAll(new RegExp(`\\b${localOf(n)}\\.([A-Za-z_]\\w*)\\s*\\(`, 'g'))].map((x) => x[1]))].map((f) => `def ${f}(*a, **k):\n    raise NotImplementedError("${f}")\n`).join('\n\n') || 'pass\n';
       // a namespace dir (no __init__.py) satisfies only the submodules it holds; any other imported name needs an __init__.py that defines it (#214)
       if (isNsDir) {
         const miss = ns.filter((n) => !fs.existsSync(path.join(nsDir, n + '.py')) && !fs.existsSync(path.join(nsDir, n)));
-        if (miss.length) add(path.join(nsDir, '__init__.py'), miss.map(stubOf).join('\n\n'));
+        for (const n of miss.filter(isSub)) add(path.join(nsDir, n + '.py'), subBody(n));
+        const other = miss.filter((n) => !isSub(n));
+        if (other.length) add(path.join(nsDir, '__init__.py'), other.map(stubOf).join('\n\n'));
         continue;
       }
       // `from pkg.sql import x` plus `from pkg.sql.ast import y`: pkg.sql must be a package, never sql.py next to sql/ (#214)
@@ -3075,7 +3082,7 @@ function stubFor(testPath, id) {
       if (existing) {
         // a module that still holds only stubs gets the newly imported names; real code is never touched
         const cur = fs.readFileSync(existing, 'utf8');
-        const rest = cur.replace(/^class \w+(\(Exception\))?:\n(?:    def __init__\(self, \*a, \*\*k\):\n        pass\n|    pass\n)(?:\n    def \w+\(self, \*a, \*\*k\):\n        raise NotImplementedError\("\w+"\)\n)*/gm, '').replace(/^def \w+\(\*a, \*\*k\):\n    raise NotImplementedError\("\w+"\)\n/gm, '');
+        const rest = cur.replace(/^# @id CODE-\S+-STUB-\d+ @implements [^\n]*\n/, '').replace(/^class \w+(\(Exception\))?:\n(?:    def __init__\(self, \*a, \*\*k\):\n        pass\n|    pass\n)(?:\n    def \w+\(self, \*a, \*\*k\):\n        raise NotImplementedError\("\w+"\)\n)*/gm, '').replace(/^def \w+\(\*a, \*\*k\):\n    raise NotImplementedError\("\w+"\)\n/gm, '');
         // names a module re-exports (`from .core import Clock`, `import x as Clock`) are importable, never stubbed over (#214)
         const reExported = new Set();
         for (const im of cur.matchAll(/^(?:from\s+\S+\s+import\s+(\([^)]*\)|[^\n]+)|import\s+([^\n]+))/gm)) for (const b of (im[1] ?? im[2]).replace(/#[^\n]*/g, '').replace(/[()]/g, '').split(',')) { const parts = b.trim().split(/\s+as\s+/); const nm = parts[1] ?? parts[0]; if (nm && nm !== '*') reExported.add(nm.split('.')[0]); }
@@ -3099,6 +3106,13 @@ function stubFor(testPath, id) {
         if (grown !== cur) { fs.writeFileSync(existing, grown); made.push(rel(existing)); }
         if (missing.length && !rest.trim()) { fs.appendFileSync(existing, (cur.endsWith('\n') ? '\n\n' : '\n\n\n') + missing.map(stubOf).join('\n\n')); made.push(rel(existing)); }
         else if (missing.length) (made.realMissing ??= []).push(`${missing.join(', ')} in ${rel(existing)}`);
+        continue;
+      }
+      const subs = ns.filter(isSub);
+      if (subs.length && !fs.existsSync(abs)) {
+        for (const n of subs) add(path.join(nsDir, n + '.py'), subBody(n));
+        const other = ns.filter((n) => !subs.includes(n));
+        if (other.length) add(path.join(nsDir, '__init__.py'), other.map(stubOf).join('\n\n'));
         continue;
       }
       add(absOut, (ns.some(isProto) ? 'from typing import Protocol\n\n\n' : '') + ns.map(stubOf).join('\n\n'));
@@ -3932,12 +3946,12 @@ function cmdTdd() {
     const made = stubFor(t.path, t.id);
     let annotationIndex = 0;
     for (const file of [...new Set(made)]) {
-      if (priorFiles.has(file) || !/\.(?:java|php|cs|jl|exs?|[cm]?[jt]sx?)$/.test(file)) continue;
+      if (priorFiles.has(file) || !/\.(?:java|php|cs|jl|exs?|py|[cm]?[jt]sx?)$/.test(file)) continue;
       const abs = path.join(ROOT, file), text = fs.readFileSync(abs, 'utf8');
       if (/@id\s+(?:CODE|TEST)-/.test(text)) continue;
       let codeId;
       do { codeId = t.id.replace(/^TEST-/, 'CODE-') + '-STUB-' + String(++annotationIndex).padStart(3, '0'); } while (ents.has(codeId));
-      const annotation = `${/\.(?:jl|exs?)$/.test(file) ? '#' : '//'} @id ${codeId} @implements ${t.refs.verifies.join(' ')}\n`;
+      const annotation = `${/\.(?:jl|exs?|py)$/.test(file) ? '#' : '//'} @id ${codeId} @implements ${t.refs.verifies.join(' ')}\n`;
       const first = text.indexOf('\n') + 1;
       const offset = text.startsWith('<?php') || text.startsWith('// sdd-stub') || (file.endsWith('.jl') && /^module\s/.test(text)) ? first : 0;
       fs.writeFileSync(abs, text.slice(0, offset) + annotation + text.slice(offset));
@@ -4221,7 +4235,7 @@ function cmdTdd() {
     else if (res.exit === 0 && typeof flags.characterization === 'string' && flags.characterization.trim()) ok = true;
     else if (res.exit === 0 && vacuousThrows(t.path, id)) { ok = false; why = `test passed: a matcher-less assert.throws / pytest.raises is satisfied by the stub's own "not implemented" error (vacuous test); add a matcher (error type or message) that only the real behaviour satisfies, or record --characterization "<why>"`; }
     else if (res.exit === 0) { ok = false; why = 'test passed; Red needs a real failure (data-only / characterization test? record it explicitly: --characterization "<why no implementation can fail it>"; amending a wrong expectation after Red: --retest "<reason>")'; }
-    else if (isLoadErr(res.text) && !flags.weak && !(flags['missing-module'] && declaredMissingModule(res.text, t.path))) { ok = false; why = 'load/compile error, not an assertion failure. new module? run `tdd stub <ID>` once (or `--missing-module`); if stub already ran or found nothing, add the missing code by hand; or --weak to record as weak Red'; }
+    else if (isLoadErr(res.text) && !flags.weak && !(flags['missing-module'] && declaredMissingModule(res.text, t.path))) { ok = false; why = 'load/compile error, not an assertion failure. new module? run `tdd stub <ID>` once (or `--missing-module`); if stub already ran or found nothing, add the missing code by hand; or --weak to record as weak Red' + (/\.py$/.test(t.path) && /ERROR collecting[\s\S]*(?:NotImplementedError|not implemented)/.test(res.text) ? '\nhint: the stub threw at collection time (a call in `@pytest.mark.parametrize` arguments or module level). Build those values inside the test body (or a fixture) so the stub fails at run time as an assertion/Red' : ''); }
     else if (ownHelperTypeError(res.text, t.path)) { ok = false; why = `TypeError raised inside the test's own helper ${ownHelperTypeError(res.text, t.path)}() (argument/signature mismatch): a test bug, not a Red for the behaviour; fix the test`; }
     else if (typeof flags.expect === 'string' && !(juliaSummaryRows(plain) ? targetOutput ?? '' : res.text).includes(flags.expect)) { ok = false; why = `failure output does not contain --expect "${flags.expect}" (Red for the wrong reason?)`; }
     else ok = true;
