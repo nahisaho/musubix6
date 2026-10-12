@@ -1,9 +1,9 @@
 # AI cost log (USD)
 
 - Project: `/home/nahisaho/GitHub/musubix6`
-- Updated: 2026-10-12 00:40 UTC
+- Updated: 2026-10-12 01:34 UTC
 - Sessions: 10
-- **Total: $371.09**
+- **Total: $387.22**
 - Basis: `total_nano_aiu` in the Copilot CLI session store / 1e9 = AIU; 1 AIU = 1 AI credit = 0.01 USD (docs.github.com, usage-based billing).
 - Local-machine estimate; the GitHub billing dashboard is authoritative.
 
@@ -13,7 +13,7 @@ Regenerate with `python3 scripts/cost-log.py`. Do not edit by hand.
 
 | Model | Calls | USD | Input tokens | Output tokens |
 |---|---:|---:|---:|---:|
-| claude-sonnet-5.5 | 10534 | $282.77 | 891041244 | 10148292 |
+| claude-sonnet-5.5 | 11212 | $298.91 | 949016544 | 10789724 |
 | gpt-6.1-sol | 6637 | $87.98 | 265367995 | 3352958 |
 | gpt-5.6-terra | 26 | $0.33 | 412537 | 9674 |
 | gpt-5.6-luna | 8 | $0.01 | 47460 | 2438 |
@@ -35,4 +35,4 @@ Regenerate with `python3 scripts/cost-log.py`. Do not edit by hand.
 | 2026-10-11T17:33 | `88999767` | claude-sonnet-5.5 | 361 | $17.65 | Create Musubix6 Application Tutorial |
 | 2026-10-11T17:33 | `88999767` | gpt-5.6-terra | 7 | $0.10 | Create Musubix6 Application Tutorial |
 | 2026-10-11T20:52 | `b1cb9b0b` | claude-sonnet-5.5 | 51 | $1.00 | 修正 WSL Container 設定 |
-| 2026-10-11T23:45 | `1e960199` | claude-sonnet-5.5 | 599 | $14.53 | Wave 7 Development Tasks |
+| 2026-10-11T23:45 | `1e960199` | claude-sonnet-5.5 | 1277 | $30.66 | Wave 7 Development Tasks |
