@@ -6252,3 +6252,24 @@ test('#252 an assertion/panic failure line outranks an incidental "No such file"
   fs.writeFileSync(f, fs.readFileSync(f, 'utf8').replace('assert.ok(1)', 'assert.ok(2)'));
   assert.match(sdd(d, 'tdd', 'red', 'TEST-A-001').out, /REJECTED|weak/, 'genuine load error still rejected');
 });
+
+test('#249 tdd red --retest on 2+ tests updates only those tests and keeps other Red evidence', () => {
+  const spec = '---\nfeature: a\ntier: T1\n---\n' + [1, 2, 3].map((n) => `| REQ-A-00${n} | r${n} shall hold. | TEST-A-00${n} |\n`).join('');
+  const body = (a, b, c) => [a, b, c].map((v, i) => `// @id TEST-A-00${i + 1} @verifies REQ-A-00${i + 1}\ntest('TEST-A-00${i + 1} x', () => {\n  assert.ok(${v});\n});\n`).join('');
+  const d = mini(spec, { 'a.test.mjs': body(1, 1, 1) }, FAIL);
+  sdd(d, 'approve', 'record', 'a', '--by', 'tester');
+  const ids = ['TEST-A-001', 'TEST-A-002', 'TEST-A-003'];
+  assert.equal(sdd(d, 'tdd', 'red', ...ids).code, 0);
+  setCmd(d, PASS);
+  assert.equal(sdd(d, 'tdd', 'green', ...ids).code, 0);
+  fs.writeFileSync(path.join(d, 'a.test.mjs'), body(2, 3, 1));
+  const r = sdd(d, 'tdd', 'red', ...ids, '--retest', 'expectation was wrong');
+  assert.equal((r.out.match(/RED ok/g) ?? []).length, 2, r.out);
+  assert.match(r.out, /REFUSED.*TEST-A-003.*unchanged|REFUSED.*unchanged/, r.out);
+  sdd(d, 'tdd', 'green', 'TEST-A-001', 'TEST-A-002');
+  const g = sdd(d, 'gate', '--no-run').out;
+  assert.match(g, /3\/3 tests Red→Green, 2 weak Red/, g);
+  const led = fs.readFileSync(path.join(d, '.sdd/tdd.jsonl'), 'utf8').trim().split('\n').map((l) => JSON.parse(l));
+  assert.equal(led.filter((e) => e.test === 'TEST-A-003').length, 2);
+  assert.equal(led.filter((e) => e.type === 'red' && !e.weak).length, 3);
+});
