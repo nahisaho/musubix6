@@ -7531,3 +7531,33 @@ test('#295 batch tdd red prints an identical compiler tail once', () => {
   const out = sdd(d, 'tdd', 'red', 'TEST-A-001', 'TEST-A-002').out;
   assert.equal(out.split('error TS2304').length - 1, 1, out);
 });
+
+test('#301 impact reaches REQs of a project that dependsOn the changed code\'s project', () => {
+  const d = mini('---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | x shall work. | TEST-A-001 |\n', {
+    '.sdd/specs/b.md': '---\nfeature: b\ntier: T1\n---\n| REQ-B-001 | y shall work. | TEST-B-001 |\n',
+    'core/lib.rs': '// @id CODE-A-001 @implements REQ-A-001\nfn f() {}\n',
+    'py/test_b.py': '# @id TEST-B-001 @verifies REQ-B-001\ndef test_b():\n    pass\n',
+  });
+  const cp = path.join(d, '.sdd/config.json');
+  const c = JSON.parse(fs.readFileSync(cp, 'utf8'));
+  c.projects = [{ root: 'core', testCmd: ['true'], checks: [] }, { root: 'py', dependsOn: ['core'], testCmd: ['true'], checks: [] }];
+  fs.writeFileSync(cp, JSON.stringify(c));
+  const j = JSON.parse(sdd(d, 'impact', 'REQ-A-001', '--json').out);
+  assert.ok(j.otherReqs.some((x) => x.req === 'REQ-B-001'), JSON.stringify(j));
+});
+
+test('#301 gate --changed runs a project check when only its feature spec changed', () => {
+  const d = mini('---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | x shall work. | TEST-A-001 |\n', {
+    'py/test_a.py': '# @id TEST-A-001 @verifies REQ-A-001\ndef test_a():\n    pass\n',
+  });
+  const git = (...a) => spawnSync('git', a, { cwd: d });
+  git('config', 'user.email', 'a@b'); git('config', 'user.name', 't');
+  const cp = path.join(d, '.sdd/config.json');
+  const c = JSON.parse(fs.readFileSync(cp, 'utf8'));
+  c.projects = [{ root: 'py', checks: [{ name: 't', cmd: ['node', '-e', '0'], changedCmd: ['node', '-e', '0'] }] }];
+  fs.writeFileSync(cp, JSON.stringify(c));
+  git('add', '-A'); git('commit', '-qm', 'base');
+  fs.appendFileSync(path.join(d, '.sdd/specs/a.md'), '\n');
+  const out = sdd(d, 'gate', '--changed').out;
+  assert.match(out, /✓ cmd py:t/, out);
+});

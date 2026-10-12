@@ -4740,6 +4740,10 @@ function cmdGate() {
   };
   const allChecks = [...(cfg.checks ?? []), ...(cfg.projects ?? []).flatMap((p) => (p.checks ?? []).map((c) => ({ ...c, name: `${p.root}:${c.name}`, cwd: p.root, dependsOn: depClosure(p) })))];
   let sharedHinted = false;
+  // a changed spec puts the projects holding that feature's tests/code in scope; the project check then runs in full
+  const specProjects = new Set();
+  if (flags.changed) { const chs = changedFiles(); for (const sp of loadSpecs()) if (chs.has(sp.path)) { const ids = new Set(sp.reqs.map((r) => r.id)); for (const e of ents.values()) if ([...e.refs.implements, ...e.refs.verifies].some((r) => ids.has(r))) for (const p of cfg.projects ?? []) if (e.path.startsWith(normDep(p.root) + '/')) specProjects.add(p.root.replace(/\/$/, '')); } }
+  const specOwned = (cwd) => specProjects.has(cwd.replace(/\/$/, ''));
   for (const p of cfg.projects ?? []) for (const dp of p.dependsOn ?? []) if (!fs.existsSync(path.join(ROOT, normDep(dp)))) lines.push(`! config: project ${p.root} dependsOn "${dp}" does not exist on disk — contract changes will not trigger its checks (typo?)`);
   if (flags['no-run']) { lines.push('! commands: SKIPPED (--no-run) — result is INCOMPLETE'); incomplete = true; }
   else {
@@ -4754,7 +4758,7 @@ function cmdGate() {
     let cmd = c.cmd;
     const base = c.cwd ? c.cwd.replace(/\/$/, '') + '/' : '';
     const inDeps = (f) => (c.dependsOn ?? []).some((d) => { const x = normDep(d); return f === x || f.startsWith(x + '/'); });
-    if (c.cwd && flags.changed && ![...changedFiles()].some((f) => f.startsWith(base) || inDeps(f))) { lines.push(`! cmd ${c.name}: no changed files in ${c.cwd}${c.dependsOn?.length ? ` or its dependencies (${c.dependsOn.join(', ')})` : ''} — skipped`); continue; }
+    if (c.cwd && flags.changed && !specOwned(c.cwd) && ![...changedFiles()].some((f) => f.startsWith(base) || inDeps(f))) { lines.push(`! cmd ${c.name}: no changed files in ${c.cwd}${c.dependsOn?.length ? ` or its dependencies (${c.dependsOn.join(', ')})` : ''} — skipped`); continue; }
     const pRoots = (cfg.projects ?? []).map((p) => p.root.replace(/\/$/, '') + '/');
     if (!c.cwd && flags.changed && pRoots.length) {
       const chg = [...changedFiles()].filter((f) => !f.startsWith('.sdd/'));
@@ -5231,6 +5235,14 @@ function cmdImpact() {
     if (!ownFeatures.size) { const sib = new Set(); for (const e of all) if (path.posix.dirname(e.path) === path.posix.dirname(sd)) for (const r of [...e.refs.implements, ...e.refs.verifies]) if (reqFeature.get(r)) sib.add(reqFeature.get(r)); if (sib.size === 1) sib.forEach((x) => ownFeatures.add(x)); }
   }
   for (const f of via.keys()) for (const e of entsIn(f)) for (const r of [...e.refs.verifies, ...e.refs.implements]) if (!reqs.includes(r)) { if (!affected.has(r)) affected.set(r, new Set()); affected.get(r).add(e.id + ' (' + f + ')'); }
+  // code seeds reach projects that list the seed's project (or the file) in dependsOn, transitively (process-spawn / runtime consumers)
+  if (!dataFile && seeds.length) {
+    const got = new Map();
+    const owner = (f) => projs.find((p) => f.startsWith(normDep(p.root) + '/'));
+    for (const f of [...via.keys()]) { const own = owner(f); for (const p of projs) if (p !== own && (hits(p, f) || (own && hits(p, normDep(own.root)))) && !got.has(p)) got.set(p, f); }
+    for (let g = true; g;) { g = false; for (const p of projs) if (!got.has(p)) { const q = [...got.keys()].find((x) => hits(p, normDep(x.root))); if (q) { got.set(p, got.get(q)); g = true; } } }
+    for (const [p, f] of got) for (const e of all) if (e.path.startsWith(normDep(p.root) + '/') && !via.has(e.path)) for (const r of [...e.refs.verifies, ...e.refs.implements]) { if (reqs.includes(r)) continue; if (!affected.has(r)) affected.set(r, new Set()); affected.get(r).add(`${e.id} (${e.path}; project ${p.root} dependsOn ${f})`); }
+  }
   for (const [r, v] of projReqs) { if (!affected.has(r)) affected.set(r, new Set()); for (const x of v) affected.get(r).add(x); }
   const sameFeature = [...affected.keys()].filter((r) => ownFeatures.has(reqFeature.get(r)));
   for (const r of sameFeature) affected.delete(r);
