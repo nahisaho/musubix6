@@ -1995,15 +1995,16 @@ function stubRust(testPath, src, dir, made) {
   };
   // capitalised names are types: `Name::Variant` => enum, otherwise a unit struct (never a function)
   // associated fns `Type::new(..)` and instance methods `v.m(..)` on `let v = Type::new(..)` (#103)
-  const rustImpl = (n, gn = null, crate_ = ownPkg) => {
+  const rustImpl = (n, gn = null, crate_ = ownPkg, only = null) => {
     const tf = '(?:::<[^;(){}]*?>)?';
     // `T::default()` is provided by derive(Default) on our own non-generic stubs
-    const assoc = [...new Set([...src.matchAll(new RegExp(`(?<![\\w:])${n}${tf}::([a-z_]\\w*)\\s*\\(`, 'g'))].map((m) => m[1]))].filter((k) => k !== 'default' || gn);
-    const vars = [...new Set([...src.matchAll(new RegExp(`\\blet\\s+(?:mut\\s+)?(\\w+)\\s*(?::[^=]+)?=\\s*${n}${tf}::[a-z_]\\w*\\s*\\(`, 'g'))].map((m) => m[1]))];
+    const assoc = only ? only.assoc : [...new Set([...src.matchAll(new RegExp(`(?<![\\w:])${n}${tf}::([a-z_]\\w*)\\s*\\(`, 'g'))].map((m) => m[1]))].filter((k) => k !== 'default' || gn);
+    // variables bound to an `N` value: `= N::f(..)`, `= N { .. }` or annotated `: N<..>`
+    const vars = [...new Set([...src.matchAll(new RegExp(`\\blet\\s+(?:mut\\s+)?(\\w+)\\s*(?::[^=]+)?=\\s*${n}${tf}::[a-z_]\\w*\\s*\\(|\\blet\\s+(?:mut\\s+)?(\\w+)\\s*=\\s*${n}\\s*\\{|\\blet\\s+(?:mut\\s+)?(\\w+)\\s*:\\s*&?(?:mut\\s+)?${n}\\b`, 'g'))].map((m) => m[1] ?? m[2] ?? m[3]))];
     const chain = chainsOf(n);
-    const inst = [...new Set([...vars.flatMap((v) => [...src.matchAll(new RegExp(`(?<![\\w.])${v}\\s*\\.\\s*([a-z_]\\w*)\\s*\\(`, 'g'))].map((m) => m[1])), ...chain.all])].filter((k) => !assoc.includes(k));
+    const inst = only ? only.inst : [...new Set([...vars.flatMap((v) => [...src.matchAll(new RegExp(`(?<![\\w.])${v}\\s*\\.\\s*([a-z_]\\w*)\\s*\\(`, 'g'))].map((m) => m[1])), ...chain.all])].filter((k) => !assoc.includes(k));
     // methods called only on `let mut v` bindings take `&mut self` (#114)
-    const mutVars = new Set([...src.matchAll(new RegExp(`\\blet\\s+mut\\s+(\\w+)\\s*(?::[^=]+)?=\\s*${n}${tf}::[a-z_]\\w*\\s*\\(`, 'g'))].map((m) => m[1]));
+    const mutVars = new Set([...src.matchAll(/\blet\s+mut\s+(\w+)/g)].map((m) => m[1]).filter((v) => vars.includes(v)));
     const needsMut = (k) => { const cs = vars.filter((v) => new RegExp(`(?<![\\w.])${v}\\s*\\.\\s*${k}\\s*\\(`).test(src)); return cs.length > 0 && cs.every((v) => mutVars.has(v)) && cs.some((v) => new RegExp(`^\\s*${v}\\s*\\.\\s*${k}\\s*\\(`, 'm').test(src)); };
     if (!assoc.length && !inst.length) return '';
     const gen = (c) => c.args.map((_, i) => `A${i}`);
@@ -2032,6 +2033,24 @@ function stubRust(testPath, src, dir, made) {
       }
     }
     return [...fields];
+  };
+  // the `pub fn` blocks of a generated impl
+  const fnBlocks = (impl) => [...impl.matchAll(/^    pub fn (\w+)[^\n]*\{\n(?:        [^\n]*\n)+    \}\n/gm)];
+  // appends fn blocks to the inherent impl of `x` in `t` (generic impls included); `create` adds `impl<..> x<..> {}` when the type has none
+  const addToImpl = (t, x, blocks, create) => {
+    if (!blocks.length) return t;
+    const at = new RegExp(`^impl(?:<[^>{]*>)?\\s+${x}(?:<[^>{]*>)?\\s*\\{`, 'm').exec(t);
+    if (!at) {
+      const def = create && new RegExp(`\\b(?:struct|enum)\\s+${x}\\s*(?:<([^>{(;]*)>)?`).exec(t);
+      if (!def) return t;
+      const ps = def[1] ? splitTop(def[1]) : [];
+      const head = ps.length ? `<${ps.map((q) => q.replace(/\s*=[^]*$/, '')).join(', ')}>` : '', use = ps.length ? `<${ps.map((q) => /^('?\w+)/.exec(q)?.[1]).join(', ')}>` : '';
+      return t.replace(/\n*$/, '\n') + `\nimpl${head} ${x}${use} {\n${blocks.join('\n')}}\n`;
+    }
+    const m_ = maskBraces(t, true);
+    let depth = 0, k = at.index + at[0].length - 1;
+    for (; k < m_.length; k++) { if (m_[k] === '{') depth++; else if (m_[k] === '}' && !--depth) break; }
+    return t.slice(0, k).replace(/\n*$/, '\n\n') + blocks.join('\n') + t.slice(k);
   };
   const typeStub = (n, crate_ = ownPkg) => {
     const vs = [...new Set([...src.matchAll(new RegExp(`\\b${n}::([A-Z]\\w*)`, 'g'))].map((m) => m[1]).filter((v) => !/^[A-Z][A-Z0-9_]+$/.test(v)))];
@@ -2121,15 +2140,9 @@ function stubRust(testPath, src, dir, made) {
       const miss = items.filter((x) => !new RegExp(`\\b(?:struct|enum|fn|const|static|type|trait|use|mod)\\s+(?:[\\w:{},\\s]*\\b)?${x}\\b`).test(nonTest) && (!opaque || new RegExp(`\`${x}\``).test(preOut)));
       // methods a later test needs are added to the existing inherent `impl Type {` (#268)
       const grown = items.filter((x) => /^[A-Z]/.test(x) && !miss.includes(x)).reduce((t, x) => {
-        const at = new RegExp(`^impl\\s+${x}\\s*\\{`, 'm').exec(t);
-        if (!at) return t;
         const hasDefault = new RegExp(`derive\\([^)]*\\bDefault\\b[^)]*\\)\\]\\s*(?:pub\\s+)?(?:struct|enum)\\s+${x}\\b|\\bimpl\\s+Default\\s+for\\s+${x}\\b`).test(t);
-        const add_ = [...rustImpl(x).matchAll(/^    pub fn (\w+)[^\n]*\{\n(?:        [^\n]*\n)+    \}\n/gm)].filter((f) => !new RegExp(`\\bfn\\s+${f[1]}\\b`).test(t) && !(f[1] === 'default' && hasDefault)).map((f) => f[0]);
-        if (!add_.length) return t;
-        const m_ = maskBraces(t, true);
-        let depth = 0, k = at.index + at[0].length - 1;
-        for (; k < m_.length; k++) { if (m_[k] === '{') depth++; else if (m_[k] === '}' && !--depth) break; }
-        return t.slice(0, k).replace(/\n*$/, '\n\n') + add_.join('\n') + t.slice(k);
+        const add_ = fnBlocks(rustImpl(x)).filter((f) => !new RegExp(`\\bfn\\s+${f[1]}\\b`).test(t) && !(f[1] === 'default' && hasDefault)).map((f) => f[0]);
+        return addToImpl(t, x, add_, false);
       }, text);
       if (grown !== text) { fs.writeFileSync(last, grown); if (!freshMods.has(last)) made.push(rel(last)); }
       if (miss.length) { fs.appendFileSync(last, (text && !text.endsWith('\n') ? '\n' : '') + (text ? '\n' : '') + miss.map((x) => itemStub(x, m[1])).join('\n')); if (!freshMods.has(last)) made.push(rel(last)); }
@@ -2184,6 +2197,34 @@ function stubRust(testPath, src, dir, made) {
     }
     out = cargoTest();
   }
+  // methods / associated fns the test calls on a type that already exists are added to its impl, found from cargo's E0599 (#298)
+  const growMembers = () => {
+    for (let round = 0; round < 4; round++) {
+      const want = new Map();
+      for (const m of out.matchAll(/no (method|associated function or constant|function or associated item) named `(\w+)` found for (?:struct|enum) `(\w+)/g)) {
+        const e = want.get(m[3]) ?? { assoc: new Set(), inst: new Set() };
+        e[m[1] === 'method' ? 'inst' : 'assoc'].add(m[2]);
+        want.set(m[3], e);
+      }
+      let wrote = false;
+      for (const [t, { assoc, inst }] of want) {
+        const srcFiles = (d) => fs.existsSync(d) ? fs.readdirSync(d, { withFileTypes: true }).flatMap((e) => e.isDirectory() ? srcFiles(path.join(d, e.name)) : e.name.endsWith('.rs') ? [path.join(d, e.name)] : []) : [];
+        const files = [...new Set([root, ...crates.values()])].flatMap((c) => srcFiles(path.join(c, 'src')));
+        const at = files.map((f) => ({ f, text: fs.readFileSync(f, 'utf8') })).find((x) => new RegExp(`\\b(?:struct|enum)\\s+${t}\\b`).test(x.text));
+        if (!at) continue;
+        const owner = [...crates].find(([, r]) => at.f.startsWith(r + path.sep))?.[0] ?? ownPkg;
+        const blocks = fnBlocks(rustImpl(t, null, owner, { assoc: [...assoc], inst: [...inst] })).filter((f) => !new RegExp(`\\bfn\\s+${f[1]}\\b`).test(at.text)).map((f) => f[0]);
+        const next = addToImpl(at.text, t, blocks, true);
+        if (next === at.text) continue;
+        fs.writeFileSync(at.f, next);
+        made.push(rel(at.f));
+        wrote = true;
+      }
+      if (!wrote) return;
+      out = cargoTest();
+    }
+  };
+  growMembers();
   const names = [...new Set([...out.matchAll(/cannot find function `(\w+)`|unresolved import `[\w:]+::(\w+)`|no `(\w+)` in the root|cannot find struct, variant or union type `(\w+)`/g)].map((m) => m[1] ?? m[2] ?? m[3] ?? m[4]))].filter((n) => !modNames.has(n) && !macroNames.has(n) && new RegExp(`\\b${n}\\b`).test(srcNoUse));
   // compile-check what was written: an honest verdict instead of an assumed "Red-safe" (#130)
   const verified = () => {

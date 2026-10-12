@@ -7849,3 +7849,14 @@ test('#298 Rust stub: nested struct literals give structs with typed fields, not
   assert.match(lib, /pub struct Inner \{[^}]*x: u8[^}]*y: f64/s, lib);
   ok17(out);
 });
+
+test('#298 Rust stub: instance methods are added to an existing (generic) impl, also for root-level imports', has268, () => {
+  const d = rs288('use hist::{Stack, Counter};\n\n' + t288('    let mut s: Stack<i32> = Stack::new();\n    s.push(1);\n    assert_eq!(s.len(), 1);\n    let c = Counter { n: 1 };\n    assert_eq!(c.double(), 2);'), {
+    'src/lib.rs': '#[derive(Debug, Default)]\npub struct Stack<T> {\n    pub items: Vec<T>,\n}\n\nimpl<T> Stack<T> {\n    pub fn new() -> Self {\n        Stack { items: Vec::new() }\n    }\n}\n\n#[derive(Debug, Default)]\npub struct Counter {\n    pub n: i64,\n}\n',
+  });
+  const { out, lib } = stub288(d);
+  assert.match(lib, /impl<T> Stack<T> \{[^]*pub fn push[^]*pub fn len/, lib);
+  assert.match(lib, /impl Counter \{[^]*pub fn double\(&self\)/, lib);
+  assert.equal((lib.match(/pub struct Stack/g) ?? []).length, 1, lib);
+  ok17(out);
+});
