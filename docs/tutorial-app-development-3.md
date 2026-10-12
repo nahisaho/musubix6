@@ -404,7 +404,9 @@ job-queue を WSLC のコンテナーにして、コンテナー内でテスト�
 (補足: コンテナーからレジストリに届かない場合や、公式イメージが使えない場合は、ローカルのイメージ alpine と、ホストで取得できるものだけでビルドする方法に切り替えて。)
 ```
 
-チュートリアル 1、2 と同じく、公式イメージを取得できないため、ローカルの `alpine` に、ホストで取得した Node.js(musl 版)と `libstdc++`、`libgcc` を載せる方法に切り替わりました。取得は `scripts/fetch-vendor.sh` が行い、`vendor/` に展開されます。
+チュートリアル 1、2 と同じく、公式イメージを取得できなかった環境では、ローカルの `alpine` を使う方法に切り替わりました。ホストで取得した Node.js(musl 版)と `libstdc++`、`libgcc` を載せます。取得は `scripts/fetch-vendor.sh` が行い、`vendor/` に展開されます。
+
+> **再検証(2026-10-12、wslc 3.0.3.0)**: 公式の `node:24-alpine` を取得でき、チュートリアル 1 §8.1 の Dockerfile でビルドできました。`network is unreachable` は再現していません。まず公式イメージでの構成を試し、失敗したときだけ、この代替策を使ってください。
 
 ```dockerfile
 FROM alpine:latest
