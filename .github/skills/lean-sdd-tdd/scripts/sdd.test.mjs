@@ -7382,3 +7382,39 @@ test('#291 python stub files carry a CODE-…-STUB-001 @implements annotation', 
   sdd(d, 'tdd', 'stub', 'TEST-W-001');
   assert.match(fs.readFileSync(path.join(d, 'netsim/rng.py'), 'utf8'), /^# @id CODE-W-001-STUB-001 @implements REQ-W-001\n/);
 });
+
+const R14C_PY = ['python3', '-m', 'pytest', '-q', '{file}', '-k', '{idu}'];
+const r14c = (src, body) => mini(W11SPEC(1), {
+  'src/m.py': src,
+  'tests/test_w.py': `import sys\nsys.path.insert(0, "src")\nfrom m import *\n\n\n# @id TEST-W-001 @verifies REQ-W-001\ndef test_w_001():\n    ${body}\n`,
+}, R14C_PY);
+
+test('#292 a stubbed SUT call passed to an assert helper is the act, not setup', () => {
+  const d = r14c('def chk(v):\n    assert v == 1\n\n\ndef act(x):\n    raise NotImplementedError("act")\n', 'chk(act(1))');
+  const r = sdd(d, 'tdd', 'red', 'TEST-W-001');
+  assert.match(r.out, /RED ok/, r.out);
+  assert.doesNotMatch(r.out, /\[weak\]|setup call/, r.out);
+});
+
+test('#292 a `with X(...)` that fails on __enter__ is flagged as a setup Red', () => {
+  const d = r14c('class Cli:\n    def __init__(self, p):\n        pass\n\n    def get(self, k):\n        return 1\n', 'with Cli("p") as c:\n        assert c.get("k") == 1');
+  const r = sdd(d, 'tdd', 'red', 'TEST-W-001');
+  assert.match(r.out, /\[weak\]/, r.out);
+  assert.match(r.out, /setup call "Cli"/, r.out);
+});
+
+test('#292 a name only derived from the stack (never in the test) is not reported as a setup call', () => {
+  const out = '--- FAIL: TestCalc (0.00s)\npanic: nyi: next [recovered]\n\ngoroutine 7 [running]:\nexample.com/x.(*It).next(...)\n\t/x/calc.go:3 +0x1\n';
+  const r = weak263(['  const v = 1;', '  assert.equal(v, 1);'], out);
+  assert.doesNotMatch(r.out, /\[weak\]|setup call/, r.out);
+});
+
+test('#292 destructured results of the asserted call are not setup, like plain assignment', () => {
+  for (const bind of ['const [a, b] = add(1);', 'const { a, b } = add(1);']) {
+    const d = approved();
+    fs.writeFileSync(path.join(d, 'add.mjs'), "export const add = () => { throw new Error('not implemented: add'); };\n");
+    testFile(d, [`  ${bind}`, '  assert.equal(a, b);']);
+    const r = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
+    assert.doesNotMatch(r.out, /\[weak\]|setup call/, `${bind}\n${r.out}`);
+  }
+});
