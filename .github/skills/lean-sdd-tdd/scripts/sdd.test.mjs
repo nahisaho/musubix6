@@ -7838,3 +7838,14 @@ test('#304 Rust stub: the first test of a workspace whose sibling crates lack sr
   assert.match(fs.readFileSync(path.join(d, 'a/src/lib.rs'), 'utf8'), /pub fn go/, r.out);
   assert.doesNotMatch(r.out, /verified.*fail|could not fully stub/i, r.out);
 });
+
+// ---- r17a (#304/#298/#290): Rust stub type inference ----
+const ok17 = (out) => assert.doesNotMatch(out, /could not fully stub|verified:? ?fail|verify.*fail/i, out);
+
+test('#298 Rust stub: nested struct literals give structs with typed fields, not unit structs / i64', has268, () => {
+  const d = rs288('use hist::{Outer, Inner, run};\n\n' + t288('    let o = Outer { name: "a".to_string(), inner: Inner { x: 1u8, y: 2.5 }, tags: vec!["t".to_string()], pair: (1, "p".to_string()), on: Some(3) };\n    assert_eq!(run(&o), 3);'));
+  const { out, lib } = stub288(d);
+  assert.match(lib, /pub struct Outer \{[^}]*name: String[^}]*inner: (?:crate::)?Inner[^}]*tags: Vec<String>[^}]*pair: \(i64, String\)[^}]*on: Option<i64>/s, lib);
+  assert.match(lib, /pub struct Inner \{[^}]*x: u8[^}]*y: f64/s, lib);
+  ok17(out);
+});

@@ -1895,6 +1895,10 @@ function stubRust(testPath, src, dir, made) {
   // #288: usage-driven helpers (all scoped to the requested test's source)
   const takeExpr = (s) => { let d = 0, i = 0; for (; i < s.length; i++) { const c = s[i]; if (c === '"') { i++; while (i < s.length && s[i] !== '"') i += s[i] === '\\' ? 2 : 1; } else if ('([{'.includes(c)) d++; else if (')]}'.includes(c)) { if (!d) break; d--; } else if ((c === ',' || c === ';') && !d) break; } return s.slice(0, i).trim(); };
   const tyRef = (n, crate_) => { const e = typePath.get(n); return e ? `${e.crate === crate_ ? 'crate' : e.crate}${e.mods}::${n}` : null; };
+  // index of the bracket closing the one at `at` (strings are opaque), -1 when unbalanced
+  const matchEnd = (s, at) => { const ms = maskBraces(s, true); let d = 0; for (let i = at; i < ms.length; i++) { if ('([{'.includes(ms[i])) d++; else if (')]}'.includes(ms[i]) && !--d) return i; } return -1; };
+  // top-level comma split of `a, (b, c), "d,e"`
+  const splitTop = (s) => { const ms = maskBraces(s, true), out = []; let d = 0, cur = 0; for (let i = 0; i < ms.length; i++) { if ('([{'.includes(ms[i])) d++; else if (')]}'.includes(ms[i])) d--; else if (ms[i] === ',' && !d) { out.push(s.slice(cur, i).trim()); cur = i + 1; } } if (s.slice(cur).trim()) out.push(s.slice(cur).trim()); return out; };
   // type of an expression the test compares a call with; `top` = the call's own type (a str literal is a `String`), otherwise nested in Option/Result/Vec (`&'static str`)
   const exprType = (e, crate_, top = true) => {
     e = e.trim();
@@ -1906,7 +1910,13 @@ function stubRust(testPath, src, dir, made) {
     if ((m = /^Ok\(([^]*)\)$/.exec(e))) return `Result<${exprType(m[1], crate_, false) ?? 'i64'}, String>`;
     if ((m = /^Err\(([^]*)\)$/.exec(e))) return `Result<i64, ${exprType(m[1], crate_, false) ?? 'String'}>`;
     if ((m = /^vec!\s*\[([^]*)\]$/.exec(e))) return `Vec<${(takeExpr(m[1]) && exprType(takeExpr(m[1]), crate_, false)) || 'i64'}>`;
+    if ((m = /^([A-Z]\w*)\s*\{/.exec(e)) && /\}$/.test(e)) return tyRef(m[1], crate_) ?? m[1];
     if ((m = /^([A-Z]\w*)\s*(?:::|[({]|$)/.exec(e))) return tyRef(m[1], crate_);
+    if (e === 'None') return 'Option<i64>';
+    if (/^'(?:\\.|[^'\\])'$/.test(e)) return 'char';
+    if ((m = /^-?\d[\d_]*(?:\.\d+)?(u8|u16|u32|u64|u128|usize|i8|i16|i32|i64|i128|isize|f32|f64)$/.exec(e))) return m[1];
+    if (e.startsWith('(') && e.endsWith(')') && matchEnd(e, 0) === e.length - 1) { const parts = splitTop(e.slice(1, -1)); return parts.length > 1 || /,\s*$/.test(e.slice(1, -1)) ? `(${parts.map((x) => exprType(x, crate_, false) ?? 'i64').join(', ')}${parts.length === 1 ? ',' : ''})` : exprType(parts[0] ?? '', crate_, top); }
+    if (e.startsWith('[') && e.endsWith(']') && matchEnd(e, 0) === e.length - 1) { const inner = e.slice(1, -1), rep = /^([^;]*);\s*([^;]+)$/.exec(inner); if (rep) return `[${exprType(rep[1], crate_, false) ?? 'i64'}; ${rep[2].trim()}]`; const parts = splitTop(inner); return `[${(parts[0] && exprType(parts[0], crate_, false)) || 'i64'}; ${parts.length}]`; }
     return null;
   };
   // return type of the first call matching callPat, from what follows/precedes it: `.len()`, `[idx]`, comparisons and assert_eq! against Some/Ok/Err/enum values
@@ -2010,6 +2020,19 @@ function stubRust(testPath, src, dir, made) {
     };
     return `\nimpl${gn ? `<${gn.join(', ')}>` : ''} ${n}${gn ? `<${gn.join(', ')}>` : ''} {\n${[...assoc.map((k) => sig(k, false)), ...inst.map((k) => sig(k, true))].join('\n')}}\n`;
   };
+  // struct literals `N { x: 1, inner: M { .. } }` (nested ones included): field name -> type, from every literal of N
+  const literalFields = (n, crate_) => {
+    const ms = maskBraces(srcNoUse, true), fields = new Map();
+    for (const m of ms.matchAll(new RegExp(`(?<!\\w)${n}\\s*\\{(?=\\s*[a-z_]\\w*\\s*:(?!:))`, 'g'))) {
+      const open = m.index + m[0].length - 1, end = matchEnd(srcNoUse, open);
+      if (end < 0) continue;
+      for (const f of splitTop(srcNoUse.slice(open + 1, end))) {
+        const fm = /^([a-z_]\w*)\s*:\s*([^]*)$/.exec(f);
+        if (fm && !fields.has(fm[1])) fields.set(fm[1], exprType(fm[2], crate_, false)?.replace(/^&'static str$/, 'String') ?? 'i64');
+      }
+    }
+    return [...fields];
+  };
   const typeStub = (n, crate_ = ownPkg) => {
     const vs = [...new Set([...src.matchAll(new RegExp(`\\b${n}::([A-Z]\\w*)`, 'g'))].map((m) => m[1]).filter((v) => !/^[A-Z][A-Z0-9_]+$/.test(v)))];
     if (vs.length) {
@@ -2026,8 +2049,7 @@ function stubRust(testPath, src, dir, made) {
       return `#[derive(Debug, Clone, ${shapes.every((x) => !x) ? 'Copy, PartialEq, Eq' : 'PartialEq'})]\npub enum ${n} {\n${vs.map((v, i) => `    ${v}${shapes[i]},\n`).join('')}}\n`;
     }
     // struct literal `N { x: 1, y: "a" }` => named fields typed from the values (#130)
-    const lit = new RegExp(`(?<!\\w)${n}\\s*\\{\\s*([a-z_]\\w*\\s*:[^{}]*)\\}`).exec(srcNoUse);
-    const fields = lit ? lit[1].split(',').map((f) => /^\s*([a-z_]\w*)\s*:\s*([^]*?)\s*$/.exec(f)).filter(Boolean).map((m) => [m[1], /^-?\d+\.\d*/.test(m[2]) ? 'f64' : /^-?\d+$/.test(m[2]) ? 'i64' : /^"/.test(m[2]) || /String::from|\.to_string\(|\.to_owned\(/.test(m[2]) ? 'String' : /^(true|false)$/.test(m[2]) ? 'bool' : /^vec!/.test(m[2]) ? 'Vec<i64>' : 'i64']) : [];
+    const fields = literalFields(n, crate_);
     const ga = fields.length ? null : genericArgs(n), gn = ga && genNames(ga);
     return fields.length ? `#[derive(Debug, Clone, Default, PartialEq)]\npub struct ${n} {\n${fields.map(([f, t]) => `    pub ${f}: ${t},\n`).join('')}}\n${rustImpl(n, null, crate_)}` : gn ? `#[derive(Debug, Clone, PartialEq)]\npub struct ${n}<${gn.join(', ')}>(pub std::marker::PhantomData<(${gn.map((x) => x.startsWith("'") ? `&${x} ()` : x).join(', ')},)>);\n${rustImpl(n, gn, crate_)}` : `#[derive(Debug, Clone, Default, PartialEq)]\npub struct ${n};\n${rustImpl(n, null, crate_)}`;
   };
