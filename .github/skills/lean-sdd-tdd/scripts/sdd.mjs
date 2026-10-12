@@ -16,7 +16,8 @@ function parseArgs(argv) {
     const a = argv[i];
     if (a.startsWith('--')) {
       const k = a.slice(2);
-      if (BOOL.has(k) || i + 1 >= argv.length || argv[i + 1].startsWith('--')) flags[k] = true;
+      if (k === 'baseline' && argv.includes('gate') && i + 1 < argv.length && !argv[i + 1].startsWith('--')) flags[k] = argv[++i];
+      else if (BOOL.has(k) || i + 1 >= argv.length || argv[i + 1].startsWith('--')) flags[k] = true;
       else flags[k] = argv[++i];
     } else pos.push(a);
   }
@@ -3938,6 +3939,12 @@ function changedFiles() {
       if (/[RC]/.test(l.slice(0, 2)) && entries[i + 1]) add(entries[++i]);
     }
   } else return null;
+  // `--baseline <ref>`: also everything committed since <ref> (#254)
+  if (typeof flags.baseline === 'string') {
+    const df = spawnSync('git', ['diff', '--name-only', '-z', flags.baseline, '--'], { cwd: ROOT, encoding: 'utf8' });
+    if (df.status !== 0) return null;
+    df.stdout.split('\0').filter(Boolean).forEach(add);
+  }
   return set;
 }
 
@@ -4130,6 +4137,10 @@ function scanless(res) {
 
 function cmdGate() {
   const lines = [];
+  if (flags.changed && typeof flags.baseline === 'string' && spawnSync('git', ['rev-parse', '--verify', '--quiet', flags.baseline + '^{commit}'], { cwd: ROOT }).status !== 0) {
+    out(`REFUSED: --baseline ${flags.baseline} is not a git ref; gate --changed --baseline <ref> diffs against it`);
+    return 2;
+  }
   if (flags.changed && changedFiles() === null) {
     lines.push('! Git change discovery unavailable — falling back to full evidence and checks');
     flags.changed = false;
@@ -4164,6 +4175,14 @@ function cmdGate() {
     relevant = new Set();
     for (const e of ents.values()) if (ch.has(e.path)) [...e.refs.implements, ...e.refs.verifies].forEach((r) => relevant.add(r));
     for (const s of specs) if (ch.has(s.path)) s.reqs.forEach((r) => relevant.add(r.id));
+    // a changed non-code artifact (contract/data file): its consumers' REQs are in scope (#254)
+    const known = new Set([...ents.values()].map((e) => e.path));
+    const art = [...ch].filter((f) => !EXT.test(f) && !known.has(f) && !f.startsWith('.sdd/') && fs.existsSync(path.join(ROOT, f)));
+    if (art.length) {
+      const rv = importRev(), seen = new Set(art), q = [...art];
+      while (q.length) for (const d of rv.get(q.shift()) ?? []) if (!seen.has(d)) { seen.add(d); q.push(d); }
+      for (const e of ents.values()) if (seen.has(e.path)) [...e.refs.implements, ...e.refs.verifies].forEach((r) => relevant.add(r));
+    }
     // a REQ edited in an already-committed spec is still stale evidence (#70)
     for (const e of ents.values()) if (e.kind === 'TEST') for (const r of e.refs.verifies) if (!relevant.has(r) && /changed in the spec/.test(evidenceStatus(e.id, e.path, entries).why ?? '')) relevant.add(r);
   }
@@ -4653,7 +4672,7 @@ function cmdImpact() {
   const reqFeature = new Map();
   for (const sp of specs) for (const r of sp.reqs) reqFeature.set(r.id, sp.feature);
   const all = [...ents.values()];
-  let seeds; let reqs; let dataFile = false;
+  let seeds; let reqs; let dataFile = false; let nonCode = false;
   if (/^REQ-/.test(target)) {
     if (!reqFeature.has(target)) { out(`IMPACT: unknown REQ ${target}`); return 1; }
     reqs = [target];
@@ -4666,12 +4685,16 @@ function cmdImpact() {
   } else if (fs.existsSync(path.join(ROOT, target))) {
     seeds = [target.replace(/^\.\//, '')];
     dataFile = !EXT.test(seeds[0]) && !all.some((e) => e.path === seeds[0]);
+    nonCode = !EXT.test(seeds[0]) && !all.some((e) => e.path === seeds[0]);
     reqs = [...new Set(all.filter((e) => e.path === seeds[0]).flatMap((e) => [...e.refs.implements, ...e.refs.verifies]))];
   } else { out(`IMPACT: unknown target ${target}`); return 1; }
   // a shared data file is outside the import graph: name the projects that list it (or a parent dir) in dependsOn (#247)
   const rev = importRev();
   dataFile = dataFile && !(rev.get(seeds[0])?.size ?? rev.get(seeds[0])?.length);
-  const depProjects = dataFile ? (loadConfig().projects ?? []).filter((p) => (p.dependsOn ?? []).some((d) => { const x = normDep(d); return seeds[0] === x || seeds[0].startsWith(x + '/'); })).map((p) => p.root) : [];
+  const projs = loadConfig().projects ?? [];
+  const hits = (p, t) => (p.dependsOn ?? []).some((d) => { const x = normDep(d); return t === x || t.startsWith(x + '/'); });
+  // dependsOn is transitive: a project depending on a dependent project depends on the file too (#255)
+  const depProjects = dataFile ? (() => { const got = new Set(projs.filter((p) => hits(p, seeds[0]))); for (let g = true; g;) { g = false; for (const p of projs) if (!got.has(p) && [...got].some((q) => hits(p, normDep(q.root)))) { got.add(p); g = true; } } return projs.filter((p) => got.has(p)).map((p) => p.root); })() : [];
   if (dataFile) seeds = [];
   const via = new Map(seeds.map((f) => [f, null]));
   const queue = [...seeds];
@@ -4682,7 +4705,7 @@ function cmdImpact() {
   const affected = new Map();
   const ownFeatures = new Set(reqs.map((r) => reqFeature.get(r)));
   // a header/file without @implements belongs to the features of the same-named implementation files (#111)
-  if (!reqs.length) for (const sd of seeds) {
+  if (!reqs.length && !nonCode) for (const sd of seeds) {
     const st = path.posix.basename(sd).replace(/\.\w+$/, '');
     for (const e of all) if (path.posix.basename(e.path).replace(/\.\w+$/, '') === st) for (const r of [...e.refs.implements, ...e.refs.verifies]) if (reqFeature.get(r)) ownFeatures.add(reqFeature.get(r));
     // an unannotated file belongs to the feature(s) of its annotated siblings in the same directory (#127)
