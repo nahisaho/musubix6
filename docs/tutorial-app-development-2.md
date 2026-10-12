@@ -385,6 +385,7 @@ chore: initial project setup with musubix6 skills and SDD
 
 - **spec と件数は実行ごとに変わります。** 再実験の REQ は計 54 件でした(auth 11、inventory 12、order-create 11、order-fulfil 10、order-cancel 10)。レビューの指摘は auth で 25 件でした。機能名も `order-fulfil` になりました。本文の件数や名前と一致しなくてかまいません。
 - **weak Red は出ないことがあります。** 再実験の gate は、すべて通常の Red → Green でした。
+- **gate が、1 回目は失敗することがあります。** 再実験では、生成されたアプリの `TEST-HTTP-009`(終了シグナルのテスト)が、負荷によって落ちました。再実行で通りました。最新の `gate` は、この状態を `FLAKY suspected` と表示します。
 - **レビューの記録は、上書きされませんでした。** 5.2 のプロンプトには指示を書いていませんが、エージェントは機能ごとに `.sdd/review-<機能名>.md` を作りました。本文のつまずきは、起きないこともあります。
 - **前の機能の spec を直さずに済むことがあります。** 再実験の order-cancel では、`order-fulfil` の spec は変わらず、既存テストの 1 件(`TEST-FUL-005`)だけを更新して、gate が通りました。再承認が必要になるのは、T2 の spec を直した場合です。
 - **Dockerfile は、コミットされませんでした。** §7 のプロンプトは、コミットを頼んでいません。ビルド用のファイルは、Dockerfile、`.dockerignore`、`.gitignore` の追記として、作業ツリーに残りました。ホストで取得した Node.js は、後片付けで削除されます。本文は、この点を直しました。
