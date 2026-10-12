@@ -680,6 +680,9 @@ function externalOracleSha(p, hash) {
     if (!abs) continue;
     try { deps.set(rel(abs), fs.existsSync(abs) ? 'data:' + dataHash(abs) : 'missing'); } catch { deps.set(rel(abs), 'missing'); }
   }
+  // config `generated` (paths/globs): build outputs the test reads are not oracle dependencies (#293)
+  const generated = [].concat((readJson(CONFIG, null) ?? {}).generated ?? []).map((g) => globRe(normDep(g)));
+  if (generated.length) for (const f of [...deps.keys()]) if (generated.some((re) => re.test(f))) deps.delete(f);
   oracleDependencyFiles = [...deps.keys()].sort();
   oracleDependencyShas = Object.fromEntries(deps);
   return deps.size ? sha(hash + '\u0000' + [...deps].sort(([a], [b]) => a.localeCompare(b)).map(([f, h]) => f + '\u0000' + h).join('\u0000')) : hash;
@@ -970,7 +973,7 @@ function loadSpecs() {
       let body = raw;
       // continuation lines of a list/prose requirement belong to its wording (#65)
       if (!m[1].includes('|')) for (let j = i + 1; j < lines.length && /^\s+\S/.test(lines[j]) && !/^\s*(?:[|#>*-]|REQ-)/.test(lines[j]); j++) body += ' ' + lines[j];
-      reqs.push({ id: m[2], table: m[1].includes('|'), srcs: [...l.matchAll(/\[src:\s*([^\]\s:]+):(\d+)/g)].map((x) => [x[1], +x[2]]), line: i + 1, tests: m[1].includes('|') ? [...new Set(l.match(/\bTEST-[A-Z0-9]+(?:-[A-Z0-9]+)*/g) ?? [])] : [], sha: sha(body.normalize('NFKC').replace(/\s+/g, ' ').trim()), rawSha: sha(body.replace(/\s+/g, ' ').trim()), deferred: hasMarker(body.normalize('NFKC'), 'deferred'), testOnly: hasMarker(body.normalize('NFKC'), 'test-only') });
+      reqs.push({ id: m[2], table: m[1].includes('|'), srcs: [...l.matchAll(/\[src:\s*([^\]\s:]+):(\d+)/g)].map((x) => [x[1], +x[2]]), line: i + 1, tests: m[1].includes('|') ? [...new Set(l.match(/\bTEST-[A-Z0-9]+(?:-[A-Z0-9]+)*/g) ?? [])] : [], sha: sha(body.normalize('NFKC').replace(/\[src:[^\]]*\]/g, '').replace(/\s+/g, ' ').trim()), rawSha: sha(body.replace(/\s+/g, ' ').trim()), srcSha: sha(body.normalize('NFKC').replace(/\s+/g, ' ').trim()), deferred: hasMarker(body.normalize('NFKC'), 'deferred'), testOnly: hasMarker(body.normalize('NFKC'), 'test-only') });
     });
     const extra = fm.artifacts ? fm.artifacts.split(',').map((s) => s.trim()).filter(Boolean) : [];
     const tl = lines;
@@ -1054,11 +1057,11 @@ function appendLedgerLocked(e) {
 let REQ_SHA = null;
 // current hash of a REQ's spec line; entries recorded before this field existed have no reqSha and are not checked
 function reqShaOf(id) {
-  if (!REQ_SHA) { REQ_SHA = new Map(); for (const sp of loadSpecs()) for (const r of sp.reqs) REQ_SHA.set(r.id, { sha: r.sha, raw: r.rawSha }); }
+  if (!REQ_SHA) { REQ_SHA = new Map(); for (const sp of loadSpecs()) for (const r of sp.reqs) REQ_SHA.set(r.id, { sha: r.sha, raw: r.rawSha, src: r.srcSha }); }
   return REQ_SHA.get(id)?.sha;
 }
 // ledgers written before NFKC hashing carry the raw-text hash (#83)
-const reqShaSame = (id, rsha) => { const c = REQ_SHA?.get(id); return !c || c.sha === rsha || c.raw === rsha; };
+const reqShaSame = (id, rsha) => { const c = REQ_SHA?.get(id); return !c || c.sha === rsha || c.raw === rsha || c.src === rsha; };
 // names the oracle dependency files whose content differs from what a ledger entry recorded (#236, #239)
 function changedOracleDeps(entry, p, id) {
   if (!entry) return [];
