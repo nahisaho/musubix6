@@ -7158,3 +7158,38 @@ test('#286 green warns that shared-impl staleness cannot be checked for unannota
   const r = sdd(d, 'tdd', 'green', 'TEST-CALC-001');
   assert.match(r.out, /no code carries @implements.*shared/, r.out);
 });
+
+const blockProject = () => {
+  const spec = '---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | x shall hold. | TEST-A-001 |\n| REQ-A-002 | y shall hold. | TEST-A-002 |\n';
+  const d = mini(spec, { 'a.test.mjs': '// @id TEST-A-001 @verifies REQ-A-001\n// one\n// @id TEST-A-002 @verifies REQ-A-002\n// two\n', 'impl.mjs': '// @id CODE-A-001 @implements REQ-A-001\nexport function one() {\n  return 1;\n}\n\n// @id CODE-A-002 @implements REQ-A-002\nexport function two() {\n  return 2;\n}\n' }, FAIL);
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-A-001').code, 0);
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-A-002').code, 0);
+  setCmd(d, PASS);
+  assert.equal(sdd(d, 'tdd', 'green', 'TEST-A-001').code, 0);
+  return d;
+};
+const touchImpl = (d, from, to) => {
+  const p = path.join(d, 'impl.mjs'), later = new Date(Date.now() + 5000);
+  fs.writeFileSync(p, fs.readFileSync(p, 'utf8').replace(from, to));
+  fs.utimesSync(p, later, later);
+};
+
+test('#287 shared-impl warning is per @implements block: editing a sibling function does not flag', () => {
+  const d = blockProject();
+  touchImpl(d, 'return 2;', 'return 22;');
+  assert.doesNotMatch(sdd(d, 'tdd', 'green', 'TEST-A-002').out, /shared with other REQs/);
+});
+
+test('#287 shared-impl warning still fires when the block itself changed', () => {
+  const d = blockProject();
+  touchImpl(d, 'return 1;', 'return 11;');
+  assert.match(sdd(d, 'tdd', 'green', 'TEST-A-002').out, /shared with other REQs[^\n]*TEST-A-001/);
+});
+
+test('#287 ledger entries without implBlocks fall back to the file mtime', () => {
+  const d = blockProject();
+  const f = path.join(d, '.sdd/tdd.jsonl');
+  fs.writeFileSync(f, fs.readFileSync(f, 'utf8').split('\n').map((l) => { if (!l.trim()) return l; const o = JSON.parse(l); delete o.implBlocks; return JSON.stringify(o); }).join('\n'));
+  touchImpl(d, 'return 2;', 'return 22;');
+  assert.match(sdd(d, 'tdd', 'green', 'TEST-A-002').out, /shared with other REQs[^\n]*TEST-A-001/);
+});

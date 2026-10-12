@@ -1578,6 +1578,34 @@ function featureGreen(spec) {
   return spec.reqs.filter((q) => !q.deferred && !q.testOnly).every((q) => [...ents.values()].some((e) => e.kind === 'TEST' && e.refs.verifies.includes(q.id) && entries.some((x) => x.test === e.id && x.type === 'green')));
 }
 
+// Per-@implements-block hash (#287): the annotated function/block region (brace- or indent-delimited); whole-file hash when it cannot be delimited.
+function implRegionSha(c) {
+  let txt;
+  try { txt = fs.readFileSync(path.join(ROOT, c.path), 'utf8'); } catch { return null; }
+  const ls = txt.replace(/\r\n/g, '\n').split('\n');
+  let i = c.line - 1;
+  while (i < ls.length && COMMENT_LEAD.test(ls[i])) i++;
+  const whole = 'f:' + sha(txt);
+  if (i >= ls.length || !ls[i].trim()) return whole;
+  let end = -1;
+  if (/\.(?:py|rb)$/.test(c.path)) {
+    const ind = (l) => /^\s*/.exec(l)[0].length, base = ind(ls[i]);
+    end = i + 1;
+    for (let j = i + 1; j < ls.length; j++) { if (!ls[j].trim()) continue; if (ind(ls[j]) <= base && !/^\s*(?:end\b|[)\]}])/.test(ls[j])) break; end = j + 1; }
+  } else {
+    let depth = 0, opened = false;
+    for (let j = i; j < ls.length && end < 0; j++) {
+      for (const ch of ls[j].replace(/\/\/.*$|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'/g, '')) {
+        if (ch === '{') { depth++; opened = true; } else if (ch === '}') depth--;
+        if (opened && depth <= 0) { end = j + 1; break; }
+      }
+      if (!opened && j - i > 2) break;
+    }
+  }
+  if (end <= i) return whole;
+  return 'b:' + sha(ls.slice(c.line - 1, end).join('\n'));
+}
+
 function implFileShas(spec) {
   const ids = new Set(spec.reqs.map((r) => r.id));
   const { ents } = scanEntities(listFiles());
@@ -4061,7 +4089,7 @@ function cmdTdd() {
   // human-approved code baseline follows the first implementation: refresh until the feature is fully Green (#92)
   const humanSpecs = sub === 'red' ? [] : loadSpecs().filter((x) => x.approval === 'human' && x.reqs.some((q) => t.refs.verifies.includes(q.id)));
   const wasDone = new Map(humanSpecs.map((x) => [x.feature, featureGreen(x)]));
-  appendLedger({ type: sub, test: id, req, reqSha: reqShaOf(req), reqShas: Object.fromEntries([...new Set([req, ...t.refs.verifies])].map((r) => [r, reqShaOf(r)]).filter(([, v]) => v)), file: t.path, fileSha: after, protectedFiles: oracleDependencyFiles, oracleShas: oracleDependencyFiles.length ? oracleDependencyShas : undefined, cmdSha: sha(cmd.join('\0')), exit: res.exit, ms: res.ms, testSha0: sub === 'red' ? testOwnSha(t.path, id) : undefined, rebaselined: rebaselined || undefined, weak: weakRed ? true : undefined, weakWhy: setupSym ? `setup:${setupSym}` : charac ? 'characterization' : retestWeak ? 'retest' : undefined, characterization: charac || undefined, retest: retestWeak || rebaselined ? retest : undefined, priorStrongRed: retestWeak && prior.some((e) => e.type === 'red' && !e.weak && !e.retest) ? true : undefined, moved: sub === 'refactor' && prior.filter((e) => e.type === 'green' || e.type === 'refactor').at(-1)?.fileSha !== after && prior.some((e) => e.type === 'green' || e.type === 'refactor') ? true : undefined });
+  appendLedger({ type: sub, test: id, req, reqSha: reqShaOf(req), reqShas: Object.fromEntries([...new Set([req, ...t.refs.verifies])].map((r) => [r, reqShaOf(r)]).filter(([, v]) => v)), file: t.path, fileSha: after, protectedFiles: oracleDependencyFiles, oracleShas: oracleDependencyFiles.length ? oracleDependencyShas : undefined, cmdSha: sha(cmd.join('\0')), exit: res.exit, ms: res.ms, testSha0: sub === 'red' ? testOwnSha(t.path, id) : undefined, rebaselined: rebaselined || undefined, weak: weakRed ? true : undefined, weakWhy: setupSym ? `setup:${setupSym}` : charac ? 'characterization' : retestWeak ? 'retest' : undefined, characterization: charac || undefined, retest: retestWeak || rebaselined ? retest : undefined, priorStrongRed: retestWeak && prior.some((e) => e.type === 'red' && !e.weak && !e.retest) ? true : undefined, implBlocks: sub === 'red' ? undefined : Object.fromEntries([...ents.values()].filter((c) => c.kind === 'CODE' && c.refs.implements.some((r) => t.refs.verifies.includes(r))).map((c) => [`${c.path}:${c.id}`, implRegionSha(c)]).filter(([, v]) => v)), moved: sub === 'refactor' && prior.filter((e) => e.type === 'green' || e.type === 'refactor').at(-1)?.fileSha !== after && prior.some((e) => e.type === 'green' || e.type === 'refactor') ? true : undefined });
   for (const x of humanSpecs) if (!wasDone.get(x.feature)) {
     const all = readJson(APPROVALS, {});
     if (all[x.feature]?.code) { all[x.feature].code = implFileShas(x); writeJson(APPROVALS, all); }
@@ -4079,7 +4107,7 @@ function cmdTdd() {
       if (e.kind !== 'TEST' || e.id === id) return false;
       const last = entries.filter((x) => x.test === e.id && (x.type === 'green' || x.type === 'refactor')).at(-1);
       const shared = [...ents.values()].filter((c) => c.kind === 'CODE' && implFiles.includes(c.path) && c.refs.implements.some((r) => e.refs.verifies.includes(r)));
-      return last && shared.some((c) => mtime(c.path) > Date.parse(last.at));
+      return last && shared.some((c) => (last.implBlocks ? last.implBlocks[`${c.path}:${c.id}`] !== implRegionSha(c) : mtime(c.path) > Date.parse(last.at)));
     });
     if (!implFiles.length && !loadSpecs().flatMap((x) => x.reqs).filter((q) => mine.has(q.id)).every((q) => q.testOnly)) out(`⚠ ${id}: no code carries @implements ${[...mine].join(', ')} — annotate the implementation so impact/trace can find it (#276); without it the shared-implementation staleness check cannot run (comment-only \`@id CODE-… @implements …\` is enough, the code itself stays unchanged)`);
     if (stale.length) out(`⚠ implementation shared with other REQs changed since their Green: ${stale.slice(0, 5).map((e) => e.id).join(', ')}${stale.length > 5 ? `, … +${stale.length - 5}` : ''} — re-run them (tdd refactor <ID>) or the project tests; their evidence is not re-checked automatically`);
