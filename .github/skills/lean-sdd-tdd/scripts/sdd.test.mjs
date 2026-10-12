@@ -8033,3 +8033,9 @@ test('#303 a flaky suspected gate run is recorded in the ledger with the policy 
     assert.match(sdd(d, 'tdd', 'check').out, /LEDGER OK \(1 entries\)/);
   }
 });
+
+test('#296 ExUnit: a stub called in a refute assertion is the asserted behaviour, not setup', () => {
+  const r = weak263(null, '** (RuntimeError) not implemented: add\n', 'add.test.exs', exs271('    assert_raise ArgumentError, fn -> Calc.boom(1) end\n    refute Calc.add(1, 1) == 3'));
+  assert.match(r.out, /RED ok/, r.out);
+  assert.doesNotMatch(r.out, /\[weak\]|setup call/, r.out);
+});

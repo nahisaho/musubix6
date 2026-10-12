@@ -3499,7 +3499,7 @@ function testBody(testPath, id) {
   if (/\.exs$/.test(testPath)) end = exClamp(ls, start, end);
   return ls.slice(start, end);
 }
-const ASSERT_LINE = /(expect\s*\(|\b(?:Assert|CollectionAssert|StringAssert|FileAssert)\.\w+|\.Should\(|\bASSERT\w*\s*\(|\bCHECK\w*\s*\(|\bEXPECT\w*\s*\(|\bassert|raises|toThrow|\.should|assertEquals|@test(?:_throws)?\b|expect_|\bif\b.*[!=]=|t\.(Error|Fatal))/;
+const ASSERT_LINE = /(expect\s*\(|\b(?:Assert|CollectionAssert|StringAssert|FileAssert)\.\w+|\.Should\(|\bASSERT\w*\s*\(|\bCHECK\w*\s*\(|\bEXPECT\w*\s*\(|\bassert|\brefute|raises|toThrow|\.should|assertEquals|@test(?:_throws)?\b|expect_|\bif\b.*[!=]=|t\.(Error|Fatal))/;
 // lines that belong to an assertion, including the continuation lines of a multi-line `assert_eq!(` / `expect(` call (#89)
 function markAsserts(lines, extra = null) {
   const A = extra ? new RegExp(`${ASSERT_LINE.source}|${extra.source}`) : ASSERT_LINE;
@@ -3602,7 +3602,7 @@ function setupOrigin(line, testPath, id, text = '') {
     const bl = testBody(testPath, id), bf = mark(bl);
     const body = bl.filter((_, i) => bf[i]);
     const esc = (v) => v.replace(/[$]/g, '\\$&');
-    const subject = (v) => new RegExp(`(?:expect\\(\\s*(?:await\\s+)?|(?:Assert|CollectionAssert|StringAssert)\\.\\w+\\(\\s*|assert\\w*!?(?:\\.\\w+)?\\(\\s*|\\bassert\\s+(?:not\\s+)?)${WRAP}&?${esc(v)}(?![\\w$])`);
+    const subject = (v) => new RegExp(`(?:expect\\(\\s*(?:await\\s+)?|(?:Assert|CollectionAssert|StringAssert)\\.\\w+\\(\\s*|assert\\w*!?(?:\\.\\w+)?\\(\\s*|\\b(?:assert|refute)\\s+(?:not\\s+)?)${WRAP}&?${esc(v)}(?![\\w$])`);
     // the variable anywhere in an assertion as a plain value (chained comparison, tuple, non-leading argument, `v.attr`, `[...v]`, `helper(v)`), but not as a call receiver (#142)
     const plainRe = (v) => new RegExp(`(?<![\\w$])(?<![\\w$)\\]]\\.)${esc(v)}(?![\\w$])(?!\\s*\\()(?!\\.[\\w$]+\\s*\\()`);
     const ASSERT_KW = /(?:\b(?:(?:Assert|CollectionAssert|StringAssert)\.\w+|assert\w*|expect\w*|ASSERT\w*|EXPECT\w*|CHECK\w*|toBe\w*|toEqual|equal|deepEqual|deepStrictEqual|strictEqual|eq|ne)!?)\s*\(/g;
