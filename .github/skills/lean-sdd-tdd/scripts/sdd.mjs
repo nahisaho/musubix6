@@ -725,6 +725,7 @@ const testShaVariant = (p, id, trim, norm = false, legacy = false, cut = true, i
   const pre = ls.slice(0, begin(starts[0])).join('\n');
   return sha((norm ? normImports(pre) : pre) + '\u0000' + region);
 };
+const testOwnSha = (p, id) => { eolNorm = true; try { return testShaVariant(p, id, true, true); } finally { eolNorm = false; } };
 const testSha = (p, id) => { eolNorm = true; try { return externalOracleSha(p, testShaVariant(p, id, true, true)); } finally { eolNorm = false; } };
 const shaMatches = (recorded, p, id) => /\.(?:py|jl)$/.test(p) || BRACE_TEST.test(p) ? recorded === testSha(p, id) || (/\.(?:c|cc|cpp|cxx)$/.test(p) && (() => { cLegacy = true; try { return recorded === testSha(p, id); } finally { cLegacy = false; } })()) : shaMatchesRaw(recorded, p, id) || (() => { eolNorm = true; try { return shaMatchesRaw(recorded, p, id); } finally { eolNorm = false; } })();
 const shaMatchesRaw = (recorded, p, id) => [true, false].some((cut) => [true, false].some((inl) => recorded === testShaVariant(p, id, true, true, false, cut, inl) || recorded === testShaVariant(p, id, true, false, false, cut, inl) || recorded === testShaVariant(p, id, false, false, false, cut, inl) || recorded === testShaVariant(p, id, true, true, true, cut, inl) || recorded === testShaVariant(p, id, true, false, true, cut, inl) || recorded === testShaVariant(p, id, false, false, true, cut, inl))) ||
@@ -3002,6 +3003,25 @@ function exClamp(ls, start, end) {
   for (let i = t + 1; i < end; i++) if (/^\s*end\b/.test(ls[i]) && /^\s*/.exec(ls[i])[0].length === ind) return i + 1;
   return end;
 }
+// `assert.throws(fn)` / `pytest.raises(Exception)` without a matcher is satisfied by the stub's own "not implemented" error (#283)
+function vacuousThrows(testPath, id) {
+  const body = testBody(testPath, id).join('\n');
+  if (/\b(?:pytest\.raises|assertRaises|assert_raises)\(\s*(?:Exception|BaseException|RuntimeError|NotImplementedError)\s*\)/.test(body)) return true;
+  for (const m of body.matchAll(/\bassert\.(?:throws|rejects)\(/g)) {
+    let depth = 1, commas = 0;
+    for (let i = m.index + m[0].length; i < body.length && depth > 0; i++) {
+      const c = body[i];
+      if ('([{'.includes(c)) depth++; else if (')]}'.includes(c)) depth--; else if (c === ',' && depth === 1) commas++;
+    }
+    if (!commas) return true;
+  }
+  return false;
+}
+// the TypeError names a function defined in the test file itself (signature mismatch in the test's own helper), so no implementation is involved (#283)
+function ownHelperTypeError(text, testPath) {
+  const m = /TypeError: (?:[\w.]+\.)?(\w+)\(\) (?:got an unexpected keyword argument|got multiple values for argument|missing \d+ required (?:positional|keyword-only) arguments?|takes \d+ positional arguments? but)/.exec(text);
+  return m && new RegExp(`^\\s*(?:async\\s+)?def\\s+${m[1]}\\s*\\(`, 'm').test(fs.readFileSync(path.join(ROOT, testPath), 'utf8')) ? m[1] : null;
+}
 function testBody(testPath, id) {
   const ls = fs.readFileSync(path.join(ROOT, testPath), 'utf8').split('\n');
   if (/\.py$/.test(testPath)) {
@@ -3067,6 +3087,13 @@ function setupOrigin(line, testPath, id, text = '') {
   const exSetup = /__ex_unit_setup/.test(text), pySetup = /ERROR at setup of/.test(text);
   if (!x && exSetup) x = /function (?:[\w.]+\.)?([\w!?]+)\/\d+ is undefined/.exec(text)?.[1] ?? /^\s*(?:[\w.]+\.)?([a-z_][\w!?]*)\(/m.exec(text.slice(text.indexOf('stacktrace:') + 1))?.[1] ?? 'setup';
   if (!x && pySetup) x = /^\S+\.py:\d+: in (\w+)/m.exec(text)?.[1] ?? 'fixture';
+  // a module-level `NAME = None` stub called by the test (`TypeError: 'NoneType' object is not callable`) is a stubbed setup call (#283)
+  if (!x && /TypeError: 'NoneType' object is not callable/.test(text)) {
+    const callees = [...(/^>\s+(.*)$/m.exec(text)?.[1] ?? '').matchAll(/(?<![\w$.])([A-Za-z_]\w*)\s*\(/g)].map((m) => m[1]);
+    const pyFiles = spawnSync('git', ['ls-files', '-co', '--exclude-standard', '*.py'], { cwd: ROOT, encoding: 'utf8' }).stdout.split('\n').filter((f) => f && f !== testPath);
+    const srcs = pyFiles.slice(0, 400).map((f) => { try { return fs.readFileSync(path.join(ROOT, f), 'utf8'); } catch { return ''; } });
+    x = callees.find((n) => srcs.some((c) => new RegExp(`^${n}\\s*=\\s*None\\s*$`, 'm').test(c)));
+  }
   if (!x) return null;
   if (exSetup || pySetup) return x;
   const all = fs.readFileSync(path.join(ROOT, testPath), 'utf8').split('\n');
@@ -3108,6 +3135,14 @@ function setupOrigin(line, testPath, id, text = '') {
     }
     const goIf = (v) => new RegExp(`\\bif\\b[^{]*?(?<![\\w$.])${v.replace(/[$]/g, '\\$&')}(?![\\w$])`);
     return vars.some((v) => body.some((l) => subject(v).test(l) || goIf(v).test(l) || plain(v).test(l)));
+  };
+  // `save(p, x)` then `got = load(p); assert got == x`: a bare stub call that shares an argument with the call whose bound result is asserted is the act (#283)
+  const pairedAct = (hitLines) => {
+    const bl = testBody(testPath, id), bf = markAsserts(bl);
+    return hitLines.filter(isBareAct).some((h) => {
+      const args = (/\(([^()]*)\)/.exec(h)?.[1] ?? '').match(/(?<![\w$.])[A-Za-z_$][\w$]*/g) ?? [];
+      return bl.some((l, i) => !bf[i] && !re.test(l) && /[\w$]\s*\(/.test(l) && args.some((a) => new RegExp(`(?<![\\w$.])${a.replace(/[$]/g, '\\$&')}(?![\\w$])`).test(l)) && assertedResult([l]));
+    });
   };
   // the stub called in an `if`/`for`/`while` condition decides the test outcome: it is the act, not setup (#263)
   const condAct = (l) => /^\s*(?:\}\s*else\s+)?(?:if|for|while)\b[^{]*/.test(l) && re.test(l.replace(/^\s*(?:\}\s*else\s+)?(?:if|for|while)\b/, ''));
@@ -3154,7 +3189,7 @@ function setupOrigin(line, testPath, id, text = '') {
     const prevStmt = (() => { for (let k = firstAssert - 1; k > start; k--) if (all[k].trim() && !/^\s*(\/\/|#)/.test(all[k])) return k; return -1; })();
     if (hit.some(({ i, l }) => i === prevStmt && /\.(unwrap|expect)\s*\(/.test(l))) return null;
     if (hit.some(({ i, l }) => i === prevStmt && isBareAct(l))) return null; // bare act statement (#124)
-    return assertedResult(hit.map(({ l }) => l)) ? null : x;
+    return assertedResult(hit.map(({ l }) => l)) || pairedAct(hit.map(({ l }) => l)) ? null : x;
   }
   const bl = testBody(testPath, id), bf = markAsserts(bl);
   const asserts = bl.filter((_, i) => bf[i]);
@@ -3170,7 +3205,8 @@ function setupOrigin(line, testPath, id, text = '') {
   if (lastStmt && re.test(lastStmt.l) && /\.(unwrap|expect)\s*\(/.test(lastStmt.l)) return null;
   // a bare call statement (`eng.run()`, `run_with_retry(..)`) directly before the first assertion is the act, its side effect is asserted (#124)
   if (lastStmt && re.test(lastStmt.l) && isBareAct(lastStmt.l)) return null;
-  return assertedResult(bl.filter((l, i) => re.test(l) && !bf[i])) ? null : x;
+  const stubLines = bl.filter((l, i) => re.test(l) && !bf[i]);
+  return assertedResult(stubLines) || pairedAct(stubLines) ? null : x;
 }
 
 function goTestTarget(testPath, id) {
@@ -3934,8 +3970,10 @@ function cmdTdd() {
     else if (zero || siblingFail === 'skip') { ok = false; why = 'no test matched the ID, or the test is skipped/todo (check @id vs test title/method name; skipped tests cannot give Red/Green)' + (goRunner && /\[no test files\]/.test(plain) ? '; go printed [no test files]: a //go:build constraint may hide this file (pass -tags in testCmd)' : ''); }
     else if (res.exit === 0 && retest) ok = true;
     else if (res.exit === 0 && typeof flags.characterization === 'string' && flags.characterization.trim()) ok = true;
+    else if (res.exit === 0 && vacuousThrows(t.path, id)) { ok = false; why = `test passed: a matcher-less assert.throws / pytest.raises is satisfied by the stub's own "not implemented" error (vacuous test); add a matcher (error type or message) that only the real behaviour satisfies, or record --characterization "<why>"`; }
     else if (res.exit === 0) { ok = false; why = 'test passed; Red needs a real failure (data-only / characterization test? record it explicitly: --characterization "<why no implementation can fail it>"; amending a wrong expectation after Red: --retest "<reason>")'; }
     else if (isLoadErr(res.text) && !flags.weak && !(flags['missing-module'] && declaredMissingModule(res.text, t.path))) { ok = false; why = 'load/compile error, not an assertion failure. new module? run `tdd stub <ID>` once (or `--missing-module`); if stub already ran or found nothing, add the missing code by hand; or --weak to record as weak Red'; }
+    else if (ownHelperTypeError(res.text, t.path)) { ok = false; why = `TypeError raised inside the test's own helper ${ownHelperTypeError(res.text, t.path)}() (argument/signature mismatch): a test bug, not a Red for the behaviour; fix the test`; }
     else if (typeof flags.expect === 'string' && !(juliaSummaryRows(plain) ? targetOutput ?? '' : res.text).includes(flags.expect)) { ok = false; why = `failure output does not contain --expect "${flags.expect}" (Red for the wrong reason?)`; }
     else ok = true;
   } else {
@@ -3956,12 +3994,15 @@ function cmdTdd() {
   // --expect naming the setup call itself does not make a setup-origin Red the asserted behaviour (#256)
   const setupSym = setupSym0 && (typeof flags.expect !== 'string' || new RegExp(`(?<![\\w$])${escapeRe(setupSym0)}(?![\\w$])`).test(flags.expect)) ? setupSym0 : null;
   const charac = sub === 'red' && res.exit === 0 && !retest ? String(flags.characterization).trim() : '';
-  const retestWeak = sub === 'red' && targetPassed && !!retest;
+  // only an oracle artifact changed since the earlier strong Red (the test's own text is identical): the strong Red still stands (#283)
+  const priorStrong = sub === 'red' && targetPassed && !!retest ? prior.filter((e) => e.type === 'red' && !e.weak && !e.retest).at(-1) : null;
+  const rebaselined = !!priorStrong?.testSha0 && priorStrong.testSha0 === testOwnSha(t.path, id);
+  const retestWeak = sub === 'red' && targetPassed && !!retest && !rebaselined;
   const weakRed = loadWeak || !!setupSym || !!charac || retestWeak;
   // human-approved code baseline follows the first implementation: refresh until the feature is fully Green (#92)
   const humanSpecs = sub === 'red' ? [] : loadSpecs().filter((x) => x.approval === 'human' && x.reqs.some((q) => t.refs.verifies.includes(q.id)));
   const wasDone = new Map(humanSpecs.map((x) => [x.feature, featureGreen(x)]));
-  appendLedger({ type: sub, test: id, req, reqSha: reqShaOf(req), reqShas: Object.fromEntries([...new Set([req, ...t.refs.verifies])].map((r) => [r, reqShaOf(r)]).filter(([, v]) => v)), file: t.path, fileSha: after, protectedFiles: oracleDependencyFiles, oracleShas: oracleDependencyFiles.length ? oracleDependencyShas : undefined, cmdSha: sha(cmd.join('\0')), exit: res.exit, ms: res.ms, weak: weakRed ? true : undefined, weakWhy: setupSym ? `setup:${setupSym}` : charac ? 'characterization' : retestWeak ? 'retest' : undefined, characterization: charac || undefined, retest: retestWeak ? retest : undefined, priorStrongRed: retestWeak && prior.some((e) => e.type === 'red' && !e.weak && !e.retest) ? true : undefined, moved: sub === 'refactor' && prior.filter((e) => e.type === 'green' || e.type === 'refactor').at(-1)?.fileSha !== after && prior.some((e) => e.type === 'green' || e.type === 'refactor') ? true : undefined });
+  appendLedger({ type: sub, test: id, req, reqSha: reqShaOf(req), reqShas: Object.fromEntries([...new Set([req, ...t.refs.verifies])].map((r) => [r, reqShaOf(r)]).filter(([, v]) => v)), file: t.path, fileSha: after, protectedFiles: oracleDependencyFiles, oracleShas: oracleDependencyFiles.length ? oracleDependencyShas : undefined, cmdSha: sha(cmd.join('\0')), exit: res.exit, ms: res.ms, testSha0: sub === 'red' ? testOwnSha(t.path, id) : undefined, rebaselined: rebaselined || undefined, weak: weakRed ? true : undefined, weakWhy: setupSym ? `setup:${setupSym}` : charac ? 'characterization' : retestWeak ? 'retest' : undefined, characterization: charac || undefined, retest: retestWeak || rebaselined ? retest : undefined, priorStrongRed: retestWeak && prior.some((e) => e.type === 'red' && !e.weak && !e.retest) ? true : undefined, moved: sub === 'refactor' && prior.filter((e) => e.type === 'green' || e.type === 'refactor').at(-1)?.fileSha !== after && prior.some((e) => e.type === 'green' || e.type === 'refactor') ? true : undefined });
   for (const x of humanSpecs) if (!wasDone.get(x.feature)) {
     const all = readJson(APPROVALS, {});
     if (all[x.feature]?.code) { all[x.feature].code = implFileShas(x); writeJson(APPROVALS, all); }
@@ -3984,6 +4025,8 @@ function cmdTdd() {
     if (!implFiles.length && !loadSpecs().flatMap((x) => x.reqs).filter((q) => mine.has(q.id)).every((q) => q.testOnly)) out(`⚠ ${id}: no code carries @implements ${[...mine].join(', ')} — annotate the implementation so impact/trace can find it (#276)`);
     if (stale.length) out(`⚠ implementation shared with other REQs changed since their Green: ${stale.slice(0, 5).map((e) => e.id).join(', ')}${stale.length > 5 ? `, … +${stale.length - 5}` : ''} — re-run them (tdd refactor <ID>) or the project tests; their evidence is not re-checked automatically`);
   }
+  if (sub === 'red' && loadWeak && /not implemented|NotImplementedError|unimplemented/i.test(res.text)) out(`! a stub failed at module load, before any test body ran: every test of this file fails the same way, so this Red says nothing about ${id}; move the stub call into the test or a fixture`);
+  if (rebaselined) out(`! --retest: only an oracle dependency changed (the test text is unchanged), so the earlier strong Red of ${id} is kept`);
   if (retestWeak && prior.some((e) => e.type === 'red' && !e.weak && !e.retest)) out(`! --retest passed against the current implementation, so the earlier strong Red of ${id} is superseded by a weak Red; to keep failing-Red evidence, temporarily break the implementation and re-run \`tdd red ${id} --retest\``);
   return 0;
 }

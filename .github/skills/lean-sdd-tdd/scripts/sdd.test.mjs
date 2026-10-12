@@ -6889,3 +6889,80 @@ test('#270 Elixir stub: a module passed to start_supervised! is startable (use G
   assert.match(s, /use GenServer/, s);
   assert.match(s, /def start_link/, s);
 });
+
+// ---- wave 11 (#283) ----
+const W11SPEC = (n) => `---\nfeature: w\ntier: T1\napproval: auto\n---\n${Array.from({ length: n }, (_, i) => `| REQ-W-00${i + 1} | g shall hold. | TEST-W-00${i + 1} |`).join('\n')}\n`;
+const lastRed = (d) => fs.readFileSync(path.join(d, '.sdd/tdd.jsonl'), 'utf8').trim().split('\n').map((l) => JSON.parse(l)).filter((e) => e.type === 'red').at(-1);
+
+test('#283 weak Red: a stub call paired with the call whose bound result is asserted is the act (strong Red)', () => {
+  const d = mini(W11SPEC(1), {
+    'src/m.py': 'def save(p, x):\n    raise NotImplementedError("save")\n\n\ndef load(p):\n    return p.get("v")\n',
+    'tests/test_w.py': 'import sys\nsys.path.insert(0, "src")\nfrom m import save, load\n\n\n# @id TEST-W-001 @verifies REQ-W-001\ndef test_w_001():\n    p = {}\n    save(p, 1)\n    got = load(p)\n    assert got == 1\n',
+  });
+  const r = sdd(d, 'tdd', 'red', 'TEST-W-001');
+  assert.match(r.out, /RED ok/, r.out);
+  assert.doesNotMatch(r.out, /\[weak\]|setup call/, r.out);
+});
+
+test('#283 a TypeError raised by the test\'s own helper is not a genuine Red', () => {
+  const d = mini(W11SPEC(1), {
+    'tests/test_w.py': 'def mk(a, b):\n    return a + b\n\n\n# @id TEST-W-001 @verifies REQ-W-001\ndef test_w_001():\n    assert mk(a=1, c=2) == 3\n',
+  });
+  const r = sdd(d, 'tdd', 'red', 'TEST-W-001');
+  assert.match(r.out, /RED REJECTED[^\n]*(?:own helper|test bug)/, r.out);
+});
+
+test('#283 a TypeError on a None stub used for setup is a weak Red', () => {
+  const d = mini(W11SPEC(1), {
+    'src/m.py': 'HLC = None\n\n\nclass Log:\n    @staticmethod\n    def entries(c):\n        return []\n',
+    'tests/test_w.py': 'import sys\nsys.path.insert(0, "src")\nfrom m import HLC, Log\n\n\n# @id TEST-W-001 @verifies REQ-W-001\ndef test_w_001():\n    clock = HLC(1)\n    assert Log.entries(clock) == []\n',
+  });
+  const r = sdd(d, 'tdd', 'red', 'TEST-W-001');
+  assert.match(r.out, /\[weak\]/, r.out);
+  assert.match(r.out, /setup call "HLC"/, r.out);
+});
+
+test('#283 a module-level stub call that fails at load is a weak Red with a loud note', () => {
+  const d = approved();
+  fs.writeFileSync(path.join(d, 'add.test.mjs'), [
+    "import { test } from 'node:test';",
+    "import assert from 'node:assert/strict';",
+    "import { add } from './add.mjs';",
+    'const fixture = add(1, 2);',
+    '/** @id TEST-CALC-001 @verifies REQ-CALC-001 */',
+    "test('TEST-CALC-001 adds', () => assert.equal(fixture, 3));", '',
+  ].join('\n'));
+  impl(d, '(a, b) => { throw new Error("not implemented"); }');
+  const r = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
+  assert.match(r.out, /\[weak\]/, r.out);
+  assert.match(r.out, /before any test body ran/, r.out);
+});
+
+test('#283 a matcher-less assert.throws satisfied by the stub error is reported as vacuous', () => {
+  const d = approved();
+  fs.writeFileSync(path.join(d, 'add.test.mjs'), [
+    "import { test } from 'node:test';",
+    "import assert from 'node:assert/strict';",
+    "import { add } from './add.mjs';",
+    '/** @id TEST-CALC-001 @verifies REQ-CALC-001 */',
+    "test('TEST-CALC-001 rejects', () => { assert.throws(() => add('x', 1)); });", '',
+  ].join('\n'));
+  impl(d, '(a, b) => { throw new Error("not implemented"); }');
+  const r = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
+  assert.match(r.out, /REJECTED[^\n]*vacuous/, r.out);
+});
+
+test('#283 --retest after only an oracle artifact changed keeps the strong Red', () => {
+  const d = mini(T1SPEC, { 'a.test.mjs': jsTest(), 'helper.mjs': 'export const one = 1;\n' }, FAIL);
+  fs.writeFileSync(path.join(d, 'a.test.mjs'), "import { one } from './helper.mjs';\n" + jsTest());
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-A-001').code, 0);
+  setCmd(d, PASS);
+  assert.equal(sdd(d, 'tdd', 'green', 'TEST-A-001').code, 0);
+  fs.writeFileSync(path.join(d, 'helper.mjs'), 'export const one = 2;\n');
+  const r = sdd(d, 'tdd', 'red', 'TEST-A-001', '--retest', 'oracle gained vectors');
+  assert.match(r.out, /RED ok/, r.out);
+  assert.doesNotMatch(r.out, /\[weak\]|superseded/, r.out);
+  assert.equal(lastRed(d).weak, undefined);
+  assert.equal(sdd(d, 'tdd', 'green', 'TEST-A-001').code, 0);
+  assert.doesNotMatch(sdd(d, 'gate', '--no-run').out, /weak Red|superseded/);
+});
