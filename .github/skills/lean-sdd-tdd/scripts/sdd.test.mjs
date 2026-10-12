@@ -7531,3 +7531,30 @@ test('#295 batch tdd red prints an identical compiler tail once', () => {
   const out = sdd(d, 'tdd', 'red', 'TEST-A-001', 'TEST-A-002').out;
   assert.equal(out.split('error TS2304').length - 1, 1, out);
 });
+
+const SPEC2 = '---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | x shall work. | TEST-A-001 |\n| REQ-A-002 | y shall work. | TEST-A-002 |\n';
+const greenBoth = (files) => {
+  const d = mini(SPEC2, files, FAIL);
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-A-001').code, 0);
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-A-002').code, 0);
+  setCmd(d, PASS);
+  assert.equal(sdd(d, 'tdd', 'green', 'TEST-A-001').code, 0);
+  assert.equal(sdd(d, 'tdd', 'green', 'TEST-A-002').code, 0);
+  return d;
+};
+
+test('#300 a comment-only CODE annotation added to the test file does not stale its tests', () => {
+  const T = '// @id TEST-A-001 @verifies REQ-A-001\nit(1);\n\n// @id TEST-A-002 @verifies REQ-A-002\nit(2);\n';
+  const d = greenBoth({ 'a.test.mjs': 'const helper = 1;\n\n' + T });
+  fs.writeFileSync(path.join(d, 'a.test.mjs'), 'const helper = 1;\n\n// @id TEST-A-001 @verifies REQ-A-001\n// @id CODE-A-001 @implements REQ-A-001\nit(1);\n\n// @id TEST-A-002 @verifies REQ-A-002\nit(2);\n');
+  const r = sdd(d, 'gate', '--no-run');
+  assert.doesNotMatch(r.out, /test changed since/, r.out);
+});
+
+test('#300 a shared-preamble edit hints tdd refactor, not --retest', () => {
+  const T = '// @id TEST-A-001 @verifies REQ-A-001\nit(1);\n\n// @id TEST-A-002 @verifies REQ-A-002\nit(2);\n';
+  const d = greenBoth({ 'a.test.mjs': 'const helper = 1;\n\n' + T });
+  fs.writeFileSync(path.join(d, 'a.test.mjs'), 'const helper = 2;\n\n' + T);
+  const r = sdd(d, 'gate', '--no-run');
+  assert.match(r.out, /own lines did not.*tdd refactor TEST-A-001/, r.out);
+});

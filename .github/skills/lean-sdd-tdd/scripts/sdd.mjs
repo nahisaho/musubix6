@@ -720,7 +720,8 @@ function juliaTestSha(txt, id) {
 let eolNorm = false;
 const testShaVariant = (p, id, trim, norm = false, legacy = false, cut = true, inl = true) => {
   const raw = fs.readFileSync(path.join(ROOT, p), 'utf8');
-  const txt = eolNorm ? raw.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n') : raw;
+  const txt0 = eolNorm ? raw.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n') : raw;
+  const txt = stripCodeAnn ? txt0.replace(CODE_ANN_LINE, '') : txt0;
   if (/\.py$/.test(p)) return pythonTestSha(txt, id);
   if (BRACE_TEST.test(p)) return braceTestSha(txt, id, p);
   if (/\.jl$/.test(p)) return juliaTestSha(txt, id);
@@ -761,7 +762,11 @@ const testShaVariant = (p, id, trim, norm = false, legacy = false, cut = true, i
 };
 const testOwnSha = (p, id) => { eolNorm = true; try { return testShaVariant(p, id, true, true); } finally { eolNorm = false; } };
 const testSha = (p, id) => { eolNorm = true; try { return externalOracleSha(p, testShaVariant(p, id, true, true)); } finally { eolNorm = false; } };
-const shaMatches = (recorded, p, id) => /\.(?:py|jl)$/.test(p) || BRACE_TEST.test(p) ? recorded === testSha(p, id) || (/\.(?:c|cc|cpp|cxx)$/.test(p) && (() => { cLegacy = true; try { return recorded === testSha(p, id); } finally { cLegacy = false; } })()) : shaMatchesRaw(recorded, p, id) || (() => { eolNorm = true; try { return shaMatchesRaw(recorded, p, id); } finally { eolNorm = false; } })();
+const shaMatchesBase = (recorded, p, id) => /\.(?:py|jl)$/.test(p) || BRACE_TEST.test(p) ? recorded === testSha(p, id) || (/\.(?:c|cc|cpp|cxx)$/.test(p) && (() => { cLegacy = true; try { return recorded === testSha(p, id); } finally { cLegacy = false; } })()) : shaMatchesRaw(recorded, p, id) || (() => { eolNorm = true; try { return shaMatchesRaw(recorded, p, id); } finally { eolNorm = false; } })();
+// a comment-only `@id CODE-… @implements …` line added to a test file is not a test edit (#300): retry with those lines dropped
+let stripCodeAnn = false;
+const CODE_ANN_LINE = /^[ \t]*(?:\/\/|#|--|;|%|\/?\*)+.*@id\s+CODE-.*(?:\r?\n|$)/gm;
+const shaMatches = (recorded, p, id) => shaMatchesBase(recorded, p, id) || (() => { try { if (!CODE_ANN_LINE.test(fs.readFileSync(path.join(ROOT, p), 'utf8'))) return false; } catch { return false; } finally { CODE_ANN_LINE.lastIndex = 0; } stripCodeAnn = true; try { return shaMatchesBase(recorded, p, id); } finally { stripCodeAnn = false; } })();
 const shaMatchesRaw = (recorded, p, id) => [true, false].some((cut) => [true, false].some((inl) => recorded === testShaVariant(p, id, true, true, false, cut, inl) || recorded === testShaVariant(p, id, true, false, false, cut, inl) || recorded === testShaVariant(p, id, false, false, false, cut, inl) || recorded === testShaVariant(p, id, true, true, true, cut, inl) || recorded === testShaVariant(p, id, true, false, true, cut, inl) || recorded === testShaVariant(p, id, false, false, true, cut, inl))) ||
   recorded === testSha(p, id) || recorded === testShaVariant(p, id, true) || recorded === testShaVariant(p, id, false) || recorded === testShaVariant(p, id, true, true, true) || recorded === testShaVariant(p, id, true, false, true) || recorded === testShaVariant(p, id, false, false, true) || recorded === sha(fs.readFileSync(path.join(ROOT, p)));
 const out = (s = '') => process.stdout.write(s + '\n');
@@ -1072,6 +1077,16 @@ function changedOracleDeps(entry, p, id) {
 // a support file that replaced an annotated stub without keeping its `@id CODE-` marker becomes part of the oracle (#265)
 const unannotatedHint = (names) => { const bad = names.filter((f) => { try { return !/@id\s+CODE-/.test(fs.readFileSync(path.join(ROOT, f), 'utf8')); } catch { return false; } }); return bad.length ? `; if ${bad.slice(0, 3).join(', ')} is production code, annotate it \`@id CODE-... @implements REQ-...\`` : ''; };
 const oracleNote = (names) => names.length ? ` — oracle dependency changed: ${names.slice(0, 4).join(', ')}${names.length > 4 ? `, … +${names.length - 4}` : ''}` : '';
+// the test's own lines (its @id line up to the next @id): lets the stale hint tell a shared-file edit from an edit of the test itself (#300)
+function testRegionSha(p, id) {
+  try {
+    const ls = fs.readFileSync(path.join(ROOT, p), 'utf8').replace(/\r\n/g, '\n').split('\n');
+    const at = ls.findIndex((l) => new RegExp(`@id\\s+${id}\\b`).test(l));
+    if (at < 0) return undefined;
+    let end = ls.findIndex((l, i) => i > at && /@id\s/.test(l)); if (end < 0) end = ls.length;
+    return sha(ls.slice(at, end).filter((l) => !/@id\s+CODE-/.test(l)).join('\n').trim());
+  } catch { return undefined; }
+}
 function evidenceStatus(testId, testPath, entries) {
   const es = entries.filter((e) => e.test === testId);
   // reverting to content that already has Green/Refactor evidence recovers it, even after a later refactor recorded against moved setup (#274)
@@ -1082,7 +1097,7 @@ function evidenceStatus(testId, testPath, entries) {
   if (!r) return { ok: false, why: 'no Red preceding Green with same test hash' };
   const ge = es.filter((e) => e.type === 'green' || e.type === 'refactor');
   const last = ge.filter((e) => shaMatches(e.fileSha, testPath, testId)).at(-1) ?? ge.at(-1);
-  if (!shaMatches(last.fileSha, testPath, testId)) return { ok: false, why: `test changed since last Green/Refactor${oracleNote(changedOracleDeps(last, testPath, testId))} (if the spec changes the expected output, update the test and re-record: tdd red ${testId} --retest "<reason>", then tdd green; otherwise revert the test)` };
+  if (!shaMatches(last.fileSha, testPath, testId)) return { ok: false, why: `test changed since last Green/Refactor${oracleNote(changedOracleDeps(last, testPath, testId))} (if the spec changes the expected output, update the test and re-record: tdd red ${testId} --retest "<reason>", then tdd green; otherwise revert the test)`.replace(/^(.*?) \(if the spec.*$/, (m, a) => last.regSha && last.regSha === testRegionSha(testPath, testId) ? `${a} but its own lines did not (shared test-file content moved): re-run tdd refactor ${testId} (a --retest needs the test expectation itself to change)` : m) };
   // every verified REQ is hash-tracked (reqShas); older entries carry only the first one
   for (const [rid, rsha] of Object.entries(last.reqShas ?? { [last.req]: last.reqSha })) {
     if (rsha && reqShaOf(rid) && !reqShaSame(rid, rsha)) return { ok: false, why: `${rid} changed in the spec since last Green/Refactor: re-verify with tdd refactor (wording only) or tdd red/green (behaviour changed)` };
@@ -4311,7 +4326,7 @@ function cmdTdd() {
   // human-approved code baseline follows the first implementation: refresh until the feature is fully Green (#92)
   const humanSpecs = sub === 'red' ? [] : loadSpecs().filter((x) => x.approval === 'human' && x.reqs.some((q) => t.refs.verifies.includes(q.id)));
   const wasDone = new Map(humanSpecs.map((x) => [x.feature, featureGreen(x)]));
-  appendLedger({ type: sub, test: id, req, reqSha: reqShaOf(req), reqShas: Object.fromEntries([...new Set([req, ...t.refs.verifies])].map((r) => [r, reqShaOf(r)]).filter(([, v]) => v)), file: t.path, fileSha: after, protectedFiles: oracleDependencyFiles, oracleShas: oracleDependencyFiles.length ? oracleDependencyShas : undefined, cmdSha: sha(cmd.join('\0')), exit: res.exit, ms: res.ms, testSha0: sub === 'red' ? testOwnSha(t.path, id) : undefined, rebaselined: rebaselined || undefined, weak: weakRed ? true : undefined, weakWhy: setupSym ? `setup:${setupSym}` : charac ? 'characterization' : retestWeak ? 'retest' : undefined, characterization: charac || undefined, retest: retestWeak || rebaselined ? retest : undefined, priorStrongRed: retestWeak && prior.some((e) => e.type === 'red' && !e.weak && !e.retest) ? true : undefined, implBlocks: sub === 'red' ? undefined : Object.fromEntries([...ents.values()].filter((c) => c.kind === 'CODE' && c.refs.implements.some((r) => t.refs.verifies.includes(r))).map((c) => [`${c.path}:${c.id}`, implRegionSha(c)]).filter(([, v]) => v)), moved: sub === 'refactor' && prior.filter((e) => e.type === 'green' || e.type === 'refactor').at(-1)?.fileSha !== after && prior.some((e) => e.type === 'green' || e.type === 'refactor') ? true : undefined });
+  appendLedger({ type: sub, test: id, req, reqSha: reqShaOf(req), reqShas: Object.fromEntries([...new Set([req, ...t.refs.verifies])].map((r) => [r, reqShaOf(r)]).filter(([, v]) => v)), file: t.path, fileSha: after, protectedFiles: oracleDependencyFiles, oracleShas: oracleDependencyFiles.length ? oracleDependencyShas : undefined, cmdSha: sha(cmd.join('\0')), exit: res.exit, ms: res.ms, testSha0: sub === 'red' ? testOwnSha(t.path, id) : undefined, regSha: testRegionSha(t.path, id), rebaselined: rebaselined || undefined, weak: weakRed ? true : undefined, weakWhy: setupSym ? `setup:${setupSym}` : charac ? 'characterization' : retestWeak ? 'retest' : undefined, characterization: charac || undefined, retest: retestWeak || rebaselined ? retest : undefined, priorStrongRed: retestWeak && prior.some((e) => e.type === 'red' && !e.weak && !e.retest) ? true : undefined, implBlocks: sub === 'red' ? undefined : Object.fromEntries([...ents.values()].filter((c) => c.kind === 'CODE' && c.refs.implements.some((r) => t.refs.verifies.includes(r))).map((c) => [`${c.path}:${c.id}`, implRegionSha(c)]).filter(([, v]) => v)), moved: sub === 'refactor' && prior.filter((e) => e.type === 'green' || e.type === 'refactor').at(-1)?.fileSha !== after && prior.some((e) => e.type === 'green' || e.type === 'refactor') ? true : undefined });
   for (const x of humanSpecs) if (!wasDone.get(x.feature)) {
     const all = readJson(APPROVALS, {});
     if (all[x.feature]?.code) { all[x.feature].code = implFileShas(x); writeJson(APPROVALS, all); }
