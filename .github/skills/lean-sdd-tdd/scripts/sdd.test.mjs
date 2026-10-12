@@ -8498,3 +8498,35 @@ test('#314 a flaky gate pass says the ledger was appended', () => {
   const r = sdd(flakyProject({ policy: 'warn' }, FLAKY_ONCE), 'gate');
   assert.match(r.out, /appended to \.sdd\/tdd\.jsonl/, r.out);
 });
+
+const R24B_SPEC = '---\nfeature: h\ntier: T1\n---\n| REQ-H-001 | a shall hold. | TEST-H-001 |\n';
+const r24bProject = (test) => mini(R24B_SPEC, {
+  'Cargo.toml': '[package]\nname = "repro"\nversion = "0.1.0"\nedition = "2021"\n',
+  'src/lib.rs': '',
+  'tests/h_test.rs': `use repro::LIMIT;\n\n// @id TEST-H-001\n// @verifies REQ-H-001\n#[test]\nfn test_h_001() {\n${test}\n}\n`,
+});
+const cargoOk = { skip: spawnSync('which', ['cargo']).status !== 0 };
+
+test('#r24b a const with no type evidence gets an SDD-TODO(stub) placeholder, not a wrong i64', cargoOk, () => {
+  const d = r24bProject('    assert!(LIMIT.is_ok());');
+  const r = sdd(d, 'tdd', 'stub', 'TEST-H-001', '--report');
+  const lib = fs.readFileSync(path.join(d, 'src/lib.rs'), 'utf8');
+  assert.match(lib, /SDD-TODO\(stub\): type unknown/, lib);
+  assert.doesNotMatch(lib, /LIMIT: i64/, lib);
+  assert.match(r.out, /LIMIT \| guessed \| tests\/h_test\.rs:\d+/, r.out);
+});
+
+test('#r24b a const typed by a float literal stays f64 and is reported inferred', cargoOk, () => {
+  const d = r24bProject('    assert_eq!(LIMIT, 1e-5);');
+  const r = sdd(d, 'tdd', 'stub', 'TEST-H-001', '--report');
+  assert.match(fs.readFileSync(path.join(d, 'src/lib.rs'), 'utf8'), /pub const LIMIT: f64/);
+  assert.match(r.out, /LIMIT \| inferred \|/, r.out);
+});
+
+test('#r24b tdd red names the SDD-TODO(stub) element instead of accepting a compile error', cargoOk, () => {
+  const d = r24bProject('    assert!(LIMIT.is_ok());');
+  sdd(d, 'tdd', 'stub', 'TEST-H-001');
+  setCmd(d, ['cargo', 'test', '--offline', '{testName}']);
+  const r = sdd(d, 'tdd', 'red', 'TEST-H-001');
+  assert.match(r.out, /REJECTED[^\n]*SDD-TODO\(stub\) element LIMIT[^\n]*fill the type of LIMIT by hand/, r.out);
+});
