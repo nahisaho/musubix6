@@ -1805,7 +1805,7 @@ function stubRust(testPath, src, dir, made) {
     const fields = lit ? lit[1].split(',').map((f) => /^\s*([a-z_]\w*)\s*:\s*([^]*?)\s*$/.exec(f)).filter(Boolean).map((m) => [m[1], /^-?\d+\.\d*/.test(m[2]) ? 'f64' : /^-?\d+$/.test(m[2]) ? 'i64' : /^"/.test(m[2]) || /String::from|\.to_string\(|\.to_owned\(/.test(m[2]) ? 'String' : /^(true|false)$/.test(m[2]) ? 'bool' : /^vec!/.test(m[2]) ? 'Vec<i64>' : 'i64']) : [];
     return fields.length ? `#[derive(Debug, Clone, Default, PartialEq)]\npub struct ${n} {\n${fields.map(([f, t]) => `    pub ${f}: ${t},\n`).join('')}}\n${rustImpl(n)}` : `#[derive(Debug, Clone, Default, PartialEq)]\npub struct ${n};\n${rustImpl(n)}`;
   };
-  const itemStub = (n) => { if (/^[A-Z]/.test(n)) return typeStub(n); const c = callInfo(src, n); const g = c.args.map((_, i) => `A${i}`); return `pub fn ${n}${g.length ? `<${g.join(', ')}>` : ''}(${c.args.map((_, i) => `_a${i}: A${i}`).join(', ')}) -> ${c.ret?.startsWith('opt:') ? `Option<${c.ret.slice(4)}>` : T[c.ret] ?? 'i64'} {\n    unimplemented!("${n}")\n}\n`; };
+  const itemStub = (n) => { if (/^[A-Z][A-Z0-9_]+$/.test(n)) { const str = new RegExp(`\\b${n}\\s*(?:\\.\\s*(?:len|chars|as_str|is_empty)\\b|[!=]=\\s*\"|,\\s*\")`).test(srcNoUse); return `pub const ${n}: ${str ? '&str' : 'i64'} = ${str ? '""' : '0'};\n`; } if (/^[A-Z]/.test(n)) return typeStub(n); const c = callInfo(src, n); const g = c.args.map((_, i) => `A${i}`); return `pub fn ${n}${g.length ? `<${g.join(', ')}>` : ''}(${c.args.map((_, i) => `_a${i}: A${i}`).join(', ')}) -> ${c.ret?.startsWith('opt:') ? `Option<${c.ret.slice(4)}>` : T[c.ret] ?? 'i64'} {\n    unimplemented!("${n}")\n}\n`; };
   // `use <crate>::a::b::{X, f};` => missing modules `a`, `a/b` (declared in the parent) holding the imported items (#69). Existing modules are never touched.
   const pkgName = (toml) => /\[package\][^[]*?^\s*name\s*=\s*"([^"]+)"/ms.exec(fs.readFileSync(toml, 'utf8'))?.[1]?.replace(/-/g, '_');
   // every workspace member crate by name, so `use other_crate::a::X` is stubbed in that crate (#76)
@@ -1844,7 +1844,12 @@ function stubRust(testPath, src, dir, made) {
       last = parent;
     }
     if (created) { fs.writeFileSync(last, items.map(itemStub).join('\n')); freshMods.add(last); }
-    else if (freshMods.has(last)) fs.appendFileSync(last, '\n' + items.filter((x) => !new RegExp(`\\b(?:struct|enum|fn)\\s+${x}\\b`).test(fs.readFileSync(last, 'utf8'))).map(itemStub).join('\n'));
+    else {
+      // missing items are appended to an existing module; items it already defines or re-exports are left alone
+      const text = fs.readFileSync(last, 'utf8');
+      const miss = items.filter((x) => !new RegExp(`\\b(?:struct|enum|fn|const|static|type|trait|use|mod)\\s+(?:[\\w:{},\\s]*\\b)?${x}\\b`).test(text));
+      if (miss.length) { fs.appendFileSync(last, (text && !text.endsWith('\n') ? '\n' : '') + (text ? '\n' : '') + miss.map(itemStub).join('\n')); if (!freshMods.has(last)) made.push(rel(last)); }
+    }
   }
   const cargoTest = () => probe('cargo', ['test', '--no-run', '--offline', '--test', path.basename(testPath, '.rs')], root);
   const out = cargoTest();
@@ -2616,7 +2621,7 @@ function stubCs(testPath, src, id, made) {
 }
 
 // ExUnit: modules the test aliases/imports/uses/requires or calls as `Mod.fun(..)` and no project file defines become lib/<snake>.ex with throwing defs
-const EX_STD = /^(?:Kernel|Enum|Stream|String|Map|MapSet|List|Keyword|Tuple|Integer|Float|Atom|File|Path|IO|Code|Module|Process|Task|Agent|GenServer|Supervisor|Application|Registry|DateTime|Date|Time|NaiveDateTime|Calendar|Regex|Range|Access|Agent|Base|Bitwise|Macro|System|Node|URI|Version|Exception|Protocol|Behaviour|Inspect|Collectable|Enumerable|ExUnit|Mix|Logger|Jason|Ecto|Plug|Phoenix|Mox|Stream|Port|Record|Function|Config|StringIO|Erlang|EEx|IEx|Hex|Poison|Req|Finch|Mint|Telemetry|Gettext)(?:\.|$)|^[a-z]/;
+const EX_STD = /^(?:Kernel|Enum|Stream|String|Map|MapSet|List|Keyword|Tuple|Integer|Float|Atom|File|Path|IO|Code|Module|Process|Task|Agent|GenServer|Supervisor|Application|Registry|DateTime|Date|Time|NaiveDateTime|Calendar|Regex|Range|Access|Agent|Base|Bitwise|Macro|System|Node|URI|Version|Exception|Protocol|Behaviour|Inspect|Collectable|Enumerable|ExUnit|Mix|Logger|Jason|Ecto|Plug|Phoenix|Mox|Stream|Port|Record|Function|Config|StringIO|Erlang|EEx|IEx|Hex|Poison|Req|Finch|Mint|Telemetry|Gettext|JSON|Duration|OptionParser)(?:\.|$)|^[a-z]/;
 function stubEx(testPath, scoped, add, made) {
   let root = path.resolve(ROOT, path.dirname(testPath));
   while (!fs.existsSync(path.join(root, 'mix.exs')) && root !== ROOT && root !== path.dirname(root)) root = path.dirname(root);
@@ -2691,13 +2696,17 @@ function stubEx(testPath, scoped, add, made) {
     if (defined.has(mod)) {
       const file = defined.get(mod), text = fs.readFileSync(file, 'utf8');
       const have = new Set([...text.matchAll(/\b(?:def|defp|defmacro|defdelegate)\s+([a-z_]\w*[!?]?)/g)].map((m) => m[1]));
-      const isStub = (/not implemented: /.test(text) || (/@id CODE-\S*-STUB-/.test(text) && !/\bdef/.test(text))) && /\bend\s*$/.test(text);
+      const isStub = (/not implemented: /.test(text) || (/@id CODE-\S*-STUB-/.test(text) && !/\bdef(?!struct)/.test(text))) && /\bend\s*$/.test(text);
       // a stub-only module also needs every arity the test calls (#257)
       const haveAr = new Set([...text.matchAll(/\bdef\s+([a-z_]\w*[!?]?)(?:\(([^)]*)\))?/g)].map((m) => `${m[1]}/${m[2]?.trim() ? m[2].split(',').length : 0}`));
       const missing = want.filter((d) => isStub && !/\\\\/.test(text) && !d.macro ? !haveAr.has(`${d.f}/${d.arity}`) : !have.has(d.f));
       const needStruct = structDef && !/\bdefstruct\b/.test(text);
-      if (!missing.length && !(needStruct && isStub)) continue;
-      if (isStub) { const withStruct = needStruct ? text.replace(/(\bdefmodule\s+[A-Z][\w.]*\s+do\n)/, `$1${structDef}`) : text; fs.writeFileSync(file, withStruct.replace(/\bend\s*$/, `\n${missing.map(stubOf).join('')}end\n`)); made.push(rel(file)); }
+      // grow the defstruct field list of a stub when a later test uses more keys
+      const cur = /\bdefstruct\s+\[([^\]]*)\]/.exec(text);
+      const grow = isStub && fields && cur ? [...fields].filter((k) => !new RegExp(`:${k}\\b`).test(cur[1])) : [];
+      if (!missing.length && !(needStruct && isStub) && !grow.length) continue;
+      if (isStub) { let withStruct = needStruct ? text.replace(/(\bdefmodule\s+[A-Z][\w.]*\s+do\n)/, `$1${structDef}`) : text;
+        if (grow.length) withStruct = withStruct.replace(cur[0], `defstruct [${[cur[1].trim(), ...grow.map((k) => `:${k}`)].filter(Boolean).join(', ')}]`); fs.writeFileSync(file, withStruct.replace(/\bend\s*$/, `\n${missing.map(stubOf).join('')}end\n`)); made.push(rel(file)); }
       else unresolved.push(`${missing.map((d) => d.f).join(', ')} in ${rel(file)}`);
       continue;
     }

@@ -6496,3 +6496,36 @@ test('#258 gate: a check that ran zero tests does not claim tests were skipped',
   assert.doesNotMatch(r.out, /all tests skipped/, r.out);
   assert.match(r.out, /no tests (found|ran)/i, r.out);
 });
+
+test('#261 Elixir stub: stdlib JSON is never stubbed; stub defstruct grows with later keys', () => {
+  const spec = '---\nfeature: j\ntier: T1\n---\n| REQ-J-001 | a shall hold. | TEST-J-001 |\n| REQ-J-002 | b shall hold. | TEST-J-002 |\n';
+  const mk = (n) => `  # @id TEST-J-00${n}\n  # @verifies REQ-J-00${n}\n`;
+  const d = mini(spec, {
+    'mix.exs': 'defmodule J.MixProject do\n  use Mix.Project\n  def project, do: [app: :j, version: "0.1.0", deps: []]\nend\n',
+    'test/test_helper.exs': 'ExUnit.start()\n',
+    'test/j_test.exs': `defmodule JTest do\n  use ExUnit.Case\n  alias J.Def\n\n${mk(1)}  test "a" do\n    assert JSON.decode("[1]") == {:ok, [1]}\n    assert %Def{name: 1} = Def.make()\n  end\n\n${mk(2)}  test "b" do\n    assert %Def{name: 1, version: 2, states: 3} = Def.make()\n  end\n`.concat('end\n'),
+  });
+  fs.rmSync(path.join(d, 'package.json'), { force: true });
+  sdd(d, 'tdd', 'stub', 'TEST-J-001');
+  assert.ok(!fs.existsSync(path.join(d, 'lib/json.ex')));
+  const f = path.join(d, 'lib/j/def.ex');
+  assert.match(fs.readFileSync(f, 'utf8'), /defstruct \[:name\]/);
+  sdd(d, 'tdd', 'stub', 'TEST-J-002');
+  assert.match(fs.readFileSync(f, 'utf8'), /defstruct \[:name, :version, :states\]/);
+});
+
+test('#260 Rust stub adds missing const/fn to an existing module', { skip: spawnSync('which', ['cargo']).status !== 0 }, () => {
+  const spec = '---\nfeature: h\ntier: T1\n---\n| REQ-H-001 | a shall hold. | TEST-H-001 |\n';
+  const d = mini(spec, {
+    'Cargo.toml': '[package]\nname = "repro"\nversion = "0.1.0"\nedition = "2021"\n',
+    'src/lib.rs': 'pub mod hash;\n',
+    'src/hash.rs': 'pub fn other() {}\n',
+    'tests/h_test.rs': 'use repro::hash::{GENESIS, fnv};\n\n// @id TEST-H-001\n// @verifies REQ-H-001\n#[test]\nfn test_h_001() {\n    assert_eq!(GENESIS.len(), 16);\n    assert_eq!(fnv(""), "x");\n}\n',
+  });
+  fs.rmSync(path.join(d, 'package.json'), { force: true });
+  sdd(d, 'tdd', 'stub', 'TEST-H-001');
+  const h = fs.readFileSync(path.join(d, 'src/hash.rs'), 'utf8');
+  assert.match(h, /pub const GENESIS: &str/, h);
+  assert.match(h, /pub fn fnv/, h);
+  assert.match(h, /pub fn other/);
+});
