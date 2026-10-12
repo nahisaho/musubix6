@@ -6577,3 +6577,46 @@ test('#263 ExUnit: a failure inside a defp helper called before the assertion is
   const b = weak263(null, out, 'add.test.exs', ex('    l = Log.new(1)'));
   assert.match(b.out, /\[weak\].*setup call "new"/, b.out);
 });
+
+test('#264 config artifacts consumed by a test are part of its oracle: edit between Red and Green is refused, after Green it stales the gate', () => {
+  const spec = '---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | x shall hold. | TEST-A-001 |\n';
+  const d = mini(spec, { 'a.test.mjs': '// @id TEST-A-001 @verifies REQ-A-001\n// body\n', 'contract/vec.json': '[1]\n' }, FAIL);
+  const cp = path.join(d, '.sdd/config.json');
+  const c = JSON.parse(fs.readFileSync(cp, 'utf8'));
+  c.artifacts = { 'contract/vec.json': ['a.test.mjs'] };
+  fs.writeFileSync(cp, JSON.stringify(c));
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-A-001').code, 0);
+  fs.writeFileSync(path.join(d, 'contract/vec.json'), '[1,2]\n');
+  setCmd(d, PASS);
+  const refused = sdd(d, 'tdd', 'green', 'TEST-A-001');
+  assert.match(refused.out, /REFUSED[^\n]*contract\/vec\.json/, refused.out);
+  fs.writeFileSync(path.join(d, 'contract/vec.json'), '[1]\n');
+  assert.equal(sdd(d, 'tdd', 'green', 'TEST-A-001').code, 0);
+  fs.writeFileSync(path.join(d, 'contract/vec.json'), '[1,3]\n');
+  assert.match(sdd(d, 'gate', '--no-run').out, /oracle dependency changed: contract\/vec\.json/);
+});
+
+test('#265 green refusal names the replaced support file and hints the missing @id CODE annotation', () => {
+  const spec = '---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | x shall hold. | TEST-A-001 |\n';
+  const d = mini(spec, { 'a.test.mjs': "import { s } from './helper.mjs';\n// @id TEST-A-001 @verifies REQ-A-001\n// body\n", 'helper.mjs': '// @id CODE-A-001-STUB @implements REQ-A-001\nexport const s = 0;\n' }, FAIL);
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-A-001').code, 0);
+  fs.writeFileSync(path.join(d, 'helper.mjs'), 'export const s = 1;\n');
+  setCmd(d, PASS);
+  const out = sdd(d, 'tdd', 'green', 'TEST-A-001').out;
+  assert.match(out, /REFUSED[^\n]*oracle dependency changed: helper\.mjs/, out);
+  assert.match(out, /@id CODE-/, out);
+});
+
+test('#264 tdd green warns when a shared implementation file changed after a sibling REQ was Green', () => {
+  const spec = '---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | x shall hold. | TEST-A-001 |\n| REQ-A-002 | y shall hold. | TEST-A-002 |\n';
+  const d = mini(spec, { 'a.test.mjs': '// @id TEST-A-001 @verifies REQ-A-001\n// one\n// @id TEST-A-002 @verifies REQ-A-002\n// two\n', 'impl.mjs': '// @id CODE-A-001 @implements REQ-A-001 REQ-A-002\nexport const v = 0;\n' }, FAIL);
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-A-001').code, 0);
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-A-002').code, 0);
+  setCmd(d, PASS);
+  assert.doesNotMatch(sdd(d, 'tdd', 'green', 'TEST-A-001').out, /shared with other REQs/);
+  const later = new Date(Date.now() + 5000);
+  fs.writeFileSync(path.join(d, 'impl.mjs'), '// @id CODE-A-001 @implements REQ-A-001 REQ-A-002\nexport const v = 1;\n');
+  fs.utimesSync(path.join(d, 'impl.mjs'), later, later);
+  const out = sdd(d, 'tdd', 'green', 'TEST-A-002').out;
+  assert.match(out, /shared with other REQs[^\n]*TEST-A-001/, out);
+});

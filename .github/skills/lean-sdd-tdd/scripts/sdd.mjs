@@ -631,6 +631,9 @@ function externalOracleSha(p, hash) {
     try { text = fs.readFileSync(f, 'utf8'); } catch { continue; }
     for (const m of text.matchAll(/@data\s+([^\s*]+(?:\s*,\s*[^\s*,]+)*)/g)) for (const x of m[1].split(',')) dataSpecs.add([x.trim(), path.dirname(f)]);
   }
+  // config `artifacts` ({"contract/x.json": ["test/a.test.mjs"]}) consumed by the test or one of its oracle files are part of the oracle (#264)
+  const ownAbs = new Set(own);
+  for (const [a, users] of Object.entries((readJson(CONFIG, null) ?? {}).artifacts ?? {})) if ([].concat(users).some((u) => ownAbs.has(path.join(ROOT, normDep(u))))) dataSpecs.add([a, ROOT]);
   const dataHash = (abs) => {
     const st = fs.statSync(abs);
     if (!st.isDirectory()) return sha(fs.readFileSync(abs));
@@ -1023,11 +1026,13 @@ function reqShaOf(id) {
 const reqShaSame = (id, rsha) => { const c = REQ_SHA?.get(id); return !c || c.sha === rsha || c.raw === rsha; };
 // names the oracle dependency files whose content differs from what a ledger entry recorded (#236, #239)
 function changedOracleDeps(entry, p, id) {
-  if (!entry?.oracleShas) return [];
+  if (!entry) return [];
   try { testSha(p, id); } catch { return []; }
-  const now = oracleDependencyShas, was = entry.oracleShas;
+  const now = oracleDependencyShas, was = entry.oracleShas ?? {};
   return [...new Set([...Object.keys(was), ...Object.keys(now)])].filter((f) => was[f] !== now[f]).sort();
 }
+// a support file that replaced an annotated stub without keeping its `@id CODE-` marker becomes part of the oracle (#265)
+const unannotatedHint = (names) => { const bad = names.filter((f) => { try { return !/@id\s+CODE-/.test(fs.readFileSync(path.join(ROOT, f), 'utf8')); } catch { return false; } }); return bad.length ? `; if ${bad.slice(0, 3).join(', ')} is production code, annotate it \`@id CODE-... @implements REQ-...\`` : ''; };
 const oracleNote = (names) => names.length ? ` — oracle dependency changed: ${names.slice(0, 4).join(', ')}${names.length > 4 ? `, … +${names.length - 4}` : ''}` : '';
 function evidenceStatus(testId, testPath, entries) {
   const es = entries.filter((e) => e.test === testId);
@@ -3652,11 +3657,14 @@ function cmdTdd() {
     const r = prior.filter((e) => e.type === 'red').at(-1);
     if (!r) { out(`REFUSED: no Red recorded for ${id}`); return 1; }
     // reverting a wrong edit back to content that already has a Red is fine, not only the very last Red (#100)
-    if (!prior.some((e) => e.type === 'red' && shaMatches(e.fileSha, t.path, id))) {
+    // a dependency that is new since the matching Red (e.g. a stub-annotated support file replaced by unannotated code) is not covered by the raw-region hash match (#265)
+    const matchedRed = prior.filter((e) => e.type === 'red' && shaMatches(e.fileSha, t.path, id)).at(-1);
+    const newDeps = matchedRed && !matchedRed.oracleShas && !/\.(?:py|jl)$/.test(t.path) && !BRACE_TEST.test(t.path) && (testSha(t.path, id), oracleDependencyFiles.length > 0);
+    if (!matchedRed || newDeps) {
       const promoted = (r.protectedFiles ?? []).filter((f) => {
         try { const text = fs.readFileSync(path.join(ROOT, f), 'utf8'); return /@id\s+CODE-/.test(text) && !/@id\s+TEST-/.test(text); } catch { return false; }
       });
-      out(promoted.length ? `REFUSED: production ownership changed since Red (${promoted.join(', ')}), not necessarily a test edit. Annotate handwritten production subjects before Red; restore annotated failing code, record a fresh Red, then implement and Green` : `REFUSED: test file changed since Red (${t.path}; checked per test ${id}${oracleNote(changedOracleDeps(r, t.path, id)) || ', its own region or a local include/header it depends on'}). revert test edits to a recorded Red's content, or record a new Red; if the test expectation itself was wrong, run: tdd red ${id} --retest "<reason>"`);
+      out(promoted.length ? `REFUSED: production ownership changed since Red (${promoted.join(', ')}), not necessarily a test edit. Annotate handwritten production subjects before Red; restore annotated failing code, record a fresh Red, then implement and Green` : `REFUSED: test file changed since Red (${t.path}; checked per test ${id}${oracleNote(changedOracleDeps(r, t.path, id)) || ', its own region or a local include/header it depends on'}${unannotatedHint(changedOracleDeps(r, t.path, id))}). revert test edits to a recorded Red's content, or record a new Red; if the test expectation itself was wrong, run: tdd red ${id} --retest "<reason>"`);
       return 1;
     }
   }
@@ -3911,7 +3919,22 @@ function cmdTdd() {
   const movedDeps = sub === 'refactor' && lastGreen && lastGreen.fileSha !== after ? changedOracleDeps(lastGreen, t.path, id) : [];
   if (movedDeps.length) out(`⚠ ${id}: oracle dependency changed since the last Green${oracleNote(movedDeps).replace(/^ — oracle dependency changed/, '')} (the test's own region may be unchanged); a refactor does not prove the changed oracle can fail (no Red). If expectations changed, use tdd red/green instead (#239)`);
   else if (sub === 'refactor' && lastGreen && lastGreen.fileSha !== after) out(`⚠ ${id}: test body changed since the last Green (includes the file preamble: imports/includes/helpers); a refactor does not prove the new assertions can fail (no Red). If behaviour/assertions changed, use tdd red/green instead (#118)`);
+<<<<<<< HEAD
   out(`${sub.toUpperCase()} ok ${id} (${req}) ${res.ms}ms${reason ? ` — fails with: ${reason}` : ''}${charac ? ` — characterization: ${charac} (test passed)` : retestWeak ? ` — retest: ${retest} (test passed)` : ''}${weakRed ? ' [weak]' : ''}${setupSym ? ` ⚠ Red comes from setup call "${setupSym}", not the asserted behaviour (use --expect <text> that does not name "${setupSym}", or --allow-setup-red)` : ''}`);
+=======
+  out(`${sub.toUpperCase()} ok ${id} (${req}) ${res.ms}ms${reason ? ` — fails with: ${reason}` : ''}${charac ? ` — characterization: ${charac} (test passed)` : retestWeak ? ` — retest: ${retest} (test passed)` : ''}${weakRed ? ' [weak]' : ''}${setupSym ? ` ⚠ Red comes from setup call "${setupSym}", not the asserted behaviour (use --expect <text> or --allow-setup-red)` : ''}`);
+  if (sub === 'green') {
+    const mine = new Set(t.refs.verifies), implFiles = [...ents.values()].filter((e) => e.kind === 'CODE' && e.refs.implements.some((r) => mine.has(r))).map((e) => e.path);
+    const mtime = (f) => { try { return fs.statSync(path.join(ROOT, f)).mtimeMs; } catch { return 0; } };
+    const stale = [...ents.values()].filter((e) => {
+      if (e.kind !== 'TEST' || e.id === id) return false;
+      const last = entries.filter((x) => x.test === e.id && (x.type === 'green' || x.type === 'refactor')).at(-1);
+      const shared = [...ents.values()].filter((c) => c.kind === 'CODE' && implFiles.includes(c.path) && c.refs.implements.some((r) => e.refs.verifies.includes(r)));
+      return last && shared.some((c) => mtime(c.path) > Date.parse(last.at));
+    });
+    if (stale.length) out(`⚠ implementation shared with other REQs changed since their Green: ${stale.slice(0, 5).map((e) => e.id).join(', ')}${stale.length > 5 ? `, … +${stale.length - 5}` : ''} — re-run them (tdd refactor <ID>) or the project tests; their evidence is not re-checked automatically`);
+  }
+>>>>>>> fix/r9d
   if (retestWeak && prior.some((e) => e.type === 'red' && !e.weak && !e.retest)) out(`! --retest passed against the current implementation, so the earlier strong Red of ${id} is superseded by a weak Red; to keep failing-Red evidence, temporarily break the implementation and re-run \`tdd red ${id} --retest\``);
   return 0;
 }
