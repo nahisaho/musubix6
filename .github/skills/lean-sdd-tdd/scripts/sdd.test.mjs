@@ -8498,3 +8498,33 @@ test('#314 a flaky gate pass says the ledger was appended', () => {
   const r = sdd(flakyProject({ policy: 'warn' }, FLAKY_ONCE), 'gate');
   assert.match(r.out, /appended to \.sdd\/tdd\.jsonl/, r.out);
 });
+
+test('r24c suspect Red: heuristic setup-call Red is recorded as suspect, accepted, hinted and listed in the gate; load-time stub stays plain weak', () => {
+  const d = project();
+  sdd(d, 'approve', 'record', 'calc', '--by', 'tester');
+  fs.writeFileSync(path.join(d, 'add.test.mjs'), [
+    "import { test } from 'node:test';",
+    "import assert from 'node:assert/strict';",
+    "import { add, reset } from './add.mjs';",
+    '/** @id TEST-CALC-001 @verifies REQ-CALC-001 */',
+    "test('TEST-CALC-001 adds', () => {",
+    '  reset();',
+    '  assert.equal(add(1, 2), 3);',
+    '});',
+    '',
+  ].join('\n'));
+  fs.writeFileSync(path.join(d, 'add.mjs'), "export const add = () => 3;\nexport const reset = () => { throw new Error('not implemented: reset'); };\n");
+  const r = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
+  assert.equal(r.code, 0, r.out);
+  assert.match(r.out, /! suspect Red.*tdd red TEST-CALC-001 --allow-setup-red/, r.out);
+  const last = fs.readFileSync(path.join(d, '.sdd/tdd.jsonl'), 'utf8').trim().split('\n').map((l) => JSON.parse(l)).at(-1);
+  assert.equal(last.suspect, true);
+  assert.equal(last.weak, true);
+  const hint = sdd(d, 'tdd', 'red', 'TEST-CALC-001', '--allow-setup-red');
+  assert.equal(hint.code, 0, hint.out);
+  assert.doesNotMatch(hint.out, /suspect/);
+  sdd(d, 'tdd', 'red', 'TEST-CALC-001');
+  fs.writeFileSync(path.join(d, 'add.mjs'), 'export const add = (a, b) => a + b;\nexport const reset = () => {};\n');
+  assert.equal(sdd(d, 'tdd', 'green', 'TEST-CALC-001').code, 0);
+  assert.match(sdd(d, 'gate', '--no-run').out, /1 suspect Red.*TEST-CALC-001/);
+});
