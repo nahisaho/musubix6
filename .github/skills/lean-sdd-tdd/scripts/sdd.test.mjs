@@ -8080,3 +8080,21 @@ test('#296 ExUnit: a stub called in a refute assertion is the asserted behaviour
   assert.match(r.out, /RED ok/, r.out);
   assert.doesNotMatch(r.out, /\[weak\]|setup call/, r.out);
 });
+
+test('#309 a (characterization) REQ marker waives the unannotated-implementation first-Green warning', () => {
+  const d = t1project();
+  fs.writeFileSync(path.join(d, '.sdd/specs/calc.md'), '---\nfeature: calc\ntier: T1\n---\n| REQ-CALC-001 | (characterization) When add is called, the system shall sum. | TEST-CALC-001 |\n');
+  fs.writeFileSync(path.join(d, 'add.mjs'), 'export const add = (a, b) => a + b;\n');
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-CALC-001', '--characterization', 'x').code, 0);
+  const r = sdd(d, 'tdd', 'green', 'TEST-CALC-001');
+  assert.doesNotMatch(r.out, /no code carries @implements/, r.out);
+});
+
+test('#309 trace validates [src:] ranges, blank lines and anchors', () => {
+  const d = mini('---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | x shall work. [src: lib/a.ts:1-9] [src: lib/a.ts:3] [src: lib/a.ts:1 `foo`] [src: lib/a.ts:1-2 `alpha`] | TEST-A-001 |\n', { 'lib/a.ts': 'alpha\nb\n\n' });
+  const r = sdd(d, 'trace', '--verbose');
+  assert.match(r.out, /lib\/a\.ts:1-9\] line range does not resolve/, r.out);
+  assert.match(r.out, /lib\/a\.ts:3\] cites only blank lines/, r.out);
+  assert.match(r.out, /lib\/a\.ts:1\] anchor `foo` not found/, r.out);
+  assert.doesNotMatch(r.out, /lib\/a\.ts:1-2\]/, r.out);
+});
