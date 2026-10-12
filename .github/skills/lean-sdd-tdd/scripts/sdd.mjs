@@ -4977,10 +4977,16 @@ function cmdImpact() {
   dataFile = dataFile && !(rev.get(seeds[0])?.size ?? rev.get(seeds[0])?.length);
   const projs = loadConfig().projects ?? [];
   const hits = (p, t) => (p.dependsOn ?? []).some((d) => { const x = normDep(d); return t === x || t.startsWith(x + '/'); });
+  // a project's real reference to the data file: any of its files naming the file's path or basename (#287)
+  const refCache = new Map();
+  const referenced = (p, t) => { const k = p.root + '\0' + t; if (!refCache.has(k)) { const pr = normDep(p.root) + '/', bn = path.posix.basename(t); refCache.set(k, listFiles().some((f) => { if (!f.startsWith(pr) || f === t) return false; try { const txt = fs.readFileSync(path.join(ROOT, f), 'utf8'); return txt.includes(t) || txt.includes(bn); } catch { return false; } })); } return refCache.get(k); }
+  // dependsOnMode "referenced": the declared edge counts only when a file of the project really mentions the data file
+  const direct = (p, t) => hits(p, t) && (p.dependsOnMode !== 'referenced' || referenced(p, t));
   // dependsOn is transitive: a project depending on a dependent project depends on the file too (#255)
-  const depProjects = dataFile ? (() => { const got = new Set(projs.filter((p) => hits(p, seeds[0]))); for (let g = true; g;) { g = false; for (const p of projs) if (!got.has(p) && [...got].some((q) => hits(p, normDep(q.root)))) { got.add(p); g = true; } } return projs.filter((p) => got.has(p)).map((p) => p.root); })() : [];
+  const depProjects = dataFile ? (() => { const got = new Set(projs.filter((p) => direct(p, seeds[0]))); for (let g = true; g;) { g = false; for (const p of projs) if (!got.has(p) && [...got].some((q) => hits(p, normDep(q.root)))) { got.add(p); g = true; } } return projs.filter((p) => got.has(p)).map((p) => p.root); })() : [];
   const projReqs = new Map();
   if (dataFile) for (const e of all) { const pr = projs.find((p) => depProjects.includes(p.root) && (e.path === normDep(p.root) || e.path.startsWith(normDep(p.root) + '/'))); if (pr) for (const r of [...e.refs.verifies, ...e.refs.implements]) { if (!projReqs.has(r)) projReqs.set(r, new Set()); projReqs.get(r).add(e.id + ' (' + e.path + ')'); } }
+  const seeds0 = seeds[0];
   if (dataFile) seeds = [];
   const via = new Map(seeds.map((f) => [f, null]));
   const queue = [...seeds];
@@ -5015,6 +5021,8 @@ function cmdImpact() {
   const seedIsTest = seeds.length > 0 && seeds.every((s) => TEST_FILE.test(s) || (entsIn(s).length > 0 && entsIn(s).every((e) => e.kind === 'TEST')));
   if (dataFile || result.otherReqs.length || sameFeature.length) out('  note: impact is file-granular — every REQ annotated in a reached file is listed, even if only one test/function uses the changed file; dependsOn edges are per project, not per language');
   if (dataFile) out(`  data file (outside the import graph); dependent projects (dependsOn): ${depProjects.join(', ') || '(none)'}`);
+  const declOnly = dataFile ? depProjects.filter((r) => { const p = projs.find((q) => q.root === r); return p && !referenced(p, seeds0); }) : [];
+  if (declOnly.length) out(`  declared dependsOn only (no file mentions ${seeds0}; set projects[].dependsOnMode "referenced" to drop): ${declOnly.join(', ')}`);
   else out(`  ${seedIsTest ? 'test' : 'impl'}: ${seeds.join(', ') || '(none)'}`);
   if (/^REQ-/.test(target) && !seeds.length) {
     const bare = listFiles().filter((f) => { try { return new RegExp('(?:\\/\\/|#|--|/\\*|;)\\s*' + target + '(?![\\w-])').test(fs.readFileSync(path.join(ROOT, f), 'utf8')); } catch { return false; } });
