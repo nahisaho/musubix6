@@ -2153,7 +2153,12 @@ function stubRust(testPath, src, dir, made) {
   const modNames = new Set();
   let preOut;
   const freshMods = new Set();
-  const srcNoUse = src.replace(/^\s*use\s[^;]*;/gm, '');
+  let srcNoUse = src.replace(/^\s*use\s[^;]*;/gm, '');
+  // the whole test file (other tests included): names imported for another test still have to exist for the file to compile (#304)
+  const fullNoUse = (() => { let full = src; try { full = fs.readFileSync(path.join(ROOT, testPath), 'utf8'); } catch { /* scoped source only */ } if (aliases.size) full = full.replace(new RegExp(`^\\s*use\\s[^;]*;|\\b(${[...aliases.keys()].join('|')})\\b`, 'gm'), (m, a) => a ? aliases.get(a) : m); return full.replace(/^\s*use\s[^;]*;/gm, ''); })();
+  // runs `fn` with the other tests visible: only for names the requested test never mentions
+  const inFull = (fn) => { const [a, b] = [src, srcNoUse]; src = fullNoUse; srcNoUse = fullNoUse; try { return fn(); } finally { src = a; srcNoUse = b; } };
+  const stubItem = (n, crate_) => new RegExp(`\\b${n}\\b`).test(srcNoUse) ? itemStub(n, crate_) : inFull(() => itemStub(n, crate_));
   // inline paths `krate::geo::Point { .. }` / `krate::util::f(..)` count as imports of that item (#130)
   const inline = [...srcNoUse.matchAll(/(?<![\w:])(\w+)((?:::[a-z_]\w*)+)::([A-Za-z_]\w*)/g)].filter((m) => crates.has(m[1])).map((m) => `use ${m[1]}${m[2]}::${m[3]};`).join('\n');
   // `use krate::ops;` + `ops::f(..)` => `use krate::ops::f;`: ops is a module (#268)
@@ -2162,7 +2167,7 @@ function stubRust(testPath, src, dir, made) {
     const croot = crates.get(m[1]);
     if (!croot) continue;
     preOut ??= probe('cargo', ['test', '--no-run', '--offline', '--test', path.basename(testPath, '.rs')], root);
-    const items = (m[3].startsWith('{') ? m[3].slice(1, -1).split(',') : [m[3]]).map((x) => x.trim().split(/\s+as\s+/)[0]).filter((x) => /^[A-Za-z_]\w*$/.test(x) && x !== 'self' && new RegExp(`\\b${x}\\b`).test(srcNoUse));
+    const items = (m[3].startsWith('{') ? m[3].slice(1, -1).split(',') : [m[3]]).map((x) => x.trim().split(/\s+as\s+/)[0]).filter((x) => /^[A-Za-z_]\w*$/.test(x) && x !== 'self' && new RegExp(`\\b${x}\\b`).test(fullNoUse));
     if (!items.length) continue;
     const lib = path.join(croot, 'src/lib.rs');
     if (!fs.existsSync(lib)) { fs.mkdirSync(path.dirname(lib), { recursive: true }); fs.writeFileSync(lib, ''); made.push(rel(lib)); }
@@ -2186,7 +2191,7 @@ function stubRust(testPath, src, dir, made) {
       parent = fs.existsSync(f) ? f : mf;
       last = parent;
     }
-    if (created) { const t_ = items.map((x) => itemStub(x, m[1])).join('\n'); fs.writeFileSync(last, t_ + implsFor(t_)); freshMods.add(last); }
+    if (created) { const t_ = items.map((x) => stubItem(x, m[1])).join('\n'); fs.writeFileSync(last, t_ + implsFor(t_)); freshMods.add(last); }
     else {
       // missing items are appended to an existing module; items it already defines or re-exports are left alone
       const text = fs.readFileSync(last, 'utf8');
@@ -2202,7 +2207,7 @@ function stubRust(testPath, src, dir, made) {
         return addToImpl(t, x, add_, false);
       }, text);
       if (grown !== text) { fs.writeFileSync(last, grown); if (!freshMods.has(last)) made.push(rel(last)); }
-      if (miss.length) { const add_ = miss.map((x) => itemStub(x, m[1])).join('\n'); fs.appendFileSync(last, (text && !text.endsWith('\n') ? '\n' : '') + (text ? '\n' : '') + add_ + implsFor(text + add_)); if (!freshMods.has(last)) made.push(rel(last)); }
+      if (miss.length) { const add_ = miss.map((x) => stubItem(x, m[1])).join('\n'); fs.appendFileSync(last, (text && !text.endsWith('\n') ? '\n' : '') + (text ? '\n' : '') + add_ + implsFor(text + add_)); if (!freshMods.has(last)) made.push(rel(last)); }
     }
   }
   // `macro_rules!` macros the test imports from a project crate (root-level `use krate::name;`, `krate::name!`, `#[macro_use] extern crate`) get an exported throwing stub (#288)
@@ -2282,7 +2287,7 @@ function stubRust(testPath, src, dir, made) {
     }
   };
   growMembers();
-  const names = [...new Set([...out.matchAll(/cannot find function `(\w+)`|unresolved import `[\w:]+::(\w+)`|no `(\w+)` in the root|cannot find struct, variant or union type `(\w+)`/g)].map((m) => m[1] ?? m[2] ?? m[3] ?? m[4]))].filter((n) => !modNames.has(n) && !macroNames.has(n) && new RegExp(`\\b${n}\\b`).test(srcNoUse));
+  const names = [...new Set([...out.matchAll(/cannot find function `(\w+)`|unresolved import `[\w:]+::(\w+)`|no `(\w+)` in the root|cannot find struct, variant or union type `(\w+)`/g)].map((m) => m[1] ?? m[2] ?? m[3] ?? m[4]))].filter((n) => !modNames.has(n) && !macroNames.has(n) && new RegExp(`\\b${n}\\b`).test(fullNoUse));
   // compile-check what was written: an honest verdict instead of an assumed "Red-safe" (#130)
   const verified = () => {
     const after = made.length || names.length ? cargoTest() : out;
@@ -2301,7 +2306,7 @@ function stubRust(testPath, src, dir, made) {
   const prev = fs.readFileSync(ownLib, 'utf8');
   // names the library already defines are not appended again, and an unchanged lib.rs is never reported as stubbed (#290)
   const fresh = names.filter((n) => !new RegExp(`\\b(?:struct|enum|fn|const|static|type|trait)\\s+${n}\\b`).test(prev));
-  const body0 = fresh.map((x) => itemStub(x)).join('\n'), body = body0 + implsFor(prev + body0);
+  const body0 = fresh.map((x) => stubItem(x)).join('\n'), body = body0 + implsFor(prev + body0);
   if (body.trim()) { fs.writeFileSync(ownLib, prev + (prev && !prev.endsWith('\n\n') ? '\n' : '') + body); made.push(rel(ownLib)); }
   else if (probeFile && !made.length) fs.rmSync(ownLib);
   return withNotes(Object.assign([...new Set(made)], verified()));

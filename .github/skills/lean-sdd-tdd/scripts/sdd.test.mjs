@@ -7908,3 +7908,14 @@ test('#304 Rust stub: consts/tables compared or iterated by the test are typed (
   assert.match(lib, /const NAME: &str/, lib);
   ok17(out);
 });
+
+test('#304 Rust stub: names imported for other tests do not break the file of the requested test', has268, () => {
+  const t = (n, body) => `// @id TEST-H-00${n} @verifies REQ-H-00${n}\n#[test]\nfn test_h_00${n}() {\n${body}\n}\n`;
+  const d = rs268({ 'src/lib.rs': '', 'tests/x.rs': 'use hist::{alpha, beta, Gadget};\n\n' + t(1, '    assert_eq!(alpha(1), 2);') + '\n' + t(2, '    let g = Gadget::new();\n    assert_eq!(beta(1, 2), 3);') }, ['TEST-H-001', 'TEST-H-002']);
+  const r = sdd(d, 'tdd', 'stub', 'TEST-H-001');
+  const lib = fs.readFileSync(path.join(d, 'src/lib.rs'), 'utf8');
+  assert.match(lib, /fn alpha/, r.out);
+  assert.match(lib, /fn beta<A0, A1>/, lib);
+  assert.match(lib, /struct Gadget/, lib);
+  ok17(r.out);
+});
