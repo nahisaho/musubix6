@@ -6496,3 +6496,40 @@ test('#258 gate: a check that ran zero tests does not claim tests were skipped',
   assert.doesNotMatch(r.out, /all tests skipped/, r.out);
   assert.match(r.out, /no tests (found|ran)/i, r.out);
 });
+
+// ---- wave 9 (#263): one weak-Red rule across languages ----
+const weak263 = (body, out, name = 'add.test.mjs', file) => {
+  const d = approved();
+  if (file) fs.writeFileSync(path.join(d, name), file);
+  else testFile(d, body);
+  fakeOut(d, out);
+  return sdd(d, 'tdd', 'red', 'TEST-CALC-001', ...(weak263.args ?? []));
+};
+
+test('#263 Rust import alias: the aliased subject is the asserted call, not a setup call', () => {
+  const r = weak263(['  // use fscore::encoding::delta::{encode as delta_encode};', '  assert.equal(delta_encode(1), 2);'], "thread 'x' panicked at src/delta.rs:3:5:\nnot implemented: delta::encode\n");
+  assert.match(r.out, /RED ok/, r.out);
+  assert.doesNotMatch(r.out, /\[weak\]|setup call/, r.out);
+});
+
+test('#263 Java: a local holding the asserted SUT result is not setup', () => {
+  const r = weak263(['  String h = Entry.computeHash(1);', '  assertEquals("lit", h);'], 'java.lang.UnsupportedOperationException: not implemented: computeHash\n');
+  assert.doesNotMatch(r.out, /\[weak\]|setup call/, r.out);
+});
+
+test('#263 Go: a stub called in an if/for condition that gates the failure is the act', () => {
+  const out = '--- FAIL: TestCalc (0.00s)\npanic: nyi: Allow [recovered]\n\ngoroutine 7 [running]:\nexample.com/x.(*B).Allow(...)\n\t/x/calc.go:3 +0x1\nexample.com/x.TestCalc(0xc0)\n\t/x/add.test.mjs:7 +0x2\n';
+  const r = weak263(['  b := make()', '  if !b.Allow() {', '    t.Error("denied")', '  }'], out);
+  assert.doesNotMatch(r.out, /\[weak\]|setup call/, r.out);
+  const q = weak263(['  b := make()', '  for b.Allow() {', '  }', '  assert.equal(b.n, 3)'], out);
+  assert.doesNotMatch(q.out, /\[weak\]|setup call/, q.out);
+});
+
+test('#263 ExUnit: a failure inside a defp helper called before the assertion is weak, like the inline setup call', () => {
+  const ex = (call) => `defmodule T do\n  use ExUnit.Case\n  # @id TEST-CALC-001\n  # @verifies REQ-CALC-001\n  test "a" do\n${call}\n    assert Log.entries(l) == []\n  end\n\n  defp filled(n) do\n    Log.new(n)\n  end\nend\n`;
+  const out = 'not implemented: new\n';
+  const a = weak263(null, out, 'add.test.exs', ex('    l = filled(1)'));
+  assert.match(a.out, /\[weak\].*setup call "new"/, a.out);
+  const b = weak263(null, out, 'add.test.exs', ex('    l = Log.new(1)'));
+  assert.match(b.out, /\[weak\].*setup call "new"/, b.out);
+});
