@@ -8,7 +8,7 @@ import os from 'node:os';
 import { builtinModules } from 'node:module';
 import path from 'node:path';
 
-const BOOL = new Set(['allow-setup-red', 'missing-module', 'baseline', 'weak', 'changed', 'json', 'no-run', 'verbose', 'help']);
+const BOOL = new Set(['allow-setup-red', 'missing-module', 'baseline', 'weak', 'changed', 'json', 'no-run', 'verbose', 'help', 'stale']);
 function parseArgs(argv) {
   const pos = [];
   const flags = {};
@@ -4233,8 +4233,18 @@ function cmdTdd() {
     return made.verified === 'fail' && /\.(?:c|cc|cpp|cxx)$/.test(t.path) ? 1 : 0;
   }
   if (!['red', 'green', 'refactor'].includes(sub)) { out('usage: tdd red|green|refactor <TEST-ID> [--req REQ] [--weak] [--expect <text>] [--retest <why>] [--characterization <why>] [--allow-setup-red] [--wording <why> (refactor on T1 after a test change)] | tdd stub <TEST-ID> [<TEST-ID>... | --all] | tdd check | tdd merge-ledger'); return 2; }
-  if (!pos[2]) { out(`usage: tdd ${sub} <TEST-ID> [<TEST-ID>...] [--req REQ] [--weak]`); return 2; }
-  if (flags.characterization === true) { out('usage: --characterization "<reason>" needs a reason text'); return 2; }
+  if (sub === 'refactor' && flags.stale && !pos[2]) {
+    const staleIds = [...ents.values()].filter((e) => {
+      if (e.kind !== 'TEST') return false;
+      const last = readLedger().filter((x) => x.test === e.id && (x.type === 'green' || x.type === 'refactor')).at(-1);
+      return last?.implBlocks && [...ents.values()].some((c) => c.kind === 'CODE' && c.refs.implements.some((r) => e.refs.verifies.includes(r)) && last.implBlocks[`${c.path}:${c.id}`] !== implRegionSha(c));
+    }).map((e) => e.id);
+    if (!staleIds.length) { out('no test has a stale shared-implementation Green'); return 0; }
+    out(`re-verifying ${staleIds.length} stale test(s): ${staleIds.join(' ')}`);
+    if (staleIds.length === 1) pos.push(staleIds[0]); else pos.push(...staleIds);
+  }
+  if (!pos[2]) { out(`usage: tdd ${sub} <TEST-ID> [<TEST-ID>...] [--req REQ] [--weak]${sub === 'refactor' ? ' | tdd refactor --stale' : ''}`); return 2; }
+  if (flags.characterization === true) { out('usage: tdd red <TEST-ID> --characterization "<reason>" — records a test that passes without any implementation (data-only/golden check) as a weak Red; the reason text is required and is shown in the gate'); return 2; }
   // batch: run each ID in turn (flags such as --req/--characterization apply to every ID) (#126)
   if (pos.length > 3) {
     const ids = pos.slice(2);
@@ -4558,7 +4568,7 @@ function cmdTdd() {
       const shared = [...ents.values()].filter((c) => c.kind === 'CODE' && implFiles.includes(c.path) && c.refs.implements.some((r) => e.refs.verifies.includes(r)));
       return last && shared.some((c) => (last.implBlocks ? last.implBlocks[`${c.path}:${c.id}`] !== implRegionSha(c) : mtime(c.path) > Date.parse(last.at)));
     });
-    if (!implFiles.length && !loadSpecs().flatMap((x) => x.reqs).filter((q) => mine.has(q.id)).every((q) => q.testOnly || q.srcs.length)) out(`⚠ ${id}: no code carries @implements ${[...mine].join(', ')} — annotate the implementation so impact/trace can find it (#276); without it the shared-implementation staleness check cannot run (comment-only \`@id CODE-… @implements …\` is enough, the code itself stays unchanged)${dups.some((x) => /^CODE-/.test(x)) ? `; duplicate @id found (${dups.filter((x) => /^CODE-/.test(x)).slice(0, 3).join(', ')}) — only one annotation per id is read, rename the duplicate` : ''}`);
+    if (!implFiles.length && !entries.some((x) => x.test === id && (x.type === 'green' || x.type === 'refactor')) && !loadSpecs().flatMap((x) => x.reqs).filter((q) => mine.has(q.id)).every((q) => q.testOnly || q.srcs.length)) out(`⚠ ${id}: no code carries @implements ${[...mine].join(', ')} — annotate the implementation so impact/trace can find it (#276); without it the shared-implementation staleness check cannot run (comment-only \`@id CODE-… @implements …\` is enough, the code itself stays unchanged)${dups.some((x) => /^CODE-/.test(x)) ? `; duplicate @id found (${dups.filter((x) => /^CODE-/.test(x)).slice(0, 3).join(', ')}) — only one annotation per id is read, rename the duplicate` : ''}`);
     if (stale.length) out(`⚠ implementation shared with other REQs changed since their Green: ${stale.map((e) => e.id).join(', ')} — re-run them (tdd refactor ${stale.map((e) => e.id).join(' ')}) or the project tests; their evidence is not re-checked automatically`);
   }
   if (sub === 'red' && loadWeak && /not implemented|NotImplementedError|unimplemented/i.test(res.text)) out(`! a stub failed at module load, before any test body ran: every test of this file fails the same way, so this Red says nothing about ${id}; move the stub call into the test or a fixture`);
