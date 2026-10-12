@@ -3255,12 +3255,13 @@ function testBody(testPath, id) {
 }
 const ASSERT_LINE = /(expect\s*\(|\b(?:Assert|CollectionAssert|StringAssert|FileAssert)\.\w+|\.Should\(|\bASSERT\w*\s*\(|\bCHECK\w*\s*\(|\bEXPECT\w*\s*\(|\bassert|raises|toThrow|\.should|assertEquals|@test(?:_throws)?\b|expect_|\bif\b.*[!=]=|t\.(Error|Fatal))/;
 // lines that belong to an assertion, including the continuation lines of a multi-line `assert_eq!(` / `expect(` call (#89)
-function markAsserts(lines) {
+function markAsserts(lines, extra = null) {
+  const A = extra ? new RegExp(`${ASSERT_LINE.source}|${extra.source}`) : ASSERT_LINE;
   const flags = lines.map(() => false);
   for (let i = 0; i < lines.length; i++) {
-    if (!ASSERT_LINE.test(lines[i])) continue;
+    if (!A.test(lines[i])) continue;
     flags[i] = true;
-    const from = lines[i].search(ASSERT_LINE);
+    const from = lines[i].search(A);
     let depth = 0;
     for (let j = i, first = true; j < lines.length; j++, first = false) {
       const seg = first ? lines[j].slice(from) : lines[j];
@@ -3274,9 +3275,10 @@ function markAsserts(lines) {
 // Red caused by a stub called from setup (not from the asserted behaviour) is not evidence for the REQ
 function setupOrigin(line, testPath, id, text = '') {
   // a missing method on a constructor-only stub (`x.m is not a function`, `has no attribute 'm'`) is a setup failure too (#75)
-  const m = /not implemented:?\s*(?:in\s+)?(?:[\w$]+(?:::|\.|->))*([\w$]+)|NotImplementedError:?\s*\(?["']?([\w$]+)|unimplemented!?\(?\s*"?([\w$]+)|\.([\w$]+) is not a function|has no attribute '([\w$]+)'/i.exec(line ?? '');
-  let x = m?.[1] ?? m?.[2] ?? m?.[3] ?? m?.[4] ?? m?.[5];
+  const m = /not implemented:?\s*(?:in\s+)?(?:[\w$]+(?:::|\.|->))*([\w$]+)|NotImplementedError:?\s*\(?["']?([\w$]+)|unimplemented!?\(?\s*"?([\w$]+)|\.([\w$]+) is not a function|has no attribute '([\w$]+)'|'(?:[\w$]+\.)*([\w$]+)' object does not support the (?:async\w* )?context manager protocol/i.exec(line ?? '');
+  let x = m?.[1] ?? m?.[2] ?? m?.[3] ?? m?.[4] ?? m?.[5] ?? m?.[6];
   if (x && /^(in|at|yet|for|by|on|here|the|a|an|from|and|is|to|of|error|exception)$/i.test(x)) x = undefined;
+  const named = !!x; // name taken from the message; stack/panic-location derived names may be absent from the test
   // Go: a `panic: <msg>` stub; the first non-runtime frame is the stubbed function (#142)
   if (!x && /^panic: /m.test(text) && /^goroutine \d+/m.test(text)) {
     const gi = text.search(/^goroutine \d+/m);
@@ -3322,11 +3324,20 @@ function setupOrigin(line, testPath, id, text = '') {
   let end = all.findIndex((l, i) => i > start && /@id\s/.test(l));
   if (end < 0) end = all.length;
   if (/\.exs$/.test(testPath)) end = exClamp(all, start, end);
-  const inA = new Array(start).fill(false).concat(markAsserts(all.slice(start, end)));
+  // assertion helpers: functions of the test file that assert, or named check*/verify*/…; a call to one is an assertion line
+  const helperNames = [...new Set(all.flatMap((l, i) => {
+    const d = /^\s*(?:pub\s+)?(?:async\s+)?(?:fn|def|function|func)\s+(\w+)/.exec(l);
+    if (!d || (i >= start && i < end) || /^test/i.test(d[1])) return [];
+    const nx = all.findIndex((q, k) => k > i && (/@id\s/.test(q) || /^\s*(?:pub\s+)?(?:async\s+)?(?:fn|def|function|func)\s/.test(q)));
+    return ASSERT_LINE.test(all.slice(i + 1, nx < 0 ? all.length : nx).join('\n')) ? [d[1]] : [];
+  })), ...all.join('\n').matchAll(/\b((?:check|verify|ensure|validate)\w*)\s*\(/gi).map((m) => m[1])];
+  const helperExtra = helperNames.length ? new RegExp(`(?<![\\w$.])(?:${helperNames.join('|')})\\s*\\(`) : null;
+  const mark = (ls) => markAsserts(ls, helperExtra);
+  const inA = new Array(start).fill(false).concat(mark(all.slice(start, end)));
   // a bare `eng.run()` statement is the act only when the assertions inspect state rather than call other code (otherwise a stubbed call before them is setup)
   const isBareAct = (l) => {
     if (!/^\s*(?:await\s+)?(?:\(new\s+[\w\\]+\(.*?\)\)|(?:[\w$.]|->)+)(?:::[\w$]+|->[\w$]+)*\s*\(.*\)\s*;?\s*$/.test(l)) return false;
-    const bl = testBody(testPath, id), bf = markAsserts(bl);
+    const bl = testBody(testPath, id), bf = mark(bl);
     const own = /(?:\b(?:(?:Assert|CollectionAssert|StringAssert)\.\w+|assert\w*|expect\w*|ASSERT\w*|EXPECT\w*|CHECK\w*|len|sorted|list|set|tuple|dict|str|sum|vec|toBe\w*|toEqual|toHaveLength|toContain|equal|deepEqual|deepStrictEqual|strictEqual|eq|ne|raises)!?|@test)\s*\(/g;
     return !bl.filter((_, i) => bf[i]).some((a) => /[\w$]\s*\(/.test(a.replace(own, '')));
   };
@@ -3334,8 +3345,10 @@ function setupOrigin(line, testPath, id, text = '') {
   const assertedResult = (hitLines) => {
     const WRAP = '(?:(?:list|len|sorted|set|tuple|dict|str|int|float|sum|bool|String|Number|JSON\\.stringify|Object\\.\\w+|Array\\.from)\\(\\s*)*';
     // single, tuple-unpacked (`a, b = f()` / `let (a, b) = f()`) and Go `:=` targets (#110)
-    let vars = hitLines.flatMap((l) => { const m = /^\s*(?:(?:const|let|var)\s+(?:mut\s+)?|(?:final\s+)?(?:[A-Z][\w.<>\[\],?]*|int|long|double|float|boolean|char|byte|short)\s+)?\(?\s*([A-Za-z_$][\w$]*(?:\s*,\s*(?:mut\s+)?[A-Za-z_$][\w$]*)*)\s*\)?\s*(?::(?!=)[^=]+)?:?=(?!=)/.exec(l); return m ? m[1].split(/\s*,\s*(?:mut\s+)?/).filter((v) => v !== '_') : []; });
-    const bl = testBody(testPath, id), bf = markAsserts(bl);
+    let vars = hitLines.flatMap((l) => { const m = /^\s*(?:(?:const|let|var)\s+(?:mut\s+)?|(?:final\s+)?(?:[A-Z][\w.<>\[\],?]*|int|long|double|float|boolean|char|byte|short)\s+)?[\[{(]?\s*([A-Za-z_$][\w$]*(?:\s*,\s*(?:mut\s+)?[A-Za-z_$][\w$]*)*)\s*[\])}]?\s*(?::(?!=)[^=]+)?:?=(?!=)/.exec(l) ; return m ? m[1].split(/\s*,\s*(?:mut\s+)?/).filter((v) => v !== '_') : []; });
+    // `with X(..) as c:` binds the context manager; only its plain use (not `c.m(..)`) asserts it
+    const withVars = hitLines.flatMap((l) => { const m = /\bwith\s+.*\bas\s+([A-Za-z_]\w*)\s*:/.exec(l); return m ? [m[1]] : []; });
+    const bl = testBody(testPath, id), bf = mark(bl);
     const body = bl.filter((_, i) => bf[i]);
     const esc = (v) => v.replace(/[$]/g, '\\$&');
     const subject = (v) => new RegExp(`(?:expect\\(\\s*(?:await\\s+)?|(?:Assert|CollectionAssert|StringAssert)\\.\\w+\\(\\s*|assert\\w*!?(?:\\.\\w+)?\\(\\s*|\\bassert\\s+(?:not\\s+)?)${WRAP}&?${esc(v)}(?![\\w$])`);
@@ -3352,11 +3365,11 @@ function setupOrigin(line, testPath, id, text = '') {
       vars = [...new Set([...vars, ...derived])];
     }
     const goIf = (v) => new RegExp(`\\bif\\b[^{]*?(?<![\\w$.])${v.replace(/[$]/g, '\\$&')}(?![\\w$])`);
-    return vars.some((v) => body.some((l) => subject(v).test(l) || goIf(v).test(l) || plain(v).test(l)));
+    return vars.some((v) => body.some((l) => subject(v).test(l) || goIf(v).test(l) || plain(v).test(l))) || withVars.some((v) => body.some((l) => plain(v).test(l)));
   };
   // `save(p, x)` then `got = load(p); assert got == x`: a bare stub call that shares an argument with the call whose bound result is asserted is the act (#283)
   const pairedAct = (hitLines) => {
-    const bl = testBody(testPath, id), bf = markAsserts(bl);
+    const bl = testBody(testPath, id), bf = mark(bl);
     return hitLines.filter(isBareAct).some((h) => {
       const args = (/\(([^()]*)\)/.exec(h)?.[1] ?? '').match(/(?<![\w$.])[A-Za-z_$][\w$]*/g) ?? [];
       return bl.some((l, i) => !bf[i] && !re.test(l) && /[\w$]\s*\(/.test(l) && args.some((a) => new RegExp(`(?<![\\w$.])${a.replace(/[$]/g, '\\$&')}(?![\\w$])`).test(l)) && assertedResult([l]));
@@ -3377,7 +3390,7 @@ function setupOrigin(line, testPath, id, text = '') {
       grew = false;
       for (const d of outside) if (!helpers.includes(d.name) && bodyOf(d, defs.indexOf(d)).some((l) => helpers.some((h) => new RegExp(`(?<![\\w$])${h}\\s*\\(`).test(l)))) { helpers.push(d.name); grew = true; }
     }
-    const bl = testBody(testPath, id), bf = markAsserts(bl);
+    const bl = testBody(testPath, id), bf = mark(bl);
     for (const h of helpers) {
       const hre = new RegExp(`(?<![\\w$])${h}\\s*\\(`);
       const calls = bl.filter((l, i) => hre.test(l) && !DEF.test(l));
@@ -3396,6 +3409,7 @@ function setupOrigin(line, testPath, id, text = '') {
     const hit = sites.filter((i) => re.test(all[i])).map((i) => ({ l: all[i], i }));
     // a call inside `with pytest.raises(...)` / assertRaises / assertThrows on the preceding line is the asserted behaviour
     if (hit.some(({ i }) => /raises|assertRaises|assertThrows|assert_raises/.test(all[i - 1] ?? ''))) return null;
+    if (!mark(all.slice(start, end)).some(Boolean)) return null;
     if (!hit.length) return helperVerdict();
     if (hit.some(({ i }) => inA[i])) return null;
     // `match f(..).unwrap() { .. }` / `match Regex::new(..) { .. }`: the scrutinee is the behaviour under test (#110)
@@ -3409,7 +3423,7 @@ function setupOrigin(line, testPath, id, text = '') {
     if (hit.some(({ i, l }) => i === prevStmt && isBareAct(l))) return null; // bare act statement (#124)
     return assertedResult(hit.map(({ l }) => l)) || pairedAct(hit.map(({ l }) => l)) ? null : x;
   }
-  const bl = testBody(testPath, id), bf = markAsserts(bl);
+  const bl = testBody(testPath, id), bf = mark(bl);
   const asserts = bl.filter((_, i) => bf[i]);
   if (!asserts.length) return null;
   if (bl.some((l, i) => !bf[i] && condAct(l))) return null;
@@ -3424,7 +3438,7 @@ function setupOrigin(line, testPath, id, text = '') {
   // a bare call statement (`eng.run()`, `run_with_retry(..)`) directly before the first assertion is the act, its side effect is asserted (#124)
   if (lastStmt && re.test(lastStmt.l) && isBareAct(lastStmt.l)) return null;
   const stubLines = bl.filter((l, i) => re.test(l) && !bf[i]);
-  return assertedResult(stubLines) || pairedAct(stubLines) ? null : x;
+  return (!named && !stubLines.length) || assertedResult(stubLines) || pairedAct(stubLines) ? null : x;
 }
 
 function goTestTarget(testPath, id) {
@@ -4239,7 +4253,7 @@ function cmdTdd() {
   // node:test: the file itself failed to load (module-level throw), so no test was registered or executed (#225)
   const nodeLoadFail = sub === 'red' && /^ℹ tests \d+/m.test(plain) && (() => { const tops = plain.split('\n').filter((l) => /^[✖✔﹣]\s/.test(l) && !/^✖ failing tests:/.test(l)); return tops.length > 0 && tops.every((l) => new RegExp(`^✖ ${escapeRe(path.basename(t.path))} \\(`).test(l)); })();
   const loadWeak = sub === 'red' && (isLoadErr(res.text) || nodeLoadFail) && !(flags['missing-module'] && declaredMissingModule(res.text, t.path));
-  const setupSym0 = sub === 'red' && !flags['allow-setup-red'] ? setupOrigin(rl.find((l) => /^E\s+.*(not implemented|NotImplementedError|unimplemented|is not a function|has no attribute)/i.test(l)) ?? rl.find((l) => /not implemented|NotImplementedError|unimplemented|is not a function|has no attribute/i.test(l) && !/^\d+\s*\|/.test(l)) ?? reason, t.path, id, res.text) : null;
+  const setupSym0 = sub === 'red' && !flags['allow-setup-red'] ? setupOrigin(rl.find((l) => /^E\s+.*(not implemented|NotImplementedError|unimplemented|is not a function|has no attribute|context manager protocol)/i.test(l)) ?? rl.find((l) => /not implemented|NotImplementedError|unimplemented|is not a function|has no attribute|context manager protocol/i.test(l) && !/^\d+\s*\|/.test(l)) ?? reason, t.path, id, res.text) : null;
   // --expect naming the setup call itself does not make a setup-origin Red the asserted behaviour (#256)
   const setupSym = setupSym0 && (typeof flags.expect !== 'string' || new RegExp(`(?<![\\w$])${escapeRe(setupSym0)}(?![\\w$])`).test(flags.expect)) ? setupSym0 : null;
   const charac = sub === 'red' && res.exit === 0 && !retest ? String(flags.characterization).trim() : '';
