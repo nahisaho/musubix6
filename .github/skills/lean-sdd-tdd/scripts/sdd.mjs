@@ -2015,6 +2015,24 @@ function stubRust(testPath, src, dir, made) {
       items.push(sigStr + ';');
       if (ty && /^[A-Z]/.test(ty)) ufcsImpls.push({ trait: n, ty, item: `    ${sigStr} {\n        unimplemented!("${ty}::${u.f}")\n    }\n` });
     }
+    // methods the test calls on a parameter bounded by the trait (`s: &dyn N`, `s: &mut S` with `S: N`, `s: impl N`)
+    const recv = [];
+    const generics = [...ms.matchAll(new RegExp(`\\b(\\w+)\\s*:\\s*(?:[\\w:?']+\\s*\\+\\s*)*${n}\\b(?!\\s*(?:for\\b|\\{))`, 'g'))].map((m) => m[1]);
+    for (const m of ms.matchAll(new RegExp(`\\b(\\w+)\\s*:\\s*(&\\s*(?:mut\\s+)?)?(?:dyn\\s+|impl\\s+)(?:[\\w:?']+\\s*\\+\\s*)*${n}\\b`, 'g'))) recv.push({ p: m[1], mut: /mut/.test(m[2] ?? ''), at: m.index });
+    for (const g of generics) for (const m of ms.matchAll(new RegExp(`\\b(\\w+)\\s*:\\s*(&\\s*(?:mut\\s+)?)?${g}\\b(?!\\s*[:=>+,]\\s*[A-Z])`, 'g'))) if (m[1] !== g) recv.push({ p: m[1], mut: /mut/.test(m[2] ?? ''), at: m.index });
+    for (const { p: rp, mut, at } of recv) {
+      // the calls count only inside the fn that declares the parameter
+      const bodyOpen = ms.indexOf('{', at), bodyEnd = bodyOpen < 0 ? -1 : matchEnd(srcNoUse, bodyOpen);
+      if (bodyEnd < 0) continue;
+      for (const k of new Set([...ms.slice(bodyOpen, bodyEnd).matchAll(new RegExp(`(?<![\\w.])${rp}\\s*\\.\\s*([a-z_]\\w*)\\s*\\(`, 'g'))].map((m) => m[1]))) {
+        if (items.some((x) => x.startsWith(`fn ${k}`)) || /^(?:clone|to_string|into|as_ref|borrow|unwrap|iter)$/.test(k)) continue;
+        const pat = `${rp}\\s*\\.\\s*${k}`, c = callInfo(srcNoUse, pat), lt = c.raws.map((r) => exprType(r, ownPkg, false)?.replace(/&'static str/g, '&str')), g = c.args.map((_, i) => `A${i}`).filter((_, i) => !lt[i]);
+        // the call is the tail expression of a fn with a declared return type
+        const tail = [...ms.matchAll(/->\s*([^{;]+?)\s*(?:where[^{;]*)?\{/g)].find((fm) => { const open = fm.index + fm[0].length - 1, end = matchEnd(srcNoUse, open); return end > 0 && new RegExp(`(?:^|[;{])\\s*${pat}\\s*\\([^;]*\\)\\s*$`).test(ms.slice(open + 1, end)); })?.[1];
+        const ret = tail?.trim() ?? rustRet(`(?<![\\w.])${pat}`, ownPkg) ?? (c.ret?.startsWith('opt:') ? `Option<${c.ret.slice(4)}>` : T[c.ret] ?? '()');
+        items.push(`fn ${k}${g.length ? `<${g.join(', ')}>` : ''}(${[mut ? '&mut self' : '&self', ...c.args.map((_, i) => `_a${i}: ${lt[i] ?? `A${i}`}`)].join(', ')}) -> ${ret};`);
+      }
+    }
     if (!found && !bound && !resolved.length) return null;
     return `pub trait ${n}${gn.length ? `<${gn.join(', ')}>` : ''} {\n${items.sort((a, b) => /^type/.test(b) - /^type/.test(a)).map((i) => `    ${i}\n`).join('')}}\n`;
   };
@@ -2025,7 +2043,7 @@ function stubRust(testPath, src, dir, made) {
     for (const m of ms.matchAll(new RegExp(`(?<![\\w:])${n}(?:::<[^;(){}]*?>)?::[a-z_]\\w*\\s*\\(`, 'g'))) {
       let i = skip(m.index + m[0].length - 1);
       const links = [];
-      for (let x; (x = /^\s*\.\s*([a-z_]\w*)\s*(?:::\s*<[^;(){}]*?>)?\s*\(/.exec(ms.slice(i))) && !/^(?:unwrap\w*|expect\w*|is_\w+|clone|to_string|into|as_\w+|len|iter|collect|ok|err|map\w*)$/.test(x[1]);) { links.push(x[1]); i = skip(i + x[0].length - 1); }
+      for (let x; (x = /^\s*\.\s*([a-z_]\w*)\s*(?:::\s*<[^;(){}]*?>)?\s*\(/.exec(ms.slice(i))) && !/^(?:unwrap\w*|expect\w*|is_\w+|clone|to_string|into|as_\w+|len|iter|collect|ok|err|map\w*|matches|contains|starts_with|ends_with|trim\w*|lines|chars|bytes|split\w*|to_uppercase|to_lowercase)$/.test(x[1]);) { links.push(x[1]); i = skip(i + x[0].length - 1); }
       const bound = /\blet\s+(?:mut\s+)?(\w+)\s*(?::[^=]+)?=\s*$/.exec(srcNoUse.slice(Math.max(0, m.index - 80), m.index))?.[1];
       links.forEach((k) => all.add(k));
       links.slice(0, bound && new RegExp(`(?<![\\w.])${bound}\\s*\\.\\s*[a-z_]\\w*\\s*\\(`).test(ms) ? undefined : -1).forEach((k) => mids.add(k));
@@ -2039,7 +2057,10 @@ function stubRust(testPath, src, dir, made) {
     // `T::default()` is provided by derive(Default) on our own non-generic stubs
     const assoc = only ? only.assoc : [...new Set([...src.matchAll(new RegExp(`(?<![\\w:])${n}${tf}::([a-z_]\\w*)\\s*\\(`, 'g'))].map((m) => m[1]))].filter((k) => k !== 'default' || gn);
     // variables bound to an `N` value: `= N::f(..)`, `= N { .. }` or annotated `: N<..>`
-    const vars = [...new Set([...src.matchAll(new RegExp(`\\blet\\s+(?:mut\\s+)?(\\w+)\\s*(?::[^=]+)?=\\s*${n}${tf}::[a-z_]\\w*\\s*\\(|\\blet\\s+(?:mut\\s+)?(\\w+)\\s*=\\s*${n}\\s*\\{|\\blet\\s+(?:mut\\s+)?(\\w+)\\s*:\\s*&?(?:mut\\s+)?${n}\\b`, 'g'))].map((m) => m[1] ?? m[2] ?? m[3]))];
+    // a value returned by an associated fn that is not `Self` (a String, a number, ..) is not a `N`: its methods are not N's
+    const nonSelf = (k) => { const pat = `(?<![\\w.])${n}(?:::\\s*<[^;(){}]*?>)?::${k}`, r = rustRet(pat, crate_), c = callInfo(src.replace(/\b\w+\./g, ''), `${n}(?:::\\s*<[^;(){}]*?>)?\\s*::\\s*${k}`); return !!(r && !new RegExp(`^(?:Option<|Result<)?${n}\\b`).test(r)) || !!(c.ret && c.ret !== 'result' && !c.ret.startsWith('opt:') && T[c.ret]) || (!c.chained && !!viaVar(pat)); };
+    const varK = new Map([...src.matchAll(new RegExp(`\\blet\\s+(?:mut\\s+)?(\\w+)\\s*(?::[^=]+)?=\\s*${n}${tf}::([a-z_]\\w*)\\s*\\(`, 'g'))].map((m) => [m[1], m[2]]));
+    const vars = [...new Set([...src.matchAll(new RegExp(`\\blet\\s+(?:mut\\s+)?(\\w+)\\s*(?::[^=]+)?=\\s*${n}${tf}::[a-z_]\\w*\\s*\\(|\\blet\\s+(?:mut\\s+)?(\\w+)\\s*=\\s*${n}\\s*\\{|\\blet\\s+(?:mut\\s+)?(\\w+)\\s*:\\s*&?(?:mut\\s+)?${n}\\b`, 'g'))].map((m) => m[1] ?? m[2] ?? m[3]))].filter((v) => !varK.has(v) || only || !nonSelf(varK.get(v)));
     const chain = chainsOf(n);
     const inst = only ? only.inst : [...new Set([...vars.flatMap((v) => [...src.matchAll(new RegExp(`(?<![\\w.])${v}\\s*\\.\\s*([a-z_]\\w*)\\s*\\(`, 'g'))].map((m) => m[1])), ...chain.all])].filter((k) => !assoc.includes(k));
     // methods called only on `let mut v` bindings take `&mut self` (#114)
@@ -2055,7 +2076,7 @@ function stubRust(testPath, src, dir, made) {
       const c = qual && qual.argc !== undefined ? qual : callInfo(flat, k);
       const pty = argTypes(self ? `(?<=[\\w)\\]]\\s*)\\.\\s*${k}` : `(?<![\\w.])${n}(?:::\\s*<[^;(){}]*?>)?\\s*::\\s*${k}`), g = gen(c).filter((_, i) => !pty[i]), mid = self && chain.mids.has(k);
       const assocRet = !self && !mid && !c.chained && c.ret !== 'result' ? rustRet(`(?<![\\w.])${n}(?:::\\s*<[^;(){}]*?>)?::${k}`, crate_) : null;
-      const ret = mid ? 'Self' : (assocRet && !new RegExp(`^${n}\\b`).test(assocRet) ? assocRet : null) ?? (!self && !mid && c.ret && c.ret !== 'result' && T[c.ret] ? T[c.ret] : null) ?? (self ? rustRet(`(?<=[\\w)\\]]\\s*)\\.\\s*${k}`, crate_) ?? (c.ret?.startsWith('opt:') ? `Option<${c.ret.slice(4)}>` : T[c.ret ?? viaVar(`(?<![\\w])\\w+\\s*\\.\\s*${k}`)] ?? 'i64') : c.ret === 'result' ? 'Result<Self, String>' : 'Self');
+      const ret = mid ? 'Self' : (assocRet && !new RegExp(`^${n}\\b`).test(assocRet) ? assocRet : null) ?? (!self && !mid && c.ret && c.ret !== 'result' && T[c.ret] ? T[c.ret] : null) ?? (self ? rustRet(`(?<=[\\w)\\]]\\s*)\\.\\s*${k}`, crate_) ?? (c.ret?.startsWith('opt:') ? `Option<${c.ret.slice(4)}>` : T[c.ret ?? viaVar(`(?<![\\w])\\w+\\s*\\.\\s*${k}`)] ?? 'i64') : c.ret === 'result' ? 'Result<Self, String>' : ((c.chained ? null : T[viaVar(`(?<![\\w.])${n}(?:::\\s*<[^;(){}]*?>)?::${k}`)]) ?? 'Self'));
       return `    pub fn ${k}${g.length ? `<${g.join(', ')}>` : ''}(${[self ? (mid ? 'self' : needsMut(k) ? '&mut self' : '&self') : '', ...c.args.map((_, i) => `_a${i}: ${pty[i] ?? `A${i}`}`)].filter(Boolean).join(', ')}) -> ${ret} {\n        ${!self && /^(new|default|with_\w+|from_\w+|create|empty)$/.test(k) ? (c.ret === 'result' ? `Ok(${mk})` : mk) : `unimplemented!("${n}::${k}")`}\n    }\n`;
     };
     return `\nimpl${gn ? `<${gn.join(', ')}>` : ''} ${n}${gn ? `<${gn.join(', ')}>` : ''} {\n${[...assoc.map((k) => sig(k, false)), ...inst.map((k) => sig(k, true))].join('\n')}}\n`;
@@ -2099,10 +2120,12 @@ function stubRust(testPath, src, dir, made) {
       const fty = (e) => /^-?\d+\.\d*/.test(e) ? 'f64' : /^-?\d+$/.test(e) ? 'i64' : /^&?"/.test(e) || /String::from|\.to_string\(|\.to_owned\(|\.into\(\)/.test(e) ? 'String' : /^(true|false)$/.test(e) ? 'bool' : /^vec!/.test(e) ? 'Vec<i64>' : 'i64';
       // `N::V(a, b)` => tuple variant, `N::V { x: 1 }` => struct variant, typed from the values (#268)
       const shape = (v) => {
-        const t = new RegExp(`\\b${n}::${v}\\s*\\(`).test(srcNoUse) ? callInfo(srcNoUse, v) : null;
-        if (t) return t.raws.length ? `(${t.raws.map((r) => fty(r)).join(', ')})` : '';
-        const b = new RegExp(`\\b${n}::${v}\\s*\\{([^{}]*)\\}`).exec(srcNoUse)?.[1];
-        const fs_ = b ? b.split(',').map((f) => /^\s*([a-z_]\w*)\s*(?::\s*([^]*?))?\s*$/.exec(f)).filter(Boolean).map((m) => `${m[1]}: ${m[2] ? fty(m[2]) : 'i64'}`) : [];
+        const ft = (e) => exprType(e, crate_, false)?.replace(/&'static str/g, 'String') ?? fty(e);
+        const t = new RegExp(`\\b${n}::${v}\\s*\\(`).test(srcNoUse) ? callInfo(srcNoUse, `${n}::${v}`) : null;
+        if (t) return t.raws.length ? `(${t.raws.map((r) => ft(r)).join(', ')})` : '';
+        const open = new RegExp(`\\b${n}::${v}\\s*\\{`).exec(srcNoUse);
+        const end = open ? matchEnd(srcNoUse, open.index + open[0].length - 1) : -1;
+        const fs_ = end > 0 ? splitTop(srcNoUse.slice(open.index + open[0].length, end)).map((f) => /^([a-z_]\w*)\s*(?::\s*([^]*?))?\s*$/.exec(f)).filter(Boolean).map((m) => `${m[1]}: ${m[2] ? ft(m[2]) : 'i64'}`) : [];
         return fs_.length ? ` { ${fs_.join(', ')} }` : '';
       };
       const shapes = vs.map(shape);

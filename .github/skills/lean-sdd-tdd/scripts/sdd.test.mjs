@@ -7919,3 +7919,28 @@ test('#304 Rust stub: names imported for other tests do not break the file of th
   assert.match(lib, /struct Gadget/, lib);
   ok17(r.out);
 });
+
+test('#304 Rust stub: enum variants carry typed fields (nested literals, tuples, Option, Vec)', has268, () => {
+  const d = rs288('use hist::{Ev, Point};\n\n' + t288('    let a = Ev::Pair(1, "a".to_string());\n    let b = Ev::Move { to: Point { x: 1, y: 2 }, speed: 1.5 };\n    let c = Ev::Tag(Some(3), vec![1u8]);\n    assert_eq!(a, a.clone());\n    assert_eq!(b, b.clone());\n    assert_eq!(c, c.clone());'));
+  const { out, lib } = stub288(d);
+  assert.match(lib, /Pair\(i64, String\)/, lib);
+  assert.match(lib, /Move \{ to: (?:crate::)?Point, speed: f64 \}/, lib);
+  assert.match(lib, /Tag\(Option<i64>, Vec<u8>\)/, lib);
+  ok17(out);
+});
+
+test('#304 Rust stub: a trait used through a generic bound / dyn gets the methods the test calls on it', has268, () => {
+  const d = rs288('use hist::Sink;\n\nfn feed<S: Sink>(s: &mut S) {\n    s.write(3);\n}\n\nfn peek(s: &dyn Sink) -> usize {\n    s.count()\n}\n\n' + t288('    assert_eq!(1, 1);'));
+  const { out, lib } = stub288(d);
+  ok17(out);
+  assert.match(lib, /pub trait Sink \{[^}]*fn write[^}]*&mut self/s, lib);
+  assert.match(lib, /pub trait Sink \{[^}]*fn count\(&self\)/s, lib);
+});
+
+test('#290 Rust stub: methods on a returned value are not added to the type whose fn returned it', has268, () => {
+  const d = rs288('use hist::Optimizer;\n\n' + t288('    let out = Optimizer::optimize(1);\n    assert_eq!(out, "x");\n    assert!(out.contains("x"));\n    assert_eq!(out.matches("x").count(), 1);'));
+  const { out, lib } = stub288(d);
+  assert.match(lib, /fn optimize<A0>\(_a0: A0\) -> String/, lib);
+  assert.doesNotMatch(lib, /fn (contains|matches)/, lib);
+  ok17(out);
+});
