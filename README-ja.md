@@ -77,6 +77,10 @@ $S --root <app> gate
 リポジトリ単位ではなくユーザー単位で使う場合は、スキルのディレクトリを
 `~/.copilot/skills/` にコピーしてください。
 
+## チュートリアル
+
+要件定義から追加開発、マニュアル作成までの手順は [`docs/tutorial-app-development-1.md`](docs/tutorial-app-development-1.md) を参照してください。
+
 ## テスト
 
 ```sh

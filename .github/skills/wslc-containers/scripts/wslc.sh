@@ -3,7 +3,7 @@
 # bash shell, forwarding all arguments unchanged.
 #
 # Usage: wslc.sh <wslc-subcommand> [args...]
-# Example: wslc.sh container ps
+# Example: wslc.sh list -a
 set -euo pipefail
 
 # Known default install location for wslc.exe (ships with WSL >= 2.9.3).
