@@ -14,7 +14,7 @@ Agent skills for **lean, spec-driven and test-driven development** and for
 | [`tech-writer`](.github/skills/tech-writer/SKILL.md) | Structures README, design docs, test plans, runbooks, proposals, RFI/RFP, Qiita/Zenn articles and more (from [kotonoha](https://github.com/nahisaho/kotonoha), MIT). |
 | [`japanese-prose`](.github/skills/japanese-prose/SKILL.md) | GiNZA-based Japanese prose diagnostics: naturalness, reading load, terminology, AI-like patterns (from kotonoha, MIT). |
 | [`wslc-containers`](.github/skills/wslc-containers/SKILL.md) | Operate Linux containers on Windows via the built-in WSL container CLI (`wslc.exe`), without Docker Desktop (from [wslc-containers-skill](https://github.com/nahisaho/wslc-containers-skill), MIT). |
-| [`agent-watchdog`](.github/skills/agent-watchdog/SKILL.md) | Detects stalled background agents (read-only `watchdog.mjs` + a resume procedure using `list_agents`/`write_agent`). |
+| [`agent-watchdog`](.github/skills/agent-watchdog/SKILL.md) | Detects stalled background agents (read-only `watchdog.mjs` for workspace idle time, plus a 5-minute scheduled idle check via `manage_schedule` that finds Idle agents with unfinished work with `list_agents` and resumes them with `write_agent`). |
 
 ## Requirements
 
@@ -100,10 +100,15 @@ A Japanese walkthrough (interview → spec → TDD → follow-up feature → man
 node --test .github/skills/lean-sdd-tdd/scripts/sdd.test.mjs
 ```
 
+## AI cost log
+
+`python3 scripts/cost-log.py` regenerates [`.sdd/cost-log.md`](.sdd/cost-log.md): the AI cost in USD (1 AIU = 0.01 USD) of every Copilot CLI session whose working directory is inside this project. It reads `~/.copilot/session-store.db`, so the total is cumulative across `/new` sessions and idempotent. Sessions run outside the project directory are not counted. It is a local estimate; the GitHub billing dashboard is authoritative. Do not edit the file by hand.
+
 ## Repository layout
 
 ```
 .github/skills/
+  agent-watchdog/       SKILL.md, scripts/watchdog.mjs (+ tests)
   lean-sdd-tdd/         SKILL.md, references/, scripts/sdd.mjs (+ tests)
   lean-agentic-coding/  SKILL.md, references/, scripts/gate.sh
   sdd-spec-interview/   SKILL.md

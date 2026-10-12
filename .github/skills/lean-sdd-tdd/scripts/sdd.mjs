@@ -1165,7 +1165,7 @@ function detectConfig(base = ROOT) {
     else if (has('mix.exs')) checks.push({ name: 'test', cmd: ['mix', 'test'] });
   }
   for (const s of ['typecheck', 'lint', 'test']) if (pkg?.scripts?.[s]) checks.push({ name: s, cmd: [pm, 'run', s], ...(s === 'test' && related ? { changedCmd: related, hubFallbackCmd: ['npx', deps.vitest ? 'vitest' : 'jest', ...(deps.vitest ? ['run'] : []), '{changedTests}', '{directTests}'] } : {}) });
-  const prepare = pkg?.scripts?.build ? { cmd: [pm, 'run', 'build'], outputs: has('dist') ? ['dist'] : [], timeoutMs: 600000 } : undefined;
+  const prepare = pkg?.scripts?.build ? { cmd: [pm, 'run', 'build'], outputs: has('dist') ? ['dist'] : [], timeoutMs: 1800000 } : undefined;
   return { schemaVersion: 1, testCmd, ...(prepare ? { prepare } : {}), checks, timeoutMs: 120000 };
 }
 const loadConfig = () => readJson(CONFIG, null) ?? detectConfig();
@@ -4719,7 +4719,7 @@ function cmdGate() {
     const outsOk = (pc.outputs ?? []).every((o) => fs.existsSync(path.join(ROOT, o)));
     if (cache.key === key && outsOk) lines.push('✓ prepare: up to date (cached, inputs unchanged)');
     else {
-      const r = run(pc.cmd, pc.timeoutMs ?? 600000);
+      const r = run(pc.cmd, pc.timeoutMs ?? 1800000);
       if (r.exit === 0) { writeJson(PREPARE_CACHE, { key, at: new Date().toISOString() }); add(true, `prepare (${(r.ms / 1000).toFixed(1)}s)`); }
       else add(false, r.timedOut ? `prepare TIMEOUT after ${(r.ms / 1000).toFixed(0)}s (raise prepare.timeoutMs)` : `prepare failed (${(r.ms / 1000).toFixed(1)}s)`, r.timedOut ? [] : tail(r.text, 8).split('\n'));
     }

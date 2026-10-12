@@ -13,7 +13,7 @@
 | [`tech-writer`](.github/skills/tech-writer/SKILL.md) | README、設計書、テスト計画書、運用設計書、提案書、RFI/RFP、Qiita/Zenn 記事などの構成を整えます([kotonoha](https://github.com/nahisaho/kotonoha) 由来、MIT)。 |
 | [`japanese-prose`](.github/skills/japanese-prose/SKILL.md) | GiNZA による日本語の診断です。自然さ、読みやすさ、用語、AI 特有の定型表現を調べます(kotonoha 由来、MIT)。 |
 | [`wslc-containers`](.github/skills/wslc-containers/SKILL.md) | Windows の組み込み WSL コンテナー CLI(`wslc.exe`)で、Docker Desktop なしに Linux コンテナーを操作します([wslc-containers-skill](https://github.com/nahisaho/wslc-containers-skill) 由来、MIT)。 |
-| [`agent-watchdog`](.github/skills/agent-watchdog/SKILL.md) | 停止したバックグラウンドエージェントを検知(読み取り専用の `watchdog.mjs`)し、`list_agents`/`write_agent` で続行を指示する手順です。 |
+| [`agent-watchdog`](.github/skills/agent-watchdog/SKILL.md) | 停止したバックグラウンドエージェントを検知します。読み取り専用の `watchdog.mjs` でワークスペースのアイドル時間を測り、`manage_schedule` の 5 分ごとのアイドルチェックで、未完了のまま Idle のエージェントを `list_agents` で見つけ、`write_agent` で続行を指示します。 |
 
 ## 必要なもの
 
@@ -88,10 +88,15 @@ $S --root <app> gate
 node --test .github/skills/lean-sdd-tdd/scripts/sdd.test.mjs
 ```
 
+## AI コストログ
+
+`python3 scripts/cost-log.py` で [`.sdd/cost-log.md`](.sdd/cost-log.md) を再生成します。作業ディレクトリがこのプロジェクト配下にある Copilot CLI セッションすべての AI コストを USD(1 AIU = 0.01 USD)で記録します。`~/.copilot/session-store.db` を読むため、`/new` でセッションを変えても累積され、何度実行しても結果は同じです。プロジェクトの外で動かしたセッションは対象外です。ローカルでの概算なので、正式な金額は GitHub の請求ダッシュボードで確認してください。このファイルは手で編集しないでください。
+
 ## リポジトリ構成
 
 ```
 .github/skills/
+  agent-watchdog/       SKILL.md、scripts/watchdog.mjs(とテスト)
   lean-sdd-tdd/         SKILL.md、references/、scripts/sdd.mjs(とテスト)
   lean-agentic-coding/  SKILL.md、references/、scripts/gate.sh
   sdd-spec-interview/   SKILL.md
