@@ -7158,3 +7158,17 @@ test('#286 green warns that shared-impl staleness cannot be checked for unannota
   const r = sdd(d, 'tdd', 'green', 'TEST-CALC-001');
   assert.match(r.out, /no code carries @implements.*shared/, r.out);
 });
+
+test('#287 impact: dependsOnMode "referenced" drops a cross-language dependsOn edge without a real reference; default labels it declared', () => {
+  const d = mini('---\nfeature: r\ntier: T1\n---\n| REQ-R-001 | x shall work. | TEST-R-001 |\n', { 'contract/g.json': '{}', 'py/a.py': 'print(1)\n', 'ts/b.ts': 'const p = "contract/g.json";\n' });
+  const cp = path.join(d, '.sdd/config.json');
+  const c = JSON.parse(fs.readFileSync(cp, 'utf8'));
+  c.projects = [{ root: 'py', dependsOn: ['contract'], testCmd: ['true'], checks: [] }, { root: 'ts', dependsOn: ['contract'], testCmd: ['true'], checks: [] }];
+  fs.writeFileSync(cp, JSON.stringify(c));
+  const dflt = sdd(d, 'impact', 'contract/g.json');
+  assert.match(dflt.out, /declared dependsOn only.*: py/, dflt.out);
+  c.projects[0].dependsOnMode = 'referenced';
+  fs.writeFileSync(cp, JSON.stringify(c));
+  const j = JSON.parse(sdd(d, 'impact', 'contract/g.json', '--json').out);
+  assert.deepEqual(j.projects, ['ts'], JSON.stringify(j));
+});
