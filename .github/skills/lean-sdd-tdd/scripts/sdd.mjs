@@ -633,7 +633,8 @@ function externalOracleSha(p, hash) {
   }
   // config `artifacts` ({"contract/x.json": ["test/a.test.mjs"]}) consumed by the test or one of its oracle files are part of the oracle (#264)
   const ownAbs = new Set(own);
-  for (const [a, users] of Object.entries((readJson(CONFIG, null) ?? {}).artifacts ?? {})) if ([].concat(users).some((u) => ownAbs.has(path.join(ROOT, normDep(u))))) dataSpecs.add([a, ROOT]);
+  const deliverables = new Set([].concat((readJson(CONFIG, null) ?? {}).deliverables ?? []).map((x) => normDep(x)));
+  for (const [a, users] of Object.entries((readJson(CONFIG, null) ?? {}).artifacts ?? {})) if (!deliverables.has(normDep(a)) && [].concat(users).some((u) => ownAbs.has(path.join(ROOT, normDep(u))))) dataSpecs.add([a, ROOT]);
   const dataHash = (abs) => {
     const st = fs.statSync(abs);
     if (!st.isDirectory()) return sha(fs.readFileSync(abs));
@@ -930,12 +931,14 @@ function loadSpecs() {
       const m = /^([\s|#>*-]*)\*{0,2}(REQ-[A-Z0-9]+(?:-[A-Z0-9]+)*)/.exec(l);
       if (!m) return;
       const marked = /[|#>*-]/.test(m[1]);
+      // a list bullet citing an already-defined REQ (e.g. under Assumptions) is a reference, not a second definition (#276)
+      if (!m[1].includes('|') && reqs.some((q) => q.id === m[2] && q.table)) return;
       // a bare line starting with an id is prose (e.g. "REQ-X-2 was spiked") unless the id is followed by a delimiter (#65)
       if (!marked && !/^\s*REQ-[A-Z0-9-]+\s*(?:[:：|(]|\*\*)/.test(l)) return;
       let body = raw;
       // continuation lines of a list/prose requirement belong to its wording (#65)
       if (!m[1].includes('|')) for (let j = i + 1; j < lines.length && /^\s+\S/.test(lines[j]) && !/^\s*(?:[|#>*-]|REQ-)/.test(lines[j]); j++) body += ' ' + lines[j];
-      reqs.push({ id: m[2], line: i + 1, tests: m[1].includes('|') ? [...new Set(l.match(/\bTEST-[A-Z0-9]+(?:-[A-Z0-9]+)*/g) ?? [])] : [], sha: sha(body.normalize('NFKC').replace(/\s+/g, ' ').trim()), rawSha: sha(body.replace(/\s+/g, ' ').trim()), deferred: hasMarker(body.normalize('NFKC'), 'deferred'), testOnly: hasMarker(body.normalize('NFKC'), 'test-only') });
+      reqs.push({ id: m[2], table: m[1].includes('|'), srcs: [...l.matchAll(/\[src:\s*([^\]\s:]+):(\d+)/g)].map((x) => [x[1], +x[2]]), line: i + 1, tests: m[1].includes('|') ? [...new Set(l.match(/\bTEST-[A-Z0-9]+(?:-[A-Z0-9]+)*/g) ?? [])] : [], sha: sha(body.normalize('NFKC').replace(/\s+/g, ' ').trim()), rawSha: sha(body.replace(/\s+/g, ' ').trim()), deferred: hasMarker(body.normalize('NFKC'), 'deferred'), testOnly: hasMarker(body.normalize('NFKC'), 'test-only') });
     });
     const extra = fm.artifacts ? fm.artifacts.split(',').map((s) => s.trim()).filter(Boolean) : [];
     const tl = lines;
@@ -3966,6 +3969,7 @@ function cmdTdd() {
       const shared = [...ents.values()].filter((c) => c.kind === 'CODE' && implFiles.includes(c.path) && c.refs.implements.some((r) => e.refs.verifies.includes(r)));
       return last && shared.some((c) => mtime(c.path) > Date.parse(last.at));
     });
+    if (!implFiles.length && !loadSpecs().flatMap((x) => x.reqs).filter((q) => mine.has(q.id)).every((q) => q.testOnly)) out(`⚠ ${id}: no code carries @implements ${[...mine].join(', ')} — annotate the implementation so impact/trace can find it (#276)`);
     if (stale.length) out(`⚠ implementation shared with other REQs changed since their Green: ${stale.slice(0, 5).map((e) => e.id).join(', ')}${stale.length > 5 ? `, … +${stale.length - 5}` : ''} — re-run them (tdd refactor <ID>) or the project tests; their evidence is not re-checked automatically`);
   }
   if (retestWeak && prior.some((e) => e.type === 'red' && !e.weak && !e.retest)) out(`! --retest passed against the current implementation, so the earlier strong Red of ${id} is superseded by a weak Red; to keep failing-Red evidence, temporarily break the implementation and re-run \`tdd red ${id} --retest\``);
@@ -4003,6 +4007,13 @@ function traceCheck(ents, dups, specs) {
       else if (!te.refs.verifies.includes(r.id)) warnings.push(`${r.id}: spec lists ${tid} but that test does not @verifies ${r.id}`);
     }
     if (!implemented.has(r.id) && !r.testOnly) warnings.push(`${r.id} has no @implements code`);
+    // reverse-spec `[src: path:line]` must point at an existing line (#276)
+    for (const [f, n] of r.srcs ?? []) {
+      let len = -1;
+      try { len = fs.readFileSync(path.join(ROOT, f), 'utf8').split('\n').length; } catch {}
+      if (len < 0) warnings.push(`${r.id}: [src: ${f}:${n}] file does not exist`);
+      else if (n > len) warnings.push(`${r.id}: [src: ${f}:${n}] line is beyond the end of the file (${len} lines)`);
+    }
   }
   return { errors, warnings, reqs, tested };
 }
@@ -4063,6 +4074,8 @@ function changedFiles() {
     if (df.status !== 0) return null;
     df.stdout.split('\0').filter(Boolean).forEach(add);
   }
+  // a changed file of a `parity` pair puts its peer in scope too (#267)
+  for (const pr of loadConfig().parity ?? []) for (const [x, y] of [[pr[0], pr[1]], [pr[1], pr[0]]]) { const a = x && normDep(x), b = y && normDep(y); if (a && b && set.has(a) && !set.has(b) && fs.existsSync(path.join(ROOT, b))) set.add(b); }
   return set;
 }
 
@@ -4853,6 +4866,7 @@ function cmdImpact() {
   else out(`  ${seedIsTest ? 'test' : 'impl'}: ${seeds.join(', ') || '(none)'}`);
   if (/^REQ-/.test(target) && !seeds.length) {
     const bare = listFiles().filter((f) => { try { return new RegExp('(?:\\/\\/|#|--|/\\*|;)\\s*' + target + '(?![\\w-])').test(fs.readFileSync(path.join(ROOT, f), 'utf8')); } catch { return false; } });
+    if (!bare.length) out(`  ! no @implements ${target} found — annotate the implementing code (@id CODE-… @implements ${target}), then run trace`);
     if (bare.length) out(`  ! ${target} is only mentioned in a bare comment (${cap(bare, 3)}) — impact follows \`@id CODE-… @implements ${target}\` markers; add one so its implementation is found`);
   }
   if (verifiers.length) out(`  verified by: ${cap(verifiers.map((e) => e.id))}`);

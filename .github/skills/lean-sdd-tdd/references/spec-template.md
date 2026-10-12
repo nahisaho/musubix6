@@ -24,3 +24,5 @@ Goal: <one sentence>   Non-goals: <bullets>
 - Test title must contain its ID (vitest/jest/node:test); pytest/Go/Cargo use the lower-case underscore form (`test_calc_001`), matched via `{idu}` in `.sdd/config.json` `testCmd`.
 - Large work: `.sdd/plan.md` with `| order | feature | depends | note |` rows; `sdd.mjs plan` reports state and the next feature.
 - Any edit to the spec invalidates its lock; re-review and re-lock (one command).
+
+Reverse-spec rows may carry `[src: path:line]` (checked by `trace`). Put per-row assumptions in prose ("Row 005 …"); a `- REQ-X:` bullet is only a reference.
