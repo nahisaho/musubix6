@@ -1419,7 +1419,7 @@ function declaredMissingModule(text, testPath) {
 const RAN_TESTS = /tests run: [1-9]\d*,|(?:Passed|Failed)!\s+-\s+Failed:\s*\d+,\s*Passed:\s*\d+,\s*Skipped:\s*\d+,\s*Total:\s*[1-9]|^\s*--- (?:PASS|FAIL): |^(?:ok|FAIL)\s+\S+\s+(?:[\d.]+s|\(cached\))(?:(?!\[no tests)[^\n])*$|ran [1-9]\d* tests?\b|[1-9]\d* tests? (completed|successful|passed)|^ok \d+ |^[1-9]\d* (?:doc)?tests?, \d+ failures?/im;
 // vitest/jest summary that lists no passed test (everything skipped by -t) means nothing ran (#62)
 const NO_PASSED = /^\s*Tests:?\s+(?![^\n]*\d+ (?:passed|failed))[^\n]*\d+ (?:skipped|todo)|^(?:# |ℹ )pass 0\b[^\n]*\n(?:(?:# |ℹ )(?:fail|cancelled|skipped) 0\b[^\n]*\n)*(?:# |ℹ )(?:skipped|todo) [1-9]/im;
-const ZERO_TESTS = /(no tests? (found|ran|collected)|# tests 0\b|ran 0 tests|collected 0 items|0 tests? (ran|found|passed)\b|no test files found|no tests were found|no tests to run|tests run: 0,|no tests executed|no test matches|all tests have been excluded)/i;
+const ZERO_TESTS = /(no tests? (found|ran|collected)|(?:# |ℹ )tests 0\b|ran 0 tests|collected 0 items|0 tests? (ran|found|passed)\b|no test files found|no tests were found|no tests to run|tests run: 0,|no tests executed|no test matches|all tests have been excluded)/i;
 
 function pytestNoExecution(text) {
   let skipped = 0, executed = 0;
@@ -1527,9 +1527,10 @@ function cmdApprove() {
   if (!spec) { out(`unknown feature "${feature ?? ''}". known: ${specs.map((s) => s.feature).join(', ') || 'none'}`); return 2; }
   if (sub === 'prepare') {
     writeJson(PREPARE_SHOWN, { ...readJson(PREPARE_SHOWN, {}), [spec.feature]: artifactSha(spec.path) });
-    out(`feature ${spec.feature} (${spec.tier}) — state: ${approvalState(spec)}`);
+    out(`feature ${spec.feature} (${spec.tier}) — state: ${needsLock(spec) ? approvalState(spec) : 'no approval lock for T1 (the tests are the guard)'}`);
     for (const p of spec.artifacts) out(`  ${p}  sha256:${fileSha(p)}`);
     out(`requirements: ${spec.reqs.map((r) => r.id).join(', ')}`);
+    if (!needsLock(spec)) { out(`requirements: ${spec.reqs.map((r) => r.id).join(', ')}`); return 0; }
     out(spec.approval === 'human'
       ? 'approval: human — show these exact paths/hashes/residual risks to the human, then: approve record <feature> --by <name>'
       : 'approval: auto — after independent AI review passes: approve record <feature> --by ai:<reviewer> --review <.sdd/review.md|summary> (no human needed; review file must have 0 Open findings and cite the spec sha256 prefix)');
@@ -3725,7 +3726,7 @@ function cmdTdd() {
   const sub = pos[1];
   if (sub === 'merge-ledger') return mergeLedger();
   const files = listFiles();
-  const { ents } = scanEntities(files);
+  const { ents, dups } = scanEntities(files);
   if (sub === 'check') {
     const entries = readLedger();
     const bad = verifyChain(entries);
@@ -3774,12 +3775,17 @@ function cmdTdd() {
     const missing = ids.filter((x) => ents.get(x)?.kind !== 'TEST');
     if (missing.length) { out(`${missing.join(', ')} not found as "@id TEST-..." annotation in source (nothing was run)`); return 2; }
     let rc = 0;
-    for (const one of ids) { pos.length = 2; pos.push(one); rc = Math.max(rc, cmdTdd()); }
+    const write = process.stdout.write.bind(process.stdout), seenRefused = new Set();
+    // an identical REFUSED line (e.g. unapproved feature) is printed once, not per ID
+    process.stdout.write = (chunk, ...rest) => { const k = String(chunk); if (k.startsWith('REFUSED:')) { if (seenRefused.has(k)) return true; seenRefused.add(k); } return write(chunk, ...rest); };
+    try { for (const one of ids) { pos.length = 2; pos.push(one); rc = Math.max(rc, cmdTdd()); } } finally { process.stdout.write = write; }
     return rc;
   }
   const id = pos[2];
   const t = ents.get(id);
   if (!t || t.kind !== 'TEST') { out(`${id} not found as "@id TEST-..." annotation in source`); return 2; }
+  const dupOf = dups.find((x) => x.startsWith(`${id} (`));
+  if (dupOf) { out(`REFUSED: duplicate @id ${dupOf} — every @id must be unique; rename one before recording evidence`); return 1; }
   rustRunnerSelection = null;
   const req = typeof flags.req === 'string' ? flags.req : t.refs.verifies[0];
   const specs = loadSpecs();
@@ -4064,7 +4070,7 @@ function cmdTdd() {
   const movedDeps = sub === 'refactor' && lastGreen && lastGreen.fileSha !== after ? changedOracleDeps(lastGreen, t.path, id) : [];
   if (movedDeps.length) out(`⚠ ${id}: oracle dependency changed since the last Green${oracleNote(movedDeps).replace(/^ — oracle dependency changed/, '')} (the test's own region may be unchanged); a refactor does not prove the changed oracle can fail (no Red). If expectations changed, use tdd red/green instead (#239)`);
   else if (sub === 'refactor' && lastGreen && lastGreen.fileSha !== after) out(`⚠ ${id}: test body changed since the last Green (includes the file preamble: imports/includes/helpers); a refactor does not prove the new assertions can fail (no Red). If behaviour/assertions changed, use tdd red/green instead (#118)`);
-  out(`${sub.toUpperCase()} ok ${id} (${req}) ${res.ms}ms${reason ? ` — fails with: ${reason}` : ''}${charac ? ` — characterization: ${charac} (test passed)` : retestWeak ? ` — retest: ${retest} (test passed)` : ''}${weakRed ? ' [weak]' : ''}${noneStub ? ' ⚠ Red is a call of a `NAME = None` stub (TypeError): implement or stub it as a callable' : ''}${setupSym ? ` ⚠ Red comes from setup call "${setupSym}", not the asserted behaviour (${typeof flags.expect === 'string' ? `--expect "${flags.expect}" names "${setupSym}" itself; use text from the asserted behaviour` : `use --expect <text> that does not name "${setupSym}"`}, or --allow-setup-red)` : ''}`);
+  out(`${sub.toUpperCase()} ok ${id} (${req}) ${res.ms}ms${reason ? ` — fails with: ${reason}` : ''}${charac ? ` — characterization: ${charac} (test passed)` : retestWeak ? ` — retest: ${retest} (test passed)` : ''}${weakRed && !charac ? ' [weak]' : ''}${noneStub ? ' ⚠ Red is a call of a `NAME = None` stub (TypeError): implement or stub it as a callable' : ''}${setupSym ? ` ⚠ Red comes from setup call "${setupSym}", not the asserted behaviour (${typeof flags.expect === 'string' ? `--expect "${flags.expect}" names "${setupSym}" itself; use text from the asserted behaviour` : `use --expect <text> that does not name "${setupSym}"`}, or --allow-setup-red)` : ''}`);
   if (sub === 'red' && res.exit !== 0 && typeof flags.characterization === 'string' && flags.characterization.trim()) out(`! --characterization ignored for ${id}: the test failed, so this is a normal Red (the flag only applies to a test that passes without implementation)`);
   if (sub === 'green') {
     const mine = new Set(t.refs.verifies), implFiles = [...ents.values()].filter((e) => e.kind === 'CODE' && e.refs.implements.some((r) => mine.has(r))).map((e) => e.path);
@@ -4075,11 +4081,16 @@ function cmdTdd() {
       const shared = [...ents.values()].filter((c) => c.kind === 'CODE' && implFiles.includes(c.path) && c.refs.implements.some((r) => e.refs.verifies.includes(r)));
       return last && shared.some((c) => mtime(c.path) > Date.parse(last.at));
     });
-    if (!implFiles.length && !loadSpecs().flatMap((x) => x.reqs).filter((q) => mine.has(q.id)).every((q) => q.testOnly)) out(`⚠ ${id}: no code carries @implements ${[...mine].join(', ')} — annotate the implementation so impact/trace can find it (#276)`);
+    if (!implFiles.length && !loadSpecs().flatMap((x) => x.reqs).filter((q) => mine.has(q.id)).every((q) => q.testOnly)) out(`⚠ ${id}: no code carries @implements ${[...mine].join(', ')} — annotate the implementation so impact/trace can find it (#276); without it the shared-implementation staleness check cannot run (comment-only \`@id CODE-… @implements …\` is enough, the code itself stays unchanged)`);
     if (stale.length) out(`⚠ implementation shared with other REQs changed since their Green: ${stale.slice(0, 5).map((e) => e.id).join(', ')}${stale.length > 5 ? `, … +${stale.length - 5}` : ''} — re-run them (tdd refactor <ID>) or the project tests; their evidence is not re-checked automatically`);
   }
   if (sub === 'red' && loadWeak && /not implemented|NotImplementedError|unimplemented/i.test(res.text)) out(`! a stub failed at module load, before any test body ran: every test of this file fails the same way, so this Red says nothing about ${id}; move the stub call into the test or a fixture`);
   if (rebaselined) out(`! --retest: only an oracle dependency changed (the test text is unchanged), so the earlier strong Red of ${id} is kept`);
+  if (sub !== 'red') {
+    const pg = prior.filter((e) => e.type === 'green' || e.type === 'refactor').at(-1);
+    const moved = pg && !needsLock(spec) && Object.entries(pg.reqShas ?? {}).filter(([rid, rsha]) => rsha && reqShaOf(rid) && !reqShaSame(rid, rsha)).map(([rid]) => rid);
+    if (moved?.length) out(`⚠ ${moved.join(', ')} changed since its previous Green and ${spec.tier} specs are not hash-locked: confirm the row was not bent to match the code`);
+  }
   if (retestWeak && prior.some((e) => e.type === 'red' && !e.weak && !e.retest)) out(`! --retest passed against the current implementation, so the earlier strong Red of ${id} is superseded by a weak Red; to keep failing-Red evidence, temporarily break the implementation and re-run \`tdd red ${id} --retest\``);
   return 0;
 }
@@ -4651,7 +4662,8 @@ function cmdPlan(args) {
     if (started && untouched.length && !done.get(r.feature)) warns.push(`${r.feature}: started before dependencies are done (${untouched.join(', ')})`);
     if (!next && !done.get(r.feature) && depsOk) next = r.feature;
     const st = sp ? `${sp.tier}${needsLock(sp) ? `:${approvalState(sp)}` : ''}` : 'no-spec';
-    out(`${done.get(r.feature) ? '✓' : '·'} ${r.order}. ${r.feature} [${st}]${r.deps.length ? ` ← ${r.deps.join(', ')}` : ''}${r.note ? ` — ${r.note}` : ''}`);
+    const unplanned = sp ? '' : specs.filter((x) => !rows.some((q) => q.feature === x.feature)).map((x) => x.feature);
+    out(`${done.get(r.feature) ? '✓' : '·'} ${r.order}. ${r.feature} [${st}]${r.deps.length ? ` ← ${r.deps.join(', ')}` : ''}${r.note ? ` — ${r.note}` : ''}${unplanned.length ? ` — no spec has feature: ${r.feature}; plan rows use the spec's feature name (unplanned specs: ${unplanned.slice(0, 5).join(', ')})` : ''}`);
   }
   const orphanReqs = [...new Set(tr.errors.map((e) => /references unknown (REQ-[A-Z0-9-]+)/.exec(e)?.[1]).filter(Boolean))].filter((u) => !specs.some((sp) => sp.reqs.some((r) => prefixOf(r.id) === prefixOf(u))));
   for (const u of orphanReqs) problems.push(`${u} is referenced by tests/code but no spec defines it (write the spec first)`);

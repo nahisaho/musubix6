@@ -509,7 +509,7 @@ test('#155 passing characterization Red reports passing evidence, not a failure 
   assert.equal(r.code, 0, r.out);
   assert.doesNotMatch(r.out, /fails with|duration_ms/);
   assert.match(r.out, /characterization: existing golden fixture.*test passed/);
-  assert.match(r.out, /\[weak\]/);
+  assert.doesNotMatch(r.out, /\[weak\]/);
 });
 
 test('#4 Open detection covers table, checkbox and state: formats', () => {
@@ -1308,7 +1308,7 @@ test('#43 a data-only test that passes without implementation needs --characteri
   assert.match(r.out, /--characterization/);
   const c = sdd(d, 'tdd', 'red', 'TEST-CALC-001', '--characterization', 'checks a data file only');
   assert.equal(c.code, 0, c.out);
-  assert.match(c.out, /\[weak\]/);
+  assert.doesNotMatch(c.out, /\[weak\]/);
   assert.equal(sdd(d, 'tdd', 'green', 'TEST-CALC-001').code, 0);
   assert.match(sdd(d, 'gate', '--no-run').out, /, 1 characterization \(passed without a failing Red; not a weak Red\)/);
 });
@@ -3361,10 +3361,12 @@ test('#141 default node pattern is token-anchored; {idu} keeps the case used in 
   assert.ok(re.test('TEST-S-001 x'));
   assert.ok(!re.test('TEST-S-0011 x'));
   const e = project();
+  fs.rmSync(path.join(e, 'add.test.mjs'));
   fs.writeFileSync(path.join(e, 'T.cs'), '// @id TEST-CALC-001 @verifies REQ-CALC-001\n[Test] public void TEST_CALC_001_Adds() {}\n');
   fs.writeFileSync(path.join(e, 'x.csproj'), '<Project/>');
   sdd(e, 'approve', 'record', 'calc', '--by', 'tester');
   fs.writeFileSync(path.join(e, '.sdd/config.json'), JSON.stringify({ schemaVersion: 1, testCmd: ['sh', '-c', 'echo "FAIL $0"; exit 1', '{idu}'] }));
+  fs.rmSync(path.join(e, 'T.cs'));
   fs.writeFileSync(path.join(e, 'add.test.mjs'), '// @id TEST-CALC-001 @verifies REQ-CALC-001\n// TEST_CALC_001 Adds\n');
   assert.match(sdd(e, 'tdd', 'red', 'TEST-CALC-001').out, /fails with: FAIL TEST_CALC_001/);
 });
@@ -6544,7 +6546,7 @@ test('#262 Python stub: a class used in pytest.raises by another test is an Exce
 // ---- wave 9 (#263): one weak-Red rule across languages ----
 const weak263 = (body, out, name = 'add.test.mjs', file) => {
   const d = approved();
-  if (file) fs.writeFileSync(path.join(d, name), file);
+  if (file) { if (name !== 'add.test.mjs') fs.rmSync(path.join(d, 'add.test.mjs')); fs.writeFileSync(path.join(d, name), file); }
   else testFile(d, body);
   fakeOut(d, out);
   return sdd(d, 'tdd', 'red', 'TEST-CALC-001', ...(weak263.args ?? []));
@@ -7087,4 +7089,72 @@ test('#284 gate --changed never prints the raw {changedCargoPkgs} placeholder', 
   const g = sdd(d, 'gate', '--changed').out;
   assert.match(g, /cannot scope changes for the changed Cargo packages/, g);
   assert.doesNotMatch(g, /\{changedCargoPkgs\}/, g);
+});
+
+const t1project = () => {
+  const d = project();
+  fs.writeFileSync(path.join(d, '.sdd/specs/calc.md'), '---\nfeature: calc\ntier: T1\n---\n| REQ-CALC-001 | When add is called, the system shall sum. | TEST-CALC-001 |\n');
+  return d;
+};
+
+test('#285 approve prepare on T1 does not say state: missing nor suggest approve record', () => {
+  const d = t1project();
+  const r = sdd(d, 'approve', 'prepare', 'calc');
+  assert.doesNotMatch(r.out, /state: missing|approve record/, r.out);
+  assert.match(r.out, /T1/, r.out);
+});
+
+test('#285 re-recording Green/Refactor warns when a T1 row changed since the previous Green', () => {
+  const d = t1project();
+  impl(d, '(a, b) => a + b');
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-CALC-001', '--characterization', 'pins current').code, 0);
+  assert.equal(sdd(d, 'tdd', 'green', 'TEST-CALC-001').code, 0);
+  fs.writeFileSync(path.join(d, '.sdd/specs/calc.md'), '---\nfeature: calc\ntier: T1\n---\n| REQ-CALC-001 | When add is called, the system shall subtract. | TEST-CALC-001 |\n');
+  const g = sdd(d, 'tdd', 'refactor', 'TEST-CALC-001');
+  assert.match(g.out, /REQ-CALC-001 .*changed since its previous Green/, g.out);
+});
+
+test('#285 --characterization output does not claim [weak]', () => {
+  const d = t1project();
+  impl(d, '(a, b) => a + b');
+  const r = sdd(d, 'tdd', 'red', 'TEST-CALC-001', '--characterization', 'pins current');
+  assert.doesNotMatch(r.out, /\[weak\]/, r.out);
+});
+
+test('#286 batch tdd red prints an identical REFUSED line once', () => {
+  const d = project();
+  fs.appendFileSync(path.join(d, 'add.test.mjs'), "/** @id TEST-CALC-002 @verifies REQ-CALC-001 */\ntest('TEST-CALC-002 b', () => assert.equal(1, 1));\n");
+  const r = sdd(d, 'tdd', 'red', 'TEST-CALC-001', 'TEST-CALC-002');
+  const n = r.out.split('\n').filter((l) => l.startsWith('REFUSED:')).length;
+  assert.equal(n, 1, r.out);
+});
+
+test('#286 tdd red refuses a duplicate @id up front', () => {
+  const d = t1project();
+  fs.appendFileSync(path.join(d, 'add.test.mjs'), "/** @id TEST-CALC-001 @verifies REQ-CALC-001 */\ntest('dup', () => assert.equal(1, 1));\n");
+  const r = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
+  assert.equal(r.code, 1, r.out);
+  assert.match(r.out, /REFUSED: duplicate @id TEST-CALC-001/, r.out);
+});
+
+test('#286 gate does not pass a node:test run with zero tests', () => {
+  const d = t1project();
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ checks: [{ name: 'unit', cmd: ['node', '-e', "console.log('ℹ tests 0\\nℹ pass 0\\nℹ fail 0\\nℹ skipped 0')"] }] }));
+  const g = sdd(d, 'gate');
+  assert.match(g.out, /INCOMPLETE/, g.out);
+});
+
+test('#286 plan explains [no-spec] when the name differs from the spec feature', () => {
+  const d = t1project();
+  fs.writeFileSync(path.join(d, '.sdd/plan.md'), '| order | feature | depends | note |\n|---|---|---|---|\n| 1 | calculator | - | x |\n');
+  const r = sdd(d, 'plan');
+  assert.match(r.out, /no spec has feature: calculator.*calc/, r.out);
+});
+
+test('#286 green warns that shared-impl staleness cannot be checked for unannotated code', () => {
+  const d = t1project();
+  fs.writeFileSync(path.join(d, 'add.mjs'), 'export const add = (a, b) => a + b;\n');
+  sdd(d, 'tdd', 'red', 'TEST-CALC-001', '--characterization', 'x');
+  const r = sdd(d, 'tdd', 'green', 'TEST-CALC-001');
+  assert.match(r.out, /no code carries @implements.*shared/, r.out);
 });
