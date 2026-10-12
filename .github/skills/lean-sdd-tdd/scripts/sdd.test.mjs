@@ -2476,7 +2476,7 @@ test('#118 tdd refactor warns when the test body changed since Green', () => {
   sdd(d, 'tdd', 'green', 'TEST-A-001');
   const f = path.join(d, 'a.test.mjs');
   fs.writeFileSync(f, fs.readFileSync(f, 'utf8').replace(/\)\s*;?\s*\}\);?\s*$/, ') ; void 0; });\n'));
-  const r = sdd(d, 'tdd', 'refactor', 'TEST-A-001');
+  const r = sdd(d, 'tdd', 'refactor', 'TEST-A-001', '--wording', 'x');
   assert.match(r.out, /test body changed since the last Green/, r.out);
 });
 
@@ -6061,7 +6061,7 @@ test('#239 tdd refactor names a changed oracle dependency instead of claiming th
   impl(d, '(a, b) => a + b');
   assert.match(sdd(d, 'tdd', 'green', 'TEST-CALC-001').out, /GREEN ok/);
   fs.writeFileSync(path.join(d, 'helper.mjs'), 'export const one = 1; // edited\n');
-  const r = sdd(d, 'tdd', 'refactor', 'TEST-CALC-001').out;
+  const r = sdd(d, 'tdd', 'refactor', 'TEST-CALC-001', '--wording', 'x').out;
   assert.match(r, /oracle dependency changed since the last Green: helper\.mjs/, r);
   assert.doesNotMatch(r, /test body changed/, r);
 });
@@ -6843,7 +6843,7 @@ test('#274 reverting a setup edit after a refactor recovers the earlier Green; t
   setCmd(d, PASS);
   assert.equal(sdd(d, 'tdd', 'green', 'TEST-A-001').code, 0);
   fs.writeFileSync(path.join(d, 'helper.mjs'), 'export const one = 1; // edited\n');
-  assert.equal(sdd(d, 'tdd', 'refactor', 'TEST-A-001').code, 0);
+  assert.equal(sdd(d, 'tdd', 'refactor', 'TEST-A-001', '--wording', 'x').code, 0);
   assert.match(sdd(d, 'gate', '--no-run').out, /refactor-recorded after the test\/setup changed/);
   fs.writeFileSync(path.join(d, 'helper.mjs'), 'export const one = 1;\n');
   const g = sdd(d, 'gate', '--no-run').out;
@@ -7530,4 +7530,28 @@ test('#295 batch tdd red prints an identical compiler tail once', () => {
   const d = mini(spec, { 'a.test.mjs': '// @id TEST-A-001 @verifies REQ-A-001\n// @id TEST-A-002 @verifies REQ-A-002\n' }, ['node', '-e', 'console.log("a\\nb\\nc\\nd\\ne\\nerror TS2304: Cannot find name x");process.exit(1)']);
   const out = sdd(d, 'tdd', 'red', 'TEST-A-001', 'TEST-A-002').out;
   assert.equal(out.split('error TS2304').length - 1, 1, out);
+});
+
+test('#302 tdd refactor on T1 after a test change needs --wording', () => {
+  const d = mini('---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | x shall work. | TEST-A-001 |\n', { 'a.test.mjs': '// @id TEST-A-001 @verifies REQ-A-001\n' }, FAIL);
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-A-001').code, 0);
+  setCmd(d, PASS);
+  assert.equal(sdd(d, 'tdd', 'green', 'TEST-A-001').code, 0);
+  fs.writeFileSync(path.join(d, 'a.test.mjs'), '// @id TEST-A-001 @verifies REQ-A-001\n// changed assertion\n');
+  const r = sdd(d, 'tdd', 'refactor', 'TEST-A-001');
+  assert.equal(r.code, 1, r.out);
+  assert.match(r.out, /--wording/);
+  assert.equal(sdd(d, 'tdd', 'refactor', 'TEST-A-001', '--wording', 'rename only').code, 0);
+});
+
+test('#302 gate trace line names deferred REQs', () => {
+  const d = mini('---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | one shall hold. | TEST-A-001 |\n| REQ-A-002 (deferred) | Later. | — |\n', { 'a.test.mjs': '// @id TEST-A-001 @verifies REQ-A-001\n' }, PASS);
+  assert.match(sdd(d, 'gate', '--no-run').out, /deferred, not tested: REQ-A-002/);
+});
+
+test('#302 a TS transform/compile error on green is reported as a load error', () => {
+  const d = mini('---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | x shall work. | TEST-A-001 |\n', { 'a.test.mjs': '// @id TEST-A-001 @verifies REQ-A-001\n' }, FAIL);
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-A-001').code, 0);
+  setCmd(d, ['node', '-e', 'console.log("TSError: ⨯ Unable to compile TypeScript:\\nbad syntax");process.exit(1)']);
+  assert.match(sdd(d, 'tdd', 'green', 'TEST-A-001').out, /load\/compile error/);
 });
