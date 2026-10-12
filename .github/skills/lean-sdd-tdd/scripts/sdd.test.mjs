@@ -7706,3 +7706,38 @@ test('#303 a consistently failing test check is a plain failure and flaky.retrie
   assert.match(sdd(flakyProject(null, always), 'gate').out, /✗ cmd test \(/);
   assert.doesNotMatch(sdd(flakyProject({ retries: 0 }, FLAKY_ONCE), 'gate').out, /FLAKY/);
 });
+
+// ---- r16a (#304): Rust stub — ctor args/lifetimes, annotated return types, bound-only traits, workspace first test ----
+test('#304 Rust stub: Type::new(&bytes) keeps its argument even after an earlier Vec::new(), and Type::of(..) takes the compared type', has268, () => {
+  const d = rs288('use hist::{BitReader, Adler32};\n\n' + t288('    let mut out = Vec::new();\n    let bytes = vec![1u8, 2];\n    let mut r = BitReader::new(&bytes);\n    out.push(r.read(3));\n    assert_eq!(Adler32::of(&bytes), 5);'));
+  const { lib } = stub288(d);
+  assert.match(lib, /fn new<A0>\(_a0: A0\)/, lib);
+  assert.match(lib, /fn of<A0>\([^\n]*-> i64/, lib);
+});
+
+test('#304 Rust stub: a `let n: u32` annotation and a comparison literal fix the return type', has268, () => {
+  const d = rs288('use hist::{count, finish};\n\n' + t288('    let n: u32 = count(1);\n    assert_eq!(n, 2);\n    assert_eq!(finish(3), vec![]);'));
+  const { lib } = stub288(d);
+  assert.match(lib, /fn count[^\n]*-> u32/, lib);
+  assert.match(lib, /fn finish[^\n]*-> Vec<i64>/, lib);
+});
+
+test('#304 Rust stub: a trait used only as a generic bound is a trait, not a struct', has268, () => {
+  const d = rs288('use hist::Hasher;\n\nfn run<H: Hasher>(_h: &H) {}\n\n' + t288('    assert_eq!(1, 1);'));
+  const { lib } = stub288(d);
+  assert.match(lib, /pub trait Hasher/, lib);
+  assert.doesNotMatch(lib, /struct Hasher/, lib);
+});
+
+test('#304 Rust stub: the first test of a workspace whose sibling crates lack src still stubs', has268, () => {
+  const d = rs268({
+    'Cargo.toml': '[workspace]\nmembers = ["a", "b"]\nresolver = "2"\n',
+    'a/Cargo.toml': '[package]\nname = "a"\nversion = "0.1.0"\nedition = "2021"\n',
+    'b/Cargo.toml': '[package]\nname = "b"\nversion = "0.1.0"\nedition = "2021"\n',
+    'a/src/lib.rs': '',
+    'a/tests/x.rs': 'use a::go;\n\n' + t288('    assert_eq!(go(1), 2);'),
+  });
+  const r = sdd(d, 'tdd', 'stub', 'TEST-H-001');
+  assert.match(fs.readFileSync(path.join(d, 'a/src/lib.rs'), 'utf8'), /pub fn go/, r.out);
+  assert.doesNotMatch(r.out, /verified.*fail|could not fully stub/i, r.out);
+});
