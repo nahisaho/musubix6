@@ -1973,7 +1973,7 @@ function stubGo(testPath, src, dir, add, made) {
     }
     // an `any` result the test uses arithmetically / passes to a typed parameter takes that scalar type (#296)
     const SCALAR = { int: 'int', float: 'float64', string: 'string', rune: 'rune', bool: 'bool' };
-    for (const m of out.matchAll(/invalid operation: (\w+) [^\s]+ [^\n]*?\(mismatched types any and untyped (\w+)\)|cannot use (\w+) \(variable of (?:interface )?type any\) as (int|float64|string|bool) value/g)) {
+    for (const m of out.matchAll(/invalid operation: (\w+) [^\s]+ [^\n]*?\(mismatched types any and (?:untyped )?(\w+)\)|cannot use (\w+) \(variable of (?:interface )?type any\) as (int|float64|string|bool) value/g)) {
       const v = m[1] ?? m[3], t = m[1] ? SCALAR[m[2]] : m[4];
       const as = t && [...src.matchAll(/((?:\w+\s*,\s*)*\w+)\s*:?=\s*(?:[\w.]+\.)?(\w+)\(/g)].find((x) => x[1].split(',').map((y) => y.trim())[0] === v);
       if (!as || retTypes.has(as[2])) continue;
