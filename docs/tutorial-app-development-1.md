@@ -16,7 +16,7 @@
 |---|---|---|
 | 1. 準備 | `lean-sdd-tdd` | `.sdd/config.json` |
 | 2. 要件定義(対話) | `sdd-spec-interview` | `.sdd/specs/todo-core.md` |
-| 3. 仕様レビューと承認 | `lean-sdd-tdd` | `.sdd/review.md`、承認記録 |
+| 3. 仕様レビューと承認 | `lean-sdd-tdd` | `.sdd/review-todo-core.md`、承認記録 |
 | 4. TDD で実装 | `lean-sdd-tdd` | `test/`、`src/`、`bin/` |
 | 5. 追加要件の開発 | 上記すべて | `.sdd/specs/todo-due.md` と追加実装 |
 | 6. マニュアル作成 | `tech-writer` | `docs/user-manual.md` |
@@ -144,7 +144,7 @@ Non-goals: 期限・優先度(次回追加)、複数ユーザー、同時書き�
 
 ```text
 .sdd/specs/todo-core.md を、別のエージェント(rubber-duck)に独立レビューさせて。曖昧な点、テストできない点、不足している要件を挙げさせて。
-指摘は spec に反映して、レビュー結果を .sdd/review.md に記録し、承認まで済ませて。
+指摘は spec に反映して、レビュー結果を .sdd/review-todo-core.md に記録し、承認まで済ませて。
 ```
 
 初版(7 件)に対する指摘は次の 5 件でした。
@@ -164,7 +164,7 @@ Non-goals: 期限・優先度(次回追加)、複数ユーザー、同時書き�
 <details>
 <summary>実行内容と結果</summary>
 
-spec を直したあと、`review template` で最新の spec ハッシュ入りの雛形を取り、結果を `.sdd/review.md` に書きます。
+spec を直したあと、`review template` で最新の spec ハッシュ入りの雛形を取り、結果を `.sdd/review-todo-core.md` に書きます(最新の `review template` は、機能ごとに別のファイルへ保存するよう案内します。共有の `review.md` は、次の機能で上書きされて古くなります)。
 
 ```md
 spec: sha256:ae91093a…
@@ -182,14 +182,14 @@ open: 0
 検証して、承認を記録します。
 
 ```text
-REVIEW OK: .sdd/review.md
+REVIEW OK: .sdd/review-todo-core.md
 recorded todo-core by ai:rubber-duck: .sdd/specs/todo-core.md — note: T1 specs without approval: human are NOT lock-enforced …
 ```
 
 </details>
 
 > **ポイント**
-> - `review.md` の先頭の `spec: sha256:…` は、spec の現在のハッシュと一致している必要があります。spec を直したら、エージェントが取り直します。
+> - `review-todo-core.md` の先頭の `spec: sha256:…` は、spec の現在のハッシュと一致している必要があります。spec を直したら、エージェントが取り直します。
 > - `open:` が 0 でなければ承認できません。
 > - T1 の spec は、承認しても改変がロックされません(ロックされるのは T2 と `approval: human` のみ)。
 
@@ -470,6 +470,8 @@ v24.21.0
 
 接続できる環境の方は、「公式イメージでビルドして」と依頼すれば、8.1 の Dockerfile が使われます。
 
+> **再検証(2026-10-12、wslc 3.0.3.0)**: この日の再検証では、`docker.io/library/node:24-alpine` を取得でき、8.1 の Dockerfile のままビルドできました。`--entrypoint node` で `--test test/todo.test.mjs` を実行すると、コンテナー内のテストが通り、`-v` のボリュームで `add` の結果が次の起動に残ることも確認できました。`network is unreachable` は、ネットワークの状態による一時的な失敗です。まず 8.1 を試してください。
+
 #### 8.3 コンテナー内でテストを実行する
 
 起動コマンドを `node --test` に切り替えて、テストファイルを実行します。
@@ -506,7 +508,7 @@ error: task not found: 9
 todo-cli/
 ├── .sdd/
 │   ├── specs/todo-core.md, todo-due.md   要件(REQ)とテスト ID
-│   ├── review.md                        独立レビューの記録
+│   ├── review-todo-core.md              独立レビューの記録
 │   ├── tdd.jsonl                        Red/Green の証跡(ハッシュ連鎖)
 │   └── approvals.json, config.json
 ├── Dockerfile, Dockerfile.offline       コンテナーのビルド定義
