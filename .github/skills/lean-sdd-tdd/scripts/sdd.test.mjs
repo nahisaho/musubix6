@@ -8329,3 +8329,65 @@ test('#300 preambleGranularity symbol: Rust top-level const edit stales only ref
   const d = symbolCase('a_test.rs', pre, T, (p) => p.replace('LIMIT: u32 = 1', 'LIMIT: u32 = 7'));
   assert.deepEqual(staleIds(d), ['TEST-A-001']);
 });
+
+// ---- r23c (#312 artifact staleness / cargo workspace / impact) ----
+const art312 = (extra = {}) => {
+  const d = mini(SPEC2, { 'a.test.mjs': "// @id TEST-A-001 @verifies REQ-A-001\n// reads 'data/golden.json'\n\n// @id TEST-A-002 @verifies REQ-A-002\n// unrelated\n", 'data/golden.json': '[1]\n' }, FAIL);
+  const cp = path.join(d, '.sdd/config.json');
+  const c = JSON.parse(fs.readFileSync(cp, 'utf8'));
+  Object.assign(c, { artifacts: { 'data/golden.json': ['src/impl.mjs'] }, artifactStaleness: true }, extra);
+  fs.writeFileSync(cp, JSON.stringify(c));
+  for (const t of ['TEST-A-001', 'TEST-A-002']) assert.equal(sdd(d, 'tdd', 'red', t).code, 0);
+  setCmd(d, PASS);
+  for (const t of ['TEST-A-001', 'TEST-A-002']) assert.equal(sdd(d, 'tdd', 'green', t).code, 0);
+  fs.writeFileSync(path.join(d, 'data/golden.json'), '[2]\n');
+  return d;
+};
+
+test('#312 tdd refactor --stale also re-verifies artifact-stale tests', () => {
+  const d = art312();
+  assert.match(sdd(d, 'gate', '--no-run').out, /artifact data\/golden\.json changed/);
+  const r = sdd(d, 'tdd', 'refactor', '--stale');
+  assert.match(r.out, /re-verifying 2 stale test\(s\): TEST-A-001 TEST-A-002/, r.out);
+  assert.doesNotMatch(sdd(d, 'gate', '--no-run').out, /artifact data\/golden\.json changed/);
+});
+
+test('#312 artifactGranularity "test": only the test that names the artifact goes stale', () => {
+  const d = art312({ artifactGranularity: 'test' });
+  const o = sdd(d, 'gate', '--no-run').out;
+  assert.match(o, /TEST-A-001[^\n]*artifact data\/golden\.json changed/, o);
+  assert.doesNotMatch(o, /TEST-A-002[^\n]*artifact/, o);
+});
+
+test('#312 gate --changed: a Cargo workspace manifest with a member glob belongs to the project at a member crate', () => {
+  const d = mini('---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | x shall hold. | TEST-A-001 |\n', { 'rs/Cargo.toml': '[workspace]\nmembers = ["crates/*"]\n', 'rs/crates/a/Cargo.toml': '[package]\nname = "a"\n' });
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ testCmd: PASS, checks: [], projects: [{ root: 'rs/crates/a', testCmd: PASS, checks: [{ name: 'ok', cmd: ['node', '-e', '0'] }] }] }));
+  spawnSync('git', ['add', '-A'], { cwd: d });
+  spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'i'], { cwd: d });
+  fs.appendFileSync(path.join(d, 'rs/Cargo.toml'), '# c\n');
+  const o = sdd(d, 'gate', '--changed').out;
+  assert.match(o, /✓ cmd rs\/crates\/a:ok/, o);
+  assert.doesNotMatch(o, /root-owned data\/config changes/, o);
+});
+
+test('#312 impact: a Cargo workspace manifest reaches the member crates\' REQs; a declared artifact only its readers', () => {
+  const spec = '---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | x shall hold. | TEST-A-001 |\n';
+  const d = mini(spec, {
+    '.sdd/specs/b.md': '---\nfeature: b\ntier: T1\n---\n| REQ-B-001 | y shall hold. | TEST-B-001 |\n',
+    '.sdd/specs/c.md': '---\nfeature: c\ntier: T1\n---\n| REQ-C-001 | z shall hold. | TEST-C-001 |\n',
+    'rs/Cargo.toml': '[workspace]\nmembers = ["crates/*"]\n', 'rs/crates/a/Cargo.toml': '[package]\nname = "a"\n',
+    'rs/crates/a/src/lib.rs': '// @id CODE-A-001 @implements REQ-A-001\npub fn a() {}\n',
+    'ts/x.test.mjs': "// @id TEST-B-001 @verifies REQ-B-001\n// reads 'contract/g.json'\n",
+    'ts/y.test.mjs': "// @id TEST-C-001 @verifies REQ-C-001\n// unrelated\n",
+    'contract/g.json': '[]\n',
+  });
+  const cp = path.join(d, '.sdd/config.json');
+  const c = JSON.parse(fs.readFileSync(cp, 'utf8'));
+  c.projects = [{ root: 'ts', testCmd: PASS, dependsOn: ['contract'] }];
+  c.artifacts = { 'contract/g.json': ['ts/x.test.mjs'] };
+  fs.writeFileSync(cp, JSON.stringify(c));
+  const cargo = JSON.parse(sdd(d, 'impact', 'rs/Cargo.toml', '--json').out);
+  assert.ok(cargo.otherReqs.some((o) => o.req === 'REQ-A-001'), JSON.stringify(cargo));
+  const g = JSON.parse(sdd(d, 'impact', 'contract/g.json', '--json').out);
+  assert.deepEqual(g.otherReqs.map((o) => o.req), ['REQ-B-001'], JSON.stringify(g));
+});
