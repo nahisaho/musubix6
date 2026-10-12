@@ -431,11 +431,22 @@ function javaModuleRoot(file) {
 }
 // Test-support files are oracles; production files (annotated CODE-, or outside test-like locations) are not (#181, #214, #219, #224).
 const testSupportPath = (f) => /(^|\/)(?:tests?|__tests__|specs?|fixtures?|__fixtures__|__mocks__|testdata|test-data|testthat|e2e|support|helpers?)\//i.test(rel(f)) || /(?:^|[/.-])(?:test|spec|helper|fixture|oracle|setup|mock)s?[^/]*$/i.test(rel(f));
-function pythonConftests(file) {
+// a conftest that only defines plain (non-autouse) fixtures the test never names cannot change the test's outcome
+function conftestUnused(conftest, testText) {
+  let c = '';
+  try { c = fs.readFileSync(conftest, 'utf8'); } catch { return false; }
+  if (/\bautouse\b|\bpytest_\w+|^\s*(?:from|import)\s+\S*conftest\b/m.test(c) || /\bconftest\b/.test(testText)) return false;
+  const names = [...c.matchAll(/^[ \t]*@(?:pytest\.)?fixture\b[^\n]*\n(?:[ \t]*@[^\n]*\n)*[ \t]*(?:async\s+)?def\s+(\w+)/gm)].map((m) => m[1]);
+  const aliased = [...c.matchAll(/\bname\s*=\s*['"](\w+)['"]/g)].map((m) => m[1]);
+  const all = [...names, ...aliased];
+  if (!all.length) return false;
+  return !all.some((n) => new RegExp(`\\b${n}\\b`).test(testText));
+}
+function pythonConftests(file, text = '') {
   const found = [];
   for (let dir = path.dirname(file); dir.startsWith(ROOT); dir = path.dirname(dir)) {
     const conftest = path.join(dir, 'conftest.py');
-    if (conftest !== file && fs.existsSync(conftest)) found.push(conftest);
+    if (conftest !== file && fs.existsSync(conftest) && !(text && conftestUnused(conftest, text))) found.push(conftest);
     if (dir === ROOT) break;
   }
   return found;
@@ -469,7 +480,7 @@ function rOracleImports(file, text) {
 }
 function localSourceDependencies(file, text, rootFile = false, cFamily = false, compilerContext = null) {
   const next = [], ext = path.extname(file);
-  if (ext === '.py') return rootFile ? pythonConftests(file) : [];
+  if (ext === '.py') return rootFile ? pythonConftests(file, text) : [];
   if (/^\.(?:[cm]?[jt]s|[jt]sx)$/.test(ext)) return scriptOracleImports(file, text);
   if (/^\.r$/i.test(ext)) return rOracleImports(file, text);
   const suffix = (name) => workspaceFiles().filter((f) => f === name || f.endsWith('/' + name)).map((f) => path.join(ROOT, f));
@@ -4326,6 +4337,8 @@ function cmdGate() {
       while (q.length) for (const d of rv.get(q.shift()) ?? []) if (!seen.has(d)) { seen.add(d); q.push(d); }
       for (const e of ents.values()) if (seen.has(e.path)) [...e.refs.implements, ...e.refs.verifies].forEach((r) => relevant.add(r));
     }
+    // evidence made stale by a changed oracle file (e.g. a contract named only in dependsOn) belongs to the changed scope too
+    for (const e of ents.values()) if (e.kind === 'TEST') { const last = entries.filter((x) => x.test === e.id && (x.type === 'green' || x.type === 'refactor')).at(-1); if (changedOracleDeps(last, e.path, e.id).some((f) => ch.has(f))) [...e.refs.verifies].forEach((r) => relevant.add(r)); }
     // a REQ edited in an already-committed spec is still stale evidence (#70)
     for (const e of ents.values()) if (e.kind === 'TEST') for (const r of e.refs.verifies) if (!relevant.has(r) && /changed in the spec/.test(evidenceStatus(e.id, e.path, entries).why ?? '')) relevant.add(r);
   }
@@ -4439,7 +4452,7 @@ function cmdGate() {
         if (!arr.length || (arr.length === 1 && !arr[0])) {
           // single-module Maven project: the root is the only module, so the full check is the scoped check (#81)
           const single = tok === '{changedModulesCsv}' && fs.existsSync(path.join(absBase, 'pom.xml')) && !/<modules>/.test(fs.readFileSync(path.join(absBase, 'pom.xml'), 'utf8'));
-          if (!single) lines.push(`! cmd ${c.name}: cannot scope changes for ${tok} — running the full check${hasCommit() ? '' : ' (this repo has no commit yet: make an initial commit so `--changed` has a baseline)'}`); cmd = c.cmd; noScope = true; break;
+          if (!single) lines.push(`! cmd ${c.name}: cannot scope changes for ${tok === '{changedCargoPkgs}' ? 'the changed Cargo packages (Cargo.toml/Cargo.lock changed, a file outside any package, or `cargo metadata --offline` failed — e.g. a new, not-yet-resolved crate)' : tok} — running the full check${hasCommit() ? '' : ' (this repo has no commit yet: make an initial commit so `--changed` has a baseline)'}`); cmd = c.cmd; noScope = true; break;
         }
         scopeVals[tok] = arr;
       }
@@ -4875,6 +4888,7 @@ function cmdImpact() {
   const cap = (a, n = 8) => a.slice(0, n).join(', ') + (a.length > n ? `, … +${a.length - n} more` : '');
   out(`IMPACT ${target}${reqs.length && target !== reqs[0] ? ` (${cap(reqs)})` : ''}`);
   const seedIsTest = seeds.length > 0 && seeds.every((s) => TEST_FILE.test(s) || (entsIn(s).length > 0 && entsIn(s).every((e) => e.kind === 'TEST')));
+  if (dataFile || result.otherReqs.length || sameFeature.length) out('  note: impact is file-granular — every REQ annotated in a reached file is listed, even if only one test/function uses the changed file; dependsOn edges are per project, not per language');
   if (dataFile) out(`  data file (outside the import graph); dependent projects (dependsOn): ${depProjects.join(', ') || '(none)'}`);
   else out(`  ${seedIsTest ? 'test' : 'impl'}: ${seeds.join(', ') || '(none)'}`);
   if (/^REQ-/.test(target) && !seeds.length) {
