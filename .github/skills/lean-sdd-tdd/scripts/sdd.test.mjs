@@ -7706,3 +7706,135 @@ test('#303 a consistently failing test check is a plain failure and flaky.retrie
   assert.match(sdd(flakyProject(null, always), 'gate').out, /✗ cmd test \(/);
   assert.doesNotMatch(sdd(flakyProject({ retries: 0 }, FLAKY_ONCE), 'gate').out, /FLAKY/);
 });
+
+test('#305 python stub: a class used as a dict value is instantiable, not a Protocol', () => {
+  const d = mini(R13SPEC, {
+    'tests/test_w.py': 'from kit import Alpha, Beta\n\nREG = {"a": Alpha, "b": Beta}\n\n\n# @id TEST-W-001 @verifies REQ-W-001\ndef test_w_001():\n    assert REG["a"]().go() == 1\n',
+  });
+  sdd(d, 'tdd', 'stub', 'TEST-W-001');
+  const t = fs.readFileSync(path.join(d, 'kit.py'), 'utf8');
+  assert.doesNotMatch(t, /Protocol/);
+  assert.match(t, /class Alpha:/);
+});
+
+test('#305 python stub: a class used in `with` gets __enter__/__exit__', () => {
+  const d = mini(R13SPEC, {
+    'tests/test_w.py': 'from kit import Ctx\n\n\n# @id TEST-W-001 @verifies REQ-W-001\ndef test_w_001():\n    with Ctx(1) as c:\n        assert c.v == 1\n',
+  });
+  sdd(d, 'tdd', 'stub', 'TEST-W-001');
+  const t = fs.readFileSync(path.join(d, 'kit.py'), 'utf8');
+  assert.match(t, /def __enter__/);
+  assert.match(t, /def __exit__/);
+});
+
+test('#305 python stub: a missing module goes where config `artifacts` maps it', () => {
+  const d = mini(R13SPEC, {
+    'py/src/keep.py': 'X = 1\n',
+    'py/tests/test_w.py': 'from kit import f\n\n\n# @id TEST-W-001 @verifies REQ-W-001\ndef test_w_001():\n    assert f() == 1\n',
+  });
+  const cfg = path.join(d, '.sdd/config.json');
+  const c = JSON.parse(fs.readFileSync(cfg, 'utf8'));
+  c.artifacts = { 'py/tools/kit.py': ['py/tests/test_w.py'] };
+  fs.writeFileSync(cfg, JSON.stringify(c));
+  sdd(d, 'tdd', 'stub', 'TEST-W-001');
+  assert.ok(fs.existsSync(path.join(d, 'py/tools/kit.py')), 'py/tools/kit.py missing');
+  assert.ok(!fs.existsSync(path.join(d, 'py/src/kit.py')));
+});
+
+test('#305 TS stub: a .cjs module loaded through createRequire is created', () => {
+  const d = jsStubProject({
+    'test/a.test.ts': "import { createRequire } from 'node:module';\nconst req = createRequire(import.meta.url);\nconst { add } = req('../src/add.cjs');\n/** @id TEST-A-001 @verifies REQ-A-001 */\nit('TEST-A-001 adds', () => { add(1, 2); });\n",
+  });
+  sdd(d, 'tdd', 'stub', 'TEST-A-001');
+  assert.ok(fs.existsSync(path.join(d, 'src/add.cjs')), 'add.cjs missing');
+});
+
+test('#306 a passing Red of a test-only REQ is recorded as characterization without the flag', () => {
+  const d = mini(T1SPEC.replace('one shall hold.', 'one shall hold. (test-only)'), { 'a.test.mjs': jsTest() }, PASS);
+  const r = sdd(d, 'tdd', 'red', 'TEST-A-001');
+  assert.equal(r.code, 0, r.out);
+  assert.match(r.out, /characterization/);
+  assert.equal(sdd(d, 'tdd', 'green', 'TEST-A-001').code, 0);
+});
+
+test('#306 a passing Red of a normal REQ is still rejected', () => {
+  const d = mini(T1SPEC, { 'a.test.mjs': jsTest() }, PASS);
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-A-001').code, 1);
+});
+
+test('#307 Rust `/// @id` doc-comment on a #[test] fn: editing the test body after Red stales it; a fenced doc test stays doc-block scoped', () => {
+  const rs = (n) => `/// @id TEST-A-001 @verifies REQ-A-001\n#[test]\nfn t1() {\n    assert_eq!(f(), ${n});\n}\n\n/// @id TEST-A-002 @verifies REQ-A-002\n#[test]\nfn t2() {\n    assert_eq!(g(), 1);\n}\n`;
+  const d = greenBoth({ 'tests/a.rs': rs(1) });
+  fs.writeFileSync(path.join(d, 'tests/a.rs'), rs(2));
+  const r = sdd(d, 'gate', '--no-run');
+  assert.match(r.out, /TEST-A-001[^\n]*(test changed since|stale)/i, r.out);
+  assert.doesNotMatch(r.out, /TEST-A-002[^\n]*(test changed since|stale)/i, r.out);
+});
+
+test('#307 duplicate CODE @id: the "no code carries @implements" warning names the duplicate', () => {
+  const d = mini(SPEC2, {
+    'a.test.mjs': '// @id TEST-A-001 @verifies REQ-A-001\nit(1);\n\n// @id TEST-A-002 @verifies REQ-A-002\nit(2);\n',
+    'src/a.mjs': '// @id CODE-A-001 @implements REQ-A-002\nexport const a = 1;\n',
+    'src/b.mjs': '// @id CODE-A-001 @implements REQ-A-001\nexport const b = 1;\n',
+  }, FAIL);
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-A-001').code, 0);
+  setCmd(d, PASS);
+  const g = sdd(d, 'tdd', 'green', 'TEST-A-001');
+  assert.match(g.out, /duplicate @id found \(CODE-A-001/, g.out);
+});
+
+test('#308 impact with several targets reports every target', () => {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-imp308-'));
+  spawnSync('git', ['init', '-q'], { cwd: d });
+  fs.mkdirSync(path.join(d, '.sdd/specs'), { recursive: true });
+  fs.writeFileSync(path.join(d, '.sdd/specs/f.md'), '---\nfeature: f\ntier: T1\n---\n- REQ-A: the system shall a\n- REQ-B: the system shall b\n');
+  const r = sdd(d, 'impact', 'REQ-A', 'REQ-B');
+  assert.match(r.out, /IMPACT REQ-A/);
+  assert.match(r.out, /IMPACT REQ-B/);
+});
+
+test('#308 impact lists a Python writer that opens the artifact with open(..., "w") as producer', () => {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-imp308-'));
+  spawnSync('git', ['init', '-q'], { cwd: d });
+  fs.mkdirSync(path.join(d, 'contract'));
+  fs.mkdirSync(path.join(d, 'tools'));
+  fs.writeFileSync(path.join(d, 'contract/vectors.json'), '{}');
+  fs.writeFileSync(path.join(d, 'tools/gen.py'), 'OUT = "contract/vectors.json"\nwith open(OUT, "w") as f:\n    f.write("{}")\n');
+  spawnSync('git', ['add', '-A'], { cwd: d });
+  assert.match(sdd(d, 'impact', 'contract/vectors.json').out, /producers: tools\/gen\.py/);
+});
+
+// ---- r16a (#304): Rust stub — ctor args/lifetimes, annotated return types, bound-only traits, workspace first test ----
+test('#304 Rust stub: Type::new(&bytes) keeps its argument even after an earlier Vec::new(), and Type::of(..) takes the compared type', has268, () => {
+  const d = rs288('use hist::{BitReader, Adler32};\n\n' + t288('    let mut out = Vec::new();\n    let bytes = vec![1u8, 2];\n    let mut r = BitReader::new(&bytes);\n    out.push(r.read(3));\n    assert_eq!(Adler32::of(&bytes), 5);'));
+  const { lib } = stub288(d);
+  assert.match(lib, /fn new<A0>\(_a0: A0\)/, lib);
+  assert.match(lib, /fn of<A0>\([^\n]*-> i64/, lib);
+});
+
+test('#304 Rust stub: a `let n: u32` annotation and a comparison literal fix the return type', has268, () => {
+  const d = rs288('use hist::{count, finish};\n\n' + t288('    let n: u32 = count(1);\n    assert_eq!(n, 2);\n    assert_eq!(finish(3), vec![]);'));
+  const { lib } = stub288(d);
+  assert.match(lib, /fn count[^\n]*-> u32/, lib);
+  assert.match(lib, /fn finish[^\n]*-> Vec<i64>/, lib);
+});
+
+test('#304 Rust stub: a trait used only as a generic bound is a trait, not a struct', has268, () => {
+  const d = rs288('use hist::Hasher;\n\nfn run<H: Hasher>(_h: &H) {}\n\n' + t288('    assert_eq!(1, 1);'));
+  const { lib } = stub288(d);
+  assert.match(lib, /pub trait Hasher/, lib);
+  assert.doesNotMatch(lib, /struct Hasher/, lib);
+});
+
+test('#304 Rust stub: the first test of a workspace whose sibling crates lack src still stubs', has268, () => {
+  const d = rs268({
+    'Cargo.toml': '[workspace]\nmembers = ["a", "b"]\nresolver = "2"\n',
+    'a/Cargo.toml': '[package]\nname = "a"\nversion = "0.1.0"\nedition = "2021"\n',
+    'b/Cargo.toml': '[package]\nname = "b"\nversion = "0.1.0"\nedition = "2021"\n',
+    'a/src/lib.rs': '',
+    'a/tests/x.rs': 'use a::go;\n\n' + t288('    assert_eq!(go(1), 2);'),
+  });
+  const r = sdd(d, 'tdd', 'stub', 'TEST-H-001');
+  assert.match(fs.readFileSync(path.join(d, 'a/src/lib.rs'), 'utf8'), /pub fn go/, r.out);
+  assert.doesNotMatch(r.out, /verified.*fail|could not fully stub/i, r.out);
+});

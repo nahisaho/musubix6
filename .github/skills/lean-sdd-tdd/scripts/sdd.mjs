@@ -257,7 +257,9 @@ function rustDocBlock(txt, id) {
   let a = at, b = at;
   while (a > 0 && /^\s*\/\/[/!]/.test(ls[a - 1])) a--;
   while (b + 1 < ls.length && /^\s*\/\/[/!]/.test(ls[b + 1])) b++;
-  return ls.slice(a, b + 1).join('\n');
+  const block = ls.slice(a, b + 1).join('\n');
+  // a `/// @id` above `#[test] fn` is an ordinary test: only a fenced doc block is a doc test
+  return /^\s*\/\/[/!]\s*(?:```|~~~)/m.test(block) ? block : null;
 }
 function braceTestSha(txt, id, p) {
   const ranges = braceFunctions(txt, p);
@@ -1914,7 +1916,9 @@ function stubRust(testPath, src, dir, made) {
       let i = m.index + m[0].length, depth = 1;
       for (; i < ms.length && depth; i++) depth += ms[i] === '(' ? 1 : ms[i] === ')' ? -1 : 0;
       const after = srcNoUse.slice(i, i + 300), before = srcNoUse.slice(Math.max(0, m.index - 100), m.index);
-      const asrt = /\bassert(?:_eq|_ne)?!\(\s*$/.test(before);
+      const asrt = /\bassert(?:_eq|_ne)?!\(\s*[\w.:]*$/.test(before);
+      const ann = /\blet\s+(?:mut\s+)?\w+\s*:\s*([^=;]+?)\s*=\s*&?[\w.:]*$/.exec(before)?.[1];
+      if (ann && !/\b_\b|\bimpl\b/.test(ann)) return ann;
       const rhs = (a) => { const x = /^\s*(?:==|!=)\s*/.exec(a) ?? (asrt ? /^\s*,\s*/.exec(a) : null); return x ? takeExpr(a.slice(x[0].length)) : null; };
       let x;
       if (/^\s*\.\s*(?:len|count|is_empty)\s*\(\s*\)/.test(after)) return 'Vec<i64>';
@@ -1961,7 +1965,8 @@ function stubRust(testPath, src, dir, made) {
       for (const f of mb.matchAll(/\btype\s+(\w+)\s*=/g)) if (!dep[f.index] && !items.includes(`type ${f[1]};`)) items.push(`type ${f[1]};`);
       for (const f of mb.matchAll(/\bconst\s+(\w+)\s*:\s*([^=;]+)=/g)) if (!dep[f.index]) items.push(`const ${f[1]}: ${body.slice(f.index + f[0].indexOf(':') + 1, f.index + f[0].indexOf(':') + 1 + f[2].length).trim()};`);
     }
-    if (!found && !new RegExp(`\\bdyn\\s+${n}\\b`).test(ms)) return null;
+    const bound = new RegExp(`\\bdyn\\s+${n}\\b|\\bimpl\\s+(?:\\w+\\s*\\+\\s*)*${n}\\b(?!\\s*(?:for\\b|\\{|<))|<[^<>;{}]*\\b\\w+\\s*:\\s*(?:[\\w:?']+\\s*\\+\\s*)*${n}\\b|\\bwhere\\b[^{;]*:\\s*(?:[\\w:?']+\\s*\\+\\s*)*${n}\\b|\\+\\s*${n}\\b`).test(ms);
+    if (!found && !bound) return null;
     return `pub trait ${n}${gn.length ? `<${gn.join(', ')}>` : ''} {\n${items.sort((a, b) => /^type/.test(b) - /^type/.test(a)).map((i) => `    ${i}\n`).join('')}}\n`;
   };
   // builder chains `Type::builder().a(1).b(2).build()`: every link but the last returns Self by value (the last keeps its inferred type)
@@ -1994,9 +1999,13 @@ function stubRust(testPath, src, dir, made) {
     const gen = (c) => c.args.map((_, i) => `A${i}`);
     const mk = gn ? 'Self(std::marker::PhantomData)' : 'Self';
     const sig = (k, self) => {
-      const c = callInfo(chain.all.includes(k) ? src.replace(/\b\w+\.|(?<=[)\]])\s*\./g, '') : src.replace(/\b\w+\./g, ''), k);
+      const flat = chain.all.includes(k) ? src.replace(/\b\w+\.|(?<=[)\]])\s*\./g, '') : src.replace(/\b\w+\./g, '');
+      // `Type::new(..)` is read from its own call, not from an earlier `Vec::new()`
+      const qual = self ? null : callInfo(flat, `${n}(?:::\\s*<[^;(){}]*?>)?\\s*::\\s*${k}`);
+      const c = qual && qual.argc !== undefined ? qual : callInfo(flat, k);
       const g = gen(c), mid = self && chain.mids.has(k);
-      const ret = mid ? 'Self' : self ? rustRet(`(?<=[\\w)\\]]\\s*)\\.\\s*${k}`, crate_) ?? (c.ret?.startsWith('opt:') ? `Option<${c.ret.slice(4)}>` : T[c.ret ?? viaVar(`(?<![\\w])\\w+\\s*\\.\\s*${k}`)] ?? 'i64') : c.ret === 'result' ? 'Result<Self, String>' : 'Self';
+      const assocRet = !self && !mid && !c.chained && c.ret !== 'result' ? rustRet(`(?<![\\w.])${n}(?:::\\s*<[^;(){}]*?>)?::${k}`, crate_) : null;
+      const ret = mid ? 'Self' : (assocRet && !new RegExp(`^${n}\\b`).test(assocRet) ? assocRet : null) ?? (!self && !mid && c.ret && c.ret !== 'result' && T[c.ret] ? T[c.ret] : null) ?? (self ? rustRet(`(?<=[\\w)\\]]\\s*)\\.\\s*${k}`, crate_) ?? (c.ret?.startsWith('opt:') ? `Option<${c.ret.slice(4)}>` : T[c.ret ?? viaVar(`(?<![\\w])\\w+\\s*\\.\\s*${k}`)] ?? 'i64') : c.ret === 'result' ? 'Result<Self, String>' : 'Self');
       return `    pub fn ${k}${g.length ? `<${g.join(', ')}>` : ''}(${[self ? (mid ? 'self' : needsMut(k) ? '&mut self' : '&self') : '', ...g.map((t, i) => `_a${i}: ${t}`)].filter(Boolean).join(', ')}) -> ${ret} {\n        ${!self && /^(new|default|with_\w+|from_\w+|create|empty)$/.test(k) ? (c.ret === 'result' ? `Ok(${mk})` : mk) : `unimplemented!("${n}::${k}")`}\n    }\n`;
     };
     return `\nimpl${gn ? `<${gn.join(', ')}>` : ''} ${n}${gn ? `<${gn.join(', ')}>` : ''} {\n${[...assoc.map((k) => sig(k, false)), ...inst.map((k) => sig(k, true))].join('\n')}}\n`;
@@ -2028,6 +2037,14 @@ function stubRust(testPath, src, dir, made) {
   // every workspace member crate by name, so `use other_crate::a::X` is stubbed in that crate (#76)
   const crates = new Map();
   for (const f of workspaceFiles().filter((f) => /(?:^|\/)Cargo\.toml$/.test(f))) { const n = pkgName(path.join(ROOT, f)); if (n) crates.set(n, path.resolve(ROOT, path.dirname(f))); }
+  // a workspace member without any target makes cargo refuse to load the workspace: give it an empty lib (#304)
+  for (const croot of crates.values()) {
+    const tomlText = fs.readFileSync(path.join(croot, 'Cargo.toml'), 'utf8');
+    if (['src/lib.rs', 'src/main.rs', 'src/bin', 'tests', 'examples', 'benches', 'build.rs'].some((x) => fs.existsSync(path.join(croot, x))) || /^\s*\[(?:lib|\[bin\])/m.test(tomlText)) continue;
+    fs.mkdirSync(path.join(croot, 'src'), { recursive: true });
+    fs.writeFileSync(path.join(croot, 'src/lib.rs'), '');
+    made.push(rel(path.join(croot, 'src/lib.rs')));
+  }
   const ownPkg = pkgName(path.join(root, 'Cargo.toml'));
   // where each imported project type lives, so a return type can name it (#288)
   const typePath = new Map();
@@ -3109,8 +3126,12 @@ function stubFor(testPath, id) {
       const ppHit = mod.startsWith('.') ? null : ppDirs.map((d) => path.resolve(proot, d)).find((d) => has(d));
       // a helper module that already sits next to the test file is importable as-is (#291)
       if (!mod.startsWith('.') && dir !== proot && has(dir)) continue;
+      // config `artifacts` ({"py/tools/x.py": ["py/tests/test_x.py"]}) names where a module the test imports lives (#305)
+      const modRel = mod.replace(/^\.+/, '').split('.').join('/') + '.py';
+      const cfgArt = mod.startsWith('.') ? {} : loadConfig().artifacts ?? {};
+      const mapped = Object.keys(cfgArt).find((a) => (normDep(a) === modRel || normDep(a).endsWith('/' + modRel)) && [].concat(cfgArt[a]).some((u) => normDep(u) === testPath));
       const base = mod.startsWith('.') ? dir : ppHit ?? (ppDir && !has(proot) ? path.join(proot, ppDir) : srcLayout ? path.join(proot, 'src') : proot);
-      const abs = path.join(base, ...mod.replace(/^\.+/, '').split('.')) + '.py';
+      const abs = mapped ? path.join(ROOT, normDep(mapped)) : path.join(base, ...mod.replace(/^\.+/, '').split('.')) + '.py';
       // `from pkg import x` where pkg/ is a namespace package: never create pkg.py next to it
       const nsDir = abs.replace(/\.py$/, '');
       const isNsDir = fs.existsSync(nsDir) && fs.statSync(nsDir).isDirectory() && !fs.existsSync(path.join(nsDir, '__init__.py'));
@@ -3122,8 +3143,8 @@ function stubFor(testPath, id) {
       // ALL_CAPS names that are never called are constants, not classes (#112)
       const isConst = (n) => /^[A-Z][A-Z0-9_]+$/.test(n) && !new RegExp(`\\b${n}\\s*\\(`).test(scoped);
       // a name used only as an annotation (never called, no attribute access) is a typing.Protocol (#288)
-      const isProto = (n) => /^[A-Z]/.test(n) && !isExc(n) && !isConst(n) && new RegExp(`(?::|->|\\[|\\|)\\s*${n}\\b`).test(scan) && !new RegExp(`(?<![\\w.])${n}\\s*[(.]|\\bisinstance\\([^)]*\\b${n}\\b|\\(\\s*${n}\\s*[,)]\\s*:?`).test(scan.replace(new RegExp(`^\\s*from[^\\n]*\\bimport[^\\n]*`, 'gm'), ''));
-      const stubOf = (n) => isProto(n) ? `class ${n}(Protocol):\n${methodsOf(scoped, n).map((k) => `    def ${k}(self, *a, **k): ...\n`).join('') || '    ...\n'}` : isExc(n) ? `class ${n}(Exception):\n    pass\n` : isConst(n) ? `${n} = ${new RegExp(`parametrize\\([^\\n]*\\b${n}\\b|\\bin\\s+${n}\\b|\\b${n}\\s*\\[`).test(scoped) ? '[]' : 'None'}\n` : /^[A-Z]/.test(n) ? `class ${n}:\n    def __init__(self, *a, **k):\n        pass\n${methodsOf(scoped, n).map((k) => `\n    def ${k}(self, *a, **k):\n        raise NotImplementedError("${k}")\n`).join('')}` : `def ${n}(*a, **k):\n    raise NotImplementedError("${n}")\n`;
+      const isProto = (n) => /^[A-Z]/.test(n) && !isExc(n) && !isConst(n) && new RegExp(`(?:(?<!['"]\\s*):|->|\\[|\\|)\\s*${n}\\b`).test(scan) && !new RegExp(`(?<![\\w.])${n}\\s*[(.]|\\bisinstance\\([^)]*\\b${n}\\b|\\(\\s*${n}\\s*[,)]\\s*:?`).test(scan.replace(new RegExp(`^\\s*from[^\\n]*\\bimport[^\\n]*`, 'gm'), ''));
+      const stubOf = (n) => isProto(n) ? `class ${n}(Protocol):\n${methodsOf(scoped, n).map((k) => `    def ${k}(self, *a, **k): ...\n`).join('') || '    ...\n'}` : isExc(n) ? `class ${n}(Exception):\n    pass\n` : isConst(n) ? `${n} = ${new RegExp(`parametrize\\([^\\n]*\\b${n}\\b|\\bin\\s+${n}\\b|\\b${n}\\s*\\[`).test(scoped) ? '[]' : 'None'}\n` : /^[A-Z]/.test(n) ? `class ${n}:\n    def __init__(self, *a, **k):\n        pass\n${new RegExp(`\\bwith\\s[^\\n]*\\b${n}\\s*\\(`).test(scan) ? '\n    def __enter__(self, *a, **k):\n        return self\n\n    def __exit__(self, *a, **k):\n        return False\n' : ''}${methodsOf(scoped, n).map((k) => `\n    def ${k}(self, *a, **k):\n        raise NotImplementedError("${k}")\n`).join('')}` : `def ${n}(*a, **k):\n    raise NotImplementedError("${n}")\n`;
       // `from pkg import mod` used only as `mod.f(...)` is a submodule: stub pkg/mod.py, never `def mod` in the package (#291)
       const isSub = (n) => !mod.startsWith('.') && /^[a-z_]\w*$/.test(n) && new RegExp(`\\b${localOf(n)}\\.\\w`).test(scoped) && !new RegExp(`(?<![\\w.])${localOf(n)}\\s*\\(`).test(scoped);
       const subBody = (n) => [...new Set([...scoped.matchAll(new RegExp(`\\b${localOf(n)}\\.([A-Za-z_]\\w*)\\s*\\(`, 'g'))].map((x) => x[1]))].map((f) => `def ${f}(*a, **k):\n    raise NotImplementedError("${f}")\n`).join('\n\n') || 'pass\n';
@@ -3142,7 +3163,7 @@ function stubFor(testPath, id) {
       if (existing) {
         // a module that still holds only stubs gets the newly imported names; real code is never touched
         const cur = fs.readFileSync(existing, 'utf8');
-        const rest = cur.replace(/^# @id CODE-\S+-STUB-\d+ @implements [^\n]*\n/, '').replace(/^class \w+(\(Exception\))?:\n(?:    def __init__\(self, \*a, \*\*k\):\n        pass\n|    pass\n)(?:\n    def \w+\(self, \*a, \*\*k\):\n        raise NotImplementedError\("\w+"\)\n)*/gm, '').replace(/^def \w+\(\*a, \*\*k\):\n    raise NotImplementedError\("\w+"\)\n/gm, '');
+        const rest = cur.replace(/^# @id CODE-\S+-STUB-\d+ @implements [^\n]*\n/, '').replace(/^class \w+(\(Exception\))?:\n(?:    def __init__\(self, \*a, \*\*k\):\n        pass\n|    pass\n)(?:\n    def \w+\(self, \*a, \*\*k\):\n        (?:raise NotImplementedError\("\w+"\)|return (?:self|False))\n)*/gm, '').replace(/^def \w+\(\*a, \*\*k\):\n    raise NotImplementedError\("\w+"\)\n/gm, '');
         // names a module re-exports (`from .core import Clock`, `import x as Clock`) are importable, never stubbed over (#214)
         const reExported = new Set();
         for (const im of cur.matchAll(/^(?:from\s+\S+\s+import\s+(\([^)]*\)|[^\n]+)|import\s+([^\n]+))/gm)) for (const b of (im[1] ?? im[2]).replace(/#[^\n]*/g, '').replace(/[()]/g, '').split(',')) { const parts = b.trim().split(/\s+as\s+/); const nm = parts[1] ?? parts[0]; if (nm && nm !== '*') reExported.add(nm.split('.')[0]); }
@@ -3159,7 +3180,7 @@ function stubFor(testPath, id) {
         // a stub-only class the test now calls more methods on gets them appended inside the class (#279)
         let grown = cur;
         for (const n of ns) {
-          const cm = new RegExp(`^class ${n}:\\n    def __init__\\(self, \\*a, \\*\\*k\\):\\n        pass\\n(?:\\n    def \\w+\\(self, \\*a, \\*\\*k\\):\\n        raise NotImplementedError\\("\\w+"\\)\\n)*`, 'm').exec(grown);
+          const cm = new RegExp(`^class ${n}:\\n    def __init__\\(self, \\*a, \\*\\*k\\):\\n        pass\\n(?:\\n    def \\w+\\(self, \\*a, \\*\\*k\\):\\n        (?:raise NotImplementedError\\("\\w+"\\)|return (?:self|False))\\n)*`, 'm').exec(grown);
           const add2 = cm ? methodsOf(scoped, n).filter((k) => !new RegExp(`def ${k}\\(`).test(cm[0])) : [];
           if (add2.length) grown = grown.replace(cm[0], cm[0] + add2.map((k) => `\n    def ${k}(self, *a, **k):\n        raise NotImplementedError("${k}")\n`).join(''));
         }
@@ -3249,7 +3270,9 @@ function stubFor(testPath, id) {
   // dynamic `import('<relative or package>')`: a bound namespace identifier means its members are used (#219)
   for (const m of scoped.matchAll(/(?:(?:const|let|var)\s+(\{[^}]*\}|[\w$]+)\s*=\s*)?await\s+import\(\s*['"]([^'"\n]+)['"]\s*\)/g)) imps.push({ 1: m[1] ? (m[1].startsWith('{') ? m[1].replace(/\s*:\s*[\w$]+/g, '') : `* as ${m[1]}`) : '', 2: m[2] });
   // CommonJS `require('<relative or package>')` gets a `module.exports` stub (#219)
-  for (const m of scoped.matchAll(/(?:(?:const|let|var)\s+(\{[^}]*\}|[\w$]+)\s*=\s*)?\brequire\(\s*['"]([^'"\n]+)['"]\s*\)/g)) imps.push({ 1: m[1] ? (m[1].startsWith('{') ? m[1].replace(/\s*:\s*[\w$]+/g, '') : `* as ${m[1]}`) : '', 2: m[2], cjs: true });
+  // `createRequire(import.meta.url)` bindings (`const req = createRequire(..)`) and the inline `createRequire(..)('./x.cjs')` load CommonJS from ESM/TS tests (#305)
+  const reqNames = ['require', ...[...scoped.matchAll(/(?:const|let|var)\s+([\w$]+)\s*=\s*(?:module\.)?createRequire\(/g)].map((m) => m[1].replace(/\$/g, '\\$'))].join('|');
+  for (const m of scoped.matchAll(new RegExp(`(?:(?:const|let|var)\\s+(\\{[^}]*\\}|[\\w$]+)\\s*=\\s*)?(?:(?<![\\w$.])(?:${reqNames})|createRequire\\([^)]*\\))\\(\\s*['"]([^'"\\n]+)['"]\\s*\\)`, 'g'))) imps.push({ 1: m[1] ? (m[1].startsWith('{') ? m[1].replace(/\s*:\s*[\w$]+/g, '') : `* as ${m[1]}`) : '', 2: m[2], cjs: true });
   const toCjs = (b) => { const ex = []; const out = b.replace(/^export\s+(?:default\s+)?(class|function|const)\s+([\w$]+)/gm, (x, k, n) => { ex.push(n); return `${k} ${n}`; }); return `${out}\nmodule.exports = { ${ex.join(', ')} };\n`; };
   // an existing CommonJS module that lacks a required name: append throwing stubs plus `module.exports.x = x` lines, never touching existing code (#219)
   const cjsExisting = (file, clause) => {
@@ -4073,6 +4096,9 @@ function cmdTdd() {
   if (dupOf) { out(`REFUSED: duplicate @id ${dupOf} — every @id must be unique; rename one before recording evidence`); return 1; }
   rustRunnerSelection = null;
   const req = typeof flags.req === 'string' ? flags.req : t.refs.verifies[0];
+  // a `(test-only)` REQ is verified by tests that need no failing Red: a passing Red is recorded as characterization (#306)
+  const testOnlyReqs = t.refs.verifies.length > 0 && t.refs.verifies.every((r) => loadSpecs().flatMap((x) => x.reqs).some((q) => q.id === r && q.testOnly));
+  const characFlag = typeof flags.characterization === 'string' ? flags.characterization : testOnlyReqs ? '(test-only) REQ' : undefined;
   const specs = loadSpecs();
   const spec = specs.find((s) => s.reqs.some((r) => r.id === req));
   if (!req || !spec) { out(`${id}: no @verifies REQ defined in a spec (.sdd/specs). add @verifies or --req`); return 2; }
@@ -4318,7 +4344,7 @@ function cmdTdd() {
     else if (goRunner && goVerdict === 'pass' && res.exit !== 0) { ok = false; why = `${id} itself passes; the failure comes from its parent, a sibling or suite setup`; }
     else if (zero || siblingFail === 'skip') { ok = false; why = 'no test matched the ID, or the test is skipped/todo (check @id vs test title/method name; skipped tests cannot give Red/Green)' + (goRunner && /\[no test files\]/.test(plain) ? '; go printed [no test files]: a //go:build constraint may hide this file (pass -tags in testCmd)' : ''); }
     else if (res.exit === 0 && retest) ok = true;
-    else if (res.exit === 0 && typeof flags.characterization === 'string' && flags.characterization.trim()) ok = true;
+    else if (res.exit === 0 && typeof characFlag === 'string' && characFlag.trim()) ok = true;
     else if (res.exit === 0 && vacuousThrows(t.path, id)) { ok = false; why = `test passed: a matcher-less assert.throws / pytest.raises is satisfied by the stub's own "not implemented" error (vacuous test); add a matcher (error type or message) that only the real behaviour satisfies, or record --characterization "<why>"`; }
     else if (res.exit === 0) { ok = false; why = 'test passed; Red needs a real failure (data-only / characterization test? record it explicitly: --characterization "<why no implementation can fail it>"; amending a wrong expectation after Red: --retest "<reason>")'; }
     else if (isLoadErr(res.text) && !flags.weak && !(flags['missing-module'] && declaredMissingModule(res.text, t.path))) { ok = false; why = 'load/compile error, not an assertion failure. new module? run `tdd stub <ID>` once (or `--missing-module`); if stub already ran or found nothing, add the missing code by hand; or --weak to record as weak Red' + (/\.py$/.test(t.path) && /ERROR collecting[\s\S]*(?:NotImplementedError|not implemented)/.test(res.text) ? '\nhint: the stub threw at collection time (a call in `@pytest.mark.parametrize` arguments or module level). Build those values inside the test body (or a fixture) so the stub fails at run time as an assertion/Red' : ''); }
@@ -4342,7 +4368,7 @@ function cmdTdd() {
   const setupSym0 = sub === 'red' && !flags['allow-setup-red'] ? setupOrigin(rl.find((l) => /^E\s+.*(not implemented|NotImplementedError|unimplemented|is not a function|has no attribute|context manager protocol)/i.test(l)) ?? rl.find((l) => /not implemented|NotImplementedError|unimplemented|is not a function|has no attribute|context manager protocol/i.test(l) && !/^\d+\s*\|/.test(l)) ?? reason, t.path, id, res.text) : null;
   // --expect naming the setup call itself does not make a setup-origin Red the asserted behaviour (#256)
   const setupSym = setupSym0 && (typeof flags.expect !== 'string' || new RegExp(`(?<![\\w$])${escapeRe(setupSym0)}(?![\\w$])`).test(flags.expect)) ? setupSym0 : null;
-  const charac = sub === 'red' && res.exit === 0 && !retest ? String(flags.characterization).trim() : '';
+  const charac = sub === 'red' && res.exit === 0 && !retest ? String(characFlag).trim() : '';
   // a `NAME = None` stub that the test calls fails with TypeError: that is the stub, not the behaviour (#279)
   const noneStub = sub === 'red' && !flags['allow-setup-red'] && /TypeError: 'NoneType' object is not callable/.test(res.text);
   // only an oracle artifact changed since the earlier strong Red (the test's own text is identical): the strong Red still stands (#283)
@@ -4373,7 +4399,7 @@ function cmdTdd() {
       const shared = [...ents.values()].filter((c) => c.kind === 'CODE' && implFiles.includes(c.path) && c.refs.implements.some((r) => e.refs.verifies.includes(r)));
       return last && shared.some((c) => (last.implBlocks ? last.implBlocks[`${c.path}:${c.id}`] !== implRegionSha(c) : mtime(c.path) > Date.parse(last.at)));
     });
-    if (!implFiles.length && !loadSpecs().flatMap((x) => x.reqs).filter((q) => mine.has(q.id)).every((q) => q.testOnly || q.srcs.length)) out(`⚠ ${id}: no code carries @implements ${[...mine].join(', ')} — annotate the implementation so impact/trace can find it (#276); without it the shared-implementation staleness check cannot run (comment-only \`@id CODE-… @implements …\` is enough, the code itself stays unchanged)`);
+    if (!implFiles.length && !loadSpecs().flatMap((x) => x.reqs).filter((q) => mine.has(q.id)).every((q) => q.testOnly || q.srcs.length)) out(`⚠ ${id}: no code carries @implements ${[...mine].join(', ')} — annotate the implementation so impact/trace can find it (#276); without it the shared-implementation staleness check cannot run (comment-only \`@id CODE-… @implements …\` is enough, the code itself stays unchanged)${dups.some((x) => /^CODE-/.test(x)) ? `; duplicate @id found (${dups.filter((x) => /^CODE-/.test(x)).slice(0, 3).join(', ')}) — only one annotation per id is read, rename the duplicate` : ''}`);
     if (stale.length) out(`⚠ implementation shared with other REQs changed since their Green: ${stale.map((e) => e.id).join(', ')} — re-run them (tdd refactor ${stale.map((e) => e.id).join(' ')}) or the project tests; their evidence is not re-checked automatically`);
   }
   if (sub === 'red' && loadWeak && /not implemented|NotImplementedError|unimplemented/i.test(res.text)) out(`! a stub failed at module load, before any test body ran: every test of this file fails the same way, so this Red says nothing about ${id}; move the stub call into the test or a fixture`);
@@ -5231,7 +5257,14 @@ function crossImpact(changed) {
 }
 
 function cmdImpact() {
-  const target = pos[1];
+  const targets = pos.slice(1);
+  if (targets.length < 2) return impactOne(targets[0]);
+  // several targets: report each one (one JSON line per target with --json) (#308)
+  let code = 0;
+  for (const t of targets) { if (!flags.json && t !== targets[0]) out(''); code = Math.max(code, impactOne(t)); }
+  return code;
+}
+function impactOne(target) {
   if (!target) { out('usage: impact <REQ-ID|TEST-ID|CODE-ID|file> [--json] [--all]'); return 2; }
   const specs = loadSpecs();
   const { ents } = scanEntities(listFiles());
@@ -5276,7 +5309,7 @@ function cmdImpact() {
   // parity is one hop (#294): the counterpart and its feature are reached, not the counterpart's importers
   for (const pr of loadConfig().parity ?? []) for (const [x, y] of [[pr[0], pr[1]], [pr[1], pr[0]]]) { const a = x && normDep(x), b = y && normDep(y); if (a && b && seeds.includes(a) && !via.has(b) && fs.existsSync(path.join(ROOT, b))) via.set(b, a); }
   // producers of a generated artifact: build.rs / codegen / writer files that name it (#294)
-  const producers = nonCode ? listFiles().filter((f) => { if (f === seeds0) return false; try { const txt = fs.readFileSync(path.join(ROOT, f), 'utf8'); if (!txt.includes(path.posix.basename(seeds0))) return false; return /(^|\/)build\.rs$|codegen|generat/i.test(f) || /\b(writeFile(Sync)?|write_text|fs::write|File::create|json\.dump|WriteFile)\b|\bcodegen\b/.test(txt); } catch { return false; } }) : [];
+  const producers = nonCode ? listFiles().filter((f) => { if (f === seeds0) return false; try { const txt = fs.readFileSync(path.join(ROOT, f), 'utf8'); if (!txt.includes(path.posix.basename(seeds0))) return false; return /(^|\/)build\.rs$|codegen|generat/i.test(f) || /\b(writeFile(Sync)?|write_text|write_bytes|fs::write|File::create|json\.dump|WriteFile|to_json|to_csv|savetxt)\b|\bopen\([^)]*['\"][wax]b?\+?['\"]|\.open\(\s*['\"][wax]|\bcodegen\b/.test(txt); } catch { return false; } }) : [];
   const reached = [...via.keys()].filter((f) => !seeds.includes(f));
   const entsIn = (f) => all.filter((e) => e.path === f);
   const verifiers = all.filter((e) => e.refs.verifies.some((r) => reqs.includes(r)));
