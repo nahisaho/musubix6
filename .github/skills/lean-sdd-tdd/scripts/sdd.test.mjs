@@ -8080,3 +8080,11 @@ test('#296 ExUnit: a stub called in a refute assertion is the asserted behaviour
   assert.match(r.out, /RED ok/, r.out);
   assert.doesNotMatch(r.out, /\[weak\]|setup call/, r.out);
 });
+
+test('#309 a comment-only edit to a nested @implements annotation does not stale the OUTER block', () => {
+  const d = blockProject();
+  fs.writeFileSync(path.join(d, 'impl.mjs'), '// @id CODE-A-001 @implements REQ-A-001\nexport function one() {\n  // @id CODE-A-002 @implements REQ-A-002\n  const two = () => 2;\n  return 1;\n}\n');
+  sdd(d, 'tdd', 'green', 'TEST-A-001');
+  touchImpl(d, '@implements REQ-A-002', '@implements REQ-A-002 (edited note)');
+  assert.doesNotMatch(sdd(d, 'tdd', 'green', 'TEST-A-002').out, /shared with other REQs[^\n]*TEST-A-001/);
+});

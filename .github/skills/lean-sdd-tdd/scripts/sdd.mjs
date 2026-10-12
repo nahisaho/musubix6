@@ -1637,7 +1637,9 @@ function implRegionSha(c) {
     }
   }
   if (end <= i) return whole;
-  return 'b:' + sha(ls.slice(c.line - 1, end).join('\n'));
+  const body = ls.slice(c.line - 1, end), nested = /@id\s+CODE-/;
+  // nested annotations inside the block are comment-only lines, not outer behaviour (#309); unchanged hash when there are none
+  return 'b:' + sha((body.some((l, k) => k >= i - c.line + 1 && nested.test(l) && COMMENT_LEAD.test(l)) ? body.filter((l, k) => k < i - c.line + 1 || !(nested.test(l) && COMMENT_LEAD.test(l))) : body).join('\n'));
 }
 
 function implFileShas(spec) {
