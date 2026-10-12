@@ -7676,3 +7676,33 @@ test('#298 Rust stub: an associated const on an existing enum is not added as a 
   const { lib } = stub288(d);
   assert.doesNotMatch(lib, /^\s*MAX\b/m, lib);
 });
+
+function flakyProject(flaky, cmdBody) {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-flaky-'));
+  spawnSync('git', ['init', '-q'], { cwd: d });
+  fs.mkdirSync(path.join(d, '.sdd/specs'), { recursive: true });
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ checks: [{ name: 'test', cmd: ['node', '-e', cmdBody] }], ...(flaky ? { flaky } : {}) }));
+  return d;
+}
+const FLAKY_ONCE = "const f=require('fs');if(f.existsSync('m'))process.exit(0);f.writeFileSync('m','1');console.log('AssertionError: flaky');process.exit(1)";
+
+test('#303 a test check that fails once and passes on re-run is reported as flaky suspected and still fails by default', () => {
+  const d = flakyProject(null, FLAKY_ONCE);
+  const r = sdd(d, 'gate');
+  assert.match(r.out, /✗ cmd test FLAKY suspected: failed on the first run, passed on re-run 1\/1/);
+  assert.match(r.out, /SDD GATE FAIL/);
+});
+
+test('#303 flaky.policy "warn" accepts a flaky suspected re-run pass', () => {
+  const d = flakyProject({ policy: 'warn' }, FLAKY_ONCE);
+  const r = sdd(d, 'gate');
+  assert.match(r.out, /✓ cmd test FLAKY suspected/);
+  assert.match(r.out, /accepted by flaky.policy "warn"/);
+});
+
+test('#303 a consistently failing test check is a plain failure and flaky.retries 0 disables the re-run', () => {
+  const always = 'console.log("AssertionError: real");process.exit(1)';
+  assert.doesNotMatch(sdd(flakyProject(null, always), 'gate').out, /FLAKY/);
+  assert.match(sdd(flakyProject(null, always), 'gate').out, /✗ cmd test \(/);
+  assert.doesNotMatch(sdd(flakyProject({ retries: 0 }, FLAKY_ONCE), 'gate').out, /FLAKY/);
+});
