@@ -7645,3 +7645,34 @@ test('#302 a TS transform/compile error on green is reported as a load error', (
   setCmd(d, ['node', '-e', 'console.log("TSError: ⨯ Unable to compile TypeScript:\\nbad syntax");process.exit(1)']);
   assert.match(sdd(d, 'tdd', 'green', 'TEST-A-001').out, /load\/compile error/);
 });
+
+// ---- r15a (#298): Rust stub — include!/macro types, Default, associated items, throwing bodies ----
+test('#298 Rust stub: a type a module defines via include!/macro is not appended again', has268, () => {
+  const d = rs288('use hist::gen::Kind;\n\n' + t288('    assert_eq!(Kind::A, Kind::A);'), {
+    'src/lib.rs': 'pub mod gen;\n',
+    'src/gen.rs': 'include!("kind.rs");\n',
+    'src/kind.rs': '#[derive(Debug, PartialEq)]\npub enum Kind {\n    A,\n}\n',
+  });
+  stub288(d);
+  const g = fs.readFileSync(path.join(d, 'src/gen.rs'), 'utf8');
+  assert.doesNotMatch(g, /pub enum Kind/, g);
+});
+
+test('#298 Rust stub: T::default() on a derive(Default) type adds no fn default to its impl', has268, () => {
+  const d = rs288('use hist::geo::Cfg;\n\n' + t288('    let c = Cfg::default();\n    assert_eq!(c.size(), 0);'), {
+    'src/lib.rs': 'pub mod geo;\n',
+    'src/geo.rs': '#[derive(Debug, Default)]\npub struct Cfg;\n\nimpl Cfg {\n    pub fn other(&self) -> i64 { 1 }\n}\n',
+  });
+  stub288(d);
+  const g = fs.readFileSync(path.join(d, 'src/geo.rs'), 'utf8');
+  assert.doesNotMatch(g, /fn default/, g);
+  assert.match(g, /fn size/, g);
+});
+
+test('#298 Rust stub: an associated const on an existing enum is not added as a variant', has268, () => {
+  const d = rs288('use hist::Mode;\n\n' + t288('    assert_eq!(Mode::MAX, 3);\n    assert_eq!(Mode::A, Mode::A);'), {
+    'src/lib.rs': '#[derive(Debug, PartialEq)]\npub enum Mode {\n    A,\n}\n',
+  });
+  const { lib } = stub288(d);
+  assert.doesNotMatch(lib, /^\s*MAX\b/m, lib);
+});

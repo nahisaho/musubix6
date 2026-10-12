@@ -1982,7 +1982,8 @@ function stubRust(testPath, src, dir, made) {
   // associated fns `Type::new(..)` and instance methods `v.m(..)` on `let v = Type::new(..)` (#103)
   const rustImpl = (n, gn = null, crate_ = ownPkg) => {
     const tf = '(?:::<[^;(){}]*?>)?';
-    const assoc = [...new Set([...src.matchAll(new RegExp(`(?<![\\w:])${n}${tf}::([a-z_]\\w*)\\s*\\(`, 'g'))].map((m) => m[1]))];
+    // `T::default()` is provided by derive(Default) on our own non-generic stubs
+    const assoc = [...new Set([...src.matchAll(new RegExp(`(?<![\\w:])${n}${tf}::([a-z_]\\w*)\\s*\\(`, 'g'))].map((m) => m[1]))].filter((k) => k !== 'default' || gn);
     const vars = [...new Set([...src.matchAll(new RegExp(`\\blet\\s+(?:mut\\s+)?(\\w+)\\s*(?::[^=]+)?=\\s*${n}${tf}::[a-z_]\\w*\\s*\\(`, 'g'))].map((m) => m[1]))];
     const chain = chainsOf(n);
     const inst = [...new Set([...vars.flatMap((v) => [...src.matchAll(new RegExp(`(?<![\\w.])${v}\\s*\\.\\s*([a-z_]\\w*)\\s*\\(`, 'g'))].map((m) => m[1])), ...chain.all])].filter((k) => !assoc.includes(k));
@@ -2001,7 +2002,7 @@ function stubRust(testPath, src, dir, made) {
     return `\nimpl${gn ? `<${gn.join(', ')}>` : ''} ${n}${gn ? `<${gn.join(', ')}>` : ''} {\n${[...assoc.map((k) => sig(k, false)), ...inst.map((k) => sig(k, true))].join('\n')}}\n`;
   };
   const typeStub = (n, crate_ = ownPkg) => {
-    const vs = [...new Set([...src.matchAll(new RegExp(`\\b${n}::([A-Z]\\w*)`, 'g'))].map((m) => m[1]))];
+    const vs = [...new Set([...src.matchAll(new RegExp(`\\b${n}::([A-Z]\\w*)`, 'g'))].map((m) => m[1]).filter((v) => !/^[A-Z][A-Z0-9_]+$/.test(v)))];
     if (vs.length) {
       const fty = (e) => /^-?\d+\.\d*/.test(e) ? 'f64' : /^-?\d+$/.test(e) ? 'i64' : /^&?"/.test(e) || /String::from|\.to_string\(|\.to_owned\(|\.into\(\)/.test(e) ? 'String' : /^(true|false)$/.test(e) ? 'bool' : /^vec!/.test(e) ? 'Vec<i64>' : 'i64';
       // `N::V(a, b)` => tuple variant, `N::V { x: 1 }` => struct variant, typed from the values (#268)
@@ -2035,6 +2036,7 @@ function stubRust(testPath, src, dir, made) {
     for (const x of (m[3].startsWith('{') ? m[3].slice(1, -1).split(',') : [m[3]]).map((y) => y.trim().split(/\s+as\s+/)[0])) if (/^[A-Z]\w*$/.test(x)) typePath.set(x, { crate: m[1], mods: m[2] });
   }
   const modNames = new Set();
+  let preOut;
   const freshMods = new Set();
   const srcNoUse = src.replace(/^\s*use\s[^;]*;/gm, '');
   // inline paths `krate::geo::Point { .. }` / `krate::util::f(..)` count as imports of that item (#130)
@@ -2044,6 +2046,7 @@ function stubRust(testPath, src, dir, made) {
   for (const m of (src + '\n' + inline + '\n' + modUse).matchAll(/^\s*use\s+(\w+)((?:::[a-z_]\w*)+)::(\{[^}]*\}|\w+)\s*;/gm)) {
     const croot = crates.get(m[1]);
     if (!croot) continue;
+    preOut ??= probe('cargo', ['test', '--no-run', '--offline', '--test', path.basename(testPath, '.rs')], root);
     const items = (m[3].startsWith('{') ? m[3].slice(1, -1).split(',') : [m[3]]).map((x) => x.trim().split(/\s+as\s+/)[0]).filter((x) => /^[A-Za-z_]\w*$/.test(x) && x !== 'self' && new RegExp(`\\b${x}\\b`).test(srcNoUse));
     if (!items.length) continue;
     const lib = path.join(croot, 'src/lib.rs');
@@ -2074,12 +2077,15 @@ function stubRust(testPath, src, dir, made) {
       const text = fs.readFileSync(last, 'utf8');
       // items inside an inline #[cfg(test)] module do not exist in non-test builds
       const nonTest = (() => { let t = text, at; while ((at = /#\[cfg\(test\)\]\s*(?:pub\s+)?mod\s+\w+\s*\{/.exec(t))) { const m_ = maskBraces(t, true); let depth = 0, k = at.index + at[0].length - 1; for (; k < m_.length; k++) { if (m_[k] === '{') depth++; else if (m_[k] === '}' && !--depth) break; } t = t.slice(0, at.index) + t.slice(k + 1); } return t; })();
-      const miss = items.filter((x) => !new RegExp(`\\b(?:struct|enum|fn|const|static|type|trait|use|mod)\\s+(?:[\\w:{},\\s]*\\b)?${x}\\b`).test(nonTest));
+      // a module that include!s a file or invokes macros may define the type itself: only what cargo reports missing is added
+      const opaque = /\binclude!\s*\(|^\s*(?!macro_rules\b)\w+!\s*[({[]/m.test(nonTest);
+      const miss = items.filter((x) => !new RegExp(`\\b(?:struct|enum|fn|const|static|type|trait|use|mod)\\s+(?:[\\w:{},\\s]*\\b)?${x}\\b`).test(nonTest) && (!opaque || new RegExp(`\`${x}\``).test(preOut)));
       // methods a later test needs are added to the existing inherent `impl Type {` (#268)
       const grown = items.filter((x) => /^[A-Z]/.test(x) && !miss.includes(x)).reduce((t, x) => {
         const at = new RegExp(`^impl\\s+${x}\\s*\\{`, 'm').exec(t);
         if (!at) return t;
-        const add_ = [...rustImpl(x).matchAll(/^    pub fn (\w+)[^\n]*\{\n(?:        [^\n]*\n)+    \}\n/gm)].filter((f) => !new RegExp(`\\bfn\\s+${f[1]}\\b`).test(t)).map((f) => f[0]);
+        const hasDefault = new RegExp(`derive\\([^)]*\\bDefault\\b[^)]*\\)\\]\\s*(?:pub\\s+)?(?:struct|enum)\\s+${x}\\b|\\bimpl\\s+Default\\s+for\\s+${x}\\b`).test(t);
+        const add_ = [...rustImpl(x).matchAll(/^    pub fn (\w+)[^\n]*\{\n(?:        [^\n]*\n)+    \}\n/gm)].filter((f) => !new RegExp(`\\bfn\\s+${f[1]}\\b`).test(t) && !(f[1] === 'default' && hasDefault)).map((f) => f[0]);
         if (!add_.length) return t;
         const m_ = maskBraces(t, true);
         let depth = 0, k = at.index + at[0].length - 1;
@@ -2119,6 +2125,15 @@ function stubRust(testPath, src, dir, made) {
     for (const [, v, e] of missingVariants) {
       const at = files.map((f) => ({ f, text: fs.readFileSync(f, 'utf8') })).map((x) => ({ ...x, m: new RegExp(`\\benum\\s+${e}\\s*\\{`).exec(x.text) })).find((x) => x.m);
       if (!at) { variantNotes.push(`variant ${e}::${v} not added: enum ${e} is not defined in the project sources — add it by hand`); continue; }
+      // associated consts / fns of an existing enum are impl items, never variants
+      if (/^[A-Z][A-Z0-9_]+$/.test(v) || /^[a-z_]/.test(v)) {
+        const item = /^[a-z_]/.test(v) ? new RegExp(`^    pub fn ${v}[^\\n]*\\{\\n(?:        [^\\n]*\\n)+    \\}\\n`, 'm').exec(rustImpl(e))?.[0] : `    pub const ${v}: i64 = 0;\n`;
+        if (!item || new RegExp(`\\b(?:fn|const)\\s+${v}\\b`).test(at.text)) { variantNotes.push(`${e}::${v} is an associated item, not a variant: add it by hand`); continue; }
+        fs.writeFileSync(at.f, at.text.replace(/\n*$/, '\n') + `\nimpl ${e} {\n${item}}\n`);
+        made.push(rel(at.f));
+        variantNotes.push(`added associated item ${e}::${v} to ${rel(at.f)}`);
+        continue;
+      }
       const line = new RegExp(`^    ${v}\\b[^\\n]*,\\n`, 'm').exec(typeStub(e))?.[0];
       const mm = maskBraces(at.text, true);
       let depth = 0, k = at.m.index + at.m[0].length - 1;
