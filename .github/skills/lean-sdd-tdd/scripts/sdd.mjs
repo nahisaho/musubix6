@@ -3612,7 +3612,10 @@ function setupOrigin(line, testPath, id, text = '') {
     const plain = (v) => ({ test: (l) => plainRe(v).test(l) && !feeds(v, l) && ![...l.replace(ASSERT_KW, '(').matchAll(/[\w$]\s*\(([^()]*)\)/g)].some((c) => !plainRe(v).test(c[1]) && !new RegExp(`(?<![\\w$])${esc(v)}(?![\\w$])`).test(c[1])) });
     // a variable computed from the act result (`got = [t for t in toks ...]`, `x = obj(r)`) that is asserted makes the act the asserted subject (#142)
     for (let k = 0; k < 2; k++) {
-      const derived = bl.filter((_, i) => !bf[i]).flatMap((l) => { const m = /^\s*(?:(?:const|let|var)\s+)?([A-Za-z_$][\w$]*)\s*(?::[^=]+)?=(?!=)(.*)$/.exec(l); return m && vars.some((v) => plainRe(v).test(m[2])) ? [m[1]] : []; });
+      const derived = bl.filter((_, i) => !bf[i]).flatMap((l) => { const m = /^\s*(?:(?:const|let|var)\s+)?([A-Za-z_$][\w$]*)\s*(?::[^=]+)?=(?!=)(.*)$/.exec(l); return m && vars.some((v) => plainRe(v).test(m[2])) ? [m[1]] : []; })
+        // `const [a, b] = r` / `const { a, b: c } = r` destructure the stored result; `r.forEach((x) => ...)` binds its elements
+        .concat(bl.flatMap((l) => { const m = /^\s*(?:const|let|var)\s+[\[{]([^\]}=]*)[\]}]\s*=(?!=)(.*)$/.exec(l); return m && vars.some((v) => plainRe(v).test(m[2])) ? m[1].split(',').map((n) => /([A-Za-z_$][\w$]*)\s*$/.exec(n.replace(/=.*$/, ''))?.[1]).filter(Boolean) : []; }))
+        .concat(bl.flatMap((l) => vars.flatMap((v) => { const m = new RegExp(`(?<![\\w$])${esc(v)}\\.\\w+\\(\\s*(?:async\\s*)?\\(?\\s*([A-Za-z_$][\\w$]*(?:\\s*,\\s*[A-Za-z_$][\\w$]*)*)\\s*\\)?\\s*=>`).exec(l); return m ? m[1].split(/\s*,\s*/) : []; })));
       vars = [...new Set([...vars, ...derived])];
     }
     vars = [...new Set([...vars, ...stateVars])];
@@ -3692,7 +3695,8 @@ function setupOrigin(line, testPath, id, text = '') {
   const stubLines = bl.filter((l, i) => re.test(l) && !bf[i]);
   // trait/operator methods are reached through sugar (`.parse()`, `a | b`, `.to_string()`, `{}`), never by name in the test (#299)
   const sugar = /^(?:from_str|from|into|try_from|try_into|to_string|fmt|eq|ne|cmp|partial_cmp|hash|clone|default|deref|index|neg|not|add|sub|mul|div|rem|bitor|bitand|bitxor|shl|shr|next|drop|as_ref|borrow|__\w+__)$/.test(x);
-  return ((!named || sugar) && !stubLines.length) || assertedResult(stubLines) || pairedAct(stubLines) ? null : x;
+  // a stub the test never names (default trait method / SUT internals delegating to it) is reached through the asserted call itself
+  return (!stubLines.length && !(named && !sugar && /is not a function|has no attribute/.test(line ?? ''))) || assertedResult(stubLines) || pairedAct(stubLines) ? null : x;
 }
 
 function goTestTarget(testPath, id) {

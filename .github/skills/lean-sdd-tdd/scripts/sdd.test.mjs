@@ -7961,3 +7961,32 @@ test('#308 gate --changed: a changed `artifacts` file scopes in the project hold
   assert.match(o, /✓ cmd svc:ok/, o);
   assert.doesNotMatch(o, /root-owned data\/config changes/, o);
 });
+
+const r18cShapes = {
+  forEach: ['  const r = add(1, 2);', '  r.forEach((x) => assert.equal(x, 3));'],
+  destructure: ['  const r = add(1, 2);', '  const [a, b] = r;', '  assert.equal(a + b, 3);'],
+  objDestructure: ['  const r = add(1, 2);', '  const { total } = r;', '  assert.equal(total, 3);'],
+};
+for (const [name, lines] of Object.entries(r18cShapes)) {
+  test(`#306 r18c shape ${name}`, () => {
+    const d = project();
+    sdd(d, 'approve', 'record', 'calc', '--by', 'tester');
+    fs.writeFileSync(path.join(d, 'add.test.mjs'), ["import { test } from 'node:test';", "import assert from 'node:assert/strict';", "import { add } from './add.mjs';", '/** @id TEST-CALC-001 @verifies REQ-CALC-001 */', "test('TEST-CALC-001 adds', () => {", ...lines, '});', ''].join('\n'));
+    fs.writeFileSync(path.join(d, 'add.mjs'), "export const add = () => { throw new Error('not implemented: add'); };\n");
+    const w = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
+    assert.equal(w.code, 0, w.out);
+    assert.doesNotMatch(w.out, /\[weak\]|setup call/, w.out);
+  });
+}
+
+test('#306 r18c Rust: default trait method delegating to a stubbed required method is not setup', has268, () => {
+  const d = rs268({
+    'src/lib.rs': 'pub trait Mk: Sized {\n    fn update(v: i64) -> Self;\n    fn of(v: i64) -> Self {\n        Self::update(v)\n    }\n}\n#[derive(Debug, PartialEq)]\npub struct P(pub i64);\nimpl Mk for P {\n    fn update(_v: i64) -> Self {\n        unimplemented!("update")\n    }\n}\n',
+    'tests/m.rs': 'use hist::{Mk, P};\n\n// @id TEST-H-001 @verifies REQ-H-001\n#[test]\nfn test_h_001() {\n    let p = P::of(3);\n    assert_eq!(p, P(3));\n}\n',
+  });
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ testCmd: ['cargo', 'test', '--test', 'm', '{idu}'], checks: [] }));
+  sdd(d, 'approve', 'record', 'h', '--by', 'tester');
+  const w = sdd(d, 'tdd', 'red', 'TEST-H-001');
+  assert.equal(w.code, 0, w.out);
+  assert.doesNotMatch(w.out, /\[weak\]|setup call/, w.out);
+});
