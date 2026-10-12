@@ -117,3 +117,7 @@ node --test .github/skills/lean-sdd-tdd/scripts/sdd.test.mjs
 [nahisaho/kotonoha](https://github.com/nahisaho/kotonoha) (MIT). The prose
 diagnostics use [GiNZA](https://github.com/megagonlabs/ginza) (MIT),
 [spaCy](https://spacy.io/) (MIT) and SudachiPy/SudachiDict (Apache-2.0).
+
+## License
+
+[MIT](LICENSE)

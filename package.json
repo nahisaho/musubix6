@@ -12,6 +12,7 @@
     "README.md",
     "README-ja.md"
   ],
+  "license": "MIT",
   "engines": {
     "node": ">=20"
   },
