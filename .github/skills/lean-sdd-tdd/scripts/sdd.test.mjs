@@ -7531,3 +7531,36 @@ test('#295 batch tdd red prints an identical compiler tail once', () => {
   const out = sdd(d, 'tdd', 'red', 'TEST-A-001', 'TEST-A-002').out;
   assert.equal(out.split('error TS2304').length - 1, 1, out);
 });
+
+const r15b = (src, body) => {
+  const d = r14c(src, body);
+  const r = sdd(d, 'tdd', 'red', 'TEST-W-001');
+  return r.out;
+};
+const STUBS15 = 'class C:\n    def push(self, v):\n        raise NotImplementedError("push")\n\n    def size(self):\n        return 0\n\n\ndef fill(x, out):\n    raise NotImplementedError("fill")\n\n\ndef run(x):\n    raise NotImplementedError("run")\n';
+
+test('#299 out-parameter act: the stub filling an out argument that is asserted is the act', () => {
+  const out = r15b(STUBS15, 'buf = []\n    fill(3, buf)\n    n = 1\n    assert buf == [3]');
+  assert.doesNotMatch(out, /\[weak\]|setup call/, out);
+});
+
+test('#299 mutator then bound query: the stub mutator is the act', () => {
+  const out = r15b(STUBS15, 'c = C()\n    c.push(1)\n    n = c.size()\n    assert n == 1');
+  assert.doesNotMatch(out, /\[weak\]|setup call/, out);
+});
+
+test('#299 local helper wrapper whose bare call precedes state assertions is the act', () => {
+  const d = mini(W11SPEC(1), {
+    'src/m.py': STUBS15,
+    'tests/test_w.py': 'import sys\nsys.path.insert(0, "src")\nfrom m import *\n\n\ndef go(out):\n    fill(1, out)\n\n\n# @id TEST-W-001 @verifies REQ-W-001\ndef test_w_001():\n    out = []\n    go(out)\n    assert out == [1]\n',
+  }, R14C_PY);
+  const out = sdd(d, 'tdd', 'red', 'TEST-W-001').out;
+  assert.doesNotMatch(out, /\[weak\]|setup call/, out);
+});
+
+test('#299 trait/operator sugar (.parse(), |, .to_string()) never names the stubbed from_str/bitor/fmt: not a setup call', () => {
+  for (const name of ['from_str', 'bitor', 'fmt']) {
+    const r = weak263(['  const v = "1".parse();', '  assert.equal(v, 1);'], `thread 'x' panicked at src/lib.rs:3:5:\nnot implemented: ${name}\n`);
+    assert.doesNotMatch(r.out, /\[weak\]|setup call/, `${name}\n${r.out}`);
+  }
+});

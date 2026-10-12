@@ -3389,6 +3389,11 @@ function setupOrigin(line, testPath, id, text = '') {
   const assertedResult = (hitLines) => {
     const WRAP = '(?:(?:list|len|sorted|set|tuple|dict|str|int|float|sum|bool|String|Number|JSON\\.stringify|Object\\.\\w+|Array\\.from)\\(\\s*)*';
     // single, tuple-unpacked (`a, b = f()` / `let (a, b) = f()`) and Go `:=` targets (#110)
+    // a bare `fill(x, out)` / `c.push(v)` statement acts on its arguments and receiver: asserting them asserts the call (out-parameter, mutator-then-query)
+    const bareStmt = (l) => /^\s*(?:await\s+)?(?:\(new\s+[\w\\]+\(.*?\)\))?(?:[\w$.]|->|::)+\s*\(.*\)\s*;?\s*$/.test(l) && !/^\s*(?:if|for|while|with|return|assert\w*|expect\w*)\b/.test(l);
+    const KW = /^(?:None|True|False|self|this|null|nil|true|false|undefined|mut|ref)$/;
+    const stateVars = hitLines.filter(bareStmt).flatMap((l) => [...(/\(([^()]*)\)/.exec(l)?.[1] ?? '').matchAll(/(?<![\w$.])[A-Za-z_$][\w$]*(?![\w$(])/g)].map((m) => m[0]).concat(/^\s*(?:await\s+)?([A-Za-z_$][\w$]*)(?:\.|->)/.exec(l)?.[1] ?? []).filter((v) => !KW.test(v)));
+    const recvVars = hitLines.filter(bareStmt).flatMap((l) => /^\s*(?:await\s+)?([A-Za-z_$][\w$]*)(?:\.|->)/.exec(l)?.[1] ?? []).filter((v) => !KW.test(v));
     let vars = hitLines.flatMap((l) => { const m = /^\s*(?:(?:const|let|var)\s+(?:mut\s+)?|(?:final\s+)?(?:[A-Z][\w.<>\[\],?]*|int|long|double|float|boolean|char|byte|short)\s+)?[\[{(]?\s*([A-Za-z_$][\w$]*(?:\s*,\s*(?:mut\s+)?[A-Za-z_$][\w$]*)*)\s*[\])}]?\s*(?::(?!=)[^=]+)?:?=(?!=)/.exec(l) ; return m ? m[1].split(/\s*,\s*(?:mut\s+)?/).filter((v) => v !== '_') : []; });
     // `with X(..) as c:` binds the context manager; only its plain use (not `c.m(..)`) asserts it
     const withVars = hitLines.flatMap((l) => { const m = /\bwith\s+.*\bas\s+([A-Za-z_]\w*)\s*:/.exec(l); return m ? [m[1]] : []; });
@@ -3408,14 +3413,15 @@ function setupOrigin(line, testPath, id, text = '') {
       const derived = bl.filter((_, i) => !bf[i]).flatMap((l) => { const m = /^\s*(?:(?:const|let|var)\s+)?([A-Za-z_$][\w$]*)\s*(?::[^=]+)?=(?!=)(.*)$/.exec(l); return m && vars.some((v) => plainRe(v).test(m[2])) ? [m[1]] : []; });
       vars = [...new Set([...vars, ...derived])];
     }
+    vars = [...new Set([...vars, ...stateVars])];
     const goIf = (v) => new RegExp(`\\bif\\b[^{]*?(?<![\\w$.])${v.replace(/[$]/g, '\\$&')}(?![\\w$])`);
-    return vars.some((v) => body.some((l) => subject(v).test(l) || goIf(v).test(l) || plain(v).test(l))) || withVars.some((v) => body.some((l) => plain(v).test(l)));
+    return vars.some((v) => body.some((l) => subject(v).test(l) || goIf(v).test(l) || plain(v).test(l))) || recvVars.some((v) => body.some((l) => new RegExp(`(?<![\\w$.])${esc(v)}(?:\\.|->)[\\w$]+\\s*\\(`).test(l))) || withVars.some((v) => body.some((l) => plain(v).test(l)));
   };
   // `save(p, x)` then `got = load(p); assert got == x`: a bare stub call that shares an argument with the call whose bound result is asserted is the act (#283)
   const pairedAct = (hitLines) => {
     const bl = testBody(testPath, id), bf = mark(bl);
     return hitLines.filter(isBareAct).some((h) => {
-      const args = (/\(([^()]*)\)/.exec(h)?.[1] ?? '').match(/(?<![\w$.])[A-Za-z_$][\w$]*/g) ?? [];
+      const args = [...((/\(([^()]*)\)/.exec(h)?.[1] ?? '').match(/(?<![\w$.])[A-Za-z_$][\w$]*/g) ?? []), ...(/^\s*(?:await\s+)?([A-Za-z_$][\w$]*)(?:\.|->)/.exec(h)?.[1] ?? [])];
       return bl.some((l, i) => !bf[i] && !re.test(l) && /[\w$]\s*\(/.test(l) && args.some((a) => new RegExp(`(?<![\\w$.])${a.replace(/[$]/g, '\\$&')}(?![\\w$])`).test(l)) && assertedResult([l]));
     });
   };
@@ -3482,7 +3488,9 @@ function setupOrigin(line, testPath, id, text = '') {
   // a bare call statement (`eng.run()`, `run_with_retry(..)`) directly before the first assertion is the act, its side effect is asserted (#124)
   if (lastStmt && re.test(lastStmt.l) && isBareAct(lastStmt.l)) return null;
   const stubLines = bl.filter((l, i) => re.test(l) && !bf[i]);
-  return (!named && !stubLines.length) || assertedResult(stubLines) || pairedAct(stubLines) ? null : x;
+  // trait/operator methods are reached through sugar (`.parse()`, `a | b`, `.to_string()`, `{}`), never by name in the test (#299)
+  const sugar = /^(?:from_str|from|into|try_from|try_into|to_string|fmt|eq|ne|cmp|partial_cmp|hash|clone|default|deref|index|neg|not|add|sub|mul|div|rem|bitor|bitand|bitxor|shl|shr|next|drop|as_ref|borrow|__\w+__)$/.test(x);
+  return ((!named || sugar) && !stubLines.length) || assertedResult(stubLines) || pairedAct(stubLines) ? null : x;
 }
 
 function goTestTarget(testPath, id) {
