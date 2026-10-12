@@ -6241,3 +6241,31 @@ test('#245 Go: `if err := sut(); err != nil` treats the initialised call as asse
   assert.match(r.out, /RED ok/, r.out);
   assert.doesNotMatch(r.out, /setup call|\[weak\]/, r.out);
 });
+
+test('#241 gate --changed: dependsOn is transitive across projects', () => {
+  const d = mini('---\nfeature: r\ntier: T1\n---\n| REQ-R-001 | x shall work. | TEST-R-001 |\n', { 'contract/c.json': '{}', 'lib/a.txt': 'a', 'app/b.txt': 'b' });
+  const cp = path.join(d, '.sdd/config.json');
+  const c = JSON.parse(fs.readFileSync(cp, 'utf8'));
+  c.projects = [
+    { root: 'lib', dependsOn: ['contract'], testCmd: ['true'], checks: [{ name: 'test', cmd: ['true'] }] },
+    { root: 'app', dependsOn: ['lib'], testCmd: ['true'], checks: [{ name: 'test', cmd: ['true'] }] },
+  ];
+  fs.writeFileSync(cp, JSON.stringify(c));
+  spawnSync('git', ['add', '-A'], { cwd: d });
+  spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'i'], { cwd: d });
+  fs.writeFileSync(path.join(d, 'contract/c.json'), '{"a":1}');
+  const r = sdd(d, 'gate', '--changed');
+  assert.doesNotMatch(r.out, /cmd app:test: no changed files/, r.out);
+  assert.doesNotMatch(r.out, /cmd lib:test: no changed files/, r.out);
+});
+
+test('#242 impact traverses non-code artifacts declared in config.artifacts', () => {
+  const spec = '---\nfeature: r\ntier: T1\n---\n| REQ-R-001 | x shall work. | TEST-R-001 |\n';
+  const d = mini(spec, { 'contract/c.json': '{"a":1}', 'src/a.ts': '// @id CODE-R-001 @implements REQ-R-001\nexport const a = 1;\n' });
+  const cp = path.join(d, '.sdd/config.json');
+  const c = JSON.parse(fs.readFileSync(cp, 'utf8'));
+  c.artifacts = { 'contract/c.json': ['src/a.ts'] };
+  fs.writeFileSync(cp, JSON.stringify(c));
+  const j = JSON.parse(sdd(d, 'impact', 'contract/c.json', '--json').out);
+  assert.ok(j.reachedFiles.includes('src/a.ts'), JSON.stringify(j));
+});

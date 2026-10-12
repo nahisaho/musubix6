@@ -4207,7 +4207,13 @@ function cmdGate() {
     const xf = [...new Set(x.map((o) => o.feature))];
     if (x.length) lines.push(`! changed files/specs are imported by other feature(s): ${xf.join(', ')} (${x.slice(0, 4).map((o) => o.req).join(', ')}${x.length > 4 ? ', …' : ''}) — their evidence is not re-checked here; run a full gate (or \`impact <file>\`)`);
   }
-  const allChecks = [...(cfg.checks ?? []), ...(cfg.projects ?? []).flatMap((p) => (p.checks ?? []).map((c) => ({ ...c, name: `${p.root}:${c.name}`, cwd: p.root, dependsOn: p.dependsOn })))];
+  // dependsOn is transitive: a project depending on another project's root (or a path under it) also depends on that project's dependsOn (#241)
+  const depClosure = (p) => {
+    const out = new Set((p.dependsOn ?? []).map(normDep));
+    for (let grew = true; grew;) { grew = false; for (const q of cfg.projects ?? []) { const qr = normDep(q.root); if (q !== p && [...out].some((x) => x === qr || x.startsWith(qr + '/'))) for (const d of q.dependsOn ?? []) if (!out.has(normDep(d))) { out.add(normDep(d)); grew = true; } } }
+    return [...out];
+  };
+  const allChecks = [...(cfg.checks ?? []), ...(cfg.projects ?? []).flatMap((p) => (p.checks ?? []).map((c) => ({ ...c, name: `${p.root}:${c.name}`, cwd: p.root, dependsOn: depClosure(p) })))];
   let sharedHinted = false;
   for (const p of cfg.projects ?? []) for (const dp of p.dependsOn ?? []) if (!fs.existsSync(path.join(ROOT, normDep(dp)))) lines.push(`! config: project ${p.root} dependsOn "${dp}" does not exist on disk — contract changes will not trigger its checks (typo?)`);
   if (flags['no-run']) { lines.push('! commands: SKIPPED (--no-run) — result is INCOMPLETE'); incomplete = true; }
@@ -4215,7 +4221,7 @@ function cmdGate() {
   // root-owned files no project depends on: hint once, also when the root has no checks of its own (#67)
   if (flags.changed && (cfg.projects ?? []).length) {
     const pr = cfg.projects.map((p) => p.root.replace(/\/$/, '') + '/');
-    const coveredBy = (f) => cfg.projects.some((p) => (p.dependsOn ?? []).some((d) => { const x = normDep(d); return f === x || f.startsWith(x + '/'); }));
+    const coveredBy = (f) => cfg.projects.some((p) => depClosure(p).some((d) => { const x = normDep(d); return f === x || f.startsWith(x + '/'); }));
     const dataOnly = [...changedFiles()].filter((f) => !f.startsWith('.sdd/') && !pr.some((r) => f.startsWith(r)) && !EXT.test(f) && !coveredBy(f));
     if (dataOnly.length) { sharedHinted = true; lines.push(`! root-owned data/config changes: ${dataOnly.slice(0, 3).join(', ')}${dataOnly.length > 3 ? ', …' : ''} — if a project reads these, add the path to its \`dependsOn\` in .sdd/config.json so that project's checks run too`); }
   }
@@ -4614,6 +4620,8 @@ function importRev() {
   }
   // an implementation file is reached by whatever includes its header
   for (const c of cImpl) for (const h of files) if (/\.h(pp|h)?$/.test(h) && cPair(h, c)) for (const imp of rev.get(h) ?? []) add(c, imp);
+  // non-code artifacts declared in .sdd/config.json `artifacts` ({"contract/x.json": ["src/a.ts"]} = files that depend on it) are impact edges (#242)
+  for (const [a, users] of Object.entries(loadConfig().artifacts ?? {})) for (const u of [].concat(users)) { const t = normDep(a), f = normDep(u); if (t !== f && fs.existsSync(path.join(ROOT, t)) && fs.existsSync(path.join(ROOT, f))) { if (!rev.has(t)) rev.set(t, []); if (!rev.get(t).includes(f)) rev.get(t).push(f); } }
   return rev;
 }
 
