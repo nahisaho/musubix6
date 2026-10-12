@@ -3613,7 +3613,9 @@ function cmdTdd() {
   const cfg = loadConfig();
   const proj = projectFor(t.path);
   const fileArg = proj ? path.posix.relative(proj.root, t.path) : t.path;
-  const cmd = (proj?.testCmd ?? cfg.testCmd).map((a) => a.replaceAll('{id}', id).replaceAll('{idu}', testName(t.path, id)).replaceAll('{IDU}', id.toUpperCase().replaceAll('-', '_')).replaceAll('{file}', fileArg));
+  const baseCmd = proj?.testCmd ?? cfg.testCmd;
+  if (!Array.isArray(baseCmd)) { out(`REFUSED: no testCmd for ${proj ? `project ${proj.root}` : 'this project'} (set projects[].testCmd or top-level testCmd in ${rel(CONFIG)})`); return 2; }
+  const cmd = baseCmd.map((a) => a.replaceAll('{id}', id).replaceAll('{idu}', testName(t.path, id)).replaceAll('{IDU}', id.toUpperCase().replaceAll('-', '_')).replaceAll('{file}', fileArg));
   let selectedName = null;
   let dotnetReport = null, exactDotnetSelection = false, genericDotnetSelection = false;
   if (/\.rs$/.test(t.path) && cmd[0] === 'cargo' && cmd[1] === 'test') {
@@ -3916,7 +3918,7 @@ function cmdTrace() {
   }
   t = applyBaseline(t);
   out(`TRACE ${t.errors.length ? 'FAIL' : 'OK'}: ${[...t.reqs.values()].filter((r) => !r.deferred).length} REQ${[...t.reqs.values()].some((r) => r.deferred) ? ` (+${[...t.reqs.values()].filter((r) => r.deferred).length} deferred)` : ''}, ${ents.size} annotated entities, ${t.errors.length} errors, ${t.warnings.length} warnings`);
-  [...t.errors.slice(0, 10).map((e) => `  ✗ ${e}`), ...t.warnings.slice(0, 5).map((w) => `  ! ${w}`), ...(t.warnings.length > 5 ? [`  ! … +${t.warnings.length - 5} more`] : [])].forEach((l) => out(l));
+  [...t.errors.slice(0, flags.verbose ? t.errors.length : 10).map((e) => `  ✗ ${e}`), ...t.warnings.slice(0, flags.verbose ? t.warnings.length : 5).map((w) => `  ! ${w}`), ...(t.warnings.length > 5 && !flags.verbose ? [`  ! … +${t.warnings.length - 5} more`] : [])].forEach((l) => out(l));
   return t.errors.length ? 1 : 0;
 }
 
@@ -4293,7 +4295,7 @@ function cmdGate() {
       r = run(c.cmd, c.timeoutMs ?? cfg.timeoutMs ?? 120000, c.cwd);
     }
     if (r.timedOut) { add(false, `cmd ${c.name} TIMEOUT after ${(r.ms / 1000).toFixed(0)}s ${scoped ? '— narrow changedCmd (e.g. {changedTests} {changedScopes}) or raise changedTimeoutMs; run full gate (no --changed) before merge' : '— raise timeoutMs in .sdd/config.json'}`); continue; }
-    if (r.exit === 0 && (NO_PASSED.test(r.text) || pytestNoExecution(r.text) || noExecution(r.text))) { lines.push(`! cmd ${c.name}: all tests skipped/todo/xfail — INCOMPLETE, no passing assertions`); incomplete = true; continue; }
+    if (r.exit === 0 && (NO_PASSED.test(r.text) || pytestNoExecution(r.text) || noExecution(r.text))) { lines.push(`! cmd ${c.name}: ${ZERO_TESTS.test(r.text) && !NO_PASSED.test(r.text) ? 'no tests found or ran' : 'all tests skipped/todo/xfail'} — INCOMPLETE, no passing assertions`); incomplete = true; continue; }
     if (r.exit !== 0 && ZERO_TESTS.test(r.text) && !RAN_TESTS.test(r.text)) { lines.push(`! cmd ${c.name}: no tests exist yet (runner exit ${r.exit}) — INCOMPLETE, not a failure`); incomplete = true; continue; }
     add(r.exit === 0, `cmd ${c.name} (${(r.ms / 1000).toFixed(1)}s)`, r.exit === 0 ? [] : failTail(r.text, 8).split('\n'));
   }
@@ -4729,6 +4731,10 @@ if (fn && badFlags.length) {
 if (!fn) {
   out('usage: sdd.mjs init | review template <feature|--feature f> | review check <file> --feature <f> (or positional feature) | approve prepare|record <feature> | guard | tdd red|green|refactor <TEST-ID> | tdd stub <TEST-ID> | tdd check | trace [--baseline] | gate [--changed] [--no-run] | status | plan | impact <REQ|TEST|CODE|file> [--json]   [--root dir]\n  tdd red: tdd red --characterization "<reason>" records a data-only/characterization test that cannot fail without implementation (weak Red); --expect <text> requires that text in the failure; --allow-setup-red accepts a stub-in-setup Red; --retest "<reason>" re-records a weak Red after correcting a wrong test expectation (needs a previous Red/Green and a changed test); --missing-module accepts a Red caused by the test own not-yet-created import (non-weak); approve record --by ai:<reviewer> needs --review <path|summary>');
   process.exit(2);
+}
+if (fn && flags.help && !['impact'].includes(pos[0])) {
+  out(`usage: sdd.mjs ${pos[0]} ${{ gate: '[--changed] [--no-run] [--verbose]', trace: '[--baseline] [--verbose]' }[pos[0]] ?? '(see sdd.mjs --help for all commands)'}`.replace('sdd.mjs gate', 'gate').replace('sdd.mjs trace', 'trace'));
+  process.exit(0);
 }
 try { process.exit(fn() ?? 0); }
 catch (error) {

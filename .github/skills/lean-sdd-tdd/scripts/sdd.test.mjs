@@ -6314,3 +6314,44 @@ test('#242 impact traverses non-code artifacts declared in config.artifacts', ()
   const j = JSON.parse(sdd(d, 'impact', 'contract/c.json', '--json').out);
   assert.ok(j.reachedFiles.includes('src/a.ts'), JSON.stringify(j));
 });
+
+test('#258 gate --help prints usage and does not run the gate', () => {
+  const d = mini('---\nfeature: r\ntier: T1\n---\n| REQ-R-001 | x shall work. | TEST-R-001 |\n');
+  const r = sdd(d, 'gate', '--help');
+  assert.equal(r.code, 0, r.out);
+  assert.match(r.out, /usage: gate/, r.out);
+  assert.doesNotMatch(r.out, /SDD GATE/, r.out);
+});
+
+test('#258 trace --verbose lists every warning', () => {
+  const rows = Array.from({ length: 9 }, (_, i) => `| REQ-R-00${i + 1} | x shall work. | TEST-R-00${i + 1} |`).join('\n');
+  const d = mini(`---\nfeature: r\ntier: T1\n---\n${rows}\n`);
+  const brief = sdd(d, 'trace').out;
+  const full = sdd(d, 'trace', '--verbose').out;
+  assert.match(brief, /more/, brief);
+  assert.doesNotMatch(full, /… \+\d+ more/, full);
+  assert.ok(full.split('\n').length > brief.split('\n').length, full);
+});
+
+test('#258 tdd red without testCmd gives a clear error, not a crash', () => {
+  const d = mini('---\nfeature: r\ntier: T1\n---\n| REQ-R-001 | x shall work. | TEST-R-001 |\n', { 'a.test.mjs': '// @id TEST-R-001 @verifies REQ-R-001\nimport {test} from "node:test";\ntest("TEST-R-001 x", () => {});\n' });
+  const cp = path.join(d, '.sdd/config.json');
+  const c = JSON.parse(fs.readFileSync(cp, 'utf8'));
+  delete c.testCmd;
+  fs.writeFileSync(cp, JSON.stringify(c));
+  const r = sdd(d, 'tdd', 'red', 'TEST-R-001');
+  assert.doesNotMatch(r.out, /TypeError|at .*sdd\.mjs/, r.out);
+  assert.match(r.out, /no testCmd/, r.out);
+});
+
+test('#258 gate: a check that ran zero tests does not claim tests were skipped', () => {
+  const d = mini('---\nfeature: r\ntier: T1\n---\n| REQ-R-001 | x shall work. | TEST-R-001 |\n');
+  const cp = path.join(d, '.sdd/config.json');
+  const c = JSON.parse(fs.readFileSync(cp, 'utf8'));
+  c.checks = [{ name: 'test', cmd: ['node', '-e', 'console.log("No tests found")'] }];
+  fs.writeFileSync(cp, JSON.stringify(c));
+  const r = sdd(d, 'gate');
+  assert.match(r.out, /cmd test: /, r.out);
+  assert.doesNotMatch(r.out, /all tests skipped/, r.out);
+  assert.match(r.out, /no tests (found|ran)/i, r.out);
+});
