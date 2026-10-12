@@ -7870,3 +7870,11 @@ test('#298 Rust stub: UFCS trait calls (`<T as Trait>::f(..)`, `Trait::f(&x)`) g
   assert.match(lib, /impl Hasher for Crc/, lib);
   ok17(out);
 });
+
+test('#298 Rust stub: an empty-collection / None argument is typed instead of an uninferable generic `A0`', has268, () => {
+  const d = rs288('use hist::{checksum, pick};\n\n' + t288('    assert_eq!(checksum(&[]), 0);\n    assert_eq!(checksum(&[1u16, 2]), 3);\n    assert_eq!(pick(None, 1), 2);'));
+  const { out, lib } = stub288(d);
+  assert.match(lib, /fn checksum\(_a0: &\[u16\]\)/, lib);
+  assert.match(lib, /fn pick<A1>\(_a0: Option<i64>, _a1: A1\)/, lib);
+  ok17(out);
+});

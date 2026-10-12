@@ -1958,6 +1958,24 @@ function stubRust(testPath, src, dir, made) {
     return args.every(Boolean) ? args : null;
   };
   const genNames = (args) => { const nt = args.filter((a) => !a.startsWith("'")).length; let t = 0; return args.map((a) => a.startsWith("'") ? (/^'(?:_|static)$/.test(a) ? "'a" : a) : nt === 1 ? 'T' : `T${t++}`); };
+  // parameter types a generic placeholder cannot infer: empty collections / `None` arguments take their element type from another call or a default
+  const argTypes = (pat) => {
+    const ms = maskBraces(srcNoUse, true), calls = [];
+    for (const m of ms.matchAll(new RegExp(`${pat}\\s*(?:::\\s*<[^;(){}]*?>)?\\s*\\(`, 'g'))) {
+      const open = m.index + m[0].length - 1, end = matchEnd(srcNoUse, open);
+      if (end > 0) calls.push(splitTop(srcNoUse.slice(open + 1, end)));
+    }
+    const width = Math.max(0, ...calls.map((c) => c.length));
+    return Array.from({ length: width }, (_, i) => {
+      const raws = calls.map((c) => c[i]).filter(Boolean);
+      const elemOf = (re) => { const o = raws.find((r) => re.test(r)); return o ? exprType(re.exec(o)[1].split(',')[0], ownPkg, false) : null; };
+      const empty = raws.find((r) => /^&\s*(?:mut\s+)?(?:\[\s*\]|vec!\s*\[\s*\]|Vec::new\(\s*\))$|^(?:vec!\s*\[\s*\]|Vec::new\(\s*\))$|^None$/.test(r));
+      if (!empty) return null;
+      if (empty === 'None') return `Option<${elemOf(/^Some\(([^]*)\)$/) ?? 'i64'}>`;
+      const el = elemOf(/^&?\s*(?:mut\s+)?(?:vec!)?\s*\[\s*([^\]\s][^]*)\]$/) ?? 'u8';
+      return /^&/.test(empty) ? (/vec!|Vec/.test(empty) ? `&Vec<${el}>` : `&[${el}]`) : `Vec<${el}>`;
+    });
+  };
   // `impl Trait for X { type A = ..; const C: T = ..; fn m(..) -> R { .. } }` in the test => the trait declaration (None when the test neither implements nor `dyn`s it)
   const ufcsImpls = [];
   const traitStub = (n) => {
@@ -2035,10 +2053,10 @@ function stubRust(testPath, src, dir, made) {
       // `Type::new(..)` is read from its own call, not from an earlier `Vec::new()`
       const qual = self ? null : callInfo(flat, `${n}(?:::\\s*<[^;(){}]*?>)?\\s*::\\s*${k}`);
       const c = qual && qual.argc !== undefined ? qual : callInfo(flat, k);
-      const g = gen(c), mid = self && chain.mids.has(k);
+      const pty = argTypes(self ? `(?<=[\\w)\\]]\\s*)\\.\\s*${k}` : `(?<![\\w.])${n}(?:::\\s*<[^;(){}]*?>)?\\s*::\\s*${k}`), g = gen(c).filter((_, i) => !pty[i]), mid = self && chain.mids.has(k);
       const assocRet = !self && !mid && !c.chained && c.ret !== 'result' ? rustRet(`(?<![\\w.])${n}(?:::\\s*<[^;(){}]*?>)?::${k}`, crate_) : null;
       const ret = mid ? 'Self' : (assocRet && !new RegExp(`^${n}\\b`).test(assocRet) ? assocRet : null) ?? (!self && !mid && c.ret && c.ret !== 'result' && T[c.ret] ? T[c.ret] : null) ?? (self ? rustRet(`(?<=[\\w)\\]]\\s*)\\.\\s*${k}`, crate_) ?? (c.ret?.startsWith('opt:') ? `Option<${c.ret.slice(4)}>` : T[c.ret ?? viaVar(`(?<![\\w])\\w+\\s*\\.\\s*${k}`)] ?? 'i64') : c.ret === 'result' ? 'Result<Self, String>' : 'Self');
-      return `    pub fn ${k}${g.length ? `<${g.join(', ')}>` : ''}(${[self ? (mid ? 'self' : needsMut(k) ? '&mut self' : '&self') : '', ...g.map((t, i) => `_a${i}: ${t}`)].filter(Boolean).join(', ')}) -> ${ret} {\n        ${!self && /^(new|default|with_\w+|from_\w+|create|empty)$/.test(k) ? (c.ret === 'result' ? `Ok(${mk})` : mk) : `unimplemented!("${n}::${k}")`}\n    }\n`;
+      return `    pub fn ${k}${g.length ? `<${g.join(', ')}>` : ''}(${[self ? (mid ? 'self' : needsMut(k) ? '&mut self' : '&self') : '', ...c.args.map((_, i) => `_a${i}: ${pty[i] ?? `A${i}`}`)].filter(Boolean).join(', ')}) -> ${ret} {\n        ${!self && /^(new|default|with_\w+|from_\w+|create|empty)$/.test(k) ? (c.ret === 'result' ? `Ok(${mk})` : mk) : `unimplemented!("${n}::${k}")`}\n    }\n`;
     };
     return `\nimpl${gn ? `<${gn.join(', ')}>` : ''} ${n}${gn ? `<${gn.join(', ')}>` : ''} {\n${[...assoc.map((k) => sig(k, false)), ...inst.map((k) => sig(k, true))].join('\n')}}\n`;
   };
@@ -2095,7 +2113,7 @@ function stubRust(testPath, src, dir, made) {
     const ga = fields.length ? null : genericArgs(n), gn = ga && genNames(ga);
     return fields.length ? `#[derive(Debug, Clone, Default, PartialEq)]\npub struct ${n} {\n${fields.map(([f, t]) => `    pub ${f}: ${t},\n`).join('')}}\n${rustImpl(n, null, crate_)}` : gn ? `#[derive(Debug, Clone, PartialEq)]\npub struct ${n}<${gn.join(', ')}>(pub std::marker::PhantomData<(${gn.map((x) => x.startsWith("'") ? `&${x} ()` : x).join(', ')},)>);\n${rustImpl(n, gn, crate_)}` : `#[derive(Debug, Clone, Default, PartialEq)]\npub struct ${n};\n${rustImpl(n, null, crate_)}`;
   };
-  const itemStub = (n, crate_ = ownPkg) => { if (/^[A-Z][A-Z0-9_]+$/.test(n)) { const str = new RegExp(`\\b${n}\\s*(?:\\.\\s*(?:len|chars|as_str|is_empty)\\b|[!=]=\\s*\"|,\\s*\")`).test(srcNoUse); return `pub const ${n}: ${str ? '&str' : 'i64'} = ${str ? '""' : '0'};\n`; } if (/^[A-Z]/.test(n)) return traitStub(n) ?? typeStub(n, crate_); const c = callInfo(src, n); c.ret ??= viaVar(`(?<![\\w.])(?:\\w+::)*${n}`); const ga = genericArgs(n, true)?.filter((a) => !a.startsWith("'")), g = ga ? genNames(ga) : c.args.map((_, i) => `A${i}`); const rr = rustRet(`(?<![\\w.])(?:\\w+::)*${n}`, crate_); return `pub fn ${n}${g.length ? `<${g.join(', ')}>` : ''}(${c.args.map((_, i) => `_a${i}: ${ga ? 'impl Sized' : `A${i}`}`).join(', ')}) -> ${rr ?? (c.ret?.startsWith('opt:') ? `Option<${c.ret.slice(4)}>` : T[c.ret] ?? 'i64')} {\n    unimplemented!("${n}")\n}\n`; };
+  const itemStub = (n, crate_ = ownPkg) => { if (/^[A-Z][A-Z0-9_]+$/.test(n)) { const str = new RegExp(`\\b${n}\\s*(?:\\.\\s*(?:len|chars|as_str|is_empty)\\b|[!=]=\\s*\"|,\\s*\")`).test(srcNoUse); return `pub const ${n}: ${str ? '&str' : 'i64'} = ${str ? '""' : '0'};\n`; } if (/^[A-Z]/.test(n)) return traitStub(n) ?? typeStub(n, crate_); const c = callInfo(src, n); c.ret ??= viaVar(`(?<![\\w.])(?:\\w+::)*${n}`); const ga = genericArgs(n, true)?.filter((a) => !a.startsWith("'")), pty = ga ? [] : argTypes(`(?<![\\w.])(?:\\w+::)*${n}`), g = ga ? genNames(ga) : c.args.map((_, i) => `A${i}`).filter((_, i) => !pty[i]); const rr = rustRet(`(?<![\\w.])(?:\\w+::)*${n}`, crate_); return `pub fn ${n}${g.length ? `<${g.join(', ')}>` : ''}(${c.args.map((_, i) => `_a${i}: ${ga ? 'impl Sized' : pty[i] ?? `A${i}`}`).join(', ')}) -> ${rr ?? (c.ret?.startsWith('opt:') ? `Option<${c.ret.slice(4)}>` : T[c.ret] ?? 'i64')} {\n    unimplemented!("${n}")\n}\n`; };
   // `use <crate>::a::b::{X, f};` => missing modules `a`, `a/b` (declared in the parent) holding the imported items (#69). Existing modules are never touched.
   const pkgName = (toml) => /\[package\][^[]*?^\s*name\s*=\s*"([^"]+)"/ms.exec(fs.readFileSync(toml, 'utf8'))?.[1]?.replace(/-/g, '_');
   // every workspace member crate by name, so `use other_crate::a::X` is stubbed in that crate (#76)
