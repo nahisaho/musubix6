@@ -1115,11 +1115,21 @@ function changedOracleDeps(entry, p, id) {
   return [...new Set([...Object.keys(was), ...Object.keys(now)])].filter((f) => was[f] !== now[f]).sort();
 }
 // opt-in `artifactStaleness`: config `artifacts` files the test file names (path or basename) are hashed into Green/Refactor evidence (#309)
-function artifactShasFor(p) {
+// artifactGranularity "test": only the test's own lines plus the file's shared preamble (text before the first @id) count as readers (#312)
+function artifactShasFor(p, id) {
   const cfg = readJson(CONFIG, null) ?? {};
   if (cfg.artifactStaleness !== true || !cfg.artifacts || typeof cfg.artifacts !== 'object') return undefined;
   let text = '';
   try { text = fs.readFileSync(path.join(ROOT, p), 'utf8'); } catch { return undefined; }
+  if (cfg.artifactGranularity === 'test' && id) {
+    const ls = text.replace(/\r\n/g, '\n').split('\n');
+    const at = ls.findIndex((l) => new RegExp(`@id\\s+${id}\\b`).test(l));
+    if (at >= 0) {
+      let end = ls.findIndex((l, i) => i > at && /@id\s+TEST-/.test(l)); if (end < 0) end = ls.length;
+      const first = ls.findIndex((l) => /@id\s+TEST-/.test(l));
+      text = [...ls.slice(0, first), ...ls.slice(at, end)].join('\n');
+    }
+  }
   const out = {};
   for (const a of Object.keys(cfg.artifacts)) {
     const n = normDep(a), abs = path.join(ROOT, n);
@@ -4393,9 +4403,10 @@ function cmdTdd() {
     const staleIds = [...ents.values()].filter((e) => {
       if (e.kind !== 'TEST') return false;
       const last = readLedger().filter((x) => x.test === e.id && (x.type === 'green' || x.type === 'refactor')).at(-1);
+      if (changedArtifacts(last).length) return true;
       return last?.implBlocks && [...ents.values()].some((c) => c.kind === 'CODE' && c.refs.implements.some((r) => e.refs.verifies.includes(r)) && last.implBlocks[`${c.path}:${c.id}`] !== implRegionSha(c));
     }).map((e) => e.id);
-    if (!staleIds.length) { out('no test has a stale shared-implementation Green'); return 0; }
+    if (!staleIds.length) { out('no test has a stale shared-implementation or artifact Green'); return 0; }
     out(`re-verifying ${staleIds.length} stale test(s): ${staleIds.join(' ')}`);
     if (staleIds.length === 1) pos.push(staleIds[0]); else pos.push(...staleIds);
   }
@@ -4706,7 +4717,7 @@ function cmdTdd() {
   // human-approved code baseline follows the first implementation: refresh until the feature is fully Green (#92)
   const humanSpecs = sub === 'red' ? [] : loadSpecs().filter((x) => x.approval === 'human' && x.reqs.some((q) => t.refs.verifies.includes(q.id)));
   const wasDone = new Map(humanSpecs.map((x) => [x.feature, featureGreen(x)]));
-  appendLedger({ type: sub, test: id, req, reqSha: reqShaOf(req), reqShas: Object.fromEntries([...new Set([req, ...t.refs.verifies])].map((r) => [r, reqShaOf(r)]).filter(([, v]) => v)), file: t.path, fileSha: after, protectedFiles: oracleDependencyFiles, oracleShas: oracleDependencyFiles.length ? oracleDependencyShas : undefined, artifactShas: sub === 'red' ? undefined : artifactShasFor(t.path), cmdSha: sha(cmd.join('\0')), exit: res.exit, ms: res.ms, testSha0: sub === 'red' ? testOwnSha(t.path, id) : undefined, regSha: testRegionSha(t.path, id), rebaselined: rebaselined || undefined, weak: weakRed ? true : undefined, weakWhy: setupSym ? `setup:${setupSym}` : charac ? 'characterization' : retestWeak ? 'retest' : undefined, characterization: charac || undefined, retest: retestWeak || rebaselined ? retest : undefined, priorStrongRed: retestWeak && prior.some((e) => e.type === 'red' && !e.weak && !e.retest) ? true : undefined, implBlocks: sub === 'red' ? undefined : Object.fromEntries([...ents.values()].filter((c) => c.kind === 'CODE' && c.refs.implements.some((r) => t.refs.verifies.includes(r))).map((c) => [`${c.path}:${c.id}`, implRegionSha(c)]).filter(([, v]) => v)), moved: sub === 'refactor' && prior.filter((e) => e.type === 'green' || e.type === 'refactor').at(-1)?.fileSha !== after && prior.some((e) => e.type === 'green' || e.type === 'refactor') ? true : undefined });
+  appendLedger({ type: sub, test: id, req, reqSha: reqShaOf(req), reqShas: Object.fromEntries([...new Set([req, ...t.refs.verifies])].map((r) => [r, reqShaOf(r)]).filter(([, v]) => v)), file: t.path, fileSha: after, protectedFiles: oracleDependencyFiles, oracleShas: oracleDependencyFiles.length ? oracleDependencyShas : undefined, artifactShas: sub === 'red' ? undefined : artifactShasFor(t.path, id), cmdSha: sha(cmd.join('\0')), exit: res.exit, ms: res.ms, testSha0: sub === 'red' ? testOwnSha(t.path, id) : undefined, regSha: testRegionSha(t.path, id), rebaselined: rebaselined || undefined, weak: weakRed ? true : undefined, weakWhy: setupSym ? `setup:${setupSym}` : charac ? 'characterization' : retestWeak ? 'retest' : undefined, characterization: charac || undefined, retest: retestWeak || rebaselined ? retest : undefined, priorStrongRed: retestWeak && prior.some((e) => e.type === 'red' && !e.weak && !e.retest) ? true : undefined, implBlocks: sub === 'red' ? undefined : Object.fromEntries([...ents.values()].filter((c) => c.kind === 'CODE' && c.refs.implements.some((r) => t.refs.verifies.includes(r))).map((c) => [`${c.path}:${c.id}`, implRegionSha(c)]).filter(([, v]) => v)), moved: sub === 'refactor' && prior.filter((e) => e.type === 'green' || e.type === 'refactor').at(-1)?.fileSha !== after && prior.some((e) => e.type === 'green' || e.type === 'refactor') ? true : undefined });
   for (const x of humanSpecs) if (!wasDone.get(x.feature)) {
     const all = readJson(APPROVALS, {});
     if (all[x.feature]?.code) { all[x.feature].code = implFileShas(x); writeJson(APPROVALS, all); }
@@ -5139,11 +5150,7 @@ function cmdGate() {
   };
   // a changed config `artifacts` file is in scope for the project that holds one of its consumers (#308)
   // a root Cargo.toml/Cargo.lock of a workspace whose members live under a project dir belongs to that project (#308)
-  const cargoOwned = (f) => {
-    if (!/(^|\/)Cargo\.(toml|lock)$/.test(f)) return [];
-    const dir = path.posix.dirname(f);
-    try { const m = /^\s*members\s*=\s*\[([^\]]*)\]/m.exec(fs.readFileSync(path.join(ROOT, dir === '.' ? '' : dir, 'Cargo.toml'), 'utf8')); return m ? [...m[1].matchAll(/["']([^"']+)["']/g)].map((x) => normDep(path.posix.join(dir, x[1]))) : []; } catch { return []; }
-  };
+  const cargoOwned = cargoMembersOf;
   const artConsumers = (f) => { const u = Object.entries(cfg.artifacts ?? {}).find(([a]) => normDep(a) === f)?.[1]; return [...(u === undefined ? [] : [].concat(u).map(normDep)), ...cargoOwned(f)]; };
   const allChecks = [...(cfg.checks ?? []), ...(cfg.projects ?? []).flatMap((p) => (p.checks ?? []).map((c) => ({ ...c, name: `${p.root}:${c.name}`, cwd: p.root, dependsOn: depClosure(p) })))];
   let sharedHinted = false;
@@ -5157,14 +5164,14 @@ function cmdGate() {
   // root-owned files no project depends on: hint once, also when the root has no checks of its own (#67)
   if (flags.changed && (cfg.projects ?? []).length) {
     const pr = cfg.projects.map((p) => p.root.replace(/\/$/, '') + '/');
-    const coveredBy = (f) => artConsumers(f).some((u) => pr.some((r) => u.startsWith(r))) || cfg.projects.some((p) => depClosure(p).some((d) => { const x = normDep(d); return f === x || f.startsWith(x + '/'); }));
+    const coveredBy = (f) => artConsumers(f).some((u) => pr.some((r) => (u + '/').startsWith(r))) || cfg.projects.some((p) => depClosure(p).some((d) => { const x = normDep(d); return f === x || f.startsWith(x + '/'); }));
     const dataOnly = [...changedFiles()].filter((f) => !f.startsWith('.sdd/') && !pr.some((r) => f.startsWith(r)) && !EXT.test(f) && !coveredBy(f));
     if (dataOnly.length) { sharedHinted = true; lines.push(`! root-owned data/config changes: ${dataOnly.slice(0, 3).join(', ')}${dataOnly.length > 3 ? ', …' : ''} — if a project reads these, add the path to its \`dependsOn\` in .sdd/config.json so that project's checks run too`); }
   }
   for (const c of allChecks) {
     let cmd = c.cmd;
     const base = c.cwd ? c.cwd.replace(/\/$/, '') + '/' : '';
-    const inDeps = (f) => (c.dependsOn ?? []).some((d) => { const x = normDep(d); return f === x || f.startsWith(x + '/'); }) || (!!base && artConsumers(f).some((u) => u.startsWith(base)));
+    const inDeps = (f) => (c.dependsOn ?? []).some((d) => { const x = normDep(d); return f === x || f.startsWith(x + '/'); }) || (!!base && artConsumers(f).some((u) => (u + '/').startsWith(base)));
     if (c.cwd && flags.changed && !specOwned(c.cwd) && ![...changedFiles()].some((f) => f.startsWith(base) || inDeps(f))) { lines.push(`! cmd ${c.name}: no changed files in ${c.cwd}${c.dependsOn?.length ? ` or its dependencies (${c.dependsOn.join(', ')})` : ''} — skipped`); continue; }
     const pRoots = (cfg.projects ?? []).map((p) => p.root.replace(/\/$/, '') + '/');
     if (!c.cwd && flags.changed && pRoots.length) {
@@ -5604,6 +5611,20 @@ function cmdImpact() {
   for (const t of targets) { if (!flags.json && t !== targets[0]) out(''); code = Math.max(code, impactOne(t)); }
   return code;
 }
+// workspace member dirs of a Cargo.toml/Cargo.lock; a trailing `*` member glob ("crates/*") expands to the existing subdirectories (#312)
+function cargoMembersOf(f) {
+  if (!/(^|\/)Cargo\.(toml|lock)$/.test(f)) return [];
+  const dir = path.posix.dirname(f);
+  try {
+    const m = /^\s*members\s*=\s*\[([^\]]*)\]/m.exec(fs.readFileSync(path.join(ROOT, dir === '.' ? '' : dir, 'Cargo.toml'), 'utf8'));
+    if (!m) return [];
+    return [...m[1].matchAll(/["']([^"']+)["']/g)].flatMap((x) => {
+      const g = /^(.*)\/\*$/.exec(x[1]);
+      if (!g) return [normDep(path.posix.join(dir, x[1]))];
+      try { return fs.readdirSync(path.join(ROOT, dir === '.' ? '' : dir, g[1]), { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => normDep(path.posix.join(dir, g[1], e.name))); } catch { return []; }
+    });
+  } catch { return []; }
+}
 function impactOne(target) {
   if (!target) { out('usage: impact <REQ-ID|TEST-ID|CODE-ID|file> [--json] [--all]'); return 2; }
   const specs = loadSpecs();
@@ -5640,7 +5661,10 @@ function impactOne(target) {
   // dependsOn is transitive: a project depending on a dependent project depends on the file too (#255)
   const depProjects = dataFile ? (() => { const got = new Set(projs.filter((p) => direct(p, seeds[0]))); for (let g = true; g;) { g = false; for (const p of projs) if (!got.has(p) && [...got].some((q) => hits(p, normDep(q.root)))) { got.add(p); g = true; } } return projs.filter((p) => got.has(p)).map((p) => p.root); })() : [];
   const projReqs = new Map();
-  if (dataFile) for (const e of all) { const pr = projs.find((p) => depProjects.includes(p.root) && (e.path === normDep(p.root) || e.path.startsWith(normDep(p.root) + '/'))); if (pr) for (const r of [...e.refs.verifies, ...e.refs.implements]) { if (!projReqs.has(r)) projReqs.set(r, new Set()); projReqs.get(r).add(e.id + ' (' + e.path + ')'); } }
+  // a Cargo workspace manifest reaches every member crate's REQs; a declared `artifacts` file reaches only the files that name it (#312)
+  const members = dataFile ? cargoMembersOf(seeds[0]) : [];
+  const readers = nonCode && !members.length && Object.keys(loadConfig().artifacts ?? {}).some((a) => normDep(a) === seeds[0]) ? new Set(listFiles().filter((f) => { try { const t = fs.readFileSync(path.join(ROOT, f), 'utf8'); return t.includes(seeds[0]) || t.includes(path.posix.basename(seeds[0])); } catch { return false; } })) : null;
+  if (dataFile) for (const e of all) { const pr = projs.find((p) => depProjects.includes(p.root) && (e.path === normDep(p.root) || e.path.startsWith(normDep(p.root) + '/'))); const mem = members.some((m) => e.path === m || e.path.startsWith(m + '/')); if ((pr && (!readers || readers.has(e.path))) || mem) for (const r of [...e.refs.verifies, ...e.refs.implements]) { if (!projReqs.has(r)) projReqs.set(r, new Set()); projReqs.get(r).add(e.id + ' (' + e.path + ')'); } }
   const seeds0 = seeds[0];
   if (dataFile) seeds = [];
   const via = new Map(seeds.map((f) => [f, null]));
@@ -5670,7 +5694,7 @@ function impactOne(target) {
     const owner = (f) => projs.find((p) => f.startsWith(normDep(p.root) + '/'));
     for (const f of [...via.keys()]) { const own = owner(f); for (const p of projs) if (p !== own && (hits(p, f) || (own && hits(p, normDep(own.root)))) && !got.has(p)) got.set(p, f); }
     for (let g = true; g;) { g = false; for (const p of projs) if (!got.has(p)) { const q = [...got.keys()].find((x) => hits(p, normDep(x.root))); if (q) { got.set(p, got.get(q)); g = true; } } }
-    for (const [p, f] of got) for (const e of all) if (e.path.startsWith(normDep(p.root) + '/') && !via.has(e.path)) for (const r of [...e.refs.verifies, ...e.refs.implements]) { if (reqs.includes(r)) continue; if (!affected.has(r)) affected.set(r, new Set()); affected.get(r).add(`${e.id} (${e.path}; project ${p.root} dependsOn ${f})`); }
+    for (const [p, f] of got) for (const e of all) if (e.path.startsWith(normDep(p.root) + '/') && !via.has(e.path) && (!readers || readers.has(e.path))) for (const r of [...e.refs.verifies, ...e.refs.implements]) { if (reqs.includes(r)) continue; if (!affected.has(r)) affected.set(r, new Set()); affected.get(r).add(`${e.id} (${e.path}; project ${p.root} dependsOn ${f})`); }
   }
   for (const [r, v] of projReqs) { if (!affected.has(r)) affected.set(r, new Set()); for (const x of v) affected.get(r).add(x); }
   const sameFeature = [...affected.keys()].filter((r) => ownFeatures.has(reqFeature.get(r)));
