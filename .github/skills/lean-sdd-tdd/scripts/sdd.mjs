@@ -3109,8 +3109,12 @@ function stubFor(testPath, id) {
       const ppHit = mod.startsWith('.') ? null : ppDirs.map((d) => path.resolve(proot, d)).find((d) => has(d));
       // a helper module that already sits next to the test file is importable as-is (#291)
       if (!mod.startsWith('.') && dir !== proot && has(dir)) continue;
+      // config `artifacts` ({"py/tools/x.py": ["py/tests/test_x.py"]}) names where a module the test imports lives (#305)
+      const modRel = mod.replace(/^\.+/, '').split('.').join('/') + '.py';
+      const cfgArt = mod.startsWith('.') ? {} : loadConfig().artifacts ?? {};
+      const mapped = Object.keys(cfgArt).find((a) => (normDep(a) === modRel || normDep(a).endsWith('/' + modRel)) && [].concat(cfgArt[a]).some((u) => normDep(u) === testPath));
       const base = mod.startsWith('.') ? dir : ppHit ?? (ppDir && !has(proot) ? path.join(proot, ppDir) : srcLayout ? path.join(proot, 'src') : proot);
-      const abs = path.join(base, ...mod.replace(/^\.+/, '').split('.')) + '.py';
+      const abs = mapped ? path.join(ROOT, normDep(mapped)) : path.join(base, ...mod.replace(/^\.+/, '').split('.')) + '.py';
       // `from pkg import x` where pkg/ is a namespace package: never create pkg.py next to it
       const nsDir = abs.replace(/\.py$/, '');
       const isNsDir = fs.existsSync(nsDir) && fs.statSync(nsDir).isDirectory() && !fs.existsSync(path.join(nsDir, '__init__.py'));
@@ -3122,8 +3126,8 @@ function stubFor(testPath, id) {
       // ALL_CAPS names that are never called are constants, not classes (#112)
       const isConst = (n) => /^[A-Z][A-Z0-9_]+$/.test(n) && !new RegExp(`\\b${n}\\s*\\(`).test(scoped);
       // a name used only as an annotation (never called, no attribute access) is a typing.Protocol (#288)
-      const isProto = (n) => /^[A-Z]/.test(n) && !isExc(n) && !isConst(n) && new RegExp(`(?::|->|\\[|\\|)\\s*${n}\\b`).test(scan) && !new RegExp(`(?<![\\w.])${n}\\s*[(.]|\\bisinstance\\([^)]*\\b${n}\\b|\\(\\s*${n}\\s*[,)]\\s*:?`).test(scan.replace(new RegExp(`^\\s*from[^\\n]*\\bimport[^\\n]*`, 'gm'), ''));
-      const stubOf = (n) => isProto(n) ? `class ${n}(Protocol):\n${methodsOf(scoped, n).map((k) => `    def ${k}(self, *a, **k): ...\n`).join('') || '    ...\n'}` : isExc(n) ? `class ${n}(Exception):\n    pass\n` : isConst(n) ? `${n} = ${new RegExp(`parametrize\\([^\\n]*\\b${n}\\b|\\bin\\s+${n}\\b|\\b${n}\\s*\\[`).test(scoped) ? '[]' : 'None'}\n` : /^[A-Z]/.test(n) ? `class ${n}:\n    def __init__(self, *a, **k):\n        pass\n${methodsOf(scoped, n).map((k) => `\n    def ${k}(self, *a, **k):\n        raise NotImplementedError("${k}")\n`).join('')}` : `def ${n}(*a, **k):\n    raise NotImplementedError("${n}")\n`;
+      const isProto = (n) => /^[A-Z]/.test(n) && !isExc(n) && !isConst(n) && new RegExp(`(?:(?<!['"]\\s*):|->|\\[|\\|)\\s*${n}\\b`).test(scan) && !new RegExp(`(?<![\\w.])${n}\\s*[(.]|\\bisinstance\\([^)]*\\b${n}\\b|\\(\\s*${n}\\s*[,)]\\s*:?`).test(scan.replace(new RegExp(`^\\s*from[^\\n]*\\bimport[^\\n]*`, 'gm'), ''));
+      const stubOf = (n) => isProto(n) ? `class ${n}(Protocol):\n${methodsOf(scoped, n).map((k) => `    def ${k}(self, *a, **k): ...\n`).join('') || '    ...\n'}` : isExc(n) ? `class ${n}(Exception):\n    pass\n` : isConst(n) ? `${n} = ${new RegExp(`parametrize\\([^\\n]*\\b${n}\\b|\\bin\\s+${n}\\b|\\b${n}\\s*\\[`).test(scoped) ? '[]' : 'None'}\n` : /^[A-Z]/.test(n) ? `class ${n}:\n    def __init__(self, *a, **k):\n        pass\n${new RegExp(`\\bwith\\s[^\\n]*\\b${n}\\s*\\(`).test(scan) ? '\n    def __enter__(self, *a, **k):\n        return self\n\n    def __exit__(self, *a, **k):\n        return False\n' : ''}${methodsOf(scoped, n).map((k) => `\n    def ${k}(self, *a, **k):\n        raise NotImplementedError("${k}")\n`).join('')}` : `def ${n}(*a, **k):\n    raise NotImplementedError("${n}")\n`;
       // `from pkg import mod` used only as `mod.f(...)` is a submodule: stub pkg/mod.py, never `def mod` in the package (#291)
       const isSub = (n) => !mod.startsWith('.') && /^[a-z_]\w*$/.test(n) && new RegExp(`\\b${localOf(n)}\\.\\w`).test(scoped) && !new RegExp(`(?<![\\w.])${localOf(n)}\\s*\\(`).test(scoped);
       const subBody = (n) => [...new Set([...scoped.matchAll(new RegExp(`\\b${localOf(n)}\\.([A-Za-z_]\\w*)\\s*\\(`, 'g'))].map((x) => x[1]))].map((f) => `def ${f}(*a, **k):\n    raise NotImplementedError("${f}")\n`).join('\n\n') || 'pass\n';
@@ -3142,7 +3146,7 @@ function stubFor(testPath, id) {
       if (existing) {
         // a module that still holds only stubs gets the newly imported names; real code is never touched
         const cur = fs.readFileSync(existing, 'utf8');
-        const rest = cur.replace(/^# @id CODE-\S+-STUB-\d+ @implements [^\n]*\n/, '').replace(/^class \w+(\(Exception\))?:\n(?:    def __init__\(self, \*a, \*\*k\):\n        pass\n|    pass\n)(?:\n    def \w+\(self, \*a, \*\*k\):\n        raise NotImplementedError\("\w+"\)\n)*/gm, '').replace(/^def \w+\(\*a, \*\*k\):\n    raise NotImplementedError\("\w+"\)\n/gm, '');
+        const rest = cur.replace(/^# @id CODE-\S+-STUB-\d+ @implements [^\n]*\n/, '').replace(/^class \w+(\(Exception\))?:\n(?:    def __init__\(self, \*a, \*\*k\):\n        pass\n|    pass\n)(?:\n    def \w+\(self, \*a, \*\*k\):\n        (?:raise NotImplementedError\("\w+"\)|return (?:self|False))\n)*/gm, '').replace(/^def \w+\(\*a, \*\*k\):\n    raise NotImplementedError\("\w+"\)\n/gm, '');
         // names a module re-exports (`from .core import Clock`, `import x as Clock`) are importable, never stubbed over (#214)
         const reExported = new Set();
         for (const im of cur.matchAll(/^(?:from\s+\S+\s+import\s+(\([^)]*\)|[^\n]+)|import\s+([^\n]+))/gm)) for (const b of (im[1] ?? im[2]).replace(/#[^\n]*/g, '').replace(/[()]/g, '').split(',')) { const parts = b.trim().split(/\s+as\s+/); const nm = parts[1] ?? parts[0]; if (nm && nm !== '*') reExported.add(nm.split('.')[0]); }
@@ -3159,7 +3163,7 @@ function stubFor(testPath, id) {
         // a stub-only class the test now calls more methods on gets them appended inside the class (#279)
         let grown = cur;
         for (const n of ns) {
-          const cm = new RegExp(`^class ${n}:\\n    def __init__\\(self, \\*a, \\*\\*k\\):\\n        pass\\n(?:\\n    def \\w+\\(self, \\*a, \\*\\*k\\):\\n        raise NotImplementedError\\("\\w+"\\)\\n)*`, 'm').exec(grown);
+          const cm = new RegExp(`^class ${n}:\\n    def __init__\\(self, \\*a, \\*\\*k\\):\\n        pass\\n(?:\\n    def \\w+\\(self, \\*a, \\*\\*k\\):\\n        (?:raise NotImplementedError\\("\\w+"\\)|return (?:self|False))\\n)*`, 'm').exec(grown);
           const add2 = cm ? methodsOf(scoped, n).filter((k) => !new RegExp(`def ${k}\\(`).test(cm[0])) : [];
           if (add2.length) grown = grown.replace(cm[0], cm[0] + add2.map((k) => `\n    def ${k}(self, *a, **k):\n        raise NotImplementedError("${k}")\n`).join(''));
         }
@@ -3249,7 +3253,9 @@ function stubFor(testPath, id) {
   // dynamic `import('<relative or package>')`: a bound namespace identifier means its members are used (#219)
   for (const m of scoped.matchAll(/(?:(?:const|let|var)\s+(\{[^}]*\}|[\w$]+)\s*=\s*)?await\s+import\(\s*['"]([^'"\n]+)['"]\s*\)/g)) imps.push({ 1: m[1] ? (m[1].startsWith('{') ? m[1].replace(/\s*:\s*[\w$]+/g, '') : `* as ${m[1]}`) : '', 2: m[2] });
   // CommonJS `require('<relative or package>')` gets a `module.exports` stub (#219)
-  for (const m of scoped.matchAll(/(?:(?:const|let|var)\s+(\{[^}]*\}|[\w$]+)\s*=\s*)?\brequire\(\s*['"]([^'"\n]+)['"]\s*\)/g)) imps.push({ 1: m[1] ? (m[1].startsWith('{') ? m[1].replace(/\s*:\s*[\w$]+/g, '') : `* as ${m[1]}`) : '', 2: m[2], cjs: true });
+  // `createRequire(import.meta.url)` bindings (`const req = createRequire(..)`) and the inline `createRequire(..)('./x.cjs')` load CommonJS from ESM/TS tests (#305)
+  const reqNames = ['require', ...[...scoped.matchAll(/(?:const|let|var)\s+([\w$]+)\s*=\s*(?:module\.)?createRequire\(/g)].map((m) => m[1].replace(/\$/g, '\\$'))].join('|');
+  for (const m of scoped.matchAll(new RegExp(`(?:(?:const|let|var)\\s+(\\{[^}]*\\}|[\\w$]+)\\s*=\\s*)?(?:(?<![\\w$.])(?:${reqNames})|createRequire\\([^)]*\\))\\(\\s*['"]([^'"\\n]+)['"]\\s*\\)`, 'g'))) imps.push({ 1: m[1] ? (m[1].startsWith('{') ? m[1].replace(/\s*:\s*[\w$]+/g, '') : `* as ${m[1]}`) : '', 2: m[2], cjs: true });
   const toCjs = (b) => { const ex = []; const out = b.replace(/^export\s+(?:default\s+)?(class|function|const)\s+([\w$]+)/gm, (x, k, n) => { ex.push(n); return `${k} ${n}`; }); return `${out}\nmodule.exports = { ${ex.join(', ')} };\n`; };
   // an existing CommonJS module that lacks a required name: append throwing stubs plus `module.exports.x = x` lines, never touching existing code (#219)
   const cjsExisting = (file, clause) => {

@@ -7706,3 +7706,45 @@ test('#303 a consistently failing test check is a plain failure and flaky.retrie
   assert.match(sdd(flakyProject(null, always), 'gate').out, /✗ cmd test \(/);
   assert.doesNotMatch(sdd(flakyProject({ retries: 0 }, FLAKY_ONCE), 'gate').out, /FLAKY/);
 });
+
+test('#305 python stub: a class used as a dict value is instantiable, not a Protocol', () => {
+  const d = mini(R13SPEC, {
+    'tests/test_w.py': 'from kit import Alpha, Beta\n\nREG = {"a": Alpha, "b": Beta}\n\n\n# @id TEST-W-001 @verifies REQ-W-001\ndef test_w_001():\n    assert REG["a"]().go() == 1\n',
+  });
+  sdd(d, 'tdd', 'stub', 'TEST-W-001');
+  const t = fs.readFileSync(path.join(d, 'kit.py'), 'utf8');
+  assert.doesNotMatch(t, /Protocol/);
+  assert.match(t, /class Alpha:/);
+});
+
+test('#305 python stub: a class used in `with` gets __enter__/__exit__', () => {
+  const d = mini(R13SPEC, {
+    'tests/test_w.py': 'from kit import Ctx\n\n\n# @id TEST-W-001 @verifies REQ-W-001\ndef test_w_001():\n    with Ctx(1) as c:\n        assert c.v == 1\n',
+  });
+  sdd(d, 'tdd', 'stub', 'TEST-W-001');
+  const t = fs.readFileSync(path.join(d, 'kit.py'), 'utf8');
+  assert.match(t, /def __enter__/);
+  assert.match(t, /def __exit__/);
+});
+
+test('#305 python stub: a missing module goes where config `artifacts` maps it', () => {
+  const d = mini(R13SPEC, {
+    'py/src/keep.py': 'X = 1\n',
+    'py/tests/test_w.py': 'from kit import f\n\n\n# @id TEST-W-001 @verifies REQ-W-001\ndef test_w_001():\n    assert f() == 1\n',
+  });
+  const cfg = path.join(d, '.sdd/config.json');
+  const c = JSON.parse(fs.readFileSync(cfg, 'utf8'));
+  c.artifacts = { 'py/tools/kit.py': ['py/tests/test_w.py'] };
+  fs.writeFileSync(cfg, JSON.stringify(c));
+  sdd(d, 'tdd', 'stub', 'TEST-W-001');
+  assert.ok(fs.existsSync(path.join(d, 'py/tools/kit.py')), 'py/tools/kit.py missing');
+  assert.ok(!fs.existsSync(path.join(d, 'py/src/kit.py')));
+});
+
+test('#305 TS stub: a .cjs module loaded through createRequire is created', () => {
+  const d = jsStubProject({
+    'test/a.test.ts': "import { createRequire } from 'node:module';\nconst req = createRequire(import.meta.url);\nconst { add } = req('../src/add.cjs');\n/** @id TEST-A-001 @verifies REQ-A-001 */\nit('TEST-A-001 adds', () => { add(1, 2); });\n",
+  });
+  sdd(d, 'tdd', 'stub', 'TEST-A-001');
+  assert.ok(fs.existsSync(path.join(d, 'src/add.cjs')), 'add.cjs missing');
+});
