@@ -7318,3 +7318,30 @@ test('#288 subprocess-subject test: stub prints a note; Red works without --weak
   assert.equal(r.code, 0, r.out);
   assert.doesNotMatch(r.out, /weak/i, r.out);
 });
+
+test('#293 config `generated` removes build outputs from the oracle: regenerating them does not refuse Green', () => {
+  const spec = '---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | x shall hold. | TEST-A-001 |\n';
+  const d = mini(spec, { 'a.test.mjs': '// @id TEST-A-001 @verifies REQ-A-001\n// body\n', 'contract/vec.json': '[1]\n' }, FAIL);
+  const cp = path.join(d, '.sdd/config.json');
+  const c = JSON.parse(fs.readFileSync(cp, 'utf8'));
+  c.artifacts = { 'contract/vec.json': ['a.test.mjs'] };
+  c.generated = ['contract/**'];
+  fs.writeFileSync(cp, JSON.stringify(c));
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-A-001').code, 0);
+  fs.writeFileSync(path.join(d, 'contract/vec.json'), '[1,2]\n');
+  setCmd(d, PASS);
+  const r = sdd(d, 'tdd', 'green', 'TEST-A-001');
+  assert.equal(r.code, 0, r.out);
+});
+
+test('#293 editing only [src: file:line] provenance of a REQ does not invalidate its Green', () => {
+  const spec = (n) => `---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | x shall hold. [src: lib.rs:${n}] | TEST-A-001 |\n`;
+  const d = mini(spec(10), { 'a.test.mjs': '// @id TEST-A-001 @verifies REQ-A-001\n// body\n' }, FAIL);
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-A-001').code, 0);
+  setCmd(d, PASS);
+  assert.equal(sdd(d, 'tdd', 'green', 'TEST-A-001').code, 0);
+  const sp = fs.readdirSync(path.join(d, '.sdd/specs')).map((f) => path.join(d, '.sdd/specs', f))[0];
+  fs.writeFileSync(sp, spec(42));
+  const g = sdd(d, 'gate', '--no-run').out;
+  assert.doesNotMatch(g, /spec changed|requirement changed|REQ-A-001[^\n]*changed/i, g);
+});
