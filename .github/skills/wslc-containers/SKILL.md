@@ -154,6 +154,9 @@ wslc 3.0.3.0 では、コンテナー VM から外部へ接続できない環境
 (`wslc pull docker.io/library/node:...` が `network is unreachable` / `E_FAIL`、
 コンテナー内の `wget`/`ping` も失敗する。`wslc build` の `FROM` や `apk add`/`npm install` も同様)。
 その場合は公式イメージの取得やビルド中のダウンロードを前提にせず、次の方針に切り替える。
+先に接続を確認する: `wslc run --rm docker.io/library/alpine:latest wget -q -T5 -O- https://registry-1.docker.io/v2/`
+が `401 Unauthorized` なら届いている (一時的な失敗なので `pull`/`build` を再試行する)。
+届かなければ `wsl --shutdown` で VM を再起動して再試行し、それでも駄目な場合だけ切り替える。
 
 1. `wslc images` で取得済みのローカルイメージ (例: `alpine:latest`) を確認し、それを `FROM` にする。
 2. ランタイム (例: Node.js) は**ホスト側で用意して COPY** する。検証済みの方法 (glibc 版):

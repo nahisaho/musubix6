@@ -432,7 +432,13 @@ RUN mkdir /data
 ENTRYPOINT ["node", "bin/todo.mjs"]
 ```
 
-#### 8.2 レジストリに届かない場合(今回の環境)
+#### 8.2 レジストリに届かない場合
+
+`network is unreachable` は、コンテナー側の VM のネットワークが一時的に使えないときに起きます。Dockerfile の誤りではありません。次の順で切り分けてください。
+
+1. 接続を確認します。`wslc.exe run --rm docker.io/library/alpine:latest wget -q -T5 -O- https://registry-1.docker.io/v2/` が `401 Unauthorized` を返せば、レジストリに届いています(401 は到達の証拠です)。この場合は 8.1 をそのまま再実行します。
+2. 届かないときは、`wsl --shutdown` で WSL の VM を再起動し、もう一度試します。VPN やプロキシを使っている場合は、いったん切って試します。
+3. それでも届かない場合に限り、次のオフライン方式に切り替えます。
 
 今回の環境では、ビルドが次のエラーで失敗しました。コンテナー側の VM から Docker Hub に接続できないためです(イメージの取得も同じ理由で失敗します)。
 
