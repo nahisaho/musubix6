@@ -8,7 +8,7 @@ import os from 'node:os';
 import { builtinModules } from 'node:module';
 import path from 'node:path';
 
-const BOOL = new Set(['allow-setup-red', 'missing-module', 'baseline', 'weak', 'changed', 'json', 'no-run', 'verbose', 'help', 'stale']);
+const BOOL = new Set(['allow-setup-red', 'missing-module', 'baseline', 'weak', 'changed', 'json', 'no-run', 'verbose', 'help', 'stale', 'report']);
 function parseArgs(argv) {
   const pos = [];
   const flags = {};
@@ -1470,6 +1470,18 @@ function missingDeliverable(text) {
   const norm = (x) => path.posix.normalize(String(x).replace(/\\/g, '/')).replace(/^\.\//, '');
   return [].concat((readJson(CONFIG, null) ?? {}).deliverables ?? []).map(norm).some((d) => d && text.replace(/\\/g, '/').includes(d) && !fs.existsSync(path.join(ROOT, d)));
 }
+// a compile error located in a generated `SDD-TODO(stub)` placeholder (design 3.2): never a Red, the type must be filled by hand
+const stubTodoHit = (text) => {
+  for (const file of workspaceFiles().filter((f) => /\.rs$/.test(f))) {
+    let lines;
+    try { lines = fs.readFileSync(path.join(ROOT, file), 'utf8').split('\n'); } catch { continue; }
+    for (let i = 0; i < lines.length; i++) {
+      const el = /SDD-TODO\(stub\)/.test(lines[i]) && /\b(?:const|static|fn|struct|enum)\s+(\w+)/.exec(lines[i])?.[1];
+      if (el && (text.includes(`${file}:${i + 1}:`) || new RegExp(`error[^\\n]*\\b${el}\\b|-->[^\\n]*\\n[^]*?\\b${el}\\b`).test(text))) return `compile error in the SDD-TODO(stub) element ${el} (${file}:${i + 1}): the stub could not infer its type, so this is not a Red — fill the type of ${el} by hand, then re-run tdd red`;
+    }
+  }
+  return null;
+};
 const isLoadErr = (text) => LOAD_ERR.test(text) && !RUNTIME_FAIL.test(text) && !ASSERT_EXC.test(text) && !missingDeliverable(text);
 // a repo without any commit has no baseline for `--changed` (#150)
 function hasCommit() { return spawnSync('git', ['rev-parse', '--verify', '-q', 'HEAD'], { cwd: ROOT, stdio: 'ignore' }).status === 0; }
@@ -2260,7 +2272,20 @@ function stubRust(testPath, src, dir, made) {
     if (new RegExp(`\\b${n}\\s*(?:[-+*/<>]=?|[=!]=)\\s*(?:${FL})|(?:${FL})\\s*(?:[-+*/<>]=?|[=!]=)\\s*${n}\\b|assert(?:_eq|_ne)?!\\(\\s*${n}\\s*,\\s*(?:${FL})|assert(?:_eq|_ne)?!\\(\\s*(?:${FL})\\s*,\\s*${n}\\b`).test(srcNoUse)) return fit('f64');
     return new RegExp(`\\b${n}\\s*\\.\\s*(?:len|iter|is_empty)\\b|\\b${n}\\s*\\[`).test(srcNoUse) ? `pub const ${n}: &[i64] = &[];\n` : null;
   };
-  const itemStub = (n, crate_ = ownPkg) => { if (/^[A-Z][A-Z0-9_]+$/.test(n)) return constStub(n, crate_) ?? `pub const ${n}: i64 = 0;\n`; if (/^[A-Z]/.test(n)) return traitStub(n) ?? typeStub(n, crate_); const c = callInfo(src, n); c.ret ??= viaVar(`(?<![\\w.])(?:\\w+::)*${n}`); const ga = genericArgs(n, true)?.filter((a) => !a.startsWith("'")), pty = ga ? [] : argTypes(`(?<![\\w.])(?:\\w+::)*${n}`), g = ga ? genNames(ga) : c.args.map((_, i) => `A${i}`).filter((_, i) => !pty[i]); const rr = rustRet(`(?<![\\w.])(?:\\w+::)*${n}`, crate_); return `pub fn ${n}${g.length ? `<${g.join(', ')}>` : ''}(${c.args.map((_, i) => `_a${i}: ${ga ? 'impl Sized' : pty[i] ?? `A${i}`}`).join(', ')}) -> ${rr ?? (c.ret?.startsWith('opt:') ? `Option<${c.ret.slice(4)}>` : T[c.ret] ?? 'i64')} {\n    unimplemented!("${n}")\n}\n`; };
+  // `tdd stub --report`: confidence (shown | inferred | guessed) and the first test line that mentions the element (design 3.2)
+  const report = [];
+  const evidenceLine = (n) => { let full = src; try { full = fs.readFileSync(path.join(ROOT, testPath), 'utf8'); } catch { /* scoped source only */ } const at = full.split('\n').findIndex((l) => !/^\s*use\s/.test(l) && new RegExp(`\\b${n}\\b`).test(l)); return at < 0 ? testPath : `${testPath}:${at + 1}`; };
+  const note = (element, confidence) => { if (!report.some((r) => r.element === element)) report.push({ element, confidence, evidence: evidenceLine(element) }); };
+  const itemStub = (n, crate_ = ownPkg) => {
+    if (/^[A-Z][A-Z0-9_]+$/.test(n)) {
+      const cs = constStub(n, crate_);
+      note(n, cs ? 'inferred' : 'guessed');
+      // no evidence for the type: a wrong concrete type would give a misleading Red, so the placeholder fails to compile at this element
+      return cs ?? `pub const ${n}: () = (); // SDD-TODO(stub): type unknown — write the real type and value by hand\n`;
+    }
+    return itemStub0(n, crate_);
+  };
+  const itemStub0 = (n, crate_ = ownPkg) => { if (/^[A-Z]/.test(n)) { const ts = traitStub(n) ?? typeStub(n, crate_); if (ts) note(n, 'inferred'); return ts; } const c = callInfo(src, n); c.ret ??= viaVar(`(?<![\\w.])(?:\\w+::)*${n}`); const ga = genericArgs(n, true)?.filter((a) => !a.startsWith("'")), pty = ga ? [] : argTypes(`(?<![\\w.])(?:\\w+::)*${n}`), g = ga ? genNames(ga) : c.args.map((_, i) => `A${i}`).filter((_, i) => !pty[i]); const rr = rustRet(`(?<![\\w.])(?:\\w+::)*${n}`, crate_); return `pub fn ${n}${g.length ? `<${g.join(', ')}>` : ''}(${c.args.map((_, i) => `_a${i}: ${ga ? 'impl Sized' : pty[i] ?? `A${i}`}`).join(', ')}) -> ${rr ?? (c.ret?.startsWith('opt:') ? `Option<${c.ret.slice(4)}>` : T[c.ret] ?? 'i64')} {\n    unimplemented!("${n}")\n}\n`; };
   // `use <crate>::a::b::{X, f};` => missing modules `a`, `a/b` (declared in the parent) holding the imported items (#69). Existing modules are never touched.
   const pkgName = (toml) => /\[package\][^[]*?^\s*name\s*=\s*"([^"]+)"/ms.exec(fs.readFileSync(toml, 'utf8'))?.[1]?.replace(/-/g, '_');
   // every workspace member crate by name, so `use other_crate::a::X` is stubbed in that crate (#76)
@@ -2432,7 +2457,7 @@ function stubRust(testPath, src, dir, made) {
     if (/mismatched types|E0308/.test(after)) notes.push('a stub return type does not match how the test uses it (Option/Result/bool/collections): fix the stub signature by hand');
     return { verified: 'fail', verifyError: err[0].slice(0, 160), notes };
   };
-  const withNotes = (r) => { if (variantNotes.length) r.notes = [...(r.notes ?? []), ...variantNotes]; return r; };
+  const withNotes = (r) => { if (report.length) r.report = report; if (variantNotes.length) r.notes = [...(r.notes ?? []), ...variantNotes]; return r; };
   if (!names.length) { if (probeFile && !made.length) fs.rmSync(ownLib); return withNotes(Object.assign([...new Set(made)], verified())); }
   const prev = fs.readFileSync(ownLib, 'utf8');
   // names the library already defines are not appended again, and an unchanged lib.rs is never reported as stubbed (#290)
@@ -4399,6 +4424,8 @@ function cmdTdd() {
     else out(scripted ? (made.checked ? `nothing to stub in ${t.path}: checked ${made.checked.rel + made.checked.abs} from-import(s) (${made.checked.rel} relative, ${made.checked.abs} absolute${made.checked.conftest ? `, ${made.checked.conftest} in conftest.py` : ''}); each resolves to an installed/existing module or is not a missing project module. Plain \`import x\` lines and non-Python subjects are not checked` : `no missing relative imports in ${t.path}`) : made.verified === 'ok' ? `nothing to stub for ${t.id} in ${t.path} (compile-checked)` : `nothing to stub for ${t.id} in ${t.path} (nothing new to generate: referenced code is already stubbed/defined, or the generator does not cover this construct); run tdd red, and if the test does not compile write the missing code by hand`);
     if (made.verified === 'partial') out(`! ${made.verifyError} — the requested test has no compile errors of its own; stub or implement the other tests (\`tdd stub <their ID>\`) before running the project's tests`);
     for (const n of [...new Set(made.notes ?? [])]) out(`! ${n}`);
+    for (const r of made.report ?? []) if (r.confidence === 'guessed') out(`! ${r.element}: type unknown (${r.evidence}) — emitted an SDD-TODO(stub) placeholder, fill the type by hand`);
+    if (flags.report) { out('stub report (element | confidence | evidence):'); for (const r of made.report ?? []) out(`  ${r.element} | ${r.confidence} | ${r.evidence}`); if (!made.report?.length) out('  (no inferred elements)'); }
     if (made.realMissing?.length) out(`! not stubbed: ${made.realMissing.join('; ')} — those modules hold real code, which stubs never edit: add the names by hand`);
     if (made.warnings?.length) out(`! not stubbed: ${[...new Set(made.warnings)].join('; ')} — add the exports by hand`);
     return made.verified === 'fail' && /\.(?:c|cc|cpp|cxx)$/.test(t.path) ? 1 : 0;
@@ -4690,6 +4717,7 @@ function cmdTdd() {
     else if (res.exit === 0 && typeof characFlag === 'string' && characFlag.trim()) ok = true;
     else if (res.exit === 0 && vacuousThrows(t.path, id)) { ok = false; why = `test passed: a matcher-less assert.throws / pytest.raises is satisfied by the stub's own "not implemented" error (vacuous test); add a matcher (error type or message) that only the real behaviour satisfies, or record --characterization "<why>"`; }
     else if (res.exit === 0) { ok = false; why = 'test passed; Red needs a real failure (data-only / characterization test? record it explicitly: --characterization "<why no implementation can fail it>"; amending a wrong expectation after Red: --retest "<reason>")'; }
+    else if (isLoadErr(res.text) && stubTodoHit(res.text)) { ok = false; why = stubTodoHit(res.text); }
     else if (isLoadErr(res.text) && !flags.weak && !(flags['missing-module'] && declaredMissingModule(res.text, t.path))) { ok = false; why = 'load/compile error, not an assertion failure. new module? run `tdd stub <ID>` once (or `--missing-module`); if stub already ran or found nothing, add the missing code by hand; or --weak to record as weak Red' + (/\.py$/.test(t.path) && /ERROR collecting[\s\S]*(?:NotImplementedError|not implemented)/.test(res.text) ? '\nhint: the stub threw at collection time (a call in `@pytest.mark.parametrize` arguments or module level). Build those values inside the test body (or a fixture) so the stub fails at run time as an assertion/Red' : ''); }
     else if (ownHelperTypeError(res.text, t.path)) { ok = false; why = `TypeError raised inside the test's own helper ${ownHelperTypeError(res.text, t.path)}() (argument/signature mismatch): a test bug, not a Red for the behaviour; fix the test`; }
     else if (typeof flags.expect === 'string' && !(juliaSummaryRows(plain) ? targetOutput ?? '' : res.text).includes(flags.expect)) { ok = false; why = `failure output does not contain --expect "${flags.expect}" (Red for the wrong reason?)`; }
