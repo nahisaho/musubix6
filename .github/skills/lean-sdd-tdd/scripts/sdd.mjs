@@ -3015,8 +3015,10 @@ function setupOrigin(line, testPath, id, text = '') {
   if (typeInit) return x ?? 'static initializer';
   if (!x) return null;
   if (/ERROR at setup of/.test(text)) return x; // pytest fixture failure is always setup
-  const re = new RegExp(`(?<![\\w$])${x.replace(/[$]/g, '\\$&')}(?![\\w$])`);
   const all = fs.readFileSync(path.join(ROOT, testPath), 'utf8').split('\n');
+  // Rust `use m::{encode as delta_encode}`: the alias is the same subject (#263)
+  const names = [x, ...[...all.join('\n').matchAll(new RegExp(`(?<![\\w$])${x.replace(/[$]/g, '\\$&')}\\s+as\\s+([\\w$]+)`, 'g'))].map((m) => m[1])];
+  const re = new RegExp(`(?<![\\w$])(?:${names.map((n) => n.replace(/[$]/g, '\\$&')).join('|')})(?![\\w$])`);
   const start = all.findIndex((l) => new RegExp(`@id\\s+${id}\\b`).test(l));
   let end = all.findIndex((l, i) => i > start && /@id\s/.test(l));
   if (end < 0) end = all.length;
@@ -3033,7 +3035,7 @@ function setupOrigin(line, testPath, id, text = '') {
   const assertedResult = (hitLines) => {
     const WRAP = '(?:(?:list|len|sorted|set|tuple|dict|str|int|float|sum|bool|String|Number|JSON\\.stringify|Object\\.\\w+|Array\\.from)\\(\\s*)*';
     // single, tuple-unpacked (`a, b = f()` / `let (a, b) = f()`) and Go `:=` targets (#110)
-    let vars = hitLines.flatMap((l) => { const m = /^\s*(?:(?:const|let|var)\s+(?:mut\s+)?)?\(?\s*([A-Za-z_$][\w$]*(?:\s*,\s*(?:mut\s+)?[A-Za-z_$][\w$]*)*)\s*\)?\s*(?::(?!=)[^=]+)?:?=(?!=)/.exec(l); return m ? m[1].split(/\s*,\s*(?:mut\s+)?/).filter((v) => v !== '_') : []; });
+    let vars = hitLines.flatMap((l) => { const m = /^\s*(?:(?:const|let|var)\s+(?:mut\s+)?|(?:final\s+)?(?:[A-Z][\w.<>\[\],?]*|int|long|double|float|boolean|char|byte|short)\s+)?\(?\s*([A-Za-z_$][\w$]*(?:\s*,\s*(?:mut\s+)?[A-Za-z_$][\w$]*)*)\s*\)?\s*(?::(?!=)[^=]+)?:?=(?!=)/.exec(l); return m ? m[1].split(/\s*,\s*(?:mut\s+)?/).filter((v) => v !== '_') : []; });
     const bl = testBody(testPath, id), bf = markAsserts(bl);
     const body = bl.filter((_, i) => bf[i]);
     const esc = (v) => v.replace(/[$]/g, '\\$&');
@@ -3042,7 +3044,9 @@ function setupOrigin(line, testPath, id, text = '') {
     const plainRe = (v) => new RegExp(`(?<![\\w$])(?<![\\w$)\\]]\\.)${esc(v)}(?![\\w$])(?!\\s*\\()(?!\\.[\\w$]+\\s*\\()`);
     const ASSERT_KW = /(?:\b(?:(?:Assert|CollectionAssert|StringAssert)\.\w+|assert\w*|expect\w*|ASSERT\w*|EXPECT\w*|CHECK\w*|toBe\w*|toEqual|equal|deepEqual|deepStrictEqual|strictEqual|eq|ne)!?)\s*\(/g;
     // an assertion that also calls unrelated code (`assert add(1, 2) == 3 + seed`) does not make `seed` the asserted result
-    const plain = (v) => ({ test: (l) => plainRe(v).test(l) && ![...l.replace(ASSERT_KW, '(').matchAll(/[\w$]\s*\(([^()]*)\)/g)].some((c) => !plainRe(v).test(c[1]) && !new RegExp(`(?<![\\w$])${esc(v)}(?![\\w$])`).test(c[1])) });
+    // an assertion that feeds the variable into another module call (`Log.entries(l)`) inspects that call; the variable is its input, i.e. setup (#263)
+    const feeds = (v, l) => new RegExp(`(?<![\\w$])[A-Z][\\w$]*(?:\\.[\\w$]+)*\\.[a-z_][\\w$]*[!?]?\\([^()]*(?<![\\w$])${esc(v)}(?![\\w$])`).test(l);
+    const plain = (v) => ({ test: (l) => plainRe(v).test(l) && !feeds(v, l) && ![...l.replace(ASSERT_KW, '(').matchAll(/[\w$]\s*\(([^()]*)\)/g)].some((c) => !plainRe(v).test(c[1]) && !new RegExp(`(?<![\\w$])${esc(v)}(?![\\w$])`).test(c[1])) });
     // a variable computed from the act result (`got = [t for t in toks ...]`, `x = obj(r)`) that is asserted makes the act the asserted subject (#142)
     for (let k = 0; k < 2; k++) {
       const derived = bl.filter((_, i) => !bf[i]).flatMap((l) => { const m = /^\s*(?:(?:const|let|var)\s+)?([A-Za-z_$][\w$]*)\s*(?::[^=]+)?=(?!=)(.*)$/.exec(l); return m && vars.some((v) => plainRe(v).test(m[2])) ? [m[1]] : []; });
@@ -3051,6 +3055,8 @@ function setupOrigin(line, testPath, id, text = '') {
     const goIf = (v) => new RegExp(`\\bif\\b[^{]*?(?<![\\w$.])${v.replace(/[$]/g, '\\$&')}(?![\\w$])`);
     return vars.some((v) => body.some((l) => subject(v).test(l) || goIf(v).test(l) || plain(v).test(l)));
   };
+  // the stub called in an `if`/`for`/`while` condition decides the test outcome: it is the act, not setup (#263)
+  const condAct = (l) => /^\s*(?:\}\s*else\s+)?(?:if|for|while)\b[^{]*/.test(l) && re.test(l.replace(/^\s*(?:\}\s*else\s+)?(?:if|for|while)\b/, ''));
   // the stub is hit inside a helper defined outside the test: the test's calls to that helper are setup unless its result is asserted (#106)
   let helperAsserted = false;
   const helperVerdict = () => {
@@ -3087,6 +3093,7 @@ function setupOrigin(line, testPath, id, text = '') {
     if (hit.some(({ l }) => /^\s*(?:match|switch)\b/.test(l))) return null;
     // Go `if err := sut(..); err != nil {` tests the call it initializes (#245)
     if (hit.some(({ l }) => /^\s*if\s+[\w\s,]+:?=[^;]*;/.test(l))) return null;
+    if (hit.some(({ l }) => condAct(l))) return null;
     const firstAssert = inA.findIndex((v, i) => v && i >= start);
     const prevStmt = (() => { for (let k = firstAssert - 1; k > start; k--) if (all[k].trim() && !/^\s*(\/\/|#)/.test(all[k])) return k; return -1; })();
     if (hit.some(({ i, l }) => i === prevStmt && /\.(unwrap|expect)\s*\(/.test(l))) return null;
@@ -3096,6 +3103,7 @@ function setupOrigin(line, testPath, id, text = '') {
   const bl = testBody(testPath, id), bf = markAsserts(bl);
   const asserts = bl.filter((_, i) => bf[i]);
   if (!asserts.length) return null;
+  if (bl.some((l, i) => !bf[i] && condAct(l))) return null;
   if (asserts.some((l) => re.test(l))) return null;
   const viaHelper = helperVerdict();
   if (viaHelper) return viaHelper;
@@ -3903,7 +3911,7 @@ function cmdTdd() {
   const movedDeps = sub === 'refactor' && lastGreen && lastGreen.fileSha !== after ? changedOracleDeps(lastGreen, t.path, id) : [];
   if (movedDeps.length) out(`⚠ ${id}: oracle dependency changed since the last Green${oracleNote(movedDeps).replace(/^ — oracle dependency changed/, '')} (the test's own region may be unchanged); a refactor does not prove the changed oracle can fail (no Red). If expectations changed, use tdd red/green instead (#239)`);
   else if (sub === 'refactor' && lastGreen && lastGreen.fileSha !== after) out(`⚠ ${id}: test body changed since the last Green (includes the file preamble: imports/includes/helpers); a refactor does not prove the new assertions can fail (no Red). If behaviour/assertions changed, use tdd red/green instead (#118)`);
-  out(`${sub.toUpperCase()} ok ${id} (${req}) ${res.ms}ms${reason ? ` — fails with: ${reason}` : ''}${charac ? ` — characterization: ${charac} (test passed)` : retestWeak ? ` — retest: ${retest} (test passed)` : ''}${weakRed ? ' [weak]' : ''}${setupSym ? ` ⚠ Red comes from setup call "${setupSym}", not the asserted behaviour (use --expect <text> or --allow-setup-red)` : ''}`);
+  out(`${sub.toUpperCase()} ok ${id} (${req}) ${res.ms}ms${reason ? ` — fails with: ${reason}` : ''}${charac ? ` — characterization: ${charac} (test passed)` : retestWeak ? ` — retest: ${retest} (test passed)` : ''}${weakRed ? ' [weak]' : ''}${setupSym ? ` ⚠ Red comes from setup call "${setupSym}", not the asserted behaviour (use --expect <text> that does not name "${setupSym}", or --allow-setup-red)` : ''}`);
   if (retestWeak && prior.some((e) => e.type === 'red' && !e.weak && !e.retest)) out(`! --retest passed against the current implementation, so the earlier strong Red of ${id} is superseded by a weak Red; to keep failing-Red evidence, temporarily break the implementation and re-run \`tdd red ${id} --retest\``);
   return 0;
 }
