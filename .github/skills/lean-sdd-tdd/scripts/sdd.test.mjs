@@ -8171,3 +8171,33 @@ test('#309 trace validates [src:] ranges, blank lines and anchors', () => {
   assert.match(r.out, /lib\/a\.ts:1\] anchor `foo` not found/, r.out);
   assert.doesNotMatch(r.out, /lib\/a\.ts:1-2\]/, r.out);
 });
+
+test('#309 approve record --review: empty or nonexistent path is refused for human approvers too', () => {
+  const d = project();
+  for (const rv of ['', 'nope/review.md']) {
+    const r = sdd(d, 'approve', 'record', 'calc', '--by', 'tester', '--review', rv);
+    assert.equal(r.code, 1, r.out);
+    assert.match(r.out, /REFUSED: --review/, r.out);
+  }
+  assert.equal(sdd(d, 'approve', 'record', 'calc', '--by', 'tester').code, 0);
+});
+
+test('#309 specEditPolicy reapprove: T1 refactor after a row edit needs --wording; default only warns', () => {
+  const run = (cfg) => {
+    const d = t1project();
+    impl(d, '(a, b) => a + b');
+    assert.equal(sdd(d, 'tdd', 'red', 'TEST-CALC-001', '--characterization', 'pins current').code, 0);
+    assert.equal(sdd(d, 'tdd', 'green', 'TEST-CALC-001').code, 0);
+    if (cfg) fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ testCmd: ['node', '-e', '0'], checks: [], ...cfg }));
+    fs.writeFileSync(path.join(d, '.sdd/specs/calc.md'), '---\nfeature: calc\ntier: T1\n---\n| REQ-CALC-001 | When add is called, the system shall subtract. | TEST-CALC-001 |\n');
+    return d;
+  };
+  const dflt = run(null);
+  assert.equal(sdd(dflt, 'tdd', 'refactor', 'TEST-CALC-001').code, 0);
+  const d = run({ specEditPolicy: 'reapprove' });
+  const r = sdd(d, 'tdd', 'refactor', 'TEST-CALC-001');
+  assert.equal(r.code, 1, r.out);
+  assert.match(r.out, /REFUSED.*REQ-CALC-001.*--wording/s, r.out);
+  assert.match(sdd(d, 'gate', '--no-run').out, /changed in the spec/);
+  assert.equal(sdd(d, 'tdd', 'refactor', 'TEST-CALC-001', '--wording', 'reworded only').code, 0);
+});

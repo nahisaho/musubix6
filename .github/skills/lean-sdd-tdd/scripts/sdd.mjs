@@ -1582,8 +1582,10 @@ function cmdApprove() {
     if (dp) { out(`REFUSED: ${dp}`); return 1; }
     const review = typeof flags.review === 'string' ? flags.review.trim() : '';
     if (isAi && (/^ai:\s*(self)?$/i.test(flags.by) || !review)) { out(`REFUSED: ai approver needs a named reviewer (not ai:self) and --review <path-or-summary>, e.g. approve record ${spec.feature} --by ai:<reviewer> --review .sdd/review-${spec.feature}.md (template: review template ${spec.feature})`); return 1; }
+    if (flags.review !== undefined && !review) { out('REFUSED: --review needs a non-empty <path-or-summary> (omit the flag to record no review)'); return 1; }
     const reviewPath = path.resolve(ROOT, review);
     const reviewIsFile = !!review && fs.existsSync(reviewPath) && fs.statSync(reviewPath).isFile();
+    if (!isAi && !reviewIsFile && review && (path.isAbsolute(review) || /^\.{1,2}[/\\]/.test(review) || /[/\\].*\.(?:md|markdown|txt)$/i.test(review) || /^[^\s]+\.(md|markdown|txt)$/i.test(review))) { out(`REFUSED: --review ${review} looks like a file path but does not exist`); return 1; }
     if (isAi && !reviewIsFile && (path.isAbsolute(review) || /^\.{1,2}[/\\]/.test(review) || /[/\\].*\.(?:md|markdown|txt)$/i.test(review) || /^[^\s]+\.(md|markdown|txt)$/i.test(review))) { out(`REFUSED: --review ${review} looks like a file path but does not exist (a free-text summary must contain spaces)`); return 1; }
     if (isAi && !reviewIsFile && loadConfig().requireReviewFile) { out('REFUSED: config requireReviewFile — --review must be a file (e.g. .sdd/review.md)'); return 1; }
     if (isAi && reviewIsFile) {
@@ -4388,6 +4390,8 @@ function cmdTdd() {
   if (sub === 'refactor' && !prior.some((e) => e.type === 'green')) { out(`REFUSED: no Green recorded for ${id}`); return 1; }
   if (sub === 'refactor' && spec.tier === 'T1') {
     const lastG = prior.filter((e) => e.type === 'green' || e.type === 'refactor').at(-1);
+    const movedRows = Object.entries(lastG?.reqShas ?? {}).filter(([rid, rsha]) => rsha && reqShaOf(rid) && !reqShaSame(rid, rsha)).map(([rid]) => rid);
+    if (movedRows.length && readJson(CONFIG, {}).specEditPolicy === 'reapprove' && !(typeof flags.wording === 'string' && flags.wording.trim())) { out(`REFUSED: specEditPolicy reapprove: ${movedRows.join(', ')} changed since the previous Green and ${spec.tier} specs have no approval lock. Re-approve the new wording: tdd refactor ${id} --wording "<why the behaviour is unchanged>" (behaviour changed: tdd red then tdd green)`); return 1; }
     if (lastG && !shaMatches(lastG.fileSha, t.path, id) && !(typeof flags.wording === 'string' && flags.wording.trim())) { out(`REFUSED: ${id}: the test changed since its last Green and ${spec.tier} specs have no approval lock, so a refactor would bless a behaviour change without a Red. Behaviour/assertions changed: tdd red then tdd green. Wording/formatting only: tdd refactor ${id} --wording "<why>"`); return 1; }
   }
 
