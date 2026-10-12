@@ -177,7 +177,20 @@ wslc 3.0.3.0 では、コンテナー VM から外部へ接続できない環境
    `wslc build -t <tag> .` 後に `wslc run --rm <tag> node -v` で確認する。
    ビルド用の `.stage/` は後で削除する。
 3. musl 版 Node を使う場合は、ホストで取得した `libstdc++`/`libgcc` の apk を一緒に載せる
-   (`alpine` に `libstdc++` は含まれず、無いと `symbol not found`。musl 版 Node での動作は未検証。glibc 版の手順 2 は検証済み)。
+   (`alpine` に `libstdc++` は含まれず、無いと `symbol not found`)。検証済みの方法 (wslc 3.0.3.0、ベース `python:3.13-alpine`):
+   ```bash
+   v=$(node -v)
+   curl -fLO https://unofficial-builds.nodejs.org/download/release/$v/node-$v-linux-x64-musl.tar.xz
+   mkdir -p x .stage/usr/local/bin && tar -xJf node-$v-linux-x64-musl.tar.xz -C x --strip-components=1
+   cp x/bin/node .stage/usr/local/bin/node
+   B=https://dl-cdn.alpinelinux.org/alpine/latest-stable/main/x86_64
+   for p in libgcc libstdc++; do f=$(curl -s $B/ | grep -o "$p-[0-9][^\"]*\.apk" | head -1); curl -fLO $B/$f; tar -xzf $f -C .stage 2>/dev/null; done
+   rm -f .stage/.PKGINFO .stage/.SIGN* .stage/.post*
+   # apk 内の libstdc++.so.6 はシンボリックリンクなので実体に置き換える (symlink を含むコンテキストは build に失敗する)
+   cp -L .stage/usr/lib/libstdc++.so.6.0.* .stage/usr/lib/libstdc++.so.6.tmp && rm .stage/usr/lib/libstdc++.so.6 && mv .stage/usr/lib/libstdc++.so.6.tmp .stage/usr/lib/libstdc++.so.6
+   ```
+   `FROM <ローカルの alpine 系イメージ>` / `COPY .stage/ /` でビルドし、`wslc run --rm <tag> node -v` が通ることを確認した。
+   Node の動作確認は `node-v24.21.0-linux-x64-musl` で実施。glibc 版の手順 2 も検証済み。
 
 制限事項:
 - 外部への通信 (レジストリ、パッケージ取得、外部 API) はできない。依存はホスト側で解決してから COPY する。
