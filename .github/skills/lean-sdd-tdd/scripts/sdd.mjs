@@ -1388,7 +1388,7 @@ const SCOPE_TOKENS = {
     return stems.length ? [[...new Set(stems)].map((x) => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')] : [];
   },
 };
-const LOAD_ERR = /(cannot find (module|package)|modulenotfounderror|importerror|^\s*(?:e\s+|uncaught\s+)?(?:\w+\.)*syntaxerror\b\s*(?::|$)|^error: unexpected [^\n]* in "|error in parse\(|unable to load shared object|error in (?:dyn\.load|loadnamespace|library)\(|cannot resolve|no such file|undefined reference|could not compile|error\[e\d+\]|failed to resolve import|failed to load url|\[build failed\]|^[^\s:]+:\d+(?::\d+)?: (?:fatal )?error\b|cannot find symbol|ld returned \d+ exit status|\[setup failed\]|failed opening required|class \"[^\"]+\" not found|call to undefined (function|method)|php parse error|cannot redeclare|cannot declare class|could not find function|there is no package called|what went wrong:\s*\n(?!execution failed for task '[^']*test')|error (cs|msb|nu)\d+|error ts\d+|test suite failed to run|non-parseable pom|the build could not read|compilation failure|fatal error compiling|release version \d+ not supported|mojoexecutionexception|could not resolve dependencies|dependencies? .{0,80}could not be resolved|cannot open the connection|undefvarerror|loaderror: (systemerror|parseerror)|error collecting |interrupted: \d+ errors? during collection|^error: loaderror: (?!some tests did not pass)|^\*\* \((?:CompileError|SyntaxError|TokenMissingError|Mix)\)|is undefined \(module [\w.]+ is not available\)|^# [^\n]*\n[^\n]*:\d+:\d+: (undefined|cannot|missing))/im;
+const LOAD_ERR = /(cannot find (module|package)|modulenotfounderror|importerror|^\s*(?:e\s+|uncaught\s+)?(?:\w+\.)*syntaxerror\b\s*(?::|$)|^error: unexpected [^\n]* in "|error in parse\(|unable to load shared object|error in (?:dyn\.load|loadnamespace|library)\(|cannot resolve|no such file|undefined reference|could not compile|error\[e\d+\]|failed to resolve import|failed to load url|\[build failed\]|^[^\s:]+:\d+(?::\d+)?: (?:fatal )?error\b|cannot find symbol|ld returned \d+ exit status|\[setup failed\]|failed opening required|class \"[^\"]+\" not found|call to undefined (function|method)|php parse error|cannot redeclare|cannot declare class|could not find function|there is no package called|what went wrong:\s*\n(?!execution failed for task '[^']*test')|error (cs|msb|nu)\d+|error ts\d+|tserror|unable to compile typescript|transform failed with \d+ error|test suite failed to run|non-parseable pom|the build could not read|compilation failure|fatal error compiling|release version \d+ not supported|mojoexecutionexception|could not resolve dependencies|dependencies? .{0,80}could not be resolved|cannot open the connection|undefvarerror|loaderror: (systemerror|parseerror)|error collecting |interrupted: \d+ errors? during collection|^error: loaderror: (?!some tests did not pass)|^\*\* \((?:CompileError|SyntaxError|TokenMissingError|Mix)\)|is undefined \(module [\w.]+ is not available\)|^# [^\n]*\n[^\n]*:\d+:\d+: (undefined|cannot|missing))/im;
 // a genuine runtime assertion/panic outranks an incidental LOAD_ERR substring such as "No such file" in the failure text (#252)
 const RUNTIME_FAIL = /^thread '[^']*'(?: \(\d+\))? panicked at |^\s*assertion [`'"]?(?:left|[^\n]*)[`'"]? failed\b/m;
 // classify by exception type: an AssertionError whose message embeds subprocess stderr is an assertion, not a load error (#282);
@@ -4035,7 +4035,7 @@ function cmdTdd() {
     if (made.warnings?.length) out(`! not stubbed: ${[...new Set(made.warnings)].join('; ')} — add the exports by hand`);
     return made.verified === 'fail' && /\.(?:c|cc|cpp|cxx)$/.test(t.path) ? 1 : 0;
   }
-  if (!['red', 'green', 'refactor'].includes(sub)) { out('usage: tdd red|green|refactor <TEST-ID> [--req REQ] [--weak] [--expect <text>] [--retest <why>] [--characterization <why>] [--allow-setup-red] | tdd stub <TEST-ID> | tdd check | tdd merge-ledger'); return 2; }
+  if (!['red', 'green', 'refactor'].includes(sub)) { out('usage: tdd red|green|refactor <TEST-ID> [--req REQ] [--weak] [--expect <text>] [--retest <why>] [--characterization <why>] [--allow-setup-red] [--wording <why> (refactor on T1 after a test change)] | tdd stub <TEST-ID> | tdd check | tdd merge-ledger'); return 2; }
   if (!pos[2]) { out(`usage: tdd ${sub} <TEST-ID> [<TEST-ID>...] [--req REQ] [--weak]`); return 2; }
   if (flags.characterization === true) { out('usage: --characterization "<reason>" needs a reason text'); return 2; }
   // batch: run each ID in turn (flags such as --req/--characterization apply to every ID) (#126)
@@ -4090,6 +4090,10 @@ function cmdTdd() {
     if (shaMatches(last.fileSha, t.path, id)) { out(`REFUSED: --retest: the test of ${id} is unchanged since its last ${last.type}; nothing to re-test`); return 1; }
   }
   if (sub === 'refactor' && !prior.some((e) => e.type === 'green')) { out(`REFUSED: no Green recorded for ${id}`); return 1; }
+  if (sub === 'refactor' && spec.tier === 'T1') {
+    const lastG = prior.filter((e) => e.type === 'green' || e.type === 'refactor').at(-1);
+    if (lastG && !shaMatches(lastG.fileSha, t.path, id) && !(typeof flags.wording === 'string' && flags.wording.trim())) { out(`REFUSED: ${id}: the test changed since its last Green and ${spec.tier} specs have no approval lock, so a refactor would bless a behaviour change without a Red. Behaviour/assertions changed: tdd red then tdd green. Wording/formatting only: tdd refactor ${id} --wording "<why>"`); return 1; }
+  }
 
   const cfg = loadConfig();
   const proj = projectFor(t.path);
@@ -4686,7 +4690,7 @@ function cmdGate() {
   for (const [f, a] of Object.entries(readJson(APPROVALS, {}))) if (!specs.some((s) => s.feature === f) && (a.tier === 'T2' || a.requireHuman)) add(false, `lock ${f}: spec removed`, [`a locked ${a.tier === 'T2' ? 'T2' : 'human'} spec disappeared — if intended: approve retire ${f} --by <human name>`]);
 
   const t = applyBaseline(traceCheck(ents, dups, specs));
-  add(!t.errors.length, `trace: ${[...t.reqs.values()].filter((r) => !r.deferred).length} REQ, ${t.errors.length} errors${t.warnings.length ? `, ${t.warnings.length} warnings` : ''}`, t.errors.slice(0, 6));
+  add(!t.errors.length, `trace: ${[...t.reqs.values()].filter((r) => !r.deferred).length} REQ${[...t.reqs.values()].some((r) => r.deferred) ? ` (+${[...t.reqs.values()].filter((r) => r.deferred).length} deferred, not tested: ${[...t.reqs.values()].filter((r) => r.deferred).map((r) => r.id).join(', ')})` : ''}, ${t.errors.length} errors${t.warnings.length ? `, ${t.warnings.length} warnings` : ''}`, t.errors.slice(0, 6));
 
   const entries = readLedger();
   const chain = verifyChain(entries);
