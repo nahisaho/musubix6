@@ -7060,3 +7060,31 @@ test('#283 --retest after only an oracle artifact changed keeps the strong Red',
   assert.equal(sdd(d, 'tdd', 'green', 'TEST-A-001').code, 0);
   assert.doesNotMatch(sdd(d, 'gate', '--no-run').out, /weak Red|superseded/);
 });
+
+// ---- wave 11 (#284) ----
+test('#284 conftest.py defining only fixtures the test never uses does not stale the test; a used fixture still does', () => {
+  const d = batch2Source('tests/test_a.py', 'def test_calc_001():\n    # @id TEST-CALC-001 @verifies REQ-CALC-001\n    assert 1 == 2\n');
+  writeAll(d, { 'tests/conftest.py': 'import pytest\n@pytest.fixture\ndef val():\n    return 1\n' });
+  fakeOut(d, 'E   assert 1 == 2\nFAILED tests/test_a.py::test_calc_001 - assert 1 == 2\n1 failed');
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-CALC-001').code, 0);
+  fakeOut(d, 'pass', 0);
+  assert.equal(sdd(d, 'tdd', 'green', 'TEST-CALC-001').code, 0);
+  writeAll(d, { 'tests/conftest.py': 'import pytest\n@pytest.fixture\ndef val():\n    return 2\n\n@pytest.fixture\ndef other():\n    return 3\n' });
+  const g = sdd(d, 'gate', '--no-run');
+  assert.doesNotMatch(g.out, /oracle dependency changed: .*conftest/, g.out);
+});
+
+test('#284 gate --changed never prints the raw {changedCargoPkgs} placeholder', () => {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-cargo-'));
+  const git = (...a) => spawnSync('git', ['-c', 'user.email=a@b', '-c', 'user.name=t', ...a], { cwd: d });
+  fs.mkdirSync(path.join(d, 'src'), { recursive: true });
+  fs.writeFileSync(path.join(d, 'Cargo.toml'), '[package]\nname = "x"\nversion = "0.1.0"\nedition = "2021"\n');
+  fs.writeFileSync(path.join(d, 'src/lib.rs'), 'pub fn a() {}\n');
+  git('init', '-q');
+  sdd(d, 'init');
+  git('add', '-A'); git('commit', '-qm', 'base');
+  fs.appendFileSync(path.join(d, 'Cargo.toml'), '\n# edit\n');
+  const g = sdd(d, 'gate', '--changed').out;
+  assert.match(g, /cannot scope changes for the changed Cargo packages/, g);
+  assert.doesNotMatch(g, /\{changedCargoPkgs\}/, g);
+});
