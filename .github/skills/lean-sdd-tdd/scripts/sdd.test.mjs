@@ -8374,3 +8374,18 @@ test('#310 Rust stub: enum variants and inherent methods used via a helper are k
   assert.match(lib, /fn get/, lib);
   ok17(out);
 });
+
+test('#311 r23b: (characterization) REQ Red is labelled with its own marker; setup-Red advice covers the stubbed-setup case', () => {
+  const d = t1project();
+  fs.writeFileSync(path.join(d, '.sdd/specs/calc.md'), '---\nfeature: calc\ntier: T1\n---\n| REQ-CALC-001 | (characterization) When add is called, the system shall sum. | TEST-CALC-001 |\n');
+  fs.writeFileSync(path.join(d, 'add.mjs'), 'export const add = (a, b) => a + b;\n');
+  const r = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
+  assert.match(r.out, /characterization: \(characterization\) REQ \(test passed\)/, r.out);
+  assert.doesNotMatch(r.out, /\(test-only\) REQ/, r.out);
+
+  const p = project();
+  sdd(p, 'approve', 'record', 'calc', '--by', 'tester');
+  fs.writeFileSync(path.join(p, 'add.test.mjs'), ["import { test } from 'node:test';", "import assert from 'node:assert/strict';", "import { add, reset } from './add.mjs';", '/** @id TEST-CALC-001 @verifies REQ-CALC-001 */', "test('TEST-CALC-001 adds', () => {", '  reset();', '  assert.equal(add(1, 2), 3);', '});', ''].join('\n'));
+  fs.writeFileSync(path.join(p, 'add.mjs'), "export const add = () => 3;\nexport const reset = () => { throw new Error('not implemented: reset'); };\n");
+  assert.match(sdd(p, 'tdd', 'red', 'TEST-CALC-001').out, /stub "reset" with a minimal working body/);
+});
