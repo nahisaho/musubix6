@@ -1350,7 +1350,15 @@ const SCOPE_TOKENS = {
 const LOAD_ERR = /(cannot find (module|package)|modulenotfounderror|importerror|^\s*(?:e\s+|uncaught\s+)?(?:\w+\.)*syntaxerror\b\s*(?::|$)|^error: unexpected [^\n]* in "|error in parse\(|unable to load shared object|error in (?:dyn\.load|loadnamespace|library)\(|cannot resolve|no such file|undefined reference|could not compile|error\[e\d+\]|failed to resolve import|failed to load url|\[build failed\]|^[^\s:]+:\d+(?::\d+)?: (?:fatal )?error\b|cannot find symbol|ld returned \d+ exit status|\[setup failed\]|failed opening required|class \"[^\"]+\" not found|call to undefined (function|method)|php parse error|cannot redeclare|cannot declare class|could not find function|there is no package called|what went wrong:\s*\n(?!execution failed for task '[^']*test')|error (cs|msb|nu)\d+|error ts\d+|test suite failed to run|non-parseable pom|the build could not read|compilation failure|fatal error compiling|release version \d+ not supported|mojoexecutionexception|could not resolve dependencies|dependencies? .{0,80}could not be resolved|cannot open the connection|undefvarerror|loaderror: (systemerror|parseerror)|error collecting |interrupted: \d+ errors? during collection|^error: loaderror: (?!some tests did not pass)|^\*\* \((?:CompileError|SyntaxError|TokenMissingError|Mix)\)|is undefined \(module [\w.]+ is not available\)|^# [^\n]*\n[^\n]*:\d+:\d+: (undefined|cannot|missing))/im;
 // a genuine runtime assertion/panic outranks an incidental LOAD_ERR substring such as "No such file" in the failure text (#252)
 const RUNTIME_FAIL = /^thread '[^']*'(?: \(\d+\))? panicked at |^\s*assertion [`'"]?(?:left|[^\n]*)[`'"]? failed\b/m;
-const isLoadErr = (text) => LOAD_ERR.test(text) && !RUNTIME_FAIL.test(text);
+// classify by exception type: an AssertionError whose message embeds subprocess stderr is an assertion, not a load error (#282);
+// ENOENT / FileNotFoundError on a declared, not-yet-created deliverable is a valid Red too
+const ASSERT_EXC = /^\s*(?:E\s+)?(?:[\w.]+\.)?AssertionError\b/m;
+function missingDeliverable(text) {
+  if (!/ENOENT|FileNotFoundError|no such file/i.test(text)) return false;
+  const norm = (x) => path.posix.normalize(String(x).replace(/\\/g, '/')).replace(/^\.\//, '');
+  return [].concat((readJson(CONFIG, null) ?? {}).deliverables ?? []).map(norm).some((d) => d && text.replace(/\\/g, '/').includes(d) && !fs.existsSync(path.join(ROOT, d)));
+}
+const isLoadErr = (text) => LOAD_ERR.test(text) && !RUNTIME_FAIL.test(text) && !ASSERT_EXC.test(text) && !missingDeliverable(text);
 // a repo without any commit has no baseline for `--changed` (#150)
 function hasCommit() { return spawnSync('git', ['rev-parse', '--verify', '-q', 'HEAD'], { cwd: ROOT, stdio: 'ignore' }).status === 0; }
 
@@ -3687,7 +3695,7 @@ function cmdTdd() {
     const made = stubFor(t.path, t.id);
     let annotationIndex = 0;
     for (const file of [...new Set(made)]) {
-      if (priorFiles.has(file) || !/\.(?:java|php|cs|jl|exs?)$/.test(file)) continue;
+      if (priorFiles.has(file) || !/\.(?:java|php|cs|jl|exs?|[cm]?[jt]sx?)$/.test(file)) continue;
       const abs = path.join(ROOT, file), text = fs.readFileSync(abs, 'utf8');
       if (/@id\s+(?:CODE|TEST)-/.test(text)) continue;
       let codeId;
