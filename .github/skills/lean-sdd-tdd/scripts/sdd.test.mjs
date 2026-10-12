@@ -7860,3 +7860,13 @@ test('#298 Rust stub: instance methods are added to an existing (generic) impl, 
   assert.equal((lib.match(/pub struct Stack/g) ?? []).length, 1, lib);
   ok17(out);
 });
+
+test('#298 Rust stub: UFCS trait calls (`<T as Trait>::f(..)`, `Trait::f(&x)`) give a trait with methods and an impl, not a struct', has268, () => {
+  const d = rs288('use hist::{Hasher, Crc};\n\n' + t288('    let c = Crc::new();\n    assert_eq!(Hasher::digest(&c, 5), 7);\n    assert_eq!(<Crc as Hasher>::name(), "crc");'));
+  const { out, lib } = stub288(d);
+  assert.match(lib, /pub trait Hasher \{[^}]*fn digest[^}]*&self/s, lib);
+  assert.doesNotMatch(lib, /struct Hasher/, lib);
+  assert.match(lib, /fn name\(\) -> String/, lib);
+  assert.match(lib, /impl Hasher for Crc/, lib);
+  ok17(out);
+});

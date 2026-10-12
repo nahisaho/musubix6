@@ -1959,6 +1959,7 @@ function stubRust(testPath, src, dir, made) {
   };
   const genNames = (args) => { const nt = args.filter((a) => !a.startsWith("'")).length; let t = 0; return args.map((a) => a.startsWith("'") ? (/^'(?:_|static)$/.test(a) ? "'a" : a) : nt === 1 ? 'T' : `T${t++}`); };
   // `impl Trait for X { type A = ..; const C: T = ..; fn m(..) -> R { .. } }` in the test => the trait declaration (None when the test neither implements nor `dyn`s it)
+  const ufcsImpls = [];
   const traitStub = (n) => {
     const ms = maskBraces(srcNoUse, true);
     const items = [];
@@ -1976,7 +1977,27 @@ function stubRust(testPath, src, dir, made) {
       for (const f of mb.matchAll(/\bconst\s+(\w+)\s*:\s*([^=;]+)=/g)) if (!dep[f.index]) items.push(`const ${f[1]}: ${body.slice(f.index + f[0].indexOf(':') + 1, f.index + f[0].indexOf(':') + 1 + f[2].length).trim()};`);
     }
     const bound = new RegExp(`\\bdyn\\s+${n}\\b|\\bimpl\\s+(?:\\w+\\s*\\+\\s*)*${n}\\b(?!\\s*(?:for\\b|\\{|<))|<[^<>;{}]*\\b\\w+\\s*:\\s*(?:[\\w:?']+\\s*\\+\\s*)*${n}\\b|\\bwhere\\b[^{;]*:\\s*(?:[\\w:?']+\\s*\\+\\s*)*${n}\\b|\\+\\s*${n}\\b`).test(ms);
-    if (!found && !bound) return null;
+    // UFCS: `<T as N>::f(&x)` / `N::f(&x)` call trait methods; `ufcsImpls` records which type needs `impl N for T`
+    const ufcs = [];
+    const hasCtor = new RegExp(`(?<![\\w:])${n}\\s*\\{|(?<![\\w:])${n}\\s*::\\s*(?:[A-Z]\\w*|[a-z_]\\w*\\s*\\(\\s*(?!&|\\))[^)])`).test(ms);
+    for (const m of ms.matchAll(new RegExp(`<\\s*([A-Z][\\w:]*)(?:<[^>]*>)?\\s+as\\s+(?:[\\w:]+::)?${n}\\s*>\\s*::\\s*([a-z_]\\w*)\\s*\\(`, 'g'))) ufcs.push({ ty: m[1].split('::').pop(), f: m[2], pat: `<\\s*${m[1]}(?:<[^>]*>)?\\s+as\\s+(?:[\\w:]+::)?${n}\\s*>\\s*::\\s*${m[2]}` });
+    if (!hasCtor) for (const m of ms.matchAll(new RegExp(`(?<![\\w:<])${n}\\s*::\\s*([a-z_]\\w*)\\s*\\(\\s*&`, 'g'))) ufcs.push({ ty: null, f: m[1], pat: `${n}\\s*::\\s*${m[1]}` });
+    const resolved = [];
+    for (const u of ufcs) {
+      if (items.some((x) => x.startsWith(`fn ${u.f}`))) continue;
+      const c = callInfo(srcNoUse, u.pat), isSelf = /^&/.test(c.raws[0] ?? ''), rest = c.args.slice(isSelf ? 1 : 0);
+      const arg0 = (c.raws[0] ?? '').replace(/^&\s*(?:mut\s+)?/, '');
+      const ty = u.ty ?? (/^[A-Z]/.test(arg0) ? /^[A-Z]\w*/.exec(arg0)[0] : new RegExp(`\\blet\\s+(?:mut\\s+)?${arg0.replace(/\W/g, '')}\\s*(?::[^=]+)?=\\s*&?([A-Z]\\w*)`).exec(srcNoUse)?.[1]);
+      // `Name::f(&x)` is a trait call only when x is visibly a value of another type: `Type::of(&bytes)` is an associated fn
+      if (!u.ty && (!ty || ty === n)) continue;
+      resolved.push(u);
+      const ret = rustRet(`(?<![\\w.])${u.pat}`, ownPkg) ?? (c.ret?.startsWith('opt:') ? `Option<${c.ret.slice(4)}>` : T[c.ret] ?? 'i64');
+      const g = rest.map((_, i) => `A${i}`);
+      const sigStr = `fn ${u.f}${g.length ? `<${g.join(', ')}>` : ''}(${[isSelf ? (/^&\s*mut\b/.test(c.raws[0]) ? '&mut self' : '&self') : '', ...g.map((t, i) => `_a${i}: ${t}`)].filter(Boolean).join(', ')}) -> ${ret}`;
+      items.push(sigStr + ';');
+      if (ty && /^[A-Z]/.test(ty)) ufcsImpls.push({ trait: n, ty, item: `    ${sigStr} {\n        unimplemented!("${ty}::${u.f}")\n    }\n` });
+    }
+    if (!found && !bound && !resolved.length) return null;
     return `pub trait ${n}${gn.length ? `<${gn.join(', ')}>` : ''} {\n${items.sort((a, b) => /^type/.test(b) - /^type/.test(a)).map((i) => `    ${i}\n`).join('')}}\n`;
   };
   // builder chains `Type::builder().a(1).b(2).build()`: every link but the last returns Self by value (the last keeps its inferred type)
@@ -2052,6 +2073,8 @@ function stubRust(testPath, src, dir, made) {
     for (; k < m_.length; k++) { if (m_[k] === '{') depth++; else if (m_[k] === '}' && !--depth) break; }
     return t.slice(0, k).replace(/\n*$/, '\n\n') + blocks.join('\n') + t.slice(k);
   };
+  // `impl Trait for Type {..}` for UFCS-called trait methods, once the type is defined in the text that is written
+  const implsFor = (text) => { const done = new Set(); return ufcsImpls.filter((u) => new RegExp(`\\b(?:struct|enum)\\s+${u.ty}\\b`).test(text) && !new RegExp(`\\bimpl(?:<[^>]*>)?\\s+${u.trait}\\s+for\\s+${u.ty}\\b`).test(text)).filter((u) => !done.has(u.trait + u.ty) && done.add(u.trait + u.ty)).map((u) => `\nimpl ${u.trait} for ${u.ty} {\n${ufcsImpls.filter((x) => x.trait === u.trait && x.ty === u.ty).map((x) => x.item).join('\n')}}\n`).join(''); };
   const typeStub = (n, crate_ = ownPkg) => {
     const vs = [...new Set([...src.matchAll(new RegExp(`\\b${n}::([A-Z]\\w*)`, 'g'))].map((m) => m[1]).filter((v) => !/^[A-Z][A-Z0-9_]+$/.test(v)))];
     if (vs.length) {
@@ -2129,7 +2152,7 @@ function stubRust(testPath, src, dir, made) {
       parent = fs.existsSync(f) ? f : mf;
       last = parent;
     }
-    if (created) { fs.writeFileSync(last, items.map((x) => itemStub(x, m[1])).join('\n')); freshMods.add(last); }
+    if (created) { const t_ = items.map((x) => itemStub(x, m[1])).join('\n'); fs.writeFileSync(last, t_ + implsFor(t_)); freshMods.add(last); }
     else {
       // missing items are appended to an existing module; items it already defines or re-exports are left alone
       const text = fs.readFileSync(last, 'utf8');
@@ -2145,7 +2168,7 @@ function stubRust(testPath, src, dir, made) {
         return addToImpl(t, x, add_, false);
       }, text);
       if (grown !== text) { fs.writeFileSync(last, grown); if (!freshMods.has(last)) made.push(rel(last)); }
-      if (miss.length) { fs.appendFileSync(last, (text && !text.endsWith('\n') ? '\n' : '') + (text ? '\n' : '') + miss.map((x) => itemStub(x, m[1])).join('\n')); if (!freshMods.has(last)) made.push(rel(last)); }
+      if (miss.length) { const add_ = miss.map((x) => itemStub(x, m[1])).join('\n'); fs.appendFileSync(last, (text && !text.endsWith('\n') ? '\n' : '') + (text ? '\n' : '') + add_ + implsFor(text + add_)); if (!freshMods.has(last)) made.push(rel(last)); }
     }
   }
   // `macro_rules!` macros the test imports from a project crate (root-level `use krate::name;`, `krate::name!`, `#[macro_use] extern crate`) get an exported throwing stub (#288)
@@ -2244,7 +2267,7 @@ function stubRust(testPath, src, dir, made) {
   const prev = fs.readFileSync(ownLib, 'utf8');
   // names the library already defines are not appended again, and an unchanged lib.rs is never reported as stubbed (#290)
   const fresh = names.filter((n) => !new RegExp(`\\b(?:struct|enum|fn|const|static|type|trait)\\s+${n}\\b`).test(prev));
-  const body = fresh.map((x) => itemStub(x)).join('\n');
+  const body0 = fresh.map((x) => itemStub(x)).join('\n'), body = body0 + implsFor(prev + body0);
   if (body.trim()) { fs.writeFileSync(ownLib, prev + (prev && !prev.endsWith('\n\n') ? '\n' : '') + body); made.push(rel(ownLib)); }
   else if (probeFile && !made.length) fs.rmSync(ownLib);
   return withNotes(Object.assign([...new Set(made)], verified()));
