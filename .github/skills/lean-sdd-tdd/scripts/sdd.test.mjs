@@ -7274,3 +7274,47 @@ test('#288 Rust stub: builder chains get by-value methods returning Self, the la
   assert.match(lib, /pub fn retries<A0>\(self, _a0: A0\) -> Self/, lib);
   assert.match(out, /compile-checked/, out);
 });
+
+// ---- r13b (#288 Python residuals) ----
+const R13SPEC = '---\nfeature: w\ntier: T1\napproval: auto\n---\n| REQ-W-001 | g shall hold. | TEST-W-001 |\n';
+
+test('#288 a type-only typing.Protocol import is stubbed as a Protocol, not a plain class', () => {
+  const d = mini(R13SPEC, {
+    'pyproject.toml': '[tool.pytest.ini_options]\npythonpath = ["src"]\n',
+    'tests/test_w.py': 'from netsim.rng import Rng\n\n\ndef draw(r: Rng) -> int:\n    return 1\n\n\n# @id TEST-W-001 @verifies REQ-W-001\ndef test_w_001():\n    assert draw(None) == 1\n',
+  });
+  sdd(d, 'tdd', 'stub', 'TEST-W-001');
+  const s = fs.readFileSync(path.join(d, 'src/netsim/rng.py'), 'utf8');
+  assert.match(s, /from typing import Protocol/, s);
+  assert.match(s, /class Rng\(Protocol\)/, s);
+});
+
+test('#288 imports made inside conftest.py fixtures are stubbed', () => {
+  const d = mini(R13SPEC, {
+    'tests/conftest.py': 'import pytest\n\n\n@pytest.fixture\ndef table():\n    from bcdis.table import OpTable\n    return OpTable()\n',
+    'tests/test_w.py': '# @id TEST-W-001 @verifies REQ-W-001\ndef test_w_001(table):\n    assert table.size() == 1\n',
+  });
+  const r = sdd(d, 'tdd', 'stub', 'TEST-W-001');
+  assert.ok(fs.existsSync(path.join(d, 'bcdis/table.py')), r.out);
+  assert.match(fs.readFileSync(path.join(d, 'bcdis/table.py'), 'utf8'), /class OpTable/);
+});
+
+test('#288 "nothing to stub" for absolute imports says what was checked', () => {
+  const d = mini(R13SPEC, {
+    'tests/test_w.py': 'import json\nfrom os import path\n\n\n# @id TEST-W-001 @verifies REQ-W-001\ndef test_w_001():\n    assert json and path\n',
+  });
+  const r = sdd(d, 'tdd', 'stub', 'TEST-W-001');
+  assert.doesNotMatch(r.out, /no missing relative imports/, r.out);
+  assert.match(r.out, /checked 1 .*import/i, r.out);
+});
+
+test('#288 subprocess-subject test: stub prints a note; Red works without --weak on a genuine non-zero exit', () => {
+  const d = mini(R13SPEC, {
+    'tests/test_w.py': 'import subprocess\n\n\n# @id TEST-W-001 @verifies REQ-W-001\ndef test_w_001():\n    r = subprocess.run(["node", "cli.ts"], capture_output=True, text=True)\n    assert r.returncode == 0\n',
+  }, ['python3', '-m', 'pytest', '-q', '{file}', '-k', '{idu}']);
+  const s = sdd(d, 'tdd', 'stub', 'TEST-W-001');
+  assert.match(s.out, /subprocess/, s.out);
+  const r = sdd(d, 'tdd', 'red', 'TEST-W-001');
+  assert.equal(r.code, 0, r.out);
+  assert.doesNotMatch(r.out, /weak/i, r.out);
+});
