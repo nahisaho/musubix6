@@ -1039,17 +1039,20 @@ const unannotatedHint = (names) => { const bad = names.filter((f) => { try { ret
 const oracleNote = (names) => names.length ? ` — oracle dependency changed: ${names.slice(0, 4).join(', ')}${names.length > 4 ? `, … +${names.length - 4}` : ''}` : '';
 function evidenceStatus(testId, testPath, entries) {
   const es = entries.filter((e) => e.test === testId);
-  const g = es.filter((e) => e.type === 'green').at(-1);
+  // reverting to content that already has Green/Refactor evidence recovers it, even after a later refactor recorded against moved setup (#274)
+  const gs = es.filter((e) => e.type === 'green');
+  const g = gs.filter((e) => shaMatches(e.fileSha, testPath, testId)).at(-1) ?? gs.at(-1);
   if (!g) return { ok: false, why: 'no Green recorded' };
   const r = es.filter((e) => e.type === 'red' && e.seq < g.seq && e.fileSha === g.fileSha).at(-1);
   if (!r) return { ok: false, why: 'no Red preceding Green with same test hash' };
-  const last = es.filter((e) => e.type === 'green' || e.type === 'refactor').at(-1);
+  const ge = es.filter((e) => e.type === 'green' || e.type === 'refactor');
+  const last = ge.filter((e) => shaMatches(e.fileSha, testPath, testId)).at(-1) ?? ge.at(-1);
   if (!shaMatches(last.fileSha, testPath, testId)) return { ok: false, why: `test changed since last Green/Refactor${oracleNote(changedOracleDeps(last, testPath, testId))} (if the spec changes the expected output, update the test and re-record: tdd red ${testId} --retest "<reason>", then tdd green; otherwise revert the test)` };
   // every verified REQ is hash-tracked (reqShas); older entries carry only the first one
   for (const [rid, rsha] of Object.entries(last.reqShas ?? { [last.req]: last.reqSha })) {
     if (rsha && reqShaOf(rid) && !reqShaSame(rid, rsha)) return { ok: false, why: `${rid} changed in the spec since last Green/Refactor: re-verify with tdd refactor (wording only) or tdd red/green (behaviour changed)` };
   }
-  return { ok: true, weak: !!r.weak, charac: !!r.characterization, retest: !!r.retest, retestSuperseded: !!(r.retest && r.priorStrongRed) };
+  return { ok: true, weak: !!r.weak, charac: !!r.characterization, retest: !!r.retest, retestSuperseded: !!(r.retest && r.priorStrongRed), blessed: !!last.moved };
 }
 
 // ---------- config / commands ----------
@@ -1337,7 +1340,7 @@ const SCOPE_TOKENS = {
 };
 const LOAD_ERR = /(cannot find (module|package)|modulenotfounderror|importerror|^\s*(?:e\s+|uncaught\s+)?(?:\w+\.)*syntaxerror\b\s*(?::|$)|^error: unexpected [^\n]* in "|error in parse\(|unable to load shared object|error in (?:dyn\.load|loadnamespace|library)\(|cannot resolve|no such file|undefined reference|could not compile|error\[e\d+\]|failed to resolve import|failed to load url|\[build failed\]|^[^\s:]+:\d+(?::\d+)?: (?:fatal )?error\b|cannot find symbol|ld returned \d+ exit status|\[setup failed\]|failed opening required|class \"[^\"]+\" not found|call to undefined (function|method)|php parse error|cannot redeclare|cannot declare class|could not find function|there is no package called|what went wrong:\s*\n(?!execution failed for task '[^']*test')|error (cs|msb|nu)\d+|error ts\d+|test suite failed to run|non-parseable pom|the build could not read|compilation failure|fatal error compiling|release version \d+ not supported|mojoexecutionexception|could not resolve dependencies|dependencies? .{0,80}could not be resolved|cannot open the connection|undefvarerror|loaderror: (systemerror|parseerror)|error collecting |interrupted: \d+ errors? during collection|^error: loaderror: (?!some tests did not pass)|^\*\* \((?:CompileError|SyntaxError|TokenMissingError|Mix)\)|is undefined \(module [\w.]+ is not available\)|^# [^\n]*\n[^\n]*:\d+:\d+: (undefined|cannot|missing))/im;
 // a genuine runtime assertion/panic outranks an incidental LOAD_ERR substring such as "No such file" in the failure text (#252)
-const RUNTIME_FAIL = /^thread '[^']*' panicked at |^\s*assertion [`'"]?(?:left|[^\n]*)[`'"]? failed\b/m;
+const RUNTIME_FAIL = /^thread '[^']*'(?: \(\d+\))? panicked at |^\s*assertion [`'"]?(?:left|[^\n]*)[`'"]? failed\b/m;
 const isLoadErr = (text) => LOAD_ERR.test(text) && !RUNTIME_FAIL.test(text);
 // a repo without any commit has no baseline for `--changed` (#150)
 function hasCommit() { return spawnSync('git', ['rev-parse', '--verify', '-q', 'HEAD'], { cwd: ROOT, stdio: 'ignore' }).status === 0; }
@@ -3931,7 +3934,7 @@ function cmdTdd() {
     if (res.timedOut) { ok = false; why = timeoutWhy; }
     else if (crashed) { ok = false; why = crashWhy; }
     else if (siblingFail === 'notrun') { ok = false; why = notRunWhy; }
-    else if (verdict === 'fail' || (res.exit !== 0 && siblingFail !== 'sibling' && verdict !== 'pass')) { ok = false; why = 'test failed'; }
+    else if (verdict === 'fail' || (res.exit !== 0 && siblingFail !== 'sibling' && verdict !== 'pass')) { ok = false; why = isLoadErr(res.text) ? 'test failed — load/compile error (the build is broken, not an assertion)' : 'test failed'; }
     else if (zero || siblingFail === 'skip') { ok = false; why = 'no test matched the ID'; }
     else ok = true;
   }
@@ -3950,7 +3953,7 @@ function cmdTdd() {
   // human-approved code baseline follows the first implementation: refresh until the feature is fully Green (#92)
   const humanSpecs = sub === 'red' ? [] : loadSpecs().filter((x) => x.approval === 'human' && x.reqs.some((q) => t.refs.verifies.includes(q.id)));
   const wasDone = new Map(humanSpecs.map((x) => [x.feature, featureGreen(x)]));
-  appendLedger({ type: sub, test: id, req, reqSha: reqShaOf(req), reqShas: Object.fromEntries([...new Set([req, ...t.refs.verifies])].map((r) => [r, reqShaOf(r)]).filter(([, v]) => v)), file: t.path, fileSha: after, protectedFiles: oracleDependencyFiles, oracleShas: oracleDependencyFiles.length ? oracleDependencyShas : undefined, cmdSha: sha(cmd.join('\0')), exit: res.exit, ms: res.ms, weak: weakRed ? true : undefined, weakWhy: setupSym ? `setup:${setupSym}` : charac ? 'characterization' : retestWeak ? 'retest' : undefined, characterization: charac || undefined, retest: retestWeak ? retest : undefined, priorStrongRed: retestWeak && prior.some((e) => e.type === 'red' && !e.weak && !e.retest) ? true : undefined });
+  appendLedger({ type: sub, test: id, req, reqSha: reqShaOf(req), reqShas: Object.fromEntries([...new Set([req, ...t.refs.verifies])].map((r) => [r, reqShaOf(r)]).filter(([, v]) => v)), file: t.path, fileSha: after, protectedFiles: oracleDependencyFiles, oracleShas: oracleDependencyFiles.length ? oracleDependencyShas : undefined, cmdSha: sha(cmd.join('\0')), exit: res.exit, ms: res.ms, weak: weakRed ? true : undefined, weakWhy: setupSym ? `setup:${setupSym}` : charac ? 'characterization' : retestWeak ? 'retest' : undefined, characterization: charac || undefined, retest: retestWeak ? retest : undefined, priorStrongRed: retestWeak && prior.some((e) => e.type === 'red' && !e.weak && !e.retest) ? true : undefined, moved: sub === 'refactor' && prior.filter((e) => e.type === 'green' || e.type === 'refactor').at(-1)?.fileSha !== after && prior.some((e) => e.type === 'green' || e.type === 'refactor') ? true : undefined });
   for (const x of humanSpecs) if (!wasDone.get(x.feature)) {
     const all = readJson(APPROVALS, {});
     if (all[x.feature]?.code) { all[x.feature].code = implFileShas(x); writeJson(APPROVALS, all); }
@@ -3960,6 +3963,7 @@ function cmdTdd() {
   if (movedDeps.length) out(`⚠ ${id}: oracle dependency changed since the last Green${oracleNote(movedDeps).replace(/^ — oracle dependency changed/, '')} (the test's own region may be unchanged); a refactor does not prove the changed oracle can fail (no Red). If expectations changed, use tdd red/green instead (#239)`);
   else if (sub === 'refactor' && lastGreen && lastGreen.fileSha !== after) out(`⚠ ${id}: test body changed since the last Green (includes the file preamble: imports/includes/helpers); a refactor does not prove the new assertions can fail (no Red). If behaviour/assertions changed, use tdd red/green instead (#118)`);
   out(`${sub.toUpperCase()} ok ${id} (${req}) ${res.ms}ms${reason ? ` — fails with: ${reason}` : ''}${charac ? ` — characterization: ${charac} (test passed)` : retestWeak ? ` — retest: ${retest} (test passed)` : ''}${weakRed ? ' [weak]' : ''}${setupSym ? ` ⚠ Red comes from setup call "${setupSym}", not the asserted behaviour (${typeof flags.expect === 'string' ? `--expect "${flags.expect}" names "${setupSym}" itself; use text from the asserted behaviour` : `use --expect <text> that does not name "${setupSym}"`}, or --allow-setup-red)` : ''}`);
+  if (sub === 'red' && res.exit !== 0 && typeof flags.characterization === 'string' && flags.characterization.trim()) out(`! --characterization ignored for ${id}: the test failed, so this is a normal Red (the flag only applies to a test that passes without implementation)`);
   if (sub === 'green') {
     const mine = new Set(t.refs.verifies), implFiles = [...ents.values()].filter((e) => e.kind === 'CODE' && e.refs.implements.some((r) => mine.has(r))).map((e) => e.path);
     const mtime = (f) => { try { return fs.statSync(path.join(ROOT, f)).mtimeMs; } catch { return 0; } };
@@ -4323,6 +4327,7 @@ function cmdGate() {
   const weakIds = [];
   let charac = 0;
   let retestN = 0, retestSupersededN = 0;
+  const blessedIds = [];
   const retestIds = [];
   let total = 0;
   const seenTests = new Set();
@@ -4334,10 +4339,10 @@ function cmdGate() {
       seenTests.add(e.id);
       total++;
       const s = evidenceStatus(e.id, e.path, entries);
-      if (s.ok) { covered++; if (s.weak) { weak++; if (!s.charac && !s.retest) weakIds.push(e.id); } if (s.charac) charac++; if (s.retest) { retestN++; retestIds.push(e.id); if (s.retestSuperseded) retestSupersededN++; } } else problems.push(`${e.id} (${id}): ${s.why}`);
+      if (s.ok) { covered++; if (s.weak) { weak++; if (!s.charac && !s.retest) weakIds.push(e.id); } if (s.charac) charac++; if (s.blessed) blessedIds.push(e.id); if (s.retest) { retestN++; retestIds.push(e.id); if (s.retestSuperseded) retestSupersededN++; } } else problems.push(`${e.id} (${id}): ${s.why}`);
     }
   }
-  add(!problems.length, `tdd evidence${flags.changed ? ' (changed scope)' : ''}: ${covered}/${total} tests Red→Green${weak ? `, ${weak} weak Red${weak > charac + retestN ? ' — Red came from setup/load, not the asserted behaviour (before implementing: `tdd red <ID> --expect <text>`; after Green: keep as weak, or temporarily break the implementation to re-record Red): ' + weakIds.slice(0, 8).join(', ') + (weakIds.length > 8 ? `, … +${weakIds.length - 8}` : '') : ''}${charac ? ` (${charac} characterization: passed without a failing Red)` : ''}${retestN ? ` (${retestN} retest: Red re-recorded with --retest, passed without a failing Red${retestSupersededN ? `; ${retestSupersededN} superseded an earlier strong Red — re-record a failing Red by temporarily breaking the implementation if that evidence matters` : ''}: ${retestIds.slice(0, 8).join(', ')}${retestIds.length > 8 ? `, … +${retestIds.length - 8}` : ''})` : ''}` : ''}`, [...problems.slice(0, flags.verbose ? problems.length : 6), ...(problems.length > 6 && !flags.verbose ? [`… +${problems.length - 6} more (all: gate --verbose)`] : [])]);
+  add(!problems.length, `tdd evidence${flags.changed ? ' (changed scope)' : ''}: ${covered}/${total} tests Red→Green${weak > charac ? `, ${weak - charac} weak Red${weak > charac + retestN ? ' — Red came from setup/load, not the asserted behaviour (before implementing: `tdd red <ID> --expect <text>`; after Green: keep as weak, or temporarily break the implementation to re-record Red): ' + weakIds.slice(0, 8).join(', ') + (weakIds.length > 8 ? `, … +${weakIds.length - 8}` : '') : ''}` : ''}${charac ? `${weak > charac ? '' : ','} ${charac} characterization (passed without a failing Red; not a weak Red)` : ''}${retestN ? ` (${retestN} retest: Red re-recorded with --retest, passed without a failing Red${retestSupersededN ? `; ${retestSupersededN} superseded an earlier strong Red — re-record a failing Red by temporarily breaking the implementation if that evidence matters` : ''}: ${retestIds.slice(0, 8).join(', ')}${retestIds.length > 8 ? `, … +${retestIds.length - 8}` : ''})` : ''}${blessedIds.length ? ` (${blessedIds.length} refactor-recorded after the test/setup changed, no new Red: ${blessedIds.slice(0, 8).join(', ')}${blessedIds.length > 8 ? `, … +${blessedIds.length - 8}` : ''})` : ''}`, [...problems.slice(0, flags.verbose ? problems.length : 6), ...(problems.length > 6 && !flags.verbose ? [`… +${problems.length - 6} more (all: gate --verbose)`] : [])]);
 
   const cfg = loadConfig();
   if (cfg.prepare && !flags['no-run']) {
