@@ -1606,7 +1606,7 @@ function cmdGuard() {
 const LIT = '("(?:[^"\\\\]|\\\\.)*"|-?\\d+\\.\\d+|-?\\d+|true|false)';
 const litType = (t) => /^-?\d+[lL]$/.test(t) ? 'long' : /^-?\d+$/.test(t) ? 'int' : /^-?\d+\.\d+$/.test(t) ? 'float' : /^"/.test(t) ? 'str' : /^(true|false)$/.test(t) ? 'bool' : /^&/.test(t) ? 'ptr' : null;
 function callInfo(src, name) {
-  const re = new RegExp(`(?<![\\w.])${name}\\s*\\(`, 'g');
+  const re = new RegExp(`(?<![\\w.])${name}\\s*(?:::\\s*<[^;(){}]*?>)?\\s*\\(`, 'g');
   const m = re.exec(src);
   if (!m) return { args: [], ret: null, multi: false };
   let i = re.lastIndex, depth = 1, cur = '';
@@ -1829,21 +1829,117 @@ function stubRust(testPath, src, dir, made) {
   if (aliases.size) src = src.replace(new RegExp(`^\\s*use\\s[^;]*;|\\b(${[...aliases.keys()].join('|')})\\b`, 'gm'), (m, a) => a ? aliases.get(a) : m);
   // `let v = f(..); assert_eq!(v, "lit")`: the literal compared through the bound variable types the return (#268)
   const viaVar = (callPat) => { const lv = new RegExp(`\\blet\\s+(?:mut\\s+)?(\\w+)\\s*(?::[^=]+)?=\\s*&?${callPat}\\s*\\(`).exec(src)?.[1]; if (!lv) return null; const lit = new RegExp(`assert(?:_eq|_ne)?!\\(\\s*${lv}\\s*,\\s*${LIT}\\s*[,)]|assert(?:_eq|_ne)?!\\(\\s*${LIT}\\s*,\\s*${lv}\\s*[,)]|\\b${lv}\\s*==\\s*${LIT}`).exec(src); const l = lit && (lit[1] ?? lit[2] ?? lit[3]); return l ? litType(l) : null; };
+  // #288: usage-driven helpers (all scoped to the requested test's source)
+  const takeExpr = (s) => { let d = 0, i = 0; for (; i < s.length; i++) { const c = s[i]; if (c === '"') { i++; while (i < s.length && s[i] !== '"') i += s[i] === '\\' ? 2 : 1; } else if ('([{'.includes(c)) d++; else if (')]}'.includes(c)) { if (!d) break; d--; } else if ((c === ',' || c === ';') && !d) break; } return s.slice(0, i).trim(); };
+  const tyRef = (n, crate_) => { const e = typePath.get(n); return e ? `${e.crate === crate_ ? 'crate' : e.crate}${e.mods}::${n}` : null; };
+  // type of an expression the test compares a call with; `top` = the call's own type (a str literal is a `String`), otherwise nested in Option/Result/Vec (`&'static str`)
+  const exprType = (e, crate_, top = true) => {
+    e = e.trim();
+    let m;
+    if (e === '()') return '()';
+    if (new RegExp(`^${LIT}$`).test(e)) return { int: 'i64', float: 'f64', bool: 'bool', str: top ? 'String' : "&'static str" }[litType(e)] ?? null;
+    if (/^String::from\(|\.to_string\(\)$|\.to_owned\(\)$/.test(e)) return 'String';
+    if ((m = /^Some\(([^]*)\)$/.exec(e))) { const x = m[1].trim(); return x.startsWith('&') ? `Option<&'static ${exprType(x.slice(1), crate_, false) ?? 'i64'}>` : `Option<${exprType(x, crate_, false) ?? 'i64'}>`; }
+    if ((m = /^Ok\(([^]*)\)$/.exec(e))) return `Result<${exprType(m[1], crate_, false) ?? 'i64'}, String>`;
+    if ((m = /^Err\(([^]*)\)$/.exec(e))) return `Result<i64, ${exprType(m[1], crate_, false) ?? 'String'}>`;
+    if ((m = /^vec!\s*\[([^]*)\]$/.exec(e))) return `Vec<${(takeExpr(m[1]) && exprType(takeExpr(m[1]), crate_, false)) || 'i64'}>`;
+    if ((m = /^([A-Z]\w*)\s*(?:::|[({]|$)/.exec(e))) return tyRef(m[1], crate_);
+    return null;
+  };
+  // return type of the first call matching callPat, from what follows/precedes it: `.len()`, `[idx]`, comparisons and assert_eq! against Some/Ok/Err/enum values
+  const rustRet = (callPat, crate_) => {
+    const ms = maskBraces(srcNoUse, true);
+    for (const m of ms.matchAll(new RegExp(`${callPat}\\s*(?:::\\s*<[^;(){}]*?>)?\\s*\\(`, 'g'))) {
+      let i = m.index + m[0].length, depth = 1;
+      for (; i < ms.length && depth; i++) depth += ms[i] === '(' ? 1 : ms[i] === ')' ? -1 : 0;
+      const after = srcNoUse.slice(i, i + 300), before = srcNoUse.slice(Math.max(0, m.index - 100), m.index);
+      const asrt = /\bassert(?:_eq|_ne)?!\(\s*$/.test(before);
+      const rhs = (a) => { const x = /^\s*(?:==|!=)\s*/.exec(a) ?? (asrt ? /^\s*,\s*/.exec(a) : null); return x ? takeExpr(a.slice(x[0].length)) : null; };
+      let x;
+      if (/^\s*\.\s*(?:len|count|is_empty)\s*\(\s*\)/.test(after)) return 'Vec<i64>';
+      if (/^\s*\.\s*(?:is_some|is_none)\s*\(\s*\)/.test(after)) return 'Option<i64>';
+      if ((x = new RegExp(`^\\s*\\[\\s*("(?:[^"\\\\]|\\\\.)*"|\\d+)\\s*\\]`).exec(after))) { const v = (rhs(after.slice(x[0].length)) && exprType(rhs(after.slice(x[0].length)), crate_)) || 'i64'; return x[1].startsWith('"') ? `std::collections::HashMap<String, ${v}>` : `Vec<${v}>`; }
+      if ((x = new RegExp(`^\\s*[<>]=?\\s*${LIT}`).exec(after))) return litType(x[1]) === 'float' ? 'f64' : 'i64';
+      const r = rhs(after) && exprType(rhs(after), crate_);
+      if (r) return r;
+      if ((x = /\bassert(?:_eq|_ne)!\(\s*([^]*?)\s*,\s*$/.exec(before))) { const b = exprType(x[1], crate_); if (b) return b; }
+    }
+    return null;
+  };
+  // explicit generic arguments the test writes for a type (`Log<A, 'a>`, `Log::<A>::new`) or fn turbofish (`f::<A>(..)`)
+  const genericArgs = (n, turbofishOnly = false) => {
+    const ms = maskBraces(srcNoUse, true);
+    const m = new RegExp(turbofishOnly ? `\\b${n}\\s*::\\s*<` : `\\b${n}\\s*::\\s*<|(?<=[:&<,(]\\s*|->\\s*|\\bmut\\s+)\\b${n}\\s*<`).exec(ms);
+    if (!m) return null;
+    const args = [];
+    let depth = 1, cur = m.index + m[0].length, i = cur;
+    for (; i < ms.length && depth; i++) {
+      if (ms[i] === '<') depth++;
+      else if (ms[i] === '>' && ms[i - 1] !== '-') depth--;
+      else if (ms[i] === ',' && depth === 1) { args.push(srcNoUse.slice(cur, i).trim()); cur = i + 1; }
+    }
+    if (depth || i > m.index + 400) return null;
+    args.push(srcNoUse.slice(cur, i - 1).trim());
+    return args.every(Boolean) ? args : null;
+  };
+  const genNames = (args) => { const nt = args.filter((a) => !a.startsWith("'")).length; let t = 0; return args.map((a) => a.startsWith("'") ? (/^'(?:_|static)$/.test(a) ? "'a" : a) : nt === 1 ? 'T' : `T${t++}`); };
+  // `impl Trait for X { type A = ..; const C: T = ..; fn m(..) -> R { .. } }` in the test => the trait declaration (None when the test neither implements nor `dyn`s it)
+  const traitStub = (n) => {
+    const ms = maskBraces(srcNoUse, true);
+    const items = [];
+    let gn = [], found = false;
+    for (const im of ms.matchAll(new RegExp(`\\bimpl\\s*(?:<[^>{]*>\\s*)?(?:[\\w:]+::)?${n}\\s*(?:<([^{]*?)>)?\\s+for\\s+[^{;]+\\{`, 'g'))) {
+      found = true;
+      if (im[1]) gn = genNames(im[1].split(',').map((a) => a.trim()).filter(Boolean));
+      let depth = 1, k = im.index + im[0].length;
+      for (; k < ms.length && depth; k++) depth += ms[k] === '{' ? 1 : ms[k] === '}' ? -1 : 0;
+      const start = im.index + im[0].length, body = srcNoUse.slice(start, k - 1), mb = ms.slice(start, k - 1);
+      const dep = []; let d = 0;
+      for (let q = 0; q < mb.length; q++) { dep[q] = d; if (mb[q] === '{') d++; else if (mb[q] === '}') d--; }
+      for (const f of mb.matchAll(/\bfn\s+(\w+)\s*(<[^>]*>)?\s*\(([^)]*)\)\s*(->[^{;]*)?\s*(where[^{;]*)?\{/g)) if (!dep[f.index] && !items.some((x) => x.startsWith(`fn ${f[1]}`))) items.push(`fn ${f[1]}${f[2] ?? ''}(${body.slice(f.index + f[0].indexOf('(') + 1, f.index + f[0].indexOf('(') + 1 + f[3].length).replace(/\bmut\s+(?=\w+\s*:)/g, '')})${f[4] ? ' ' + body.slice(f.index + f[0].indexOf('->'), f.index + f[0].indexOf('->') + f[4].length).trim() : ''};`);
+      for (const f of mb.matchAll(/\btype\s+(\w+)\s*=/g)) if (!dep[f.index] && !items.includes(`type ${f[1]};`)) items.push(`type ${f[1]};`);
+      for (const f of mb.matchAll(/\bconst\s+(\w+)\s*:\s*([^=;]+)=/g)) if (!dep[f.index]) items.push(`const ${f[1]}: ${body.slice(f.index + f[0].indexOf(':') + 1, f.index + f[0].indexOf(':') + 1 + f[2].length).trim()};`);
+    }
+    if (!found && !new RegExp(`\\bdyn\\s+${n}\\b`).test(ms)) return null;
+    return `pub trait ${n}${gn.length ? `<${gn.join(', ')}>` : ''} {\n${items.sort((a, b) => /^type/.test(b) - /^type/.test(a)).map((i) => `    ${i}\n`).join('')}}\n`;
+  };
+  // builder chains `Type::builder().a(1).b(2).build()`: every link but the last returns Self by value (the last keeps its inferred type)
+  const chainsOf = (n) => {
+    const ms = maskBraces(srcNoUse, true), all = new Set(), mids = new Set();
+    const skip = (i) => { let d = 1; for (i++; i < ms.length && d; i++) d += ms[i] === '(' ? 1 : ms[i] === ')' ? -1 : 0; return i; };
+    for (const m of ms.matchAll(new RegExp(`(?<![\\w:])${n}(?:::<[^;(){}]*?>)?::[a-z_]\\w*\\s*\\(`, 'g'))) {
+      let i = skip(m.index + m[0].length - 1);
+      const links = [];
+      for (let x; (x = /^\s*\.\s*([a-z_]\w*)\s*(?:::\s*<[^;(){}]*?>)?\s*\(/.exec(ms.slice(i))) && !/^(?:unwrap\w*|expect\w*|is_\w+|clone|to_string|into|as_\w+|len|iter|collect|ok|err|map\w*)$/.test(x[1]);) { links.push(x[1]); i = skip(i + x[0].length - 1); }
+      const bound = /\blet\s+(?:mut\s+)?(\w+)\s*(?::[^=]+)?=\s*$/.exec(srcNoUse.slice(Math.max(0, m.index - 80), m.index))?.[1];
+      links.forEach((k) => all.add(k));
+      links.slice(0, bound && new RegExp(`(?<![\\w.])${bound}\\s*\\.\\s*[a-z_]\\w*\\s*\\(`).test(ms) ? undefined : -1).forEach((k) => mids.add(k));
+    }
+    return { all: [...all], mids };
+  };
   // capitalised names are types: `Name::Variant` => enum, otherwise a unit struct (never a function)
   // associated fns `Type::new(..)` and instance methods `v.m(..)` on `let v = Type::new(..)` (#103)
-  const rustImpl = (n) => {
-    const assoc = [...new Set([...src.matchAll(new RegExp(`(?<![\\w:])${n}::([a-z_]\\w*)\\s*\\(`, 'g'))].map((m) => m[1]))];
-    const vars = [...new Set([...src.matchAll(new RegExp(`\\blet\\s+(?:mut\\s+)?(\\w+)\\s*(?::[^=]+)?=\\s*${n}::[a-z_]\\w*\\s*\\(`, 'g'))].map((m) => m[1]))];
-    const inst = [...new Set(vars.flatMap((v) => [...src.matchAll(new RegExp(`(?<![\\w.])${v}\\s*\\.\\s*([a-z_]\\w*)\\s*\\(`, 'g'))].map((m) => m[1])))].filter((k) => !assoc.includes(k));
+  const rustImpl = (n, gn = null, crate_ = ownPkg) => {
+    const tf = '(?:::<[^;(){}]*?>)?';
+    const assoc = [...new Set([...src.matchAll(new RegExp(`(?<![\\w:])${n}${tf}::([a-z_]\\w*)\\s*\\(`, 'g'))].map((m) => m[1]))];
+    const vars = [...new Set([...src.matchAll(new RegExp(`\\blet\\s+(?:mut\\s+)?(\\w+)\\s*(?::[^=]+)?=\\s*${n}${tf}::[a-z_]\\w*\\s*\\(`, 'g'))].map((m) => m[1]))];
+    const chain = chainsOf(n);
+    const inst = [...new Set([...vars.flatMap((v) => [...src.matchAll(new RegExp(`(?<![\\w.])${v}\\s*\\.\\s*([a-z_]\\w*)\\s*\\(`, 'g'))].map((m) => m[1])), ...chain.all])].filter((k) => !assoc.includes(k));
     // methods called only on `let mut v` bindings take `&mut self` (#114)
-    const mutVars = new Set([...src.matchAll(new RegExp(`\\blet\\s+mut\\s+(\\w+)\\s*(?::[^=]+)?=\\s*${n}::[a-z_]\\w*\\s*\\(`, 'g'))].map((m) => m[1]));
+    const mutVars = new Set([...src.matchAll(new RegExp(`\\blet\\s+mut\\s+(\\w+)\\s*(?::[^=]+)?=\\s*${n}${tf}::[a-z_]\\w*\\s*\\(`, 'g'))].map((m) => m[1]));
     const needsMut = (k) => { const cs = vars.filter((v) => new RegExp(`(?<![\\w.])${v}\\s*\\.\\s*${k}\\s*\\(`).test(src)); return cs.length > 0 && cs.every((v) => mutVars.has(v)) && cs.some((v) => new RegExp(`^\\s*${v}\\s*\\.\\s*${k}\\s*\\(`, 'm').test(src)); };
     if (!assoc.length && !inst.length) return '';
     const gen = (c) => c.args.map((_, i) => `A${i}`);
-    const sig = (k, self) => { const c = callInfo(src.replace(/\b\w+\./g, ''), k); const g = gen(c); return `    pub fn ${k}${g.length ? `<${g.join(', ')}>` : ''}(${[self ? (needsMut(k) ? '&mut self' : '&self') : '', ...g.map((t, i) => `_a${i}: ${t}`)].filter(Boolean).join(', ')}) -> ${self ? (c.ret?.startsWith('opt:') ? `Option<${c.ret.slice(4)}>` : T[c.ret ?? viaVar(`(?<![\\w])\\w+\\s*\\.\\s*${k}`)] ?? 'i64') : c.ret === 'result' ? 'Result<Self, String>' : 'Self'} {\n        ${!self && /^(new|default|with_\w+|from_\w+|create|empty)$/.test(k) ? (c.ret === 'result' ? 'Ok(Self)' : 'Self') : `unimplemented!("${n}::${k}")`}\n    }\n`; };
-    return `\nimpl ${n} {\n${[...assoc.map((k) => sig(k, false)), ...inst.map((k) => sig(k, true))].join('\n')}}\n`;
+    const mk = gn ? 'Self(std::marker::PhantomData)' : 'Self';
+    const sig = (k, self) => {
+      const c = callInfo(chain.all.includes(k) ? src.replace(/\b\w+\.|(?<=[)\]])\s*\./g, '') : src.replace(/\b\w+\./g, ''), k);
+      const g = gen(c), mid = self && chain.mids.has(k);
+      const ret = mid ? 'Self' : self ? rustRet(`(?<=[\\w)\\]]\\s*)\\.\\s*${k}`, crate_) ?? (c.ret?.startsWith('opt:') ? `Option<${c.ret.slice(4)}>` : T[c.ret ?? viaVar(`(?<![\\w])\\w+\\s*\\.\\s*${k}`)] ?? 'i64') : c.ret === 'result' ? 'Result<Self, String>' : 'Self';
+      return `    pub fn ${k}${g.length ? `<${g.join(', ')}>` : ''}(${[self ? (mid ? 'self' : needsMut(k) ? '&mut self' : '&self') : '', ...g.map((t, i) => `_a${i}: ${t}`)].filter(Boolean).join(', ')}) -> ${ret} {\n        ${!self && /^(new|default|with_\w+|from_\w+|create|empty)$/.test(k) ? (c.ret === 'result' ? `Ok(${mk})` : mk) : `unimplemented!("${n}::${k}")`}\n    }\n`;
+    };
+    return `\nimpl${gn ? `<${gn.join(', ')}>` : ''} ${n}${gn ? `<${gn.join(', ')}>` : ''} {\n${[...assoc.map((k) => sig(k, false)), ...inst.map((k) => sig(k, true))].join('\n')}}\n`;
   };
-  const typeStub = (n) => {
+  const typeStub = (n, crate_ = ownPkg) => {
     const vs = [...new Set([...src.matchAll(new RegExp(`\\b${n}::([A-Z]\\w*)`, 'g'))].map((m) => m[1]))];
     if (vs.length) {
       const fty = (e) => /^-?\d+\.\d*/.test(e) ? 'f64' : /^-?\d+$/.test(e) ? 'i64' : /^&?"/.test(e) || /String::from|\.to_string\(|\.to_owned\(|\.into\(\)/.test(e) ? 'String' : /^(true|false)$/.test(e) ? 'bool' : /^vec!/.test(e) ? 'Vec<i64>' : 'i64';
@@ -1861,14 +1957,22 @@ function stubRust(testPath, src, dir, made) {
     // struct literal `N { x: 1, y: "a" }` => named fields typed from the values (#130)
     const lit = new RegExp(`(?<!\\w)${n}\\s*\\{\\s*([a-z_]\\w*\\s*:[^{}]*)\\}`).exec(srcNoUse);
     const fields = lit ? lit[1].split(',').map((f) => /^\s*([a-z_]\w*)\s*:\s*([^]*?)\s*$/.exec(f)).filter(Boolean).map((m) => [m[1], /^-?\d+\.\d*/.test(m[2]) ? 'f64' : /^-?\d+$/.test(m[2]) ? 'i64' : /^"/.test(m[2]) || /String::from|\.to_string\(|\.to_owned\(/.test(m[2]) ? 'String' : /^(true|false)$/.test(m[2]) ? 'bool' : /^vec!/.test(m[2]) ? 'Vec<i64>' : 'i64']) : [];
-    return fields.length ? `#[derive(Debug, Clone, Default, PartialEq)]\npub struct ${n} {\n${fields.map(([f, t]) => `    pub ${f}: ${t},\n`).join('')}}\n${rustImpl(n)}` : `#[derive(Debug, Clone, Default, PartialEq)]\npub struct ${n};\n${rustImpl(n)}`;
+    const ga = fields.length ? null : genericArgs(n), gn = ga && genNames(ga);
+    return fields.length ? `#[derive(Debug, Clone, Default, PartialEq)]\npub struct ${n} {\n${fields.map(([f, t]) => `    pub ${f}: ${t},\n`).join('')}}\n${rustImpl(n, null, crate_)}` : gn ? `#[derive(Debug, Clone, PartialEq)]\npub struct ${n}<${gn.join(', ')}>(pub std::marker::PhantomData<(${gn.map((x) => x.startsWith("'") ? `&${x} ()` : x).join(', ')},)>);\n${rustImpl(n, gn, crate_)}` : `#[derive(Debug, Clone, Default, PartialEq)]\npub struct ${n};\n${rustImpl(n, null, crate_)}`;
   };
-  const itemStub = (n) => { if (/^[A-Z][A-Z0-9_]+$/.test(n)) { const str = new RegExp(`\\b${n}\\s*(?:\\.\\s*(?:len|chars|as_str|is_empty)\\b|[!=]=\\s*\"|,\\s*\")`).test(srcNoUse); return `pub const ${n}: ${str ? '&str' : 'i64'} = ${str ? '""' : '0'};\n`; } if (/^[A-Z]/.test(n)) return typeStub(n); const c = callInfo(src, n); c.ret ??= viaVar(`(?<![\\w.])(?:\\w+::)*${n}`); const g = c.args.map((_, i) => `A${i}`); return `pub fn ${n}${g.length ? `<${g.join(', ')}>` : ''}(${c.args.map((_, i) => `_a${i}: A${i}`).join(', ')}) -> ${c.ret?.startsWith('opt:') ? `Option<${c.ret.slice(4)}>` : T[c.ret] ?? 'i64'} {\n    unimplemented!("${n}")\n}\n`; };
+  const itemStub = (n, crate_ = ownPkg) => { if (/^[A-Z][A-Z0-9_]+$/.test(n)) { const str = new RegExp(`\\b${n}\\s*(?:\\.\\s*(?:len|chars|as_str|is_empty)\\b|[!=]=\\s*\"|,\\s*\")`).test(srcNoUse); return `pub const ${n}: ${str ? '&str' : 'i64'} = ${str ? '""' : '0'};\n`; } if (/^[A-Z]/.test(n)) return traitStub(n) ?? typeStub(n, crate_); const c = callInfo(src, n); c.ret ??= viaVar(`(?<![\\w.])(?:\\w+::)*${n}`); const ga = genericArgs(n, true)?.filter((a) => !a.startsWith("'")), g = ga ? genNames(ga) : c.args.map((_, i) => `A${i}`); const rr = rustRet(`(?<![\\w.])(?:\\w+::)*${n}`, crate_); return `pub fn ${n}${g.length ? `<${g.join(', ')}>` : ''}(${c.args.map((_, i) => `_a${i}: ${ga ? 'impl Sized' : `A${i}`}`).join(', ')}) -> ${rr ?? (c.ret?.startsWith('opt:') ? `Option<${c.ret.slice(4)}>` : T[c.ret] ?? 'i64')} {\n    unimplemented!("${n}")\n}\n`; };
   // `use <crate>::a::b::{X, f};` => missing modules `a`, `a/b` (declared in the parent) holding the imported items (#69). Existing modules are never touched.
   const pkgName = (toml) => /\[package\][^[]*?^\s*name\s*=\s*"([^"]+)"/ms.exec(fs.readFileSync(toml, 'utf8'))?.[1]?.replace(/-/g, '_');
   // every workspace member crate by name, so `use other_crate::a::X` is stubbed in that crate (#76)
   const crates = new Map();
   for (const f of workspaceFiles().filter((f) => /(?:^|\/)Cargo\.toml$/.test(f))) { const n = pkgName(path.join(ROOT, f)); if (n) crates.set(n, path.resolve(ROOT, path.dirname(f))); }
+  const ownPkg = pkgName(path.join(root, 'Cargo.toml'));
+  // where each imported project type lives, so a return type can name it (#288)
+  const typePath = new Map();
+  for (const m of src.matchAll(/^\s*use\s+(\w+)((?:::[a-z_]\w*)*)::(\{[^}]*\}|[A-Z]\w*)\s*;/gm)) {
+    if (!crates.has(m[1])) continue;
+    for (const x of (m[3].startsWith('{') ? m[3].slice(1, -1).split(',') : [m[3]]).map((y) => y.trim().split(/\s+as\s+/)[0])) if (/^[A-Z]\w*$/.test(x)) typePath.set(x, { crate: m[1], mods: m[2] });
+  }
   const modNames = new Set();
   const freshMods = new Set();
   const srcNoUse = src.replace(/^\s*use\s[^;]*;/gm, '');
@@ -1903,7 +2007,7 @@ function stubRust(testPath, src, dir, made) {
       parent = fs.existsSync(f) ? f : mf;
       last = parent;
     }
-    if (created) { fs.writeFileSync(last, items.map(itemStub).join('\n')); freshMods.add(last); }
+    if (created) { fs.writeFileSync(last, items.map((x) => itemStub(x, m[1])).join('\n')); freshMods.add(last); }
     else {
       // missing items are appended to an existing module; items it already defines or re-exports are left alone
       const text = fs.readFileSync(last, 'utf8');
@@ -1922,12 +2026,30 @@ function stubRust(testPath, src, dir, made) {
         return t.slice(0, k).replace(/\n*$/, '\n\n') + add_.join('\n') + t.slice(k);
       }, text);
       if (grown !== text) { fs.writeFileSync(last, grown); if (!freshMods.has(last)) made.push(rel(last)); }
-      if (miss.length) { fs.appendFileSync(last, (text && !text.endsWith('\n') ? '\n' : '') + (text ? '\n' : '') + miss.map(itemStub).join('\n')); if (!freshMods.has(last)) made.push(rel(last)); }
+      if (miss.length) { fs.appendFileSync(last, (text && !text.endsWith('\n') ? '\n' : '') + (text ? '\n' : '') + miss.map((x) => itemStub(x, m[1])).join('\n')); if (!freshMods.has(last)) made.push(rel(last)); }
     }
+  }
+  // `macro_rules!` macros the test imports from a project crate (root-level `use krate::name;`, `krate::name!`, `#[macro_use] extern crate`) get an exported throwing stub (#288)
+  const stdMacros = new Set(['assert', 'assert_eq', 'assert_ne', 'debug_assert', 'debug_assert_eq', 'debug_assert_ne', 'vec', 'println', 'print', 'eprintln', 'eprint', 'format', 'format_args', 'panic', 'write', 'writeln', 'matches', 'unreachable', 'unimplemented', 'todo', 'include', 'include_str', 'include_bytes', 'concat', 'stringify', 'env', 'option_env', 'cfg', 'line', 'file', 'column', 'module_path', 'dbg', 'compile_error', 'thread_local', 'macro_rules']);
+  const macroNames = new Set();
+  const macroUse = /#\[macro_use\]\s*extern\s+crate\s+(\w+)/.exec(src)?.[1];
+  for (const m of maskBraces(srcNoUse, true).matchAll(/(?<![\w!])(?:(\w+)::)?(\w+)!\s*[[({]/g)) {
+    const name = m[2];
+    if (stdMacros.has(name) || macroNames.has(name) || new RegExp(`\\bmacro_rules!\\s*${name}\\b`).test(src)) continue;
+    const imp = new RegExp(`^\\s*use\\s+(\\w+)::(?:\\{[^}]*\\b${name}\\b[^}]*\\}|${name})\\s*;`, 'm').exec(src)?.[1];
+    const krate = [m[1], imp, macroUse].find((k) => k && crates.has(k));
+    if (!krate) continue;
+    macroNames.add(name);
+    const lib = path.join(crates.get(krate), 'src/lib.rs');
+    fs.mkdirSync(path.dirname(lib), { recursive: true });
+    const text = fs.existsSync(lib) ? fs.readFileSync(lib, 'utf8') : '';
+    if (new RegExp(`\\bmacro_rules!\\s*${name}\\b`).test(text)) continue;
+    fs.writeFileSync(lib, text + (text && !text.endsWith('\n') ? '\n' : '') + (text ? '\n' : '') + `#[macro_export]\nmacro_rules! ${name} {\n    ($($t:tt)*) => {\n        unimplemented!("${name}!")\n    };\n}\n`);
+    made.push(rel(lib));
   }
   const cargoTest = () => probe('cargo', ['test', '--no-run', '--offline', '--test', path.basename(testPath, '.rs')], root);
   const out = cargoTest();
-  const names = [...new Set([...out.matchAll(/cannot find function `(\w+)`|unresolved import `[\w:]+::(\w+)`|no `(\w+)` in the root|cannot find struct, variant or union type `(\w+)`/g)].map((m) => m[1] ?? m[2] ?? m[3] ?? m[4]))].filter((n) => !modNames.has(n) && new RegExp(`\\b${n}\\b`).test(srcNoUse));
+  const names = [...new Set([...out.matchAll(/cannot find function `(\w+)`|unresolved import `[\w:]+::(\w+)`|no `(\w+)` in the root|cannot find struct, variant or union type `(\w+)`/g)].map((m) => m[1] ?? m[2] ?? m[3] ?? m[4]))].filter((n) => !modNames.has(n) && !macroNames.has(n) && new RegExp(`\\b${n}\\b`).test(srcNoUse));
   // compile-check what was written: an honest verdict instead of an assumed "Red-safe" (#130)
   const verified = () => {
     const after = made.length || names.length ? cargoTest() : out;
@@ -1942,7 +2064,7 @@ function stubRust(testPath, src, dir, made) {
     return { verified: 'fail', verifyError: err[0].slice(0, 160), notes };
   };
   if (!names.length) { if (probeFile && !made.length) fs.rmSync(ownLib); return Object.assign([...new Set(made)], verified()); }
-  const body = names.map(itemStub).join('\n');
+  const body = names.map((x) => itemStub(x)).join('\n');
   const prev = fs.readFileSync(ownLib, 'utf8');
   fs.writeFileSync(ownLib, prev + (prev && !prev.endsWith('\n\n') ? '\n' : '') + body);
   made.push(rel(ownLib));
