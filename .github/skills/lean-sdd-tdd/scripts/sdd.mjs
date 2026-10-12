@@ -4961,6 +4961,8 @@ function cmdGate() {
     for (let grew = true; grew;) { grew = false; for (const q of cfg.projects ?? []) { const qr = normDep(q.root); if (q !== p && [...out].some((x) => x === qr || x.startsWith(qr + '/'))) for (const d of q.dependsOn ?? []) if (!out.has(normDep(d))) { out.add(normDep(d)); grew = true; } } }
     return [...out];
   };
+  // a changed config `artifacts` file is in scope for the project that holds one of its consumers (#308)
+  const artConsumers = (f) => { const u = Object.entries(cfg.artifacts ?? {}).find(([a]) => normDep(a) === f)?.[1]; return u === undefined ? [] : [].concat(u).map(normDep); };
   const allChecks = [...(cfg.checks ?? []), ...(cfg.projects ?? []).flatMap((p) => (p.checks ?? []).map((c) => ({ ...c, name: `${p.root}:${c.name}`, cwd: p.root, dependsOn: depClosure(p) })))];
   let sharedHinted = false;
   // a changed spec puts the projects holding that feature's tests/code in scope; the project check then runs in full
@@ -4973,14 +4975,14 @@ function cmdGate() {
   // root-owned files no project depends on: hint once, also when the root has no checks of its own (#67)
   if (flags.changed && (cfg.projects ?? []).length) {
     const pr = cfg.projects.map((p) => p.root.replace(/\/$/, '') + '/');
-    const coveredBy = (f) => cfg.projects.some((p) => depClosure(p).some((d) => { const x = normDep(d); return f === x || f.startsWith(x + '/'); }));
+    const coveredBy = (f) => artConsumers(f).some((u) => pr.some((r) => u.startsWith(r))) || cfg.projects.some((p) => depClosure(p).some((d) => { const x = normDep(d); return f === x || f.startsWith(x + '/'); }));
     const dataOnly = [...changedFiles()].filter((f) => !f.startsWith('.sdd/') && !pr.some((r) => f.startsWith(r)) && !EXT.test(f) && !coveredBy(f));
     if (dataOnly.length) { sharedHinted = true; lines.push(`! root-owned data/config changes: ${dataOnly.slice(0, 3).join(', ')}${dataOnly.length > 3 ? ', …' : ''} — if a project reads these, add the path to its \`dependsOn\` in .sdd/config.json so that project's checks run too`); }
   }
   for (const c of allChecks) {
     let cmd = c.cmd;
     const base = c.cwd ? c.cwd.replace(/\/$/, '') + '/' : '';
-    const inDeps = (f) => (c.dependsOn ?? []).some((d) => { const x = normDep(d); return f === x || f.startsWith(x + '/'); });
+    const inDeps = (f) => (c.dependsOn ?? []).some((d) => { const x = normDep(d); return f === x || f.startsWith(x + '/'); }) || (!!base && artConsumers(f).some((u) => u.startsWith(base)));
     if (c.cwd && flags.changed && !specOwned(c.cwd) && ![...changedFiles()].some((f) => f.startsWith(base) || inDeps(f))) { lines.push(`! cmd ${c.name}: no changed files in ${c.cwd}${c.dependsOn?.length ? ` or its dependencies (${c.dependsOn.join(', ')})` : ''} — skipped`); continue; }
     const pRoots = (cfg.projects ?? []).map((p) => p.root.replace(/\/$/, '') + '/');
     if (!c.cwd && flags.changed && pRoots.length) {
