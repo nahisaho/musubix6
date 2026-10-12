@@ -8282,3 +8282,50 @@ test('#309 artifactStaleness: tdd refactor re-records the artifact hash and clea
   assert.equal(sdd(d, 'tdd', 'refactor', 'TEST-A-001').code, 0);
   assert.doesNotMatch(sdd(d, 'gate', '--no-run').out, /artifact data\/golden\.json changed/);
 });
+
+const symbolCfg = (d, on = true) => { const cp = path.join(d, '.sdd/config.json'); const c = JSON.parse(fs.readFileSync(cp, 'utf8')); if (on) c.preambleGranularity = 'symbol'; fs.writeFileSync(cp, JSON.stringify(c)); };
+const symbolCase = (file, pre, tests, edit, on = true) => {
+  const d = mini(SPEC2, {}, FAIL);
+  if (on) symbolCfg(d);
+  fs.writeFileSync(path.join(d, file), pre + tests);
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-A-001').code, 0);
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-A-002').code, 0);
+  setCmd(d, PASS);
+  assert.equal(sdd(d, 'tdd', 'green', 'TEST-A-001').code, 0);
+  assert.equal(sdd(d, 'tdd', 'green', 'TEST-A-002').code, 0);
+  fs.writeFileSync(path.join(d, file), edit(pre) + tests);
+  return d;
+};
+const staleIds = (d) => [...sdd(d, 'gate', '--no-run').out.matchAll(/(TEST-A-00\d)[^\n]*test changed since/g)].map((m) => m[1]);
+
+test('#300 preambleGranularity symbol: a TS/JS fixture edit stales only tests that reference it', () => {
+  const pre = "import { x } from './x.mjs';\nconst fixture = { a: 1 };\nfunction other() { return 2; }\n\n";
+  const T = '// @id TEST-A-001 @verifies REQ-A-001\nit(fixture.a);\n\n// @id TEST-A-002 @verifies REQ-A-002\nit(other());\n';
+  const d = symbolCase('a.test.mjs', pre, T, (p) => p.replace('a: 1', 'a: 9'));
+  assert.deepEqual(staleIds(d), ['TEST-A-001']);
+  const g = symbolCase('a.test.mjs', pre, T, (p) => p.replace("'./x.mjs'", "'./y.mjs'"));
+  assert.deepEqual(staleIds(g).sort(), ['TEST-A-001', 'TEST-A-002']);
+});
+
+test('#300 preambleGranularity symbol: transitive helper use and default behaviour', () => {
+  const pre = "const base = 1;\nconst derived = () => base;\nfunction other() { return 2; }\n\n";
+  const T = '// @id TEST-A-001 @verifies REQ-A-001\nit(derived());\n\n// @id TEST-A-002 @verifies REQ-A-002\nit(other());\n';
+  const d = symbolCase('a.test.mjs', pre, T, (p) => p.replace('base = 1', 'base = 5'));
+  assert.deepEqual(staleIds(d), ['TEST-A-001']);
+  const def = symbolCase('a.test.mjs', pre, T, (p) => p.replace('base = 1', 'base = 5'), false);
+  assert.deepEqual(staleIds(def).sort(), ['TEST-A-001', 'TEST-A-002']);
+});
+
+test('#300 preambleGranularity symbol: Python top-level helper edit stales only referencing tests', () => {
+  const pre = "import os\n\nFIXTURE = 1\n\ndef helper():\n    return 2\n\n";
+  const T = '# @id TEST-A-001 @verifies REQ-A-001\ndef test_a():\n    assert FIXTURE\n\n# @id TEST-A-002 @verifies REQ-A-002\ndef test_b():\n    assert helper()\n';
+  const d = symbolCase('test_a.py', pre, T, (p) => p.replace('return 2', 'return 3'));
+  assert.deepEqual(staleIds(d), ['TEST-A-002']);
+});
+
+test('#300 preambleGranularity symbol: Rust top-level const edit stales only referencing tests', () => {
+  const pre = "use std::fmt;\nconst LIMIT: u32 = 1;\nconst OTHER: u32 = 2;\n\n";
+  const T = '// @id TEST-A-001 @verifies REQ-A-001\n#[test]\nfn a() { assert_eq!(LIMIT, 1); }\n\n// @id TEST-A-002 @verifies REQ-A-002\n#[test]\nfn b() { assert_eq!(OTHER, 2); }\n';
+  const d = symbolCase('a_test.rs', pre, T, (p) => p.replace('LIMIT: u32 = 1', 'LIMIT: u32 = 7'));
+  assert.deepEqual(staleIds(d), ['TEST-A-001']);
+});

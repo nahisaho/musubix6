@@ -47,6 +47,41 @@ const artifactSha = (p) => sha(fs.readFileSync(path.join(ROOT, p), 'utf8').repla
 const normImports = (t) => t
   .replace(/\bimport\s+(?:type\s+)?[\w$*{}\s,]*?\s*from\s*(['"][^'"]+['"])\s*;?/g, 'import from $1')
   .replace(/^from\s+(\S+)\s+import\s*(?:\([^)]*\)|.*)$/gm, 'from $1');
+// opt-in `.sdd/config.json` preambleGranularity "symbol" (#300): the shared preamble is split into declarations (import/use/include/other statements: any change stales every test)
+// and named top-level helper/fixture blocks (function/class/const/def/fn/struct…): a change stales only tests whose own body (transitively through helpers) names that helper.
+// symbolOff lets a ledger recorded before the option was enabled keep matching its old whole-preamble hash.
+let symbolOff = false;
+const symbolMode = () => !symbolOff && readJson(CONFIG, null)?.preambleGranularity === 'symbol';
+const SYMBOL_HELPER = /^(?:export\s+)?(?:default\s+)?(?:declare\s+)?(?:async\s+)?(?:pub(?:\([^)]*\))?\s+)?(?:unsafe\s+)?(?:abstract\s+)?(?:function\*?|class|const|let|var|type|interface|enum|def|fn|struct|trait|static)\s+(?:<[^>]*>\s*)?([A-Za-z_$][\w$]*)|^impl(?:<[^>]*>)?\s+(?:[\w:]+(?:<[^>]*>)?\s+for\s+)?([A-Za-z_]\w*)|^([A-Za-z_]\w*)\s*(?::[^=\n]+)?=(?!=)/;
+function symbolPreamble(pre, mineBody, extraBodies = []) {
+  const chunks = [];
+  let pending = [], cur = null;
+  for (const l of pre.split('\n')) {
+    const prefix = /^(?:\/\/|#(?!include|import|define)|\/\*|\*|@\w|#\[)/.test(l);
+    if (!l.trim()) { (cur ?? { lines: pending }).lines.push(l); continue; }
+    if (/^\s/.test(l) || /^[)\]}]/.test(l) || (cur && cur.open && !prefix && /^(?:else|catch|finally)\b/.test(l))) { (cur ?? { lines: pending }).lines.push(l); continue; }
+    if (prefix) { if (cur) { chunks.push(cur); cur = null; } pending.push(l); continue; }
+    if (cur) chunks.push(cur);
+    cur = { lines: [...pending, l], first: l }; pending = [];
+    cur.open = true;
+  }
+  if (cur) chunks.push(cur);
+  const decl = [...(cur ? [] : pending)], helpers = [];
+  for (const c of chunks) {
+    const m = SYMBOL_HELPER.exec(c.first.trim());
+    const isImport = /=\s*(?:await\s+)?require\(|^import\b/.test(c.first);
+    const name = !isImport && m && (m[1] ?? m[2] ?? m[3]);
+    if (name) helpers.push({ name, body: c.lines.join('\n').trim() }); else decl.push(c.lines.join('\n'));
+  }
+  const chosen = new Set();
+  let calls = mineBody + '\n' + extraBodies.join('\n');
+  for (;;) {
+    const next = helpers.filter((h) => !chosen.has(h) && new RegExp(`(?<![\\w$])${h.name.replace(/\$/g, '\\$')}(?![\\w$])`).test(calls));
+    if (!next.length) break;
+    for (const h of next) { chosen.add(h); calls += '\n' + h.body; }
+  }
+  return decl.join('\n').split('\n').filter((l) => l.trim()).join('\n').trim() + '\u0001' + helpers.filter((h) => chosen.has(h)).map((h) => h.body).join('\u0000');
+}
 const pythonScopes = new Map();
 function pythonScope(txt) {
   if (pythonScopes.has(txt)) return pythonScopes.get(txt);
@@ -77,7 +112,9 @@ function pythonTestSha(txt, id) {
   if (!mine) return sha(txt);
   const ls = txt.split('\n');
   const shared = ls.filter((_, i) => !ranges.some((r) => i >= r.start && i < r.end)).join('\n').trim();
-  return sha(shared + '\u0000' + ls.slice(mine.start, mine.end).join('\n').trim());
+  const own = ls.slice(mine.start, mine.end).join('\n').trim();
+  if (symbolMode()) return sha(symbolPreamble(shared, own) + '\u0000' + own);
+  return sha(shared + '\u0000' + own);
 }
 const BRACE_TEST = /\.(rs|java|php|cs|c|cc|cpp|cxx)$/;
 const maskBraces = (txt, rust = false) => txt.replace(rust ? /\/\*[\s\S]*?\*\/|\/\/[^\n]*|\b(?:br|r)(#+)"[\s\S]*?"\1|\b(?:br|r)"[\s\S]*?"|"(?:\\[\s\S]|[^"\\])*"|'(?:\\.|[^'\\\n])'/g : /\/\*[\s\S]*?\*\/|\/\/[^\n]*|(?<!\w)(?:u8|u|U|L)?R"([^()\\\s]{0,16})\([\s\S]*?\)\1"|"(?:\\[\s\S]|[^"\\])*"|'(?:\\[\s\S]|[^'\\])*'/g, (s) => s.replace(/[^\n]/g, ' '));
@@ -276,7 +313,7 @@ function braceTestSha(txt, id, p) {
   // comments outside every function (a trailing note) are not an oracle in C/C++ (#236)
   if (!cLegacy && /\.(?:c|cc|cpp|cxx)$/.test(p)) shared = shared.replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*|"(?:\\[\s\S]|[^"\\])*"|'(?:\\[\s\S]|[^'\\])*'/g, (c) => (c[0] === '/' ? '' : c)).split('\n').filter((l) => l.trim()).join('\n').trim();
   const own = regs.filter((r) => r.target === mine.name).map((r) => r.body.trim()).join('\u0000');
-  return sha(shared + '\u0000' + mine.body.trim() + '\u0000' + protectedHelpers(mine, helpers, shared, /\.php$/.test(p)) + (own ? '\u0000' + own : ''));
+  return sha((symbolMode() && /\.rs$/.test(p) ? symbolPreamble(shared, mine.body, reachableHelpers(mine, helpers, shared).map((r) => r.body)) : shared) + '\u0000' + mine.body.trim() + '\u0000' + protectedHelpers(mine, helpers, shared, /\.php$/.test(p)) + (own ? '\u0000' + own : ''));
 }
 function cRegistrations(txt, ranges) {
   const names = new Set(ranges.map((r) => r.name));
@@ -759,7 +796,8 @@ const testShaVariant = (p, id, trim, norm = false, legacy = false, cut = true, i
   if (trim) while (rl.length > 1 && /^[})\];,\s]*$/.test(rl.at(-1)) && !/^\s+\S/.test(rl.at(-1))) rl.pop();
   const region = rl.join('\n');
   if (legacy ? /@implements\b/.test(txt) : /@id\s+CODE-/.test(txt) || (inl && /\.rs$/.test(p) && /#\[cfg\(test\)\]/.test(txt))) return sha(region);
-  const pre = ls.slice(0, begin(starts[0])).join('\n');
+  const pre0 = ls.slice(0, begin(starts[0])).join('\n');
+  const pre = symbolMode() && /\.(?:[cm]?[jt]sx?)$/.test(p) ? symbolPreamble(pre0, region) : pre0;
   return sha((norm ? normImports(pre) : pre) + '\u0000' + region);
 };
 const testOwnSha = (p, id) => { eolNorm = true; try { return testShaVariant(p, id, true, true); } finally { eolNorm = false; } };
@@ -768,7 +806,7 @@ const shaMatchesBase = (recorded, p, id) => /\.(?:py|jl)$/.test(p) || BRACE_TEST
 // a comment-only `@id CODE-… @implements …` line added to a test file is not a test edit (#300): retry with those lines dropped
 let stripCodeAnn = false;
 const CODE_ANN_LINE = /^[ \t]*(?:\/\/|#|--|;|%|\/?\*)+.*@id\s+CODE-.*(?:\r?\n|$)/gm;
-const shaMatches = (recorded, p, id) => shaMatchesBase(recorded, p, id) || (() => { try { if (!CODE_ANN_LINE.test(fs.readFileSync(path.join(ROOT, p), 'utf8'))) return false; } catch { return false; } finally { CODE_ANN_LINE.lastIndex = 0; } stripCodeAnn = true; try { return shaMatchesBase(recorded, p, id); } finally { stripCodeAnn = false; } })();
+const shaMatches = (recorded, p, id) => shaMatchesBase(recorded, p, id) || (symbolMode() && (() => { symbolOff = true; try { return shaMatchesBase(recorded, p, id); } finally { symbolOff = false; } })()) || (() => { try { if (!CODE_ANN_LINE.test(fs.readFileSync(path.join(ROOT, p), 'utf8'))) return false; } catch { return false; } finally { CODE_ANN_LINE.lastIndex = 0; } stripCodeAnn = true; try { return shaMatchesBase(recorded, p, id) || (symbolMode() && (() => { symbolOff = true; try { return shaMatchesBase(recorded, p, id); } finally { symbolOff = false; } })()); } finally { stripCodeAnn = false; } })();
 const shaMatchesRaw = (recorded, p, id) => [true, false].some((cut) => [true, false].some((inl) => recorded === testShaVariant(p, id, true, true, false, cut, inl) || recorded === testShaVariant(p, id, true, false, false, cut, inl) || recorded === testShaVariant(p, id, false, false, false, cut, inl) || recorded === testShaVariant(p, id, true, true, true, cut, inl) || recorded === testShaVariant(p, id, true, false, true, cut, inl) || recorded === testShaVariant(p, id, false, false, true, cut, inl))) ||
   recorded === testSha(p, id) || recorded === testShaVariant(p, id, true) || recorded === testShaVariant(p, id, false) || recorded === testShaVariant(p, id, true, true, true) || recorded === testShaVariant(p, id, true, false, true) || recorded === testShaVariant(p, id, false, false, true) || recorded === sha(fs.readFileSync(path.join(ROOT, p)));
 const out = (s = '') => process.stdout.write(s + '\n');
