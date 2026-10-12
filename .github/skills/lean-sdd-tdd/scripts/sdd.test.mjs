@@ -7748,3 +7748,16 @@ test('#305 TS stub: a .cjs module loaded through createRequire is created', () =
   sdd(d, 'tdd', 'stub', 'TEST-A-001');
   assert.ok(fs.existsSync(path.join(d, 'src/add.cjs')), 'add.cjs missing');
 });
+
+test('#306 a passing Red of a test-only REQ is recorded as characterization without the flag', () => {
+  const d = mini(T1SPEC.replace('one shall hold.', 'one shall hold. (test-only)'), { 'a.test.mjs': jsTest() }, PASS);
+  const r = sdd(d, 'tdd', 'red', 'TEST-A-001');
+  assert.equal(r.code, 0, r.out);
+  assert.match(r.out, /characterization/);
+  assert.equal(sdd(d, 'tdd', 'green', 'TEST-A-001').code, 0);
+});
+
+test('#306 a passing Red of a normal REQ is still rejected', () => {
+  const d = mini(T1SPEC, { 'a.test.mjs': jsTest() }, PASS);
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-A-001').code, 1);
+});

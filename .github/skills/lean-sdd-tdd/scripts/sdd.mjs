@@ -4079,6 +4079,9 @@ function cmdTdd() {
   if (dupOf) { out(`REFUSED: duplicate @id ${dupOf} — every @id must be unique; rename one before recording evidence`); return 1; }
   rustRunnerSelection = null;
   const req = typeof flags.req === 'string' ? flags.req : t.refs.verifies[0];
+  // a `(test-only)` REQ is verified by tests that need no failing Red: a passing Red is recorded as characterization (#306)
+  const testOnlyReqs = t.refs.verifies.length > 0 && t.refs.verifies.every((r) => loadSpecs().flatMap((x) => x.reqs).some((q) => q.id === r && q.testOnly));
+  const characFlag = typeof flags.characterization === 'string' ? flags.characterization : testOnlyReqs ? '(test-only) REQ' : undefined;
   const specs = loadSpecs();
   const spec = specs.find((s) => s.reqs.some((r) => r.id === req));
   if (!req || !spec) { out(`${id}: no @verifies REQ defined in a spec (.sdd/specs). add @verifies or --req`); return 2; }
@@ -4324,7 +4327,7 @@ function cmdTdd() {
     else if (goRunner && goVerdict === 'pass' && res.exit !== 0) { ok = false; why = `${id} itself passes; the failure comes from its parent, a sibling or suite setup`; }
     else if (zero || siblingFail === 'skip') { ok = false; why = 'no test matched the ID, or the test is skipped/todo (check @id vs test title/method name; skipped tests cannot give Red/Green)' + (goRunner && /\[no test files\]/.test(plain) ? '; go printed [no test files]: a //go:build constraint may hide this file (pass -tags in testCmd)' : ''); }
     else if (res.exit === 0 && retest) ok = true;
-    else if (res.exit === 0 && typeof flags.characterization === 'string' && flags.characterization.trim()) ok = true;
+    else if (res.exit === 0 && typeof characFlag === 'string' && characFlag.trim()) ok = true;
     else if (res.exit === 0 && vacuousThrows(t.path, id)) { ok = false; why = `test passed: a matcher-less assert.throws / pytest.raises is satisfied by the stub's own "not implemented" error (vacuous test); add a matcher (error type or message) that only the real behaviour satisfies, or record --characterization "<why>"`; }
     else if (res.exit === 0) { ok = false; why = 'test passed; Red needs a real failure (data-only / characterization test? record it explicitly: --characterization "<why no implementation can fail it>"; amending a wrong expectation after Red: --retest "<reason>")'; }
     else if (isLoadErr(res.text) && !flags.weak && !(flags['missing-module'] && declaredMissingModule(res.text, t.path))) { ok = false; why = 'load/compile error, not an assertion failure. new module? run `tdd stub <ID>` once (or `--missing-module`); if stub already ran or found nothing, add the missing code by hand; or --weak to record as weak Red' + (/\.py$/.test(t.path) && /ERROR collecting[\s\S]*(?:NotImplementedError|not implemented)/.test(res.text) ? '\nhint: the stub threw at collection time (a call in `@pytest.mark.parametrize` arguments or module level). Build those values inside the test body (or a fixture) so the stub fails at run time as an assertion/Red' : ''); }
@@ -4348,7 +4351,7 @@ function cmdTdd() {
   const setupSym0 = sub === 'red' && !flags['allow-setup-red'] ? setupOrigin(rl.find((l) => /^E\s+.*(not implemented|NotImplementedError|unimplemented|is not a function|has no attribute|context manager protocol)/i.test(l)) ?? rl.find((l) => /not implemented|NotImplementedError|unimplemented|is not a function|has no attribute|context manager protocol/i.test(l) && !/^\d+\s*\|/.test(l)) ?? reason, t.path, id, res.text) : null;
   // --expect naming the setup call itself does not make a setup-origin Red the asserted behaviour (#256)
   const setupSym = setupSym0 && (typeof flags.expect !== 'string' || new RegExp(`(?<![\\w$])${escapeRe(setupSym0)}(?![\\w$])`).test(flags.expect)) ? setupSym0 : null;
-  const charac = sub === 'red' && res.exit === 0 && !retest ? String(flags.characterization).trim() : '';
+  const charac = sub === 'red' && res.exit === 0 && !retest ? String(characFlag).trim() : '';
   // a `NAME = None` stub that the test calls fails with TypeError: that is the stub, not the behaviour (#279)
   const noneStub = sub === 'red' && !flags['allow-setup-red'] && /TypeError: 'NoneType' object is not callable/.test(res.text);
   // only an oracle artifact changed since the earlier strong Red (the test's own text is identical): the strong Red still stands (#283)
