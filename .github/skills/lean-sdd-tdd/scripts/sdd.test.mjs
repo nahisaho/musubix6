@@ -6620,3 +6620,34 @@ test('#264 tdd green warns when a shared implementation file changed after a sib
   const out = sdd(d, 'tdd', 'green', 'TEST-A-002').out;
   assert.match(out, /shared with other REQs[^\n]*TEST-A-001/, out);
 });
+
+test('#266 impact on a contract file reaches REQs of transitively dependent projects (dependsOn closure)', () => {
+  const spec = '---\nfeature: r\ntier: T1\n---\n| REQ-R-001 | x shall work. | TEST-R-001 |\n';
+  const d = mini(spec, { 'contract/g.json': '{}', 'lib/a.ts': '// @id CODE-R-001 @implements REQ-R-001\nexport const a = 1;\n' });
+  const cp = path.join(d, '.sdd/config.json');
+  const c = JSON.parse(fs.readFileSync(cp, 'utf8'));
+  c.projects = [{ root: 'lib', dependsOn: ['contract'], testCmd: ['true'], checks: [] }];
+  fs.writeFileSync(cp, JSON.stringify(c));
+  const r = sdd(d, 'impact', 'contract/g.json');
+  assert.match(r.out, /REQ-R-001/, r.out);
+});
+
+test('#266 impact: config parity pair links two implementations of one algorithm', () => {
+  const d = mini('---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | x shall work. | TEST-A-001 |\n', {
+    '.sdd/specs/b.md': '---\nfeature: b\ntier: T1\n---\n| REQ-B-001 | y shall work. | TEST-B-001 |\n',
+    'rs/hash.rs': '// @id CODE-A-001 @implements REQ-A-001\nfn h() {}\n',
+    'ex/hash.ex': '# @id CODE-B-001 @implements REQ-B-001\ndefmodule H do\nend\n',
+  });
+  const cp = path.join(d, '.sdd/config.json');
+  const c = JSON.parse(fs.readFileSync(cp, 'utf8'));
+  c.parity = [['rs/hash.rs', 'ex/hash.ex']];
+  fs.writeFileSync(cp, JSON.stringify(c));
+  const r = sdd(d, 'impact', 'rs/hash.rs');
+  assert.match(r.out, /REQ-B-001/, r.out);
+});
+
+test('#266 impact REQ-X with only a bare comment hints at the missing @implements marker', () => {
+  const d = mini('---\nfeature: r\ntier: T1\n---\n| REQ-R-001 | x shall work. | TEST-R-001 |\n', { 'src/a.ts': '// REQ-R-001\nexport const a = 1;\n' });
+  const r = sdd(d, 'impact', 'REQ-R-001');
+  assert.match(r.out, /bare comment/, r.out);
+});

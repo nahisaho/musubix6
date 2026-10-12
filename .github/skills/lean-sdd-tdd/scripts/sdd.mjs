@@ -4729,6 +4729,8 @@ function importRev() {
   for (const c of cImpl) for (const h of files) if (/\.h(pp|h)?$/.test(h) && cPair(h, c)) for (const imp of rev.get(h) ?? []) add(c, imp);
   // non-code artifacts declared in .sdd/config.json `artifacts` ({"contract/x.json": ["src/a.ts"]} = files that depend on it) are impact edges (#242)
   for (const [a, users] of Object.entries(loadConfig().artifacts ?? {})) for (const u of [].concat(users)) { const t = normDep(a), f = normDep(u); if (t !== f && fs.existsSync(path.join(ROOT, t)) && fs.existsSync(path.join(ROOT, f))) { if (!rev.has(t)) rev.set(t, []); if (!rev.get(t).includes(f)) rev.get(t).push(f); } }
+  // `parity`: [["rust/hash.rs", "elixir/hash.ex"]] = two implementations of one algorithm; a change to either reaches the other (#266)
+  for (const pr of loadConfig().parity ?? []) for (const [x, y] of [[pr[0], pr[1]], [pr[1], pr[0]]]) { const t = x && normDep(x), f = y && normDep(y); if (t && f && t !== f && fs.existsSync(path.join(ROOT, t)) && fs.existsSync(path.join(ROOT, f))) { if (!rev.has(t)) rev.set(t, []); if (!rev.get(t).includes(f)) rev.get(t).push(f); } }
   return rev;
 }
 
@@ -4780,6 +4782,8 @@ function cmdImpact() {
   const hits = (p, t) => (p.dependsOn ?? []).some((d) => { const x = normDep(d); return t === x || t.startsWith(x + '/'); });
   // dependsOn is transitive: a project depending on a dependent project depends on the file too (#255)
   const depProjects = dataFile ? (() => { const got = new Set(projs.filter((p) => hits(p, seeds[0]))); for (let g = true; g;) { g = false; for (const p of projs) if (!got.has(p) && [...got].some((q) => hits(p, normDep(q.root)))) { got.add(p); g = true; } } return projs.filter((p) => got.has(p)).map((p) => p.root); })() : [];
+  const projReqs = new Map();
+  if (dataFile) for (const e of all) { const pr = projs.find((p) => depProjects.includes(p.root) && (e.path === normDep(p.root) || e.path.startsWith(normDep(p.root) + '/'))); if (pr) for (const r of [...e.refs.verifies, ...e.refs.implements]) { if (!projReqs.has(r)) projReqs.set(r, new Set()); projReqs.get(r).add(e.id + ' (' + e.path + ')'); } }
   if (dataFile) seeds = [];
   const via = new Map(seeds.map((f) => [f, null]));
   const queue = [...seeds];
@@ -4798,6 +4802,7 @@ function cmdImpact() {
     if (!ownFeatures.size) { const sib = new Set(); for (const e of all) if (path.posix.dirname(e.path) === path.posix.dirname(sd)) for (const r of [...e.refs.implements, ...e.refs.verifies]) if (reqFeature.get(r)) sib.add(reqFeature.get(r)); if (sib.size === 1) sib.forEach((x) => ownFeatures.add(x)); }
   }
   for (const f of via.keys()) for (const e of entsIn(f)) for (const r of [...e.refs.verifies, ...e.refs.implements]) if (!reqs.includes(r)) { if (!affected.has(r)) affected.set(r, new Set()); affected.get(r).add(e.id + ' (' + f + ')'); }
+  for (const [r, v] of projReqs) { if (!affected.has(r)) affected.set(r, new Set()); for (const x of v) affected.get(r).add(x); }
   const sameFeature = [...affected.keys()].filter((r) => ownFeatures.has(reqFeature.get(r)));
   for (const r of sameFeature) affected.delete(r);
   const chain = (f) => { const c = [f]; while (via.get(c[c.length - 1])) c.push(via.get(c[c.length - 1])); return c.join(' ← '); };
@@ -4813,6 +4818,10 @@ function cmdImpact() {
   const seedIsTest = seeds.length > 0 && seeds.every((s) => TEST_FILE.test(s) || (entsIn(s).length > 0 && entsIn(s).every((e) => e.kind === 'TEST')));
   if (dataFile) out(`  data file (outside the import graph); dependent projects (dependsOn): ${depProjects.join(', ') || '(none)'}`);
   else out(`  ${seedIsTest ? 'test' : 'impl'}: ${seeds.join(', ') || '(none)'}`);
+  if (/^REQ-/.test(target) && !seeds.length) {
+    const bare = listFiles().filter((f) => { try { return new RegExp('(?:\\/\\/|#|--|/\\*|;)\\s*' + target + '(?![\\w-])').test(fs.readFileSync(path.join(ROOT, f), 'utf8')); } catch { return false; } });
+    if (bare.length) out(`  ! ${target} is only mentioned in a bare comment (${cap(bare, 3)}) — impact follows \`@id CODE-… @implements ${target}\` markers; add one so its implementation is found`);
+  }
   if (verifiers.length) out(`  verified by: ${cap(verifiers.map((e) => e.id))}`);
   if (!dataFile) out(`  reaches ${reached.length} file(s) via imports${result.reachedTests.length ? `; tests: ${cap(result.reachedTests)}` : ''}`);
   if (sameFeature.length) out(`  same feature: ${sameFeature.length} other REQ(s) (${sameFeature.slice(0, 4).join(', ')}${sameFeature.length > 4 ? ', …' : ''})`);
