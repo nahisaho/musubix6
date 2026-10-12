@@ -14,6 +14,7 @@ Agent skills for **lean, spec-driven and test-driven development** and for
 | [`tech-writer`](.github/skills/tech-writer/SKILL.md) | Structures README, design docs, test plans, runbooks, proposals, RFI/RFP, Qiita/Zenn articles and more (from [kotonoha](https://github.com/nahisaho/kotonoha), MIT). |
 | [`japanese-prose`](.github/skills/japanese-prose/SKILL.md) | GiNZA-based Japanese prose diagnostics: naturalness, reading load, terminology, AI-like patterns (from kotonoha, MIT). |
 | [`wslc-containers`](.github/skills/wslc-containers/SKILL.md) | Operate Linux containers on Windows via the built-in WSL container CLI (`wslc.exe`), without Docker Desktop (from [wslc-containers-skill](https://github.com/nahisaho/wslc-containers-skill), MIT). |
+| [`agent-watchdog`](.github/skills/agent-watchdog/SKILL.md) | Detects stalled background agents (read-only `watchdog.mjs` + a resume procedure using `list_agents`/`write_agent`). |
 
 ## Requirements
 
