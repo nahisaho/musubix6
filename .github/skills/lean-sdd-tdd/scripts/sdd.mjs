@@ -1916,7 +1916,9 @@ function stubRust(testPath, src, dir, made) {
       let i = m.index + m[0].length, depth = 1;
       for (; i < ms.length && depth; i++) depth += ms[i] === '(' ? 1 : ms[i] === ')' ? -1 : 0;
       const after = srcNoUse.slice(i, i + 300), before = srcNoUse.slice(Math.max(0, m.index - 100), m.index);
-      const asrt = /\bassert(?:_eq|_ne)?!\(\s*$/.test(before);
+      const asrt = /\bassert(?:_eq|_ne)?!\(\s*[\w.:]*$/.test(before);
+      const ann = /\blet\s+(?:mut\s+)?\w+\s*:\s*([^=;]+?)\s*=\s*&?[\w.:]*$/.exec(before)?.[1];
+      if (ann && !/\b_\b|\bimpl\b/.test(ann)) return ann;
       const rhs = (a) => { const x = /^\s*(?:==|!=)\s*/.exec(a) ?? (asrt ? /^\s*,\s*/.exec(a) : null); return x ? takeExpr(a.slice(x[0].length)) : null; };
       let x;
       if (/^\s*\.\s*(?:len|count|is_empty)\s*\(\s*\)/.test(after)) return 'Vec<i64>';
@@ -1963,7 +1965,8 @@ function stubRust(testPath, src, dir, made) {
       for (const f of mb.matchAll(/\btype\s+(\w+)\s*=/g)) if (!dep[f.index] && !items.includes(`type ${f[1]};`)) items.push(`type ${f[1]};`);
       for (const f of mb.matchAll(/\bconst\s+(\w+)\s*:\s*([^=;]+)=/g)) if (!dep[f.index]) items.push(`const ${f[1]}: ${body.slice(f.index + f[0].indexOf(':') + 1, f.index + f[0].indexOf(':') + 1 + f[2].length).trim()};`);
     }
-    if (!found && !new RegExp(`\\bdyn\\s+${n}\\b`).test(ms)) return null;
+    const bound = new RegExp(`\\bdyn\\s+${n}\\b|\\bimpl\\s+(?:\\w+\\s*\\+\\s*)*${n}\\b(?!\\s*(?:for\\b|\\{|<))|<[^<>;{}]*\\b\\w+\\s*:\\s*(?:[\\w:?']+\\s*\\+\\s*)*${n}\\b|\\bwhere\\b[^{;]*:\\s*(?:[\\w:?']+\\s*\\+\\s*)*${n}\\b|\\+\\s*${n}\\b`).test(ms);
+    if (!found && !bound) return null;
     return `pub trait ${n}${gn.length ? `<${gn.join(', ')}>` : ''} {\n${items.sort((a, b) => /^type/.test(b) - /^type/.test(a)).map((i) => `    ${i}\n`).join('')}}\n`;
   };
   // builder chains `Type::builder().a(1).b(2).build()`: every link but the last returns Self by value (the last keeps its inferred type)
@@ -1996,9 +1999,13 @@ function stubRust(testPath, src, dir, made) {
     const gen = (c) => c.args.map((_, i) => `A${i}`);
     const mk = gn ? 'Self(std::marker::PhantomData)' : 'Self';
     const sig = (k, self) => {
-      const c = callInfo(chain.all.includes(k) ? src.replace(/\b\w+\.|(?<=[)\]])\s*\./g, '') : src.replace(/\b\w+\./g, ''), k);
+      const flat = chain.all.includes(k) ? src.replace(/\b\w+\.|(?<=[)\]])\s*\./g, '') : src.replace(/\b\w+\./g, '');
+      // `Type::new(..)` is read from its own call, not from an earlier `Vec::new()`
+      const qual = self ? null : callInfo(flat, `${n}(?:::\\s*<[^;(){}]*?>)?\\s*::\\s*${k}`);
+      const c = qual && qual.argc !== undefined ? qual : callInfo(flat, k);
       const g = gen(c), mid = self && chain.mids.has(k);
-      const ret = mid ? 'Self' : self ? rustRet(`(?<=[\\w)\\]]\\s*)\\.\\s*${k}`, crate_) ?? (c.ret?.startsWith('opt:') ? `Option<${c.ret.slice(4)}>` : T[c.ret ?? viaVar(`(?<![\\w])\\w+\\s*\\.\\s*${k}`)] ?? 'i64') : c.ret === 'result' ? 'Result<Self, String>' : 'Self';
+      const assocRet = !self && !mid && !c.chained && c.ret !== 'result' ? rustRet(`(?<![\\w.])${n}(?:::\\s*<[^;(){}]*?>)?::${k}`, crate_) : null;
+      const ret = mid ? 'Self' : (assocRet && !new RegExp(`^${n}\\b`).test(assocRet) ? assocRet : null) ?? (!self && !mid && c.ret && c.ret !== 'result' && T[c.ret] ? T[c.ret] : null) ?? (self ? rustRet(`(?<=[\\w)\\]]\\s*)\\.\\s*${k}`, crate_) ?? (c.ret?.startsWith('opt:') ? `Option<${c.ret.slice(4)}>` : T[c.ret ?? viaVar(`(?<![\\w])\\w+\\s*\\.\\s*${k}`)] ?? 'i64') : c.ret === 'result' ? 'Result<Self, String>' : 'Self');
       return `    pub fn ${k}${g.length ? `<${g.join(', ')}>` : ''}(${[self ? (mid ? 'self' : needsMut(k) ? '&mut self' : '&self') : '', ...g.map((t, i) => `_a${i}: ${t}`)].filter(Boolean).join(', ')}) -> ${ret} {\n        ${!self && /^(new|default|with_\w+|from_\w+|create|empty)$/.test(k) ? (c.ret === 'result' ? `Ok(${mk})` : mk) : `unimplemented!("${n}::${k}")`}\n    }\n`;
     };
     return `\nimpl${gn ? `<${gn.join(', ')}>` : ''} ${n}${gn ? `<${gn.join(', ')}>` : ''} {\n${[...assoc.map((k) => sig(k, false)), ...inst.map((k) => sig(k, true))].join('\n')}}\n`;
@@ -2030,6 +2037,14 @@ function stubRust(testPath, src, dir, made) {
   // every workspace member crate by name, so `use other_crate::a::X` is stubbed in that crate (#76)
   const crates = new Map();
   for (const f of workspaceFiles().filter((f) => /(?:^|\/)Cargo\.toml$/.test(f))) { const n = pkgName(path.join(ROOT, f)); if (n) crates.set(n, path.resolve(ROOT, path.dirname(f))); }
+  // a workspace member without any target makes cargo refuse to load the workspace: give it an empty lib (#304)
+  for (const croot of crates.values()) {
+    const tomlText = fs.readFileSync(path.join(croot, 'Cargo.toml'), 'utf8');
+    if (['src/lib.rs', 'src/main.rs', 'src/bin', 'tests', 'examples', 'benches', 'build.rs'].some((x) => fs.existsSync(path.join(croot, x))) || /^\s*\[(?:lib|\[bin\])/m.test(tomlText)) continue;
+    fs.mkdirSync(path.join(croot, 'src'), { recursive: true });
+    fs.writeFileSync(path.join(croot, 'src/lib.rs'), '');
+    made.push(rel(path.join(croot, 'src/lib.rs')));
+  }
   const ownPkg = pkgName(path.join(root, 'Cargo.toml'));
   // where each imported project type lives, so a return type can name it (#288)
   const typePath = new Map();
