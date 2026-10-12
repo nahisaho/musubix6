@@ -2866,8 +2866,14 @@ function stubFor(testPath, id) {
   };
   if (/\.py$/.test(testPath)) {
     // class stubs must construct: a throwing __init__ in a fixture/setup makes every test a weak Red
-    for (const m of scoped.matchAll(/^\s*from\s+(\.*[\w.]+)\s+import\s+(\([^)]*\)|[^\n#]+)/gm)) {
+    // imports inside conftest.py fixtures the test can use count too (#288)
+    const conftestText = pythonConftests(path.join(ROOT, testPath), scoped).map((f) => { try { return fs.readFileSync(f, 'utf8'); } catch { return ''; } }).join('\n');
+    const scan = scoped + '\n' + conftestText;
+    const checked = { rel: 0, abs: 0, conftest: [...conftestText.matchAll(/^\s*from\s+\.*[\w.]+\s+import\s/gm)].length };
+    if (/\bsubprocess\.(?:run|Popen|check_output|check_call|call)\s*\(|\bos\.system\s*\(/.test(scoped)) (made.notes ??= []).push(`${id ?? testPath} runs a subprocess (e.g. \`node cli.ts\`): the subject is an external program, which stubs cannot generate; create it by hand or leave it missing — \`tdd red\` accepts a genuine non-zero exit/assertion failure without --weak`);
+    for (const m of scan.matchAll(/^\s*from\s+(\.*[\w.]+)\s+import\s+(\([^)]*\)|[^\n#]+)/gm)) {
       const mod = m[1];
+      checked[mod.startsWith('.') ? 'rel' : 'abs']++;
       // stdlib / installed packages must not be shadowed by a stub (probe with cwd removed from sys.path so project dirs do not count; user site and PYTHONPATH do)
       if (!mod.startsWith('.') && spawnSync('python3', ['-c', 'import importlib.util,sys;sys.path=[p for p in sys.path if p not in ("",".")];sys.exit(0 if importlib.util.find_spec(sys.argv[1].split(".")[0]) else 1)', mod], { cwd: os.tmpdir() }).status === 0) continue;
       const proot = path.resolve(ROOT, projectFor(testPath)?.root ?? '.');
@@ -2892,7 +2898,9 @@ function stubFor(testPath, id) {
       const isExc = (n) => new RegExp(`(raises|assertRaises|assertRaisesRegex)\\(\\s*${n}\\b|\\bexcept\\s+\\(?\\s*${n}\\b`).test(src);
       // ALL_CAPS names that are never called are constants, not classes (#112)
       const isConst = (n) => /^[A-Z][A-Z0-9_]+$/.test(n) && !new RegExp(`\\b${n}\\s*\\(`).test(scoped);
-      const stubOf = (n) => isExc(n) ? `class ${n}(Exception):\n    pass\n` : isConst(n) ? `${n} = ${new RegExp(`parametrize\\([^\\n]*\\b${n}\\b|\\bin\\s+${n}\\b|\\b${n}\\s*\\[`).test(scoped) ? '[]' : 'None'}\n` : /^[A-Z]/.test(n) ? `class ${n}:\n    def __init__(self, *a, **k):\n        pass\n${methodsOf(scoped, n).map((k) => `\n    def ${k}(self, *a, **k):\n        raise NotImplementedError("${k}")\n`).join('')}` : `def ${n}(*a, **k):\n    raise NotImplementedError("${n}")\n`;
+      // a name used only as an annotation (never called, no attribute access) is a typing.Protocol (#288)
+      const isProto = (n) => /^[A-Z]/.test(n) && !isExc(n) && !isConst(n) && new RegExp(`(?::|->|\\[|\\|)\\s*${n}\\b`).test(scan) && !new RegExp(`(?<![\\w.])${n}\\s*[(.]|\\bisinstance\\([^)]*\\b${n}\\b|\\(\\s*${n}\\s*[,)]\\s*:?`).test(scan.replace(new RegExp(`^\\s*from[^\\n]*\\bimport[^\\n]*`, 'gm'), ''));
+      const stubOf = (n) => isProto(n) ? `class ${n}(Protocol):\n${methodsOf(scoped, n).map((k) => `    def ${k}(self, *a, **k): ...\n`).join('') || '    ...\n'}` : isExc(n) ? `class ${n}(Exception):\n    pass\n` : isConst(n) ? `${n} = ${new RegExp(`parametrize\\([^\\n]*\\b${n}\\b|\\bin\\s+${n}\\b|\\b${n}\\s*\\[`).test(scoped) ? '[]' : 'None'}\n` : /^[A-Z]/.test(n) ? `class ${n}:\n    def __init__(self, *a, **k):\n        pass\n${methodsOf(scoped, n).map((k) => `\n    def ${k}(self, *a, **k):\n        raise NotImplementedError("${k}")\n`).join('')}` : `def ${n}(*a, **k):\n    raise NotImplementedError("${n}")\n`;
       // a namespace dir (no __init__.py) satisfies only the submodules it holds; any other imported name needs an __init__.py that defines it (#214)
       if (isNsDir) {
         const miss = ns.filter((n) => !fs.existsSync(path.join(nsDir, n + '.py')) && !fs.existsSync(path.join(nsDir, n)));
@@ -2932,9 +2940,9 @@ function stubFor(testPath, id) {
         else if (missing.length) (made.realMissing ??= []).push(`${missing.join(', ')} in ${rel(existing)}`);
         continue;
       }
-      add(absOut, ns.map(stubOf).join('\n\n'));
+      add(absOut, (ns.some(isProto) ? 'from typing import Protocol\n\n\n' : '') + ns.map(stubOf).join('\n\n'));
     }
-    return Object.assign([...new Set(made)], { realMissing: made.realMissing });
+    return Object.assign([...new Set(made)], { realMissing: made.realMissing, notes: made.notes, checked });
   }
   if (/_test\.go$/.test(testPath)) return stubGo(testPath, scoped, dir, add, made);
   if (/\.rs$/.test(testPath)) return stubRust(testPath, scoped, dir, made);
@@ -3758,7 +3766,7 @@ function cmdTdd() {
     else if (made.length) out(made.verified === 'ok' ? `stubbed (throwing, compile-checked): ${made.join(', ')} — now run: tdd red ${t.id}` : made.verified === 'fail' ? `stubbed (throwing): ${made.join(', ')} — ! the test still does not compile: ${made.verifyError}\n! could not fully stub ${t.id}: finish the stub by hand (types, struct fields, methods), then run: tdd red ${t.id}` : `stubbed (throwing; compile NOT verified${scripted ? '' : ' — no checker for this language'}): ${made.join(', ')} — now run: tdd red ${t.id}; if it reports a load/compile error, finish the stub by hand`);
     else if (made.verified === 'partial') out(`nothing was stubbed for ${t.id}: it has no compile errors of its own — NOT compile-checked`);
     else if (made.verified === 'fail') out(`nothing could be stubbed for ${t.id}: the test does not compile (${made.verifyError}) — write the missing code by hand`);
-    else out(scripted ? `no missing relative imports in ${t.path}` : made.verified === 'ok' ? `nothing to stub for ${t.id} in ${t.path} (compile-checked)` : `nothing to stub for ${t.id} in ${t.path} (nothing new to generate: referenced code is already stubbed/defined, or the generator does not cover this construct); run tdd red, and if the test does not compile write the missing code by hand`);
+    else out(scripted ? (made.checked ? `nothing to stub in ${t.path}: checked ${made.checked.rel + made.checked.abs} from-import(s) (${made.checked.rel} relative, ${made.checked.abs} absolute${made.checked.conftest ? `, ${made.checked.conftest} in conftest.py` : ''}); each resolves to an installed/existing module or is not a missing project module. Plain \`import x\` lines and non-Python subjects are not checked` : `no missing relative imports in ${t.path}`) : made.verified === 'ok' ? `nothing to stub for ${t.id} in ${t.path} (compile-checked)` : `nothing to stub for ${t.id} in ${t.path} (nothing new to generate: referenced code is already stubbed/defined, or the generator does not cover this construct); run tdd red, and if the test does not compile write the missing code by hand`);
     if (made.verified === 'partial') out(`! ${made.verifyError} — the requested test has no compile errors of its own; stub or implement the other tests (\`tdd stub <their ID>\`) before running the project's tests`);
     for (const n of [...new Set(made.notes ?? [])]) out(`! ${n}`);
     if (made.realMissing?.length) out(`! not stubbed: ${made.realMissing.join('; ')} — those modules hold real code, which stubs never edit: add the names by hand`);
