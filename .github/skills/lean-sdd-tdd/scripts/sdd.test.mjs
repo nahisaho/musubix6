@@ -7944,3 +7944,34 @@ test('#290 Rust stub: methods on a returned value are not added to the type whos
   assert.doesNotMatch(lib, /fn (contains|matches)/, lib);
   ok17(out);
 });
+
+test('#295 tdd refactor --stale re-verifies every test with a stale shared-implementation Green', () => {
+  const spec = '---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | x shall hold. | TEST-A-001 |\n| REQ-A-002 | y shall hold. | TEST-A-002 |\n';
+  const d = mini(spec, { 'a.test.mjs': '// @id TEST-A-001 @verifies REQ-A-001\n// one\n// @id TEST-A-002 @verifies REQ-A-002\n// two\n', 'impl.mjs': '// @id CODE-A-001 @implements REQ-A-001 REQ-A-002\nexport const v = 0;\n' }, FAIL);
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-A-001').code, 0);
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-A-002').code, 0);
+  setCmd(d, PASS);
+  sdd(d, 'tdd', 'green', 'TEST-A-001');
+  sdd(d, 'tdd', 'green', 'TEST-A-002');
+  fs.writeFileSync(path.join(d, 'impl.mjs'), '// @id CODE-A-001 @implements REQ-A-001 REQ-A-002\nexport const v = 1;\n');
+  const r = sdd(d, 'tdd', 'refactor', '--stale');
+  assert.equal(r.code, 0, r.out);
+  assert.match(r.out, /TEST-A-001/, r.out);
+  assert.match(r.out, /TEST-A-002/, r.out);
+  assert.match(sdd(d, 'tdd', 'refactor', '--stale').out, /no test has a stale/);
+});
+
+test('#295 --characterization without a reason explains the flag', () => {
+  const d = t1project();
+  const r = sdd(d, 'tdd', 'red', 'TEST-CALC-001', '--characterization');
+  assert.equal(r.code, 2);
+  assert.match(r.out, /passes without any implementation/, r.out);
+});
+
+test('#295 the missing-@implements warning is not repeated once the test already has a Green', () => {
+  const d = t1project();
+  fs.writeFileSync(path.join(d, 'add.mjs'), 'export const add = (a, b) => a + b;\n');
+  sdd(d, 'tdd', 'red', 'TEST-CALC-001', '--characterization', 'x');
+  assert.match(sdd(d, 'tdd', 'green', 'TEST-CALC-001').out, /no code carries @implements/);
+  assert.doesNotMatch(sdd(d, 'tdd', 'green', 'TEST-CALC-001').out, /no code carries @implements/);
+});
