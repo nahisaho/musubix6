@@ -8074,3 +8074,9 @@ test('#296 C#: a type used in `case T.X:` is an enum even when it is also a decl
   assert.doesNotMatch(out, /does not compile|could not fully stub/, out);
   assert.match(rd130(d, 'T/Status.cs'), /public enum Status/);
 });
+
+test('#296 ExUnit: a stub called in a refute assertion is the asserted behaviour, not setup', () => {
+  const r = weak263(null, '** (RuntimeError) not implemented: add\n', 'add.test.exs', exs271('    assert_raise ArgumentError, fn -> Calc.boom(1) end\n    refute Calc.add(1, 1) == 3'));
+  assert.match(r.out, /RED ok/, r.out);
+  assert.doesNotMatch(r.out, /\[weak\]|setup call/, r.out);
+});
