@@ -8080,3 +8080,14 @@ test('#296 ExUnit: a stub called in a refute assertion is the asserted behaviour
   assert.match(r.out, /RED ok/, r.out);
   assert.doesNotMatch(r.out, /\[weak\]|setup call/, r.out);
 });
+
+test('#308 gate --changed: a root Cargo workspace manifest belongs to the project holding its members', () => {
+  const d = mini('---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | x shall hold. | TEST-A-001 |\n', { 'Cargo.toml': '[workspace]\nmembers = ["rs/crates/a"]\n', 'rs/crates/a/Cargo.toml': '[package]\nname = "a"\n' });
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ testCmd: PASS, checks: [], projects: [{ root: 'rs', testCmd: PASS, checks: [{ name: 'ok', cmd: ['node', '-e', '0'] }] }] }));
+  spawnSync('git', ['add', '-A'], { cwd: d });
+  spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'i'], { cwd: d });
+  fs.appendFileSync(path.join(d, 'Cargo.toml'), '# c\n');
+  const o = sdd(d, 'gate', '--changed').out;
+  assert.match(o, /✓ cmd rs:ok/, o);
+  assert.doesNotMatch(o, /root-owned data\/config changes/, o);
+});
