@@ -483,7 +483,7 @@ v24.21.0
 
 `network is unreachable` は再現しませんでした。追加の確認は次のとおりです。
 
-> - `node`、`python`、`golang`、`busybox` の 4 イメージを削除し、取得し直しても成功した
+> - 4 イメージを削除して取得し直しても、成功した(`node`、`python`、`golang`、`busybox`)
 > - コンテナー内から、レジストリ `registry-1.docker.io` に IPv4 と HTTPS で到達できた(認証前なので 401 が返る)
 > - `--no-cache` でビルドし直しても成功した
 >
