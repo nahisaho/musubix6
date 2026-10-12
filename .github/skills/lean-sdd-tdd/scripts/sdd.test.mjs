@@ -6339,3 +6339,57 @@ test('#259 C++ raw string literals do not break per-test hash isolation', () => 
   const r = sdd(d, 'tdd', 'green', 'TEST-CALC-001');
   assert.equal(r.code, 0, r.out);
 });
+
+const gitC = (d, ...a) => spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', ...a], { cwd: d, encoding: 'utf8' });
+
+test('#254 gate --changed --baseline <ref> diffs committed changes; bad ref is an error', () => {
+  const spec = '---\nfeature: r\ntier: T1\n---\n| REQ-R-001 | x shall work. | TEST-R-001 |\n';
+  const d = mini(spec, { 'contract/c.json': '{}', 'src/a.test.ts': '// @id TEST-R-001 @verifies REQ-R-001\n' });
+  const cp = path.join(d, '.sdd/config.json');
+  const c = JSON.parse(fs.readFileSync(cp, 'utf8'));
+  c.artifacts = { 'contract/c.json': ['src/a.test.ts'] };
+  fs.writeFileSync(cp, JSON.stringify(c));
+  gitC(d, 'add', '-A'); gitC(d, 'commit', '-qm', 'i');
+  fs.writeFileSync(path.join(d, 'contract/c.json'), '{"a":1}');
+  gitC(d, 'commit', '-qam', 'edit');
+  const r = sdd(d, 'gate', '--changed', '--baseline', 'HEAD~1', '--no-run');
+  assert.doesNotMatch(r.out, /changed scope\): 0\/0/, r.out);
+  const bad = sdd(d, 'gate', '--changed', '--baseline', 'nope-ref', '--no-run');
+  assert.equal(bad.code, 2, bad.out);
+  assert.match(bad.out, /baseline/, bad.out);
+});
+
+test('#254 gate --changed: contract-only edit puts artifact consumers in scope', () => {
+  const spec = '---\nfeature: r\ntier: T1\n---\n| REQ-R-001 | x shall work. | TEST-R-001 |\n';
+  const d = mini(spec, { 'contract/c.json': '{}', 'src/a.test.ts': '// @id TEST-R-001 @verifies REQ-R-001\n' });
+  const cp = path.join(d, '.sdd/config.json');
+  const c = JSON.parse(fs.readFileSync(cp, 'utf8'));
+  c.artifacts = { 'contract/c.json': ['src/a.test.ts'] };
+  fs.writeFileSync(cp, JSON.stringify(c));
+  gitC(d, 'add', '-A'); gitC(d, 'commit', '-qm', 'i');
+  fs.writeFileSync(path.join(d, 'contract/c.json'), '{"a":1}');
+  const r = sdd(d, 'gate', '--changed', '--no-run');
+  assert.doesNotMatch(r.out, /changed scope\): 0\/0/, r.out);
+});
+
+test('#255 impact on a non-code artifact: no "same feature" bucket', () => {
+  const spec = '---\nfeature: api\ntier: T1\n---\n| REQ-API-001 | x shall work. | TEST-API-001 |\n';
+  const d = mini(spec, { 'contract/api.json': '{}', 'src/api.ts': '// @id CODE-API-001 @implements REQ-API-001\nexport const a = 1;\n', 'src/api.test.ts': '// @id TEST-API-001 @verifies REQ-API-001\nimport "./api";\n' });
+  const cp = path.join(d, '.sdd/config.json');
+  const c = JSON.parse(fs.readFileSync(cp, 'utf8'));
+  c.artifacts = { 'contract/api.json': ['src/api.ts'] };
+  fs.writeFileSync(cp, JSON.stringify(c));
+  const r = sdd(d, 'impact', 'contract/api.json');
+  assert.doesNotMatch(r.out, /same feature/, r.out);
+  assert.match(r.out, /REQ-API-001/, r.out);
+});
+
+test('#255 impact on a data file lists transitive dependent projects', () => {
+  const d = mini('---\nfeature: r\ntier: T1\n---\n| REQ-R-001 | x shall work. | TEST-R-001 |\n', { 'contract/g.json': '{}', 'lib/a.txt': 'a', 'app/b.txt': 'b' });
+  const cp = path.join(d, '.sdd/config.json');
+  const c = JSON.parse(fs.readFileSync(cp, 'utf8'));
+  c.projects = [{ root: 'lib', dependsOn: ['contract'], testCmd: ['true'], checks: [] }, { root: 'app', dependsOn: ['lib'], testCmd: ['true'], checks: [] }];
+  fs.writeFileSync(cp, JSON.stringify(c));
+  const j = JSON.parse(sdd(d, 'impact', 'contract/g.json', '--json').out);
+  assert.deepEqual([...j.projects].sort(), ['app', 'lib'], JSON.stringify(j));
+});
