@@ -79,7 +79,7 @@ function pythonTestSha(txt, id) {
   return sha(shared + '\u0000' + ls.slice(mine.start, mine.end).join('\n').trim());
 }
 const BRACE_TEST = /\.(rs|java|php|cs|c|cc|cpp|cxx)$/;
-const maskBraces = (txt, rust = false) => txt.replace(rust ? /\/\*[\s\S]*?\*\/|\/\/[^\n]*|\b(?:br|r)(#+)"[\s\S]*?"\1|\b(?:br|r)"[\s\S]*?"|"(?:\\[\s\S]|[^"\\])*"|'(?:\\.|[^'\\\n])'/g : /\/\*[\s\S]*?\*\/|\/\/[^\n]*|"(?:\\[\s\S]|[^"\\])*"|'(?:\\[\s\S]|[^'\\])*'/g, (s) => s.replace(/[^\n]/g, ' '));
+const maskBraces = (txt, rust = false) => txt.replace(rust ? /\/\*[\s\S]*?\*\/|\/\/[^\n]*|\b(?:br|r)(#+)"[\s\S]*?"\1|\b(?:br|r)"[\s\S]*?"|"(?:\\[\s\S]|[^"\\])*"|'(?:\\.|[^'\\\n])'/g : /\/\*[\s\S]*?\*\/|\/\/[^\n]*|(?<!\w)(?:u8|u|U|L)?R"([^()\\\s]{0,16})\([\s\S]*?\)\1"|"(?:\\[\s\S]|[^"\\])*"|'(?:\\[\s\S]|[^'\\])*'/g, (s) => s.replace(/[^\n]/g, ' '));
 function sharedOutside(txt, ranges, start = 0) {
   let shared = '', cursor = start;
   for (const r of [...ranges].sort((a, b) => a.start - b.start)) {
@@ -708,6 +708,7 @@ const testShaVariant = (p, id, trim, norm = false, legacy = false, cut = true, i
     for (let i = start + 1; i < end; i++) {
       const l = ls[i];
       if (!l.trim() || ind(l) > ref || /^\s*[})\]]/.test(l)) continue;
+      if (/\.exs?$/.test(p) && ind(l) < ref && /^\s*end\b/.test(l)) { end = Math.max(i, at + 1); break; }
       const prev = ls[i - 1];
       if (!prev.trim() || /^[})\];,\s]*$/.test(prev)) { end = Math.max(i, at + 1); break; }
     }

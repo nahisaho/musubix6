@@ -6314,3 +6314,28 @@ test('#242 impact traverses non-code artifacts declared in config.artifacts', ()
   const j = JSON.parse(sdd(d, 'impact', 'contract/c.json', '--json').out);
   assert.ok(j.reachedFiles.includes('src/a.ts'), JSON.stringify(j));
 });
+
+test('#253 ExUnit: appending a test after the last test does not stale it', () => {
+  const src = (extra = '') => `defmodule ATest do\n  use ExUnit.Case\n\n  # @id TEST-CALC-001 @verifies REQ-CALC-001\n  test "one" do\n    assert 1 == 2\n  end\n${extra}end\n`;
+  const d = batch2Source('test/a_test.exs', src());
+  writeAll(d, { 'mix.exs': 'defmodule A.MixProject do\nend\n' });
+  fakeOut(d, 'Failure');
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-CALC-001').code, 0);
+  fakeOut(d, 'pass', 0);
+  writeAll(d, { 'test/a_test.exs': src() });
+  assert.equal(sdd(d, 'tdd', 'green', 'TEST-CALC-001').code, 0);
+  writeAll(d, { 'test/a_test.exs': src('\n  # @id TEST-CALC-002 @verifies REQ-CALC-001\n  test "two" do\n    assert 2 == 2\n  end\n') });
+  const r = sdd(d, 'tdd', 'green', 'TEST-CALC-001');
+  assert.doesNotMatch(r.out, /changed since/, r.out);
+});
+
+test('#259 C++ raw string literals do not break per-test hash isolation', () => {
+  const src = (bodyB) => `#include <string>\n// @id TEST-CALC-001 @verifies REQ-CALC-001\nTESTCASE(one) {\n  const std::string s = R"({"a":"x\\"y"})";\n  CHECK(!s.empty());\n}\n// @id TEST-CALC-002 @verifies REQ-CALC-001\nTESTCASE(two) {\n  CHECK(1);${bodyB}\n}\n`;
+  const d = batch2Source('t.cpp', src(''));
+  fakeOut(d, 'Failure');
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-CALC-001').code, 0);
+  fakeOut(d, 'pass', 0);
+  writeAll(d, { 't.cpp': src(' CHECK(2);') });
+  const r = sdd(d, 'tdd', 'green', 'TEST-CALC-001');
+  assert.equal(r.code, 0, r.out);
+});
