@@ -6889,3 +6889,45 @@ test('#270 Elixir stub: a module passed to start_supervised! is startable (use G
   assert.match(s, /use GenServer/, s);
   assert.match(s, /def start_link/, s);
 });
+
+// ---- wave 11 (#278/#280) ----
+test('#278 Rust include!(concat!(env!("OUT_DIR"), ..)) is a build artifact: red/green neither crash nor refuse', { skip: !has130('cargo') }, () => {
+  const d = batch2Source('src/cases.rs', '// @id TEST-CALC-001 @verifies REQ-CALC-001\n#[test]\nfn test_calc_001() { assert_eq!(crate::answer(), 7); }\n');
+  writeAll(d, {
+    'Cargo.toml': '[package]\nname="outdir-probe"\nversion="0.1.0"\nedition="2021"\nbuild="build.rs"\n',
+    'build.rs': 'fn main() { let o = std::env::var("OUT_DIR").unwrap(); std::fs::write(format!("{}/gen.rs", o), "pub const G: i32 = 1;").unwrap(); }\n',
+    'src/lib.rs': '// @id CODE-CALC-001 @implements REQ-CALC-001\ninclude!(concat!(env!("OUT_DIR"), "/gen.rs"));\npub fn answer() -> i32 { G - 1 }\n#[cfg(test)] mod cases;\n',
+  });
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ testCmd: ['cargo', 'test', '--lib', '{idu}'], checks: [] }));
+  const red = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
+  assert.equal(red.code, 0, red.out);
+  assert.doesNotMatch(red.out, /\n\s+at /);
+  fs.writeFileSync(path.join(d, 'src/lib.rs'), rd130(d, 'src/lib.rs').replace('G - 1', 'G + 6'));
+  const green = sdd(d, 'tdd', 'green', 'TEST-CALC-001');
+  assert.equal(green.code, 0, green.out);
+  assert.doesNotMatch(green.out, /\n\s+at /);
+});
+
+test('#278 an unresolvable Rust include prints a clean REFUSED without a stack', { skip: !has130('cargo') }, () => {
+  const d = batch2Source('src/cases.rs', '// @id TEST-CALC-001 @verifies REQ-CALC-001\n#[test]\nfn test_calc_001() { assert_eq!(crate::answer(), 7); }\n');
+  writeAll(d, { 'Cargo.toml': '[package]\nname="inc-probe"\nversion="0.1.0"\nedition="2021"\n', 'src/lib.rs': '// @id CODE-CALC-001 @implements REQ-CALC-001\ninclude!(concat!(env!("SOME_DIR"), "/gen.rs"));\npub fn answer() -> i32 { 0 }\n#[cfg(test)] mod cases;\n' });
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ testCmd: ['cargo', 'test', '--lib', '{idu}'], checks: [] }));
+  const red = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
+  assert.equal(red.code, 1, red.out);
+  assert.match(red.out, /REFUSED: unresolved Rust include ownership/);
+  assert.doesNotMatch(red.out, /\n\s+at /);
+});
+
+test('#280 Rust stub: assert!(f(..)) returns bool; items of an existing cfg(test)-only module are added; macros get a clear note', { skip: !has130('cargo') }, () => {
+  const toml = '[package]\nname = "s280"\nversion = "0.1.0"\nedition = "2021"\n';
+  const b = mk130({ 'Cargo.toml': toml, 'tests/t.rs': 'use s280::ops::is_ok;\n// @id TEST-A-001 @verifies REQ-A-001\n#[test]\nfn t1() { assert!(is_ok(3)); }\n' });
+  const ob = sdd(b, 'tdd', 'stub', 'TEST-A-001').out;
+  assert.match(rd130(b, 'src/ops.rs'), /pub fn is_ok<A0>\(_a0: A0\) -> bool/, ob);
+  assert.match(ob, /compile-checked/, ob);
+  const m = mk130({ 'Cargo.toml': toml, 'src/lib.rs': 'pub mod ops;\n', 'src/ops.rs': '#[cfg(test)]\nmod tests {\n    pub fn double(x: i64) -> i64 { x }\n}\n', 'tests/t.rs': 'use s280::ops::double;\n// @id TEST-A-001 @verifies REQ-A-001\n#[test]\nfn t1() { assert_eq!(double(2), 4); }\n' });
+  sdd(m, 'tdd', 'stub', 'TEST-A-001');
+  assert.match(rd130(m, 'src/ops.rs'), /^pub fn double/m);
+  const k = mk130({ 'Cargo.toml': toml, 'tests/t.rs': '// @id TEST-A-001 @verifies REQ-A-001\n#[test]\nfn t1() { let v = entries![1, 2]; assert_eq!(v.len(), 2); }\n' });
+  const ok = sdd(k, 'tdd', 'stub', 'TEST-A-001').out;
+  assert.match(ok, /macro entries! is not stubbed/, ok);
+});
