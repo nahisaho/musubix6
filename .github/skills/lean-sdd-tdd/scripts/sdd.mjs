@@ -3049,8 +3049,12 @@ function setupOrigin(line, testPath, id, text = '') {
   }
   // C#: a static field initializer / type initializer that calls a stub fails before any test body runs (#142)
   if (typeInit) return x ?? 'static initializer';
+  // ExUnit `setup`/`setup_all`/CaseTemplate failure (frame `__ex_unit_setup_N`) and pytest fixture error are setup whatever the exception is
+  const exSetup = /__ex_unit_setup/.test(text), pySetup = /ERROR at setup of/.test(text);
+  if (!x && exSetup) x = /function (?:[\w.]+\.)?([\w!?]+)\/\d+ is undefined/.exec(text)?.[1] ?? /^\s*(?:[\w.]+\.)?([a-z_][\w!?]*)\(/m.exec(text.slice(text.indexOf('stacktrace:') + 1))?.[1] ?? 'setup';
+  if (!x && pySetup) x = /^\S+\.py:\d+: in (\w+)/m.exec(text)?.[1] ?? 'fixture';
   if (!x) return null;
-  if (/ERROR at setup of/.test(text)) return x; // pytest fixture failure is always setup
+  if (exSetup || pySetup) return x;
   const all = fs.readFileSync(path.join(ROOT, testPath), 'utf8').split('\n');
   // Rust `use m::{encode as delta_encode}`: the alias is the same subject (#263)
   const names = [x, ...[...all.join('\n').matchAll(new RegExp(`(?<![\\w$])${x.replace(/[$]/g, '\\$&')}\\s+as\\s+([\\w$]+)`, 'g'))].map((m) => m[1])];
@@ -3111,7 +3115,9 @@ function setupOrigin(line, testPath, id, text = '') {
       const hre = new RegExp(`(?<![\\w$])${h}\\s*\\(`);
       const calls = bl.filter((l, i) => hre.test(l) && !DEF.test(l));
       if (!calls.length) continue;
-      if (bl.some((l, i) => bf[i] && hre.test(l))) { helperAsserted = true; return null; }
+      // `assert_eq!(cost(&p(), 1), 2)`: the helper only feeds another call, its own value is not asserted
+      const feeding = (l) => new RegExp(`[\\w$](?:::[\\w$]+|\\.[\\w$]+)*!?\\([^()]*(?<![\\w$])${h}\\s*\\(`).test(l.replace(/^\s*(?:\w+!|assert\w*)\(/, ''));
+      if (bl.some((l, i) => bf[i] && hre.test(l) && !feeding(l))) { helperAsserted = true; return null; }
       if (assertedResult(calls)) { helperAsserted = true; return null; }
       return x;
     }
@@ -3950,7 +3956,7 @@ function cmdTdd() {
   const movedDeps = sub === 'refactor' && lastGreen && lastGreen.fileSha !== after ? changedOracleDeps(lastGreen, t.path, id) : [];
   if (movedDeps.length) out(`⚠ ${id}: oracle dependency changed since the last Green${oracleNote(movedDeps).replace(/^ — oracle dependency changed/, '')} (the test's own region may be unchanged); a refactor does not prove the changed oracle can fail (no Red). If expectations changed, use tdd red/green instead (#239)`);
   else if (sub === 'refactor' && lastGreen && lastGreen.fileSha !== after) out(`⚠ ${id}: test body changed since the last Green (includes the file preamble: imports/includes/helpers); a refactor does not prove the new assertions can fail (no Red). If behaviour/assertions changed, use tdd red/green instead (#118)`);
-  out(`${sub.toUpperCase()} ok ${id} (${req}) ${res.ms}ms${reason ? ` — fails with: ${reason}` : ''}${charac ? ` — characterization: ${charac} (test passed)` : retestWeak ? ` — retest: ${retest} (test passed)` : ''}${weakRed ? ' [weak]' : ''}${setupSym ? ` ⚠ Red comes from setup call "${setupSym}", not the asserted behaviour (use --expect <text> that does not name "${setupSym}", or --allow-setup-red)` : ''}`);
+  out(`${sub.toUpperCase()} ok ${id} (${req}) ${res.ms}ms${reason ? ` — fails with: ${reason}` : ''}${charac ? ` — characterization: ${charac} (test passed)` : retestWeak ? ` — retest: ${retest} (test passed)` : ''}${weakRed ? ' [weak]' : ''}${setupSym ? ` ⚠ Red comes from setup call "${setupSym}", not the asserted behaviour (${typeof flags.expect === 'string' ? `--expect "${flags.expect}" names "${setupSym}" itself; use text from the asserted behaviour` : `use --expect <text> that does not name "${setupSym}"`}, or --allow-setup-red)` : ''}`);
   if (sub === 'green') {
     const mine = new Set(t.refs.verifies), implFiles = [...ents.values()].filter((e) => e.kind === 'CODE' && e.refs.implements.some((r) => mine.has(r))).map((e) => e.path);
     const mtime = (f) => { try { return fs.statSync(path.join(ROOT, f)).mtimeMs; } catch { return 0; } };

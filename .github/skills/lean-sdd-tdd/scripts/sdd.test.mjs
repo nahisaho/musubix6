@@ -6706,3 +6706,36 @@ test('#268 Rust stub: a string literal compared through a bound variable gives a
   sdd(d, 'tdd', 'stub', 'TEST-H-001');
   assert.match(fs.readFileSync(path.join(d, 'src/lib.rs'), 'utf8'), /fn explain<A0>\(_a0: A0\) -> String/);
 });
+
+// ---- wave 10 (#271): one weak-Red rule, Rust/pytest/ExUnit variants ----
+const exs271 = (inner, pre = '') => `defmodule T do\n  use ExUnit.Case\n${pre}  # @id TEST-CALC-001\n  # @verifies REQ-CALC-001\n  test "a" do\n${inner}\n  end\n\n  defp filled(n) do\n    Log.new(n)\n  end\nend\n`;
+
+const rs271 = (helper, body) => `import { test } from 'node:test';\n${helper}\n/** @id TEST-CALC-001 @verifies REQ-CALC-001 */\ntest('TEST-CALC-001 x', () => {\n${body.join('\n')}\n});\n`;
+const rsOut = "thread 'x' panicked at src/m.rs:3:5:\nnot implemented: ";
+
+test('#271 ExUnit: a failure raised in a setup block (child_spec undefined) is setup, with the function as the reason', () => {
+  const pre = '  setup do\n    start_supervised!({Cache, name: nil})\n    :ok\n  end\n\n';
+  const out = '  1) test a (T)\n     test/t.exs:9\n     ** (UndefinedFunctionError) function Cache.child_spec/1 is undefined or private\n     stacktrace:\n       Cache.child_spec([])\n       test/t.exs:3: T."__ex_unit_setup_0"/1\n       test/t.exs:1: T.__ex_unit__/2\n';
+  const r = weak263(null, out, 'add.test.exs', exs271('    assert Foo.run(1) == 2', pre));
+  assert.match(r.out, /\[weak\].*setup call "child_spec"/, r.out);
+});
+
+test('#271 Rust: a shared helper whose stub fails is setup even when the helper call is an argument of the asserted call', () => {
+  const r = weak263(null, `${rsOut}default\n`, 'a.test.mjs', rs271('fn p() -> CostParams { CostParams::default() }', ['  assert_eq!(cost(&p(), 1), 2);']));
+  assert.match(r.out, /\[weak\].*setup call "default"/, r.out);
+});
+
+test('#271 pytest: a fixture failure is setup even when the error is not a NotImplementedError', () => {
+  const py = `import pytest\n\n\n@pytest.fixture\ndef eng():\n    return Engine()\n\n\n# @id TEST-CALC-001 @verifies REQ-CALC-001\ndef test_a(eng):\n    assert eng.run(1) == 2\n`;
+  const out = 'ERROR at setup of test_a\nconftest.py:6: in eng\n    return Engine()\nE   TypeError: Engine() takes no arguments\n';
+  const r = weak263(null, out, 'a.test.py', py);
+  assert.match(r.out, /\[weak\].*setup call "eng"/, r.out);
+});
+
+test('#271 --expect after --allow-setup-red: the hint does not suggest --expect again', () => {
+  weak263.args = ['--expect', 'not implemented: new'];
+  const r = weak263(null, 'not implemented: new\n', 'add.test.exs', exs271('    l = Log.new(1)\n    assert Log.entries(l) == []'));
+  weak263.args = undefined;
+  assert.match(r.out, /\[weak\]/, r.out);
+  assert.doesNotMatch(r.out, /use --expect/, r.out);
+});
