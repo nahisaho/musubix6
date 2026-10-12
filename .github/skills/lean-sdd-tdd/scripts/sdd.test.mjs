@@ -7881,20 +7881,20 @@ test('#298 Rust stub: an empty-collection / None argument is typed instead of an
 
 test('#304 Rust stub: several IDs (or --all) are stubbed in one run; a single ID still stubs only its own test', has268, () => {
   const t = (n, body) => `// @id TEST-H-00${n} @verifies REQ-H-00${n}\n#[test]\nfn test_h_00${n}() {\n${body}\n}\n`;
-  const body = 'use hist::{alpha, beta, gamma};\n\n' + t(1, '    assert_eq!(alpha(1), 2);') + '\n' + t(2, '    assert_eq!(beta(1), 3);') + '\n' + t(3, '    assert_eq!(gamma(1), 4);');
+  const body = t(1, '    assert_eq!(hist::ops::alpha(1), 2);') + '\n' + t(2, '    assert_eq!(hist::ops::beta(1), 3);') + '\n' + t(3, '    assert_eq!(hist::ops::gamma(1), 4);');
   const mk = () => rs268({ 'src/lib.rs': '', 'tests/x.rs': body }, ['TEST-H-001', 'TEST-H-002', 'TEST-H-003']);
+  const ops = (d) => fs.readFileSync(path.join(d, 'src/ops.rs'), 'utf8');
   const one = mk();
   sdd(one, 'tdd', 'stub', 'TEST-H-001');
-  assert.doesNotMatch(fs.readFileSync(path.join(one, 'src/lib.rs'), 'utf8'), /fn beta/);
+  assert.doesNotMatch(ops(one), /fn beta/);
   const two = mk();
   const r = sdd(two, 'tdd', 'stub', 'TEST-H-001', 'TEST-H-002');
-  const lib = fs.readFileSync(path.join(two, 'src/lib.rs'), 'utf8');
-  assert.match(lib, /fn alpha/, r.out);
-  assert.match(lib, /fn beta/, r.out);
-  assert.doesNotMatch(lib, /fn gamma/);
+  assert.match(ops(two), /fn alpha/, r.out);
+  assert.match(ops(two), /fn beta/, r.out);
+  assert.doesNotMatch(ops(two), /fn gamma/);
   const all = mk();
   sdd(all, 'tdd', 'stub', 'TEST-H-001', '--all');
-  assert.match(fs.readFileSync(path.join(all, 'src/lib.rs'), 'utf8'), /fn gamma/);
+  assert.match(ops(all), /fn gamma/);
 });
 
 test('#304 Rust stub: consts/tables compared or iterated by the test are typed (tuples, Option, slices), not i64', has268, () => {

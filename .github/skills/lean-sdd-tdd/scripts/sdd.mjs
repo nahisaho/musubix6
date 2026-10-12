@@ -2167,7 +2167,7 @@ function stubRust(testPath, src, dir, made) {
     const croot = crates.get(m[1]);
     if (!croot) continue;
     preOut ??= probe('cargo', ['test', '--no-run', '--offline', '--test', path.basename(testPath, '.rs')], root);
-    const items = (m[3].startsWith('{') ? m[3].slice(1, -1).split(',') : [m[3]]).map((x) => x.trim().split(/\s+as\s+/)[0]).filter((x) => /^[A-Za-z_]\w*$/.test(x) && x !== 'self' && new RegExp(`\\b${x}\\b`).test(fullNoUse));
+    const items = (m[3].startsWith('{') ? m[3].slice(1, -1).split(',') : [m[3]]).map((x) => x.trim().split(/\s+as\s+/)[0]).filter((x) => /^[A-Za-z_]\w*$/.test(x) && x !== 'self' && new RegExp(`\\b${x}\\b`).test(srcNoUse));
     if (!items.length) continue;
     const lib = path.join(croot, 'src/lib.rs');
     if (!fs.existsSync(lib)) { fs.mkdirSync(path.dirname(lib), { recursive: true }); fs.writeFileSync(lib, ''); made.push(rel(lib)); }
@@ -2191,14 +2191,14 @@ function stubRust(testPath, src, dir, made) {
       parent = fs.existsSync(f) ? f : mf;
       last = parent;
     }
-    if (created) { const t_ = items.map((x) => stubItem(x, m[1])).join('\n'); fs.writeFileSync(last, t_ + implsFor(t_)); freshMods.add(last); }
+    if (created) { const t_ = items.map((x) => itemStub(x, m[1])).join('\n'); fs.writeFileSync(last, t_ + implsFor(t_)); freshMods.add(last); }
     else {
       // missing items are appended to an existing module; items it already defines or re-exports are left alone
       const text = fs.readFileSync(last, 'utf8');
       // items inside an inline #[cfg(test)] module do not exist in non-test builds
       const nonTest = (() => { let t = text, at; while ((at = /#\[cfg\(test\)\]\s*(?:pub\s+)?mod\s+\w+\s*\{/.exec(t))) { const m_ = maskBraces(t, true); let depth = 0, k = at.index + at[0].length - 1; for (; k < m_.length; k++) { if (m_[k] === '{') depth++; else if (m_[k] === '}' && !--depth) break; } t = t.slice(0, at.index) + t.slice(k + 1); } return t; })();
       // a module that include!s a file or invokes macros may define the type itself: only what cargo reports missing is added
-      const opaque = /\binclude!\s*\(|^\s*(?!macro_rules\b)\w+!\s*[({[]/m.test(nonTest);
+      const opaque = /\binclude!\s*\(|^\s*(?!(?:macro_rules|unimplemented|todo|panic|assert\w*|debug_assert\w*|unreachable|vec|println|format)\b)\w+!\s*[({[]/m.test(nonTest);
       const miss = items.filter((x) => !new RegExp(`\\b(?:struct|enum|fn|const|static|type|trait|use|mod)\\s+(?:[\\w:{},\\s]*\\b)?${x}\\b`).test(nonTest) && (!opaque || new RegExp(`\`${x}\``).test(preOut)));
       // methods a later test needs are added to the existing inherent `impl Type {` (#268)
       const grown = items.filter((x) => /^[A-Z]/.test(x) && !miss.includes(x)).reduce((t, x) => {
@@ -2207,7 +2207,7 @@ function stubRust(testPath, src, dir, made) {
         return addToImpl(t, x, add_, false);
       }, text);
       if (grown !== text) { fs.writeFileSync(last, grown); if (!freshMods.has(last)) made.push(rel(last)); }
-      if (miss.length) { const add_ = miss.map((x) => stubItem(x, m[1])).join('\n'); fs.appendFileSync(last, (text && !text.endsWith('\n') ? '\n' : '') + (text ? '\n' : '') + add_ + implsFor(text + add_)); if (!freshMods.has(last)) made.push(rel(last)); }
+      if (miss.length) { const add_ = miss.map((x) => itemStub(x, m[1])).join('\n'); fs.appendFileSync(last, (text && !text.endsWith('\n') ? '\n' : '') + (text ? '\n' : '') + add_ + implsFor(text + add_)); if (!freshMods.has(last)) made.push(rel(last)); }
     }
   }
   // `macro_rules!` macros the test imports from a project crate (root-level `use krate::name;`, `krate::name!`, `#[macro_use] extern crate`) get an exported throwing stub (#288)
