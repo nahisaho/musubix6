@@ -6241,3 +6241,16 @@ test('#245 Go: `if err := sut(); err != nil` treats the initialised call as asse
   assert.match(r.out, /RED ok/, r.out);
   assert.doesNotMatch(r.out, /setup call|\[weak\]/, r.out);
 });
+
+test('#251 weak Red: value derived from the stubbed call via a filtered comprehension is strong Red', () => {
+  const spec = '---\nfeature: w\ntier: T1\napproval: auto\n---\n| REQ-W-001 | g shall triple. | TEST-W-001 |\n| REQ-W-002 | g shall triple. | TEST-W-002 |\n';
+  const d = mini(spec, {
+    'src/m.py': 'def g(xs):\n    raise NotImplementedError("g")\n',
+    'tests/test_w.py': 'import sys\nsys.path.insert(0, "src")\nfrom m import g\n\n\n# @id TEST-W-001 @verifies REQ-W-001\ndef test_w_001():\n    o = g([1, 2])\n    s = {n for n in o}\n    assert s == {3, 6}\n\n\n# @id TEST-W-002 @verifies REQ-W-002\ndef test_w_002():\n    o = g([1, 2])\n    s = {n for n in o if isinstance(n, int)}\n    assert s == {3, 6}\n',
+  });
+  for (const id of ['TEST-W-001', 'TEST-W-002']) {
+    const r = sdd(d, 'tdd', 'red', id);
+    assert.match(r.out, /RED ok/, r.out);
+    assert.doesNotMatch(r.out, /\[weak\]|setup call/, r.out);
+  }
+});

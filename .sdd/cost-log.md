@@ -1,9 +1,9 @@
 # AI cost log (USD)
 
-- Project: `/home/nahisaho/GitHub/musubix6`
-- Updated: 2026-10-11 21:25 UTC
-- Sessions: 9
-- **Total: $335.76**
+- Project: `/home/nahisaho/musubix6-fix-r7a`
+- Updated: 2026-10-12 00:10 UTC
+- Sessions: 0
+- **Total: $0.00**
 - Basis: `total_nano_aiu` in the Copilot CLI session store / 1e9 = AIU; 1 AIU = 1 AI credit = 0.01 USD (docs.github.com, usage-based billing).
 - Local-machine estimate; the GitHub billing dashboard is authoritative.
 
@@ -13,25 +13,8 @@ Regenerate with `python3 scripts/cost-log.py`. Do not edit by hand.
 
 | Model | Calls | USD | Input tokens | Output tokens |
 |---|---:|---:|---:|---:|
-| claude-sonnet-5.5 | 9397 | $247.44 | 792098942 | 8989723 |
-| gpt-6.1-sol | 6637 | $87.98 | 265367995 | 3352958 |
-| gpt-5.6-terra | 26 | $0.33 | 412537 | 9674 |
-| gpt-5.6-luna | 8 | $0.01 | 47460 | 2438 |
 
 ## By session
 
 | Started (UTC) | Session | Model | Calls | USD | Summary |
 |---|---|---|---:|---:|---|
-| 2026-10-09T21:13 | `2419307e` | claude-sonnet-5.5 | 2 | $0.09 | Review Previous Work |
-| 2026-10-09T21:17 | `7949881c` | claude-sonnet-5.5 | 63 | $1.78 | Develop AI Coding Agent Skill |
-| 2026-10-09T22:04 | `3248d553` | claude-sonnet-5.5 | 325 | $8.29 | Create Fix Plan for GitHub Issue |
-| 2026-10-10T00:29 | `1bace3a6` | claude-sonnet-5.5 | 3321 | $68.98 | #28 #29を閉じる |
-| 2026-10-10T00:29 | `1bace3a6` | gpt-5.6-terra | 19 | $0.23 | #28 #29を閉じる |
-| 2026-10-10T09:21 | `9919902f` | claude-sonnet-5.5 | 2895 | $75.19 | Create dockfood-6 Directory |
-| 2026-10-10T09:21 | `9919902f` | gpt-5.6-luna | 8 | $0.01 | Create dockfood-6 Directory |
-| 2026-10-10T12:46 | `84cb428d` | claude-sonnet-5.5 | 246 | $18.04 | Check SKILL.md Size |
-| 2026-10-10T12:46 | `84cb428d` | gpt-6.1-sol | 6637 | $87.98 | Check SKILL.md Size |
-| 2026-10-11T15:53 | `069072a9` | claude-sonnet-5.5 | 2202 | $62.27 | Advanced Application Development |
-| 2026-10-11T17:33 | `88999767` | claude-sonnet-5.5 | 295 | $11.84 | Create Musubix6 Application Tutorial |
-| 2026-10-11T17:33 | `88999767` | gpt-5.6-terra | 7 | $0.10 | Create Musubix6 Application Tutorial |
-| 2026-10-11T20:52 | `b1cb9b0b` | claude-sonnet-5.5 | 48 | $0.96 | 修正 WSL Container 設定 |
