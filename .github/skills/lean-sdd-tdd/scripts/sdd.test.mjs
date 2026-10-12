@@ -8021,3 +8021,15 @@ test('#295 the missing-@implements warning is not repeated once the test already
   assert.match(sdd(d, 'tdd', 'green', 'TEST-CALC-001').out, /no code carries @implements/);
   assert.doesNotMatch(sdd(d, 'tdd', 'green', 'TEST-CALC-001').out, /no code carries @implements/);
 });
+
+test('#303 a flaky suspected gate run is recorded in the ledger with the policy outcome', () => {
+  for (const [flaky, outcome] of [[null, 'fail'], [{ policy: 'warn' }, 'accepted']]) {
+    const d = flakyProject(flaky, FLAKY_ONCE);
+    sdd(d, 'gate');
+    const es = fs.readFileSync(path.join(d, '.sdd/tdd.jsonl'), 'utf8').trim().split('\n').map((l) => JSON.parse(l));
+    assert.equal(es.length, 1);
+    assert.equal(es[0].type, 'flaky');
+    assert.equal(es[0].outcome, outcome);
+    assert.match(sdd(d, 'tdd', 'check').out, /LEDGER OK \(1 entries\)/);
+  }
+});
