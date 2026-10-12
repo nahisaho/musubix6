@@ -7782,3 +7782,24 @@ test('#307 duplicate CODE @id: the "no code carries @implements" warning names t
   const g = sdd(d, 'tdd', 'green', 'TEST-A-001');
   assert.match(g.out, /duplicate @id found \(CODE-A-001/, g.out);
 });
+
+test('#308 impact with several targets reports every target', () => {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-imp308-'));
+  spawnSync('git', ['init', '-q'], { cwd: d });
+  fs.mkdirSync(path.join(d, '.sdd/specs'), { recursive: true });
+  fs.writeFileSync(path.join(d, '.sdd/specs/f.md'), '---\nfeature: f\ntier: T1\n---\n- REQ-A: the system shall a\n- REQ-B: the system shall b\n');
+  const r = sdd(d, 'impact', 'REQ-A', 'REQ-B');
+  assert.match(r.out, /IMPACT REQ-A/);
+  assert.match(r.out, /IMPACT REQ-B/);
+});
+
+test('#308 impact lists a Python writer that opens the artifact with open(..., "w") as producer', () => {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-imp308-'));
+  spawnSync('git', ['init', '-q'], { cwd: d });
+  fs.mkdirSync(path.join(d, 'contract'));
+  fs.mkdirSync(path.join(d, 'tools'));
+  fs.writeFileSync(path.join(d, 'contract/vectors.json'), '{}');
+  fs.writeFileSync(path.join(d, 'tools/gen.py'), 'OUT = "contract/vectors.json"\nwith open(OUT, "w") as f:\n    f.write("{}")\n');
+  spawnSync('git', ['add', '-A'], { cwd: d });
+  assert.match(sdd(d, 'impact', 'contract/vectors.json').out, /producers: tools\/gen\.py/);
+});

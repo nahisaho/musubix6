@@ -5242,7 +5242,14 @@ function crossImpact(changed) {
 }
 
 function cmdImpact() {
-  const target = pos[1];
+  const targets = pos.slice(1);
+  if (targets.length < 2) return impactOne(targets[0]);
+  // several targets: report each one (one JSON line per target with --json) (#308)
+  let code = 0;
+  for (const t of targets) { if (!flags.json && t !== targets[0]) out(''); code = Math.max(code, impactOne(t)); }
+  return code;
+}
+function impactOne(target) {
   if (!target) { out('usage: impact <REQ-ID|TEST-ID|CODE-ID|file> [--json] [--all]'); return 2; }
   const specs = loadSpecs();
   const { ents } = scanEntities(listFiles());
@@ -5287,7 +5294,7 @@ function cmdImpact() {
   // parity is one hop (#294): the counterpart and its feature are reached, not the counterpart's importers
   for (const pr of loadConfig().parity ?? []) for (const [x, y] of [[pr[0], pr[1]], [pr[1], pr[0]]]) { const a = x && normDep(x), b = y && normDep(y); if (a && b && seeds.includes(a) && !via.has(b) && fs.existsSync(path.join(ROOT, b))) via.set(b, a); }
   // producers of a generated artifact: build.rs / codegen / writer files that name it (#294)
-  const producers = nonCode ? listFiles().filter((f) => { if (f === seeds0) return false; try { const txt = fs.readFileSync(path.join(ROOT, f), 'utf8'); if (!txt.includes(path.posix.basename(seeds0))) return false; return /(^|\/)build\.rs$|codegen|generat/i.test(f) || /\b(writeFile(Sync)?|write_text|fs::write|File::create|json\.dump|WriteFile)\b|\bcodegen\b/.test(txt); } catch { return false; } }) : [];
+  const producers = nonCode ? listFiles().filter((f) => { if (f === seeds0) return false; try { const txt = fs.readFileSync(path.join(ROOT, f), 'utf8'); if (!txt.includes(path.posix.basename(seeds0))) return false; return /(^|\/)build\.rs$|codegen|generat/i.test(f) || /\b(writeFile(Sync)?|write_text|write_bytes|fs::write|File::create|json\.dump|WriteFile|to_json|to_csv|savetxt)\b|\bopen\([^)]*['\"][wax]b?\+?['\"]|\.open\(\s*['\"][wax]|\bcodegen\b/.test(txt); } catch { return false; } }) : [];
   const reached = [...via.keys()].filter((f) => !seeds.includes(f));
   const entsIn = (f) => all.filter((e) => e.path === f);
   const verifiers = all.filter((e) => e.refs.verifies.some((r) => reqs.includes(r)));
