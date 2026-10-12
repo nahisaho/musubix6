@@ -7221,3 +7221,56 @@ test('#287 a Rust doc test marked `/// @id TEST-.. @verifies REQ-..` gets Red/Gr
   const tr = sdd(d, 'trace');
   assert.doesNotMatch(tr.out, /TEST-CALC-001[^\n]*(missing|no evidence)/i, tr.out);
 });
+
+// ---- #288 (Rust): return types from usage, traits, generics, macros, builder chains ----
+const rs288 = (body, extra = {}) => rs268({ 'src/lib.rs': '', 'tests/x.rs': `${body}\n`, ...extra });
+const t288 = (inner) => `// @id TEST-H-001 @verifies REQ-H-001\n#[test]\nfn test_h_001() {\n${inner}\n}\n`;
+const stub288 = (d) => { const r = sdd(d, 'tdd', 'stub', 'TEST-H-001'); return { out: r.out, lib: fs.readFileSync(path.join(d, 'src/lib.rs'), 'utf8') }; };
+
+test('#288 Rust stub: return types come from .len(), indexing, Option<&T>, Ok(())/Err(..) and comparisons', has268, () => {
+  const d = rs288('use hist::{count, field, first, check, big};\n\n' + t288('    assert_eq!(count(&[1]).len(), 2);\n    assert_eq!(field(1)["k"], 3);\n    assert_eq!(first(1), Some(&5));\n    assert_eq!(check(1), Ok(()));\n    assert!(big(1) > 0);'));
+  const { out, lib } = stub288(d);
+  assert.match(lib, /fn count<A0>\(_a0: A0\) -> Vec<i64>/, lib);
+  assert.match(lib, /fn field<A0>\(_a0: A0\) -> std::collections::HashMap<String, i64>/, lib);
+  assert.match(lib, /fn first<A0>\(_a0: A0\) -> Option<&'static i64>/, lib);
+  assert.match(lib, /fn check<A0>\(_a0: A0\) -> Result<\(\), String>/, lib);
+  assert.match(lib, /fn big<A0>\(_a0: A0\) -> i64/, lib);
+  assert.match(out, /compile-checked/, out);
+});
+
+test('#288 Rust stub: `impl Trait for X` in the test generates the trait with its associated types and method signatures', has268, () => {
+  const d = rs288('use hist::Store;\n\nstruct Mem;\nimpl Store for Mem {\n    type Item = u8;\n    const CAP: usize = 4;\n    fn put(&mut self, mut v: u8) -> usize {\n        v as usize\n    }\n}\n\n' + t288('    let mut m = Mem;\n    assert_eq!(m.put(1), 1);'));
+  const { out, lib } = stub288(d);
+  assert.match(lib, /pub trait Store \{/, lib);
+  assert.match(lib, /type Item;/, lib);
+  assert.match(lib, /const CAP: usize;/, lib);
+  assert.match(lib, /fn put\(&mut self, v: u8\) -> usize;/, lib);
+  assert.match(out, /compile-checked/, out);
+});
+
+test('#288 Rust stub: explicit generic args and lifetimes generate generic types and fns', has268, () => {
+  const d = rs288('use hist::{Log, conv};\n\n' + t288("    let _l: Log<u8, &'static str> = Log::<u8, &'static str>::new();\n    let v = conv::<u8>(3);\n    assert_eq!(v, 3);"));
+  const { out, lib } = stub288(d);
+  assert.match(lib, /pub struct Log<T0, T1>/, lib);
+  assert.match(lib, /impl<T0, T1> Log<T0, T1>/, lib);
+  assert.match(lib, /fn conv<T>\(_a0: impl Sized\) -> i64/, lib);
+  assert.doesNotMatch(lib, /unimplemented!\("Log::new"\)/, lib);
+  assert.match(out, /compile-checked/, out);
+});
+
+test('#288 Rust stub: an imported macro_rules! macro gets an exported throwing stub, not a fn', has268, () => {
+  const d = rs288('use hist::entries;\n\n' + t288('    let _v = entries![1, 2];'));
+  const { out, lib } = stub288(d);
+  assert.match(lib, /#\[macro_export\]\nmacro_rules! entries/, lib);
+  assert.match(lib, /unimplemented!\("entries!"\)/, lib);
+  assert.doesNotMatch(lib, /fn entries/, lib);
+  assert.match(out, /compile-checked/, out);
+});
+
+test('#288 Rust stub: builder chains get by-value methods returning Self, the last one throws with its inferred type', has268, () => {
+  const d = rs288('use hist::Req;\n\n' + t288('    let r = Req::builder().path("/a").retries(3).build();\n    assert_eq!(r, 1);'));
+  const { out, lib } = stub288(d);
+  assert.match(lib, /pub fn path<A0>\(self, _a0: A0\) -> Self/, lib);
+  assert.match(lib, /pub fn retries<A0>\(self, _a0: A0\) -> Self/, lib);
+  assert.match(out, /compile-checked/, out);
+});
