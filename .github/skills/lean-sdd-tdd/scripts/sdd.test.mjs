@@ -6529,3 +6529,14 @@ test('#260 Rust stub adds missing const/fn to an existing module', { skip: spawn
   assert.match(h, /pub fn fnv/, h);
   assert.match(h, /pub fn other/);
 });
+
+test('#262 Python stub: a class used in pytest.raises by another test is an Exception subclass', () => {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-pyexc2-'));
+  spawnSync('git', ['init', '-q'], { cwd: d });
+  fs.mkdirSync(path.join(d, '.sdd/specs'), { recursive: true });
+  fs.mkdirSync(path.join(d, 'tests'));
+  fs.writeFileSync(path.join(d, 'tests/test_r.py'), 'import pytest\nfrom rp.schema import Schema, VErr\n\n# @id TEST-RP-001\n# @verifies REQ-RP-001\ndef test_rp_001():\n    assert Schema.load().name == "x"\n\n# @id TEST-RP-002\n# @verifies REQ-RP-002\ndef test_rp_002():\n    with pytest.raises(VErr):\n        Schema.load().validate({})\n');
+  sdd(d, 'init');
+  sdd(d, 'tdd', 'stub', 'TEST-RP-001');
+  assert.match(fs.readFileSync(path.join(d, 'rp/schema.py'), 'utf8'), /class VErr\(Exception\)/);
+});

@@ -2797,7 +2797,7 @@ function stubFor(testPath, id) {
       const ns = bindings.map(([n]) => n);
       const localOf = (n) => bindings.find(([name]) => name === n)?.[1] ?? n;
       // pytest.raises(X) / assertRaises(X) / except X => an Exception subclass, else the Red is "must derive from BaseException"
-      const isExc = (n) => new RegExp(`(raises|assertRaises|assertRaisesRegex)\\(\\s*${n}\\b|\\bexcept\\s+\\(?\\s*${n}\\b`).test(scoped);
+      const isExc = (n) => new RegExp(`(raises|assertRaises|assertRaisesRegex)\\(\\s*${n}\\b|\\bexcept\\s+\\(?\\s*${n}\\b`).test(src);
       // ALL_CAPS names that are never called are constants, not classes (#112)
       const isConst = (n) => /^[A-Z][A-Z0-9_]+$/.test(n) && !new RegExp(`\\b${n}\\s*\\(`).test(scoped);
       const stubOf = (n) => isExc(n) ? `class ${n}(Exception):\n    pass\n` : isConst(n) ? `${n} = None\n` : /^[A-Z]/.test(n) ? `class ${n}:\n    def __init__(self, *a, **k):\n        pass\n${methodsOf(scoped, n).map((k) => `\n    def ${k}(self, *a, **k):\n        raise NotImplementedError("${k}")\n`).join('')}` : `def ${n}(*a, **k):\n    raise NotImplementedError("${n}")\n`;
