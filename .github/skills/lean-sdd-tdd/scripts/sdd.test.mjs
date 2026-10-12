@@ -8477,3 +8477,24 @@ test('#313 tdd stub: an unapproved T2 feature gets a warning that tdd red will r
   const r = sdd(d, 'tdd', 'stub', 'TEST-A-001');
   assert.match(r.out, /! .*approv.*tdd red/i, r.out);
 });
+
+test('#314 a (characterization) REQ Red names its own marker, a (test-only) REQ keeps its label', () => {
+  const c = sdd(mini(T1SPEC.replace('one shall hold.', 'one shall hold. (characterization)'), { 'a.test.mjs': jsTest() }, PASS), 'tdd', 'red', 'TEST-A-001');
+  assert.match(c.out, /characterization: \(characterization\) REQ/, c.out);
+  assert.doesNotMatch(c.out, /\(test-only\)/, c.out);
+  const t = sdd(mini(T1SPEC.replace('one shall hold.', 'one shall hold. (test-only)'), { 'a.test.mjs': jsTest() }, PASS), 'tdd', 'red', 'TEST-A-001');
+  assert.match(t.out, /\(test-only\) REQ/, t.out);
+});
+
+test('#314 approve <feature> without a subcommand names the missing subcommand', () => {
+  const d = mini(T1SPEC, {}, PASS);
+  const r = sdd(d, 'approve', 'a');
+  assert.equal(r.code, 2);
+  assert.match(r.out, /approve record a/, r.out);
+  assert.doesNotMatch(r.out, /unknown feature ""/, r.out);
+});
+
+test('#314 a flaky gate pass says the ledger was appended', () => {
+  const r = sdd(flakyProject({ policy: 'warn' }, FLAKY_ONCE), 'gate');
+  assert.match(r.out, /appended to \.sdd\/tdd\.jsonl/, r.out);
+});

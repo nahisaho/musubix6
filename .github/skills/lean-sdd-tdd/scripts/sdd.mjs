@@ -1172,7 +1172,7 @@ function evidenceStatus(testId, testPath, entries) {
     if (rsha && reqShaOf(rid) && !reqShaSame(rid, rsha)) return { ok: false, why: `${rid} changed in the spec since last Green/Refactor: re-verify with tdd refactor (wording only) or tdd red/green (behaviour changed)` };
   }
   const stale = changedArtifacts(last);
-  if (stale.length) return { ok: false, why: `artifact ${stale.join(', ')} changed since last Green/Refactor: re-verify with tdd refactor ${testId} (data change keeps behaviour) or tdd red ${testId} --retest "<reason>" then tdd green (expected output changed)` };
+  if (stale.length) return { ok: false, why: `artifact ${stale.join(', ')} changed since last Green/Refactor: re-verify with tdd refactor ${testId} (data change keeps behaviour; the evidence line still lists it as "refactor-recorded, no new Red") or tdd red ${testId} --retest "<reason>" then tdd green (clears that evidence note too)` };
   return { ok: true, weak: !!r.weak, charac: !!r.characterization, retest: !!r.retest, retestSuperseded: !!(r.retest && r.priorStrongRed), blessed: !!last.moved };
 }
 
@@ -1615,6 +1615,7 @@ function cmdApprove() {
   const sub = pos[1];
   const specs = loadSpecs();
   const feature = pos[2];
+  if (sub && !['prepare', 'record', 'retire'].includes(sub) && !feature && specs.some((s) => s.feature === sub)) { out(`unknown approve subcommand "${sub}" — "${sub}" is a feature. usage: approve prepare ${sub} | approve record ${sub} --by <name>`); return 2; }
   if (sub === 'retire') {
     const all = readJson(APPROVALS, {});
     if (!all[feature]) { out(`no lock for "${feature ?? ''}"`); return 2; }
@@ -5123,7 +5124,7 @@ function cmdGate() {
       if (s.ok) { covered++; if (s.weak) { weak++; if (!s.charac && !s.retest) weakIds.push(e.id); } if (s.charac) charac++; if (s.blessed) blessedIds.push(e.id); if (s.retest) { retestN++; retestIds.push(e.id); if (s.retestSuperseded) retestSupersededN++; } } else problems.push(`${e.id} (${id}): ${s.why}`);
     }
   }
-  add(!problems.length, `tdd evidence${flags.changed ? ' (changed scope)' : ''}: ${covered}/${total} tests Red→Green${weak > charac ? `, ${weak - charac} weak Red${weak > charac + retestN ? ' — Red came from setup/load, not the asserted behaviour (before implementing: `tdd red <ID> --expect <text>`; after Green: keep as weak, or temporarily break the implementation to re-record Red): ' + weakIds.slice(0, 8).join(', ') + (weakIds.length > 8 ? `, … +${weakIds.length - 8}` : '') : ''}` : ''}${charac ? `${weak > charac ? '' : ','} ${charac} characterization (passed without a failing Red; not a weak Red)` : ''}${retestN ? ` (${retestN} retest: Red re-recorded with --retest, passed without a failing Red${retestSupersededN ? `; ${retestSupersededN} superseded an earlier strong Red — re-record a failing Red by temporarily breaking the implementation if that evidence matters` : ''}: ${retestIds.slice(0, 8).join(', ')}${retestIds.length > 8 ? `, … +${retestIds.length - 8}` : ''})` : ''}${blessedIds.length ? ` (${blessedIds.length} refactor-recorded after the test/setup changed, no new Red: ${blessedIds.slice(0, 8).join(', ')}${blessedIds.length > 8 ? `, … +${blessedIds.length - 8}` : ''})` : ''}`, [...problems.slice(0, flags.verbose ? problems.length : 6), ...(problems.length > 6 && !flags.verbose ? [`… +${problems.length - 6} more (all: gate --verbose)`] : [])]);
+  add(!problems.length, `tdd evidence${flags.changed ? ' (changed scope)' : ''}: ${covered}/${total} tests Red→Green${weak > charac ? `, ${weak - charac} weak Red${weak > charac + retestN ? ' — Red came from setup/load, not the asserted behaviour (before implementing: `tdd red <ID> --expect <text>`; after Green: keep as weak, or temporarily break the implementation to re-record Red): ' + weakIds.slice(0, 8).join(', ') + (weakIds.length > 8 ? `, … +${weakIds.length - 8}` : '') : ''}` : ''}${charac ? `${weak > charac ? '' : ','} ${charac} characterization (passed without a failing Red; not a weak Red)` : ''}${retestN ? ` (${retestN} retest: Red re-recorded with --retest, passed without a failing Red${retestSupersededN ? `; ${retestSupersededN} superseded an earlier strong Red — re-record a failing Red by temporarily breaking the implementation if that evidence matters` : ''}: ${retestIds.slice(0, 8).join(', ')}${retestIds.length > 8 ? `, … +${retestIds.length - 8}` : ''})` : ''}${blessedIds.length ? ` (${blessedIds.length} refactor-recorded after the test/setup changed, no new Red: ${blessedIds.slice(0, 8).join(', ')}${blessedIds.length > 8 ? `, … +${blessedIds.length - 8}` : ''}; to replace that with real evidence: tdd red <ID> --retest "<why>" then tdd green <ID>)` : ''}`, [...problems.slice(0, flags.verbose ? problems.length : 6), ...(problems.length > 6 && !flags.verbose ? [`… +${problems.length - 6} more (all: gate --verbose)`] : [])]);
 
   const cfg = loadConfig();
   if (cfg.prepare && !flags['no-run']) {
@@ -5246,7 +5247,7 @@ function cmdGate() {
       for (let i = 0; i < retries; i++) {
         const r2 = run(cmd, scoped ? (c.changedTimeoutMs ?? cfg.changedTimeoutMs ?? 60000) : (c.timeoutMs ?? cfg.timeoutMs ?? 120000), c.cwd);
         if (r2.exit === 0 && !r2.timedOut) {
-          add(warnOnly, `cmd ${c.name} FLAKY suspected: failed on the first run, passed on re-run ${i + 1}/${retries} (${(r2.ms / 1000).toFixed(1)}s)${warnOnly ? ' — accepted by flaky.policy "warn"' : ' — set flaky.policy "warn" in .sdd/config.json to accept, or fix the test (no sleep, injected clock, port 0, generous timeouts)'}`, failTail(r.text, 8).split('\n'));
+          add(warnOnly, `cmd ${c.name} FLAKY suspected: failed on the first run, passed on re-run ${i + 1}/${retries} (${(r2.ms / 1000).toFixed(1)}s) — a flaky entry was appended to .sdd/tdd.jsonl (commit it)${warnOnly ? ' — accepted by flaky.policy "warn"' : ' — set flaky.policy "warn" in .sdd/config.json to accept, or fix the test (no sleep, injected clock, port 0, generous timeouts)'}`, failTail(r.text, 8).split('\n'));
           appendLedger({ type: 'flaky', check: c.name, retry: i + 1, retries, policy: warnOnly ? 'warn' : 'fail', outcome: warnOnly ? 'accepted' : 'fail' });
           r = null;
           break;

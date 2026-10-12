@@ -61,7 +61,7 @@ T2 only: parallel sub-agents by risk axis (security · correctness/state · cont
 Read the spec and the specific files only; `view` ranges; quiet commands; one parallel batch for independent reads; no plan recaps; cite `path:line`. Suggest `/new` at boundaries. End with ≤8 lines: tier · REQs · gate verdict · open findings · next.
 
 ## Deterministic tests
-No fixed `sleep` (poll with a deadline); inject clock/random; bind port 0; generous timeouts that print diagnostics; isolate signal/kill tests. A gate pass on re-run is `FLAKY suspected` (ledger type `flaky`; `flaky.policy` in `references/config.md`).
+No fixed `sleep` (poll with a deadline); inject clock/random; bind port 0; generous timeouts that print diagnostics; isolate signal/kill tests. A gate pass on re-run is `FLAKY suspected` (ledger type `flaky`; `flaky.policy` in `references/config.md`). Only the gate `test` check is retried; a flake in `tdd green` is a plain `GREEN REJECTED` — re-run it.
 
 ## Guardrails
 No secrets; no push to `main` without request; commit trailer `Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>`; state what was not run.
