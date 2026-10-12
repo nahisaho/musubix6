@@ -1788,6 +1788,11 @@ function stubRust(testPath, src, dir, made) {
   const probeFile = !fs.existsSync(ownLib);
   if (probeFile) { fs.mkdirSync(path.dirname(ownLib), { recursive: true }); fs.writeFileSync(ownLib, ''); }
   const T = { int: 'i64', float: 'f64', str: 'String', bool: 'bool', result: 'Result<i64, String>' };
+  // `use k::m::{Real as Alias}`: the body is analysed under the real name (#268)
+  const aliases = new Map([...src.matchAll(/^\s*use\s[^;]*;/gm)].flatMap((u) => [...u[0].matchAll(/\b(\w+)\s+as\s+(\w+)/g)].filter((a) => a[1] !== 'self' && a[2] !== '_').map((a) => [a[2], a[1]])));
+  if (aliases.size) src = src.replace(new RegExp(`^\\s*use\\s[^;]*;|\\b(${[...aliases.keys()].join('|')})\\b`, 'gm'), (m, a) => a ? aliases.get(a) : m);
+  // `let v = f(..); assert_eq!(v, "lit")`: the literal compared through the bound variable types the return (#268)
+  const viaVar = (callPat) => { const lv = new RegExp(`\\blet\\s+(?:mut\\s+)?(\\w+)\\s*(?::[^=]+)?=\\s*&?${callPat}\\s*\\(`).exec(src)?.[1]; if (!lv) return null; const lit = new RegExp(`assert(?:_eq|_ne)?!\\(\\s*${lv}\\s*,\\s*${LIT}\\s*[,)]|assert(?:_eq|_ne)?!\\(\\s*${LIT}\\s*,\\s*${lv}\\s*[,)]|\\b${lv}\\s*==\\s*${LIT}`).exec(src); const l = lit && (lit[1] ?? lit[2] ?? lit[3]); return l ? litType(l) : null; };
   // capitalised names are types: `Name::Variant` => enum, otherwise a unit struct (never a function)
   // associated fns `Type::new(..)` and instance methods `v.m(..)` on `let v = Type::new(..)` (#103)
   const rustImpl = (n) => {
@@ -1799,18 +1804,30 @@ function stubRust(testPath, src, dir, made) {
     const needsMut = (k) => { const cs = vars.filter((v) => new RegExp(`(?<![\\w.])${v}\\s*\\.\\s*${k}\\s*\\(`).test(src)); return cs.length > 0 && cs.every((v) => mutVars.has(v)) && cs.some((v) => new RegExp(`^\\s*${v}\\s*\\.\\s*${k}\\s*\\(`, 'm').test(src)); };
     if (!assoc.length && !inst.length) return '';
     const gen = (c) => c.args.map((_, i) => `A${i}`);
-    const sig = (k, self) => { const c = callInfo(src.replace(/\b\w+\./g, ''), k); const g = gen(c); return `    pub fn ${k}${g.length ? `<${g.join(', ')}>` : ''}(${[self ? (needsMut(k) ? '&mut self' : '&self') : '', ...g.map((t, i) => `_a${i}: ${t}`)].filter(Boolean).join(', ')}) -> ${self ? (c.ret?.startsWith('opt:') ? `Option<${c.ret.slice(4)}>` : T[c.ret] ?? 'i64') : c.ret === 'result' ? 'Result<Self, String>' : 'Self'} {\n        ${!self && /^(new|default|with_\w+|from_\w+|create|empty)$/.test(k) ? (c.ret === 'result' ? 'Ok(Self)' : 'Self') : `unimplemented!("${n}::${k}")`}\n    }\n`; };
+    const sig = (k, self) => { const c = callInfo(src.replace(/\b\w+\./g, ''), k); const g = gen(c); return `    pub fn ${k}${g.length ? `<${g.join(', ')}>` : ''}(${[self ? (needsMut(k) ? '&mut self' : '&self') : '', ...g.map((t, i) => `_a${i}: ${t}`)].filter(Boolean).join(', ')}) -> ${self ? (c.ret?.startsWith('opt:') ? `Option<${c.ret.slice(4)}>` : T[c.ret ?? viaVar(`(?<![\\w])\\w+\\s*\\.\\s*${k}`)] ?? 'i64') : c.ret === 'result' ? 'Result<Self, String>' : 'Self'} {\n        ${!self && /^(new|default|with_\w+|from_\w+|create|empty)$/.test(k) ? (c.ret === 'result' ? 'Ok(Self)' : 'Self') : `unimplemented!("${n}::${k}")`}\n    }\n`; };
     return `\nimpl ${n} {\n${[...assoc.map((k) => sig(k, false)), ...inst.map((k) => sig(k, true))].join('\n')}}\n`;
   };
   const typeStub = (n) => {
     const vs = [...new Set([...src.matchAll(new RegExp(`\\b${n}::([A-Z]\\w*)`, 'g'))].map((m) => m[1]))];
-    if (vs.length) return `#[derive(Debug, Clone, Copy, PartialEq, Eq)]\npub enum ${n} {\n${vs.map((v) => `    ${v},\n`).join('')}}\n`;
+    if (vs.length) {
+      const fty = (e) => /^-?\d+\.\d*/.test(e) ? 'f64' : /^-?\d+$/.test(e) ? 'i64' : /^&?"/.test(e) || /String::from|\.to_string\(|\.to_owned\(|\.into\(\)/.test(e) ? 'String' : /^(true|false)$/.test(e) ? 'bool' : /^vec!/.test(e) ? 'Vec<i64>' : 'i64';
+      // `N::V(a, b)` => tuple variant, `N::V { x: 1 }` => struct variant, typed from the values (#268)
+      const shape = (v) => {
+        const t = new RegExp(`\\b${n}::${v}\\s*\\(`).test(srcNoUse) ? callInfo(srcNoUse, v) : null;
+        if (t) return t.raws.length ? `(${t.raws.map((r) => fty(r)).join(', ')})` : '';
+        const b = new RegExp(`\\b${n}::${v}\\s*\\{([^{}]*)\\}`).exec(srcNoUse)?.[1];
+        const fs_ = b ? b.split(',').map((f) => /^\s*([a-z_]\w*)\s*(?::\s*([^]*?))?\s*$/.exec(f)).filter(Boolean).map((m) => `${m[1]}: ${m[2] ? fty(m[2]) : 'i64'}`) : [];
+        return fs_.length ? ` { ${fs_.join(', ')} }` : '';
+      };
+      const shapes = vs.map(shape);
+      return `#[derive(Debug, Clone, ${shapes.every((x) => !x) ? 'Copy, PartialEq, Eq' : 'PartialEq'})]\npub enum ${n} {\n${vs.map((v, i) => `    ${v}${shapes[i]},\n`).join('')}}\n`;
+    }
     // struct literal `N { x: 1, y: "a" }` => named fields typed from the values (#130)
     const lit = new RegExp(`(?<!\\w)${n}\\s*\\{\\s*([a-z_]\\w*\\s*:[^{}]*)\\}`).exec(srcNoUse);
     const fields = lit ? lit[1].split(',').map((f) => /^\s*([a-z_]\w*)\s*:\s*([^]*?)\s*$/.exec(f)).filter(Boolean).map((m) => [m[1], /^-?\d+\.\d*/.test(m[2]) ? 'f64' : /^-?\d+$/.test(m[2]) ? 'i64' : /^"/.test(m[2]) || /String::from|\.to_string\(|\.to_owned\(/.test(m[2]) ? 'String' : /^(true|false)$/.test(m[2]) ? 'bool' : /^vec!/.test(m[2]) ? 'Vec<i64>' : 'i64']) : [];
     return fields.length ? `#[derive(Debug, Clone, Default, PartialEq)]\npub struct ${n} {\n${fields.map(([f, t]) => `    pub ${f}: ${t},\n`).join('')}}\n${rustImpl(n)}` : `#[derive(Debug, Clone, Default, PartialEq)]\npub struct ${n};\n${rustImpl(n)}`;
   };
-  const itemStub = (n) => { if (/^[A-Z][A-Z0-9_]+$/.test(n)) { const str = new RegExp(`\\b${n}\\s*(?:\\.\\s*(?:len|chars|as_str|is_empty)\\b|[!=]=\\s*\"|,\\s*\")`).test(srcNoUse); return `pub const ${n}: ${str ? '&str' : 'i64'} = ${str ? '""' : '0'};\n`; } if (/^[A-Z]/.test(n)) return typeStub(n); const c = callInfo(src, n); const g = c.args.map((_, i) => `A${i}`); return `pub fn ${n}${g.length ? `<${g.join(', ')}>` : ''}(${c.args.map((_, i) => `_a${i}: A${i}`).join(', ')}) -> ${c.ret?.startsWith('opt:') ? `Option<${c.ret.slice(4)}>` : T[c.ret] ?? 'i64'} {\n    unimplemented!("${n}")\n}\n`; };
+  const itemStub = (n) => { if (/^[A-Z][A-Z0-9_]+$/.test(n)) { const str = new RegExp(`\\b${n}\\s*(?:\\.\\s*(?:len|chars|as_str|is_empty)\\b|[!=]=\\s*\"|,\\s*\")`).test(srcNoUse); return `pub const ${n}: ${str ? '&str' : 'i64'} = ${str ? '""' : '0'};\n`; } if (/^[A-Z]/.test(n)) return typeStub(n); const c = callInfo(src, n); c.ret ??= viaVar(`(?<![\\w.])(?:\\w+::)*${n}`); const g = c.args.map((_, i) => `A${i}`); return `pub fn ${n}${g.length ? `<${g.join(', ')}>` : ''}(${c.args.map((_, i) => `_a${i}: A${i}`).join(', ')}) -> ${c.ret?.startsWith('opt:') ? `Option<${c.ret.slice(4)}>` : T[c.ret] ?? 'i64'} {\n    unimplemented!("${n}")\n}\n`; };
   // `use <crate>::a::b::{X, f};` => missing modules `a`, `a/b` (declared in the parent) holding the imported items (#69). Existing modules are never touched.
   const pkgName = (toml) => /\[package\][^[]*?^\s*name\s*=\s*"([^"]+)"/ms.exec(fs.readFileSync(toml, 'utf8'))?.[1]?.replace(/-/g, '_');
   // every workspace member crate by name, so `use other_crate::a::X` is stubbed in that crate (#76)
@@ -1821,7 +1838,9 @@ function stubRust(testPath, src, dir, made) {
   const srcNoUse = src.replace(/^\s*use\s[^;]*;/gm, '');
   // inline paths `krate::geo::Point { .. }` / `krate::util::f(..)` count as imports of that item (#130)
   const inline = [...srcNoUse.matchAll(/(?<![\w:])(\w+)((?:::[a-z_]\w*)+)::([A-Za-z_]\w*)/g)].filter((m) => crates.has(m[1])).map((m) => `use ${m[1]}${m[2]}::${m[3]};`).join('\n');
-  for (const m of (src + '\n' + inline).matchAll(/^\s*use\s+(\w+)((?:::[a-z_]\w*)+)::(\{[^}]*\}|\w+)\s*;/gm)) {
+  // `use krate::ops;` + `ops::f(..)` => `use krate::ops::f;`: ops is a module (#268)
+  const modUse = [...src.matchAll(/^\s*use\s+(\w+)::([a-z_]\w*)\s*;/gm)].filter((m) => crates.has(m[1])).flatMap((m) => [...new Set([...srcNoUse.matchAll(new RegExp(`(?<![\\w:])${m[2]}::([A-Za-z_]\\w*)`, 'g'))].map((x) => x[1]))].map((x) => `use ${m[1]}::${m[2]}::${x};`)).join('\n');
+  for (const m of (src + '\n' + inline + '\n' + modUse).matchAll(/^\s*use\s+(\w+)((?:::[a-z_]\w*)+)::(\{[^}]*\}|\w+)\s*;/gm)) {
     const croot = crates.get(m[1]);
     if (!croot) continue;
     const items = (m[3].startsWith('{') ? m[3].slice(1, -1).split(',') : [m[3]]).map((x) => x.trim().split(/\s+as\s+/)[0]).filter((x) => /^[A-Za-z_]\w*$/.test(x) && x !== 'self' && new RegExp(`\\b${x}\\b`).test(srcNoUse));
@@ -1853,6 +1872,18 @@ function stubRust(testPath, src, dir, made) {
       // missing items are appended to an existing module; items it already defines or re-exports are left alone
       const text = fs.readFileSync(last, 'utf8');
       const miss = items.filter((x) => !new RegExp(`\\b(?:struct|enum|fn|const|static|type|trait|use|mod)\\s+(?:[\\w:{},\\s]*\\b)?${x}\\b`).test(text));
+      // methods a later test needs are added to the existing inherent `impl Type {` (#268)
+      const grown = items.filter((x) => /^[A-Z]/.test(x) && !miss.includes(x)).reduce((t, x) => {
+        const at = new RegExp(`^impl\\s+${x}\\s*\\{`, 'm').exec(t);
+        if (!at) return t;
+        const add_ = [...rustImpl(x).matchAll(/^    pub fn (\w+)[^\n]*\{\n(?:        [^\n]*\n)+    \}\n/gm)].filter((f) => !new RegExp(`\\bfn\\s+${f[1]}\\b`).test(t)).map((f) => f[0]);
+        if (!add_.length) return t;
+        const m_ = maskBraces(t, true);
+        let depth = 0, k = at.index + at[0].length - 1;
+        for (; k < m_.length; k++) { if (m_[k] === '{') depth++; else if (m_[k] === '}' && !--depth) break; }
+        return t.slice(0, k).replace(/\n*$/, '\n\n') + add_.join('\n') + t.slice(k);
+      }, text);
+      if (grown !== text) { fs.writeFileSync(last, grown); if (!freshMods.has(last)) made.push(rel(last)); }
       if (miss.length) { fs.appendFileSync(last, (text && !text.endsWith('\n') ? '\n' : '') + (text ? '\n' : '') + miss.map(itemStub).join('\n')); if (!freshMods.has(last)) made.push(rel(last)); }
     }
   }

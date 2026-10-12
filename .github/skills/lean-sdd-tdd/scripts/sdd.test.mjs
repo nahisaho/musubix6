@@ -6651,3 +6651,58 @@ test('#266 impact REQ-X with only a bare comment hints at the missing @implement
   const r = sdd(d, 'impact', 'REQ-R-001');
   assert.match(r.out, /bare comment/, r.out);
 });
+
+// ---- wave 10 (#268): Rust stub gaps ----
+const rs268 = (files, ids = ['TEST-H-001']) => {
+  const spec = '---\nfeature: h\ntier: T1\n---\n' + ids.map((_, i) => `| REQ-H-00${i + 1} | a shall hold. | TEST-H-00${i + 1} |\n`).join('');
+  const d = mini(spec, { 'Cargo.toml': '[package]\nname = "hist"\nversion = "0.1.0"\nedition = "2021"\n', ...files });
+  fs.rmSync(path.join(d, 'package.json'), { force: true });
+  return d;
+};
+const has268 = { skip: spawnSync('which', ['cargo']).status !== 0 };
+
+test('#268 Rust stub: a method needed by a later test is appended to the existing stub impl', has268, () => {
+  const t = (n, body) => `// @id TEST-H-00${n} @verifies REQ-H-00${n}\n#[test]\nfn test_h_00${n}() {\n${body}\n}\n`;
+  const d = rs268({
+    'src/lib.rs': 'pub mod histogram;\n',
+    'src/histogram.rs': '#[derive(Debug, Clone, Default, PartialEq)]\npub struct Histogram;\n\nimpl Histogram {\n    pub fn equi_width<A0, A1>(_a0: A0, _a1: A1) -> Self {\n        unimplemented!("Histogram::equi_width")\n    }\n\n    pub fn bucket_count(&self) -> i64 {\n        unimplemented!("Histogram::bucket_count")\n    }\n}\n',
+    'tests/h.rs': 'use hist::histogram::Histogram;\n\n' + t(1, '    let h = Histogram::equi_width(&[1.0], 2);\n    assert_eq!(h.bucket_count(), 2);') + '\n' + t(2, '    let h = Histogram::equi_width(&[1.0], 2);\n    assert_eq!(h.total(), 2);'),
+  }, ['a', 'b']);
+  sdd(d, 'tdd', 'stub', 'TEST-H-002');
+  const h = fs.readFileSync(path.join(d, 'src/histogram.rs'), 'utf8');
+  assert.match(h, /pub fn total\(&self\)/, h);
+  assert.match(h, /pub fn bucket_count/, h);
+});
+
+test('#268 Rust stub: `use krate::ops;` + `ops::f(..)` is a module, not a function', has268, () => {
+  const d = rs268({
+    'src/lib.rs': '',
+    'tests/o.rs': 'use hist::ops;\n\n// @id TEST-H-001 @verifies REQ-H-001\n#[test]\nfn test_h_001() {\n    assert_eq!(ops::pages(10, 2), 5);\n}\n',
+  });
+  sdd(d, 'tdd', 'stub', 'TEST-H-001');
+  const lib = fs.readFileSync(path.join(d, 'src/lib.rs'), 'utf8');
+  assert.match(lib, /pub mod ops;/, lib);
+  assert.doesNotMatch(lib, /fn ops/, lib);
+  assert.match(fs.readFileSync(path.join(d, 'src/ops.rs'), 'utf8'), /pub fn pages/);
+});
+
+test('#268 Rust stub: payload variants are tuple variants; `use .. as Alias` resolves to the real type', has268, () => {
+  const d = rs268({
+    'src/lib.rs': '',
+    'tests/e.rs': 'use hist::err::{Lit as L, HistError};\n\n// @id TEST-H-001 @verifies REQ-H-001\n#[test]\nfn test_h_001() {\n    let e = HistError::Duplicate("a".to_string());\n    assert_eq!(e, HistError::Empty);\n    assert_eq!(L::Int(3), L::Int(3));\n}\n',
+  });
+  sdd(d, 'tdd', 'stub', 'TEST-H-001');
+  const e = fs.readFileSync(path.join(d, 'src/err.rs'), 'utf8');
+  assert.match(e, /Duplicate\(/, e);
+  assert.match(e, /Int\(/, e);
+  assert.doesNotMatch(e, /Copy/, e);
+});
+
+test('#268 Rust stub: a string literal compared through a bound variable gives a String return', has268, () => {
+  const d = rs268({
+    'src/lib.rs': '',
+    'tests/x.rs': 'use hist::explain;\n\n// @id TEST-H-001 @verifies REQ-H-001\n#[test]\nfn test_h_001() {\n    let text = explain(&1);\n    assert_eq!(text, "Filter rows=20");\n}\n',
+  });
+  sdd(d, 'tdd', 'stub', 'TEST-H-001');
+  assert.match(fs.readFileSync(path.join(d, 'src/lib.rs'), 'utf8'), /fn explain<A0>\(_a0: A0\) -> String/);
+});
