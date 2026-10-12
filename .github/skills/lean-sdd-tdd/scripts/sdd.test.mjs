@@ -1310,7 +1310,7 @@ test('#43 a data-only test that passes without implementation needs --characteri
   assert.equal(c.code, 0, c.out);
   assert.match(c.out, /\[weak\]/);
   assert.equal(sdd(d, 'tdd', 'green', 'TEST-CALC-001').code, 0);
-  assert.match(sdd(d, 'gate', '--no-run').out, /1 weak Red \(1 characterization/);
+  assert.match(sdd(d, 'gate', '--no-run').out, /, 1 characterization \(passed without a failing Red; not a weak Red\)/);
 });
 
 test('#44 weak-Red: result assigned from the stub and asserted is the act (not setup); pytest fixture error is weak with a real reason; Python class stubs construct', () => {
@@ -6650,4 +6650,51 @@ test('#266 impact REQ-X with only a bare comment hints at the missing @implement
   const d = mini('---\nfeature: r\ntier: T1\n---\n| REQ-R-001 | x shall work. | TEST-R-001 |\n', { 'src/a.ts': '// REQ-R-001\nexport const a = 1;\n' });
   const r = sdd(d, 'impact', 'REQ-R-001');
   assert.match(r.out, /bare comment/, r.out);
+});
+
+test('#272 --characterization on a failing test warns that the flag was ignored', () => {
+  const d = mini(T1SPEC, { 'a.test.mjs': jsTest() }, FAIL);
+  const r = sdd(d, 'tdd', 'red', 'TEST-A-001', '--characterization', 'data-only');
+  assert.match(r.out, /RED ok/, r.out);
+  assert.match(r.out, /--characterization ignored/, r.out);
+});
+
+test('#272 gate does not count characterization Reds as weak Reds', () => {
+  const d = mini(T1SPEC, { 'a.test.mjs': jsTest() }, PASS);
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-A-001', '--characterization', 'pins behaviour').code, 0);
+  assert.equal(sdd(d, 'tdd', 'green', 'TEST-A-001').code, 0);
+  const g = sdd(d, 'gate', '--no-run').out;
+  assert.match(g, /1 characterization/, g);
+  assert.doesNotMatch(g, /\d+ weak Red/, g);
+});
+
+test('#273 a Rust runtime unwrap() panic (thread id in the panic line) is a Red, not a load/compile error', () => {
+  const d = mini(T1SPEC, { 'a.test.mjs': jsTest() }, ['sh', '-c', "printf \"thread 'x' (4242) panicked at tests/c.rs:5:10:\\ncalled \\`Result::unwrap()\\` on an \\`Err\\` value: Os { code: 2, kind: NotFound, message: \\\"No such file or directory\\\" }\\n\"; exit 101"]);
+  const r = sdd(d, 'tdd', 'red', 'TEST-A-001');
+  assert.match(r.out, /RED ok/, r.out);
+  assert.doesNotMatch(r.out, /REJECTED|\[weak\]/, r.out);
+});
+
+test('#273 Green after a compile error says it is a load/compile error, not just "test failed"', () => {
+  const d = mini(T1SPEC, { 'a.test.mjs': jsTest() }, FAIL);
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-A-001').code, 0);
+  setCmd(d, ['sh', '-c', 'echo "** (CompileError) lib/a.ex:3: cannot invoke remote function Access.get/2 inside guards"; exit 1']);
+  const r = sdd(d, 'tdd', 'green', 'TEST-A-001');
+  assert.match(r.out, /GREEN REJECTED[^\n]*compile error/, r.out);
+});
+
+test('#274 reverting a setup edit after a refactor recovers the earlier Green; the refactor is flagged as unproven', () => {
+  const d = mini(T1SPEC, { 'a.test.mjs': jsTest(), 'helper.mjs': 'export const one = 1;\n' }, FAIL);
+  const f = path.join(d, 'a.test.mjs');
+  fs.writeFileSync(f, "import { one } from './helper.mjs';\n" + jsTest());
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-A-001').code, 0);
+  setCmd(d, PASS);
+  assert.equal(sdd(d, 'tdd', 'green', 'TEST-A-001').code, 0);
+  fs.writeFileSync(path.join(d, 'helper.mjs'), 'export const one = 1; // edited\n');
+  assert.equal(sdd(d, 'tdd', 'refactor', 'TEST-A-001').code, 0);
+  assert.match(sdd(d, 'gate', '--no-run').out, /refactor-recorded after the test\/setup changed/);
+  fs.writeFileSync(path.join(d, 'helper.mjs'), 'export const one = 1;\n');
+  const g = sdd(d, 'gate', '--no-run').out;
+  assert.doesNotMatch(g, /changed since last Green/, g);
+  assert.doesNotMatch(g, /refactor-recorded after/, g);
 });
