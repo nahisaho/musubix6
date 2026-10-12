@@ -986,7 +986,7 @@ function loadSpecs() {
     const tl = lines;
     const di = tl.findIndex((l) => /^#{1,4}\s*(?:\d+[.)]?\s*)?(Design|設計)\b/i.test(l));
     let designLines = 0;
-    if (di >= 0) for (const l of tl.slice(di + 1)) { if (/^#{1,4}\s/.test(l)) break; if (l.trim()) designLines++; }
+    if (di >= 0) for (const l of tl.slice(di + 1)) { if (/^#{1,4}\s/.test(l)) break; if (l.trim()) designLines += Math.max(1, l.split(/(?<=[。！？；])|(?<=[.!?;])\s+/).filter((x) => x.trim().length >= 8).length); }
     specs.push({ path: p, feature: fm.feature || f.replace(/\.md$/, ''), tier: (fm.tier || 'T1').toUpperCase(), approval: (fm.approval || 'auto').toLowerCase(), reqs, designLines, artifacts: [p, ...extra] });
   }
   return specs;
@@ -1004,7 +1004,7 @@ const lockDrift = (s) => {
 const needsLock = (s) => s.tier === 'T2' || s.approval === 'human' || !!lockDrift(s);
 // a T2 spec must carry a Design section (components, state/policy tables, key decisions) before it can be locked
 function designProblem(s) {
-  return s.tier === 'T2' && s.designLines < 2 ? `${s.path}: T2 spec needs a "## Design" section (≥2 non-blank lines — a one-line paragraph counts as 1 even with several sentences; use a list or line breaks: components, data flow, state/policy tables, key decisions)` : null;
+  return s.tier === 'T2' && s.designLines < 2 ? `${s.path}: T2 spec needs a "## Design" section (≥2 non-blank lines — each sentence counts as a line; components, data flow, state/policy tables, key decisions)` : null;
 }
 
 // ---------- approval ----------

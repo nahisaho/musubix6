@@ -7944,3 +7944,9 @@ test('#290 Rust stub: methods on a returned value are not added to the type whos
   assert.doesNotMatch(lib, /fn (contains|matches)/, lib);
   ok17(out);
 });
+
+test('#307 T2 Design: a one-line multi-sentence paragraph satisfies the Design check', () => {
+  const d = mini('---\nfeature: a\ntier: T2\n---\n## Design\nComponent A reads input. It returns the sum. State is none.\n## Requirements\n| REQ-A-001 | one shall hold. | TEST-A-001 |\n', { 'a.test.mjs': jsTest() });
+  const r = sddRaw(d, 'guard', 'a');
+  assert.doesNotMatch(r.out, /needs a "## Design"/, r.out);
+});
