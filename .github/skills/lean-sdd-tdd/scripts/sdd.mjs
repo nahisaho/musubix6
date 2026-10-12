@@ -2087,7 +2087,13 @@ function stubRust(testPath, src, dir, made) {
     const ufcs = [];
     const hasCtor = new RegExp(`(?<![\\w:])${n}\\s*\\{|(?<![\\w:])${n}\\s*::\\s*(?:[A-Z]\\w*|[a-z_]\\w*\\s*\\(\\s*(?!&|\\))[^)])`).test(ms);
     for (const m of ms.matchAll(new RegExp(`<\\s*([A-Z][\\w:]*)(?:<[^>]*>)?\\s+as\\s+(?:[\\w:]+::)?${n}\\s*>\\s*::\\s*([a-z_]\\w*)\\s*\\(`, 'g'))) ufcs.push({ ty: m[1].split('::').pop(), f: m[2], pat: `<\\s*${m[1]}(?:<[^>]*>)?\\s+as\\s+(?:[\\w:]+::)?${n}\\s*>\\s*::\\s*${m[2]}` });
-    if (!hasCtor) for (const m of ms.matchAll(new RegExp(`(?<![\\w:<])${n}\\s*::\\s*([a-z_]\\w*)\\s*\\(\\s*&`, 'g'))) ufcs.push({ ty: null, f: m[1], pat: `${n}\\s*::\\s*${m[1]}` });
+    if (!hasCtor) for (const m of ms.matchAll(new RegExp(`(?<![\\w:<])${n}\\s*::\\s*(?!new\\b)([a-z_]\\w*)\\s*\\(\\s*&`, 'g'))) ufcs.push({ ty: null, f: m[1], pat: `${n}\\s*::\\s*${m[1]}` });
+    // `<T as N>::Assoc`: N is a trait with an associated type
+    for (const m of ms.matchAll(new RegExp(`<\\s*([A-Z]\\w*)(?:<[^>]*>)?\\s+as\\s+(?:[\\w:]+::)?${n}\\s*>\\s*::\\s*([A-Z]\\w*)`, 'g'))) {
+      found = true;
+      if (!items.includes(`type ${m[2]};`)) items.push(`type ${m[2]};`);
+      ufcsImpls.push({ trait: n, ty: m[1], item: `    type ${m[2]} = i64;\n` });
+    }
     const resolved = [];
     for (const u of ufcs) {
       if (items.some((x) => x.startsWith(`fn ${u.f}`))) continue;
@@ -2148,12 +2154,12 @@ function stubRust(testPath, src, dir, made) {
     // a value returned by an associated fn that is not `Self` (a String, a number, ..) is not a `N`: its methods are not N's
     const nonSelf = (k) => { const pat = `(?<![\\w.])${n}(?:::\\s*<[^;(){}]*?>)?::${k}`, r = rustRet(pat, crate_), c = callInfo(src.replace(/\b\w+\./g, ''), `${n}(?:::\\s*<[^;(){}]*?>)?\\s*::\\s*${k}`); return !!(r && !new RegExp(`^(?:Option<|Result<)?${n}\\b`).test(r)) || !!(c.ret && c.ret !== 'result' && !c.ret.startsWith('opt:') && T[c.ret]) || (!c.chained && !!viaVar(pat)); };
     const varK = new Map([...src.matchAll(new RegExp(`\\blet\\s+(?:mut\\s+)?(\\w+)\\s*(?::[^=]+)?=\\s*${n}${tf}::([a-z_]\\w*)\\s*\\(`, 'g'))].map((m) => [m[1], m[2]]));
-    const vars = [...new Set([...src.matchAll(new RegExp(`\\blet\\s+(?:mut\\s+)?(\\w+)\\s*(?::[^=]+)?=\\s*${n}${tf}::[a-z_]\\w*\\s*\\(|\\blet\\s+(?:mut\\s+)?(\\w+)\\s*=\\s*${n}\\s*\\{|\\blet\\s+(?:mut\\s+)?(\\w+)\\s*:\\s*&?(?:mut\\s+)?${n}\\b`, 'g'))].map((m) => m[1] ?? m[2] ?? m[3]))].filter((v) => !varK.has(v) || only || !nonSelf(varK.get(v)));
+    const vars = [...new Set([...src.matchAll(new RegExp(`\\blet\\s+(?:mut\\s+)?(\\w+)\\s*(?::[^=]+)?=\\s*${n}${tf}::[a-z_]\\w*\\s*\\(|\\blet\\s+(?:mut\\s+)?(\\w+)\\s*=\\s*${n}\\s*\\{|\\blet\\s+(?:mut\\s+)?(\\w+)\\s*:\\s*&?(?:mut\\s+)?${n}\\b|\\blet\\s+(?:mut\\s+)?(\\w+)\\s*=\\s*${n}\\s*::\\s*[A-Z][a-z]\\w*\\b(?!\\s*::)`, 'g'))].map((m) => m[1] ?? m[2] ?? m[3] ?? m[4]))].filter((v) => !varK.has(v) || only || !nonSelf(varK.get(v)));
     const chain = chainsOf(n);
-    const inst = only ? only.inst : [...new Set([...vars.flatMap((v) => [...src.matchAll(new RegExp(`(?<![\\w.])${v}\\s*\\.\\s*([a-z_]\\w*)\\s*\\(`, 'g'))].map((m) => m[1])), ...chain.all])].filter((k) => !assoc.includes(k));
+    const inst = only ? only.inst : [...new Set([...vars.flatMap((v) => [...src.matchAll(new RegExp(`(?<![\\w.])${v}\\s*\\.\\s*([a-z_]\\w*)\\s*\\(`, 'g'))].map((m) => m[1])), ...chain.all])].filter((k) => !assoc.includes(k) && !/^(?:clone|eq|ne)$/.test(k));
     // methods called only on `let mut v` bindings take `&mut self` (#114)
     const mutVars = new Set([...src.matchAll(/\blet\s+mut\s+(\w+)/g)].map((m) => m[1]).filter((v) => vars.includes(v)));
-    const needsMut = (k) => { const cs = vars.filter((v) => new RegExp(`(?<![\\w.])${v}\\s*\\.\\s*${k}\\s*\\(`).test(src)); return cs.length > 0 && cs.every((v) => mutVars.has(v)) && cs.some((v) => new RegExp(`^\\s*${v}\\s*\\.\\s*${k}\\s*\\(`, 'm').test(src)); };
+    const needsMut = (k) => { const cs = vars.filter((v) => new RegExp(`(?<![\\w.])${v}\\s*\\.\\s*${k}\\s*\\(`).test(src)); return cs.length > 0 && cs.every((v) => mutVars.has(v)) && cs.some((v) => new RegExp(`^\\s*${v}\\s*\\.\\s*${k}\\s*\\(`, 'm').test(src) || (new RegExp(`^\\s*assert\\w*!\\(\\s*${v}\\s*\\.\\s*${k}\\s*\\(`, 'm').test(src) && !new RegExp(`^\\s*${v}\\s*\\.\\s*\\w+\\s*\\(`, 'm').test(src))); };
     if (!assoc.length && !inst.length) return '';
     const gen = (c) => c.args.map((_, i) => `A${i}`);
     const mk = gn ? 'Self(std::marker::PhantomData)' : 'Self';
@@ -2217,7 +2223,7 @@ function stubRust(testPath, src, dir, made) {
         return fs_.length ? ` { ${fs_.join(', ')} }` : '';
       };
       const shapes = vs.map(shape);
-      return `#[derive(Debug, Clone, ${shapes.every((x) => !x) ? 'Copy, PartialEq, Eq' : 'PartialEq'})]\npub enum ${n} {\n${vs.map((v, i) => `    ${v}${shapes[i]},\n`).join('')}}\n`;
+      return `#[derive(Debug, Clone, ${shapes.every((x) => !x) ? 'Copy, PartialEq, Eq' : 'PartialEq'})]\npub enum ${n} {\n${vs.map((v, i) => `    ${v}${shapes[i]},\n`).join('')}}\n${rustImpl(n, null, crate_)}`;
     }
     // struct literal `N { x: 1, y: "a" }` => named fields typed from the values (#130)
     const fields = literalFields(n, crate_);
@@ -2238,6 +2244,9 @@ function stubRust(testPath, src, dir, made) {
     if (idx) return fit(idx, true);
     if (loop) return fit(loop[2] ? `(${loop[2].split(',').map(() => 'i64').join(', ')}${loop[2].split(',').length === 1 ? ',' : ''})` : 'i64', true);
     if (direct) return fit(direct);
+    // a float literal beside the const (`EPSILON / 2.0`, `assert_eq!(EPSILON, 1e-5)`) makes it f64 (#310)
+    const FL = '-?(?:\\d+\\.\\d+(?:[eE][+-]?\\d+)?|\\d+[eE][+-]?\\d+)(?:_?f(?:32|64))?\\b|-?\\d+_?f(?:32|64)\\b';
+    if (new RegExp(`\\b${n}\\s*(?:[-+*/<>]=?|[=!]=)\\s*(?:${FL})|(?:${FL})\\s*(?:[-+*/<>]=?|[=!]=)\\s*${n}\\b|assert(?:_eq|_ne)?!\\(\\s*${n}\\s*,\\s*(?:${FL})|assert(?:_eq|_ne)?!\\(\\s*(?:${FL})\\s*,\\s*${n}\\b`).test(srcNoUse)) return fit('f64');
     return new RegExp(`\\b${n}\\s*\\.\\s*(?:len|iter|is_empty)\\b|\\b${n}\\s*\\[`).test(srcNoUse) ? `pub const ${n}: &[i64] = &[];\n` : null;
   };
   const itemStub = (n, crate_ = ownPkg) => { if (/^[A-Z][A-Z0-9_]+$/.test(n)) return constStub(n, crate_) ?? `pub const ${n}: i64 = 0;\n`; if (/^[A-Z]/.test(n)) return traitStub(n) ?? typeStub(n, crate_); const c = callInfo(src, n); c.ret ??= viaVar(`(?<![\\w.])(?:\\w+::)*${n}`); const ga = genericArgs(n, true)?.filter((a) => !a.startsWith("'")), pty = ga ? [] : argTypes(`(?<![\\w.])(?:\\w+::)*${n}`), g = ga ? genNames(ga) : c.args.map((_, i) => `A${i}`).filter((_, i) => !pty[i]); const rr = rustRet(`(?<![\\w.])(?:\\w+::)*${n}`, crate_); return `pub fn ${n}${g.length ? `<${g.join(', ')}>` : ''}(${c.args.map((_, i) => `_a${i}: ${ga ? 'impl Sized' : pty[i] ?? `A${i}`}`).join(', ')}) -> ${rr ?? (c.ret?.startsWith('opt:') ? `Option<${c.ret.slice(4)}>` : T[c.ret] ?? 'i64')} {\n    unimplemented!("${n}")\n}\n`; };

@@ -8329,3 +8329,48 @@ test('#300 preambleGranularity symbol: Rust top-level const edit stales only ref
   const d = symbolCase('a_test.rs', pre, T, (p) => p.replace('LIMIT: u32 = 1', 'LIMIT: u32 = 7'));
   assert.deepEqual(staleIds(d), ['TEST-A-001']);
 });
+
+test('#310 Rust stub: a const used with float literals is f64, not i64', has268, () => {
+  const d = rs288('use hist::EPSILON;\n\n' + t288('    let h = EPSILON / 2.0;\n    assert!(h > 0.0);\n    assert_eq!(EPSILON, 1e-5);'));
+  const { out, lib } = stub288(d);
+  assert.match(lib, /const EPSILON: f64 = 0\.0;/, lib);
+  ok17(out);
+});
+
+test('#310 Rust stub: const only divided/compared with a float literal is f64', has268, () => {
+  const d = rs288('use hist::TOL;\n\n' + t288('    let h = TOL / 2.0;\n    assert!(h < 1.0);'));
+  const { out, lib } = stub288(d);
+  assert.match(lib, /const TOL: f64 = 0\.0;/, lib);
+  ok17(out);
+});
+
+test('#310 Rust stub: Type::new(args) with a value in scope is a constructor, not a trait', has268, () => {
+  const d = rs288('use hist::{Encoder, Vocab};\n\n' + t288('    let v = Vocab::new();\n    let e = Encoder::new(&v, 2);\n    assert_eq!(e.size(), 2);'));
+  const { out, lib } = stub288(d);
+  assert.doesNotMatch(lib, /pub trait Encoder/, lib);
+  assert.match(lib, /struct Encoder/, lib);
+  ok17(out);
+});
+
+test('#310 Rust stub: <T as Trait>::Assoc makes Trait a trait with an associated type', has268, () => {
+  const d = rs288('use hist::{BpeModel, Model};\n\n' + t288('    let m = BpeModel::new();\n    let o: <BpeModel as Model>::Output = m.run(1);\n    assert_eq!(1, 1);'));
+  const { out, lib } = stub288(d);
+  assert.match(lib, /pub trait Model \{[^}]*type Output/s, lib);
+  ok17(out);
+});
+
+test('#310 Rust stub: methods called on a `let mut` receiver take &mut self', has268, () => {
+  const d = rs288('use hist::Server;\n\n' + t288('    let mut s = Server::new();\n    assert_eq!(s.handle_line("x"), 1);'));
+  const { out, lib } = stub288(d);
+  assert.match(lib, /fn handle_line[^(]*\(&mut self/, lib);
+  ok17(out);
+});
+
+test('#310 Rust stub: enum variants and inherent methods used via a helper are kept', has268, () => {
+  const d = rs288('use hist::Json;\n\n' + t288('    let j = Json::Obj(vec![]);\n    let n = Json::Null;\n    assert!(j.get("a").is_none());\n    assert_eq!(n, Json::Null);'));
+  const { out, lib } = stub288(d);
+  assert.match(lib, /Obj\(/, lib);
+  assert.match(lib, /Null/, lib);
+  assert.match(lib, /fn get/, lib);
+  ok17(out);
+});
