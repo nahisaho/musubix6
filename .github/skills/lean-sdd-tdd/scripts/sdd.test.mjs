@@ -6651,3 +6651,65 @@ test('#266 impact REQ-X with only a bare comment hints at the missing @implement
   const r = sdd(d, 'impact', 'REQ-R-001');
   assert.match(r.out, /bare comment/, r.out);
 });
+
+test('#267 gate --changed adds the parity peer of a changed file to the scope', () => {
+  const d = mini('---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | x shall work. | TEST-A-001 |\n', { 'rs/hash.rs': 'fn h() {}\n', 'ex/hash.ex': 'defmodule H do\nend\n' });
+  const cp = path.join(d, '.sdd/config.json');
+  const c = JSON.parse(fs.readFileSync(cp, 'utf8'));
+  c.parity = [['rs/hash.rs', 'ex/hash.ex']];
+  c.checks = [{ name: 'paths', cmd: ['node', '-e', '0'], changedCmd: ['node', '-e', 'console.log("SCOPE:" + process.argv.slice(1).join("|"));process.exit(1)', '{changedFiles}'] }];
+  fs.writeFileSync(cp, JSON.stringify(c));
+  spawnSync('git', ['add', '-A'], { cwd: d });
+  spawnSync('git', ['-c', 'user.email=a@b', '-c', 'user.name=a', 'commit', '-qm', 'i'], { cwd: d });
+  fs.writeFileSync(path.join(d, 'rs/hash.rs'), 'fn h() { 1 }\n');
+  const r = sdd(d, 'gate', '--changed', '--verbose');
+  assert.match(r.out, /SCOPE:[^\n]*ex\/hash\.ex/, r.out);
+});
+
+test('#276 a "- REQ-X:" Assumptions bullet is a reference, not a second definition', () => {
+  const d = mini('---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | x shall work. | TEST-A-001 |\n\n## Assumptions / risks\n- REQ-A-001: low confidence, kept as is.\n');
+  const r = sdd(d, 'trace');
+  assert.doesNotMatch(r.out, /duplicate REQ/, r.out);
+});
+
+test('#276 trace checks reverse-spec [src: path:line] annotations', () => {
+  const d = mini('---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | x shall work. [src: lib/a.ts:2] [src: lib/a.ts:99] [src: nope.ts:1] | TEST-A-001 |\n', { 'lib/a.ts': 'a\nb\n' });
+  const r = sdd(d, 'trace', '--verbose');
+  assert.match(r.out, /lib\/a\.ts:99\] line is beyond/, r.out);
+  assert.match(r.out, /nope\.ts:1\] file does not exist/, r.out);
+  assert.doesNotMatch(r.out, /lib\/a\.ts:2\]/, r.out);
+});
+
+test('#276 impact REQ-X with no @implements anywhere says so', () => {
+  const d = mini('---\nfeature: r\ntier: T1\n---\n| REQ-R-001 | x shall work. | TEST-R-001 |\n');
+  const r = sdd(d, 'impact', 'REQ-R-001');
+  assert.match(r.out, /no @implements REQ-R-001 found/, r.out);
+});
+
+test('#276 tdd green warns when no code carries @implements for the REQ', () => {
+  const d = mini('---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | x shall work. | TEST-A-001 |\n', { 'a.test.mjs': '// @id TEST-A-001 @verifies REQ-A-001\n' }, FAIL);
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-A-001').code, 0);
+  setCmd(d, PASS);
+  assert.match(sdd(d, 'tdd', 'green', 'TEST-A-001').out, /no code carries @implements REQ-A-001/);
+});
+
+test('#275 config deliverables: a golden artifact that is the deliverable gets a non-weak Red and does not stale tests', () => {
+  const spec = '---\nfeature: g\ntier: T1\n---\n| REQ-G-001 | golden shall exist. | TEST-G-001 |\n| REQ-G-002 | other shall hold. | TEST-G-002 |\n';
+  const t = "// @id TEST-G-001 @verifies REQ-G-001\n// @id TEST-G-002 @verifies REQ-G-002\n";
+  const d = mini(spec, { 'c.test.mjs': t });
+  const cp = path.join(d, '.sdd/config.json');
+  const c = JSON.parse(fs.readFileSync(cp, 'utf8'));
+  c.artifacts = { 'contract/plan.json': ['c.test.mjs'] };
+  c.deliverables = ['contract/plan.json'];
+  c.testCmd = ['node', '-e', 'const f=require("fs");const id=process.argv[1];if(id.endsWith("001")&&!f.existsSync("contract/plan.json")){console.log("AssertionError: missing");process.exit(1)}', '{id}'];
+  fs.writeFileSync(cp, JSON.stringify(c));
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-G-001').code, 0);
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-G-002', '--characterization', 'data only').code, 0);
+  fs.mkdirSync(path.join(d, 'contract'));
+  fs.writeFileSync(path.join(d, 'contract/plan.json'), '{}');
+  const g1 = sdd(d, 'tdd', 'green', 'TEST-G-001');
+  assert.equal(g1.code, 0, g1.out);
+  assert.doesNotMatch(g1.out, /\[weak\]/);
+  const g2 = sdd(d, 'tdd', 'green', 'TEST-G-002');
+  assert.equal(g2.code, 0, g2.out);
+});
