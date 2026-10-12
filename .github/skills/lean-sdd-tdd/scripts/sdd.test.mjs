@@ -7706,3 +7706,24 @@ test('#303 a consistently failing test check is a plain failure and flaky.retrie
   assert.match(sdd(flakyProject(null, always), 'gate').out, /✗ cmd test \(/);
   assert.doesNotMatch(sdd(flakyProject({ retries: 0 }, FLAKY_ONCE), 'gate').out, /FLAKY/);
 });
+
+test('#307 Rust `/// @id` doc-comment on a #[test] fn: editing the test body after Red stales it; a fenced doc test stays doc-block scoped', () => {
+  const rs = (n) => `/// @id TEST-A-001 @verifies REQ-A-001\n#[test]\nfn t1() {\n    assert_eq!(f(), ${n});\n}\n\n/// @id TEST-A-002 @verifies REQ-A-002\n#[test]\nfn t2() {\n    assert_eq!(g(), 1);\n}\n`;
+  const d = greenBoth({ 'tests/a.rs': rs(1) });
+  fs.writeFileSync(path.join(d, 'tests/a.rs'), rs(2));
+  const r = sdd(d, 'gate', '--no-run');
+  assert.match(r.out, /TEST-A-001[^\n]*(test changed since|stale)/i, r.out);
+  assert.doesNotMatch(r.out, /TEST-A-002[^\n]*(test changed since|stale)/i, r.out);
+});
+
+test('#307 duplicate CODE @id: the "no code carries @implements" warning names the duplicate', () => {
+  const d = mini(SPEC2, {
+    'a.test.mjs': '// @id TEST-A-001 @verifies REQ-A-001\nit(1);\n\n// @id TEST-A-002 @verifies REQ-A-002\nit(2);\n',
+    'src/a.mjs': '// @id CODE-A-001 @implements REQ-A-002\nexport const a = 1;\n',
+    'src/b.mjs': '// @id CODE-A-001 @implements REQ-A-001\nexport const b = 1;\n',
+  }, FAIL);
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-A-001').code, 0);
+  setCmd(d, PASS);
+  const g = sdd(d, 'tdd', 'green', 'TEST-A-001');
+  assert.match(g.out, /duplicate @id found \(CODE-A-001/, g.out);
+});

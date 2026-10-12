@@ -257,7 +257,9 @@ function rustDocBlock(txt, id) {
   let a = at, b = at;
   while (a > 0 && /^\s*\/\/[/!]/.test(ls[a - 1])) a--;
   while (b + 1 < ls.length && /^\s*\/\/[/!]/.test(ls[b + 1])) b++;
-  return ls.slice(a, b + 1).join('\n');
+  const block = ls.slice(a, b + 1).join('\n');
+  // a `/// @id` above `#[test] fn` is an ordinary test: only a fenced doc block is a doc test
+  return /^\s*\/\/[/!]\s*(?:```|~~~)/m.test(block) ? block : null;
 }
 function braceTestSha(txt, id, p) {
   const ranges = braceFunctions(txt, p);
@@ -4373,7 +4375,7 @@ function cmdTdd() {
       const shared = [...ents.values()].filter((c) => c.kind === 'CODE' && implFiles.includes(c.path) && c.refs.implements.some((r) => e.refs.verifies.includes(r)));
       return last && shared.some((c) => (last.implBlocks ? last.implBlocks[`${c.path}:${c.id}`] !== implRegionSha(c) : mtime(c.path) > Date.parse(last.at)));
     });
-    if (!implFiles.length && !loadSpecs().flatMap((x) => x.reqs).filter((q) => mine.has(q.id)).every((q) => q.testOnly || q.srcs.length)) out(`⚠ ${id}: no code carries @implements ${[...mine].join(', ')} — annotate the implementation so impact/trace can find it (#276); without it the shared-implementation staleness check cannot run (comment-only \`@id CODE-… @implements …\` is enough, the code itself stays unchanged)`);
+    if (!implFiles.length && !loadSpecs().flatMap((x) => x.reqs).filter((q) => mine.has(q.id)).every((q) => q.testOnly || q.srcs.length)) out(`⚠ ${id}: no code carries @implements ${[...mine].join(', ')} — annotate the implementation so impact/trace can find it (#276); without it the shared-implementation staleness check cannot run (comment-only \`@id CODE-… @implements …\` is enough, the code itself stays unchanged)${dups.some((x) => /^CODE-/.test(x)) ? `; duplicate @id found (${dups.filter((x) => /^CODE-/.test(x)).slice(0, 3).join(', ')}) — only one annotation per id is read, rename the duplicate` : ''}`);
     if (stale.length) out(`⚠ implementation shared with other REQs changed since their Green: ${stale.map((e) => e.id).join(', ')} — re-run them (tdd refactor ${stale.map((e) => e.id).join(' ')}) or the project tests; their evidence is not re-checked automatically`);
   }
   if (sub === 'red' && loadWeak && /not implemented|NotImplementedError|unimplemented/i.test(res.text)) out(`! a stub failed at module load, before any test body ran: every test of this file fails the same way, so this Red says nothing about ${id}; move the stub call into the test or a fixture`);
