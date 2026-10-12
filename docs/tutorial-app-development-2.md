@@ -106,7 +106,7 @@ T2 では、レビューを**リスクの観点ごとに、別々のエージェ
 
 ```text
 .sdd/specs/auth.md は認証というセキュリティに関わる機能なので、慎重にレビューしたい。
-セキュリティ、正しさ、公開インターフェース、テストの十分さの観点ごとに、別々のエージェントで並列にレビューして。指摘は spec に反映し、レビュー結果を .sdd/review.md に記録して、承認まで済ませて。
+セキュリティ、正しさ、公開インターフェース、テストの十分さの観点ごとに、別々のエージェントで並列にレビューして。指摘は spec に反映し、レビュー結果を .sdd/review-auth.md に記録して、承認まで済ませて。
 ```
 
 4 つの観点から、合計 **28 件**の指摘が出ました。主なものは次のとおりです。
@@ -120,12 +120,12 @@ T2 では、レビューを**リスクの観点ごとに、別々のエージェ
 | 公開インターフェース | High | メソッドごとの 405 や HEAD の扱い | **見送り**。Non-goals に移し、理由を記録する |
 | テスト | High | 定数時間比較をどうテストするか未定 | 時間を測らず、比較関数を注入して呼び出しを確認する |
 
-レビュー結果は、`.sdd/review.md` に 1 行 1 件で記録されます(重大度、場所、状態)。すべて `Closed` で、`verdict: pass` になった状態で承認されます。見送った指摘も、理由つきで `Closed (declined)` として残ります。
+レビュー結果は、`.sdd/review-auth.md` に 1 行 1 件で記録されます(重大度、場所、状態)。すべて `Closed` で、`verdict: pass` になった状態で承認されます。見送った指摘も、理由つきで `Closed (declined)` として残ります。
 
 <details>
 <summary>エージェントが実行すること(承認)</summary>
 
-`review check` が `REVIEW OK` を返したあと、`approve record auth --by ai:<レビュー担当> --review .sdd/review.md` で承認を記録します。T2 の spec は、承認の時点で**ハッシュでロック**されます。
+`review check` が `REVIEW OK` を返したあと、`approve record auth --by ai:<レビュー担当> --review .sdd/review-auth.md` で承認を記録します。T2 の spec は、承認の時点で**ハッシュでロック**されます。
 
 ```text
 specs 1 [auth:T2:ok]
@@ -300,10 +300,10 @@ next: (all features done)
 order-api を WSLC のコンテナーにして、コンテナー内でテストを実行して。
 そのあと、API キーを環境変数で渡してサーバーを起動し、ポートを公開して、この環境から curl で認証・商品登録・注文作成・支払い・出荷・キャンセルの一連を試して。後片付けもして。
 ビルドに使った Dockerfile はリポジトリに残して。
-(補足: この環境ではコンテナーからレジストリに届かないので、公式イメージが使えない場合は、ローカルのイメージ alpine と、ホストで取得できるものだけでビルドする方法に切り替えて。)
+(補足: コンテナーからレジストリに届かない場合や、公式イメージが使えない場合は、ローカルのイメージ alpine と、ホストで取得できるものだけでビルドする方法に切り替えて。)
 ```
 
-チュートリアル 1 と同じく、公式イメージの取得に失敗するため、ローカルの `alpine` に、ホストで取得した Node.js(musl 版)と `libstdc++`、`libgcc` を載せる方法に切り替わりました。
+チュートリアル 1 と同じく、公式イメージの取得に失敗する環境では、ローカルの `alpine` に、ホストで取得した Node.js(musl 版)と `libstdc++`、`libgcc` を載せる方法に切り替わりました。
 
 結果は次のとおりです。
 
@@ -370,7 +370,7 @@ chore: initial project setup with musubix6 skills and SDD
 |---|---|
 | 1. 準備 | 動作。スキル 6 件のコピー、SDD の初期化、Git のユーザー設定、初期コミットまで完了した |
 | 2. 分割と最初の spec | 動作。5 機能の `plan` と、T2 の `auth` の spec(`## Design` つき、REQ 9 件)ができた。進捗の質問にも答えた |
-| 3. 並列レビューと承認 | 動作。4 観点の指摘が反映され、`.sdd/review.md` に記録されて承認(`lock auth: ok`)された |
+| 3. 並列レビューと承認 | 動作。4 観点の指摘が反映され、`.sdd/review-auth.md` に記録されて承認(`lock auth: ok`)された |
 | 4. 実装 | 動作。REQ 11 件が Red → Green になり、gate PASS、コミットまで完了した |
 | 5.1 inventory | 動作。gate PASS(23 REQ)、コミット済み |
 | 5.2 order-create | 動作。並列レビューのあと、gate PASS(34 REQ)、コミット済み |
@@ -381,7 +381,7 @@ chore: initial project setup with musubix6 skills and SDD
 
 再実験では、本文の記録と異なる点がありました。
 
-- **spec と件数は実行ごとに変わります。** 再実験の REQ は、auth 11、inventory 12、order-create 11、order-fulfil 10、order-cancel 10 の計 54 件で、レビューの指摘は auth で 25 件でした。機能名も `order-fulfil` になりました。本文の件数や名前と一致しなくてかまいません。
+- **spec と件数は実行ごとに変わります。** 再実験の REQ は計 54 件でした(auth 11、inventory 12、order-create 11、order-fulfil 10、order-cancel 10)。レビューの指摘は auth で 25 件でした。機能名も `order-fulfil` になりました。本文の件数や名前と一致しなくてかまいません。
 - **weak Red は出ないことがあります。** 再実験の gate は、すべて通常の Red → Green でした。
 - **レビューの記録は、上書きされませんでした。** 5.2 のプロンプトには指示を書いていませんが、エージェントは機能ごとに `.sdd/review-<機能名>.md` を作りました。本文のつまずきは、起きないこともあります。
 - **前の機能の spec を直さずに済むことがあります。** 再実験の order-cancel では、`order-fulfil` の spec は変わらず、既存テストの 1 件(`TEST-FUL-005`)だけを更新して、gate が通りました。再承認が必要になるのは、T2 の spec を直した場合です。
