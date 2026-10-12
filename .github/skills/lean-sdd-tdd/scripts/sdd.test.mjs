@@ -7944,3 +7944,14 @@ test('#290 Rust stub: methods on a returned value are not added to the type whos
   assert.doesNotMatch(lib, /fn (contains|matches)/, lib);
   ok17(out);
 });
+
+test('#308 gate --changed: a changed `artifacts` file scopes in the project holding its consumer', () => {
+  const d = mini('---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | x shall hold. | TEST-A-001 |\n', { 'svc/x.txt': 'x', 'data/cases.json': '{}' });
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ testCmd: PASS, checks: [], artifacts: { 'data/cases.json': ['svc/x.txt'] }, projects: [{ root: 'svc', testCmd: PASS, checks: [{ name: 'ok', cmd: ['node', '-e', '0'] }] }] }));
+  spawnSync('git', ['add', '-A'], { cwd: d });
+  spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'i'], { cwd: d });
+  fs.writeFileSync(path.join(d, 'data/cases.json'), '{"a":1}');
+  const o = sdd(d, 'gate', '--changed').out;
+  assert.match(o, /✓ cmd svc:ok/, o);
+  assert.doesNotMatch(o, /root-owned data\/config changes/, o);
+});
