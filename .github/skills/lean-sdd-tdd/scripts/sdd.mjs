@@ -1828,7 +1828,7 @@ function stubGo(testPath, src, dir, add, made) {
     }
   }
   // each pass reveals the next layer: undefined names, then methods/fields of the types just created (#69)
-  for (let pass = 0; pass < 4 && !extDone; pass++) {
+  for (let pass = 0; pass < 6 && !extDone; pass++) {
     const out = probe('go', ['test', '-count=1', '-gcflags=-e', '-run', '^$', '.'], dir);
     let grew = false;
     for (const m of out.matchAll(/undefined: (\w+)/g)) {
@@ -1858,6 +1858,17 @@ function stubGo(testPath, src, dir, add, made) {
     for (const m of out.matchAll(/(\w+)\.(\w+) undefined \(type any has no field or method \w+\)/g)) {
       const [, v, member] = m;
       const as = [...src.matchAll(/((?:\w+\s*,\s*)*\w+)\s*:?=\s*(?:[\w.]+\.)?(\w+)\(/g)].find((x) => x[1].split(',').map((y) => y.trim())[0] === v);
+      // `for _, it := range items` with `items := F(..)`: F returns a slice of a struct (#296)
+      const rg = !as && new RegExp(`\\bfor\\s+(?:\\w+\\s*,\\s*)?${v}\\s*:=\\s*range\\s+(\\w+)(?![\\w.(])`).exec(src)?.[1];
+      const rc = !as && !rg && new RegExp(`\\bfor\\s+(?:\\w+\\s*,\\s*)?${v}\\s*:=\\s*range\\s+(?:[\\w.]+\\.)?(\\w+)\\(`).exec(src)?.[1];
+      const src2 = rc ? [null, null, rc] : rg && [...src.matchAll(/((?:\w+\s*,\s*)*\w+)\s*:?=\s*(?:[\w.]+\.)?(\w+)\(/g)].find((x) => x[1].split(',').map((y) => y.trim())[0] === rg);
+      if (src2 && (!retTypes.has(src2[2]) || retTypes.get(src2[2]) === '[]any')) {
+        const en = `${src2[2]}Item`;
+        retTypes.set(src2[2], `[]${en}`);
+        types.set(en, new Set());
+        grew = true;
+        continue;
+      }
       if (!as || retTypes.has(as[2])) continue;
       const tn = `${as[2]}Result`;
       retTypes.set(as[2], tn);
@@ -1869,6 +1880,20 @@ function stubGo(testPath, src, dir, add, made) {
       if (types.has(m[2]) && !types.get(m[2]).has(m[1])) { types.get(m[2]).add(m[1]); grew = true; }
     }
     if (typedResults(out, (x) => x, types)) grew = true;
+    for (const m of out.matchAll(/cannot range over (?:[\w.]+\.)?(\w+)\(.*?\) \(value of (?:interface )?type any\)/g)) {
+      if (retTypes.has(m[1])) continue;
+      retTypes.set(m[1], '[]any');
+      grew = true;
+    }
+    // an `any` result the test uses arithmetically / passes to a typed parameter takes that scalar type (#296)
+    const SCALAR = { int: 'int', float: 'float64', string: 'string', rune: 'rune', bool: 'bool' };
+    for (const m of out.matchAll(/invalid operation: (\w+) [^\s]+ [^\n]*?\(mismatched types any and untyped (\w+)\)|cannot use (\w+) \(variable of (?:interface )?type any\) as (int|float64|string|bool) value/g)) {
+      const v = m[1] ?? m[3], t = m[1] ? SCALAR[m[2]] : m[4];
+      const as = t && [...src.matchAll(/((?:\w+\s*,\s*)*\w+)\s*:?=\s*(?:[\w.]+\.)?(\w+)\(/g)].find((x) => x[1].split(',').map((y) => y.trim())[0] === v);
+      if (!as || retTypes.has(as[2])) continue;
+      retTypes.set(as[2], t);
+      grew = true;
+    }
     if (!grew) break;
     fs.writeFileSync(target, render());
   }
@@ -2436,14 +2461,27 @@ function stubJava(testPath, src, dir, add, made) {
   // receivers: `new Cls(..).m(`, variables built from Cls, variables declared `Cls v`, and `Cls.factory(..).m(`
   const instOf = (cls) => {
     const ms = new Set(methodsOf(src, cls));
-    const vars = [...src.matchAll(new RegExp(`\\b${cls}\\s+(\\w+)\\s*(?:=|;|,|\\))`, 'g'))].map((m) => m[1]);
-    for (const v of vars) for (const m of src.matchAll(new RegExp(`(?<![\\w.])${v}\\s*\\.\\s*([a-z]\\w*)\\s*\\(`, 'g'))) ms.add(m[1]);
+    // a variable name reused for another type in a later block belongs to the nearest preceding declaration (#296)
+    const declRe = /\b([A-Z]\w*(?:<[^;=()]*>)?|int|long|double|boolean|String|var)\s+([a-z]\w*)\s*(?:=|;|,|\)|:)/g;
+    const decls = [...src.matchAll(declRe)].map((m) => ({ t: m[1].replace(/<.*/, ''), v: m[2], at: m.index }));
+    for (const d of decls) {
+      if (d.t !== cls) continue;
+      for (const m of src.matchAll(new RegExp(`(?<![\\w.])${d.v}\\s*\\.\\s*([a-z]\\w*)\\s*\\(`, 'g'))) {
+        const owner = decls.filter((o) => o.v === d.v && o.at < m.index).pop();
+        if (owner === d) ms.add(m[1]);
+      }
+    }
     for (const m of src.matchAll(new RegExp(`\\b${cls}\\.[a-z]\\w*\\s*\\((?:[^()]|\\([^()]*\\))*\\)\\s*\\.\\s*([a-z]\\w*)\\s*\\(`, 'g'))) ms.add(m[1]);
     return [...ms].filter((k) => !/^(equals|hashCode|toString|getClass|compareTo|assert\w*)$/.test(k));
   };
   for (const m of src.matchAll(/\b([A-Z]\w*)\s+\w+\s*=\s*(?:new\s+\1\s*\(|\1\.[a-z]\w*\s*\()|\b([A-Z]\w*)\s+\w+\s*=\s*[\w.]+\.[a-z]\w*\s*\(/g)) {
     const c = m[1] ?? m[2];
     if (c && !byClass.has(c) && !excs.has(c) && !imported.has(c) && !local.has(c) && !known.has(c) && !isJdk(c) && !/^(Object|Exception|Throwable)$/.test(c)) byClass.set(c, []);
+  }
+  // `for (Item i : xs)` names a project class too (#296)
+  for (const m of src.matchAll(/\bfor\s*\(\s*(?:final\s+)?([A-Z]\w*)\s+\w+\s*:/g)) {
+    const c = m[1];
+    if (!byClass.has(c) && !excs.has(c) && !imported.has(c) && !local.has(c) && !known.has(c) && !isJdk(c) && !/^(Object|Exception|Throwable|Integer|Long|Double|String|Boolean|Character)$/.test(c)) byClass.set(c, []);
   }
   // element types of declared generic results (`List<Token> ts = ..`) must exist too (#149)
   for (const m of src.matchAll(/\b(?:List|Set|Optional|Collection|Iterable|Stream|Deque|Queue)<([A-Z]\w*)>\s+\w+\s*=\s*[\w.]+\.[a-z]\w*\s*\(/g)) {
@@ -2962,7 +3000,9 @@ function stubCs(testPath, src, id, made) {
     const calls = [...text.matchAll(new RegExp(`(?<![\\w.])${esc(n)}\\.([A-Z]\\w*)\\s*\\(`, 'g'))].map((m) => m[1]);
     const props = [...text.matchAll(new RegExp(`(?<![\\w.])${esc(n)}\\.([A-Z]\\w*)\\b(?!\\s*[(<])`, 'g'))].map((m) => m[1]);
     const inst = new RegExp(`\\bnew\\s+${esc(n)}\\b|\\b${esc(n)}\\??\\s+[A-Za-z_]\\w*\\s*[=;,)(]|<\\s*${esc(n)}\\s*>|:\\s*${esc(n)}\\b|\\b(?:is|as)\\s+${esc(n)}\\b|typeof\\s*\\(\\s*${esc(n)}\\s*\\)`).test(text);
-    if (!inst && !calls.length && props.length) return 'enum';
+    // `case T.X:` / `(int)T.X` need a real constant, so T is an enum even when it is also used as a declared type (#296)
+    const constUse = new RegExp(`\\bcase\\s+${esc(n)}\\.[A-Z]\\w*\\s*(?::|=>|when\\b)|\\(\\s*(?:int|long|byte)\\s*\\)\\s*${esc(n)}\\.[A-Z]`).test(text);
+    if (!calls.length && props.length && (!inst || constUse)) return 'enum';
     const named = callArgs(text, n)?.map((a) => /^\s*([A-Za-z_]\w*)\s*:/.exec(a)?.[1]);
     if (named?.length && named.every(Boolean)) return 'record';
     return inst ? 'class' : 'static';

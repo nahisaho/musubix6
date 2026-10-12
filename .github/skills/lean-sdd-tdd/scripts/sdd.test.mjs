@@ -8033,3 +8033,44 @@ test('#303 a flaky suspected gate run is recorded in the ledger with the policy 
     assert.match(sdd(d, 'tdd', 'check').out, /LEDGER OK \(1 entries\)/);
   }
 });
+
+test('#296 Java: for-each variables and re-declared variable names resolve to the nearest declaration', () => {
+  const d = mk130({ 'src/test/java/CalcTest.java': [
+    'public class CalcTest {',
+    '  // @id TEST-A-001 @verifies REQ-A-001',
+    '  static void t() {',
+    '    Calc c = new Calc();',
+    '    for (Item i : c.items()) { String q = i.name(); }',
+    '    { Widget w = new Widget(); w.run(); }',
+    '    { Gadget w = new Gadget(); w.spin(); }',
+    '  }',
+    '}',
+    '',
+  ].join('\n') });
+  sdd(d, 'tdd', 'stub', 'TEST-A-001');
+  assert.match(rd130(d, 'src/main/java/Item.java'), /name\(\)/);
+  assert.doesNotMatch(rd130(d, 'src/main/java/Widget.java'), /spin/);
+  assert.doesNotMatch(rd130(d, 'src/main/java/Gadget.java'), /run/);
+});
+
+test('#296 Go: results used arithmetically, as typed arguments or ranged over get concrete types, not any', { skip: !has130('go') }, () => {
+  const d = mk130({
+    'go.mod': 'module example.com/m\n\ngo 1.21\n',
+    'calc/calc_test.go': 'package calc\n\nimport (\n\t"strings"\n\t"testing"\n)\n\n// @id TEST-A-001 @verifies REQ-A-001\nfunc TestAdd(t *testing.T) {\n\tc := NewCalc(2)\n\tgot := c.Add(1, 2)\n\tif got+1 != 4 {\n\t\tt.Fatal(got)\n\t}\n\tname := c.Name()\n\tif strings.ToUpper(name) != "X" {\n\t\tt.Fatal(name)\n\t}\n\tfor _, it := range c.Items() {\n\t\t_ = it.ID\n\t}\n}\n',
+  });
+  const out = sdd(d, 'tdd', 'stub', 'TEST-A-001').out;
+  assert.doesNotMatch(out, /does not compile|could not fully stub/, out);
+  const g = rd130(d, 'calc/calc.go');
+  assert.match(g, /\) Add\(a0, a1 any\) int/);
+  assert.match(g, /\) Name\(\) string/);
+});
+
+test('#296 C#: a type used in `case T.X:` is an enum even when it is also a declared type', { skip: !has130('dotnet') }, () => {
+  const d = mk130({
+    'T/T.csproj': '<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><TargetFramework>net8.0</TargetFramework></PropertyGroup></Project>\n',
+    'T/CalcTests.cs': 'class CalcTests {\n  // @id TEST-A-001 @verifies REQ-A-001\n  static void T() {\n    var c = new Calc(2);\n    Status st = c.Status();\n    switch (st) { case Status.Active: break; case Status.Done: break; }\n  }\n}\n',
+  });
+  const out = sdd(d, 'tdd', 'stub', 'TEST-A-001').out;
+  assert.doesNotMatch(out, /does not compile|could not fully stub/, out);
+  assert.match(rd130(d, 'T/Status.cs'), /public enum Status/);
+});
