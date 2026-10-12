@@ -250,10 +250,21 @@ function phpLifecycle(body, txt) {
 // Protect shared oracles without including sibling tests or annotated implementation (#166/#170).
 // evidence recorded before #236 hashed registration macros and comments as shared code
 let cLegacy = false;
+// the `///` block holding a doc test's `@id`: its own oracle, so editing the documented implementation keeps the Red valid (#287)
+function rustDocBlock(txt, id) {
+  const ls = txt.split('\n'), at = ls.findIndex((l) => new RegExp(`^\\s*//[/!].*@id\\s+${id}(?![\\w-])`).test(l));
+  if (at < 0) return null;
+  let a = at, b = at;
+  while (a > 0 && /^\s*\/\/[/!]/.test(ls[a - 1])) a--;
+  while (b + 1 < ls.length && /^\s*\/\/[/!]/.test(ls[b + 1])) b++;
+  return ls.slice(a, b + 1).join('\n');
+}
 function braceTestSha(txt, id, p) {
   const ranges = braceFunctions(txt, p);
   if (!ranges) return sha(txt);
   const mine = ranges.find((r) => new RegExp(`@id\\s+${id}\\b`).test(r.body));
+  const docBlock = /\.rs$/.test(p) ? rustDocBlock(txt, id) : null;
+  if (docBlock) return sha('rust-doctest\u0000' + docBlock);
   if (!mine) return sha(txt);
   const inline = /\.rs$/.test(p) ? rustTestRegion(txt) : -1;
   const helpers = ranges.filter((r) => !r.test && !r.code && (inline < 0 || r.start > inline));
@@ -3520,6 +3531,22 @@ function rustTarget(testPath, cwd = ROOT) {
   if (!candidates.length) throw new Error(`REFUSED: no owning Cargo target resolved for ${testPath}; check include/module paths and the configured package/target`);
   return candidates.length === 1 ? candidates[0] : null;
 }
+// `/// @id TEST-.. @verifies REQ-..` in the doc comment above a ``` fence marks a Rust doc test: run it by its exact `cargo test --doc` name (#287)
+let rustDocName = null;
+function rustDocTest(testPath, id, cmd, cwd) {
+  const ls = fs.readFileSync(path.join(ROOT, testPath), 'utf8').split('\n');
+  const at = ls.findIndex((l) => new RegExp(`^\\s*//[/!].*@id\\s+${id}(?![\\w-])`).test(l));
+  if (at < 0) return null;
+  let fence = -1;
+  for (let i = at; i < ls.length && /^\s*\/\/[/!]/.test(ls[i]); i++) if (/^\s*\/\/[/!]\s*(?:```|~~~)/.test(ls[i])) { fence = i; break; }
+  if (fence < 0) return null;
+  const owner = rustTarget(testPath, cwd);
+  const pkg = cmd.findIndex((a) => /^(?:-p|--package)$/.test(a));
+  const base = ['cargo', 'test', '--doc', ...(pkg >= 0 ? cmd.slice(pkg, pkg + 2) : owner ? ['-p', owner.package] : [])];
+  const listed = cmdOut([...base, '--', '--list'], cwd).split('\n').map((l) => /^(.+ \(line (\d+)\)): test$/.exec(l)).filter((m) => m && +m[2] === fence + 1 && testPath.endsWith(m[1].split(' - ')[0].replace(/^\.\//, '')));
+  if (listed.length !== 1) throw new Error(`REFUSED: cannot resolve the doc test of ${id} (${listed.length} candidates for line ${fence + 1} of ${testPath})`);
+  return [...base, '--', listed[0][1]];
+}
 function qualifiedTestName(testPath, id, rust = false) {
   const name = testName(testPath, id);
   const text = fs.readFileSync(path.join(ROOT, testPath), 'utf8');
@@ -3647,6 +3674,10 @@ function targetVerdict(plain, testPath, id, selectedName = null, requireJavaResu
       const mine = rows.filter((r) => new RegExp(`(?<![\\w-])${escapeRe(id)}(?![\\w-])`, 'i').test(r.name));
       return !mine.length ? 'notrun' : mine.some((r) => r.bad) ? 'fail' : mine.some((r) => r.pass) ? 'pass' : 'skip';
     }
+  }
+  if (rustDocName && /\.rs$/.test(testPath)) {
+    const rows = [...plain.matchAll(/^test (.+?) \.\.\. (ok|FAILED|ignored)/gm)].filter((m) => m[1] === rustDocName);
+    return !rows.length ? 'notrun' : rows.some((m) => m[2] === 'FAILED') ? 'fail' : rows.some((m) => m[2] === 'ok') ? 'pass' : 'skip';
   }
   if (/\.rs$/.test(testPath) && (/^test \S+ \.\.\. /m.test(plain) || /running \d+ tests|test result:/.test(plain))) {
     const full = qualifiedTestName(testPath, id, true);
@@ -3835,7 +3866,10 @@ function cmdTdd() {
     rustRunnerSelection = selector < 0 && packageFlag < 0 ? null : { kind: selector < 0 ? null : cmd[selector], name: cmd[selector + 1], package: packageFlag < 0 ? null : cmd[packageFlag + 1] };
     const name = testName(t.path, id);
     const i = cmd.indexOf(name);
-    if (i >= 0) {
+    const doc = rustDocTest(t.path, id, cmd, path.resolve(ROOT, proj?.root ?? '.'));
+    rustDocName = doc ? doc.at(-1) : null;
+    if (doc) cmd.splice(0, cmd.length, ...doc);
+    else if (i >= 0) {
       const owner = rustTarget(t.path, path.resolve(ROOT, proj?.root ?? '.'));
       cmd[i] = qualifiedTestName(t.path, id, true);
       if (owner && !cmd.some((a) => /^(?:--test|--lib|--bin|--example|--all-targets)$/.test(a))) {

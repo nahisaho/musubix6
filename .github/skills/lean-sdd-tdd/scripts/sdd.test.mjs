@@ -7158,3 +7158,17 @@ test('#286 green warns that shared-impl staleness cannot be checked for unannota
   const r = sdd(d, 'tdd', 'green', 'TEST-CALC-001');
   assert.match(r.out, /no code carries @implements.*shared/, r.out);
 });
+
+// ---- #287 item 3: Rust doc tests ----
+test('#287 a Rust doc test marked `/// @id TEST-.. @verifies REQ-..` gets Red/Green evidence via cargo test --doc', { skip: !has130('cargo') }, () => {
+  const d = batch2Source('src/lib.rs', '// @id CODE-CALC-001 @implements REQ-CALC-001\n/// Answer.\n///\n/// @id TEST-CALC-001 @verifies REQ-CALC-001\n/// ```\n/// assert_eq!(docprobe::answer(), 7);\n/// ```\npub fn answer() -> i32 { 0 }\n');
+  writeAll(d, { 'Cargo.toml': '[package]\nname="docprobe"\nversion="0.1.0"\nedition="2021"\n' });
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ testCmd: ['cargo', 'test', '--lib', '{idu}'], checks: [] }));
+  const red = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
+  assert.equal(red.code, 0, red.out);
+  fs.writeFileSync(path.join(d, 'src/lib.rs'), rd130(d, 'src/lib.rs').replace('{ 0 }', '{ 7 }'));
+  const green = sdd(d, 'tdd', 'green', 'TEST-CALC-001');
+  assert.equal(green.code, 0, green.out);
+  const tr = sdd(d, 'trace');
+  assert.doesNotMatch(tr.out, /TEST-CALC-001[^\n]*(missing|no evidence)/i, tr.out);
+});
