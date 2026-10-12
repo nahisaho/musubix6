@@ -2837,8 +2837,11 @@ function stubFor(testPath, id) {
       // src layout: put new modules under src/ when the package already lives there (or src/ is the only package root) (#68)
       const srcLayout = !has(proot) && (has(path.join(proot, 'src')) || (fs.existsSync(path.join(proot, 'src')) && fs.readdirSync(path.join(proot, 'src')).some((x) => fs.existsSync(path.join(proot, 'src', x, '__init__.py')))));
       // pytest `pythonpath = src` (pytest.ini / pyproject / setup.cfg / tox.ini) names the package root even when that directory does not exist yet (#131)
-      const ppDir = (() => { for (const f of ['pytest.ini', 'pyproject.toml', 'setup.cfg', 'tox.ini']) { try { const m = /^\s*pythonpath\s*=\s*(\[[^\]]*\]|[^\n]*(?:\n[ \t]+[^\n]+)*)/m.exec(fs.readFileSync(path.join(proot, f), 'utf8')); const d = m && [...m[1].matchAll(/[\w./-]+/g)].map((x) => x[0]).find((x) => x !== '.'); if (d) return d; } catch {} } return null; })();
-      const base = mod.startsWith('.') ? dir : ppDir && !has(proot) ? path.join(proot, ppDir) : srcLayout ? path.join(proot, 'src') : proot;
+      const ppDirs = (() => { for (const f of ['pytest.ini', 'pyproject.toml', 'setup.cfg', 'tox.ini']) { try { const m = /^\s*pythonpath\s*=\s*(\[[^\]]*\]|[^\n]*(?:\n[ \t]+[^\n]+)*)/m.exec(fs.readFileSync(path.join(proot, f), 'utf8')); const d = m && [...m[1].matchAll(/[\w./-]+/g)].map((x) => x[0]).filter((x) => x !== '.'); if (d?.length) return d; } catch {} } return []; })();
+      const ppDir = ppDirs[0] ?? null;
+      // a package that already lives on any configured pythonpath entry (`../core/src`) is real code: never shadowed by a stub (#279)
+      const ppHit = mod.startsWith('.') ? null : ppDirs.map((d) => path.resolve(proot, d)).find((d) => has(d));
+      const base = mod.startsWith('.') ? dir : ppHit ?? (ppDir && !has(proot) ? path.join(proot, ppDir) : srcLayout ? path.join(proot, 'src') : proot);
       const abs = path.join(base, ...mod.replace(/^\.+/, '').split('.')) + '.py';
       // `from pkg import x` where pkg/ is a namespace package: never create pkg.py next to it
       const nsDir = abs.replace(/\.py$/, '');
@@ -2850,7 +2853,7 @@ function stubFor(testPath, id) {
       const isExc = (n) => new RegExp(`(raises|assertRaises|assertRaisesRegex)\\(\\s*${n}\\b|\\bexcept\\s+\\(?\\s*${n}\\b`).test(src);
       // ALL_CAPS names that are never called are constants, not classes (#112)
       const isConst = (n) => /^[A-Z][A-Z0-9_]+$/.test(n) && !new RegExp(`\\b${n}\\s*\\(`).test(scoped);
-      const stubOf = (n) => isExc(n) ? `class ${n}(Exception):\n    pass\n` : isConst(n) ? `${n} = None\n` : /^[A-Z]/.test(n) ? `class ${n}:\n    def __init__(self, *a, **k):\n        pass\n${methodsOf(scoped, n).map((k) => `\n    def ${k}(self, *a, **k):\n        raise NotImplementedError("${k}")\n`).join('')}` : `def ${n}(*a, **k):\n    raise NotImplementedError("${n}")\n`;
+      const stubOf = (n) => isExc(n) ? `class ${n}(Exception):\n    pass\n` : isConst(n) ? `${n} = ${new RegExp(`parametrize\\([^\\n]*\\b${n}\\b|\\bin\\s+${n}\\b|\\b${n}\\s*\\[`).test(scoped) ? '[]' : 'None'}\n` : /^[A-Z]/.test(n) ? `class ${n}:\n    def __init__(self, *a, **k):\n        pass\n${methodsOf(scoped, n).map((k) => `\n    def ${k}(self, *a, **k):\n        raise NotImplementedError("${k}")\n`).join('')}` : `def ${n}(*a, **k):\n    raise NotImplementedError("${n}")\n`;
       // a namespace dir (no __init__.py) satisfies only the submodules it holds; any other imported name needs an __init__.py that defines it (#214)
       if (isNsDir) {
         const miss = ns.filter((n) => !fs.existsSync(path.join(nsDir, n + '.py')) && !fs.existsSync(path.join(nsDir, n)));
@@ -2878,6 +2881,14 @@ function stubFor(testPath, id) {
           }
           missing = missing.filter((n) => !sub.includes(n));
         }
+        // a stub-only class the test now calls more methods on gets them appended inside the class (#279)
+        let grown = cur;
+        for (const n of ns) {
+          const cm = new RegExp(`^class ${n}:\\n    def __init__\\(self, \\*a, \\*\\*k\\):\\n        pass\\n(?:\\n    def \\w+\\(self, \\*a, \\*\\*k\\):\\n        raise NotImplementedError\\("\\w+"\\)\\n)*`, 'm').exec(grown);
+          const add2 = cm ? methodsOf(scoped, n).filter((k) => !new RegExp(`def ${k}\\(`).test(cm[0])) : [];
+          if (add2.length) grown = grown.replace(cm[0], cm[0] + add2.map((k) => `\n    def ${k}(self, *a, **k):\n        raise NotImplementedError("${k}")\n`).join(''));
+        }
+        if (grown !== cur) { fs.writeFileSync(existing, grown); made.push(rel(existing)); }
         if (missing.length && !rest.trim()) { fs.appendFileSync(existing, (cur.endsWith('\n') ? '\n\n' : '\n\n\n') + missing.map(stubOf).join('\n\n')); made.push(rel(existing)); }
         else if (missing.length) (made.realMissing ??= []).push(`${missing.join(', ')} in ${rel(existing)}`);
         continue;
@@ -3957,7 +3968,9 @@ function cmdTdd() {
   const setupSym = setupSym0 && (typeof flags.expect !== 'string' || new RegExp(`(?<![\\w$])${escapeRe(setupSym0)}(?![\\w$])`).test(flags.expect)) ? setupSym0 : null;
   const charac = sub === 'red' && res.exit === 0 && !retest ? String(flags.characterization).trim() : '';
   const retestWeak = sub === 'red' && targetPassed && !!retest;
-  const weakRed = loadWeak || !!setupSym || !!charac || retestWeak;
+  // a `NAME = None` stub that the test calls fails with TypeError: that is the stub, not the behaviour (#279)
+  const noneStub = sub === 'red' && !flags['allow-setup-red'] && /TypeError: 'NoneType' object is not callable/.test(res.text);
+  const weakRed = loadWeak || !!setupSym || !!charac || retestWeak || noneStub;
   // human-approved code baseline follows the first implementation: refresh until the feature is fully Green (#92)
   const humanSpecs = sub === 'red' ? [] : loadSpecs().filter((x) => x.approval === 'human' && x.reqs.some((q) => t.refs.verifies.includes(q.id)));
   const wasDone = new Map(humanSpecs.map((x) => [x.feature, featureGreen(x)]));
@@ -3970,7 +3983,7 @@ function cmdTdd() {
   const movedDeps = sub === 'refactor' && lastGreen && lastGreen.fileSha !== after ? changedOracleDeps(lastGreen, t.path, id) : [];
   if (movedDeps.length) out(`⚠ ${id}: oracle dependency changed since the last Green${oracleNote(movedDeps).replace(/^ — oracle dependency changed/, '')} (the test's own region may be unchanged); a refactor does not prove the changed oracle can fail (no Red). If expectations changed, use tdd red/green instead (#239)`);
   else if (sub === 'refactor' && lastGreen && lastGreen.fileSha !== after) out(`⚠ ${id}: test body changed since the last Green (includes the file preamble: imports/includes/helpers); a refactor does not prove the new assertions can fail (no Red). If behaviour/assertions changed, use tdd red/green instead (#118)`);
-  out(`${sub.toUpperCase()} ok ${id} (${req}) ${res.ms}ms${reason ? ` — fails with: ${reason}` : ''}${charac ? ` — characterization: ${charac} (test passed)` : retestWeak ? ` — retest: ${retest} (test passed)` : ''}${weakRed ? ' [weak]' : ''}${setupSym ? ` ⚠ Red comes from setup call "${setupSym}", not the asserted behaviour (${typeof flags.expect === 'string' ? `--expect "${flags.expect}" names "${setupSym}" itself; use text from the asserted behaviour` : `use --expect <text> that does not name "${setupSym}"`}, or --allow-setup-red)` : ''}`);
+  out(`${sub.toUpperCase()} ok ${id} (${req}) ${res.ms}ms${reason ? ` — fails with: ${reason}` : ''}${charac ? ` — characterization: ${charac} (test passed)` : retestWeak ? ` — retest: ${retest} (test passed)` : ''}${weakRed ? ' [weak]' : ''}${noneStub ? ' ⚠ Red is a call of a `NAME = None` stub (TypeError): implement or stub it as a callable' : ''}${setupSym ? ` ⚠ Red comes from setup call "${setupSym}", not the asserted behaviour (${typeof flags.expect === 'string' ? `--expect "${flags.expect}" names "${setupSym}" itself; use text from the asserted behaviour` : `use --expect <text> that does not name "${setupSym}"`}, or --allow-setup-red)` : ''}`);
   if (sub === 'red' && res.exit !== 0 && typeof flags.characterization === 'string' && flags.characterization.trim()) out(`! --characterization ignored for ${id}: the test failed, so this is a normal Red (the flag only applies to a test that passes without implementation)`);
   if (sub === 'green') {
     const mine = new Set(t.refs.verifies), implFiles = [...ents.values()].filter((e) => e.kind === 'CODE' && e.refs.implements.some((r) => mine.has(r))).map((e) => e.path);

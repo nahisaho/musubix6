@@ -6889,3 +6889,19 @@ test('#270 Elixir stub: a module passed to start_supervised! is startable (use G
   assert.match(s, /use GenServer/, s);
   assert.match(s, /def start_link/, s);
 });
+
+test('#279 pytest stub: packages on a sibling pythonpath entry are not shadowed; stub classes grow methods; parametrized constants load', () => {
+  const d = stub10({
+    'core/src/crdt_core/__init__.py': '',
+    'core/src/crdt_core/hlc.py': 'class Clock:\n    pass\n',
+    'oplog/pytest.ini': '[pytest]\npythonpath = src ../core/src\n',
+    'oplog/src/oplog/__init__.py': '',
+    'oplog/tests/test_a.py': "import pytest\nfrom crdt_core.hlc import Clock\nfrom oplog.reg import Reg, SCHEMA\n\n@pytest.mark.parametrize('s', SCHEMA)\n# @id TEST-A-001\n# @verifies REQ-A-001\ndef test_a(s):\n    r = Reg()\n    r.merge(1)\n    assert Clock\n",
+  }, 'TEST-A-001');
+  assert.equal(fs.existsSync(path.join(d, 'oplog/src/crdt_core')), false);
+  const reg = path.join(d, 'oplog/src/oplog/reg.py');
+  assert.match(fs.readFileSync(reg, 'utf8'), /SCHEMA = \[\]/);
+  fs.writeFileSync(path.join(d, 'oplog/tests/test_a.py'), fs.readFileSync(path.join(d, 'oplog/tests/test_a.py'), 'utf8').replace('r.merge(1)', 'r.merge(1)\n    r.value()'));
+  sdd(d, 'tdd', 'stub', 'TEST-A-001');
+  assert.match(fs.readFileSync(reg, 'utf8'), /def value\(self/);
+});
