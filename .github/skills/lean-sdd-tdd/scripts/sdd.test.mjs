@@ -6651,3 +6651,44 @@ test('#266 impact REQ-X with only a bare comment hints at the missing @implement
   const r = sdd(d, 'impact', 'REQ-R-001');
   assert.match(r.out, /bare comment/, r.out);
 });
+
+// ---- wave 10 (#269/#270) ----
+const stub10 = (files, id) => {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-w10-'));
+  spawnSync('git', ['init', '-q'], { cwd: d });
+  fs.mkdirSync(path.join(d, '.sdd/specs'), { recursive: true });
+  for (const [f, c] of Object.entries(files)) { fs.mkdirSync(path.dirname(path.join(d, f)), { recursive: true }); fs.writeFileSync(path.join(d, f), c); }
+  sdd(d, 'init');
+  if (files['mix.exs']) fs.rmSync(path.join(d, 'package.json'), { force: true });
+  sdd(d, 'tdd', 'stub', id);
+  return d;
+};
+
+test('#269 TS stub: a name ending in Error that is only called as a function stays a function', () => {
+  const d = stub10({
+    'sdk.test.ts': "import { mapError, NotFoundError } from './sdk';\n\n// @id TEST-S-001\n// @verifies REQ-S-001\ntest('s', () => {\n  const e = mapError(404, 'x');\n  expect(e instanceof NotFoundError).toBe(true);\n});\n",
+  }, 'TEST-S-001');
+  const s = fs.readFileSync(path.join(d, 'sdk.ts'), 'utf8');
+  assert.match(s, /export function mapError/, s);
+  assert.match(s, /export class NotFoundError extends Error/, s);
+});
+
+test('#269 pytest stub: methods called on a fixture-provided instance are added to the class', () => {
+  const d = stub10({
+    'tests/test_agg.py': "import pytest\nfrom winlib.agg import Agg\n\n@pytest.fixture\ndef agg():\n    return Agg()\n\n# @id TEST-AGG-001\n# @verifies REQ-AGG-001\ndef test_agg_001(agg):\n    agg.process(1)\n    assert agg.flush() == []\n",
+  }, 'TEST-AGG-001');
+  const s = fs.readFileSync(path.join(d, 'winlib/agg.py'), 'utf8');
+  assert.match(s, /def process\(self/, s);
+  assert.match(s, /def flush\(self/, s);
+});
+
+test('#270 Elixir stub: a module passed to start_supervised! is startable (use GenServer => child_spec/1)', () => {
+  const d = stub10({
+    'mix.exs': 'defmodule C.MixProject do\n  use Mix.Project\n  def project, do: [app: :c, version: "0.1.0", deps: []]\nend\n',
+    'test/test_helper.exs': 'ExUnit.start()\n',
+    'test/c_test.exs': 'defmodule CTest do\n  use ExUnit.Case\n\n  # @id TEST-C-001\n  # @verifies REQ-C-001\n  test "c" do\n    pid = start_supervised!({Cache, name: nil})\n    assert is_pid(pid)\n  end\nend\n',
+  }, 'TEST-C-001');
+  const s = fs.readFileSync(path.join(d, 'lib/cache.ex'), 'utf8');
+  assert.match(s, /use GenServer/, s);
+  assert.match(s, /def start_link/, s);
+});

@@ -2389,6 +2389,8 @@ function methodsOf(src, cls, strict = false) {
         if (els.length === 1) { const e = els[0], hs = hl.join('\n'); const c = /^([A-Z][\w$]*)\s*\(/.exec(e)?.[1] ?? (/^[\w$]+$/.test(e) ? new RegExp(`\\b${e}\\s*(?::[^=\\n]+)?=\\s*(?:await\\s+)?(?:new\\s+)?([A-Z][\\w$]*)\\s*\\(`).exec(hs)?.[1] : undefined); if (c && c !== cls) continue; }
       }
     }
+    // a pytest fixture `@pytest.fixture def agg(): return Agg()` is the instance itself inside tests that take `agg` as a parameter
+    if (new RegExp(`@(?:pytest\\.)?fixture[^\\n]*\\n\\s*def\\s+${h}\\b`).test(src)) for (const m of src.matchAll(new RegExp(`(?<![\\w$.])${h}\\s*\\.\\s*([A-Za-z_]\\w*)\\s*\\(`, 'g'))) out.add(m[1]);
     for (const m of src.matchAll(new RegExp(`\\b${h}\\s*\\([^()]*\\)\\s*(?:\\.\\s*[A-Za-z_$][\\w$]*\\s*)?\\.\\s*([A-Za-z_$][\\w$]*)\\s*\\(`, 'g'))) out.add(m[1]);
     for (const m of src.matchAll(new RegExp(`^\\s*(?:(?:const|let|var)\\s+)?[\\[{(]?\\s*([\\w$]+(?:\\s*[,:]\\s*[\\w$]+)*)\\s*[\\]})]?\\s*(?::[^=\\n]+)?=\\s*(?:await\\s+)?${h}\\s*\\(`, 'gm'))) { const lhs = m[0].split('=')[0]; if (sutKeys?.length && /\{/.test(lhs)) { for (const e of lhs.replace(/^[^{]*\{/, '').replace(/\}[^}]*$/, '').split(',')) { const kv = /^\s*([\w$]+)\s*(?::\s*([\w$]+))?\s*$/.exec(e); if (kv && sutKeys.includes(kv[1])) vars.push(kv[2] ?? kv[1]); } continue; } const names = m[1].split(/\s*[,:]\s*/).filter((x) => x && x !== '_'); vars.push(...(sutIdx >= 0 && names.length === slots && !/[{:]/.test(lhs) ? [names[sutIdx]] : names)); }
   }
@@ -2672,6 +2674,9 @@ function stubEx(testPath, scoped, add, made) {
     }
     structs.set(mod, keys);
   }
+  // `start_supervised!({Mod, opts})` needs Mod.child_spec/1 (via `use GenServer`) and start_link/1
+  const supervised = new Set([...code.matchAll(/\bstart_supervised!?\(\s*\{?\s*([A-Z][\w.]*)/g)].map((m) => resolve(m[1])));
+  for (const m of supervised) mods.add(m);
   const local = new Set([...code.matchAll(/\bdef(?:p|macro)?\s+([a-z_]\w*[!?]?)/g)].map((m) => m[1]));
   const RESERVED = /^(?:assert|refute|assert_\w+|refute_\w+|test|describe|setup|setup_all|on_exit|doctest|def|defp|defmodule|defmacro|if|unless|case|cond|with|for|fn|raise|reraise|throw|catch|rescue|try|receive|quote|unquote|import|alias|use|require|elem|length|hd|tl|is_\w+|inspect|to_string|spawn\w*|send|self|apply|put_elem|abs|div|rem|round|trunc|max|min|not|and|or|struct|sigil_\w|tag|capture_\w+|start_supervised!?|stop_supervised!?|flunk|raise)$/;
   for (const mod of imported) for (const m of code.matchAll(/(?<![\w.:@&])([a-z_]\w*[!?]?)\(/g)) if (!RESERVED.test(m[1]) && !local.has(m[1])) addDef(mod, m[1], arityAt(m.index + m[0].length));
@@ -2694,8 +2699,9 @@ function stubEx(testPath, scoped, add, made) {
     const want = [...(defs.get(mod)?.values() ?? [])];
     // `use Mod` calls Mod.__using__/1, so the module needs that macro to compile (#214)
     if (used.has(mod)) want.push({ f: '__using__', arity: 1, macro: true });
-    if (!want.length && !needed.has(mod) && !defined.has(mod) && !structs.has(mod)) continue;
+    if (!want.length && !needed.has(mod) && !supervised.has(mod) && !defined.has(mod) && !structs.has(mod)) continue;
     const fields = structs.get(mod);
+    if (supervised.has(mod) && !want.some((d) => d.f === 'start_link')) want.push({ f: 'start_link', arity: 1 });
     const structDef = fields ? `  defstruct [${[...fields].map((k) => `:${k}`).join(', ')}]\n` : '';
     const stubOf = ({ f, arity, macro }) => !macro && fields && f === 'new' ? `  def new(${Array.from({ length: arity }, (_, i) => `_a${i + 1}`).join(', ')}), do: %__MODULE__{}\n` : macro ? `  defmacro ${f}(_opts) do\n    quote do\n    end\n  end\n` : `  def ${f}(${Array.from({ length: arity }, (_, i) => `_a${i + 1}`).join(', ')}), do: raise("not implemented: ${f}")\n`;
     if (defined.has(mod)) {
@@ -2717,7 +2723,7 @@ function stubEx(testPath, scoped, add, made) {
     }
     const file = path.join(root, 'lib', ...mod.split('.').map((p) => p.replace(/([a-z0-9])([A-Z])/g, '$1_$2').toLowerCase())) + '.ex';
     if (fs.existsSync(file)) { unresolved.push(`${mod} in ${rel(file)}`); continue; }
-    add(file, `defmodule ${mod} do\n${structDef}${want.map(stubOf).join('')}end\n`);
+    add(file, `defmodule ${mod} do\n${supervised.has(mod) ? '  use GenServer\n' : ''}${structDef}${want.map(stubOf).join('')}end\n`);
   }
   return Object.assign([...new Set(made)], { realMissing: unresolved.length ? unresolved : undefined });
 }
@@ -2748,8 +2754,10 @@ function stubFor(testPath, id) {
   };
   // static methods the test calls on an imported class: `Foo.create(` (#128)
   const staticsOf = (S, n) => [...new Set([...S.matchAll(new RegExp(`(?<![\\w$.])${n.replace(/\$/g, '\\$')}\\s*\\.\\s*([A-Za-z_$][\\w$]*)\\s*\\(`, 'g'))].map((m) => m[1]))].filter((k) => !/^(then|catch|toString|valueOf|call|apply|bind|constructor)$/.test(k));
+  // `mapError(404)` without `new`/`instanceof`/`extends` is a function even when its name ends in Error
+  const calledAsFn = (S, n) => new RegExp(`(?<!new\\s+)(?<![\\w$.])${n.replace(/\$/g, '\\$')}\\s*\\(`).test(S) && !new RegExp(`\\b(?:new|extends|instanceof)\\s+${n.replace(/\$/g, '\\$')}\\b`).test(S);
   const isError = (S, n) => {
-    if (/(Error|Exception)$/.test(n) || new RegExp(`\\b(?:toThrow|toThrowError)\\(\\s*${n}\\s*\\)`).test(S)) return true;
+    if ((/(Error|Exception)$/.test(n) && !calledAsFn(S, n)) || new RegExp(`\\b(?:toThrow|toThrowError)\\(\\s*${n}\\s*\\)`).test(S)) return true;
     for (const m of S.matchAll(/\b(?:throws|rejects)\s*\(/g)) {
       let depth = 1, quote = '';
       for (let i = m.index + m[0].length; i < S.length && depth; i++) {
