@@ -3919,10 +3919,7 @@ function cmdTdd() {
   const movedDeps = sub === 'refactor' && lastGreen && lastGreen.fileSha !== after ? changedOracleDeps(lastGreen, t.path, id) : [];
   if (movedDeps.length) out(`⚠ ${id}: oracle dependency changed since the last Green${oracleNote(movedDeps).replace(/^ — oracle dependency changed/, '')} (the test's own region may be unchanged); a refactor does not prove the changed oracle can fail (no Red). If expectations changed, use tdd red/green instead (#239)`);
   else if (sub === 'refactor' && lastGreen && lastGreen.fileSha !== after) out(`⚠ ${id}: test body changed since the last Green (includes the file preamble: imports/includes/helpers); a refactor does not prove the new assertions can fail (no Red). If behaviour/assertions changed, use tdd red/green instead (#118)`);
-<<<<<<< HEAD
   out(`${sub.toUpperCase()} ok ${id} (${req}) ${res.ms}ms${reason ? ` — fails with: ${reason}` : ''}${charac ? ` — characterization: ${charac} (test passed)` : retestWeak ? ` — retest: ${retest} (test passed)` : ''}${weakRed ? ' [weak]' : ''}${setupSym ? ` ⚠ Red comes from setup call "${setupSym}", not the asserted behaviour (use --expect <text> that does not name "${setupSym}", or --allow-setup-red)` : ''}`);
-=======
-  out(`${sub.toUpperCase()} ok ${id} (${req}) ${res.ms}ms${reason ? ` — fails with: ${reason}` : ''}${charac ? ` — characterization: ${charac} (test passed)` : retestWeak ? ` — retest: ${retest} (test passed)` : ''}${weakRed ? ' [weak]' : ''}${setupSym ? ` ⚠ Red comes from setup call "${setupSym}", not the asserted behaviour (use --expect <text> or --allow-setup-red)` : ''}`);
   if (sub === 'green') {
     const mine = new Set(t.refs.verifies), implFiles = [...ents.values()].filter((e) => e.kind === 'CODE' && e.refs.implements.some((r) => mine.has(r))).map((e) => e.path);
     const mtime = (f) => { try { return fs.statSync(path.join(ROOT, f)).mtimeMs; } catch { return 0; } };
@@ -3934,7 +3931,6 @@ function cmdTdd() {
     });
     if (stale.length) out(`⚠ implementation shared with other REQs changed since their Green: ${stale.slice(0, 5).map((e) => e.id).join(', ')}${stale.length > 5 ? `, … +${stale.length - 5}` : ''} — re-run them (tdd refactor <ID>) or the project tests; their evidence is not re-checked automatically`);
   }
->>>>>>> fix/r9d
   if (retestWeak && prior.some((e) => e.type === 'red' && !e.weak && !e.retest)) out(`! --retest passed against the current implementation, so the earlier strong Red of ${id} is superseded by a weak Red; to keep failing-Red evidence, temporarily break the implementation and re-run \`tdd red ${id} --retest\``);
   return 0;
 }
