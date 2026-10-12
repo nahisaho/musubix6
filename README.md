@@ -77,8 +77,21 @@ $S --root <app> tdd green TEST-F-001
 $S --root <app> gate
 ```
 
+### Install from npm
+
+```bash
+npm install -g musubix6        # or: npx musubix6 init
+musubix6 init [dir]            # copy skills into <dir>/.github/skills (--force, --only a,b)
+musubix6 list                  # bundled skills
+musubix6 sdd gate              # run the lean-sdd-tdd CLI
+```
+
 To install per-user instead of per repository, copy the skill directories to
 `~/.copilot/skills/`.
+
+## Tutorial
+
+A Japanese walkthrough (interview → spec → TDD → follow-up feature → manual) is in [`docs/tutorial-app-development-1.md`](docs/tutorial-app-development-1.md).
 
 ## Tests
 

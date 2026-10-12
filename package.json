@@ -1,0 +1,27 @@
+{
+  "name": "musubix6",
+  "version": "0.1.0",
+  "description": "Spec-driven (SDD) and test-driven (TDD) agent skills for GitHub Copilot CLI: lean-sdd-tdd, sdd-spec-interview, sdd-reverse-spec, tech-writer, japanese-prose and more.",
+  "type": "module",
+  "bin": {
+    "musubix6": "bin/musubix6.mjs"
+  },
+  "files": [
+    "bin",
+    ".github/skills",
+    "README.md",
+    "README-ja.md"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "keywords": ["sdd", "tdd", "ears", "copilot", "agent-skills"],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nahisaho/musubix6.git"
+  },
+  "homepage": "https://github.com/nahisaho/musubix6#readme",
+  "bugs": {
+    "url": "https://github.com/nahisaho/musubix6/issues"
+  }
+}
