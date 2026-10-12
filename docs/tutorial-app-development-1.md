@@ -478,16 +478,18 @@ v24.21.0
 
 > **再検証(2026-10-12、wslc 3.0.3.0)**: `docker.io/library/node:24-alpine` を取得でき、8.1 の Dockerfile のままビルドできました。次の 2 点も確認できました。
 >
-> - `--entrypoint node` で `--test test/todo.test.mjs` を実行すると、コンテナー内のテストが通る
+> - コンテナー内で `node --test test/todo.test.mjs` を実行すると、テストが通る
 > - `-v` のボリュームに、`add` の結果が次の起動まで残る
->
-> `network is unreachable` は再現しませんでした。追加で、次を確認しています。
->
-> - `node`、`python`、`golang`、`busybox` の 4 イメージを、削除してから取得し直しても成功した
-> - コンテナー内から `registry-1.docker.io` を IPv4 で引け、HTTPS で到達できた(認証前の 401 が返る)
+
+`network is unreachable` は再現しませんでした。追加の確認は次のとおりです。
+
+> - `node`、`python`、`golang`、`busybox` の 4 イメージを削除し、取得し直しても成功した
+> - コンテナー内から、レジストリ `registry-1.docker.io` に IPv4 と HTTPS で到達できた(認証前なので 401 が返る)
 > - `--no-cache` でビルドし直しても成功した
 >
-> 失敗の原因は、当時のネットワークの状態だったと考えられます。まず 8.1 を試し、`network is unreachable` が出たときだけ 8.2 に進んでください。
+> 失敗の原因は、当時のネットワークの状態だったと考えられます。
+>
+> まず 8.1 を試してください。`network is unreachable` が出たときだけ、8.2 に進みます。
 
 #### 8.3 コンテナー内でテストを実行する
 
