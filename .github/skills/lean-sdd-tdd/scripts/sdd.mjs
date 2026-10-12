@@ -5018,7 +5018,13 @@ function cmdGate() {
     return [...out];
   };
   // a changed config `artifacts` file is in scope for the project that holds one of its consumers (#308)
-  const artConsumers = (f) => { const u = Object.entries(cfg.artifacts ?? {}).find(([a]) => normDep(a) === f)?.[1]; return u === undefined ? [] : [].concat(u).map(normDep); };
+  // a root Cargo.toml/Cargo.lock of a workspace whose members live under a project dir belongs to that project (#308)
+  const cargoOwned = (f) => {
+    if (!/(^|\/)Cargo\.(toml|lock)$/.test(f)) return [];
+    const dir = path.posix.dirname(f);
+    try { const m = /^\s*members\s*=\s*\[([^\]]*)\]/m.exec(fs.readFileSync(path.join(ROOT, dir === '.' ? '' : dir, 'Cargo.toml'), 'utf8')); return m ? [...m[1].matchAll(/["']([^"']+)["']/g)].map((x) => normDep(path.posix.join(dir, x[1]))) : []; } catch { return []; }
+  };
+  const artConsumers = (f) => { const u = Object.entries(cfg.artifacts ?? {}).find(([a]) => normDep(a) === f)?.[1]; return [...(u === undefined ? [] : [].concat(u).map(normDep)), ...cargoOwned(f)]; };
   const allChecks = [...(cfg.checks ?? []), ...(cfg.projects ?? []).flatMap((p) => (p.checks ?? []).map((c) => ({ ...c, name: `${p.root}:${c.name}`, cwd: p.root, dependsOn: depClosure(p) })))];
   let sharedHinted = false;
   // a changed spec puts the projects holding that feature's tests/code in scope; the project check then runs in full
