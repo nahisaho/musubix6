@@ -6314,3 +6314,65 @@ test('#242 impact traverses non-code artifacts declared in config.artifacts', ()
   const j = JSON.parse(sdd(d, 'impact', 'contract/c.json', '--json').out);
   assert.ok(j.reachedFiles.includes('src/a.ts'), JSON.stringify(j));
 });
+
+const ex256Spec = '---\nfeature: e\ntier: T1\n---\n| REQ-E-001 | parse shall hold. | TEST-E-001 |\n| REQ-E-002 | helper shall hold. | TEST-E-002 |\n| REQ-E-003 | json shall hold. | TEST-E-003 |\n';
+const ex256 = (extra = {}) => ({
+  'mix.exs': exFiles['mix.exs'],
+  'test/test_helper.exs': 'ExUnit.start()\n',
+  'lib/d/calc.ex': '# @id CODE-E-001-STUB-001 @implements REQ-E-001\ndefmodule D.Calc do\n  def parse(_a1), do: raise("not implemented: parse")\n  def new(_a1), do: raise("not implemented: new")\n  def other(_a1), do: 1\n  def from_json(_a1), do: raise(\"not implemented: from_json\")\nend\n',
+  'test/d_test.exs': 'defmodule DTest do\n  use ExUnit.Case\n  alias D.Calc\n\n  # @id TEST-E-001\n  # @verifies REQ-E-001\n  test "parse" do\n    assert {:ok, 1} = Calc.parse("1")\n  end\n\n  # @id TEST-E-002\n  # @verifies REQ-E-002\n  test "helper" do\n    room()\n    assert Calc.other(2) == 1\n  end\n\n  # @id TEST-E-003\n  # @verifies REQ-E-003\n  test "json" do\n    path = Path.join("test", "test_helper.exs")\n    assert {:ok, %{type: "D"}} = Calc.from_json(File.read!(path))\n  end\n\n  defp room, do: Calc.new(1)\nend\n',
+  ...extra,
+});
+
+test('#256 ExUnit: pattern-match assert on the subject is not a setup Red; helper setup Red is weak; --expect naming the setup call stays weak', { skip: !HAS_MIX }, () => {
+  const d = mini(ex256Spec, ex256(), ['mix', 'test', '{file}']);
+  const a = sdd(d, 'tdd', 'red', 'TEST-E-001');
+  assert.match(a.out, /RED ok/, a.out);
+  assert.doesNotMatch(a.out, /\[weak\]/, a.out);
+  const b = sdd(d, 'tdd', 'red', 'TEST-E-002');
+  assert.match(b.out, /setup call "new"/, b.out);
+  const c = sdd(d, 'tdd', 'red', 'TEST-E-002', '--expect', 'not implemented: new');
+  assert.match(c.out, /setup call "new"/, c.out);
+  const f = sdd(d, 'tdd', 'red', 'TEST-E-003');
+  assert.match(f.out, /RED ok/, f.out);
+  assert.doesNotMatch(f.out, /\[weak\]/, f.out);
+  const e = sdd(d, 'tdd', 'red', 'TEST-E-002', '--expect', 'not implemented');
+  assert.doesNotMatch(e.out, /setup call/, e.out);
+});
+
+test('#257 TS stub: a value stub for an imported class is upgraded on re-run; instance .apply() is stubbed', () => {
+  const spec = '---\nfeature: r\ntier: T1\n---\n| REQ-R-001 | x shall work. | TEST-R-001 |\n| REQ-R-002 | y shall work. | TEST-R-002 |\n';
+  const imp = 'import { Rep, LWW } from "../src/rep.ts";\n';
+  const d = mini(spec, { 'test/a.test.ts': `${imp}/** @id TEST-R-001 @verifies REQ-R-001 */\ntest("a", () => { const r = new Rep(); r.apply(1); });\n`, 'src/rep.ts': 'export class Rep {\n  constructor(..._args: any[]) {}\n}\n\nexport const LWW: any = undefined;\n' });
+  sdd(d, 'tdd', 'stub', 'TEST-R-001');
+  assert.match(fs.readFileSync(path.join(d, 'src/rep.ts'), 'utf8'), /apply\(\.\.\._args/);
+  fs.appendFileSync(path.join(d, 'test/a.test.ts'), '/** @id TEST-R-002 @verifies REQ-R-002 */\ntest("b", () => { new LWW(1).merge(2); });\n');
+  sdd(d, 'tdd', 'stub', 'TEST-R-002');
+  const s = fs.readFileSync(path.join(d, 'src/rep.ts'), 'utf8');
+  assert.match(s, /export class LWW/, s);
+  assert.doesNotMatch(s, /LWW: any = undefined/, s);
+  assert.match(s, /merge\(\.\.\._args/, s);
+});
+
+test('#257 ExUnit stub: path-dep modules are not shadowed; %Mod{} gets defstruct; a new arity of a stubbed name is added', { skip: !HAS_MIX }, () => {
+  const spec = '---\nfeature: e\ntier: T1\n---\n| REQ-E-001 | x shall hold. | TEST-E-001 |\n| REQ-E-002 | y shall hold. | TEST-E-002 |\n';
+  const d = mini(spec, {
+    'store/mix.exs': 'defmodule S.MixProject do\n  use Mix.Project\n  def project, do: [app: :s, version: "0.1.0", deps: []]\nend\n',
+    'store/lib/s/mem.ex': 'defmodule S.Mem do\n  def put(a, b), do: {a, b}\nend\n',
+    'app/mix.exs': 'defmodule A.MixProject do\n  use Mix.Project\n  def project, do: [app: :a, version: "0.1.0", deps: [{:s, path: "../store"}]]\nend\n',
+    'app/test/test_helper.exs': 'ExUnit.start()\n',
+    'app/test/a_test.exs': 'defmodule ATest do\n  use ExUnit.Case\n  alias S.Mem\n  alias A.Ev\n\n  # @id TEST-E-001\n  # @verifies REQ-E-001\n  test "x" do\n    assert {1, 2} = Mem.put(1, 2)\n    assert %Ev{id: 1, kind: "k"} = Ev.make(1)\n  end\nend\n',
+  }, ['mix', 'test', '{file}']);
+  sdd(d, 'tdd', 'stub', 'TEST-E-001');
+  assert.ok(!fs.existsSync(path.join(d, 'app/lib/s/mem.ex')), 'path dep module must not be stubbed');
+  const ev = fs.readFileSync(path.join(d, 'app/lib/a/ev.ex'), 'utf8');
+  assert.match(ev, /defstruct \[:id, :kind\]/, ev);
+  assert.match(ev, /def make\(_a1\)/, ev);
+  fs.appendFileSync(path.join(d, 'app/test/a_test.exs'), '');
+  const t = fs.readFileSync(path.join(d, 'app/test/a_test.exs'), 'utf8').replace(/end\n$/, '\n  # @id TEST-E-002\n  # @verifies REQ-E-002\n  test "y" do\n    assert Ev.make(1, 2) == nil\n  end\nend\n');
+  fs.writeFileSync(path.join(d, 'app/test/a_test.exs'), t);
+  sdd(d, 'tdd', 'stub', 'TEST-E-002');
+  const ev2 = fs.readFileSync(path.join(d, 'app/lib/a/ev.ex'), 'utf8');
+  assert.match(ev2, /def make\(_a1\)/, ev2);
+  assert.match(ev2, /def make\(_a1, _a2\)/, ev2);
+});

@@ -2325,7 +2325,7 @@ function methodsOf(src, cls, strict = false) {
   // `new Foo<T>(..)` is `new Foo(..)` (#151)
   src = src.replace(/\b(new\s+[\w$]+)\s*<[^<>()]*(?:<[^<>()]*>[^<>()]*)*>\s*\(/g, '$1(');
   const out = new Set();
-  const skip = /^(assert\w*|then|catch|toString|valueOf|constructor|call|apply|bind)$/;
+  const skip = /^(assert\w*|then|catch|toString|valueOf|constructor|call|bind)$/;
   for (const m of src.matchAll(new RegExp(`(?:new\\s+)?\\b${cls}\\s*\\([^()]*\\)\\s*\\.\\s*([A-Za-z_$][\\w$]*)\\s*\\(`, 'g'))) out.add(m[1]);
   const directCtor = (text, start) => {
     let depth = 1, i = start, quote = '';
@@ -2643,6 +2643,23 @@ function stubEx(testPath, scoped, add, made) {
   };
   const addDef = (mod, f, arity) => { mods.add(mod); if (!defs.has(mod)) defs.set(mod, new Map()); const d = defs.get(mod); d.set(`${f}/${arity}`, { f, arity }); };
   for (const m of code.matchAll(/(?<![\w.:])([A-Z]\w*(?:\.[A-Z]\w*)*)\.([a-z_]\w*[!?]?)\(/g)) { needed.add(resolve(m[1])); addDef(resolve(m[1]), m[2], arityAt(m.index + m[0].length) + (/\|>\s*$/.test(code.slice(0, m.index)) ? 1 : 0)); }
+  // `%Mod{k: ..}` patterns/literals need `Mod` to define a struct with those keys (#257)
+  const structs = new Map();
+  for (const m of code.matchAll(/%([A-Z][\w.]*)\{/g)) {
+    const mod = resolve(m[1]);
+    mods.add(mod);
+    const keys = structs.get(mod) ?? new Set();
+    for (let i = m.index + m[0].length, depth = 1, itemStart = true, q = ''; i < code.length && depth > 0; i++) {
+      const c = code[i];
+      if (q) { if (c === '\\') i++; else if (c === q) q = ''; continue; }
+      if (c === '"' || c === "'") q = c;
+      else if (/[([{]/.test(c)) depth++;
+      else if (/[)\]}]/.test(c)) depth--;
+      else if (depth === 1 && c === ',') itemStart = true;
+      else if (depth === 1 && itemStart && !/\s/.test(c)) { itemStart = false; const k = /^([a-z_]\w*):(?!:)/.exec(code.slice(i)); if (k) keys.add(k[1]); }
+    }
+    structs.set(mod, keys);
+  }
   const local = new Set([...code.matchAll(/\bdef(?:p|macro)?\s+([a-z_]\w*[!?]?)/g)].map((m) => m[1]));
   const RESERVED = /^(?:assert|refute|assert_\w+|refute_\w+|test|describe|setup|setup_all|on_exit|doctest|def|defp|defmodule|defmacro|if|unless|case|cond|with|for|fn|raise|reraise|throw|catch|rescue|try|receive|quote|unquote|import|alias|use|require|elem|length|hd|tl|is_\w+|inspect|to_string|spawn\w*|send|self|apply|put_elem|abs|div|rem|round|trunc|max|min|not|and|or|struct|sigil_\w|tag|capture_\w+|start_supervised!?|stop_supervised!?|flunk|raise)$/;
   for (const mod of imported) for (const m of code.matchAll(/(?<![\w.:@&])([a-z_]\w*[!?]?)\(/g)) if (!RESERVED.test(m[1]) && !local.has(m[1])) addDef(mod, m[1], arityAt(m.index + m[0].length));
@@ -2650,6 +2667,8 @@ function stubEx(testPath, scoped, add, made) {
   const defined = new Map();
   const walk = (d) => { for (const e of fs.existsSync(d) ? fs.readdirSync(d, { withFileTypes: true }) : []) { const p = path.join(d, e.name); if (e.isDirectory()) { if (!/^(?:_build|deps|\.git|node_modules)$/.test(e.name)) walk(p); } else if (/\.exs?$/.test(e.name) && p !== path.join(ROOT, testPath)) for (const m of fs.readFileSync(p, 'utf8').matchAll(/\bdefmodule\s+([A-Z][\w.]*)/g)) defined.set(m[1], p); } };
   walk(root);
+  // modules of `path:` dependencies in mix.exs live in the dependency, never in a stub here (#257)
+  if (fs.existsSync(path.join(root, 'mix.exs'))) for (const m of fs.readFileSync(path.join(root, 'mix.exs'), 'utf8').matchAll(/\bpath:\s*"([^"]+)"/g)) { const dep = path.resolve(root, m[1]); if (dep !== root && fs.existsSync(dep)) walk(dep); }
   // umbrella: modules owned by a sibling app are defined too
   for (let up = path.dirname(root); up.startsWith(ROOT) && up !== root; up = path.dirname(up)) {
     const mx = path.join(up, 'mix.exs');
@@ -2663,20 +2682,26 @@ function stubEx(testPath, scoped, add, made) {
     const want = [...(defs.get(mod)?.values() ?? [])];
     // `use Mod` calls Mod.__using__/1, so the module needs that macro to compile (#214)
     if (used.has(mod)) want.push({ f: '__using__', arity: 1, macro: true });
-    if (!want.length && !needed.has(mod) && !defined.has(mod)) continue;
-    const stubOf = ({ f, arity, macro }) => macro ? `  defmacro ${f}(_opts) do\n    quote do\n    end\n  end\n` : `  def ${f}(${Array.from({ length: arity }, (_, i) => `_a${i + 1}`).join(', ')}), do: raise("not implemented: ${f}")\n`;
+    if (!want.length && !needed.has(mod) && !defined.has(mod) && !structs.has(mod)) continue;
+    const fields = structs.get(mod);
+    const structDef = fields ? `  defstruct [${[...fields].map((k) => `:${k}`).join(', ')}]\n` : '';
+    const stubOf = ({ f, arity, macro }) => !macro && fields && f === 'new' ? `  def new(${Array.from({ length: arity }, (_, i) => `_a${i + 1}`).join(', ')}), do: %__MODULE__{}\n` : macro ? `  defmacro ${f}(_opts) do\n    quote do\n    end\n  end\n` : `  def ${f}(${Array.from({ length: arity }, (_, i) => `_a${i + 1}`).join(', ')}), do: raise("not implemented: ${f}")\n`;
     if (defined.has(mod)) {
       const file = defined.get(mod), text = fs.readFileSync(file, 'utf8');
       const have = new Set([...text.matchAll(/\b(?:def|defp|defmacro|defdelegate)\s+([a-z_]\w*[!?]?)/g)].map((m) => m[1]));
-      const missing = want.filter((d) => !have.has(d.f));
-      if (!missing.length) continue;
-      if ((/not implemented: /.test(text) || (/@id CODE-\S*-STUB-/.test(text) && !/\bdef/.test(text))) && /\bend\s*$/.test(text)) { fs.writeFileSync(file, text.replace(/\bend\s*$/, `\n${missing.map(stubOf).join('')}end\n`)); made.push(rel(file)); }
+      const isStub = (/not implemented: /.test(text) || (/@id CODE-\S*-STUB-/.test(text) && !/\bdef/.test(text))) && /\bend\s*$/.test(text);
+      // a stub-only module also needs every arity the test calls (#257)
+      const haveAr = new Set([...text.matchAll(/\bdef\s+([a-z_]\w*[!?]?)(?:\(([^)]*)\))?/g)].map((m) => `${m[1]}/${m[2]?.trim() ? m[2].split(',').length : 0}`));
+      const missing = want.filter((d) => isStub && !/\\\\/.test(text) && !d.macro ? !haveAr.has(`${d.f}/${d.arity}`) : !have.has(d.f));
+      const needStruct = structDef && !/\bdefstruct\b/.test(text);
+      if (!missing.length && !(needStruct && isStub)) continue;
+      if (isStub) { const withStruct = needStruct ? text.replace(/(\bdefmodule\s+[A-Z][\w.]*\s+do\n)/, `$1${structDef}`) : text; fs.writeFileSync(file, withStruct.replace(/\bend\s*$/, `\n${missing.map(stubOf).join('')}end\n`)); made.push(rel(file)); }
       else unresolved.push(`${missing.map((d) => d.f).join(', ')} in ${rel(file)}`);
       continue;
     }
     const file = path.join(root, 'lib', ...mod.split('.').map((p) => p.replace(/([a-z0-9])([A-Z])/g, '$1_$2').toLowerCase())) + '.ex';
     if (fs.existsSync(file)) { unresolved.push(`${mod} in ${rel(file)}`); continue; }
-    add(file, `defmodule ${mod} do\n${want.map(stubOf).join('')}end\n`);
+    add(file, `defmodule ${mod} do\n${structDef}${want.map(stubOf).join('')}end\n`);
   }
   return Object.assign([...new Set(made)], { realMissing: unresolved.length ? unresolved : undefined });
 }
@@ -2838,6 +2863,11 @@ function stubFor(testPath, id) {
     const add2 = named.filter((x) => !has(x)).map((n) => exportOf(n, S));
     if (ts) for (const n of types.filter((x) => !has(x))) add2.push(`export type ${n} = any;\n`);
     let changed = false;
+    // an earlier value stub (`export const X: any = undefined;` / Proxy) of a name the test now constructs becomes a class (#257)
+    for (const n of named) {
+      const val = new RegExp(`^export const ${n}(?:: any)? = (?:undefined;|new Proxy\\(function \\(\\) \\{\\}, \\{[\\s\\S]*?\\n\\}\\);)\\n`, 'm');
+      if (isCls(S, n) && val.test(cur)) { cur = cur.replace(val, () => exportOf(n, S)); changed = true; }
+    }
     for (const n of [...named, def].filter((x) => x && has(x))) {
       const cm = new RegExp(`\\bclass\\s+${n}\\b[^{]*\\{`).exec(cur);
       if (!cm) continue;
@@ -2903,6 +2933,14 @@ function stubFor(testPath, id) {
 }
 
 // body of the test annotated with `@id <id>` (up to the next @id), as lines
+// ExUnit: the last test of a module ends at its own `end`, not at EOF (helpers `defp` after it are outside the test)
+function exClamp(ls, start, end) {
+  const t = ls.findIndex((l, i) => i > start && i < end && /^\s*test\s+"/.test(l));
+  if (t < 0) return end;
+  const ind = /^\s*/.exec(ls[t])[0].length;
+  for (let i = t + 1; i < end; i++) if (/^\s*end\b/.test(ls[i]) && /^\s*/.exec(ls[i])[0].length === ind) return i + 1;
+  return end;
+}
 function testBody(testPath, id) {
   const ls = fs.readFileSync(path.join(ROOT, testPath), 'utf8').split('\n');
   if (/\.py$/.test(testPath)) {
@@ -2913,6 +2951,7 @@ function testBody(testPath, id) {
   if (start < 0) return [];
   let end = ls.findIndex((l, i) => i > start && /@id\s/.test(l));
   if (end < 0) end = ls.length;
+  if (/\.exs$/.test(testPath)) end = exClamp(ls, start, end);
   return ls.slice(start, end);
 }
 const ASSERT_LINE = /(expect\s*\(|\b(?:Assert|CollectionAssert|StringAssert|FileAssert)\.\w+|\.Should\(|\bASSERT\w*\s*\(|\bCHECK\w*\s*\(|\bEXPECT\w*\s*\(|\bassert|raises|toThrow|\.should|assertEquals|@test(?:_throws)?\b|expect_|\bif\b.*[!=]=|t\.(Error|Fatal))/;
@@ -2970,6 +3009,7 @@ function setupOrigin(line, testPath, id, text = '') {
   const start = all.findIndex((l) => new RegExp(`@id\\s+${id}\\b`).test(l));
   let end = all.findIndex((l, i) => i > start && /@id\s/.test(l));
   if (end < 0) end = all.length;
+  if (/\.exs$/.test(testPath)) end = exClamp(all, start, end);
   const inA = new Array(start).fill(false).concat(markAsserts(all.slice(start, end)));
   // a bare `eng.run()` statement is the act only when the assertions inspect state rather than call other code (otherwise a stubbed call before them is setup)
   const isBareAct = (l) => {
@@ -3003,7 +3043,7 @@ function setupOrigin(line, testPath, id, text = '') {
   // the stub is hit inside a helper defined outside the test: the test's calls to that helper are setup unless its result is asserted (#106)
   let helperAsserted = false;
   const helperVerdict = () => {
-    const DEF = /^\s*(?:pub\s+)?(?:async\s+)?(?:fn|def|function|func)\s+(\w+)|^\s*(?:const|let)\s+(\w+)\s*=\s*(?:async\s*)?\(/;
+    const DEF = /^\s*(?:pub\s+)?(?:async\s+)?(?:fn|defp?|function|func)\s+(\w+)|^\s*(?:const|let)\s+(\w+)\s*=\s*(?:async\s*)?\(/;
     const defs = all.map((l, i) => ({ i, n: DEF.exec(l) })).filter((d) => d.n).map((d) => ({ i: d.i, name: d.n[1] ?? d.n[2] }));
     const bodyOf = (d, k) => all.slice(d.i, k + 1 < defs.length ? defs[k + 1].i : all.length);
     const outside = defs.filter((d) => (d.i < start || d.i >= end) && !/^test/i.test(d.name));
@@ -3832,7 +3872,9 @@ function cmdTdd() {
   // node:test: the file itself failed to load (module-level throw), so no test was registered or executed (#225)
   const nodeLoadFail = sub === 'red' && /^ℹ tests \d+/m.test(plain) && (() => { const tops = plain.split('\n').filter((l) => /^[✖✔﹣]\s/.test(l) && !/^✖ failing tests:/.test(l)); return tops.length > 0 && tops.every((l) => new RegExp(`^✖ ${escapeRe(path.basename(t.path))} \\(`).test(l)); })();
   const loadWeak = sub === 'red' && (isLoadErr(res.text) || nodeLoadFail) && !(flags['missing-module'] && declaredMissingModule(res.text, t.path));
-  const setupSym = sub === 'red' && !flags['allow-setup-red'] && typeof flags.expect !== 'string' ? setupOrigin(rl.find((l) => /^E\s+.*(not implemented|NotImplementedError|unimplemented|is not a function|has no attribute)/i.test(l)) ?? rl.find((l) => /not implemented|NotImplementedError|unimplemented|is not a function|has no attribute/i.test(l) && !/^\d+\s*\|/.test(l)) ?? reason, t.path, id, res.text) : null;
+  const setupSym0 = sub === 'red' && !flags['allow-setup-red'] ? setupOrigin(rl.find((l) => /^E\s+.*(not implemented|NotImplementedError|unimplemented|is not a function|has no attribute)/i.test(l)) ?? rl.find((l) => /not implemented|NotImplementedError|unimplemented|is not a function|has no attribute/i.test(l) && !/^\d+\s*\|/.test(l)) ?? reason, t.path, id, res.text) : null;
+  // --expect naming the setup call itself does not make a setup-origin Red the asserted behaviour (#256)
+  const setupSym = setupSym0 && (typeof flags.expect !== 'string' || new RegExp(`(?<![\\w$])${escapeRe(setupSym0)}(?![\\w$])`).test(flags.expect)) ? setupSym0 : null;
   const charac = sub === 'red' && res.exit === 0 && !retest ? String(flags.characterization).trim() : '';
   const retestWeak = sub === 'red' && targetPassed && !!retest;
   const weakRed = loadWeak || !!setupSym || !!charac || retestWeak;
