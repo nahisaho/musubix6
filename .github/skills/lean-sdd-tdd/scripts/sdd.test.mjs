@@ -6889,3 +6889,39 @@ test('#270 Elixir stub: a module passed to start_supervised! is startable (use G
   assert.match(s, /use GenServer/, s);
   assert.match(s, /def start_link/, s);
 });
+
+test('#281 TS stub emits @id/@implements so the later swap is not an ownership change', () => {
+  const d = stub10({
+    'sdk.test.ts': "import { mapError } from './sdk';\n\n// @id TEST-S-001\n// @verifies REQ-S-001\ntest('s', () => {\n  expect(mapError(404, 'x')).toBeTruthy();\n});\n",
+  }, 'TEST-S-001');
+  const s = fs.readFileSync(path.join(d, 'sdk.ts'), 'utf8');
+  assert.match(s, /\/\/ @id CODE-S-001-STUB-001 @implements REQ-S-001/, s);
+});
+
+test('#282 Red: AssertionError embedding subprocess stderr is an assertion; missing declared deliverable is a valid Red', () => {
+  const d = project();
+  sdd(d, 'init');
+  const cj = path.join(d, '.sdd/config.json');
+  fs.writeFileSync(cj, JSON.stringify({ ...JSON.parse(fs.readFileSync(cj, 'utf8')), deliverables: ['contract/vectors.json'] }));
+  fs.writeFileSync(path.join(d, 'add.test.mjs'), [
+    "import { test } from 'node:test';",
+    "import assert from 'node:assert/strict';",
+    "import { spawnSync } from 'node:child_process';",
+    '/** @id TEST-CALC-001 @verifies REQ-CALC-001 */',
+    "test('TEST-CALC-001 cli', () => { const r = spawnSync('node', ['cli.ts'], { encoding: 'utf8' }); assert.equal(r.status, 0, r.stderr); });",
+    '',
+  ].join('\n'));
+  sdd(d, 'approve', 'record', 'calc', '--by', 'tester');
+  const r = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
+  assert.equal(r.code, 0, r.out);
+  assert.doesNotMatch(r.out, /weak/);
+  fs.writeFileSync(path.join(d, 'add.test.mjs'), [
+    "import { test } from 'node:test';",
+    "import fs from 'node:fs';",
+    '/** @id TEST-CALC-001 @verifies REQ-CALC-001 */',
+    "test('TEST-CALC-001 vectors', () => { JSON.parse(fs.readFileSync('contract/vectors.json', 'utf8')); });",
+    '',
+  ].join('\n'));
+  const r2 = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
+  assert.equal(r2.code, 0, r2.out);
+});
