@@ -7318,3 +7318,24 @@ test('#288 subprocess-subject test: stub prints a note; Red works without --weak
   assert.equal(r.code, 0, r.out);
   assert.doesNotMatch(r.out, /weak/i, r.out);
 });
+
+// ---- #290 (Rust stub: honest messages, enum variants, inline tests, annotations) ----
+test('#290 Rust stub: a missing variant is added to the existing enum', has268, () => {
+  const d = rs288('use hist::SchedError;\n\n' + t288('    assert_eq!(SchedError::ZeroLimit, SchedError::ZeroLimit);'), { 'src/lib.rs': '#[derive(Debug, Clone, Copy, PartialEq, Eq)]\npub enum SchedError {\n    Empty,\n}\n' });
+  const { out, lib } = stub288(d);
+  assert.match(lib, /enum SchedError \{\n    Empty,\n    ZeroLimit,\n\}/, lib);
+  assert.match(out, /added variant SchedError::ZeroLimit/, out);
+});
+
+test('#290 Rust stub: an inline #[cfg(test)] test says why nothing is stubbed', has268, () => {
+  const d = rs268({ 'src/lib.rs': 'pub fn f() -> i64 { 1 }\n#[cfg(test)]\nmod tests {\n    use super::*;\n    // @id TEST-H-001 @verifies REQ-H-001\n    #[test]\n    fn t() { assert_eq!(f(), 1); }\n}\n' });
+  const r = sdd(d, 'tdd', 'stub', 'TEST-H-001');
+  assert.match(r.out, /inline in the subject file/, r.out);
+});
+
+test('#290 Rust stub: a new stub file carries @id CODE-…-STUB / @implements', has268, () => {
+  const d = rs288('use hist::geo::Point;\n\n' + t288('    let p = Point { x: 1 };\n    assert_eq!(p.x, 1);'));
+  stub288(d);
+  const f = fs.readFileSync(path.join(d, 'src/geo.rs'), 'utf8');
+  assert.match(f, /^\/\/ @id CODE-H-001-STUB-001 @implements REQ-H-001\n/, f);
+});

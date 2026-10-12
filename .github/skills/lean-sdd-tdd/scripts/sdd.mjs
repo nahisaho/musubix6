@@ -1858,6 +1858,7 @@ function stubGo(testPath, src, dir, add, made) {
 
 function stubRust(testPath, src, dir, made) {
   const root = (() => { let d = dir; while (d !== path.dirname(d)) { if (fs.existsSync(path.join(d, 'Cargo.toml'))) return d; d = path.dirname(d); } return null; })();
+  if (root && !/(^|\/)tests\//.test(testPath) && /#\[cfg\(test\)\]/.test(src)) made.notes = ['this test is inline in the subject file (#[cfg(test)]): it can only use items of its own crate, so there is nothing to generate — write the code under test by hand'];
   if (!root || !/(^|\/)tests\//.test(testPath)) return made;
   const ownLib = path.join(root, 'src/lib.rs');
   const probeFile = !fs.existsSync(ownLib);
@@ -2087,7 +2088,27 @@ function stubRust(testPath, src, dir, made) {
     made.push(rel(lib));
   }
   const cargoTest = () => probe('cargo', ['test', '--no-run', '--offline', '--test', path.basename(testPath, '.rs')], root);
-  const out = cargoTest();
+  let out = cargoTest();
+  // variants the test uses that an existing enum lacks are added to it (#290)
+  const variantNotes = [];
+  const missingVariants = [...new Map([...out.matchAll(/no variant[^`\n]*named `(\w+)` found for enum `(\w+)`/g)].map((m) => [m[2] + '::' + m[1], m])).values()];
+  if (missingVariants.length) {
+    const srcFiles = (d) => fs.existsSync(d) ? fs.readdirSync(d, { withFileTypes: true }).flatMap((e) => e.isDirectory() ? srcFiles(path.join(d, e.name)) : e.name.endsWith('.rs') ? [path.join(d, e.name)] : []) : [];
+    const files = [...new Set([root, ...crates.values()])].flatMap((c) => srcFiles(path.join(c, 'src')));
+    for (const [, v, e] of missingVariants) {
+      const at = files.map((f) => ({ f, text: fs.readFileSync(f, 'utf8') })).map((x) => ({ ...x, m: new RegExp(`\\benum\\s+${e}\\s*\\{`).exec(x.text) })).find((x) => x.m);
+      if (!at) { variantNotes.push(`variant ${e}::${v} not added: enum ${e} is not defined in the project sources — add it by hand`); continue; }
+      const line = new RegExp(`^    ${v}\\b[^\\n]*,\\n`, 'm').exec(typeStub(e))?.[0];
+      const mm = maskBraces(at.text, true);
+      let depth = 0, k = at.m.index + at.m[0].length - 1;
+      for (; k < mm.length; k++) { if (mm[k] === '{') depth++; else if (mm[k] === '}' && !--depth) break; }
+      if (!line || k >= mm.length || new RegExp(`\\b${v}\\b`).test(at.text.slice(at.m.index, k))) { variantNotes.push(`variant ${e}::${v} not added: add it to enum ${e} by hand`); continue; }
+      fs.writeFileSync(at.f, at.text.slice(0, k).replace(/\n*$/, '\n') + line + at.text.slice(k));
+      made.push(rel(at.f));
+      variantNotes.push(`added variant ${e}::${v} to ${rel(at.f)}`);
+    }
+    out = cargoTest();
+  }
   const names = [...new Set([...out.matchAll(/cannot find function `(\w+)`|unresolved import `[\w:]+::(\w+)`|no `(\w+)` in the root|cannot find struct, variant or union type `(\w+)`/g)].map((m) => m[1] ?? m[2] ?? m[3] ?? m[4]))].filter((n) => !modNames.has(n) && !macroNames.has(n) && new RegExp(`\\b${n}\\b`).test(srcNoUse));
   // compile-check what was written: an honest verdict instead of an assumed "Red-safe" (#130)
   const verified = () => {
@@ -2102,12 +2123,15 @@ function stubRust(testPath, src, dir, made) {
     if (/mismatched types|E0308/.test(after)) notes.push('a stub return type does not match how the test uses it (Option/Result/bool/collections): fix the stub signature by hand');
     return { verified: 'fail', verifyError: err[0].slice(0, 160), notes };
   };
-  if (!names.length) { if (probeFile && !made.length) fs.rmSync(ownLib); return Object.assign([...new Set(made)], verified()); }
-  const body = names.map((x) => itemStub(x)).join('\n');
+  const withNotes = (r) => { if (variantNotes.length) r.notes = [...(r.notes ?? []), ...variantNotes]; return r; };
+  if (!names.length) { if (probeFile && !made.length) fs.rmSync(ownLib); return withNotes(Object.assign([...new Set(made)], verified())); }
   const prev = fs.readFileSync(ownLib, 'utf8');
-  fs.writeFileSync(ownLib, prev + (prev && !prev.endsWith('\n\n') ? '\n' : '') + body);
-  made.push(rel(ownLib));
-  return Object.assign([...new Set(made)], verified());
+  // names the library already defines are not appended again, and an unchanged lib.rs is never reported as stubbed (#290)
+  const fresh = names.filter((n) => !new RegExp(`\\b(?:struct|enum|fn|const|static|type|trait)\\s+${n}\\b`).test(prev));
+  const body = fresh.map((x) => itemStub(x)).join('\n');
+  if (body.trim()) { fs.writeFileSync(ownLib, prev + (prev && !prev.endsWith('\n\n') ? '\n' : '') + body); made.push(rel(ownLib)); }
+  else if (probeFile && !made.length) fs.rmSync(ownLib);
+  return withNotes(Object.assign([...new Set(made)], verified()));
 }
 
 function stubJava(testPath, src, dir, add, made) {
@@ -3932,7 +3956,7 @@ function cmdTdd() {
     const made = stubFor(t.path, t.id);
     let annotationIndex = 0;
     for (const file of [...new Set(made)]) {
-      if (priorFiles.has(file) || !/\.(?:java|php|cs|jl|exs?|[cm]?[jt]sx?)$/.test(file)) continue;
+      if (priorFiles.has(file) || !/\.(?:java|php|cs|jl|rs|exs?|[cm]?[jt]sx?)$/.test(file)) continue;
       const abs = path.join(ROOT, file), text = fs.readFileSync(abs, 'utf8');
       if (/@id\s+(?:CODE|TEST)-/.test(text)) continue;
       let codeId;
