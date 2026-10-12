@@ -8329,3 +8329,29 @@ test('#300 preambleGranularity symbol: Rust top-level const edit stales only ref
   const d = symbolCase('a_test.rs', pre, T, (p) => p.replace('LIMIT: u32 = 1', 'LIMIT: u32 = 7'));
   assert.deepEqual(staleIds(d), ['TEST-A-001']);
 });
+
+// ---- r23d (#313): tdd stub CLI ----
+const stubJs = (id, n) => `// @id TEST-A-00${id} @verifies REQ-A-00${id}\ntest('TEST-A-00${id} x', () => {\n  assert.equal(f${n}(1), 1);\n});\n`;
+const T2SPEC313 = '---\nfeature: a\ntier: T2\napproval: human\n---\n## Design\nx\n\n| REQ-A-001 | one shall hold. | TEST-A-001 |\n| REQ-A-002 | two shall hold. | TEST-A-002 |\n';
+
+test('#313 tdd stub: `--all <ID>` takes the ID (flag before the ID) and usage lists --all', () => {
+  const d = mini(T2SPEC313, { 'a.test.mjs': "import { f1, f2 } from './lib.mjs';\n" + stubJs(1, 1) + stubJs(2, 2) }, PASS);
+  const r = sdd(d, 'tdd', 'stub', '--all', 'TEST-A-001');
+  assert.doesNotMatch(r.out, /undefined/, r.out);
+  assert.equal(r.code, 0, r.out);
+  assert.match(sdd(d, 'tdd', 'bogus').out, /--all/);
+});
+
+test('#313 tdd stub: IDs from two test files name the other file, not "is not a TEST"', () => {
+  const d = mini(T2SPEC313, { 'a.test.mjs': "import { f1 } from './lib.mjs';\n" + stubJs(1, 1), 'b.test.mjs': "import { f2 } from './lib.mjs';\n" + stubJs(2, 2) }, PASS);
+  const r = sdd(d, 'tdd', 'stub', 'TEST-A-001', 'TEST-A-002');
+  assert.equal(r.code, 2, r.out);
+  assert.doesNotMatch(r.out, /is not a TEST/, r.out);
+  assert.match(r.out, /b\.test\.mjs/, r.out);
+});
+
+test('#313 tdd stub: an unapproved T2 feature gets a warning that tdd red will refuse', () => {
+  const d = mini(T2SPEC313, { 'a.test.mjs': "import { f1 } from './lib.mjs';\n" + stubJs(1, 1) }, PASS);
+  const r = sdd(d, 'tdd', 'stub', 'TEST-A-001');
+  assert.match(r.out, /! .*approv.*tdd red/i, r.out);
+});

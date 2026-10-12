@@ -4342,17 +4342,21 @@ function cmdTdd() {
     return bad ? 1 : 0;
   }
   if (sub === 'stub') {
+    // `--all TEST-X`: the parser binds the ID to --all as its value
+    if (typeof flags.all === 'string') { pos.splice(2, 0, flags.all); flags.all = true; }
     const t = ents.get(pos[2]);
-    if (!t || t.kind !== 'TEST') { out(`${pos[2]} not found as "@id TEST-..." annotation in source`); return 2; }
+    if (!t || t.kind !== 'TEST') { out(`${pos[2] ?? '(no ID)'} not found as "@id TEST-..." annotation in source — usage: tdd stub <TEST-ID> [<TEST-ID>... | --all]`); return 2; }
     // several IDs (or --all: every test of that file) are stubbed in one run (#304)
     const group = flags.all ? [...ents.values()].filter((e) => e.kind === 'TEST' && e.path === t.path) : pos.slice(2).map((x) => ents.get(x));
     const bad = group.find((e) => !e || e.kind !== 'TEST' || e.path !== t.path);
-    if (bad !== undefined) { out(`${pos.slice(2).find((x) => !ents.get(x) || ents.get(x).kind !== 'TEST' || ents.get(x).path !== t.path) ?? pos[2]} is not a TEST in ${t.path}: tdd stub takes IDs of one test file`); return 2; }
+    if (bad !== undefined) { const x = pos.slice(2).find((y) => !ents.get(y) || ents.get(y).kind !== 'TEST' || ents.get(y).path !== t.path) ?? pos[2]; out(!ents.get(x) || ents.get(x).kind !== 'TEST' ? `${x} is not a TEST (no "@id TEST-..." annotation found)` : `${x} is in ${ents.get(x).path}, not ${t.path}: tdd stub takes IDs of one test file — run it once per file`); return 2; }
     if (!group.includes(t)) group.unshift(t);
     const allSpecs = loadSpecs();
     t.refs = { ...t.refs, verifies: [...new Set(group.flatMap((e) => e.refs.verifies))] };
     const unknownReq = allSpecs.length ? t.refs.verifies.filter((r) => !allSpecs.some((sp) => sp.reqs.some((q) => q.id === r))) : [];
     if (unknownReq.length) { out(`REFUSED: ${t.id} verifies ${unknownReq.join(', ')} which no spec defines — write the spec first`); return 1; }
+    const stubSpec = allSpecs.find((sp) => sp.reqs.some((q) => q.id === t.refs.verifies[0]));
+    if (stubSpec && needsLock(stubSpec) && approvalState(stubSpec) !== 'ok') out(`! ${stubSpec.tier} feature ${stubSpec.feature} approval is ${approvalState(stubSpec)}: stubbing is allowed, but tdd red will REFUSE until the spec is approved (approve prepare/record ${stubSpec.feature})`);
     const priorFiles = new Set(workspaceFiles());
     const made = stubFor(t.path, group.map((e) => e.id));
     let annotationIndex = 0;
@@ -5712,7 +5716,7 @@ if (fn && badFlags.length) {
   process.exit(2);
 }
 if (!fn) {
-  out('usage: sdd.mjs init | review template <feature|--feature f> | review check <file> --feature <f> (or positional feature) | approve prepare|record <feature> | guard | tdd red|green|refactor <TEST-ID> | tdd stub <TEST-ID> | tdd check | trace [--baseline] | gate [--changed] [--no-run] | status | plan | impact <REQ|TEST|CODE|file> [--json]   [--root dir]\n  tdd red: tdd red --characterization "<reason>" records a data-only/characterization test that cannot fail without implementation (weak Red); --expect <text> requires that text in the failure; --allow-setup-red accepts a stub-in-setup Red; --retest "<reason>" re-records a weak Red after correcting a wrong test expectation (needs a previous Red/Green and a changed test); --missing-module accepts a Red caused by the test own not-yet-created import (non-weak); approve record --by ai:<reviewer> needs --review <path|summary>');
+  out('usage: sdd.mjs init | review template <feature|--feature f> | review check <file> --feature <f> (or positional feature) | approve prepare|record <feature> | guard | tdd red|green|refactor <TEST-ID> | tdd stub <TEST-ID> [<TEST-ID>... | --all] | tdd check | trace [--baseline] | gate [--changed] [--no-run] | status | plan | impact <REQ|TEST|CODE|file> [--json]   [--root dir]\n  tdd red: tdd red --characterization "<reason>" records a data-only/characterization test that cannot fail without implementation (weak Red); --expect <text> requires that text in the failure; --allow-setup-red accepts a stub-in-setup Red; --retest "<reason>" re-records a weak Red after correcting a wrong test expectation (needs a previous Red/Green and a changed test); --missing-module accepts a Red caused by the test own not-yet-created import (non-weak); approve record --by ai:<reviewer> needs --review <path|summary>');
   process.exit(2);
 }
 if (fn && flags.help && !['impact'].includes(pos[0])) {
