@@ -994,7 +994,7 @@ const lockDrift = (s) => {
 const needsLock = (s) => s.tier === 'T2' || s.approval === 'human' || !!lockDrift(s);
 // a T2 spec must carry a Design section (components, state/policy tables, key decisions) before it can be locked
 function designProblem(s) {
-  return s.tier === 'T2' && s.designLines < 2 ? `${s.path}: T2 spec needs a "## Design" section (≥2 lines: components, data flow, state/policy tables, key decisions)` : null;
+  return s.tier === 'T2' && s.designLines < 2 ? `${s.path}: T2 spec needs a "## Design" section (≥2 non-blank lines — a one-line paragraph counts as 1 even with several sentences; use a list or line breaks: components, data flow, state/policy tables, key decisions)` : null;
 }
 
 // ---------- approval ----------
@@ -1507,13 +1507,16 @@ function cmdReview() {
     return 0;
   }
   if (sub === 'check') {
-    const cf = featArg ?? pos[3];
-    if (!a || !cf) { out('usage: review check <file> --feature <feature> | review check <file> <feature> (both required)'); return 2; }
+    // `review check <feature>` infers .sdd/review-<feature>.md
+    const lone = pos[3] == null && !featArg && a && !fs.existsSync(path.resolve(ROOT, a)) && loadSpecs().some((x) => x.feature === a) ? a : null;
+    const file = lone ? `.sdd/review-${lone}.md` : a;
+    const cf = featArg ?? pos[3] ?? lone ?? (file && /^review-(.+)\.md$/.test(path.basename(file)) ? path.basename(file).replace(/^review-(.+)\.md$/, '$1') : null);
+    if (!file || !cf) { out('usage: review check <file> --feature <feature> | review check <file> <feature> | review check <feature> (reads .sdd/review-<feature>.md)'); return 2; }
     const spec = loadSpecs().find((x) => x.feature === cf);
     if (!spec) { out(`unknown feature "${cf}" (known: ${loadSpecs().map((x) => x.feature).join(', ') || 'none'})`); return 2; }
-    if (!fs.existsSync(path.resolve(ROOT, a)) || !fs.statSync(path.resolve(ROOT, a)).isFile()) { out(`review file not found: ${a}`); return 2; }
-    const probs = reviewProblems(fs.readFileSync(path.resolve(ROOT, a), 'utf8'), fileSha(spec.path));
-    out(probs.length ? `REVIEW INVALID: ${a}\n${probs.map((x) => '  ' + x).join('\n')}` : `REVIEW OK: ${a}`);
+    if (!fs.existsSync(path.resolve(ROOT, file)) || !fs.statSync(path.resolve(ROOT, file)).isFile()) { out(`review file not found: ${file}`); return 2; }
+    const probs = reviewProblems(fs.readFileSync(path.resolve(ROOT, file), 'utf8'), fileSha(spec.path));
+    out(probs.length ? `REVIEW INVALID: ${file}\n${probs.map((x) => '  ' + x).join('\n')}` : `REVIEW OK: ${file}`);
     return probs.length ? 1 : 0;
   }
   out('usage: review template <feature|--feature f> | review check <file> --feature <feature|feature>');
@@ -1541,7 +1544,7 @@ function cmdApprove() {
     out(`feature ${spec.feature} (${spec.tier}) — state: ${needsLock(spec) ? approvalState(spec) : 'no approval lock for T1 (the tests are the guard)'}`);
     for (const p of spec.artifacts) out(`  ${p}  sha256:${fileSha(p)}`);
     out(`requirements: ${spec.reqs.map((r) => r.id).join(', ')}`);
-    if (!needsLock(spec)) { out(`requirements: ${spec.reqs.map((r) => r.id).join(', ')}`); return 0; }
+    if (!needsLock(spec)) return 0;
     out(spec.approval === 'human'
       ? 'approval: human — show these exact paths/hashes/residual risks to the human, then: approve record <feature> --by <name>'
       : 'approval: auto — after independent AI review passes: approve record <feature> --by ai:<reviewer> --review <.sdd/review.md|summary> (no human needed; review file must have 0 Open findings and cite the spec sha256 prefix)');
@@ -3964,9 +3967,9 @@ function cmdTdd() {
     const missing = ids.filter((x) => ents.get(x)?.kind !== 'TEST');
     if (missing.length) { out(`${missing.join(', ')} not found as "@id TEST-..." annotation in source (nothing was run)`); return 2; }
     let rc = 0;
-    const write = process.stdout.write.bind(process.stdout), seenRefused = new Set();
+    const write = process.stdout.write.bind(process.stdout), seenRefused = new Set(), seenTail = new Set();
     // an identical REFUSED line (e.g. unapproved feature) is printed once, not per ID
-    process.stdout.write = (chunk, ...rest) => { const k = String(chunk); if (k.startsWith('REFUSED:')) { if (seenRefused.has(k)) return true; seenRefused.add(k); } return write(chunk, ...rest); };
+    process.stdout.write = (chunk, ...rest) => { const k = String(chunk); if (k.startsWith('REFUSED:')) { if (seenRefused.has(k)) return true; seenRefused.add(k); } if (k.split('\n').length > 3) { if (seenTail.has(k)) return write('(same compiler/test output as above)\n', ...rest); seenTail.add(k); } return write(chunk, ...rest); };
     try { for (const one of ids) { pos.length = 2; pos.push(one); rc = Math.max(rc, cmdTdd()); } } finally { process.stdout.write = write; }
     return rc;
   }
@@ -4273,8 +4276,8 @@ function cmdTdd() {
       const shared = [...ents.values()].filter((c) => c.kind === 'CODE' && implFiles.includes(c.path) && c.refs.implements.some((r) => e.refs.verifies.includes(r)));
       return last && shared.some((c) => (last.implBlocks ? last.implBlocks[`${c.path}:${c.id}`] !== implRegionSha(c) : mtime(c.path) > Date.parse(last.at)));
     });
-    if (!implFiles.length && !loadSpecs().flatMap((x) => x.reqs).filter((q) => mine.has(q.id)).every((q) => q.testOnly)) out(`⚠ ${id}: no code carries @implements ${[...mine].join(', ')} — annotate the implementation so impact/trace can find it (#276); without it the shared-implementation staleness check cannot run (comment-only \`@id CODE-… @implements …\` is enough, the code itself stays unchanged)`);
-    if (stale.length) out(`⚠ implementation shared with other REQs changed since their Green: ${stale.slice(0, 5).map((e) => e.id).join(', ')}${stale.length > 5 ? `, … +${stale.length - 5}` : ''} — re-run them (tdd refactor <ID>) or the project tests; their evidence is not re-checked automatically`);
+    if (!implFiles.length && !loadSpecs().flatMap((x) => x.reqs).filter((q) => mine.has(q.id)).every((q) => q.testOnly || q.srcs.length)) out(`⚠ ${id}: no code carries @implements ${[...mine].join(', ')} — annotate the implementation so impact/trace can find it (#276); without it the shared-implementation staleness check cannot run (comment-only \`@id CODE-… @implements …\` is enough, the code itself stays unchanged)`);
+    if (stale.length) out(`⚠ implementation shared with other REQs changed since their Green: ${stale.map((e) => e.id).join(', ')} — re-run them (tdd refactor ${stale.map((e) => e.id).join(' ')}) or the project tests; their evidence is not re-checked automatically`);
   }
   if (sub === 'red' && loadWeak && /not implemented|NotImplementedError|unimplemented/i.test(res.text)) out(`! a stub failed at module load, before any test body ran: every test of this file fails the same way, so this Red says nothing about ${id}; move the stub call into the test or a fixture`);
   if (rebaselined) out(`! --retest: only an oracle dependency changed (the test text is unchanged), so the earlier strong Red of ${id} is kept`);
@@ -4356,7 +4359,7 @@ function cmdTrace() {
     return 0;
   }
   t = applyBaseline(t);
-  out(`TRACE ${t.errors.length ? 'FAIL' : 'OK'}: ${[...t.reqs.values()].filter((r) => !r.deferred).length} REQ${[...t.reqs.values()].some((r) => r.deferred) ? ` (+${[...t.reqs.values()].filter((r) => r.deferred).length} deferred)` : ''}, ${ents.size} annotated entities, ${t.errors.length} errors, ${t.warnings.length} warnings`);
+  out(`TRACE ${t.errors.length ? 'FAIL' : 'OK'}: ${[...t.reqs.values()].filter((r) => !r.deferred).length} REQ${[...t.reqs.values()].some((r) => r.deferred) ? ` (+${[...t.reqs.values()].filter((r) => r.deferred).length} deferred: ${[...t.reqs.values()].filter((r) => r.deferred).map((r) => r.id).join(', ')})` : ''}, ${ents.size} annotated entities, ${t.errors.length} errors, ${t.warnings.length} warnings`);
   [...t.errors.slice(0, flags.verbose ? t.errors.length : 10).map((e) => `  ✗ ${e}`), ...t.warnings.slice(0, flags.verbose ? t.warnings.length : 5).map((w) => `  ! ${w}`), ...(t.warnings.length > 5 && !flags.verbose ? [`  ! … +${t.warnings.length - 5} more`] : [])].forEach((l) => out(l));
   return t.errors.length ? 1 : 0;
 }

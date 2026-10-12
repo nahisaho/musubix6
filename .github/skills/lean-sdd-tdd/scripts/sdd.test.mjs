@@ -7318,3 +7318,46 @@ test('#288 subprocess-subject test: stub prints a note; Red works without --weak
   assert.equal(r.code, 0, r.out);
   assert.doesNotMatch(r.out, /weak/i, r.out);
 });
+
+test('#295 design-lines message says non-blank lines', () => {
+  const d = mini('---\nfeature: a\ntier: T2\n---\n## Design\nOne. Two sentences here.\n\n## Requirements\n| REQ-A-001 | x shall work. | TEST-A-001 |\n');
+  assert.match(sdd(d, 'approve', 'record', 'a', '--by', 'x').out, /non-blank lines/);
+});
+
+test('#295 approve prepare prints requirements once', () => {
+  const d = mini('---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | x shall work. | TEST-A-001 |\n');
+  const out = sdd(d, 'approve', 'prepare', 'a').out;
+  assert.equal(out.split('\n').filter((l) => l.startsWith('requirements:')).length, 1, out);
+});
+
+test('#295 review check <feature> infers .sdd/review-<feature>.md', () => {
+  const d = mini('---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | x shall work. | TEST-A-001 |\n');
+  const r = sdd(d, 'review', 'check', 'a');
+  assert.match(r.out, /review-a\.md/, r.out);
+  assert.doesNotMatch(r.out, /^usage/, r.out);
+});
+
+test('#295 a [src:] reverse-spec row is not warned about missing @implements', () => {
+  const d = mini('---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | x shall work. [src: old.py:1] | TEST-A-001 |\n', { 'old.py': 'x = 1\n', 'a.test.mjs': '// @id TEST-A-001 @verifies REQ-A-001\n' }, FAIL);
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-A-001').code, 0);
+  setCmd(d, PASS);
+  assert.doesNotMatch(sdd(d, 'tdd', 'green', 'TEST-A-001').out, /no code carries @implements/);
+});
+
+test('#295 trace lists deferred REQ IDs', () => {
+  const d = mini('---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | one shall hold. | TEST-A-001 |\n| REQ-A-002 (deferred) | Later. | — |\n', { 'a.test.mjs': '// @id TEST-A-001 @verifies REQ-A-001\n' }, PASS);
+  assert.match(sdd(d, 'trace').out, /deferred: REQ-A-002/);
+});
+
+test('#295 shared-impl warning names the refactor command with all stale IDs', () => {
+  const d = blockProject();
+  touchImpl(d, 'return 1;', 'return 11;');
+  assert.match(sdd(d, 'tdd', 'green', 'TEST-A-002').out, /tdd refactor TEST-A-001/);
+});
+
+test('#295 batch tdd red prints an identical compiler tail once', () => {
+  const spec = '---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | x shall work. | TEST-A-001 |\n| REQ-A-002 | y shall work. | TEST-A-002 |\n';
+  const d = mini(spec, { 'a.test.mjs': '// @id TEST-A-001 @verifies REQ-A-001\n// @id TEST-A-002 @verifies REQ-A-002\n' }, ['node', '-e', 'console.log("a\\nb\\nc\\nd\\ne\\nerror TS2304: Cannot find name x");process.exit(1)']);
+  const out = sdd(d, 'tdd', 'red', 'TEST-A-001', 'TEST-A-002').out;
+  assert.equal(out.split('error TS2304').length - 1, 1, out);
+});
