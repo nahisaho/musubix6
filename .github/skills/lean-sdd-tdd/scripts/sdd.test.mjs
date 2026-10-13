@@ -9549,3 +9549,49 @@ test('r29e full gate skips an untracked config', () => {
   const d = mini('---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | x shall hold. | TEST-A-001 |\n', {}, PASS);
   assert.doesNotMatch(sdd(d, 'gate', '--no-run').out, /config:/);
 });
+
+test('#338 vanished secondary REQs in grouped Green evidence warn, fail strict gates, and require human retirement', () => {
+  const spec = T1SPEC + '| REQ-A-002 | two shall hold. | TEST-A-001 |\n';
+  const source = (reqs, offset) => `// @id CODE-A-001 @implements ${reqs}\nexport const add = (value) => value + ${offset};\n`;
+  const testBody = (id, reqs, extra = '') => `import { test } from 'node:test';\nimport assert from 'node:assert/strict';\nimport { add } from './add.mjs';\n// @id ${id} @verifies ${reqs}\ntest('${id} increments', () => {\n  assert.equal(add(1), 2);\n${extra}});\n`;
+  const d = mini(spec, {
+    'add.mjs': source('REQ-A-001 REQ-A-002', 0),
+    'a.test.mjs': testBody('TEST-A-001', 'REQ-A-001 REQ-A-002', '  assert.equal(add(2), 3);\n'),
+  }, ['node', '--test', 'a.test.mjs']);
+  const cp = path.join(d, '.sdd/config.json');
+  const config = { ...JSON.parse(fs.readFileSync(cp, 'utf8')), checks: [{ name: 'test', cmd: ['node', '--test', 'a.test.mjs'] }] };
+  fs.writeFileSync(cp, JSON.stringify(config));
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-A-001').code, 0);
+  fs.writeFileSync(path.join(d, 'add.mjs'), source('REQ-A-001 REQ-A-002', 1));
+  assert.equal(sdd(d, 'tdd', 'green', 'TEST-A-001').code, 0);
+  const oldGreen = fs.readFileSync(path.join(d, '.sdd/tdd.jsonl'), 'utf8').trim().split('\n').map(JSON.parse).find((e) => e.type === 'green');
+  assert.equal(oldGreen.req, 'REQ-A-001');
+  assert.deepEqual(Object.keys(oldGreen.reqShas), ['REQ-A-001', 'REQ-A-002']);
+  const baseline = sdd(d, 'gate');
+  assert.equal(baseline.code, 0, baseline.out);
+
+  fs.writeFileSync(specPath(d), T1SPEC.replace('TEST-A-001', 'TEST-A-002'));
+  fs.writeFileSync(path.join(d, 'a.test.mjs'), testBody('TEST-A-002', 'REQ-A-001'));
+  fs.writeFileSync(path.join(d, 'add.mjs'), source('REQ-A-001', 0));
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-A-002').code, 0);
+  fs.writeFileSync(path.join(d, 'add.mjs'), source('REQ-A-001', 1));
+  assert.equal(sdd(d, 'tdd', 'green', 'TEST-A-002').code, 0);
+
+  for (const policy of ['warn', 'strict']) {
+    fs.writeFileSync(cp, JSON.stringify({ ...config, scopePolicy: policy }));
+    for (const args of [['gate'], ['gate', '--changed']]) {
+      const result = sdd(d, ...args);
+      assert.equal(result.code, policy === 'strict' ? 1 : 0, result.out);
+      assert.match(result.out, /req REQ-A-002: has Green evidence.*approve retire REQ-A-002/, result.out);
+      assert.equal(result.out.split('req REQ-A-002:').length - 1, 1, result.out);
+      assert.doesNotMatch(result.out, /req REQ-A-001: has Green evidence/);
+    }
+  }
+  assert.match(sdd(d, 'approve', 'retire', 'REQ-A-002', '--by', 'ai:reviewer').out, /REFUSED/);
+  assert.equal(sdd(d, 'approve', 'retire', 'REQ-A-002', '--by', 'alice').code, 0);
+  for (const args of [['gate'], ['gate', '--changed']]) {
+    const result = sdd(d, ...args);
+    assert.equal(result.code, 0, result.out);
+    assert.doesNotMatch(result.out, /req REQ-A-002: has Green evidence/);
+  }
+});

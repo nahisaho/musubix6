@@ -5324,7 +5324,7 @@ function cmdGate() {
 
   {
     const live = new Set(specs.flatMap((x) => x.reqs.map((q) => q.id))), retired = readJson(RETIRED_REQS, {});
-    const gone = [...new Set(readLedger().filter((e) => e.type === 'green' && e.req && !live.has(e.req) && !retired[e.req]).map((e) => e.req))];
+    const gone = [...new Set(readLedger().filter((e) => e.type === 'green').flatMap((e) => [e.req, ...Object.keys(e.reqShas ?? {})]).filter((r) => r && !live.has(r) && !retired[r]))];
     for (const r of gone) {
       const msg = `req ${r}: has Green evidence but no longer exists in any spec — if the removal is intended: approve retire ${r} --by <human name>; otherwise restore the REQ`;
       if (readJson(CONFIG, {}).scopePolicy === 'strict') add(false, `${msg} (scopePolicy strict)`); else lines.push(`! ${msg} (scopePolicy warn: set "scopePolicy": "strict" to fail)`);
