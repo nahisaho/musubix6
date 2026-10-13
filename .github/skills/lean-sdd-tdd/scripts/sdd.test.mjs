@@ -10025,3 +10025,182 @@ test('#339 native Node TypeScript parse failures cannot establish Red for any se
   const green = sdd(d, 'tdd', 'green', ids[0]);
   assert.equal(green.code, 0, green.out);
 });
+
+function r31aFixture(files, checks, projects = []) {
+  const d = mini(T1SPEC, { 'a.test.mjs': jsTest(), ...files }, FAIL);
+  const cp = path.join(d, '.sdd/config.json');
+  fs.writeFileSync(cp, JSON.stringify({
+    ...JSON.parse(fs.readFileSync(cp, 'utf8')),
+    scan: { include: ['a.test.mjs'] },
+    scopePolicy: 'warn', unscoped: ['**'], checks, projects,
+  }));
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-A-001').code, 0);
+  setCmd(d, PASS);
+  const green = sdd(d, 'tdd', 'green', 'TEST-A-001');
+  assert.equal(green.code, 0, green.out);
+  assert.equal(spawnSync('git', ['add', '-A'], { cwd: d }).status, 0);
+  assert.equal(spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'check closure baseline'], { cwd: d }).status, 0);
+  return d;
+}
+
+function r31aDrift(d, file) {
+  const cp = path.join(d, '.sdd/config.json');
+  for (const policy of ['warn', 'strict']) {
+    fs.writeFileSync(cp, JSON.stringify({ ...JSON.parse(fs.readFileSync(cp, 'utf8')), scopePolicy: policy }));
+    for (const args of [['gate'], ['gate', '--changed', '--baseline', 'HEAD']]) {
+      const g = sdd(d, ...args);
+      assert.equal(g.code, policy === 'strict' ? 1 : 0, g.out);
+      assert.match(g.out, /scope: .*defin(?:es|ing) what a gate check runs/, g.out);
+      assert.ok(g.out.includes(file), `${file}: ${g.out}`);
+    }
+  }
+}
+
+/** @id TEST-CHECK-CLOSURE-001 @verifies REQ-CHECK-CLOSURE-001 */
+test('r31a #340 command closure follows interpreter targets nested wrappers make recipes and cycles', () => {
+  const cases = [
+    [{ 'tools/run.py': 'import subprocess\nsubprocess.call(["sh", "tools/nested.sh"])\n', 'tools/nested.sh': 'true\n' }, ['sh', '-c', 'true # python3 tools/run.py'], 'tools/nested.sh'],
+    [{ 'tools/run.mjs': "import { spawnSync } from 'node:child_process';\nspawnSync('sh', ['tools/nested.sh'], {stdio:'inherit'});\n", 'tools/nested.sh': 'true\n' }, ['node', 'tools/run.mjs'], 'tools/nested.sh'],
+    [{ 'tools/check.sh': 'make verify\n', Makefile: 'verify:\n\tsh tools/nested.sh\n', 'tools/nested.sh': 'true\n' }, ['sh', 'tools/check.sh'], 'tools/nested.sh'],
+    [{ 'tools/run.sh': 'true # sh tools/loop.sh\n', 'tools/loop.sh': 'true # sh tools/run.sh\n' }, ['sh', 'tools/run.sh'], 'tools/loop.sh'],
+    [{ 'tools/check space.mjs': 'process.exit(0);\n' }, ['node', 'tools/check space.mjs'], 'tools/check space.mjs'],
+  ];
+  for (const [files, cmd, target] of cases) {
+    const d = r31aFixture(files, [{ name: 'test', cmd }]);
+    assert.equal(sdd(d, 'gate').code, 0);
+    fs.appendFileSync(path.join(d, target), target.endsWith('.mjs') ? '// changed selection\n' : '# changed selection\n');
+    r31aDrift(d, target);
+  }
+});
+
+/** @id TEST-CHECK-CLOSURE-002 @verifies REQ-CHECK-CLOSURE-001 */
+test('r31a #340 package wrappers include nested script calls project cwd and symlink targets', () => {
+  const d = r31aFixture({
+    'app/package.json': JSON.stringify({ scripts: { test: 'npm run inner', inner: 'node tools/check.mjs' } }),
+    'app/tools/check.mjs': 'process.exit(0);\n',
+    'app/tools/narrow.mjs': 'process.exit(0); // narrowed\n',
+  }, [], [{ root: 'app', checks: [{ name: 'test', cmd: ['npm', 'run', 'test'] }] }]);
+  const baseline = sdd(d, 'gate');
+  assert.equal(baseline.code, 0, baseline.out);
+  fs.rmSync(path.join(d, 'app/tools/check.mjs'));
+  fs.symlinkSync('narrow.mjs', path.join(d, 'app/tools/check.mjs'));
+  r31aDrift(d, 'app/tools/check.mjs');
+});
+
+/** @id TEST-CHECK-CLOSURE-003 @verifies REQ-CHECK-CLOSURE-002 */
+test('r31a #343 npm pnpm yarn lifecycle additions edits removals and hook wrappers are definitions', () => {
+  for (const manager of ['npm', 'pnpm', 'yarn']) {
+    for (const hook of ['pretest', 'posttest']) {
+      const files = {
+        'package.json': JSON.stringify({ scripts: { test: 'node -e 0', [hook]: 'node tools/hook.mjs', unrelated: 'true' } }),
+        'tools/hook.mjs': 'process.exit(0);\n',
+      };
+      const cmd = manager === 'npm' ? ['npm', 'test'] : ['sh', '-c', `true # ${manager} run test`];
+      const d = r31aFixture(files, [{ name: 'test', cmd }]);
+      const pkg = path.join(d, 'package.json');
+      fs.writeFileSync(pkg, JSON.stringify({ scripts: { ...JSON.parse(files['package.json']).scripts, unrelated: 'false' } }));
+      for (const args of [['gate'], ['gate', '--changed']]) {
+        const unchanged = sdd(d, ...args);
+        assert.equal(unchanged.code, 0, unchanged.out);
+        assert.doesNotMatch(unchanged.out, /scope: .*defin(?:es|ing) what a gate check runs/, unchanged.out);
+      }
+      fs.appendFileSync(path.join(d, 'tools/hook.mjs'), '// hook selection changed\n');
+      r31aDrift(d, 'tools/hook.mjs');
+      fs.writeFileSync(path.join(d, 'tools/hook.mjs'), files['tools/hook.mjs']);
+      fs.writeFileSync(pkg, JSON.stringify({ scripts: { ...JSON.parse(files['package.json']).scripts, [hook]: 'node -e 0' } }));
+      r31aDrift(d, 'package.json');
+      fs.writeFileSync(pkg, JSON.stringify({ scripts: { test: 'node -e 0', unrelated: 'true' } }));
+      r31aDrift(d, 'package.json');
+    }
+    const d = r31aFixture({ 'package.json': '{"scripts":{"test":"node -e 0"}}' }, [{ name: 'test', cmd: ['sh', '-c', `true # ${manager} test`] }]);
+    fs.writeFileSync(path.join(d, 'package.json'), '{"scripts":{"test":"node -e 0","pretest":"node -e 0"}}');
+    r31aDrift(d, 'package.json');
+  }
+});
+
+/** @id TEST-CHECK-CLOSURE-004 @verifies REQ-CHECK-CLOSURE-003 */
+test('r31a #344 Cargo closure tracks complete ancestor config and toolchains including additions and removals', () => {
+  for (const target of ['.cargo/config', '.cargo/config.toml', 'rust-toolchain', 'rust-toolchain.toml', 'workspace/.cargo/config.toml', 'workspace/crate/.cargo/config.toml']) {
+    const d = r31aFixture({
+      [target]: target.includes('toolchain') ? '# baseline toolchain\n' : '[build]\nrustflags = []\n',
+      'workspace/crate/Cargo.toml': '[package]\nname = "fixture"\n',
+    }, [], [{ root: 'workspace/crate', checks: [{ name: 'test', cmd: ['sh', '-c', 'true # cargo +stable test'] }] }]);
+    fs.appendFileSync(path.join(d, target), '# selection changed\n');
+    r31aDrift(d, target);
+    const refactor = sdd(d, 'tdd', 'refactor', 'TEST-A-001');
+    assert.equal(refactor.code, 0, refactor.out);
+    const refreshed = sdd(d, 'gate');
+    assert.equal(refreshed.code, 0, refreshed.out);
+    fs.rmSync(path.join(d, target));
+    r31aDrift(d, target);
+  }
+  const d = r31aFixture({ 'workspace/crate/Cargo.toml': '[package]\nname = "fixture"\n' }, [], [{ root: 'workspace/crate', checks: [{ name: 'test', cmd: ['sh', '-c', 'true # cargo test'] }] }]);
+  fs.mkdirSync(path.join(d, '.cargo'), { recursive: true });
+  fs.writeFileSync(path.join(d, '.cargo/config.toml'), '[build]\nrustflags = ["--cfg", "skip_second"]\n[env]\nTEST_FILTER = "one"\n');
+  r31aDrift(d, '.cargo/config.toml');
+});
+
+/** @id TEST-CHECK-CLOSURE-005 @verifies REQ-CHECK-CLOSURE-001 */
+test('r31a #340 changed checks share closure and committed wrapper drift still fails changed gate', () => {
+  const d = r31aFixture({ 'tools/changed.sh': 'true\n' }, [{ name: 'test', cmd: PASS, changedCmd: ['sh', 'tools/changed.sh'] }]);
+  fs.appendFileSync(path.join(d, 'tools/changed.sh'), '# select fewer tests\n');
+  assert.equal(spawnSync('git', ['add', '-A'], { cwd: d }).status, 0);
+  assert.equal(spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'committed wrapper drift'], { cwd: d }).status, 0);
+  r31aDrift(d, 'tools/changed.sh');
+});
+
+test('r31a #340 unchanged committed symlink wrappers are not definition drift', () => {
+  const d = r31aFixture({ 'tools/target.sh': 'true\n' }, [{ name: 'test', cmd: ['sh', 'tools/check.sh'] }]);
+  fs.symlinkSync('target.sh', path.join(d, 'tools/check.sh'));
+  assert.equal(sdd(d, 'tdd', 'refactor', 'TEST-A-001').code, 0);
+  assert.equal(spawnSync('git', ['add', '-A'], { cwd: d }).status, 0);
+  assert.equal(spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'symlink wrapper baseline'], { cwd: d }).status, 0);
+  const clean = sdd(d, 'gate', '--changed');
+  assert.equal(clean.code, 0, clean.out);
+  assert.doesNotMatch(clean.out, /scope: .*defin(?:es|ing) what a gate check runs/, clean.out);
+  fs.appendFileSync(path.join(d, 'tools/target.sh'), '# nested target change\n');
+  r31aDrift(d, 'tools/check.sh');
+});
+
+test('r31a #344 Cargo definitions above the repo root remain covered by Green snapshots', () => {
+  const original = r31aFixture({}, [{ name: 'test', cmd: ['sh', '-c', 'true # cargo test'] }]);
+  const parent = fs.mkdtempSync(path.join(work, 'cargo-ancestor-'));
+  const d = path.join(parent, 'repo');
+  fs.renameSync(original, d);
+  fs.mkdirSync(path.join(parent, '.cargo'));
+  const target = path.join(parent, '.cargo/config.toml');
+  fs.writeFileSync(target, '[build]\nrustflags = []\n');
+  const refactor = sdd(d, 'tdd', 'refactor', 'TEST-A-001');
+  assert.equal(refactor.code, 0, refactor.out);
+  assert.equal(sdd(d, 'gate', '--changed').code, 0);
+  fs.appendFileSync(target, '# changed effective ancestor\n');
+  r31aDrift(d, '../.cargo/config.toml');
+});
+
+test('r31a #340 file-valued interpreter options are part of the command closure', () => {
+  const d = r31aFixture({ 'tools/preload.mjs': 'export {};\n' }, [{ name: 'test', cmd: ['node', '--import=./tools/preload.mjs', '-e', '0'] }]);
+  fs.appendFileSync(path.join(d, 'tools/preload.mjs'), '// changed selection\n');
+  r31aDrift(d, 'tools/preload.mjs');
+});
+
+test('r31a #344 Cargo-home configuration is hashed as a complete definition', () => {
+  const previous = ENV.CARGO_HOME;
+  ENV.CARGO_HOME = '.cargo-home';
+  try {
+    const d = r31aFixture({ '.cargo-home/config.toml': '[build]\nrustflags = []\n' }, [{ name: 'test', cmd: ['sh', '-c', 'true # cargo test'] }]);
+    fs.appendFileSync(path.join(d, '.cargo-home/config.toml'), '[env]\nSELECT = "smoke"\n');
+    r31aDrift(d, '.cargo-home/config.toml');
+  } finally {
+    if (previous === undefined) delete ENV.CARGO_HOME;
+    else ENV.CARGO_HOME = previous;
+  }
+});
+
+test('r31a #340 script-relative nested wrapper imports belong to the same closure', () => {
+  const d = r31aFixture({
+    'tools/run.mjs': "import './nested.mjs';\n",
+    'tools/nested.mjs': 'export {};\n',
+  }, [{ name: 'test', cmd: ['node', 'tools/run.mjs'] }]);
+  fs.appendFileSync(path.join(d, 'tools/nested.mjs'), '// changed selection\n');
+  r31aDrift(d, 'tools/nested.mjs');
+});

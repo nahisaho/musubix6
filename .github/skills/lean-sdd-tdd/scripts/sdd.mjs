@@ -5131,28 +5131,117 @@ function pytestDefFiles(b) {
     && (!b || f.startsWith(b) || f === 'conftest.py' || b.startsWith(path.posix.dirname(f) + '/')));
   return [...configs, ...hooks];
 }
-// hashes of the text that selects what each gate check runs (package.json script, pytest config/hooks, cargo alias); recorded at Green/refactor, compared by the full gate (#325, #333)
-function checkDefShas(cfg) {
+// Static, conservative execution-surface closure; never execute wrappers to discover their inputs.
+function checkDefClosure(cfg, read = (f) => { try { return fs.readFileSync(path.resolve(ROOT, f), 'utf8'); } catch { return null; } }) {
   const all = [...(cfg.checks ?? []), ...(cfg.projects ?? []).flatMap((p) => (p.checks ?? []).map((c) => ({ ...c, name: `${p.root}:${c.name}`, cwd: p.root })))];
-  const rd = (f) => { try { return fs.readFileSync(path.join(ROOT, f), 'utf8'); } catch { return null; } };
-  const o = {};
-  for (const c of all) {
-    const b = c.cwd ? normDep(c.cwd) + '/' : '';
-    const line = (c.cmd ?? []).join(' ');
-    const sm = line.match(/\b(?:npm|pnpm|yarn|bun)\s+(?:run(?:-script)?\s+)?([\w:.-]+)/);
-    if (sm) { const t = rd(b + 'package.json'); let v; try { v = t && JSON.parse(t).scripts?.[sm[1] === 't' ? 'test' : sm[1]]; } catch { /* unparsable */ } if (v !== undefined && v !== null) o[`${c.name}|${b}package.json`] = sha(String(v)); }
-    if (/\bpytest\b/.test(line)) for (const f of pytestDefFiles(b)) {
-      let t = rd(f); if (t === null) continue;
-      if (path.posix.basename(f) === 'pyproject.toml') t = t.split(/^(?=\[)/m).filter((x) => /^\[tool\.pytest/.test(x)).join('');
-      o[`${c.name}|${f}`] = sha(t);
+  const cache = new Map(), defs = new Map();
+  const rd = (f) => { if (!cache.has(f)) cache.set(f, read(f)); return cache.get(f); };
+  const relative = (f) => path.relative(ROOT, f).split(path.sep).join('/');
+  const tokens = (text) => {
+    const result = [];
+    for (const m of String(text).matchAll(/"([^"]*)"|'([^']*)'|`([^`]*)`|([^\s"'`()\[\]{},;|&<>]+)/g)) {
+      const t = m[1] ?? m[2] ?? m[3] ?? m[4];
+      result.push(t);
+      if (m[4] === undefined && /\s/.test(t)) result.push(...tokens(t));
     }
-    if (c.cmd?.[0] === 'cargo' && c.cmd[1]) for (const m of ['.cargo/config.toml', '.cargo/config']) {
-      const t = rd(b + m); if (t === null) continue;
-      const al = t.split('\n').filter((l) => new RegExp(`^\\s*${c.cmd[1].replace(/[^\w-]/g, '')}\\s*=`).test(l)).join('\n');
-      if (al) o[`${c.name}|${b}${m}`] = sha(al);
+    return result;
+  };
+  for (const c of all) {
+    const visited = new Set(), activeFiles = new Set(), scripts = new Map();
+    const put = (f, text, label = `check ${c.name} (${f} changed)`) => {
+      defs.set(`${c.name}|${f}`, { sha: sha(text), label });
+    };
+    const file = (abs, cwd, label) => {
+      const f = relative(abs), t = rd(f);
+      if (t === null) return;
+      put(f, t, label);
+      const key = `${f}\0${cwd}`;
+      if (visited.has(key) || activeFiles.has(f) || t.includes('\0')) return;
+      visited.add(key);
+      activeFiles.add(f);
+      inspect(tokens(t), cwd, path.dirname(abs));
+      activeFiles.delete(f);
+    };
+    const packageScript = (cwd, name, manager) => {
+      const f = relative(path.join(cwd, 'package.json'));
+      let pkg;
+      try { pkg = JSON.parse(rd(f)); } catch { return; }
+      const names = manager === 'bun' ? [name] : [name, `pre${name}`, `post${name}`];
+      for (const n of names) {
+        const value = pkg?.scripts?.[n];
+        if (typeof value !== 'string') continue;
+        if (!scripts.has(f)) scripts.set(f, new Map());
+        const selected = scripts.get(f);
+        if (selected.has(n)) continue;
+        selected.set(n, value);
+        inspect(tokens(value), cwd);
+      }
+      const selected = scripts.get(f);
+      if (selected) {
+        const entries = [...selected].sort(([a], [b]) => a.localeCompare(b));
+        // Preserve the old single-script digest for ledgers without hooks or nested scripts.
+        put(f, entries.length === 1 ? entries[0][1] : JSON.stringify(entries),
+          `check ${c.name} runs package.json script "${name}" (${f} changed)`);
+      }
+    };
+    const inspect = (ts, initialCwd, sourceDir = initialCwd) => {
+      let cwd = initialCwd;
+      for (let i = 0; i < ts.length; i++) {
+        const token = ts[i], exe = path.basename(token);
+        if (token === 'cd' && ts[i + 1]) { cwd = path.resolve(cwd, ts[++i]); continue; }
+        if (/^(npm|pnpm|yarn|bun)$/.test(exe)) {
+          let j = i + 1, packageCwd = cwd;
+          while (/^(--prefix|--cwd|-C|--dir)$/.test(ts[j] ?? '') && ts[j + 1]) {
+            packageCwd = path.resolve(cwd, ts[j + 1]); j += 2;
+          }
+          let name = ts[j];
+          if (/^run(?:-script)?$/.test(name ?? '')) name = ts[j + 1];
+          if (name === 't') name = 'test';
+          if (name && /^[\w:.-]+$/.test(name) && !/^(exec|install|ci|add|dlx)$/.test(name)) packageScript(packageCwd, name, exe);
+        }
+        if (exe === 'pytest') {
+          const b = relative(cwd), prefix = b ? b + '/' : '';
+          for (const f of pytestDefFiles(prefix)) {
+            let t = rd(f); if (t === null) continue;
+            if (path.posix.basename(f) === 'pyproject.toml') t = t.split(/^(?=\[)/m).filter((x) => /^\[tool\.pytest/.test(x)).join('');
+            put(f, t, `check ${c.name} runs pytest, configured by ${f} (changed)`);
+          }
+        }
+        if (exe === 'cargo') {
+          const alias = ts.slice(i + 1).find((t) => !t.startsWith('+') && !t.startsWith('-'));
+          for (let dir = cwd; ; dir = path.dirname(dir)) {
+            for (const m of ['.cargo/config.toml', '.cargo/config', 'rust-toolchain.toml', 'rust-toolchain']) {
+              const f = relative(path.join(dir, m));
+              file(path.join(dir, m), cwd, `check ${c.name} runs cargo alias "${alias ?? 'test'}" (${f} changed)`);
+            }
+            if (dir === path.dirname(dir)) break;
+          }
+          const home = path.resolve(cwd, process.env.CARGO_HOME ?? path.join(os.homedir(), '.cargo'));
+          for (const m of ['config.toml', 'config']) file(path.join(home, m), cwd);
+        }
+        if (/^(make|gmake)$/.test(exe)) {
+          const makeCwd = ts[i + 1] === '-C' && ts[i + 2] ? path.resolve(cwd, ts[i + 2]) : cwd;
+          for (const m of ['GNUmakefile', 'makefile', 'Makefile']) file(path.join(makeCwd, m), makeCwd);
+        }
+        // Keep argv boundaries (including paths with spaces), and literal paths inside wrapper source.
+        const candidate = token.replace(/^--?[\w-]+=/, '');
+        if (!candidate || /[*?{}]/.test(candidate) || candidate.startsWith('-')) continue;
+        const abs = path.resolve(cwd, candidate);
+        if (path.isAbsolute(candidate) && !abs.startsWith(ROOT + path.sep) && !/\.(?:[cm]?[jt]s|py|sh|rb|pl)$/.test(candidate)) continue;
+        file(abs, cwd);
+        if (sourceDir !== cwd) file(path.resolve(sourceDir, candidate), cwd);
+      }
+    };
+    for (const cmd of [c.cmd, c.changedCmd, c.hubFallbackCmd]) if (cmd) {
+      const argv = (Array.isArray(cmd) ? cmd : [cmd]).map(String), cwd = path.resolve(ROOT, c.cwd ?? '.');
+      inspect(argv, cwd);
+      inspect(argv.flatMap(tokens), cwd);
     }
   }
-  return o;
+  return defs;
+}
+function checkDefShas(cfg) {
+  return Object.fromEntries([...checkDefClosure(cfg)].map(([k, v]) => [k, v.sha]));
 }
 // scope confidence (design 3.1): globs for `unscoped` / --allow-unscoped / default ignores (matched with globRe)
 const SCOPE_IGNORE = ['**/*.md', '.github/**', 'LICENSE', '.sdd/**'];
@@ -5633,7 +5722,7 @@ function cmdGate() {
         else lines.push(`! ${wm}${bc.scopePolicy === 'strict' ? ' (accepted by --allow-config-weaken)' : ''}`);
       }
     }
-    if (!flags.changed && !flags['no-run']) {
+    if (!flags['no-run']) {
       // Include new definitions: an added higher-precedence config can narrow the run without changing a recorded file (#333).
       const rec = readLedger().reverse().find((e) => e.checkDefShas)?.checkDefShas;
       if (rec) {
@@ -5708,27 +5797,24 @@ function cmdGate() {
         }
       }
     }
-    // a changed manifest that defines what a gate check runs can silently narrow the test run (#324)
-    const defs = [];
-    const chgSet = changedFiles();
-    for (const c of allChecks) {
-      const b = c.cwd ? normDep(c.cwd) + '/' : '';
-      const line = (c.cmd ?? []).join(' ');
-      const sm = line.match(/\b(?:npm|pnpm|yarn|bun)\s+(?:run(?:-script)?\s+)?([\w:.-]+)/);
-      const script = sm ? (sm[1] === 't' ? 'test' : sm[1]) : null;
-      if (script && chgSet.has(b + 'package.json')) {
-        const cur = (() => { try { return JSON.parse(fs.readFileSync(path.join(ROOT, b + 'package.json'), 'utf8')).scripts?.[script]; } catch { return undefined; } })();
-        const old = spawnSync('git', ['show', `HEAD:./${b}package.json`], { cwd: ROOT, encoding: 'utf8' });
-        let prev; try { prev = old.status === 0 ? JSON.parse(old.stdout).scripts?.[script] : undefined; } catch { prev = undefined; }
-        if (old.status !== 0 || cur !== prev) defs.push(`check ${c.name} runs package.json script "${script}" (${b}package.json changed)`);
+    const currentDefs = checkDefClosure(cfg);
+    const tree = spawnSync('git', ['ls-tree', '-r', '-z', bref, '--', '.'], { cwd: ROOT, encoding: 'utf8' });
+    const modes = new Map((tree.stdout ?? '').split('\0').filter(Boolean).map((s) => [s.slice(s.indexOf('\t') + 1), s.slice(0, 6)]));
+    const baselineRead = (f, seen = new Set()) => {
+      if (seen.has(f)) return null;
+      seen.add(f);
+      if (f === '..' || f.startsWith('../') || path.isAbsolute(f)) {
+        try { return fs.readFileSync(path.resolve(ROOT, f), 'utf8'); } catch { return null; }
       }
-      if (/\bpytest\b/.test(line)) for (const f of pytestDefFiles(b)) if (chgSet.has(f)) defs.push(`check ${c.name} runs pytest, configured by ${f} (changed)`);
-      if (c.cmd?.[0] === 'cargo' && c.cmd[1]) for (const m of ['.cargo/config.toml', '.cargo/config']) {
-        if (!chgSet.has(b + m)) continue;
-        let txt = ''; try { txt = fs.readFileSync(path.join(ROOT, b + m), 'utf8'); } catch { /* removed */ }
-        if (!txt || new RegExp(`^\\s*${c.cmd[1].replace(/[^\w-]/g, '')}\\s*=`, 'm').test(txt)) defs.push(`check ${c.name} runs cargo alias "${c.cmd[1]}" (${b}${m} changed)`);
-      }
-    }
+      if (!modes.has(f)) return null;
+      const r = spawnSync('git', ['show', `${bref}:./${f}`], { cwd: ROOT, encoding: 'utf8' });
+      if (r.status !== 0) return null;
+      return modes.get(f) === '120000' ? baselineRead(rel(path.resolve(ROOT, path.dirname(f), r.stdout)), seen) : r.stdout;
+    };
+    const baselineDefs = checkDefClosure(cfg, baselineRead);
+    const defs = [...new Set([...currentDefs.keys(), ...baselineDefs.keys()])]
+      .filter((k) => currentDefs.get(k)?.sha !== baselineDefs.get(k)?.sha)
+      .map((k) => (currentDefs.get(k) ?? baselineDefs.get(k)).label);
     if (defs.length) {
       const msg = `scope: a changed file defines what a gate check runs — ${defs.join('; ')} — the test run may have been narrowed; review the diff`;
       if (cfg.scopePolicy === 'strict') add(false, `${msg} (scopePolicy strict)`);
