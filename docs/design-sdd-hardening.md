@@ -86,9 +86,14 @@ Two consecutive waves with S1 = S2 = 0 end the loop. S3 findings go into one tra
 | r24b | §3.2 stub confidence markers + `tdd stub --report` (Rust first, then Python/TS) | r23a (#310) |
 | r24c | §3.3 `weak` vs `suspect` split + ledger recording | r23b (#311) |
 | r24d | §3.4 mapper differential + stub round-trip tests | r24a, r24b |
-| Wave 16 | 5 apps, judged by §3.5 | r24 all |
+| r25 | hardening fixes found while landing r24 (stubs, weak-Red, scope) | r24 all |
+| Wave 16 | 5 apps, judged by §3.5. Result: S1=0, S2=8, S3=55 — stop criterion **not met** | r25 |
+| r26a-d | Wave 16 S2 fixes: #316 unmapped/unannotated files, #317 `refactor --stale`, #318 Rust stub signatures, #319 generated oracle + weak-Red helpers | Wave 16 |
+| Wave 17+ | repeat until two consecutive waves have S1 = S2 = 0 | r26 |
 
-Defaults: §3.1 rule 1 (fail on unscoped) is **on** for new `init`, off for existing `.sdd/config.json` (key `scopePolicy: "strict" | "warn"`, default `warn` when absent), flipping to `strict` after Wave 16 if S1/S2 = 0.
+Status: §3.1–§3.4 are implemented (§3.4 as `r24d` tests: scope differential per ecosystem, Rust stub round-trip with counted toolchain skips, ledger invariants).
+
+Defaults: §3.1 rule 1 (fail on unscoped) is **on** for new `init`, off for existing `.sdd/config.json` (key `scopePolicy: "strict" | "warn"`, default `warn` when absent), flipping to `strict` once the §3.5 stop criterion is met. **On hold:** Wave 16 had S2 = 8, so the default stays `warn`.
 
 ## 5. Risks
 
@@ -99,6 +104,6 @@ Defaults: §3.1 rule 1 (fail on unscoped) is **on** for new `init`, off for exis
 
 ## 6. Open questions
 
-1. ~~`scopePolicy` default~~ Decided (2026-10-13, @nahisaho): existing projects stay `warn`; new `init` writes `strict`; default flips to `strict` after Wave 16 if S1/S2 = 0.
+1. ~~`scopePolicy` default~~ Decided (2026-10-13, @nahisaho): existing projects stay `warn`; new `init` writes `strict`; default flips to `strict` once two consecutive waves have S1/S2 = 0 (Wave 16 did not qualify).
 2. Should `suspect` Reds count toward the §3.5 S2 class?
 3. Fixture licensing: may snippets from dogfood apps be committed?
