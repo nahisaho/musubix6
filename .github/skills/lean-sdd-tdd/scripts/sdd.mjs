@@ -1103,6 +1103,15 @@ function appendLedgerLocked(e) {
   fs.mkdirSync(SDD, { recursive: true });
   fs.appendFileSync(LEDGER, JSON.stringify(full) + '\n');
 }
+// every baseline ledger entry must survive (ignoring seq/prev/hash, which merge-ledger re-chains); a removed or rewritten one is tampering (#328)
+function ledgerRegression(bref = 'HEAD') {
+  const sh = spawnSync('git', ['show', `${bref}:./.sdd/tdd.jsonl`], { cwd: ROOT, encoding: 'utf8' });
+  if (sh.status !== 0 || !fs.existsSync(LEDGER)) return null;
+  const key = (l) => { try { const { seq, prev, hash, ...r } = JSON.parse(l); return JSON.stringify(r); } catch { return l; } };
+  const cur = new Set(fs.readFileSync(LEDGER, 'utf8').split('\n').filter(Boolean).map(key));
+  const lost = sh.stdout.split('\n').filter(Boolean).map(key).filter((k) => !cur.has(k));
+  return lost.length ? `${lost.length} ledger entr${lost.length === 1 ? 'y' : 'ies'} of ${bref} removed or modified in ${rel(LEDGER)} (truncation/rewrite; only appends or tdd merge-ledger are allowed)` : null;
+}
 let REQ_SHA = null;
 // current hash of a REQ's spec line; entries recorded before this field existed have no reqSha and are not checked
 function reqShaOf(id) {
@@ -4459,7 +4468,7 @@ function cmdTdd() {
   const { ents, dups } = scanEntities(files);
   if (sub === 'check') {
     const entries = readLedger();
-    const bad = verifyChain(entries);
+    const bad = verifyChain(entries) ?? ledgerRegression();
     out(bad ? `LEDGER FAIL: ${bad}` : `LEDGER OK (${entries.length} entries)`);
     return bad ? 1 : 0;
   }
@@ -5470,6 +5479,8 @@ function cmdGate() {
         }
       }
     }
+  const lreg = ledgerRegression(typeof flags.baseline === 'string' ? flags.baseline : 'HEAD');
+  if (lreg) add(false, `ledger: ${lreg}`);
   let scopeJson;
   if (flags.changed) {
     const pr = (cfg.projects ?? []).map((p) => normDep(p.root) + '/');
