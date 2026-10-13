@@ -1,12 +1,17 @@
 # AI cost log (USD)
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 - Project: `/home/nahisaho/GitHub/musubix-fix-r29a`
 - Updated: 2026-10-13 13:16 UTC
 =======
 - Project: `/home/nahisaho/GitHub/musubix-fix-r29c`
 - Updated: 2026-10-13 13:14 UTC
 >>>>>>> fix/r29c
+=======
+- Project: `/home/nahisaho/GitHub/musubix-fix-r29d`
+- Updated: 2026-10-13 13:16 UTC
+>>>>>>> fix/r29d
 - Sessions: 0
 - **Total: $0.00**
 - Basis: `total_nano_aiu` in the Copilot CLI session store / 1e9 = AIU; 1 AIU = 1 AI credit = 0.01 USD (docs.github.com, usage-based billing).

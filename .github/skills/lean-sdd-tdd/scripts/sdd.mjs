@@ -3683,7 +3683,15 @@ function stubFor(testPath, id) {
       const miss = methodsOf(S, n, true).filter((k) => !new RegExp(`(?:^|\\s)(?:async\\s+|static\\s+|get\\s+|set\\s+)*${k}\\s*\\(|\\b${k}\\s*[=:]`).test(body));
       const missStatic = staticsOf(S, n).filter((k) => !new RegExp(`\\bstatic\\s+(?:async\\s+)?${k}\\b`).test(body));
       if (!miss.length && !missStatic.length) continue;
-      const ins = [...missStatic.map((k) => mth(n, k, true)), ...miss.map((k) => mth(n, k))].join('');
+      // a receiver variable also bound to a non-class value (`s = 'x'` and `s = new C()`) is no evidence of the class: skip, report ambiguous (#330)
+      const rhsOther = (v) => [...S.matchAll(new RegExp(`(?:\\b(?:const|let|var)\\s+|^\\s*)${v.replace(/\$/g, '\\$')}\\s*(?::[^=\\n]+)?=(?!=)\\s*([^\\n]*)`, 'gm'))].some((x) => new RegExp(`^(?:['"\`\\d\\[{-]|new\\s+(?!${n}\\b))`).test(x[1]));
+      const ambiguous = (k) => { const rc = new Set([...S.matchAll(new RegExp(`(?<![\\w$.])([A-Za-z_$][\\w$]*)\\.${k}\\s*\\(`, 'g'))].map((x) => x[1])); return rc.size > 0 && [...rc].every(rhsOther); };
+      const amb = miss.filter(ambiguous);
+      for (const k of amb) { note(`${n}.${k}`, 'ambiguous'); (made.notes ??= []).push(`${n}.${k}: receiver is also bound to another type in the test — not added to ${rel(file)}, add it by hand if it belongs to ${n}`); }
+      const miss2 = miss.filter((k) => !amb.includes(k));
+      if (!miss2.length && !missStatic.length) continue;
+      const mark = (k, m) => { note(`${n}.${k}`, 'guessed'); return m.replace(/\{\n/, '{ // SDD-TODO(stub): member added to an existing type from the test — implement it or remove it\n'); };
+      const ins = [...missStatic.map((k) => mark(k, mth(n, k, true))), ...miss2.map((k) => mark(k, mth(n, k)))].join('');
       cur = cur.slice(0, i - 1) + ins + cur.slice(i - 1);
       changed = true;
     }
@@ -4470,6 +4478,14 @@ function noExecution(plain) {
   return /did not perform any assertions|Passed:\s*0,[^\n]*Skipped:\s*[1-9]/i.test(plain);
 }
 
+// REQs whose verifying tests all have valid Red→Green evidence
+function greenReqs(ents) {
+  const entries = readLedger(), out = new Set(), all = new Map();
+  for (const e of ents.values()) if (e.kind === 'TEST') for (const r of e.refs.verifies) all.set(r, [...(all.get(r) ?? []), e]);
+  for (const [r, ts] of all) if (ts.every((e) => evidenceStatus(e.id, e.path, entries).ok)) out.add(r);
+  return out;
+}
+
 function cmdTdd() {
   const sub = pos[1];
   if (sub === 'merge-ledger') return mergeLedger();
@@ -4498,7 +4514,15 @@ function cmdTdd() {
     const stubSpec = allSpecs.find((sp) => sp.reqs.some((q) => q.id === t.refs.verifies[0]));
     if (stubSpec && needsLock(stubSpec) && approvalState(stubSpec) !== 'ok') out(`! ${stubSpec.tier} feature ${stubSpec.feature} approval is ${approvalState(stubSpec)}: stubbing is allowed, but tdd red will REFUSE until the spec is approved (approve prepare/record ${stubSpec.feature})`);
     const priorFiles = new Set(workspaceFiles());
+    const before = new Map(workspaceFiles().map((f) => [f, (() => { try { return fs.readFileSync(path.join(ROOT, f), 'utf8'); } catch { return null; } })()]));
     const made = stubFor(t.path, group.map((e) => e.id));
+    // a stub run that edits a file already annotated for a Green REQ says so (#330)
+    const greens = greenReqs(ents);
+    for (const f of [...new Set(made)]) {
+      if (!priorFiles.has(f) || before.get(f) === fs.readFileSync(path.join(ROOT, f), 'utf8')) continue;
+      const g = [...ents.values()].filter((e) => e.path === f).flatMap((e) => e.refs.implements).filter((r) => greens.has(r) && !t.refs.verifies.includes(r));
+      if (g.length) (made.notes ??= []).push(`${f} was modified but already implements Green ${[...new Set(g)].join(', ')} (another feature): review the diff, SDD-TODO(stub) members must be implemented or removed`);
+    }
     let annotationIndex = 0;
     for (const file of [...new Set(made)]) {
       if (priorFiles.has(file) || !/\.(?:java|php|cs|jl|rs|py|exs?|[cm]?[jt]sx?)$/.test(file)) continue;
@@ -5320,6 +5344,20 @@ function cmdGate() {
   }
   add(!problems.length, `tdd evidence${flags.changed ? ' (changed scope)' : ''}: ${covered}/${total} tests Red→Green${weak > charac ? `, ${weak - charac} weak Red${weak > charac + retestN ? ' — Red came from setup/load, not the asserted behaviour (before implementing: `tdd red <ID> --expect <text>`; after Green: keep as weak, or temporarily break the implementation to re-record Red): ' + weakIds.slice(0, 8).join(', ') + (weakIds.length > 8 ? `, … +${weakIds.length - 8}` : '') : ''}` : ''}${suspectIds.length ? ` (${suspectIds.length} suspect Red — heuristic setup-call classification, not blocking; audit: ${suspectIds.slice(0, 8).join(', ')}${suspectIds.length > 8 ? `, … +${suspectIds.length - 8}` : ''}; each is accepted as-is with \`tdd red <ID> --allow-setup-red\`)` : ''}${charac ? `${weak > charac ? '' : ','} ${charac} characterization (passed without a failing Red; not a weak Red)` : ''}${retestN ? ` (${retestN} retest: Red re-recorded with --retest, passed without a failing Red${retestSupersededN ? `; ${retestSupersededN} superseded an earlier strong Red — re-record a failing Red by temporarily breaking the implementation if that evidence matters` : ''}: ${retestIds.slice(0, 8).join(', ')}${retestIds.length > 8 ? `, … +${retestIds.length - 8}` : ''})` : ''}${blessedIds.length ? ` (${blessedIds.length} refactor-recorded after the test/setup changed, no new Red: ${blessedIds.slice(0, 8).join(', ')}${blessedIds.length > 8 ? `, … +${blessedIds.length - 8}` : ''}; to replace that with real evidence: tdd red <ID> --retest "<why>" then tdd green <ID>)` : ''}`, [...problems.slice(0, flags.verbose ? problems.length : 6), ...(problems.length > 6 && !flags.verbose ? [`… +${problems.length - 6} more (all: gate --verbose)`] : [])]);
 
+  // leftover stub placeholders in source owned by a Green REQ (#330)
+  {
+    const greens = greenReqs(ents), left = [];
+    for (const e of ents.values()) {
+      if (e.kind === 'TEST' || left.some((x) => x.f === e.path) || !e.refs.implements.some((r) => greens.has(r) && relevant.has(r))) continue;
+      let txt = ''; try { txt = fs.readFileSync(path.join(ROOT, e.path), 'utf8'); } catch { /* removed */ }
+      const n = txt.split('\n').findIndex((l) => /SDD-TODO\(stub\)|['"`]not implemented: |\bnot implemented: \w/.test(l));
+      if (n >= 0) left.push({ f: e.path, line: n + 1 });
+    }
+    if (left.length) {
+      const msg = `stub: ${left.length} source file(s) of Green REQs still hold SDD-TODO(stub) / 'not implemented:' placeholders: ${left.slice(0, 4).map((x) => `${x.f}:${x.line}`).join(', ')}${left.length > 4 ? ', …' : ''} — implement or remove them`;
+      if (loadConfig().scopePolicy === 'strict') add(false, `${msg} (scopePolicy strict)`); else lines.push(`! ${msg} (scopePolicy warn: set "scopePolicy": "strict" to fail)`);
+    }
+  }
   const cfg = loadConfig();
   if (cfg.prepare && !flags['no-run']) {
     const pc = cfg.prepare;
