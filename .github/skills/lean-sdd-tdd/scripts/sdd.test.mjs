@@ -9383,3 +9383,26 @@ test('r28b a config change that does not weaken stays silent', () => {
   const d = r28b({ scopePolicy: 'warn' }, { scopePolicy: 'strict' });
   assert.doesNotMatch(sdd(d, 'gate', '--changed').out, /config:/);
 });
+
+// r29a #327: a lockfile in a workspace sub-root widens like its manifest; the change set survives a check that rewrites it
+const r29a = (files, lock, firstCmd) => {
+  const d = mini('---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | x shall hold. | TEST-A-001 |\n', { ...files, [lock]: 'v1\n' });
+  const roots = Object.keys(files).filter((f) => /\/(package|Cargo)\.(json|toml)$/.test(f) && f.split('/').length > 2).map((f) => path.posix.dirname(f));
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ testCmd: PASS, checks: [], projects: roots.map((r, i) => ({ root: r, testCmd: PASS, checks: [{ name: 'ok', cmd: i === 0 ? firstCmd : ['node', '-e', '0'] }] })) }));
+  spawnSync('git', ['add', '-A'], { cwd: d });
+  spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'i'], { cwd: d });
+  fs.appendFileSync(path.join(d, lock), 'v2\n');
+  return d;
+};
+test('r29a #327 a package-lock.json in a workspace sub-root runs every project under it', () => {
+  const d = r29a({ 'js/package.json': '{"workspaces":["packages/*"]}', 'js/packages/a/package.json': '{"name":"a"}', 'js/packages/b/package.json': '{"name":"b"}' }, 'js/package-lock.json', ['node', '-e', '0']);
+  const o = sdd(d, 'gate', '--changed').out;
+  assert.match(o, /✓ cmd js\/packages\/a:ok/, o);
+  assert.match(o, /✓ cmd js\/packages\/b:ok/, o);
+});
+test('r29a #327 a check that rewrites the lockfile does not hide the change from later projects', () => {
+  const d = r29a({ 'rust/Cargo.toml': '[workspace]\nmembers = ["crates/*"]\n', 'rust/crates/a/Cargo.toml': '[package]\nname = "a"\n', 'rust/crates/b/Cargo.toml': '[package]\nname = "b"\n' }, 'rust/Cargo.lock', ['git', 'checkout', '--', '../../Cargo.lock']);
+  const o = sdd(d, 'gate', '--changed').out;
+  assert.match(o, /✓ cmd rust\/crates\/b:ok/, o);
+  assert.doesNotMatch(o, /skipped/, o);
+});

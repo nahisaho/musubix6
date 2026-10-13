@@ -4960,7 +4960,10 @@ function cmdTrace() {
   return t.errors.length ? 1 : 0;
 }
 
+// `gate --changed` fixes its change set before running checks: a check that rewrites a lockfile (cargo test) must not erase the change for the next project (#327)
+let changedSnap = null;
 function changedFiles() {
+  if (changedSnap) return changedSnap;
   const set = new Set();
   const top = spawnSync('git', ['rev-parse', '--show-toplevel'], { cwd: ROOT, encoding: 'utf8' });
   if (top.status !== 0) return null;
@@ -5305,6 +5308,7 @@ function cmdGate() {
     }
   }
   if (flags.changed) {
+    changedSnap = changedFiles();
     const chg = changedFiles();
     const specFeatures = new Set(loadSpecs().filter((sp) => chg.has(sp.path) || [...chg].some((c) => c.replace(/^\.\//, '') === sp.path)).map((sp) => sp.feature));
     const specImpl = specFeatures.size ? [...scanEntities(listFiles()).ents.values()].filter((e) => e.refs.implements.some((r) => loadSpecs().some((sp) => specFeatures.has(sp.feature) && sp.reqs.some((q) => q.id === r)))).map((e) => e.path) : [];
@@ -5322,7 +5326,9 @@ function cmdGate() {
   // a root Cargo.toml/Cargo.lock of a workspace whose members live under a project dir belongs to that project (#308)
   const cargoOwned = cargoMembersOf;
   // a root manifest/lockfile/toolchain file widens to every project of that ecosystem (design 3.1)
-  const widenOwned = (f) => { const w = WORKSPACE_ROOT.find(([re]) => re.test(f)); return w ? (cfg.projects ?? []).filter((p) => w[1].some((m) => m instanceof RegExp ? (fs.existsSync(path.join(ROOT, p.root)) && fs.readdirSync(path.join(ROOT, p.root)).some((x) => m.test(x))) : fs.existsSync(path.join(ROOT, p.root, m)))).map((p) => normDep(p.root)) : []; };
+  // a lockfile in a workspace sub-root widens like the root one, to the projects under that dir (#327)
+  const NESTED_LOCK = /^(Cargo\.lock|package-lock\.json|npm-shrinkwrap\.json|pnpm-lock\.yaml|yarn\.lock|bun\.lockb?|uv\.lock|poetry\.lock|Pipfile\.lock)$/;
+  const widenOwned = (f) => { const dir = path.posix.dirname(f), nested = dir !== "." && NESTED_LOCK.test(path.posix.basename(f)); const w = WORKSPACE_ROOT.find(([re]) => re.test(nested ? path.posix.basename(f) : f)); return w ? (cfg.projects ?? []).filter((p) => (!nested || normDep(p.root) === dir || normDep(p.root).startsWith(dir + "/")) && w[1].some((m) => m instanceof RegExp ? (fs.existsSync(path.join(ROOT, p.root)) && fs.readdirSync(path.join(ROOT, p.root)).some((x) => m.test(x))) : fs.existsSync(path.join(ROOT, p.root, m)))).map((p) => normDep(p.root)) : []; };
   // projects that dependsOn (transitively) a package rebuilt by a root manifest change are consumers too (#322)
   const withDependents = (roots) => [...roots, ...(cfg.projects ?? []).filter((p) => depClosure(p).some((d) => roots.some((r) => d === r || d.startsWith(r + '/') || r.startsWith(d + '/')))).map((p) => normDep(p.root))];
   const artConsumers = (f) => { const u = Object.entries(cfg.artifacts ?? {}).find(([a]) => normDep(a) === f)?.[1]; const w = [...cargoOwned(f), ...widenOwned(f)]; return [...(u === undefined ? [] : [].concat(u).map(normDep)), ...(w.length ? withDependents(w) : [])]; };
