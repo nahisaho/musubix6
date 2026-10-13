@@ -5201,6 +5201,10 @@ function cmdGate() {
   const chain = verifyChain(entries);
   add(!chain, `ledger: ${chain ?? `${entries.length} entries, chain intact`}`);
 
+  // a declared config `artifacts` file missing from disk (never created, or deleted in the diff) is an error in full and --changed gates (#320)
+  const goneArt = Object.keys(loadConfig().artifacts ?? {}).filter((a) => !fs.existsSync(path.join(ROOT, normDep(a))));
+  for (const a of goneArt) add(false, `artifact ${a}: declared in .sdd/config.json artifacts but missing from disk`, ['restore it, or remove the entry from `artifacts` if it was removed on purpose']);
+
   let relevant = new Set([...t.reqs.keys()]);
   if (flags.changed) {
     const ch = changedFiles();

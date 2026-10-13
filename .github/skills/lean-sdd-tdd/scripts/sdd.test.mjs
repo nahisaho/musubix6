@@ -9181,3 +9181,27 @@ test('r26d gate compact output names the trace warnings', () => {
   assert.match(r.out, /warnings/, r.out);
   assert.match(r.out, /warning: REQ-A-001 has no @implements code/, r.out);
 });
+
+// ---- r27a (#320): a declared artifact missing from disk fails the gate ----
+const r27aProj = (cfg) => failOpenProj({ artifacts: { 'contract/core-ast.md': ['lib.mjs'] }, ...cfg }, { 'contract/core-ast.md': '# ast\n' });
+test('r27a full gate fails naming a declared artifact deleted from disk', () => {
+  const d = r27aProj({});
+  fs.rmSync(path.join(d, 'contract/core-ast.md'));
+  const r = sdd(d, 'gate', '--no-run');
+  assert.equal(r.code, 1, r.out);
+  assert.match(r.out, /✗.*contract\/core-ast\.md/, r.out);
+});
+test('r27a gate --changed fails when the declared artifact was deleted in the diff (git rm)', () => {
+  const d = r27aProj({});
+  spawnSync('git', ['rm', '-q', 'contract/core-ast.md'], { cwd: d });
+  const r = sdd(d, 'gate', '--changed', '--baseline', 'HEAD', '--no-run');
+  assert.equal(r.code, 1, r.out);
+  assert.match(r.out, /✗.*contract\/core-ast\.md/, r.out);
+});
+test('r27a a declared artifact that never existed also fails; a present one passes', () => {
+  const d = r27aProj({ artifacts: { 'contract/never.md': ['lib.mjs'] } });
+  const r = sdd(d, 'gate', '--no-run');
+  assert.equal(r.code, 1, r.out);
+  assert.match(r.out, /✗.*contract\/never\.md/, r.out);
+  assert.doesNotMatch(r.out, /✗.*core-ast/, r.out);
+});

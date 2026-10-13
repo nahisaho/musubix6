@@ -144,6 +144,7 @@ Audit of `gate` paths that could end PASS (exit 0) with missing or unverifiable 
 | Path | Repro | Class | Fix / reason |
 |---|---|---|---|
 | `changedCmd` check, only deleted files changed | delete `lib.mjs`, `gate --changed` | S1 | skipped as "no changed files" and passed. Now runs the full check (`only deleted files changed`) |
+| Declared config `artifacts` file missing from disk (deleted, `git rm`, or never created) | r27a (#320): `git rm contract/x.md`, `gate` / `gate --changed --baseline HEAD` | S1 | passed silently. Now `✗ artifact <path>: declared … but missing from disk` in both modes; remove the entry if the deletion is intended (`deliverables` entries are `artifacts` keys, so they are covered; `parity` pairs are unchanged) |
 | Root test check skipped because all changes are in a nested project that has no checks | `projects:[{root:'app'}]`, root `test` check, edit `app/x.mjs` | S1 | nothing ran. `scopePolicy` strict: `✗` fail; warn (default for existing configs): `!` line naming the project |
 | New unannotated source file under a project; unmapped `.sh` | r26a (#316) | S2 | `!` warn, `✗` under strict; `--explain` lists `unannotated`; `.sh` is not claimed by root checks |
 | Unclaimed changed file (no project / dependsOn / check) | r24a | — | already handled by r24a (`scopePolicy`, `unscoped`, `--allow-unscoped`, ledger) |
