@@ -158,3 +158,4 @@ Audit of `gate` paths that could end PASS (exit 0) with missing or unverifiable 
 | Approval/lock absent | T2 or `approval: human` without lock | none | `✗ lock` fail; spec removal also fails |
 | Stale evidence accepted | edit test/REQ/oracle after Green | none | `evidenceStatus` fails (hash of REQ, test region and oracle deps); changed oracles pull their REQs into `--changed` scope |
 | `prepare` step cached on unchanged inputs | — | none | key covers cmd + input hashes + outputs exist |
+- r27c (#322): a root manifest/lockfile change that widens to projects (e.g. `Cargo.toml` → Rust crates) also runs every project that `dependsOn` (transitively) a widened project, so a Python project spawning the rebuilt binary is not SKIPPED; such a dependent with no `checks` of its own is reported as not re-verified and the gate is INCOMPLETE.

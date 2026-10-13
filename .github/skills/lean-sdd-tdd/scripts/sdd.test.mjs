@@ -9181,3 +9181,26 @@ test('r26d gate compact output names the trace warnings', () => {
   assert.match(r.out, /warnings/, r.out);
   assert.match(r.out, /warning: REQ-A-001 has no @implements code/, r.out);
 });
+
+// ---- r27c (#322 root Cargo.toml widens to projects that dependsOn a rebuilt package) ----
+const r27c = (pyChecks) => {
+  const d = mini('---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | x shall hold. | TEST-A-001 |\n', { 'Cargo.toml': '[workspace]\nmembers = ["crates/a"]\n', 'crates/a/Cargo.toml': '[package]\nname = "a"\n', 'py/p/pyproject.toml': '[project]\nname = "p"\n' });
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ testCmd: PASS, checks: [], projects: [{ root: 'crates/a', testCmd: PASS, checks: [{ name: 'ok', cmd: ['node', '-e', '0'] }] }, { root: 'py/p', dependsOn: ['crates/a'], testCmd: PASS, checks: pyChecks }] }));
+  spawnSync('git', ['add', '-A'], { cwd: d });
+  spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'i'], { cwd: d });
+  fs.appendFileSync(path.join(d, 'Cargo.toml'), '# c\n');
+  return d;
+};
+
+test('r27c #322 gate --changed: a root Cargo.toml change also runs projects that dependsOn a rebuilt package', () => {
+  const o = sdd(r27c([{ name: 'py', cmd: ['node', '-e', '0'] }]), 'gate', '--changed').out;
+  assert.match(o, /✓ cmd crates\/a:ok/, o);
+  assert.match(o, /✓ cmd py\/p:py/, o);
+  assert.doesNotMatch(o, /py\/p:py[^\n]*skipped/, o);
+});
+
+test('r27c #322 gate --changed: a dependent project with no check of its own makes the result INCOMPLETE', () => {
+  const r = sdd(r27c([]), 'gate', '--changed');
+  assert.match(r.out, /py\/p[^\n]*not re-verified/, r.out);
+  assert.match(r.out, /INCOMPLETE/, r.out);
+});
