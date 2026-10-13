@@ -9011,3 +9011,50 @@ test('r25d conservative: a stub result never used by the assertion stays setup',
   const r = weak263(null, `${rsOut}sphere\n`, 'a.test.mjs', rs271('', ['  let s = sphere(1);', '  assert_eq!(other(), 2);']));
   assert.match(r.out, /\[weak\].*setup call "sphere"/, r.out);
 });
+
+// ---- r26c: Rust/TS stub fidelity (#318) ----
+const R26C_LIB = 'pub trait Pager { fn alloc(&mut self) -> u32; }\npub struct Mem;\nimpl Pager for Mem { fn alloc(&mut self) -> u32 { 1 } }\npub struct Cache<P: Pager> { pub p: P }\nimpl<P: Pager> Cache<P> {\n    pub fn new(p: P) -> Self { Cache { p } }\n}\npub struct Session;\nimpl Session {\n    pub fn new() -> Self { Session }\n}\n';
+const R26C_TEST = (body, head = 'use repro::{Cache, Mem, Session};\n') => `${head}\n// @id TEST-H-001\n// @verifies REQ-H-001\n#[test]\nfn test_h_001() {\n${body}\n}\n`;
+const r26cProj = (test) => mini(R24B_SPEC, { 'Cargo.toml': '[package]\nname = "repro"\nversion = "0.1.0"\nedition = "2021"\n', 'src/lib.rs': R26C_LIB, 'tests/h_test.rs': test });
+
+test('r26c Rust: a method called on a `let mut` receiver takes &mut self, and is listed in --report', cargoOk, () => {
+  const d = r26cProj(R26C_TEST('    let mut s = Session::new();\n    s.handle(3);\n    assert_eq!(s.handle(4), 4);'));
+  const r = sdd(d, 'tdd', 'stub', 'TEST-H-001', '--report');
+  const lib = fs.readFileSync(path.join(d, 'src/lib.rs'), 'utf8');
+  assert.match(lib, /fn handle<A0>\(&mut self[^\n]*SDD-TODO\(stub\)/, lib);
+  assert.match(r.out, /Session::handle \| guessed \|/, r.out);
+});
+
+test('r26c Rust: methods are added to a generic `impl<P: Trait> Type<P>` block', cargoOk, () => {
+  const d = r26cProj(R26C_TEST('    let mut c = Cache::new(Mem);\n    c.flush(1);\n    assert_eq!(c.len(), 0);'));
+  sdd(d, 'tdd', 'stub', 'TEST-H-001');
+  const lib = fs.readFileSync(path.join(d, 'src/lib.rs'), 'utf8');
+  assert.match(lib, /impl<P: Pager> Cache<P> \{[^]*fn flush[^]*fn len/, lib);
+});
+
+test('r26c Rust: a method no test references is never invented', cargoOk, () => {
+  const d = r26cProj(R26C_TEST('    let mut s = Session::new();\n    s.handle(3);', 'use repro::*;\n'));
+  sdd(d, 'tdd', 'stub', 'TEST-H-001');
+  const lib = fs.readFileSync(path.join(d, 'src/lib.rs'), 'utf8');
+  assert.match(lib, /fn handle/, lib);
+  assert.doesNotMatch(lib, /as_str|fn (?!new|handle|alloc)\w+\(&/, lib);
+});
+
+test('r26c Rust: macro_rules! / `use crate::*` in the test file degrade to partial stubs with a message, not a refusal', cargoOk, () => {
+  const d = r26cProj(R26C_TEST('    let mut s = Session::new();\n    s.handle(3);\n    ck!(1);\n    assert_eq!(top(2), 2);', 'use repro::*;\nmacro_rules! ck { ($e:expr) => { assert!($e == 1) }; }\n'));
+  const r = sdd(d, 'tdd', 'stub', 'TEST-H-001');
+  const lib = fs.readFileSync(path.join(d, 'src/lib.rs'), 'utf8');
+  assert.match(lib, /fn handle/, r.out + lib);
+  assert.match(r.out, /macro_rules! in the test file/, r.out);
+  assert.match(r.out, /wildcard/, r.out);
+});
+
+test('r26c TS: a stub param/const with a literal or annotation avoids any, and --report lists the element', () => {
+  const d = mini(R24B_SPEC, { 'package.json': '{"type":"module"}\n', 'h.test.ts': "import { LIMIT, run } from './h';\n// @id TEST-H-001\n// @verifies REQ-H-001\ntest('x', () => { const n: number = LIMIT; expect(run(1, 'a')).toBe(2); });\n" });
+  const r = sdd(d, 'tdd', 'stub', 'TEST-H-001', '--report');
+  const src = fs.readFileSync(path.join(d, 'h.ts'), 'utf8');
+  assert.doesNotMatch(src, /LIMIT[^\n]*: any/, src);
+  assert.doesNotMatch(r.out, /no inferred elements/, r.out);
+  assert.match(r.out, /LIMIT \| inferred \|/, r.out);
+  assert.match(r.out, /run \| guessed \|/, r.out);
+});
