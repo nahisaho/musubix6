@@ -8,6 +8,8 @@ Lock drift: a lock made under T2/`approval: human` goes stale if the spec later 
 
 Human-approved specs: `approve record` stores the shas of the `@implements` files; a later change makes `gate` print a `!` warning "implementation changed since approval" (not a failure).
 
+Both `approve retire <REQ-ID>` and `approve retire <feature>` apply the same human-name validation as human `approve record`: after NFKC normalization, removal of zero-width/format characters and trimming, empty names, AI attribution and generic names (`bot`, `agent`, `copilot`, `assistant`, `claude`, `gpt`, `human`, `user`, `ai`, `me`, `test`) are refused without changing retirement records or locks. This checks attribution labels, not the person's identity; external human review is still required.
+
 Not enforced (agent discipline): test quality, mutation, security review. Do not claim them.
 
 ## Wave-2b oracle and ownership refinements (#199–#205)
