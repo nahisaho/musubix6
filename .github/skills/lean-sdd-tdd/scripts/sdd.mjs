@@ -1395,9 +1395,25 @@ const RUNNER_ENV_ALLOWLIST = [
   'JAVA_HOME', 'JDK_HOME', 'DOTNET_ROOT', 'DOTNET_ROOT_X64', 'DOTNET_ROOT_X86', 'DOTNET_CLI_HOME',
   'RUSTUP_HOME', 'CARGO_HOME', 'CI', 'TERM', 'NO_COLOR', 'FORCE_COLOR',
 ];
+function resolveExecutable(exe, cwd = ROOT) {
+  if (!exe) return null;
+  for (const p of /[/\\]/.test(exe) ? [path.resolve(cwd, exe)] : (process.env.PATH ?? '').split(path.delimiter).map((d) => path.resolve(cwd, d || '.', exe))) {
+    try { const s = fs.statSync(p); if (s.isFile() && (process.platform === 'win32' || (s.mode & 0o111))) return p; } catch {}
+  }
+  return null;
+}
+const executableHashes = new Map();
+function executableHash(p) {
+  const s = fs.statSync(p), stamp = `${fs.realpathSync(p)}:${s.dev}:${s.ino}:${s.size}:${s.mtimeMs}:${s.ctimeMs}:${s.mode}`;
+  const old = executableHashes.get(p);
+  if (old?.stamp === stamp) return old.sha;
+  const digest = fileSha(p);
+  executableHashes.set(p, { stamp, sha: digest });
+  return digest;
+}
 function runnerEnv(cmd = [], cwd = '.') {
   const allowed = new Set(RUNNER_ENV_ALLOWLIST);
-  const blocked = /^(?:PYTEST_.*|PYTHONPATH|NODE_OPTIONS|NODE_TEST_CONTEXT|GOFLAGS|RUSTFLAGS|RUSTDOCFLAGS|CARGO_.*(?:RUSTFLAGS|RUNNER)|JAVA_TOOL_OPTIONS|JDK_JAVA_OPTIONS|MAVEN_OPTS|GRADLE_OPTS|RUBYOPT|PERL5OPT)$|_(?:SELECTOR|FILTER|OPTIONS|FLAGS|OPTS|PLUGINS?)$/i;
+  const blocked = /^(?:PYTEST_.*|PYTHONPATH|NPM_CONFIG_.*|NODE_OPTIONS|NODE_TEST_CONTEXT|GOFLAGS|RUSTFLAGS|RUSTDOCFLAGS|CARGO_.*(?:RUSTFLAGS|RUNNER)|JAVA_TOOL_OPTIONS|JDK_JAVA_OPTIONS|MAVEN_OPTS|GRADLE_OPTS|RUBYOPT|PERL5OPT)$|_(?:SELECTOR|FILTER|OPTIONS|FLAGS|OPTS|PLUGINS?)$/i;
   const inspect = (text) => {
     const patterns = [
       /\bprocess\.env\.([A-Za-z_]\w*)/g,
@@ -1429,7 +1445,8 @@ function runnerEnv(cmd = [], cwd = '.') {
     } catch { /* try the next executable location */ }
     finally { if (fd !== undefined) fs.closeSync(fd); }
   }
-  return Object.fromEntries(Object.entries(process.env).filter(([key]) => allowed.has(key.toUpperCase())));
+  return { ...Object.fromEntries(Object.entries(process.env).filter(([key]) => allowed.has(key.toUpperCase()))),
+    PYTHONSAFEPATH: '1', PYTHONNOUSERSITE: '1' };
 }
 function runnerEnvRecord(cmd = []) {
   const inherited = Object.keys(runnerEnv(cmd)).sort(), allowed = new Set(inherited.map((k) => k.toUpperCase()));
@@ -1458,15 +1475,49 @@ function run(cmd, timeoutMs, cwd = '.') {
 }
 function run1(cmd, timeoutMs, cwd = '.') {
   const t0 = Date.now();
+  const pytest = pytestArgs(cmd);
+  const safeCmd = pytest ? isolatedPytest(cmd, pytest, cwd) : cmd;
   // PHPUnit/Pest runaway tests can outlive a killed sdd (the group is detached, so nothing signals it): a watchdog in the group kills it once this process is gone (#237)
   const guarded = process.platform !== 'win32' && /phpunit|\bpest\b/.test(cmd.join(' '));
-  const argv = guarded ? ['sh', '-c', 'G=$$; P=$1; shift; ( while kill -0 "$P" 2>/dev/null && kill -0 "$G" 2>/dev/null; do sleep 1; done; kill -0 "$P" 2>/dev/null || kill -s KILL -- "-$G" 2>/dev/null ) </dev/null >/dev/null 2>&1 & exec "$@"', 'sdd-watchdog', String(process.pid), ...cmd] : cmd;
-  const r = spawnSync(argv[0], argv.slice(1), { cwd: path.resolve(ROOT, cwd), env: runnerEnv(cmd, cwd), encoding: 'utf8', timeout: timeoutMs, maxBuffer: 64e6, detached: true });
+  const argv = guarded ? ['sh', '-c', 'G=$$; P=$1; shift; ( while kill -0 "$P" 2>/dev/null && kill -0 "$G" 2>/dev/null; do sleep 1; done; kill -0 "$P" 2>/dev/null || kill -s KILL -- "-$G" 2>/dev/null ) </dev/null >/dev/null 2>&1 & exec "$@"', 'sdd-watchdog', String(process.pid), ...safeCmd] : safeCmd;
+  const r = spawnSync(resolveExecutable(argv[0], path.resolve(ROOT, cwd)) ?? argv[0], argv.slice(1), { cwd: path.resolve(ROOT, cwd), env: runnerEnv(cmd, cwd), encoding: 'utf8', timeout: timeoutMs, maxBuffer: 64e6, detached: true });
   const timedOut = r.error?.code === 'ETIMEDOUT';
   // spawnSync's timeout signals only the launcher (cargo, npm, mvn); the detached group also holds the hung test binary (#225)
   if (timedOut && r.pid) { try { process.kill(-r.pid, 'SIGKILL'); } catch { /* group already gone */ } }
   const text = (r.stdout ?? '') + (r.stderr ?? '') + (timedOut ? `test timed out after ${timeoutMs} ms (hung test? the whole process group was killed)` : r.error ? String(r.error.message) : '');
-  return { exit: r.status ?? (r.error ? 127 : 1), signal: r.signal, text, ms: Date.now() - t0, timedOut };
+  const pytestResults = pytest ? [...text.matchAll(/^SDD-PYTEST (\{[^\n]+\})$/gm)].flatMap((m) => { try { const r = JSON.parse(m[1]); return typeof r.nodeid === 'string' && /^(passed|failed|skipped)$/.test(r.outcome) ? [r] : []; } catch { return []; } }) : null;
+  return { exit: r.status ?? (r.error ? 127 : 1), signal: r.signal, text, ms: Date.now() - t0, timedOut, pytestResults };
+}
+function pytestArgs(cmd) {
+  const exe = path.basename(cmd[0] ?? '');
+  if (exe === 'pytest' || /^pytest-[\d.]+$/.test(exe)) return cmd.slice(1);
+  const m = cmd.indexOf('-m');
+  return /^python[\d.]*$/.test(exe) && m > 0 && cmd[m + 1] === 'pytest' ? cmd.slice(m + 2) : null;
+}
+function isolatedPytest(cmd, args, cwd) {
+  let python = cmd[0];
+  if (!/^python[\d.]*$/.test(path.basename(python))) {
+    try {
+      const first = fs.readFileSync(resolveExecutable(python, path.resolve(ROOT, cwd ?? '.')), 'utf8').split('\n')[0];
+      python = /^#!\s*(\S*python[\d.]*)\s*$/.exec(first)?.[1] ?? 'python3';
+    } catch { python = 'python3'; }
+  }
+  // -S prevents .pth and customization execution; add package directories without running site.main().
+  // Import pytest before exposing the workspace, so a local pytest.py cannot replace the runner.
+  const bootstrap = `import sys, os, sysconfig, site, json
+prefix = os.path.dirname(os.path.dirname(sys.executable))
+venv = [sysconfig.get_path(k, vars={"base": prefix, "platbase": prefix}) for k in ("purelib", "platlib")] if os.path.isfile(os.path.join(prefix, "pyvenv.cfg")) else []
+for p in dict.fromkeys([*venv, sysconfig.get_path("purelib"), sysconfig.get_path("platlib"), site.getusersitepackages(), *site.getsitepackages()]):
+    if p and p not in sys.path: sys.path.append(p)
+import pytest
+sys.path.insert(0, os.getcwd())
+class Evidence:
+    def pytest_runtest_logreport(self, report):
+        if report.when == "call" or report.failed:
+            print("\\nSDD-PYTEST " + json.dumps({"nodeid": report.nodeid, "outcome": report.outcome, "phase": report.when}), flush=True)
+raise SystemExit(pytest.main(sys.argv[1:], plugins=[Evidence()]))
+`;
+  return [python, '-I', '-S', '-c', bootstrap, ...args];
 }
 // Scope placeholders for changedCmd. An empty result means "cannot scope" and the caller falls back to the full check.
 function cmdOut(cmd, cwd) {
@@ -4967,7 +5018,15 @@ function cmdTdd() {
   const javaRunner = /\.java$/.test(t.path) && /(?:^|[/\s])(?:mvn|mvnw|gradle|gradlew)(?:\s|$)/.test(cmd.join(' '));
   const runtimeVerdict = dotnetResult(dotnetReport, t.path, id, exactDotnetSelection);
   if (genericDotnetSelection && !runtimeVerdict && !LOAD_ERR.test(plain)) { out(`${sub.toUpperCase()} REJECTED ${id}: generic .NET fixtures require observable TRX method ownership; the runner did not emit sdd-target.trx`); return 1; }
-  const verdict = runtimeVerdict ?? targetVerdict(plain, t.path, id, selectedName, javaRunner, exactDotnetSelection);
+  const pythonRows = res.pytestResults?.filter((r) => {
+    const parts = r.nodeid.split('::');
+    return path.resolve(ROOT, proj?.root ?? '.', parts[0]) === path.resolve(ROOT, t.path)
+      && parts.at(-1).replace(/\[.*$/, '') === testName(t.path, id);
+  });
+  const pythonVerdict = pythonRows && !isLoadErr(plain) ? pythonRows.some((r) => r.outcome === 'failed') ? 'fail'
+    : pythonRows.some((r) => r.outcome === 'passed') ? 'pass' : pythonRows.length ? 'skip' : 'notrun' : null;
+  if (pythonVerdict === 'fail' && res.exit === 0) { out(`${sub.toUpperCase()} REJECTED ${id}: test failed but pytest returned a successful runner exit\n${failTail(res.text, 8)}`); return 1; }
+  const verdict = runtimeVerdict ?? pythonVerdict ?? targetVerdict(plain, t.path, id, selectedName, javaRunner, exactDotnetSelection);
   const targetExecuted = verdict === 'pass' || verdict === 'fail';
   const zero = (!targetExecuted && ((ZERO_TESTS.test(res.text) && !RAN_TESTS.test(res.text)) || allSkipped || noAssert)) || NO_PASSED.test(plain) || pytestNoExecution(plain) || nodeNoMatch || goNoMatch || verdict === 'notrun' || verdict === 'skip';
   const siblingFail = juliaSiblingFail(plain, id);
@@ -5263,13 +5322,29 @@ function cfgRunLoosening(bc, cfg) {
 }
 function pytestDefFiles(b) {
   const configs = ['pyproject.toml', 'pytest.ini', 'setup.cfg', 'tox.ini'].map((m) => b + m);
-  const hooks = workspaceFiles().filter((f) => /(^|\/)conftest\.py$/.test(f) && !SKIP.test(f)
-    && (!b || f.startsWith(b) || f === 'conftest.py' || b.startsWith(path.posix.dirname(f) + '/')));
+  const files = [], dirs = [ROOT];
+  while (dirs.length) {
+    const dir = dirs.pop();
+    let entries; try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch { continue; }
+    for (const e of entries) {
+      const p = path.join(dir, e.name), f = rel(p);
+      if (SKIP.test(f + '/')) continue;
+      if (e.isDirectory()) dirs.push(p);
+      else if (/\.py$/.test(f)) files.push(f);
+    }
+  }
+  const hooks = files.filter((f) => !SKIP.test(f)
+    && (!b || f.startsWith(b) || f === 'conftest.py' || b.startsWith(path.posix.dirname(f) + '/'))
+    && (/(^|\/)(?:conftest|pytest|sitecustomize|usercustomize)\.py$/.test(f)
+      || (() => { try { return /\bpytest_plugins\s*=/.test(fs.readFileSync(path.join(ROOT, f), 'utf8')); } catch { return false; } })()));
   return [...configs, ...hooks];
 }
 // Static, conservative execution-surface closure; never execute wrappers to discover their inputs.
-function checkDefClosure(cfg, read = (f) => { try { return fs.readFileSync(path.resolve(ROOT, f), 'utf8'); } catch { return null; } }) {
-  const all = [...(cfg.checks ?? []), ...(cfg.projects ?? []).flatMap((p) => (p.checks ?? []).map((c) => ({ ...c, name: `${p.root}:${c.name}`, cwd: p.root })))];
+function checkDefClosure(cfg, read = null) {
+  const live = read === null;
+  read ??= (f) => { try { return fs.readFileSync(path.resolve(ROOT, f), 'utf8'); } catch { return null; } };
+  const all = [...(cfg.checks ?? []), ...(cfg.testCmd ? [{ name: 'tdd', cmd: cfg.testCmd }] : []),
+    ...(cfg.projects ?? []).flatMap((p) => [...(p.checks ?? []), ...(p.testCmd ? [{ name: 'tdd', cmd: p.testCmd }] : [])].map((c) => ({ ...c, name: `${p.root}:${c.name}`, cwd: p.root })))];
   const cache = new Map(), defs = new Map();
   const rd = (f) => { if (!cache.has(f)) cache.set(f, read(f)); return cache.get(f); };
   const relative = (f) => path.relative(ROOT, f).split(path.sep).join('/');
@@ -5299,6 +5374,7 @@ function checkDefClosure(cfg, read = (f) => { try { return fs.readFileSync(path.
       visited.add(key);
       activeFiles.add(f);
       inspect(tokens(t), cwd, path.dirname(abs));
+      if (path.basename(f) === '.npmrc') inspect(tokens(t.replace(/^[\w-]+\s*=/gm, '')), cwd, path.dirname(abs), true);
       activeFiles.delete(f);
     };
     const packageScript = (cwd, name, manager) => {
@@ -5313,7 +5389,7 @@ function checkDefClosure(cfg, read = (f) => { try { return fs.readFileSync(path.
         const selected = scripts.get(f);
         if (selected.has(n)) continue;
         selected.set(n, value);
-        inspect(tokens(value), cwd);
+        inspect(tokens(value), cwd, cwd, n !== name);
       }
       const selected = scripts.get(f);
       if (selected) {
@@ -5323,7 +5399,15 @@ function checkDefClosure(cfg, read = (f) => { try { return fs.readFileSync(path.
           `check ${c.name} runs package.json script "${name}" (${f} changed)`);
       }
     };
-    const inspect = (ts, initialCwd, sourceDir = initialCwd) => {
+    const pythonModule = (name, cwd, sourceDir = cwd) => {
+      if (!/^[A-Za-z_]\w*(?:\.[A-Za-z_]\w*)*$/.test(name)) return;
+      const p = name.replace(/\./g, '/');
+      for (const d of new Set([cwd, sourceDir, ROOT, path.join(cwd, 'src')])) {
+        file(path.join(d, p + '.py'), cwd, undefined, true);
+        file(path.join(d, p, '__init__.py'), cwd, undefined, true);
+      }
+    };
+    const inspect = (ts, initialCwd, sourceDir = initialCwd, protectedHook = false) => {
       let cwd = initialCwd;
       for (let i = 0; i < ts.length; i++) {
         const token = ts[i], exe = path.basename(token);
@@ -5337,14 +5421,27 @@ function checkDefClosure(cfg, read = (f) => { try { return fs.readFileSync(path.
           if (/^run(?:-script)?$/.test(name ?? '')) name = ts[j + 1];
           if (name === 't') name = 'test';
           if (name && /^[\w:.-]+$/.test(name) && !/^(exec|install|ci|add|dlx)$/.test(name)) packageScript(packageCwd, name, exe);
+          for (let dir = packageCwd; ; dir = path.dirname(dir)) {
+            file(path.join(dir, '.npmrc'), packageCwd, undefined, true);
+            if (dir === path.dirname(dir)) break;
+          }
+          for (const f of [path.join(os.homedir(), '.npmrc'), path.join(path.dirname(path.dirname(resolveExecutable(token, cwd) ?? cwd)), 'etc/npmrc')]) file(f, packageCwd, undefined, true);
         }
         if (exe === 'pytest') {
           const b = relative(cwd), prefix = b ? b + '/' : '';
           for (const f of pytestDefFiles(prefix)) {
             let t = rd(f); if (t === null) continue;
             if (path.posix.basename(f) === 'pyproject.toml') t = t.split(/^(?=\[)/m).filter((x) => /^\[tool\.pytest/.test(x)).join('');
+            if (TEST_FILE.test(f)) t = [...t.matchAll(/\bpytest_plugins\s*=\s*(\[[\s\S]*?\]|\([\s\S]*?\)|['"][^'"]+['"])/g)].map((m) => m[0]).join('\n');
             put(f, t, `check ${c.name} runs pytest, configured by ${f} (changed)`);
+            const configKey = `pytest:${f}`;
+            if (visited.has(configKey)) continue;
+            visited.add(configKey);
+            inspect(tokens(t), cwd, path.dirname(path.resolve(ROOT, f)));
+            for (const m of t.matchAll(/\bpytest_plugins\s*=\s*(\[[\s\S]*?\]|\([\s\S]*?\)|['"][^'"]+['"])/g))
+              for (const n of m[1].matchAll(/['"]([\w.]+)['"]/g)) pythonModule(n[1], cwd, path.dirname(path.resolve(ROOT, f)));
           }
+          for (let j = i + 1; j < ts.length; j++) if (ts[j] === '-p' && ts[j + 1]) pythonModule(ts[++j], cwd);
         }
         if (exe === 'cargo') {
           const alias = ts.slice(i + 1).find((t) => !t.startsWith('+') && !t.startsWith('-'));
@@ -5359,15 +5456,43 @@ function checkDefClosure(cfg, read = (f) => { try { return fs.readFileSync(path.
           for (const m of ['config.toml', 'config']) file(path.join(home, m), cwd, undefined, true);
         }
         if (/^(make|gmake)$/.test(exe)) {
-          const makeCwd = ts[i + 1] === '-C' && ts[i + 2] ? path.resolve(cwd, ts[i + 2]) : cwd;
+          let makeCwd = cwd;
+          const inputs = [];
+          for (let j = i + 1; j < ts.length; j++) {
+            if (/^(?:-C|--directory)$/.test(ts[j]) && ts[j + 1]) makeCwd = path.resolve(makeCwd, ts[++j]);
+            else if (/^--directory=/.test(ts[j])) makeCwd = path.resolve(makeCwd, ts[j].slice(12));
+            else if (/^(?:-f|--file|--makefile)$/.test(ts[j]) && ts[j + 1]) inputs.push(ts[++j]);
+            else if (/^(?:-f.+|--(?:file|makefile)=)/.test(ts[j])) inputs.push(ts[j].replace(/^(?:-f|--(?:file|makefile)=)/, ''));
+          }
           for (const m of ['GNUmakefile', 'makefile', 'Makefile']) file(path.join(makeCwd, m), makeCwd, undefined, true);
+          for (const m of inputs) file(path.resolve(makeCwd, m), makeCwd, undefined, true);
+        }
+        if (token === 'import' || token === 'from') {
+          if (ts[i + 1]) pythonModule(ts[i + 1], cwd, sourceDir);
+        }
+        const resolved = resolveExecutable(token, cwd);
+        if (resolved && (i === 0 || /^(?:node|python[\d.]*|pytest|cargo|go|dotnet|npm|pnpm|yarn|bun|make|gmake|sh|bash|env)$/.test(exe))) {
+          if (/^python[\d.]*$/.test(exe)) file(path.join(path.dirname(path.dirname(resolved)), 'pyvenv.cfg'), cwd, undefined, true);
+          const f = relative(resolved), real = fs.realpathSync(resolved);
+          let digest;
+          if (resolved.startsWith(ROOT + path.sep)) {
+            const text = rd(f);
+            if (text !== null) {
+              digest = live ? executableHash(resolved) : sha(read.raw?.(f) ?? text);
+              file(resolved, cwd, undefined, true);
+            }
+          } else digest = executableHash(resolved);
+          if (digest) {
+            defs.set(`executable:${exe}|${f}`, { sha: sha(`${relative(real)}\0${digest}`), label: `check ${c.name} executable ${f} (changed)` });
+            if (real !== resolved) defs.set(`executable:${exe}|${relative(real)}`, { sha: sha(digest), label: `check ${c.name} executable target ${relative(real)} (changed)` });
+          }
         }
         // Keep argv boundaries (including paths with spaces), and literal paths inside wrapper source.
         const candidate = token.replace(/^--?[\w-]+=/, '');
         if (!candidate || /[*?{}]/.test(candidate) || candidate.startsWith('-')) continue;
         const abs = path.resolve(cwd, candidate);
         if (path.isAbsolute(candidate) && !abs.startsWith(ROOT + path.sep) && !/\.(?:[cm]?[jt]s|py|sh|rb|pl)$/.test(candidate)) continue;
-        file(abs, cwd);
+        file(abs, cwd, undefined, protectedHook);
         if (sourceDir !== cwd) file(path.resolve(sourceDir, candidate), cwd);
       }
     };
@@ -5378,12 +5503,27 @@ function checkDefClosure(cfg, read = (f) => { try { return fs.readFileSync(path.
       const cwd = path.resolve(ROOT, c.cwd ?? '.');
       inspect(argv, cwd);
       inspect(argv.flatMap(tokens), cwd);
+      const pytest = pytestArgs(raw);
+      if (pytest) inspect([isolatedPytest(raw, pytest, c.cwd)[0]], cwd);
     }
   }
   return defs;
 }
 function checkDefShas(cfg) {
   return Object.fromEntries([...checkDefClosure(cfg)].map(([k, v]) => [k, v.sha]));
+}
+function missingPytestIds(result, cmd, cwd, ents) {
+  if (!result.pytestResults) return [];
+  const args = pytestArgs(cmd) ?? [];
+  // Explicit selection is reviewed separately through command/config provenance.
+  if (args.some((a) => /^(?:-k|-m|--deselect)(?:=|$)/.test(a))) return [];
+  const base = path.resolve(ROOT, cwd ?? '.');
+  const operands = args.filter((a) => !a.startsWith('-') && fs.existsSync(path.resolve(base, a.split('::')[0])));
+  const executed = result.pytestResults.filter((r) => /^(passed|failed)$/.test(r.outcome));
+  return [...ents.values()].filter((e) => e.kind === 'TEST' && /\.py$/.test(e.path)
+    && path.resolve(ROOT, e.path).startsWith(base + path.sep)
+    && (!operands.length || operands.some((p) => { const f = path.resolve(base, p.split('::')[0]), target = path.resolve(ROOT, e.path); return target === f || target.startsWith(f + path.sep); }))
+    && !executed.some((r) => { const parts = (r.nodeid ?? '').split('::'); return path.resolve(base, parts[0]) === path.resolve(ROOT, e.path) && parts.at(-1).replace(/\[.*$/, '') === testName(e.path, e.id); })).map((e) => e.id);
 }
 // scope confidence (design 3.1): globs for `unscoped` / --allow-unscoped / default ignores (matched with globRe)
 const SCOPE_IGNORE = ['**/*.md', '.github/**', 'LICENSE', '.sdd/**'];
@@ -5585,7 +5725,7 @@ function scanless(res) {
 function gatePathSha(f, seen = new Set()) {
   const p = path.resolve(ROOT, f);
   try {
-    if (!fs.statSync(p).isDirectory()) return fileSha(f);
+    if (!fs.statSync(p).isDirectory()) return executableHashes.has(p) ? executableHash(p) : fileSha(f);
     const real = fs.realpathSync(p);
     if (seen.has(real)) return `cycle:${real}`;
     const next = new Set([...seen, real]);
@@ -5895,7 +6035,10 @@ function cmdGate() {
     if (flags.changed) note(scoped || (!widened && !c.changedCmd && base && [...changedFiles()].some((f) => f.startsWith(base))) ? 'exact' : 'widened');
     if (flags.changed) scopeCount[scoped || (!widened && !c.changedCmd && base && [...changedFiles()].some((f) => f.startsWith(base))) ? 'exact' : 'widened']++;
     if (r.timedOut) { add(false, `cmd ${c.name} TIMEOUT after ${(r.ms / 1000).toFixed(0)}s ${scoped ? '— narrow changedCmd (e.g. {changedTests} {changedScopes}) or raise changedTimeoutMs; run full gate (no --changed) before merge' : '— raise timeoutMs in .sdd/config.json'}`); continue; }
-    if (r.exit === 0 && (NO_PASSED.test(r.text) || pytestNoExecution(r.text) || noExecution(r.text))) { lines.push(`! cmd ${c.name}: ${ZERO_TESTS.test(r.text) && !NO_PASSED.test(r.text) ? 'no tests found or ran' : 'all tests skipped/todo/xfail'} — INCOMPLETE, no passing assertions`); incomplete = true; continue; }
+    if (r.exit === 0 && r.pytestResults?.some((x) => x.outcome === 'failed')) { add(false, `cmd ${c.name}: pytest reported failed tests despite a successful runner exit`, failTail(r.text, 8).split('\n')); continue; }
+    if (r.exit === 0 && (NO_PASSED.test(r.text) || pytestNoExecution(r.text) || noExecution(r.text) || (r.pytestResults && !r.pytestResults.some((x) => /^(passed|failed)$/.test(x.outcome))))) { lines.push(`! cmd ${c.name}: ${ZERO_TESTS.test(r.text) && !NO_PASSED.test(r.text) || r.pytestResults?.length === 0 ? 'no tests found or ran' : 'all tests skipped/todo/xfail'} — INCOMPLETE, no passing assertions`); incomplete = true; continue; }
+    const missingIds = missingPytestIds(r, cmd, c.cwd, ents);
+    if (missingIds.length) { add(false, `cmd ${c.name}: ${missingIds.join(', ')} missing executed pytest test ids`); continue; }
     if (r.exit !== 0 && ZERO_TESTS.test(r.text) && !RAN_TESTS.test(r.text)) { lines.push(`! cmd ${c.name}: no tests exist yet (runner exit ${r.exit}) — INCOMPLETE, not a failure`); incomplete = true; continue; }
     // a failed test check is re-run (flaky.retries, default 1): a pass on re-run is reported as "flaky suspected", never as a plain pass (#303)
     if (r.exit !== 0 && /(^|:)test$/.test(c.name)) {
@@ -5904,7 +6047,7 @@ function cmdGate() {
       for (let i = 0; i < retries; i++) {
         const r2 = run(cmd, scoped ? (c.changedTimeoutMs ?? cfg.changedTimeoutMs ?? 60000) : (c.timeoutMs ?? cfg.timeoutMs ?? 120000), c.cwd);
         if (!checkInputs(`check ${c.name} retry ${i + 1}`)) break;
-        if (r2.exit === 0 && !r2.timedOut && !NO_PASSED.test(r2.text) && !pytestNoExecution(r2.text) && !noExecution(r2.text)) {
+        if (r2.exit === 0 && !r2.timedOut && !NO_PASSED.test(r2.text) && !pytestNoExecution(r2.text) && !noExecution(r2.text) && (!r2.pytestResults || (r2.pytestResults.some((x) => x.outcome === 'passed') && !r2.pytestResults.some((x) => x.outcome === 'failed'))) && !missingPytestIds(r2, cmd, c.cwd, ents).length) {
           add(warnOnly, `cmd ${c.name} FLAKY suspected: failed on the first run, passed on re-run ${i + 1}/${retries} (${(r2.ms / 1000).toFixed(1)}s) — a flaky entry was appended to .sdd/tdd.jsonl (commit it)${warnOnly ? ' — accepted by flaky.policy "warn"' : ' — set flaky.policy "warn" in .sdd/config.json to accept, or fix the test (no sleep, injected clock, port 0, generous timeouts)'}`, failTail(r.text, 8).split('\n'));
           appendLedger({ type: 'flaky', check: c.name, retry: i + 1, retries, policy: warnOnly ? 'warn' : 'fail', outcome: warnOnly ? 'accepted' : 'fail' });
           inputSnapshot.set(rel(LEDGER), gatePathSha(rel(LEDGER)));
@@ -6017,14 +6160,29 @@ function cmdGate() {
         try { return fs.readFileSync(path.resolve(ROOT, f), 'utf8'); } catch { return null; }
       }
       if (!modes.has(f)) return null;
-      const r = spawnSync('git', ['show', `${bref}:./${f}`], { cwd: ROOT, encoding: 'utf8' });
+      const r = spawnSync('git', ['show', `${bref}:./${f}`], { cwd: ROOT, encoding: 'utf8', maxBuffer: 256e6 });
       if (r.status !== 0) return null;
       return modes.get(f) === '120000' ? baselineRead(rel(path.resolve(ROOT, path.dirname(f), r.stdout)), seen) : r.stdout;
     };
+    baselineRead.raw = (f, seen = new Set()) => {
+      if (seen.has(f) || !modes.has(f)) return null;
+      seen.add(f);
+      const r = spawnSync('git', ['show', `${bref}:./${f}`], { cwd: ROOT, maxBuffer: 256e6 });
+      if (r.status !== 0) return null;
+      return modes.get(f) === '120000' ? baselineRead.raw(rel(path.resolve(ROOT, path.dirname(f), r.stdout.toString())), seen) : r.stdout;
+    };
     const baselineDefs = checkDefClosure(cfg, baselineRead);
-    const defs = [...new Set([...currentDefs.keys(), ...baselineDefs.keys()])]
-      .filter((k) => tree.status === 0 && currentDefs.get(k)?.sha !== baselineDefs.get(k)?.sha)
-      .map((k) => (currentDefs.get(k) ?? baselineDefs.get(k)).label);
+    const recordedDefs = readLedger().reverse().find((e) => e.checkDefShas)?.checkDefShas ?? {};
+    const defs = [...new Set([...currentDefs.keys(), ...baselineDefs.keys(), ...Object.keys(recordedDefs)])]
+      .filter((k) => {
+        const f = k.slice(k.indexOf('|') + 1);
+        const external = f === '..' || f.startsWith('../') || path.isAbsolute(f);
+        const recordedExecutable = k.startsWith('executable:') && Object.keys(recordedDefs).some((r) => r.split('|')[0] === k.split('|')[0]);
+        const baseline = modes.has(f) ? baselineDefs.get(k)?.sha : recordedDefs[k]
+          ?? (external && !recordedExecutable ? baselineDefs.get(k)?.sha : undefined);
+        return tree.status === 0 && currentDefs.get(k)?.sha !== baseline;
+      })
+      .map((k) => (currentDefs.get(k) ?? baselineDefs.get(k))?.label ?? `check ${k.split('|')[0]} (${k.slice(k.indexOf('|') + 1)} removed)`);
     if (defs.length) {
       const msg = `scope: a changed file defines what a gate check runs — ${defs.join('; ')} — the test run may have been narrowed; review the diff`;
       if (cfg.scopePolicy === 'strict') add(false, `${msg} (scopePolicy strict)`);

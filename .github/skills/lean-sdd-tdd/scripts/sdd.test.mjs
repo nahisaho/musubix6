@@ -10780,3 +10780,141 @@ test('r31d #345 merge-ledger preserves Red-before-Green when timestamps are equa
   assert.equal(result.code, 0, result.out);
   assert.match(result.out, /1\/1 tests Red→Green/, result.out);
 });
+
+test('r32c #349 PATH-selected launchers and their symlink targets are Green definitions', () => {
+  const bin = fs.mkdtempSync(path.join(work, 'r32-path-'));
+  const target = path.join(bin, 'launcher');
+  fs.writeFileSync(target, '#!/bin/sh\nexit 0\n', { mode: 0o755 });
+  fs.symlinkSync('launcher', path.join(bin, 'cargo'));
+  const previous = ENV.PATH;
+  ENV.PATH = `${bin}${path.delimiter}${previous}`;
+  const processPath = process.env.PATH;
+  process.env.PATH = ENV.PATH;
+  try {
+    const d = r31aFixture({}, [{ name: 'test', cmd: ['cargo', 'test'] }]);
+    const entry = r24dLedger(d).at(-1);
+    assert.ok(Object.keys(entry.checkDefShas).some((k) => k.endsWith('/cargo')), JSON.stringify(entry.checkDefShas));
+    fs.writeFileSync(target, '#!/bin/sh\n# narrowed suite\nexit 0\n');
+    r31aDrift(d, 'cargo');
+  } finally { ENV.PATH = previous; process.env.PATH = processPath; }
+});
+
+test('r32c #349 unchanged ignored executable does not drift against the Git baseline', () => {
+  const d = r31aFixture({ '.gitignore': 'launcher\n', launcher: '#!/bin/sh\nexit 0\n' }, [{ name: 'test', cmd: ['./launcher'] }]);
+  fs.chmodSync(path.join(d, 'launcher'), 0o755);
+  assert.equal(sdd(d, 'tdd', 'refactor', 'TEST-A-001').code, 0);
+  const cp = path.join(d, '.sdd/config.json');
+  fs.writeFileSync(cp, JSON.stringify({ ...JSON.parse(fs.readFileSync(cp)), scopePolicy: 'strict' }));
+  const unchanged = sdd(d, 'gate', '--changed');
+  assert.equal(unchanged.code, 0, unchanged.out);
+  fs.appendFileSync(path.join(d, 'launcher'), '# selection changed\n');
+  const changed = sdd(d, 'gate', '--changed');
+  assert.equal(changed.code, 1, changed.out);
+  assert.match(changed.out, /launcher.*changed/);
+});
+
+for (const [label, files, cmd, input] of [
+  ['npmrc', { 'package.json': '{"scripts":{"test":"node -e 0"}}', '.npmrc': 'audit=false\n' }, ['npm', 'test'], '.npmrc'],
+  ['protected lifecycle', { 'package.json': '{"scripts":{"test":"node -e 0","pretest":"node hook.mjs"}}', 'hook.mjs': '// @id CODE-HOOK-001 @implements REQ-A-001\n0;\n' }, ['npm', 'test'], 'hook.mjs'],
+  ['extensionless makefile', { rules: 'test:\n\t@true\n' }, ['make', '-f', 'rules', 'test'], 'rules'],
+  ['long makefile option', { rules: 'test:\n\t@true\n' }, ['make', '--file=rules', 'test'], 'rules'],
+  ['pytest plugins', { 'conftest.py': 'pytest_plugins = ["local_plugin"]\n', 'local_plugin.py': 'def pytest_collection_modifyitems(items):\n    pass\n' }, ['sh', '-c', 'true # python3 -m pytest'], 'local_plugin.py'],
+  ['pytest -p plugin', { 'local_plugin.py': 'def pytest_collection_modifyitems(items):\n    pass\n' }, ['sh', '-c', 'true # pytest -p local_plugin'], 'local_plugin.py'],
+]) {
+  test(`r32c #350 #351 closure includes ${label}`, () => {
+    const d = r31aFixture(files, [{ name: 'test', cmd }]);
+    fs.appendFileSync(path.join(d, input), input === '.npmrc' ? 'fund=false\n' : input.endsWith('.mjs') ? '// changed selection\n' : '# changed selection\n');
+    r31aDrift(d, input);
+  });
+}
+
+const r32cPythonAvailable = spawnSync('python3', ['-m', 'pytest', '--version']).status === 0;
+test('r32c #350 successful collect-only checks are incomplete', { skip: !r32cPythonAvailable }, () => {
+  const d = r31aFixture({ 'test_plain.py': 'def test_plain():\n    assert True\n' }, [{ name: 'test', cmd: ['python3', '-m', 'pytest', '--collect-only', '-q'] }]);
+  const result = sdd(d, 'gate');
+  assert.equal(result.code, 2, result.out);
+  assert.match(result.out, /no tests.*INCOMPLETE/);
+});
+
+for (const hook of ['pytest.py', 'sitecustomize.py', 'usercustomize.py']) {
+  test(`r32c #351 ${hook} cannot hollow out Python tests`, { skip: !r32cPythonAvailable }, () => {
+    const d = mini(T1SPEC, {
+      'pytest.ini': '[pytest]\n',
+      'test_a.py': 'from pathlib import Path\n# @id TEST-A-001 @verifies REQ-A-001\ndef test_a_001():\n    assert not Path(".sdd/regression").exists(), "real assertion"\n',
+      '.sdd/regression': 'fail\n',
+      [hook]: hook === 'pytest.py' ? 'print("1 passed in 0.01s")\n' : 'import os\nos._exit(0)\n',
+    }, ['python3', '-m', 'pytest', '-q', 'test_a.py', '-k', '{idu}']);
+    // Seed legitimate evidence without executing the malicious startup surface.
+    const poisoned = fs.readFileSync(path.join(d, hook));
+    fs.unlinkSync(path.join(d, hook));
+    assert.equal(sdd(d, 'tdd', 'red', 'TEST-A-001').code, 0);
+    fs.unlinkSync(path.join(d, '.sdd/regression'));
+    const green = sdd(d, 'tdd', 'green', 'TEST-A-001');
+    assert.equal(green.code, 0, green.out);
+    fs.writeFileSync(path.join(d, hook), poisoned);
+    // Refactor must run the real passing test, not a shadow/startup module.
+    const real = sdd(d, 'tdd', 'refactor', 'TEST-A-001');
+    assert.equal(real.code, 0, real.out);
+    assert.match(real.out, /REFACTOR ok TEST-A-001/);
+    fs.writeFileSync(path.join(d, '.sdd/regression'), 'fail\n');
+    const failed = sdd(d, 'tdd', 'refactor', 'TEST-A-001');
+    assert.equal(failed.code, 1, failed.out);
+    assert.match(failed.out, /real assertion/);
+  });
+}
+
+test('r32c #351 collected but removed annotated pytest ids cannot pass a gate', { skip: !r32cPythonAvailable }, () => {
+  const d = mini(T1SPEC, {
+    'pytest.ini': '[pytest]\n',
+    'test_a.py': '# @id TEST-A-001 @verifies REQ-A-001\ndef test_a_001():\n    assert True\n\ndef test_other():\n    assert True\n',
+    'conftest.py': 'def pytest_collection_modifyitems(items):\n    items[:] = [item for item in items if item.name != "test_a_001"]\n',
+  }, FAIL);
+  const cp = path.join(d, '.sdd/config.json');
+  fs.writeFileSync(cp, JSON.stringify({ ...JSON.parse(fs.readFileSync(cp)), scan: { include: ['test_a.py'] }, checks: [{ name: 'test', cmd: ['python3', '-m', 'pytest', '-q'] }] }));
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-A-001').code, 0);
+  setCmd(d, PASS);
+  assert.equal(sdd(d, 'tdd', 'green', 'TEST-A-001').code, 0);
+  const result = sdd(d, 'gate');
+  assert.notEqual(result.code, 0, result.out);
+  assert.match(result.out, /TEST-A-001.*(?:execut|ran|missing)/i);
+});
+
+test('r32c #350 npmrc preload contents share the startup definition closure', () => {
+  const d = r31aFixture({
+    'package.json': '{"scripts":{"test":"node -e 0"}}',
+    '.npmrc': 'node-options=--require=./preload.cjs\n',
+    'preload.cjs': '0;\n',
+  }, [{ name: 'test', cmd: ['npm', 'test'] }]);
+  fs.appendFileSync(path.join(d, 'preload.cjs'), '// changed selection\n');
+  r31aDrift(d, 'preload.cjs');
+});
+
+test('r32c #351 test-module plugin declarations and transitive plugin imports are definitions', () => {
+  const d = r31aFixture({
+    'test_plain.py': 'pytest_plugins = ["plugins.selector"]\ndef test_plain():\n    assert True\n',
+    'plugins/__init__.py': '',
+    'plugins/selector.py': 'from plugins import helper\n',
+    'plugins/helper.py': 'def pytest_collection_modifyitems(items):\n    pass\n',
+  }, [{ name: 'test', cmd: ['sh', '-c', 'true # pytest'] }]);
+  fs.appendFileSync(path.join(d, 'plugins/helper.py'), '# changed selection\n');
+  r31aDrift(d, 'plugins/helper.py');
+});
+
+test('r32c #351 pytest execution outcomes cannot be replaced by a plugin exit-code override', { skip: !r32cPythonAvailable }, () => {
+  const d = mini(T1SPEC, {
+    'pytest.ini': '[pytest]\n',
+    'test_a.py': 'from pathlib import Path\n# @id TEST-A-001 @verifies REQ-A-001\ndef test_a_001():\n    assert not Path(".sdd/regression").exists(), "real assertion"\n',
+    'conftest.py': 'def pytest_sessionfinish(session):\n    session.exitstatus = 0\n',
+  }, ['python3', '-m', 'pytest', '-q', 'test_a.py', '-k', '{idu}']);
+  const cp = path.join(d, '.sdd/config.json');
+  fs.writeFileSync(cp, JSON.stringify({ ...JSON.parse(fs.readFileSync(cp)), checks: [{ name: 'test', cmd: ['python3', '-m', 'pytest', '-q'] }] }));
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-A-001', '--characterization', 'runner-integrity fixture').code, 0);
+  assert.equal(sdd(d, 'tdd', 'green', 'TEST-A-001').code, 0);
+  fs.writeFileSync(path.join(d, '.sdd/regression'), 'fail\n');
+  const refactor = sdd(d, 'tdd', 'refactor', 'TEST-A-001');
+  assert.equal(refactor.code, 1, refactor.out);
+  assert.match(refactor.out, /test failed/);
+  const gate = sdd(d, 'gate');
+  assert.equal(gate.code, 1, gate.out);
+  assert.match(gate.out, /real assertion/);
+});
