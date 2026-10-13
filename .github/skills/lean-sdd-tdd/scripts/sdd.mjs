@@ -4879,7 +4879,7 @@ function cmdTdd() {
       const drift = [...new Set([...Object.keys(red.admissionShas), ...Object.keys(current)])]
         .filter((k) => red.admissionShas[k] !== current[k]);
       if (drift.length) {
-        out(`REFUSED: check definition changed since Red (${drift.map((k) => k.slice(k.indexOf('|') + 1)).join(', ')}); restore the resolution/compiler inputs or record a fresh assertion Red before Green`);
+        out(`REFUSED: check definition changed since Red (${drift.map((k) => k.slice(k.indexOf('|') + 1)).join(', ')}); restore the resolution/compiler/Python inputs or record a fresh assertion Red before Green`);
         return 1;
       }
     }
@@ -5448,11 +5448,11 @@ function checkDefClosure(cfg, read = null, knownFiles = null) {
     return result;
   };
   for (const c of all) {
-    const visited = new Set(), activeFiles = new Set(), scripts = new Map();
+    const visited = new Set(), activeFiles = new Set(), scripts = new Map(), pythonDefinitions = new Set();
     const put = (f, text, label = `check ${c.name} (${f} changed)`) => {
-      defs.set(`${c.name}|${f}`, { sha: sha(text), label });
+      defs.set(`${c.name}|${f}`, { sha: sha(text), label, python: pythonDefinitions.has(f) });
     };
-    const file = (abs, cwd, label, definition = false) => {
+    const file = (abs, cwd, label, definition = false, pythonRoot = null) => {
       const f = relative(abs), t = rd(f);
       if (t === null) return;
       // Tests and their implementation are protected by evidence, not whole-file definition hashes.
@@ -5463,9 +5463,12 @@ function checkDefClosure(cfg, read = null, knownFiles = null) {
       if (visited.has(key) || activeFiles.has(f) || t.includes('\0')) return;
       visited.add(key);
       activeFiles.add(f);
-      if (definition && /\.py$/.test(f)) for (const declaration of pytestPluginDeclarations(t, f))
-        for (const name of declaration.names) pythonModule(name, cwd, path.dirname(abs));
-      inspect(tokens(t), cwd, path.dirname(abs));
+      if (definition && /\.py$/.test(f)) {
+        for (const declaration of pytestPluginDeclarations(t, f))
+          for (const name of declaration.names) pythonModule(name, cwd, path.dirname(abs), pythonRoot);
+        pythonImports(t, abs, cwd, pythonRoot);
+      }
+      inspect(tokens(t), cwd, path.dirname(abs), false, definition && /\.py$/.test(f));
       if (path.basename(f) === '.npmrc') inspect(tokens(t.replace(/^[\w-]+\s*=/gm, '')), cwd, path.dirname(abs), true);
       activeFiles.delete(f);
     };
@@ -5617,15 +5620,92 @@ function checkDefClosure(cfg, read = null, knownFiles = null) {
         }
       }
     };
-    const pythonModule = (name, cwd, sourceDir = cwd) => {
-      if (!/^[A-Za-z_]\w*(?:\.[A-Za-z_]\w*)*$/.test(name)) return;
-      const p = name.replace(/\./g, '/');
-      for (const d of new Set([cwd, sourceDir, ROOT, path.join(cwd, 'src')])) {
-        file(path.join(d, p + '.py'), cwd, undefined, true);
-        file(path.join(d, p, '__init__.py'), cwd, undefined, true);
+    const pythonDirectory = (base) => {
+      const prefix = relative(base) + '/';
+      if (knownFiles) return knownFiles.some((f) => f.startsWith(prefix));
+      try { return fs.statSync(base).isDirectory(); } catch { return false; }
+    };
+    /** @id CODE-R34-PYREL-001 @implements REQ-CHECK-CLOSURE-001 */
+    const pythonInput = (base, root, cwd, required = false, namespace = false) => {
+      const module = base + '.py', init = path.join(base, '__init__.py');
+      const hasModule = rd(relative(module)) !== null, hasInit = rd(relative(init)) !== null;
+      if (hasModule && hasInit) throw new Error(`REFUSED: unresolved Python module ${relative(base)}: ambiguous module and package`);
+      if (!hasModule && !hasInit) {
+        if (namespace && pythonDirectory(base)) return { base, root, package: true, text: '' };
+        if (required) throw new Error(`REFUSED: unresolved Python relative import ${relative(base)}: missing protected input`);
+        return null;
+      }
+      const abs = hasModule ? module : init;
+      pythonDefinitions.add(relative(abs));
+      for (let dir = path.dirname(base); dir !== root && dir.startsWith(root + path.sep); dir = path.dirname(dir)) {
+        if (rd(relative(dir + '.py')) !== null)
+          throw new Error(`REFUSED: unresolved Python module ${relative(dir)}: ambiguous or non-package parent`);
+        pythonDefinitions.add(relative(path.join(dir, '__init__.py')));
+        file(path.join(dir, '__init__.py'), cwd, undefined, true, root);
+      }
+      file(abs, cwd, undefined, true, root);
+      return { base, root, package: hasInit, text: rd(relative(abs)) };
+    };
+    const pythonModule = (name, cwd, sourceDir = cwd, sourceRoot = null) => {
+      if (!/^[A-Za-z_]\w*(?:\.[A-Za-z_]\w*)*$/.test(name)) return null;
+      const p = name.replace(/\./g, '/'), candidates = new Map(), roots = new Set([cwd, sourceDir, ROOT, path.join(cwd, 'src')]);
+      for (const d of roots) {
+        const base = path.join(d, p);
+        if (rd(relative(base + '.py')) === null && rd(relative(path.join(base, '__init__.py'))) === null && !pythonDirectory(base)) continue;
+        let root = d;
+        if (d === sourceDir) {
+          if (sourceRoot && (base === sourceRoot || base.startsWith(sourceRoot + path.sep))) root = sourceRoot;
+          else while (rd(relative(path.join(root, '__init__.py'))) !== null) root = path.dirname(root);
+        }
+        candidates.set(base, { base, root });
+      }
+      if (candidates.size > 1) throw new Error(`REFUSED: unresolved Python module ${name}: ambiguous local roots`);
+      const selected = [...candidates.values()][0];
+      if (!selected && name.includes('.') && [...roots].some((d) => {
+        const top = path.join(d, name.split('.')[0]);
+        return rd(relative(top + '.py')) !== null || rd(relative(path.join(top, '__init__.py'))) !== null
+          || pythonDirectory(top);
+      })) throw new Error(`REFUSED: unresolved Python module ${name}: missing protected local input`);
+      return selected ? pythonInput(selected.base, selected.root, cwd, false, true) : null;
+    };
+    const pythonImports = (text, abs, cwd, root) => {
+      const source = text.replace(/#[^\n]*/g, '').replace(/\\\r?\n/g, ' ');
+      const importedNames = (body) => body.replace(/[()]/g, '').split(',').map((s) => s.trim().split(/\s+as\s+/)[0]).filter(Boolean);
+      for (const m of source.matchAll(/^[ \t]*import[ \t]+([^\n;]+)/gm))
+        for (const name of importedNames(m[1])) pythonModule(name, cwd, path.dirname(abs), root);
+      for (const m of source.matchAll(/^[ \t]*from[ \t]+(\.*[\w.]+|\.+)[ \t]+import[ \t]+(\([^)]*\)|[^\n;]+)/gm)) {
+        const name = m[1], names = importedNames(m[2]);
+        let target;
+        if (name.startsWith('.')) {
+          const level = /^\.+/.exec(name)[0].length;
+          let packageRoot = root;
+          if (!packageRoot) {
+            packageRoot = path.dirname(abs);
+            while (rd(relative(path.join(packageRoot, '__init__.py'))) !== null) packageRoot = path.dirname(packageRoot);
+          }
+          const parts = path.relative(packageRoot, path.dirname(abs)).split(path.sep).filter(Boolean);
+          if (!parts.length || parts.some((p) => p === '..') || level > parts.length)
+            throw new Error(`REFUSED: unresolved Python relative import ${name} in ${relative(abs)}: beyond package boundary`);
+          const base = path.join(packageRoot, ...parts.slice(0, parts.length - level + 1), ...name.slice(level).split('.').filter(Boolean));
+          target = pythonInput(base, packageRoot, cwd, true, true);
+        } else target = pythonModule(name, cwd, path.dirname(abs), root);
+        if (!target?.package) continue;
+        for (const child of names) {
+          if (child === '*') continue;
+          if (!/^[A-Za-z_]\w*$/.test(child))
+            throw new Error(`REFUSED: unresolved Python relative import ${name} in ${relative(abs)}: unsupported imported name`);
+          // Package attributes/re-exports are valid; otherwise a from-import loads a child module.
+          const bound = new RegExp(`^[ \\t]*(?:(?:def|class)[ \\t]+${child}\\b|${child}[ \\t]*(?::[^=\\n]+)?=)`, 'm').test(target.text)
+            || [...target.text.matchAll(/^[ \t]*(?:from[ \t]+\S+[ \t]+import[ \t]+(\([^)]*\)|[^\n;#]+)|import[ \t]+([^\n;#]+))/gm)]
+              .some((im) => (im[1] ?? im[2]).replace(/[()]/g, '').split(',').some((s) => {
+                const bits = s.trim().split(/\s+as\s+/);
+                return (bits[1] ?? bits[0].split('.')[0]) === child;
+              }));
+          if (!bound) pythonInput(path.join(target.base, child), target.root, cwd, true, true);
+        }
       }
     };
-    const inspect = (ts, initialCwd, sourceDir = initialCwd, protectedHook = false) => {
+    const inspect = (ts, initialCwd, sourceDir = initialCwd, protectedHook = false, pythonSource = false) => {
       let cwd = initialCwd;
       for (let i = 0; i < ts.length; i++) {
         const token = ts[i], exe = path.basename(token);
@@ -5707,7 +5787,7 @@ function checkDefClosure(cfg, read = null, knownFiles = null) {
           for (const m of ['GNUmakefile', 'makefile', 'Makefile']) file(path.join(makeCwd, m), makeCwd, undefined, true);
           for (const m of inputs) file(path.resolve(makeCwd, m), makeCwd, undefined, true);
         }
-        if (token === 'import' || token === 'from') {
+        if (!pythonSource && (token === 'import' || token === 'from')) {
           if (ts[i + 1]) pythonModule(ts[i + 1], cwd, sourceDir);
         }
         const resolved = resolveExecutable(token, cwd);
@@ -5762,7 +5842,7 @@ function packageResolutionSha(text) {
 }
 function checkAdmissionShas(cfg, pinned = null) {
   const inputs = Object.fromEntries([...checkDefClosure(cfg)]
-    .filter(([k]) => k.startsWith('resolution|') || /^executable:rustc(?:-workspace)?-wrapper:/.test(k) || /\|(?:.*\/)?\.cargo\/config(?:\.toml)?$/.test(k))
+    .filter(([k, v]) => v.python || k.startsWith('resolution|') || /^executable:rustc(?:-workspace)?-wrapper:/.test(k) || /\|(?:.*\/)?\.cargo\/config(?:\.toml)?$/.test(k))
     .map(([k, v]) => [k, v.sha]));
   // Runner/check renames do not change metadata; recorded paths remain protected even if discovery changes.
   for (const k of Object.keys(pinned ?? {})) if (k.startsWith('resolution|') && !Object.hasOwn(inputs, k)) {
@@ -7079,7 +7159,7 @@ if (fn && flags.help && !['impact'].includes(pos[0])) {
 }
 try { process.exit(fn() ?? 0); }
 catch (error) {
-  if (!/^REFUSED: unresolved (?:Rust include (?:oracle|ownership)|pytest_plugins)/.test(error.message)) throw error;
+  if (!/^REFUSED: unresolved (?:Rust include (?:oracle|ownership)|pytest_plugins|Python (?:relative import|module))/.test(error.message)) throw error;
   out(error.message);
   process.exit(1);
 }
