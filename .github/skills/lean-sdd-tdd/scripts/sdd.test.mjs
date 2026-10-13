@@ -9383,3 +9383,47 @@ test('r28b a config change that does not weaken stays silent', () => {
   const d = r28b({ scopePolicy: 'warn' }, { scopePolicy: 'strict' });
   assert.doesNotMatch(sdd(d, 'gate', '--changed').out, /config:/);
 });
+
+// ---- r29d (#330): stub members on a Green class ----
+const r29d = () => {
+  const spec = '---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | a shall hold. | TEST-A-001 |\n| REQ-B-001 | b shall hold. | TEST-B-001 |\n';
+  const d = mini(spec, {
+    'lib.mjs': '// @id CODE-A-001 @implements REQ-A-001\nexport class Box {\n  get() { return 1; }\n}\n',
+    'a.test.mjs': "import { Box } from './lib.mjs';\n// @id TEST-A-001 @verifies REQ-A-001\ntest('TEST-A-001 x', () => {\n  assert.equal(new Box().get(), 1);\n});\n",
+    'b.test.mjs': "import { Box } from './lib.mjs';\n// @id TEST-B-001 @verifies REQ-B-001\ntest('TEST-B-001 x', () => {\n  const s = 'abc';\n  assert.ok(s.startsWith('a'));\n  const t = new Box();\n  t.extra();\n});\n",
+  }, FAIL);
+  sdd(d, 'tdd', 'red', 'TEST-A-001');
+  setCmd(d, PASS);
+  sdd(d, 'tdd', 'green', 'TEST-A-001');
+  return d;
+};
+
+test('#330 stub members added to an existing TS type carry SDD-TODO(stub), a report row and a Green-file note', () => {
+  const d = r29d();
+  const r = sdd(d, 'tdd', 'stub', '--all', 'TEST-B-001', '--report');
+  const lib = fs.readFileSync(path.join(d, 'lib.mjs'), 'utf8');
+  assert.match(lib, /extra\([^)]*\) \{ \/\/ SDD-TODO\(stub\)/, lib);
+  assert.match(r.out, /Box\.extra \| guessed/, r.out);
+  assert.match(r.out, /lib\.mjs was modified but already implements Green REQ-A-001/, r.out);
+});
+
+test('#330 a receiver name bound to different types is ambiguous: not guessed into the class', () => {
+  const d = r29d();
+  fs.writeFileSync(path.join(d, 'b.test.mjs'), "import { Box } from './lib.mjs';\n// @id TEST-B-001 @verifies REQ-B-001\ntest('TEST-B-001 x', () => {\n  let s = 'abc';\n  assert.ok(s.startsWith('a'));\n  s = new Box();\n  s.startsWith('b');\n});\n");
+  const r = sdd(d, 'tdd', 'stub', '--all', 'TEST-B-001', '--report');
+  assert.doesNotMatch(fs.readFileSync(path.join(d, 'lib.mjs'), 'utf8'), /startsWith/);
+  assert.match(r.out, /Box\.startsWith \| ambiguous/, r.out);
+});
+
+test('#330 gate warns (strict: fails) on leftover stub markers in a Green REQ file', () => {
+  const d = r29d();
+  fs.appendFileSync(path.join(d, 'lib.mjs'), "export function left() { throw new Error('not implemented: left'); }\n");
+  const cp = path.join(d, '.sdd/config.json');
+  fs.writeFileSync(cp, JSON.stringify({ ...JSON.parse(fs.readFileSync(cp, 'utf8')), scopePolicy: 'warn' }));
+  const g = sdd(d, 'gate');
+  assert.match(g.out, /! stub: 1 source file\(s\) of Green REQs still hold/, g.out);
+  fs.writeFileSync(cp, JSON.stringify({ ...JSON.parse(fs.readFileSync(cp, 'utf8')), scopePolicy: 'strict' }));
+  const s = sdd(d, 'gate');
+  assert.match(s.out, /✗ stub: 1 source file/, s.out);
+  assert.equal(s.code, 1, s.out);
+});
