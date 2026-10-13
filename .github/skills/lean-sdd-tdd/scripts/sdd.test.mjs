@@ -9761,3 +9761,71 @@ test('r30c #334 approval events survive merge-ledger and cannot be written onto 
   fs.writeFileSync(ledger, original);
   assert.equal(sdd(d, 'guard').code, 0);
 });
+
+function r30dFlakyProject(flaky, cmdBody) {
+  const d = flakyProject(flaky, cmdBody);
+  fs.writeFileSync(path.join(d, '.sdd/specs/retry.md'),
+    '---\nfeature: retry\ntier: T1\n---\n| REQ-RETRY-001 (deferred) | The system shall support retries. | — |\n');
+  return d;
+}
+
+test('#335 a skipped Node retry cannot recover a failed test check', () => {
+  const d = r30dFlakyProject({ retries: 1, policy: 'warn' }, '');
+  fs.writeFileSync(path.join(d, 'retry.test.mjs'), [
+    "import { test } from 'node:test';",
+    "import assert from 'node:assert/strict';",
+    "import fs from 'node:fs';",
+    "const skip = fs.existsSync('retry-marker');",
+    "test('retry target', { skip }, () => {",
+    "  fs.writeFileSync('retry-marker', '1');",
+    "  assert.fail('first attempt fails');",
+    "});",
+  ].join('\n'));
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({
+    checks: [{ name: 'test', cmd: ['node', '--test', '--test-name-pattern=retry target', 'retry.test.mjs'] }],
+    flaky: { retries: 1, policy: 'warn' },
+  }));
+  const first = sdd(d, 'gate');
+  assert.equal(first.code, 1, first.out);
+  assert.match(first.out, /✗ cmd test \(/);
+  assert.doesNotMatch(first.out, /FLAKY suspected/);
+  assert.equal(fs.existsSync(path.join(d, '.sdd/tdd.jsonl')), false);
+  const second = sdd(d, 'gate');
+  assert.equal(second.code, 2, second.out);
+  assert.match(second.out, /INCOMPLETE, no passing assertions/);
+});
+
+test('#335 no-execution retry summaries do not produce flaky recovery evidence', () => {
+  const summaries = [
+    'Tests  1 skipped (1)',
+    '1 skipped in 0.01s',
+    's [100%]',
+    'test result: ok. 0 passed; 0 failed; 1 ignored;',
+    'No tests found',
+    'Tests: 1, Assertions: 0',
+  ];
+  for (const policy of ['warn', 'fail']) {
+    for (const summary of summaries) {
+      const d = r30dFlakyProject({ retries: 1, policy },
+        `const f=require('fs');if(f.existsSync('m')){console.log(${JSON.stringify(summary)});}else{f.writeFileSync('m','1');console.log('AssertionError: first attempt');process.exit(1);}`);
+      const r = sdd(d, 'gate');
+      assert.equal(r.code, 1, `${policy}: ${summary}\n${r.out}`);
+      assert.match(r.out, /✗ cmd test \(/);
+      assert.doesNotMatch(r.out, /FLAKY suspected/);
+      assert.equal(fs.existsSync(path.join(d, '.sdd/tdd.jsonl')), false);
+    }
+  }
+});
+
+test('#335 a later executed retry may recover after a skipped retry', () => {
+  const d = r30dFlakyProject({ retries: 2, policy: 'warn' },
+    "const f=require('fs');const n=f.existsSync('m')?Number(f.readFileSync('m','utf8')):0;f.writeFileSync('m',String(n+1));if(n===0){console.log('AssertionError: first attempt');process.exit(1);}console.log(n===1?'Tests  1 skipped (1)':'Tests  1 passed (1)');");
+  const r = sdd(d, 'gate');
+  assert.equal(r.code, 0, r.out);
+  assert.match(r.out, /FLAKY suspected: .*passed on re-run 2\/2/);
+  const entries = fs.readFileSync(path.join(d, '.sdd/tdd.jsonl'), 'utf8').trim().split('\n').map((line) => JSON.parse(line));
+  assert.equal(entries.length, 1);
+  assert.equal(entries[0].type, 'flaky');
+  assert.equal(entries[0].retry, 2);
+  assert.equal(entries[0].outcome, 'accepted');
+});
