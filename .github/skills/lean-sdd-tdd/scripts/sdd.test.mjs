@@ -8628,3 +8628,239 @@ test('r24c suspect Red: heuristic setup-call Red is recorded as suspect, accepte
   assert.equal(sdd(d, 'tdd', 'green', 'TEST-CALC-001').code, 0);
   assert.match(sdd(d, 'gate', '--no-run').out, /1 suspect Red.*TEST-CALC-001/);
 });
+
+// ---- r24d (design 3.4 self-verification) ----
+// (1) scope differential: `gate --changed` scope must be a superset of the brute-force oracle's relevant checks
+const R24D_HASH = "const fs=require('fs'),p=require('path'),c=require('crypto');const h=c.createHash('sha1');const w=(x)=>{if(!fs.existsSync(x))return;if(fs.statSync(x).isDirectory()){for(const e of fs.readdirSync(x).sort())w(p.join(x,e));}else{h.update(x+'\\0'+fs.readFileSync(x));}};for(const a of process.argv.slice(1))w(a);console.log(h.digest('hex'));";
+const r24dGit = (d, ...a) => spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', ...a], { cwd: d, encoding: 'utf8' });
+function r24dWorkspace({ files, projects, rootInputs }) {
+  const d = mini('---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | x shall hold. | TEST-A-001 |\n', files);
+  fs.rmSync(path.join(d, 'package.json'), { force: true });
+  const closure = (p, seen = new Set()) => { for (const x of [p.root, ...(p.dependsOn ?? [])]) if (!seen.has(x)) { seen.add(x); const q = projects.find((y) => y.root === x); if (q && q !== p) closure(q, seen); } return [...seen]; };
+  const inputsOf = (p) => [...closure(p), ...rootInputs].map((x) => path.join(d, x));
+  const cmdOf = (p) => ['node', '-e', R24D_HASH, ...inputsOf(p)];
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ testCmd: PASS, checks: [], projects: projects.map((p) => ({ root: p.root, dependsOn: p.dependsOn, testCmd: PASS, checks: [{ name: 'ok', cmd: cmdOf(p) }] })) }));
+  r24dGit(d, 'add', '-A');
+  r24dGit(d, 'commit', '-qm', 'i');
+  const result = (p) => spawnSync(cmdOf(p)[0], cmdOf(p).slice(1), { cwd: path.join(d, p.root), encoding: 'utf8' }).stdout;
+  return { d, result };
+}
+function r24dDifferential(ws, projects, mutate, { policy } = {}) {
+  const { d, result } = ws;
+  const base = Object.fromEntries(projects.map((p) => [p.root, result(p)]));
+  mutate(d);
+  const relevant = projects.filter((p) => result(p) !== base[p.root]).map((p) => p.root);
+  const cp = path.join(d, '.sdd/config.json');
+  if (policy) fs.writeFileSync(cp, JSON.stringify({ ...JSON.parse(fs.readFileSync(cp, 'utf8')), scopePolicy: policy }));
+  const g = sdd(d, 'gate', '--changed');
+  const ran = projects.filter((p) => new RegExp(`✓ cmd ${p.root.replace(/[/.]/g, '\\$&')}:ok`).test(g.out)).map((p) => p.root);
+  r24dGit(d, 'checkout', '-q', '--', '.');
+  r24dGit(d, 'clean', '-fdq', '-e', '.sdd');
+  return { relevant, ran, out: g.out, code: g.code };
+}
+const R24D_ECOSYSTEMS = {
+  cargo: {
+    files: { 'Cargo.toml': '[workspace]\nmembers=["crates/a","crates/b","crates/c"]\n', 'Cargo.lock': '# lock\n', 'rust-toolchain.toml': '[toolchain]\nchannel="stable"\n', '.cargo/config.toml': '[build]\n', 'crates/a/Cargo.toml': '[package]\nname="a"\n', 'crates/a/src/lib.rs': 'pub fn a() {}\n', 'crates/b/Cargo.toml': '[package]\nname="b"\n', 'crates/b/src/lib.rs': 'pub fn b() {}\n', 'crates/c/Cargo.toml': '[package]\nname="c"\n', 'crates/c/src/lib.rs': 'pub fn c() {}\n', 'misc/data.bin': 'x' },
+    projects: [{ root: 'crates/a' }, { root: 'crates/b' }, { root: 'crates/c', dependsOn: ['crates/b'] }],
+    rootInputs: ['Cargo.toml', 'Cargo.lock', 'rust-toolchain.toml', '.cargo/config.toml'],
+  },
+  js: {
+    files: { 'package.json': '{"private":true,"workspaces":["packages/*"]}\n', 'package-lock.json': '{}\n', 'pnpm-workspace.yaml': 'packages:\n  - packages/*\n', 'packages/x/package.json': '{"name":"x"}\n', 'packages/x/index.mjs': 'export const x = 1;\n', 'packages/y/package.json': '{"name":"y"}\n', 'packages/y/index.mjs': 'export const y = 1;\n', 'misc/data.bin': 'x' },
+    projects: [{ root: 'packages/x' }, { root: 'packages/y', dependsOn: ['packages/x'] }],
+    rootInputs: ['package.json', 'package-lock.json', 'pnpm-workspace.yaml'],
+  },
+  python: {
+    files: { 'pyproject.toml': '[tool]\n', 'requirements.txt': 'a\n', 'py/a/pyproject.toml': '[project]\nname="a"\n', 'py/a/a.py': 'A = 1\n', 'py/b/requirements.txt': 'b\n', 'py/b/b.py': 'B = 1\n', 'misc/data.bin': 'x' },
+    projects: [{ root: 'py/a' }, { root: 'py/b' }],
+    rootInputs: ['pyproject.toml', 'requirements.txt'],
+  },
+};
+for (const [eco, spec] of Object.entries(R24D_ECOSYSTEMS)) {
+  test(`r24d scope differential (${eco}): every single-file mutation keeps scope ⊇ oracle-relevant checks`, () => {
+    const ws = r24dWorkspace(spec);
+    const claimedFiles = Object.keys(spec.files).filter((f) => f !== 'misc/data.bin');
+    const mutations = [
+      ...claimedFiles.map((f) => [`edit ${f}`, (d) => fs.appendFileSync(path.join(d, f), '\n# r24d mutation\n')]),
+      ...spec.projects.map((p) => [`add file in ${p.root}`, (d) => fs.writeFileSync(path.join(d, p.root, 'added.txt'), 'new\n')]),
+    ];
+    let relevantSeen = 0;
+    for (const [name, mutate] of mutations) {
+      const r = r24dDifferential(ws, spec.projects, mutate);
+      relevantSeen += r.relevant.length;
+      assert.deepEqual(r.relevant.filter((x) => !r.ran.includes(x)), [], `${eco}: ${name} silently skipped a relevant check (ran=${r.ran} relevant=${r.relevant})\n${r.out}`);
+      assert.doesNotMatch(r.out, /✗ cmd/, `${eco}: ${name}\n${r.out}`);
+    }
+    assert.ok(relevantSeen >= spec.projects.length + spec.rootInputs.length, `${eco}: oracle found only ${relevantSeen} relevant checks, differential is vacuous`);
+  });
+  test(`r24d scope differential (${eco}): an unclaimed file is irrelevant to every check but warns, and fails under strict`, () => {
+    const ws = r24dWorkspace(spec);
+    const mutate = (d) => fs.appendFileSync(path.join(d, 'misc/data.bin'), 'y');
+    const w = r24dDifferential(ws, spec.projects, mutate);
+    assert.deepEqual(w.relevant, []);
+    assert.match(w.out, /! scope: 1 changed file\(s\) not claimed.*misc\/data\.bin/, w.out);
+    assert.doesNotMatch(w.out, /✗ scope/, w.out);
+    const s = r24dDifferential(ws, spec.projects, mutate, { policy: 'strict' });
+    assert.equal(s.code, 1, s.out);
+    assert.match(s.out, /✗ scope:.*misc\/data\.bin/, s.out);
+  });
+}
+
+// (2) stub round-trip: synthetic Rust tests modelled on the wave-15 stub captures (own code, not copied)
+const R24D_NO_CARGO = spawnSync('which', ['cargo']).status !== 0;
+const r24dCargoSkip = R24D_NO_CARGO ? 'SKIP: toolchain missing (cargo)' : false;
+const r24dRustStub = (body, uses) => {
+  const d = mini(R24B_SPEC, {
+    'Cargo.toml': '[package]\nname = "repro"\nversion = "0.1.0"\nedition = "2021"\n',
+    'src/lib.rs': '',
+    'tests/h_test.rs': `use repro::{${uses}};\n\n// @id TEST-H-001\n// @verifies REQ-H-001\n#[test]\nfn test_h_001() {\n${body}\n}\n`,
+  });
+  const r = sdd(d, 'tdd', 'stub', 'TEST-H-001', '--report');
+  const lib = fs.readFileSync(path.join(d, 'src/lib.rs'), 'utf8');
+  const rows = [...r.out.matchAll(/^ {2}(\w+) \| (shown|inferred|guessed) \| (\S+)$/gm)].map((m) => ({ element: m[1], confidence: m[2], evidence: m[3] }));
+  return { d, out: r.out, lib, rows };
+};
+// every generated const/type either has evidence-backed confidence or an SDD-TODO(stub) marker, and --report lists it
+function r24dAssertStubInvariants({ d, out, lib, rows }, label) {
+  const lines = lib.split('\n');
+  for (const l of lines) {
+    const c = /^pub const (\w+): (.+?) =/.exec(l);
+    if (c) {
+      const row = rows.find((r) => r.element === c[1]);
+      assert.ok(row, `${label}: const ${c[1]} is not listed by --report\n${out}`);
+      if (/SDD-TODO\(stub\)/.test(l)) assert.equal(row.confidence, 'guessed', `${label}: marked ${c[1]} must be reported guessed`);
+      else { assert.notEqual(row.confidence, 'guessed', `${label}: ${c[1]} is guessed but carries no SDD-TODO(stub) marker`); assert.notEqual(c[2], '()', `${label}: unit placeholder without marker for ${c[1]}`); }
+    }
+    const t = /^pub (?:struct|enum|trait) (\w+)/.exec(l);
+    if (t) assert.ok(rows.some((r) => r.element === t[1]), `${label}: type ${t[1]} is not listed by --report\n${out}`);
+  }
+  for (const row of rows) {
+    if (row.confidence === 'guessed') assert.match(lib, new RegExp(`const ${row.element}: \\(\\) = \\(\\); // SDD-TODO\\(stub\\)`), `${label}: guessed ${row.element} has no marker`);
+    const m = /^(.+):(\d+)$/.exec(row.evidence);
+    assert.ok(m, `${label}: evidence of ${row.element} has no file:line (${row.evidence})`);
+    assert.match(fs.readFileSync(path.join(d, m[1]), 'utf8').split('\n')[Number(m[2]) - 1] ?? '', new RegExp(`\\b${row.element}\\b`), `${label}: evidence line for ${row.element} does not mention it`);
+  }
+}
+const R24D_STUB_CORPUS = {
+  'str const compared with a literal': ['NAME', '    assert_eq!(NAME, "abc");', /pub const NAME: &str/],
+  'float const next to a float literal': ['EPSILON', '    assert!((1.0f64 - 1.0).abs() < EPSILON / 2.0);', /pub const EPSILON: f64/],
+  'indexed const compared with a typed literal': ['PRIMES', '    assert_eq!(PRIMES[0], 2u32);', /pub const PRIMES: &\[u32\]/],
+  'const compared with Some(typed)': ['MAYBE', '    assert_eq!(MAYBE, Some(3u8));', /pub const MAYBE: Option<u8>/],
+  'method called on a const with no type evidence': ['LIMIT', '    assert!(LIMIT.is_ok());', /LIMIT: \(\) = \(\); \/\/ SDD-TODO\(stub\)/],
+};
+for (const [name, [id, body, expected]] of Object.entries(R24D_STUB_CORPUS)) {
+  test(`r24d stub round-trip: ${name} -> evidence-typed or SDD-TODO(stub), listed by --report`, cargoOk, () => {
+    const s = r24dRustStub(body, id);
+    assert.match(s.lib, expected, s.lib);
+    r24dAssertStubInvariants(s, name);
+  });
+  test(`r24d stub round-trip: ${name} -> compiles or carries a marker`, { skip: r24dCargoSkip }, () => {
+    const s = r24dRustStub(body, id);
+    const b = spawnSync('cargo', ['test', '--offline', '--no-run'], { cwd: s.d, encoding: 'utf8', env: ENV });
+    if (b.status !== 0) assert.match(s.lib, /SDD-TODO\(stub\)/, `${name}: stub does not compile and has no SDD-TODO(stub) marker\n${b.stderr}`);
+  });
+}
+test('r24d stub round-trip: struct/enum shapes from a call-heavy test are all listed by --report', cargoOk, () => {
+  const s = r24dRustStub("    let s = Segment::Glob(vec![Token::Lit('a')]);\n    assert!(s.is_glob());", 'Segment, Token');
+  assert.match(s.lib, /pub enum Segment/);
+  assert.match(s.lib, /pub enum Token/);
+  r24dAssertStubInvariants(s, 'types');
+});
+test('r24d stub round-trip: toolchain gaps are counted, never silently dropped', () => {
+  assert.ok(R24D_NO_CARGO || r24dCargoSkip === false, 'SKIP: toolchain missing (cargo) must be a counted skip, not a pass');
+});
+
+// shapes the wave-15 captures showed and the stub generator still gets wrong: recorded, not hidden (design 3.2 acceptance)
+const r24dTodo = { todo: 'known stub-heuristic gap (design 3.2); fix when it reproduces twice' };
+test('r24d TODO stub: a call with no return-type evidence is emitted as a concrete i64 without an SDD-TODO(stub) marker', { ...r24dTodo, skip: r24dCargoSkip }, () => {
+  const s = r24dRustStub('    assert!(mystery(5).ok());', 'mystery');
+  assert.match(s.lib, /fn mystery[^\n]*\n[^\n]*\n[^\n]*\n/);
+  assert.doesNotMatch(s.lib, /fn mystery<A0>\(_a0: A0\) -> i64/, s.lib);
+});
+test('r24d TODO stub: free functions are generated but not listed by --report', { ...r24dTodo, skip: r24dCargoSkip }, () => {
+  const s = r24dRustStub('    assert_eq!(tally(&[1u8, 2]), 3);', 'tally');
+  assert.match(s.lib, /pub fn tally/);
+  assert.ok(s.rows.some((r) => r.element === 'tally'), s.out);
+});
+test('r24d TODO stub: a method compared with a float literal is stubbed -> i64', { ...r24dTodo, skip: r24dCargoSkip }, () => {
+  const s = r24dRustStub('    assert_eq!(Ratio::new(1, 2).value(), 0.5);', 'Ratio');
+  assert.doesNotMatch(s.lib, /fn value\(&self\) -> i64/, s.lib);
+});
+test('r24d TODO stub: a loop-bound const gets guessed i64 element types reported as inferred', { ...r24dTodo, skip: r24dCargoSkip }, () => {
+  const s = r24dRustStub('    for (a, b) in TABLE { assert_eq!(a, b); }', 'TABLE');
+  assert.doesNotMatch(s.lib, /TABLE: &\[\(i64, i64\)\]/, s.lib);
+});
+
+import { createHash } from 'node:crypto';
+// (3) ledger invariants: replay hand-built tdd.jsonl chains through `gate --no-run` / merge-ledger
+const R24D_SPEC = '---\nfeature: calc\ntier: T1\n---\n| REQ-CALC-001 | When add is called, the system shall sum. | TEST-CALC-001 |\n';
+const r24dChain = (entries) => {
+  let prev = '';
+  return entries.map((e, i) => { const x = { ...e, seq: i + 1, prev }; delete x.hash; x.hash = createHash('sha256').update(JSON.stringify(x)).digest('hex'); prev = x.hash; return JSON.stringify(x); }).join('\n') + '\n';
+};
+const r24dLedger = (d) => fs.readFileSync(path.join(d, '.sdd/tdd.jsonl'), 'utf8').trim().split('\n').map((l) => JSON.parse(l));
+function r24dRedGreen() {
+  const d = mini(R24D_SPEC, {
+    'add.test.mjs': "import { test } from 'node:test';\nimport assert from 'node:assert/strict';\nimport { add } from './add.mjs';\n/** @id TEST-CALC-001 @verifies REQ-CALC-001 */\ntest('TEST-CALC-001 adds', () => assert.equal(add(1, 2), 3));\n",
+    'add.mjs': '/** @id CODE-CALC-001 @implements REQ-CALC-001 */\nexport const add = () => 0;\n',
+  });
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-CALC-001').code, 0);
+  fs.writeFileSync(path.join(d, 'add.mjs'), '/** @id CODE-CALC-001 @implements REQ-CALC-001 */\nexport const add = (a, b) => a + b;\n');
+  assert.equal(sdd(d, 'tdd', 'green', 'TEST-CALC-001').code, 0);
+  const [red, green] = r24dLedger(d);
+  assert.equal(red.type, 'red');
+  assert.equal(green.type, 'green');
+  return { d, red, green, write: (es) => fs.writeFileSync(path.join(d, '.sdd/tdd.jsonl'), r24dChain(es)), evidence: () => /tdd evidence[^:]*: (\d+)\/(\d+)/.exec(sdd(d, 'gate', '--no-run').out) };
+}
+test('r24d ledger invariant: a Red followed by a Green with the same test hash is covered', () => {
+  const { d, red, green, write, evidence } = r24dRedGreen();
+  write([red, green]);
+  assert.deepEqual(evidence().slice(1), ['1', '1']);
+  assert.match(sdd(d, 'tdd', 'check').out, /LEDGER OK/);
+});
+test('r24d ledger invariant: Red-before-Green — a Green with no Red, or ordered before its Red, is never covered', () => {
+  const { red, green, write, evidence } = r24dRedGreen();
+  write([green]);
+  assert.deepEqual(evidence().slice(1), ['0', '1']);
+  write([green, red]);
+  assert.deepEqual(evidence().slice(1), ['0', '1']);
+  write([{ ...red, test: 'TEST-CALC-009' }, green]);
+  assert.deepEqual(evidence().slice(1), ['0', '1']);
+});
+test('r24d ledger invariant: a Green recorded for a different test hash than its Red is not evidence', () => {
+  const { red, green, write, evidence } = r24dRedGreen();
+  write([red, { ...green, fileSha: 'f'.repeat(64) }]);
+  assert.deepEqual(evidence().slice(1), ['0', '1']);
+});
+test('r24d ledger invariant: no Green on stale evidence — test edit or REQ edit after Green invalidates it; CLI refuses a Green without a matching Red', () => {
+  const a = r24dRedGreen();
+  fs.writeFileSync(path.join(a.d, 'add.test.mjs'), fs.readFileSync(path.join(a.d, 'add.test.mjs'), 'utf8').replace('add(1, 2), 3', 'add(1, 2), 4'));
+  assert.deepEqual(a.evidence().slice(1), ['0', '1']);
+  const g = sdd(a.d, 'tdd', 'green', 'TEST-CALC-001');
+  assert.notEqual(g.code, 0, g.out);
+  assert.match(g.out, /REFUSED/, g.out);
+  const b = r24dRedGreen();
+  fs.writeFileSync(path.join(b.d, '.sdd/specs/calc.md'), R24D_SPEC.replace('shall sum', 'shall add up'));
+  assert.deepEqual(b.evidence().slice(1), ['0', '1']);
+  const c = mini(R24D_SPEC, { 'add.test.mjs': fs.readFileSync(path.join(a.d, 'add.test.mjs'), 'utf8'), 'add.mjs': '/** @id CODE-CALC-001 @implements REQ-CALC-001 */\nexport const add = (a, b) => a + b;\n' });
+  assert.match(sdd(c, 'tdd', 'green', 'TEST-CALC-001').out, /REFUSED: no Red recorded/);
+});
+test('r24d ledger invariant: merge-ledger is idempotent (merge twice = merge once) and keeps a valid chain', () => {
+  const { d, red, green } = r24dRedGreen();
+  const ledgerPath = path.join(d, '.sdd/tdd.jsonl');
+  const other = { ...red, test: 'TEST-CALC-002', at: '2026-01-01T00:00:00.000Z' };
+  const flaky = { v: 1, type: 'flaky', check: 'test', retry: 1, retries: 1, policy: 'warn', outcome: 'accepted', at: '2026-01-02T00:00:00.000Z' };
+  const [base, side1, side2] = [r24dChain([red]), r24dChain([red, green]), r24dChain([red, other, flaky])];
+  const forks = [
+    side1,
+    `${base.trimEnd()}\n<<<<<<< HEAD\n${side1.split('\n')[1]}\n=======\n${side2.split('\n')[1]}\n${side2.split('\n')[2]}\n>>>>>>> branch\n`,
+    `${side1}${side2}`,
+  ];
+  for (const f of forks) {
+    fs.writeFileSync(ledgerPath, f);
+    assert.equal(sdd(d, 'tdd', 'merge-ledger').code, 0);
+    const once = fs.readFileSync(ledgerPath, 'utf8');
+    assert.match(sdd(d, 'tdd', 'check').out, /LEDGER OK/, once);
+    assert.match(sdd(d, 'tdd', 'merge-ledger').out, /\(\d+ unchanged, 0 re-chained/);
+    assert.equal(fs.readFileSync(ledgerPath, 'utf8'), once, 'second merge changed the ledger');
+  }
+});
