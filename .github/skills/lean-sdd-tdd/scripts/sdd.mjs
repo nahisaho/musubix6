@@ -4872,6 +4872,18 @@ function cmdTdd() {
   }
 
   const cfg = loadConfig();
+  if (sub === 'green') {
+    const red = prior.filter((e) => e.type === 'red' && shaMatches(e.fileSha, t.path, id)).at(-1);
+    if (red?.admissionShas) {
+      const current = checkAdmissionShas(cfg, red.admissionShas);
+      const drift = [...new Set([...Object.keys(red.admissionShas), ...Object.keys(current)])]
+        .filter((k) => red.admissionShas[k] !== current[k]);
+      if (drift.length) {
+        out(`REFUSED: check definition changed since Red (${drift.map((k) => k.slice(k.indexOf('|') + 1)).join(', ')}); restore the resolution/compiler inputs or record a fresh assertion Red before Green`);
+        return 1;
+      }
+    }
+  }
   const proj = projectFor(t.path);
   const fileArg = proj ? path.posix.relative(proj.root, t.path) : t.path;
   const baseCmd = proj?.testCmd ?? cfg.testCmd;
@@ -5129,7 +5141,7 @@ function cmdTdd() {
   const wasDone = new Map(humanSpecs.map((x) => [x.feature, featureGreen(x)]));
   // Whole-file runners may fail a sibling while observably passing the selected test.
   const outcomeExit = targetPassed ? 0 : res.exit;
-  appendLedger({ type: sub, test: id, req, reqSha: reqShaOf(req), reqShas: Object.fromEntries([...new Set([req, ...t.refs.verifies])].map((r) => [r, reqShaOf(r)]).filter(([, v]) => v)), file: t.path, fileSha: after, protectedFiles: oracleDependencyFiles, produced: Object.keys(producedShas).length ? producedShas : undefined, oracleShas: oracleDependencyFiles.length ? oracleDependencyShas : undefined, artifactShas: sub === 'red' ? undefined : artifactShasFor(t.path, id), checkDefShas: sub === 'red' ? undefined : checkDefShas(cfg), runnerEnv: runnerEnvRecord(cmd), cmdSha: sha(cmd.join('\0')), exit: outcomeExit, runnerExit: outcomeExit !== res.exit ? res.exit : undefined, ms: res.ms, testSha0: sub === 'red' ? testOwnSha(t.path, id) : undefined, regSha: testRegionSha(t.path, id), rebaselined: rebaselined || undefined, weak: weakRed ? true : undefined, suspect: suspect ? true : undefined, weakWhy: setupSym ? `setup:${setupSym}` : charac ? 'characterization' : retestWeak ? 'retest' : undefined, characterization: charac || undefined, retest: retestWeak || rebaselined ? retest : undefined, priorStrongRed: retestWeak && prior.some((e) => e.type === 'red' && !e.weak && !e.retest) ? true : undefined, implFiles: sub === 'red' ? undefined : Object.fromEntries([...new Set([...ents.values()].filter((c) => c.kind === 'CODE' && c.refs.implements.some((r) => t.refs.verifies.includes(r))).map((c) => c.path))].map((f) => [f, fileSha(f)])), implBlocks: sub === 'red' ? undefined : Object.fromEntries([...ents.values()].filter((c) => c.kind === 'CODE' && c.refs.implements.some((r) => t.refs.verifies.includes(r))).map((c) => [`${c.path}:${c.id}`, implRegionSha(c)]).filter(([, v]) => v)), moved: sub === 'refactor' && prior.filter((e) => e.type === 'green' || e.type === 'refactor').at(-1)?.fileSha !== after && prior.some((e) => e.type === 'green' || e.type === 'refactor') ? true : undefined });
+  appendLedger({ type: sub, test: id, req, reqSha: reqShaOf(req), reqShas: Object.fromEntries([...new Set([req, ...t.refs.verifies])].map((r) => [r, reqShaOf(r)]).filter(([, v]) => v)), file: t.path, fileSha: after, protectedFiles: oracleDependencyFiles, produced: Object.keys(producedShas).length ? producedShas : undefined, oracleShas: oracleDependencyFiles.length ? oracleDependencyShas : undefined, artifactShas: sub === 'red' ? undefined : artifactShasFor(t.path, id), checkDefShas: sub === 'red' ? undefined : checkDefShas(cfg), admissionShas: sub === 'red' ? checkAdmissionShas(cfg) : undefined, runnerEnv: runnerEnvRecord(cmd), cmdSha: sha(cmd.join('\0')), exit: outcomeExit, runnerExit: outcomeExit !== res.exit ? res.exit : undefined, ms: res.ms, testSha0: sub === 'red' ? testOwnSha(t.path, id) : undefined, regSha: testRegionSha(t.path, id), rebaselined: rebaselined || undefined, weak: weakRed ? true : undefined, suspect: suspect ? true : undefined, weakWhy: setupSym ? `setup:${setupSym}` : charac ? 'characterization' : retestWeak ? 'retest' : undefined, characterization: charac || undefined, retest: retestWeak || rebaselined ? retest : undefined, priorStrongRed: retestWeak && prior.some((e) => e.type === 'red' && !e.weak && !e.retest) ? true : undefined, implFiles: sub === 'red' ? undefined : Object.fromEntries([...new Set([...ents.values()].filter((c) => c.kind === 'CODE' && c.refs.implements.some((r) => t.refs.verifies.includes(r))).map((c) => c.path))].map((f) => [f, fileSha(f)])), implBlocks: sub === 'red' ? undefined : Object.fromEntries([...ents.values()].filter((c) => c.kind === 'CODE' && c.refs.implements.some((r) => t.refs.verifies.includes(r))).map((c) => [`${c.path}:${c.id}`, implRegionSha(c)]).filter(([, v]) => v)), moved: sub === 'refactor' && prior.filter((e) => e.type === 'green' || e.type === 'refactor').at(-1)?.fileSha !== after && prior.some((e) => e.type === 'green' || e.type === 'refactor') ? true : undefined });
   for (const x of humanSpecs) if (!wasDone.get(x.feature)) {
     const all = readJson(APPROVALS, {});
     if (all[x.feature]?.code) { all[x.feature].code = implFileShas(x); writeJson(APPROVALS, all); }
@@ -5377,6 +5389,24 @@ function checkDefClosure(cfg, read = null, knownFiles = null) {
   const relative = (f) => path.relative(ROOT, f).split(path.sep).join('/');
   let manifests;
   const cargoManifests = () => manifests ??= (knownFiles ?? gitFiles('*Cargo.toml')).filter((f) => /(^|\/)Cargo\.toml$/.test(f) && !SKIP.test(f));
+  let packages;
+  const packageManifests = () => {
+    if (packages) return packages;
+    if (knownFiles) return packages = knownFiles.filter((f) => /(^|\/)package\.json$/.test(f));
+    packages = [];
+    const dirs = [ROOT];
+    while (dirs.length) {
+      const dir = dirs.pop();
+      let entries; try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch { continue; }
+      for (const e of entries) {
+        const p = path.join(dir, e.name), f = relative(p);
+        if (SKIP.test(f.replace(/(^|\/)node_modules(?=\/|$)/g, '$1packages') + '/')) continue;
+        if (e.isDirectory()) dirs.push(p);
+        else if (e.name === 'package.json') packages.push(f);
+      }
+    }
+    return packages;
+  };
   const tokens = (text) => {
     const result = [];
     for (const m of String(text).matchAll(/"([^"]*)"|'([^']*)'|`([^`]*)`|([^\s"'`()\[\]{},;|&<>]+)/g)) {
@@ -5405,6 +5435,44 @@ function checkDefClosure(cfg, read = null, knownFiles = null) {
       inspect(tokens(t), cwd, path.dirname(abs));
       if (path.basename(f) === '.npmrc') inspect(tokens(t.replace(/^[\w-]+\s*=/gm, '')), cwd, path.dirname(abs), true);
       activeFiles.delete(f);
+    };
+    const nodeDefinitions = (cwd) => {
+      const key = `resolution:${cwd}`;
+      if (visited.has(key)) return;
+      visited.add(key);
+      const selected = new Set(packageManifests().filter((f) => path.resolve(ROOT, f).startsWith(cwd + path.sep)));
+      for (let dir = cwd; ; dir = path.dirname(dir)) {
+        selected.add(relative(path.join(dir, 'package.json')));
+        if (dir === path.dirname(dir)) break;
+      }
+      for (const f of selected) {
+        const text = rd(f); if (text === null) continue;
+        defs.set(`resolution|${f}`, { sha: packageResolutionSha(text), label: `check ${c.name} package resolution (${f} changed)` });
+      }
+    };
+    const compilerWrapper = (value, cwd, base = cwd, kind = 'rustc-wrapper') => {
+      if (!value) return;
+      const candidates = /[/\\]/.test(value) ? [path.resolve(base, value)]
+        : (process.env.PATH ?? '').split(path.delimiter).map((d) => path.resolve(cwd, d || '.', value));
+      const abs = resolveExecutable(/[/\\]/.test(value) ? path.resolve(base, value) : value, cwd)
+        ?? candidates.find((p) => rd(relative(p)) !== null) ?? path.resolve(base, value);
+      const f = relative(abs), text = rd(f);
+      const raw = live ? (() => { try { return fs.readFileSync(abs); } catch { return null; } })() : read.raw?.(f) ?? text;
+      let real = abs;
+      try { real = fs.realpathSync(abs); } catch { /* Missing inputs retain their path and unreadable fingerprint. */ }
+      defs.set(`executable:${kind}:${c.name}|${f}`, {
+        sha: sha(`${relative(real)}\0${raw === null ? 'unreadable' : sha(raw)}`),
+        label: `check ${c.name} ${kind} executable ${f} (changed)`,
+      });
+      file(abs, cwd, undefined, true);
+    };
+    const cargoWrappers = (text, cwd, base) => {
+      for (const m of text.matchAll(/(?:^|[\s.])(?:["']?)(rustc(?:-workspace)?-wrapper|RUSTC(?:_WORKSPACE)?_WRAPPER)(?:["']?)\s*=\s*(?:["']([^"']*)["']|(\{[^\n}]*\})|([^\s"'{}]+))/g)) {
+        let value = m[2] ?? m[4] ?? /\bvalue\s*=\s*["']([^"']*)["']/.exec(m[3] ?? '')?.[1];
+        const env = m[1].startsWith('RUSTC');
+        if (value && env && /\brelative\s*=\s*true\b/.test(m[3] ?? '')) value = path.resolve(base, value);
+        compilerWrapper(value, cwd, env && !/\brelative\s*=\s*true\b/.test(m[3] ?? '') ? cwd : base, m[1].toLowerCase().replaceAll('_', '-'));
+      }
     };
     const packageScript = (cwd, name, manager) => {
       const f = relative(path.join(cwd, 'package.json'));
@@ -5529,6 +5597,9 @@ function checkDefClosure(cfg, read = null, knownFiles = null) {
       for (let i = 0; i < ts.length; i++) {
         const token = ts[i], exe = path.basename(token);
         if (token === 'cd' && ts[i + 1]) { cwd = path.resolve(cwd, ts[++i]); continue; }
+        if (/^(?:node|npm|pnpm|yarn|bun|npx|bunx)(?:\.cmd)?$/.test(exe)) nodeDefinitions(cwd);
+        const wrapperEnv = /^((?:CARGO_BUILD_)?RUSTC(?:_WORKSPACE)?_WRAPPER)=(.*)$/.exec(token);
+        if (wrapperEnv) compilerWrapper(wrapperEnv[2], cwd, cwd, wrapperEnv[1].toLowerCase().replaceAll('_', '-').replace(/^cargo-build-/, ''));
         if (/^(npm|pnpm|yarn|bun)$/.test(exe)) {
           let j = i + 1, packageCwd = cwd;
           while (/^(--prefix|--cwd|-C|--dir)$/.test(ts[j] ?? '') && ts[j + 1]) {
@@ -5567,11 +5638,27 @@ function checkDefClosure(cfg, read = null, knownFiles = null) {
             for (const m of ['.cargo/config.toml', '.cargo/config', 'rust-toolchain.toml', 'rust-toolchain']) {
               const f = relative(path.join(dir, m));
               file(path.join(dir, m), cwd, `check ${c.name} runs cargo alias "${alias ?? 'test'}" (${f} changed)`, true);
+              if (m.startsWith('.cargo/')) cargoWrappers(rd(f) ?? '', cwd, dir);
             }
             if (dir === path.dirname(dir)) break;
           }
           const home = path.resolve(cwd, process.env.CARGO_HOME ?? path.join(os.homedir(), '.cargo'));
-          for (const m of ['config.toml', 'config']) file(path.join(home, m), cwd, undefined, true);
+          for (const m of ['config.toml', 'config']) {
+            file(path.join(home, m), cwd, undefined, true);
+            cargoWrappers(rd(relative(path.join(home, m))) ?? '', cwd, path.dirname(home));
+          }
+          for (const name of ['RUSTC_WRAPPER', 'RUSTC_WORKSPACE_WRAPPER', 'CARGO_BUILD_RUSTC_WRAPPER', 'CARGO_BUILD_RUSTC_WORKSPACE_WRAPPER'])
+            compilerWrapper(process.env[name], cwd, cwd, name.toLowerCase().replaceAll('_', '-').replace(/^cargo-build-/, ''));
+          for (let j = i + 1; j < ts.length; j++) if (/^--config(?:=|$)/.test(ts[j])) {
+            let value = ts[j].includes('=') ? ts[j].slice(9) : ts[++j] ?? '';
+            if (value.endsWith('=') && ts[j + 1]) value += ts[++j];
+            if (value.includes('=')) cargoWrappers(value, cwd, cwd);
+            else {
+              const abs = path.resolve(cwd, value);
+              file(abs, cwd, undefined, true);
+              cargoWrappers(rd(relative(abs)) ?? '', cwd, path.dirname(path.dirname(abs)));
+            }
+          }
         }
         if (/^tsc(?:\.cmd)?$/.test(exe)) tsDefinitions(ts.slice(i + 1), cwd);
         if (/^(make|gmake)$/.test(exe)) {
@@ -5631,6 +5718,24 @@ function checkDefClosure(cfg, read = null, knownFiles = null) {
 function checkDefShas(cfg) {
   return Object.fromEntries([...checkDefClosure(cfg)].map(([k, v]) => [k, v.sha]));
 }
+function packageResolutionSha(text) {
+  let value = text;
+  try {
+    const pkg = JSON.parse(text);
+    value = JSON.stringify(Object.fromEntries(['name', 'type', 'main', 'imports', 'exports'].filter((k) => Object.hasOwn(pkg, k)).map((k) => [k, pkg[k]])));
+  } catch { /* Invalid metadata is still a definition, never an absent input. */ }
+  return sha(value);
+}
+function checkAdmissionShas(cfg, pinned = null) {
+  const inputs = Object.fromEntries([...checkDefClosure(cfg)]
+    .filter(([k]) => k.startsWith('resolution|') || /^executable:rustc(?:-workspace)?-wrapper:/.test(k) || /\|(?:.*\/)?\.cargo\/config(?:\.toml)?$/.test(k))
+    .map(([k, v]) => [k, v.sha]));
+  // Runner/check renames do not change metadata; recorded paths remain protected even if discovery changes.
+  for (const k of Object.keys(pinned ?? {})) if (k.startsWith('resolution|') && !Object.hasOwn(inputs, k)) {
+    try { inputs[k] = packageResolutionSha(fs.readFileSync(path.resolve(ROOT, k.slice(k.indexOf('|') + 1)), 'utf8')); } catch { /* Missing input differs from the pinned hash. */ }
+  }
+  return inputs;
+}
 function rustGateExecution(ents, cfg, runs) {
   if (!runs.length) return [];
   const defs = checkDefClosure(cfg), expected = new Map(), observed = [];
@@ -5653,6 +5758,7 @@ function rustGateExecution(ents, cfg, runs) {
     const manifests = new Set([...defs.keys()].filter((k) => k.startsWith(c.name + '|') && /(?:^|\|)Cargo\.toml$|\/Cargo\.toml$/.test(k)).map((k) => k.slice(k.indexOf('|') + 1)));
     for (const e of ents.values()) {
       if (e.kind !== 'TEST' || !/\.rs$/.test(e.path)) continue;
+      if (flags.changed && c.cwd && projectFor(e.path) && normDep(projectFor(e.path).root) !== normDep(c.cwd)) continue;
       let dir = path.dirname(path.resolve(ROOT, e.path)), manifest = null;
       for (; ; dir = path.dirname(dir)) {
         const f = rel(path.join(dir, 'Cargo.toml'));

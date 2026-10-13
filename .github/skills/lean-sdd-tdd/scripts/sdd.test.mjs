@@ -11185,3 +11185,171 @@ test('r32c #351 pytest execution outcomes cannot be replaced by a plugin exit-co
   assert.equal(gate.code, 1, gate.out);
   assert.match(gate.out, /real assertion/);
 });
+
+for (const key of ['rustc-wrapper', 'rustc-workspace-wrapper']) {
+  for (const annotated of [false, true]) {
+    test(`r33a #353 Cargo ${key} protects ${annotated ? 'annotated' : 'plain'} extensionless adapters`, () => {
+      const d = r31aFixture({
+        '.cargo/config.toml': `[build]\n${key} = "./tools/compiler"\n`,
+        'tools/compiler': `${annotated ? '# @id CODE-A-001 @implements REQ-A-001\n' : ''}exec "$@"\n`,
+      }, [{ name: 'test', cmd: ['sh', '-c', 'true # cargo test'] }]);
+      fs.appendFileSync(path.join(d, 'tools/compiler'), '# changed compiler selection\n');
+      r31aDrift(d, 'tools/compiler');
+    });
+  }
+}
+
+for (const kind of ['config', 'environment', 'inline', 'config-env', 'cli-config']) {
+  test(`r33a #353 fingerprints raw compiled wrapper bytes through ${kind}`, () => {
+    const old = ENV.RUSTC_WRAPPER;
+    const d = mini(T1SPEC, {
+      'a.test.mjs': jsTest(), 'tools/compiler': Buffer.from([0x7f, 0x45, 0x4c, 0x46, 0, 0xff]),
+    }, FAIL);
+    fs.chmodSync(path.join(d, 'tools/compiler'), 0o755);
+    let command = 'true # cargo test';
+    if (kind === 'config') writeAll(d, { '.cargo/config': '[build]\nrustc-wrapper="./tools/compiler"\n' });
+    if (kind === 'config-env') writeAll(d, { '.cargo/config.toml': '[env]\nRUSTC_WRAPPER={value="tools/compiler", relative=true}\n' });
+    if (kind === 'environment') ENV.RUSTC_WRAPPER = path.join(d, 'tools/compiler');
+    if (kind === 'inline') command = 'true # env RUSTC_WORKSPACE_WRAPPER=./tools/compiler cargo test';
+    if (kind === 'cli-config') command = 'true # cargo --config build.rustc-wrapper="./tools/compiler" test';
+    try {
+      const cp = path.join(d, '.sdd/config.json');
+      fs.writeFileSync(cp, JSON.stringify({
+        ...JSON.parse(fs.readFileSync(cp)), scan: { include: ['a.test.mjs'] },
+        scopePolicy: 'warn', unscoped: ['**'], checks: [{ name: 'test', cmd: ['sh', '-c', command] }],
+      }));
+      assert.equal(sdd(d, 'tdd', 'red', 'TEST-A-001').code, 0);
+      setCmd(d, PASS);
+      const green = sdd(d, 'tdd', 'green', 'TEST-A-001');
+      assert.equal(green.code, 0, green.out);
+      assert.equal(spawnSync('git', ['add', '-A'], { cwd: d }).status, 0);
+      assert.equal(spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'binary wrapper baseline'], { cwd: d }).status, 0);
+      const clean = sdd(d, 'gate', '--changed');
+      assert.equal(clean.code, 0, clean.out);
+      assert.doesNotMatch(clean.out, /scope: .*defin(?:es|ing) what a gate check runs/, clean.out);
+      fs.writeFileSync(path.join(d, 'tools/compiler'), Buffer.from([0x7f, 0x45, 0x4c, 0x46, 0, 0xfe]));
+      r31aDrift(d, 'tools/compiler');
+    } finally {
+      if (old === undefined) delete ENV.RUSTC_WRAPPER; else ENV.RUSTC_WRAPPER = old;
+    }
+  });
+}
+
+for (const field of ['imports', 'exports']) {
+  for (const nested of [false, true]) {
+    test(`r33a #354 tracks ${nested ? 'nested' : 'root'} package ${field} for direct Node checks`, () => {
+      const target = nested ? 'tests/package.json' : 'package.json';
+      const manifest = { type: 'module', [field]: field === 'imports' ? { '#subject': './real.mjs' } : { '.': './real.mjs' } };
+      const d = r31aFixture({
+        [target]: JSON.stringify(manifest), 'tests/plain.test.mjs': "import {test} from 'node:test'; test('plain', () => {});\n",
+      }, [{ name: 'test', cmd: ['node', '--test', 'tests/plain.test.mjs'] }]);
+      fs.writeFileSync(path.join(d, target), JSON.stringify({ ...manifest, [field]: { [field === 'imports' ? '#subject' : '.']: './mock.mjs' } }));
+      r31aDrift(d, target);
+    });
+  }
+}
+
+test('r33a #354 rejects import-map substitution between assertion Red and Green', () => {
+  const d = mini(T1SPEC, {
+    'package.json': '{"type":"module","imports":{"#subject":"./real.mjs"}}',
+    'real.mjs': '/** @id CODE-A-001 @implements REQ-A-001 */\nexport const answer = () => 0;\n',
+    'mock.mjs': 'export const answer = () => 1;\n',
+    'a.test.mjs': "import {test} from 'node:test'; import assert from 'node:assert/strict'; import {answer} from '#subject';\n/** @id TEST-A-001 @verifies REQ-A-001 */\ntest('TEST-A-001', () => assert.equal(answer(), 1));\n",
+  }, ['node', '--test', '--test-name-pattern={id}', '{file}']);
+  const red = sdd(d, 'tdd', 'red', 'TEST-A-001');
+  assert.equal(red.code, 0, red.out);
+  const before = fs.readFileSync(path.join(d, '.sdd/tdd.jsonl'), 'utf8');
+  fs.writeFileSync(path.join(d, 'package.json'), '{"type":"module","imports":{"#subject":"./mock.mjs"}}');
+  const green = sdd(d, 'tdd', 'green', 'TEST-A-001');
+  assert.equal(green.code, 1, green.out);
+  assert.match(green.out, /definition.*changed since Red|check.*changed since Red/i);
+  assert.equal(fs.readFileSync(path.join(d, '.sdd/tdd.jsonl'), 'utf8'), before);
+});
+
+test('r33a S3 changed Cargo downstream checks do not demand skipped sibling project execution', { skip: !has130('cargo') }, () => {
+  const d = mini('---\nfeature: surface\ntier: T1\n---\n| REQ-A-001 | a shall hold. | TEST-A-001 |\n| REQ-B-001 | b shall hold. | TEST-B-001 |\n', {
+    'Cargo.toml': '[workspace]\nmembers=["a","b"]\nresolver="2"\n',
+    'a/Cargo.toml': '[package]\nname="surface_a"\nversion="0.1.0"\nedition="2021"\n',
+    'b/Cargo.toml': '[package]\nname="surface_b"\nversion="0.1.0"\nedition="2021"\n[dependencies]\nsurface_a={path="../a"}\n',
+    'a/src/lib.rs': '// @id CODE-A-001 @implements REQ-A-001\npub fn answer() -> i32 { 0 }\n// @id TEST-A-001 @verifies REQ-A-001\n#[test]\nfn verified() { assert_eq!(answer(), 1); }\n',
+    'b/src/lib.rs': '// @id CODE-B-001 @implements REQ-B-001\npub fn answer() -> i32 { 0 }\n// @id TEST-B-001 @verifies REQ-B-001\n#[test]\nfn verified() { assert_eq!(answer(), 1); }\n',
+    '.gitignore': 'target/\n',
+  }, ['cargo', 'test', '{idu}']);
+  const cp = path.join(d, '.sdd/config.json');
+  fs.writeFileSync(cp, JSON.stringify({
+    ...JSON.parse(fs.readFileSync(cp)), scopePolicy: 'warn', checks: [],
+    projects: ['a', 'b'].map((root) => ({
+      root, ...(root === 'b' ? { dependsOn: ['a'] } : {}),
+      testCmd: ['cargo', 'test', '-p', `surface_${root}`, '{idu}', '--offline'],
+      checks: [{ name: 'test', cmd: ['cargo', 'test', '-p', `surface_${root}`, '--offline'] }],
+    })),
+  }));
+  for (const root of ['a', 'b']) {
+    const id = `TEST-${root.toUpperCase()}-001`;
+    const red = sdd(d, 'tdd', 'red', id);
+    assert.equal(red.code, 0, red.out);
+    const p = path.join(d, root, 'src/lib.rs');
+    fs.writeFileSync(p, fs.readFileSync(p, 'utf8').replace('{ 0 }', '{ 1 }'));
+    const green = sdd(d, 'tdd', 'green', id);
+    assert.equal(green.code, 0, green.out);
+  }
+  assert.equal(sdd(d, 'gate').code, 0);
+  assert.equal(spawnSync('git', ['add', '-A'], { cwd: d }).status, 0);
+  assert.equal(spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'surface baseline'], { cwd: d }).status, 0);
+  const p = path.join(d, 'b/src/lib.rs');
+  fs.writeFileSync(p, fs.readFileSync(p, 'utf8').replace('{ 1 }', '{ 0 + 1 }'));
+  const refresh = sdd(d, 'tdd', 'refactor', 'TEST-B-001');
+  assert.equal(refresh.code, 0, refresh.out);
+  const gate = sdd(d, 'gate', '--changed', '--explain');
+  assert.equal(gate.code, 0, gate.out);
+  assert.match(gate.out, /a:test: .*skipped/);
+  assert.doesNotMatch(gate.out, /TEST-A-001.*not executed/);
+  fs.writeFileSync(p, fs.readFileSync(p, 'utf8').replace('#[test]', '#[test]\n#[ignore]'));
+  const hidden = sdd(d, 'gate', '--changed');
+  assert.equal(hidden.code, 1, hidden.out);
+  assert.match(hidden.out, /TEST-B-001.*not executed/);
+});
+
+test('r33a #353 a real compiled Cargo adapter remains stale after executable replacement', { skip: !has130('rustc') }, () => {
+  const d = mini(T1SPEC, {
+    'a.test.mjs': jsTest(), 'wrapper.rs': 'fn main() {}\n',
+    '.cargo/config.toml': '[build]\nrustc-wrapper="./tools/compiler"\n',
+  }, FAIL);
+  fs.mkdirSync(path.join(d, 'tools'));
+  const build = spawnSync('rustc', ['wrapper.rs', '-o', 'tools/compiler'], { cwd: d, encoding: 'utf8' });
+  assert.equal(build.status, 0, build.stderr);
+  const cp = path.join(d, '.sdd/config.json');
+  fs.writeFileSync(cp, JSON.stringify({
+    ...JSON.parse(fs.readFileSync(cp)), scan: { include: ['a.test.mjs'] }, scopePolicy: 'strict',
+    checks: [{ name: 'test', cmd: ['sh', '-c', 'true # cargo test'] }],
+  }));
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-A-001').code, 0);
+  setCmd(d, PASS);
+  const green = sdd(d, 'tdd', 'green', 'TEST-A-001');
+  assert.equal(green.code, 0, green.out);
+  fs.appendFileSync(path.join(d, 'tools/compiler'), Buffer.from([0, 0xff]));
+  const gate = sdd(d, 'gate');
+  assert.equal(gate.code, 1, gate.out);
+  assert.match(gate.out, /tools\/compiler.*changed/);
+});
+
+test('r33a #353 rejects annotated compiler substitution between Red and Green', () => {
+  const d = mini(T1SPEC, {
+    'a.test.mjs': jsTest(), '.cargo/config.toml': '[build]\nrustc-wrapper="./tools/compiler"\n',
+    'tools/compiler': '# @id CODE-A-001 @implements REQ-A-001\n#!/bin/sh\nexec "$@"\n',
+  }, FAIL);
+  const cp = path.join(d, '.sdd/config.json');
+  fs.writeFileSync(cp, JSON.stringify({
+    ...JSON.parse(fs.readFileSync(cp)), scan: { include: ['a.test.mjs'] },
+    checks: [{ name: 'test', cmd: ['sh', '-c', 'true # cargo test'] }],
+  }));
+  const red = sdd(d, 'tdd', 'red', 'TEST-A-001');
+  assert.equal(red.code, 0, red.out);
+  setCmd(d, PASS);
+  fs.appendFileSync(path.join(d, 'tools/compiler'), '# altered compiler\n');
+  const before = fs.readFileSync(path.join(d, '.sdd/tdd.jsonl'), 'utf8');
+  const green = sdd(d, 'tdd', 'green', 'TEST-A-001');
+  assert.equal(green.code, 1, green.out);
+  assert.match(green.out, /check definition changed since Red/);
+  assert.equal(fs.readFileSync(path.join(d, '.sdd/tdd.jsonl'), 'utf8'), before);
+});
