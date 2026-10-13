@@ -9037,3 +9037,39 @@ test('r26a a new unannotated source file under a project warns, fails under stri
   assert.equal(s.code, 1, s.out);
   assert.match(s.out, /✗ scope: 1 new source file/, s.out);
 });
+
+const r317 = (cfg, impl) => {
+  const d = mini(SPEC2, { 'a.test.mjs': '// @id TEST-A-001 @verifies REQ-A-001\n// one\n// @id TEST-A-002 @verifies REQ-A-002\n// two\n', 'lib.rs': impl }, FAIL);
+  if (cfg) symbolCfg(d);
+  for (const t of ['TEST-A-001', 'TEST-A-002']) assert.equal(sdd(d, 'tdd', 'red', t).code, 0);
+  setCmd(d, PASS);
+  for (const t of ['TEST-A-001', 'TEST-A-002']) assert.equal(sdd(d, 'tdd', 'green', t).code, 0);
+  return d;
+};
+
+test('#317 symbol granularity: an edit inside a Rust impl of the annotated type is stale; unrelated impls are not', () => {
+  const impl = '// @id CODE-A-001 @implements REQ-A-001 REQ-A-002\npub struct X { n: u32 }\n\nimpl Default for X {\n    fn default() -> Self { X { n: 1 } }\n}\n\nimpl Y {\n    fn y() -> u32 { 1 }\n}\n';
+  const d = r317(true, impl);
+  fs.writeFileSync(path.join(d, 'lib.rs'), impl.replace('{ n: 1 }', '{ n: 2 }'));
+  assert.match(sdd(d, 'tdd', 'refactor', '--stale').out, /re-verifying 2 stale test\(s\)/);
+  const e = r317(true, impl);
+  fs.writeFileSync(path.join(e, 'lib.rs'), impl.replace('{ 1 }', '{ 5 }'));
+  assert.match(sdd(e, 'tdd', 'refactor', '--stale').out, /edit fell outside any annotated CODE span in lib\.rs \(tests: TEST-A-001 TEST-A-002\)/);
+});
+
+test('#317 --stale reports an edit outside any annotated span instead of silently selecting nothing', () => {
+  const impl = '// @id CODE-A-001 @implements REQ-A-001 REQ-A-002\nexport function v() { return 0; }\n\nfunction shared() {\n  return 1;\n}\n';
+  const d = r317(false, impl);
+  fs.writeFileSync(path.join(d, 'lib.rs'), impl.replace('return 1', 'return 2'));
+  const o = sdd(d, 'tdd', 'refactor', '--stale').out;
+  assert.match(o, /edit fell outside any annotated CODE span in lib\.rs \(tests: TEST-A-001 TEST-A-002\)/, o);
+  assert.match(o, /no test has a stale/, o);
+});
+
+test('#317 --stale agrees with the gate: a REQ wording change the gate says to re-run is selected', () => {
+  const d = r317(false, '// @id CODE-A-001 @implements REQ-A-001\nexport const v = 0;\n');
+  const sp = path.join(d, '.sdd/specs/a.md');
+  fs.writeFileSync(sp, fs.readFileSync(sp, 'utf8').replace('x shall work.', 'x shall always work.'));
+  assert.match(sdd(d, 'gate', '--no-run').out, /re-verify with tdd refactor/);
+  assert.match(sdd(d, 'tdd', 'refactor', '--stale').out, /re-verifying 1 stale test\(s\): TEST-A-001/);
+});

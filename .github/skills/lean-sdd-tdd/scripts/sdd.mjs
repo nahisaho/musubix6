@@ -1728,7 +1728,20 @@ function implRegionSha(c) {
     }
   }
   if (end <= i) return whole;
-  const body = ls.slice(c.line - 1, end), nested = /@id\s+CODE-/;
+  let body = ls.slice(c.line - 1, end);
+  // symbol granularity: Rust `impl .. X` blocks of the annotated type are its behaviour too
+  const tn = symbolMode() && /\.rs$/.test(c.path) ? /^\s*(?:pub(?:\([^)]*\))?\s+)?(?:struct|enum)\s+(\w+)/.exec(ls[i])?.[1] : null;
+  if (tn) {
+    const hdr = new RegExp(`^\\s*impl\\b[^{]*\\b${tn}\\b\\s*(?:<[^{]*>)?\\s*(?:where\\b[^{]*)?\\{`);
+    for (let j = end; j < ls.length; j++) {
+      if (!hdr.test(ls[j]) || /^\s*impl\b[^{]*\bfor\b/.test(ls[j]) && !new RegExp(`\\bfor\\s+(?:&\\s*)?${tn}\\b`).test(ls[j])) continue;
+      let d = 0, k = j;
+      for (; k < ls.length; k++) { for (const ch of ls[k].replace(/\/\/.*$|"(?:\\.|[^"\\])*"/g, '')) d += ch === '{' ? 1 : ch === '}' ? -1 : 0; if (d <= 0) break; }
+      body = body.concat(ls.slice(j, k + 1));
+      j = k;
+    }
+  }
+  const nested = /@id\s+CODE-/;
   // nested annotations inside the block are comment-only lines, not outer behaviour (#309); unchanged hash when there are none
   return 'b:' + sha((body.some((l, k) => k >= i - c.line + 1 && nested.test(l) && COMMENT_LEAD.test(l)) ? body.filter((l, k) => k < i - c.line + 1 || !(nested.test(l) && COMMENT_LEAD.test(l))) : body).join('\n'));
 }
@@ -4471,9 +4484,22 @@ function cmdTdd() {
       if (e.kind !== 'TEST') return false;
       const last = readLedger().filter((x) => x.test === e.id && (x.type === 'green' || x.type === 'refactor')).at(-1);
       if (changedArtifacts(last).length) return true;
+      const ev = evidenceStatus(e.id, e.path, readLedger());
+      if (!ev.ok && /tdd refactor/.test(ev.why ?? '')) return true;
       return last?.implBlocks && [...ents.values()].some((c) => c.kind === 'CODE' && c.refs.implements.some((r) => e.refs.verifies.includes(r)) && last.implBlocks[`${c.path}:${c.id}`] !== implRegionSha(c));
     }).map((e) => e.id);
-    if (!staleIds.length) { out('no test has a stale shared-implementation or artifact Green'); return 0; }
+    if (!staleIds.length) {
+      const led = readLedger(), outside = new Set();
+      for (const c of ents.values()) {
+        if (c.kind !== 'CODE') continue;
+        for (const t of ents.values()) {
+          const last = t.kind === 'TEST' && t.refs.verifies.some((r) => c.refs.implements.includes(r)) ? led.filter((x) => x.test === t.id && (x.type === 'green' || x.type === 'refactor')).at(-1) : null;
+          if (last?.implFiles && last.implFiles[c.path] !== undefined && last.implFiles[c.path] !== fileSha(c.path)) outside.add(`${c.path} (tests: ${[...ents.values()].filter((x) => x.kind === 'TEST' && x.refs.verifies.some((r) => c.refs.implements.includes(r))).map((x) => x.id).join(' ')})`);
+        }
+      }
+      for (const o of outside) out(`! edit fell outside any annotated CODE span in ${o}: --stale cannot tell which test it affects; re-run those tests (tdd refactor <TEST-ID>) or annotate the changed code \`@id CODE-... @implements REQ-...\``);
+      out('no test has a stale shared-implementation or artifact Green'); return 0;
+    }
     out(`re-verifying ${staleIds.length} stale test(s): ${staleIds.join(' ')}`);
     if (staleIds.length === 1) pos.push(staleIds[0]); else pos.push(...staleIds);
   }
@@ -4787,7 +4813,7 @@ function cmdTdd() {
   // human-approved code baseline follows the first implementation: refresh until the feature is fully Green (#92)
   const humanSpecs = sub === 'red' ? [] : loadSpecs().filter((x) => x.approval === 'human' && x.reqs.some((q) => t.refs.verifies.includes(q.id)));
   const wasDone = new Map(humanSpecs.map((x) => [x.feature, featureGreen(x)]));
-  appendLedger({ type: sub, test: id, req, reqSha: reqShaOf(req), reqShas: Object.fromEntries([...new Set([req, ...t.refs.verifies])].map((r) => [r, reqShaOf(r)]).filter(([, v]) => v)), file: t.path, fileSha: after, protectedFiles: oracleDependencyFiles, oracleShas: oracleDependencyFiles.length ? oracleDependencyShas : undefined, artifactShas: sub === 'red' ? undefined : artifactShasFor(t.path, id), cmdSha: sha(cmd.join('\0')), exit: res.exit, ms: res.ms, testSha0: sub === 'red' ? testOwnSha(t.path, id) : undefined, regSha: testRegionSha(t.path, id), rebaselined: rebaselined || undefined, weak: weakRed ? true : undefined, suspect: suspect ? true : undefined, weakWhy: setupSym ? `setup:${setupSym}` : charac ? 'characterization' : retestWeak ? 'retest' : undefined, characterization: charac || undefined, retest: retestWeak || rebaselined ? retest : undefined, priorStrongRed: retestWeak && prior.some((e) => e.type === 'red' && !e.weak && !e.retest) ? true : undefined, implBlocks: sub === 'red' ? undefined : Object.fromEntries([...ents.values()].filter((c) => c.kind === 'CODE' && c.refs.implements.some((r) => t.refs.verifies.includes(r))).map((c) => [`${c.path}:${c.id}`, implRegionSha(c)]).filter(([, v]) => v)), moved: sub === 'refactor' && prior.filter((e) => e.type === 'green' || e.type === 'refactor').at(-1)?.fileSha !== after && prior.some((e) => e.type === 'green' || e.type === 'refactor') ? true : undefined });
+  appendLedger({ type: sub, test: id, req, reqSha: reqShaOf(req), reqShas: Object.fromEntries([...new Set([req, ...t.refs.verifies])].map((r) => [r, reqShaOf(r)]).filter(([, v]) => v)), file: t.path, fileSha: after, protectedFiles: oracleDependencyFiles, oracleShas: oracleDependencyFiles.length ? oracleDependencyShas : undefined, artifactShas: sub === 'red' ? undefined : artifactShasFor(t.path, id), cmdSha: sha(cmd.join('\0')), exit: res.exit, ms: res.ms, testSha0: sub === 'red' ? testOwnSha(t.path, id) : undefined, regSha: testRegionSha(t.path, id), rebaselined: rebaselined || undefined, weak: weakRed ? true : undefined, suspect: suspect ? true : undefined, weakWhy: setupSym ? `setup:${setupSym}` : charac ? 'characterization' : retestWeak ? 'retest' : undefined, characterization: charac || undefined, retest: retestWeak || rebaselined ? retest : undefined, priorStrongRed: retestWeak && prior.some((e) => e.type === 'red' && !e.weak && !e.retest) ? true : undefined, implFiles: sub === 'red' ? undefined : Object.fromEntries([...new Set([...ents.values()].filter((c) => c.kind === 'CODE' && c.refs.implements.some((r) => t.refs.verifies.includes(r))).map((c) => c.path))].map((f) => [f, fileSha(f)])), implBlocks: sub === 'red' ? undefined : Object.fromEntries([...ents.values()].filter((c) => c.kind === 'CODE' && c.refs.implements.some((r) => t.refs.verifies.includes(r))).map((c) => [`${c.path}:${c.id}`, implRegionSha(c)]).filter(([, v]) => v)), moved: sub === 'refactor' && prior.filter((e) => e.type === 'green' || e.type === 'refactor').at(-1)?.fileSha !== after && prior.some((e) => e.type === 'green' || e.type === 'refactor') ? true : undefined });
   for (const x of humanSpecs) if (!wasDone.get(x.feature)) {
     const all = readJson(APPROVALS, {});
     if (all[x.feature]?.code) { all[x.feature].code = implFileShas(x); writeJson(APPROVALS, all); }
