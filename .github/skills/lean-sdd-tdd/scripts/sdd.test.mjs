@@ -9011,3 +9011,64 @@ test('r25d conservative: a stub result never used by the assertion stays setup',
   const r = weak263(null, `${rsOut}sphere\n`, 'a.test.mjs', rs271('', ['  let s = sphere(1);', '  assert_eq!(other(), 2);']));
   assert.match(r.out, /\[weak\].*setup call "sphere"/, r.out);
 });
+
+// ---- r26d: helper-wrapped asserts, --expect override (S2-4) ----
+test('r26d weak Red: a test-file helper that only wraps an assertion does not make its stub-calling argument a setup call', () => {
+  const helper = 'fn near(a: f64) {\n  let e = 1.0;\n  assert!((a - e).abs() < 1e-9);\n}\nfn got(n: i32) -> f64 { sphere(n) }';
+  const r = weak263(null, `${rsOut}sphere\n`, 'a.test.mjs', rs271(helper, ['  near(got(1));']));
+  assert.match(r.out, /RED ok/, r.out);
+  assert.doesNotMatch(r.out, /\[weak\]|setup call/, r.out);
+});
+
+test('r26d weak Red: --expect text found in the failure overrides the setup classification', () => {
+  weak263.args = ['--expect', 'not implemented: sphere (layout)'];
+  const r = weak263(null, `${rsOut}sphere (layout)\n`, 'a.test.mjs', rs271('', ['  const s = sphere(1);', '  assert.equal(other(), 2);']));
+  weak263.args = undefined;
+  assert.match(r.out, /RED ok/, r.out);
+  assert.doesNotMatch(r.out, /\[weak\]|setup call/, r.out);
+});
+
+// ---- r26d: generated artifact producers (S2-3) ----
+const r26dGen = (producers) => {
+  const spec = '---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | x shall hold. | TEST-A-001 |\n';
+  const d = mini(spec, { 'a.test.mjs': '// @id TEST-A-001 @verifies REQ-A-001\n// body\n', 'contract/golden.json': '[1]\n' }, FAIL);
+  const cp = path.join(d, '.sdd/config.json');
+  const c = JSON.parse(fs.readFileSync(cp, 'utf8'));
+  c.artifacts = { 'contract/golden.json': ['a.test.mjs'] };
+  if (producers) c.artifactProducers = producers;
+  fs.writeFileSync(cp, JSON.stringify(c));
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-A-001').code, 0);
+  fs.writeFileSync(path.join(d, 'contract/golden.json'), '[1,2]\n');
+  setCmd(d, PASS);
+  return d;
+};
+
+test('r26d artifactProducers: regenerating a declared artifact between Red and Green is accepted and recorded', () => {
+  const d = r26dGen({ 'contract/golden.json': 'llcli golden' });
+  const r = sdd(d, 'tdd', 'green', 'TEST-A-001');
+  assert.equal(r.code, 0, r.out);
+  assert.match(r.out, /regenerated since Red.*contract\/golden\.json/, r.out);
+  const last = fs.readFileSync(path.join(d, '.sdd/tdd.jsonl'), 'utf8').trim().split('\n').map((l) => JSON.parse(l)).at(-1);
+  assert.ok(last.produced?.['contract/golden.json'], JSON.stringify(last));
+});
+
+test('r26d undeclared generated artifact: the refusal names the artifactProducers workaround', () => {
+  const d = r26dGen(null);
+  const r = sdd(d, 'tdd', 'green', 'TEST-A-001');
+  assert.equal(r.code, 1, r.out);
+  assert.match(r.out, /artifactProducers/, r.out);
+});
+
+test('r26d impact: a producer declared in config artifactProducers is listed for a data artifact', () => {
+  const d = r26dGen({ 'contract/golden.json': 'llcli golden' });
+  const r = sdd(d, 'impact', 'contract/golden.json');
+  assert.match(r.out, /producers: .*llcli golden/, r.out);
+});
+
+test('r26d gate compact output names the trace warnings', () => {
+  const spec = '---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | x shall hold. | TEST-A-001 |\n';
+  const d = mini(spec, { 'a.test.mjs': '// @id TEST-A-001 @verifies REQ-A-001\n// body\n' }, PASS);
+  const r = sdd(d, 'gate', '--no-run');
+  assert.match(r.out, /warnings/, r.out);
+  assert.match(r.out, /warning: REQ-A-001 has no @implements code/, r.out);
+});
