@@ -9313,3 +9313,40 @@ test('r27b artifactStaleness: `artifacts` given as an array is explained and not
   const last = fs.readFileSync(path.join(d, '.sdd/tdd.jsonl'), 'utf8').trim().split('\n').map((l) => JSON.parse(l)).at(-1);
   assert.doesNotMatch(JSON.stringify(last.artifactShas ?? {}), /"[01]"/);
 });
+
+// ---- r28a (#325 full gate: check-defining file changed since the last Green) ----
+const r28a = (name, orig, cmd, extra = {}) => {
+  const d = mini(SPEC2, { 'a.test.mjs': "// @id TEST-A-001 @verifies REQ-A-001\n", [name]: orig }, FAIL);
+  const cp = path.join(d, '.sdd/config.json');
+  fs.writeFileSync(cp, JSON.stringify({ ...JSON.parse(fs.readFileSync(cp, 'utf8')), checks: [{ name: 'test', cmd }], scopePolicy: 'warn', ...extra }));
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-A-001').code, 0);
+  setCmd(d, PASS);
+  assert.equal(sdd(d, 'tdd', 'green', 'TEST-A-001').code, 0);
+  return d;
+};
+test('r28a full gate warns when the package.json script changed after Green, fails under strict', () => {
+  const d = r28a('package.json', '{"scripts":{"test":"node --test"}}', ['sh', '-c', 'true # npm run test']);
+  assert.doesNotMatch(sdd(d, 'gate').out, /differs from the last Green/);
+  fs.writeFileSync(path.join(d, 'package.json'), '{"scripts":{"test":"node --test one.test.mjs"}}');
+  const w = sdd(d, 'gate');
+  assert.match(w.out, /! scope: .*differs from the last Green record — check test \(package\.json changed\)/, w.out);
+  const cp = path.join(d, '.sdd/config.json');
+  fs.writeFileSync(cp, JSON.stringify({ ...JSON.parse(fs.readFileSync(cp, 'utf8')), scopePolicy: 'strict' }));
+  const s = sdd(d, 'gate');
+  assert.equal(s.code, 1, s.out);
+  assert.match(s.out, /✗ scope:.*package\.json changed/, s.out);
+});
+test('r28a full gate warns when pytest testpaths in pyproject.toml changed after Green; other sections do not', () => {
+  const d = r28a('pyproject.toml', '[tool.pytest.ini_options]\ntestpaths = ["tests"]\n[project]\nname="x"\n', ['sh', '-c', 'true # python -m pytest']);
+  fs.writeFileSync(path.join(d, 'pyproject.toml'), '[tool.pytest.ini_options]\ntestpaths = ["tests"]\n[project]\nname="y"\n');
+  assert.doesNotMatch(sdd(d, 'gate').out, /differs from the last Green/);
+  fs.writeFileSync(path.join(d, 'pyproject.toml'), '[tool.pytest.ini_options]\ntestpaths = ["tests/one.py"]\n[project]\nname="x"\n');
+  assert.match(sdd(d, 'gate').out, /! scope: .*check test \(pyproject\.toml changed\)/);
+});
+test('r28a no recorded check-def hash (old ledger) means no warning', () => {
+  const d = mini(SPEC2, { 'package.json': '{"scripts":{"test":"a"}}' });
+  const cp = path.join(d, '.sdd/config.json');
+  fs.writeFileSync(cp, JSON.stringify({ ...JSON.parse(fs.readFileSync(cp, 'utf8')), checks: [{ name: 'test', cmd: ['sh', '-c', 'true # npm run test'] }] }));
+  fs.writeFileSync(path.join(d, 'package.json'), '{"scripts":{"test":"b"}}');
+  assert.doesNotMatch(sdd(d, 'gate').out, /differs from the last Green/);
+});

@@ -4845,7 +4845,7 @@ function cmdTdd() {
   // human-approved code baseline follows the first implementation: refresh until the feature is fully Green (#92)
   const humanSpecs = sub === 'red' ? [] : loadSpecs().filter((x) => x.approval === 'human' && x.reqs.some((q) => t.refs.verifies.includes(q.id)));
   const wasDone = new Map(humanSpecs.map((x) => [x.feature, featureGreen(x)]));
-  appendLedger({ type: sub, test: id, req, reqSha: reqShaOf(req), reqShas: Object.fromEntries([...new Set([req, ...t.refs.verifies])].map((r) => [r, reqShaOf(r)]).filter(([, v]) => v)), file: t.path, fileSha: after, protectedFiles: oracleDependencyFiles, produced: Object.keys(producedShas).length ? producedShas : undefined, oracleShas: oracleDependencyFiles.length ? oracleDependencyShas : undefined, artifactShas: sub === 'red' ? undefined : artifactShasFor(t.path, id), cmdSha: sha(cmd.join('\0')), exit: res.exit, ms: res.ms, testSha0: sub === 'red' ? testOwnSha(t.path, id) : undefined, regSha: testRegionSha(t.path, id), rebaselined: rebaselined || undefined, weak: weakRed ? true : undefined, suspect: suspect ? true : undefined, weakWhy: setupSym ? `setup:${setupSym}` : charac ? 'characterization' : retestWeak ? 'retest' : undefined, characterization: charac || undefined, retest: retestWeak || rebaselined ? retest : undefined, priorStrongRed: retestWeak && prior.some((e) => e.type === 'red' && !e.weak && !e.retest) ? true : undefined, implFiles: sub === 'red' ? undefined : Object.fromEntries([...new Set([...ents.values()].filter((c) => c.kind === 'CODE' && c.refs.implements.some((r) => t.refs.verifies.includes(r))).map((c) => c.path))].map((f) => [f, fileSha(f)])), implBlocks: sub === 'red' ? undefined : Object.fromEntries([...ents.values()].filter((c) => c.kind === 'CODE' && c.refs.implements.some((r) => t.refs.verifies.includes(r))).map((c) => [`${c.path}:${c.id}`, implRegionSha(c)]).filter(([, v]) => v)), moved: sub === 'refactor' && prior.filter((e) => e.type === 'green' || e.type === 'refactor').at(-1)?.fileSha !== after && prior.some((e) => e.type === 'green' || e.type === 'refactor') ? true : undefined });
+  appendLedger({ type: sub, test: id, req, reqSha: reqShaOf(req), reqShas: Object.fromEntries([...new Set([req, ...t.refs.verifies])].map((r) => [r, reqShaOf(r)]).filter(([, v]) => v)), file: t.path, fileSha: after, protectedFiles: oracleDependencyFiles, produced: Object.keys(producedShas).length ? producedShas : undefined, oracleShas: oracleDependencyFiles.length ? oracleDependencyShas : undefined, artifactShas: sub === 'red' ? undefined : artifactShasFor(t.path, id), checkDefShas: sub === 'red' ? undefined : checkDefShas(cfg), cmdSha: sha(cmd.join('\0')), exit: res.exit, ms: res.ms, testSha0: sub === 'red' ? testOwnSha(t.path, id) : undefined, regSha: testRegionSha(t.path, id), rebaselined: rebaselined || undefined, weak: weakRed ? true : undefined, suspect: suspect ? true : undefined, weakWhy: setupSym ? `setup:${setupSym}` : charac ? 'characterization' : retestWeak ? 'retest' : undefined, characterization: charac || undefined, retest: retestWeak || rebaselined ? retest : undefined, priorStrongRed: retestWeak && prior.some((e) => e.type === 'red' && !e.weak && !e.retest) ? true : undefined, implFiles: sub === 'red' ? undefined : Object.fromEntries([...new Set([...ents.values()].filter((c) => c.kind === 'CODE' && c.refs.implements.some((r) => t.refs.verifies.includes(r))).map((c) => c.path))].map((f) => [f, fileSha(f)])), implBlocks: sub === 'red' ? undefined : Object.fromEntries([...ents.values()].filter((c) => c.kind === 'CODE' && c.refs.implements.some((r) => t.refs.verifies.includes(r))).map((c) => [`${c.path}:${c.id}`, implRegionSha(c)]).filter(([, v]) => v)), moved: sub === 'refactor' && prior.filter((e) => e.type === 'green' || e.type === 'refactor').at(-1)?.fileSha !== after && prior.some((e) => e.type === 'green' || e.type === 'refactor') ? true : undefined });
   for (const x of humanSpecs) if (!wasDone.get(x.feature)) {
     const all = readJson(APPROVALS, {});
     if (all[x.feature]?.code) { all[x.feature].code = implFileShas(x); writeJson(APPROVALS, all); }
@@ -4992,6 +4992,29 @@ function changedFiles() {
 const TEST_FILE = /\.(test|spec)\.[cm]?[jt]sx?$|(^|\/)test_[^/]*\.py$|_test\.(py|go|exs)$/;
 // dependsOn entries: `./contract`, `contract\\` and `contract/` all name the same repo-relative path (#146)
 const normDep = (d) => path.posix.normalize(String(d).replace(/\\/g, '/')).replace(/^\.\//, '').replace(/\/+$/, '');
+// hashes of the text that selects what each gate check runs (package.json script, pytest config, cargo alias); recorded at Green/refactor, compared by the full gate (#325)
+function checkDefShas(cfg) {
+  const all = [...(cfg.checks ?? []), ...(cfg.projects ?? []).flatMap((p) => (p.checks ?? []).map((c) => ({ ...c, name: `${p.root}:${c.name}`, cwd: p.root })))];
+  const rd = (f) => { try { return fs.readFileSync(path.join(ROOT, f), 'utf8'); } catch { return null; } };
+  const o = {};
+  for (const c of all) {
+    const b = c.cwd ? normDep(c.cwd) + '/' : '';
+    const line = (c.cmd ?? []).join(' ');
+    const sm = line.match(/\b(?:npm|pnpm|yarn|bun)\s+(?:run(?:-script)?\s+)?([\w:.-]+)/);
+    if (sm) { const t = rd(b + 'package.json'); let v; try { v = t && JSON.parse(t).scripts?.[sm[1] === 't' ? 'test' : sm[1]]; } catch { /* unparsable */ } if (v !== undefined && v !== null) o[`${c.name}|${b}package.json`] = sha(String(v)); }
+    if (/\bpytest\b/.test(line)) for (const m of ['pyproject.toml', 'pytest.ini', 'setup.cfg', 'tox.ini']) {
+      let t = rd(b + m); if (t === null) continue;
+      if (m === 'pyproject.toml') t = t.split(/^(?=\[)/m).filter((x) => /^\[tool\.pytest/.test(x)).join('');
+      o[`${c.name}|${b}${m}`] = sha(t);
+    }
+    if (c.cmd?.[0] === 'cargo' && c.cmd[1]) for (const m of ['.cargo/config.toml', '.cargo/config']) {
+      const t = rd(b + m); if (t === null) continue;
+      const al = t.split('\n').filter((l) => new RegExp(`^\\s*${c.cmd[1].replace(/[^\w-]/g, '')}\\s*=`).test(l)).join('\n');
+      if (al) o[`${c.name}|${b}${m}`] = sha(al);
+    }
+  }
+  return o;
+}
 // scope confidence (design 3.1): globs for `unscoped` / --allow-unscoped / default ignores (matched with globRe)
 const SCOPE_IGNORE = ['**/*.md', '.github/**', 'LICENSE', '.sdd/**'];
 // workspace-root files that affect every member of an ecosystem: [file pattern, manifests identifying a member]
@@ -5434,6 +5457,19 @@ function cmdGate() {
   }
   if (!flags['no-run'] && !allChecks.length) { lines.push('! commands: none configured — nothing was run'); incomplete = true; }
 
+    if (!flags.changed && !flags['no-run']) {
+      // full gate: a check-defining file that differs from the last Green/refactor record may have narrowed the run (#325); no record = no warning
+      const rec = readLedger().reverse().find((e) => e.checkDefShas)?.checkDefShas;
+      if (rec) {
+        const cur = checkDefShas(cfg);
+        const diff = Object.keys(rec).filter((k) => cur[k] !== rec[k]).map((k) => { const [n, f] = k.split('|'); return `check ${n} (${f}${cur[k] === undefined ? ' no longer defines it' : ' changed'})`; });
+        if (diff.length) {
+          const msg = `scope: a file defining what a gate check runs differs from the last Green record — ${diff.join('; ')} — the test run may have been narrowed; review the diff, then re-run \`tdd refactor\` to re-record`;
+          if (cfg.scopePolicy === 'strict') add(false, `${msg} (scopePolicy strict)`);
+          else lines.push(`! ${msg} (scopePolicy warn: set "scopePolicy": "strict" to fail)`);
+        }
+      }
+    }
   let scopeJson;
   if (flags.changed) {
     const pr = (cfg.projects ?? []).map((p) => normDep(p.root) + '/');
