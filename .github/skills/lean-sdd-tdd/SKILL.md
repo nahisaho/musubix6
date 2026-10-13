@@ -30,12 +30,14 @@ Unsure → higher tier. Escalate on discovery; never downgrade silently.
 `.sdd/specs/<feature>.md`, template in `references/spec-template.md`. Frontmatter `feature`, `tier`, optional `approval: human`. One `REQ-<F>-nnn` line per requirement (EARS). Bug fix: one REQ describing the correct behavior. First use: `$S init`.
 
 ## 2. T1/T2 loop (each step one command)
+0. **PASS conditions and counterexamples first**: use GPT-6.1 Sol to write observable success conditions and concrete violations in the same spec (`REQ | PASS condition | counterexample | TEST/command | evidence`); wrap referenced REQ IDs in backticks to avoid duplicate definitions. Check contract, inputs, execution, verdict, history and integration risks; explain non-applicable stages. Derive expectations from the spec or an independent reference, not implementation output. Include valid-input controls and relevant boundary/error cases.
 1. Write the test with `/** @id TEST-F-001 @verifies REQ-F-001 */` above it and the test title containing `TEST-F-001`.
 2. T2 only: spike risky assumptions in scratch (see `references/t2.md`), AI-review the spec, then `$S approve record <feature> --by ai:<reviewer> --review "<1 line>"`. `approval: human`: see Autonomy model (prepare again after any spec edit).
 3. `$S tdd red TEST-F-001` → must fail by assertion. Load/compile error is rejected: add a failing stub (preferred) or `--weak`.
 4. Implement minimal code with `/** @id CODE-F-001 @implements REQ-F-001 */`. Do not edit the test. REQ verified only by golden/characterization tests: mark the REQ line `(test-only)` (or `(deferred)`) as a delimited marker, never prose. A `(test-only)` REQ's passing Red is recorded automatically as a characterization (no `--characterization` needed).
 5. `$S tdd green TEST-F-001`. Test edited since Red → rejected: revert, or record a new Red.
 6. Optional refactor, then `$S tdd refactor TEST-F-001`.
+6a. For each distinct changed failure mechanism, apply a bounded mutation in isolation and confirm the regression detects it; restore it and rerun affected checks. A gate fix must reject invalid evidence AND accept valid evidence. Record actual Red/Green/mutation commands and outcomes in the spec. Unrun, skipped or unparseable evidence cannot justify completion; do not fabricate ledger entries.
 7. `$S gate --changed` (trace + evidence for touched REQs + project checks). Fix; stop after 3 identical failures and report.
 Impact: `$S impact <REQ|TEST|CODE|file> [--json]` lists implementing files, verifying tests and cross-feature REQs reached via imports (precision per language: `references/enforced-rules.md`). Run before changing a shared REQ.
 Batch: write all tests for a feature, then red each, implement, green each, **one** gate at the end.
@@ -45,7 +47,7 @@ Batch: write all tests for a feature, then red each, implement, green each, **on
 - Red before Green with identical test hash; hash-chained `.sdd/tdd.jsonl` (conflict ⇒ `tdd merge-ledger`).
 - Every REQ has a test, every annotation resolves (orphan/unknown REQ = error); skipped checks ⇒ `INCOMPLETE` (exit 2), never PASS.
 - Human approvals: `--by` must be a real name (generic/`ai` names refused); `approve prepare` first; later `@implements` code change ⇒ gate warning. A REQ with Green evidence deleted from every spec warns (fails under `scopePolicy: strict`) until `approve retire <REQ-ID> --by <human>` (recorded in `.sdd/retired-reqs.json`).
-- Not enforced (agent discipline): test quality, mutation, security review. Do not claim them.
+- Not enforced (agent discipline): PASS-condition/counterexample quality, mutation coverage, security review. Report actual evidence; do not claim the script enforces these obligations.
 
 ## 3a. Config, runners, stubs (read only when needed)
 - `references/config.md`: install, `.sdd/config.json` (`scan`, `timeoutMs`, `prepare`, `changedCmd`/hub scoping), per-stack `testCmd` (Go, Rust, Maven, Gradle, CMake, Make, .NET, PHP, Julia, R, other), monorepo `projects`.
