@@ -10025,3 +10025,188 @@ test('#339 native Node TypeScript parse failures cannot establish Red for any se
   const green = sdd(d, 'tdd', 'green', ids[0]);
   assert.equal(green.code, 0, green.out);
 });
+
+function r31dLedgerFixture() {
+  const fixture = r24dRedGreen();
+  const cp = path.join(fixture.d, '.sdd/config.json');
+  const cfg = JSON.parse(fs.readFileSync(cp, 'utf8'));
+  cfg.checks = [{ name: 'test', cmd: ['node', '--test', '--test-name-pattern=TEST-CALC-001', 'add.test.mjs'] }];
+  fs.writeFileSync(cp, JSON.stringify(cfg));
+  const baseline = sdd(fixture.d, 'gate');
+  assert.equal(baseline.code, 0, baseline.out);
+  return fixture;
+}
+
+for (const [name, mutate] of [
+  ['Green exit 9', (red, green) => [red, { ...green, exit: 9 }]],
+  ['Refactor exit 9', (red, green) => [red, green, { ...green, type: 'refactor', exit: 9 }]],
+  ['passing ordinary Red', (red, green) => [{ ...red, exit: 0 }, green]],
+  ['passing weak Red without an exception', (red, green) => [{ ...red, exit: 0, weak: true }, green]],
+  ['missing Green exit', (red, green) => { delete green.exit; return [red, green]; }],
+  ['missing Red exit', (red, green) => { delete red.exit; return [red, green]; }],
+  ...['test', 'req', 'file', 'fileSha', 'cmdSha', 'ms', 'at', 'v'].map((field) =>
+    [`missing ${field}`, (red, green) => { delete green[field]; return [red, green]; }]),
+  ['invalid timestamp', (red, green) => [red, { ...green, at: 'not-a-date' }]],
+  ['backwards timestamp', (red, green) => [red, { ...green, at: new Date(Date.parse(red.at) - 1).toISOString() }]],
+  ['string exit', (red, green) => [red, { ...green, exit: '0' }]],
+  ['negative exit', (red, green) => [{ ...red, exit: -1 }, green]],
+  ['negative duration', (red, green) => [red, { ...green, ms: -1 }]],
+  ['unknown event type', (red, green) => [red, green, { ...green, type: 'success' }]],
+]) {
+  test(`r31d #345 ledger rejects ${name}`, () => {
+    const { d, red, green, write } = r31dLedgerFixture();
+    write(mutate(red, green));
+    for (const args of [['tdd', 'check'], ['gate'], ['gate', '--changed']]) {
+      const result = sdd(d, ...args);
+      assert.equal(result.code, 1, `${name}: ${result.out}`);
+      assert.match(result.out, /(?:LEDGER FAIL:|✗ ledger:).*invalid.*seq/i, result.out);
+    }
+  });
+}
+
+for (const seq of [1, 3, '2']) {
+  test(`r31d #345 ledger rejects sequence ${JSON.stringify(seq)}`, () => {
+    const { d, red, green } = r31dLedgerFixture();
+    const e = { ...green, seq, prev: red.hash };
+    delete e.hash;
+    e.hash = createHash('sha256').update(JSON.stringify(e)).digest('hex');
+    fs.writeFileSync(path.join(d, '.sdd/tdd.jsonl'), [red, e].map(JSON.stringify).join('\n') + '\n');
+    const result = sdd(d, 'tdd', 'check');
+    assert.equal(result.code, 1, result.out);
+    assert.match(result.out, /LEDGER FAIL:.*invalid.*seq/i, result.out);
+  });
+}
+
+test('r31d #345 ledger permits explicit passing Red exceptions and equal timestamps', () => {
+  const { d, red, green, write } = r31dLedgerFixture();
+  for (const exception of [
+    { weak: true, characterization: 'existing golden', weakWhy: 'characterization' },
+    { weak: true, retest: 'corrected expectation', weakWhy: 'retest' },
+    { rebaselined: true, retest: 'regenerated oracle' },
+  ]) {
+    write([{ ...red, exit: 0, ...exception }, { ...green, at: red.at }]);
+    const checked = sdd(d, 'tdd', 'check');
+    assert.equal(checked.code, 0, checked.out);
+    const gate = sdd(d, 'gate');
+    assert.equal(gate.code, 0, gate.out);
+    assert.match(gate.out, /1\/1 tests Red→Green/, gate.out);
+  }
+});
+
+test('r31d #345 selected passing test records zero outcome and preserves failing runner status', () => {
+  const d = approved();
+  const summary = (row) => `Test Summary: | Pass  Fail  Total  Time\n${row}\n`;
+  fakeOut(d, summary('TEST-CALC-001 |    0     1      1  0.1s'));
+  const red = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
+  assert.equal(red.code, 0, red.out);
+  fakeOut(d, summary('TEST-CALC-001 |    1            1  0.1s\nTEST-OTHER-001 |    0     1      1  0.1s'));
+  for (const sub of ['green', 'refactor']) {
+    const result = sdd(d, 'tdd', sub, 'TEST-CALC-001');
+    assert.equal(result.code, 0, result.out);
+    const entry = r24dLedger(d).at(-1);
+    assert.equal(entry.exit, 0);
+    assert.equal(entry.runnerExit, 1);
+    const checked = sdd(d, 'tdd', 'check');
+    assert.equal(checked.code, 0, checked.out);
+  }
+});
+
+test('r31d #345 merge-ledger orders an older branch event before its preserved prefix', () => {
+  const { d, red, green } = r31dLedgerFixture();
+  const older = { v: 1, type: 'flaky', check: 'test', retry: 1, retries: 1, policy: 'warn', outcome: 'accepted', at: new Date(Date.parse(red.at) - 1).toISOString() };
+  const lp = path.join(d, '.sdd/tdd.jsonl');
+  fs.writeFileSync(lp, `${r24dChain([red, green])}${r24dChain([red, older])}`);
+  const merged = sdd(d, 'tdd', 'merge-ledger');
+  assert.equal(merged.code, 0, merged.out);
+  const entries = r24dLedger(d);
+  assert.deepEqual(entries.map((e) => e.type), ['flaky', 'red', 'green']);
+  const checked = sdd(d, 'tdd', 'check');
+  assert.equal(checked.code, 0, checked.out);
+  const once = fs.readFileSync(lp, 'utf8');
+  assert.equal(sdd(d, 'tdd', 'merge-ledger').code, 0);
+  assert.equal(fs.readFileSync(lp, 'utf8'), once);
+});
+
+for (const args of [['gate'], ['gate', '--changed'], ['gate', '--changed', '--baseline', 'HEAD'], ['tdd', 'check']]) {
+  test(`r31d #346 missing committed ledger fails ${args.join(' ')}`, () => {
+    const { d } = r31dLedgerFixture();
+    const lp = path.join(d, '.sdd/tdd.jsonl');
+    assert.equal(spawnSync('git', ['add', '-A'], { cwd: d }).status, 0);
+    assert.equal(spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'ledger baseline'], { cwd: d }).status, 0);
+    const count = r24dLedger(d).length;
+    fs.unlinkSync(lp);
+    const result = sdd(d, ...args);
+    assert.equal(result.code, 1, result.out);
+    assert.match(result.out, new RegExp(`${count} ledger entries of HEAD removed or modified.*tdd\\.jsonl`), result.out);
+  });
+}
+
+test('r31d #346 missing ledger is compared with an explicit non-HEAD baseline', () => {
+  const { d } = r31dLedgerFixture();
+  const lp = path.join(d, '.sdd/tdd.jsonl');
+  assert.equal(spawnSync('git', ['add', '-A'], { cwd: d }).status, 0);
+  assert.equal(spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'ledger baseline'], { cwd: d }).status, 0);
+  assert.equal(spawnSync('git', ['tag', 'ledger-baseline'], { cwd: d }).status, 0);
+  fs.unlinkSync(lp);
+  assert.equal(spawnSync('git', ['add', '-A'], { cwd: d }).status, 0);
+  assert.equal(spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'remove ledger'], { cwd: d }).status, 0);
+  const result = sdd(d, 'gate', '--changed', '--baseline', 'ledger-baseline');
+  assert.equal(result.code, 1, result.out);
+  assert.match(result.out, /ledger entries of ledger-baseline removed or modified.*tdd\.jsonl/, result.out);
+});
+
+test('r31d #346 absent never-committed and empty baseline ledgers are not regressions', () => {
+  const d = mini(T1SPEC);
+  const lp = path.join(d, '.sdd/tdd.jsonl');
+  for (const committedEmpty of [false, true]) {
+    if (committedEmpty) {
+      fs.writeFileSync(lp, '');
+      assert.equal(spawnSync('git', ['add', '-A'], { cwd: d }).status, 0);
+      assert.equal(spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'empty ledger'], { cwd: d }).status, 0);
+      fs.unlinkSync(lp);
+    }
+    const result = sdd(d, 'tdd', 'check');
+    assert.equal(result.code, 0, result.out);
+    assert.match(result.out, /LEDGER OK \(0 entries\)/);
+  }
+});
+
+test('r31d #345 malformed auxiliary events cannot hide behind a valid chain', () => {
+  const { d, red, green, write } = r31dLedgerFixture();
+  for (const event of [
+    { type: 'approval', feature: 'calc' },
+    { type: 'flaky', check: 'test', retry: 1, retries: 1, policy: 'fail', outcome: 'accepted' },
+    { type: 'scope-waiver', globs: ['build/**'] },
+  ]) {
+    write([red, green, { v: 1, at: green.at, ...event }]);
+    const result = sdd(d, 'tdd', 'check');
+    assert.equal(result.code, 1, result.out);
+    assert.match(result.out, /LEDGER FAIL:.*invalid.*seq/i, result.out);
+  }
+});
+
+test('r31d #345 non-object JSON ledger rows fail cleanly instead of throwing', () => {
+  const { d } = r31dLedgerFixture();
+  const lp = path.join(d, '.sdd/tdd.jsonl');
+  for (const entry of [null, [], 1, 'event']) {
+    fs.writeFileSync(lp, JSON.stringify(entry) + '\n');
+    for (const args of [['tdd', 'check'], ['gate'], ['gate', '--changed']]) {
+      const result = sdd(d, ...args);
+      assert.equal(result.code, 2, result.out);
+      assert.match(result.out, /LEDGER CORRUPT:.*line 1.*object/, result.out);
+      assert.doesNotMatch(result.out, /TypeError|at verifyChain/, result.out);
+    }
+  }
+});
+
+test('r31d #345 merge-ledger preserves Red-before-Green when timestamps are equal', () => {
+  const { d, red, green } = r31dLedgerFixture();
+  const older = { v: 1, type: 'scope-waiver', globs: ['build/**'], files: ['build/output.txt'], at: new Date(Date.parse(red.at) - 1).toISOString() };
+  fs.writeFileSync(path.join(d, '.sdd/tdd.jsonl'), `${r24dChain([red, { ...green, at: red.at }])}${r24dChain([older])}`);
+  const merged = sdd(d, 'tdd', 'merge-ledger');
+  assert.equal(merged.code, 0, merged.out);
+  assert.deepEqual(r24dLedger(d).map((e) => e.type), ['scope-waiver', 'red', 'green']);
+  const result = sdd(d, 'gate');
+  assert.equal(result.code, 0, result.out);
+  assert.match(result.out, /1\/1 tests Red→Green/, result.out);
+});

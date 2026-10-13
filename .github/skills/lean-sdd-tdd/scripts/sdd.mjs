@@ -1085,14 +1085,53 @@ function readLedger() {
   if (!fs.existsSync(LEDGER)) return [];
   const ls = fs.readFileSync(LEDGER, 'utf8').split('\n').filter(Boolean);
   if (ls.some((l) => /^(<{7}|={7}|>{7})/.test(l))) { out(`LEDGER CONFLICT: ${rel(LEDGER)} has git merge conflict markers. Run: tdd merge-ledger (keeps both branches' evidence, re-chains the ledger)`); process.exit(2); }
-  return ls.map((l, i) => { try { return JSON.parse(l); } catch { out(`LEDGER CORRUPT: ${rel(LEDGER)} line ${i + 1} is not valid JSON`); process.exit(2); } });
+  return ls.map((l, i) => {
+    let e;
+    try { e = JSON.parse(l); } catch { out(`LEDGER CORRUPT: ${rel(LEDGER)} line ${i + 1} is not valid JSON`); process.exit(2); }
+    if (!e || typeof e !== 'object' || Array.isArray(e)) { out(`LEDGER CORRUPT: ${rel(LEDGER)} line ${i + 1} must be an event object`); process.exit(2); }
+    return e;
+  });
 }
 const entryHash = (e) => { const { hash, ...rest } = e; return sha(JSON.stringify(rest)); };
+function ledgerEventProblem(e) {
+  const text = (v) => typeof v === 'string' && v.trim().length > 0;
+  const digest = (v) => typeof v === 'string' && /^[a-f0-9]{64}$/.test(v);
+  if (!e || typeof e !== 'object' || Array.isArray(e)) return 'event must be an object';
+  if (e.v !== 1) return 'unsupported or missing version';
+  if (!text(e.at) || !Number.isFinite(Date.parse(e.at))) return 'invalid or missing timestamp';
+  if (['red', 'green', 'refactor'].includes(e.type)) {
+    for (const f of ['test', 'req', 'file']) if (!text(e[f])) return `invalid or missing ${f}`;
+    for (const f of ['fileSha', 'cmdSha']) if (!digest(e[f])) return `invalid or missing ${f}`;
+    if (!Number.isSafeInteger(e.exit) || e.exit < 0) return 'exit must be a nonnegative integer';
+    if (!Number.isFinite(e.ms) || e.ms < 0) return 'ms must be a nonnegative number';
+    if (e.type !== 'red' && e.exit !== 0) return `${e.type} requires exit 0`;
+    if (e.type === 'red' && e.exit === 0 && !text(e.characterization) && !text(e.retest)) return 'passing Red requires an explicit characterization or retest';
+    if (e.characterization !== undefined && (!text(e.characterization) || e.type !== 'red' || e.exit !== 0)) return 'invalid characterization outcome';
+    if (e.retest !== undefined && (!text(e.retest) || e.type !== 'red')) return 'invalid retest';
+    if (e.runnerExit !== undefined && (!Number.isSafeInteger(e.runnerExit) || e.runnerExit < 0)) return 'invalid runnerExit';
+  } else if (e.type === 'approval') {
+    if (!text(e.feature) || !digest(e.approvalSha)) return 'approval requires feature and approvalSha';
+  } else if (e.type === 'flaky') {
+    if (!text(e.check) || !Number.isSafeInteger(e.retry) || e.retry < 1 || !Number.isSafeInteger(e.retries) || e.retry > e.retries) return 'invalid flaky retry';
+    if (!['warn', 'fail'].includes(e.policy) || e.outcome !== (e.policy === 'warn' ? 'accepted' : 'fail')) return 'invalid flaky policy/outcome';
+  } else if (e.type === 'scope-waiver') {
+    if (![e.globs, e.files].every((v) => Array.isArray(v) && v.every(text))) return 'scope waiver requires globs and files';
+  } else return 'unknown event type';
+  return null;
+}
 function verifyChain(entries) {
   let prev = '';
+  let at = -Infinity;
   for (let i = 0; i < entries.length; i++) {
-    if (entries[i].prev !== prev || entries[i].hash !== entryHash(entries[i])) return `broken at seq ${entries[i].seq ?? i}`;
-    prev = entries[i].hash;
+    const e = entries[i];
+    if (e && typeof e === 'object' && !Array.isArray(e) && (e.prev !== prev || e.hash !== entryHash(e))) return `broken at seq ${e.seq ?? i + 1}`;
+    const problem = ledgerEventProblem(e);
+    if (problem) return `invalid event at seq ${e?.seq ?? i + 1}: ${problem}`;
+    if (e.seq !== i + 1) return `invalid sequence at seq ${e.seq}: expected ${i + 1}`;
+    const time = Date.parse(e.at);
+    if (time < at) return `invalid timestamp at seq ${e.seq}: time goes backwards`;
+    prev = e.hash;
+    at = time;
   }
   return null;
 }
@@ -1118,15 +1157,17 @@ function appendLedgerLocked(e) {
   const entries = readLedger();
   const full = { v: 1, seq: entries.length + 1, ...e, at: new Date().toISOString(), prev: entries.at(-1)?.hash ?? '' };
   full.hash = entryHash(full);
+  const problem = verifyChain([...entries, full]) ?? ledgerRegression();
+  if (problem) { out(`LEDGER FAIL: ${problem}`); process.exit(1); }
   fs.mkdirSync(SDD, { recursive: true });
   fs.appendFileSync(LEDGER, JSON.stringify(full) + '\n');
 }
 // every baseline ledger entry must survive (ignoring seq/prev/hash, which merge-ledger re-chains); a removed or rewritten one is tampering (#328)
 function ledgerRegression(bref = 'HEAD') {
   const sh = spawnSync('git', ['show', `${bref}:./.sdd/tdd.jsonl`], { cwd: ROOT, encoding: 'utf8' });
-  if (sh.status !== 0 || !fs.existsSync(LEDGER)) return null;
+  if (sh.status !== 0) return null;
   const key = (l) => { try { const { seq, prev, hash, ...r } = JSON.parse(l); return JSON.stringify(r); } catch { return l; } };
-  const cur = new Set(fs.readFileSync(LEDGER, 'utf8').split('\n').filter(Boolean).map(key));
+  const cur = new Set((fs.existsSync(LEDGER) ? fs.readFileSync(LEDGER, 'utf8') : '').split('\n').filter(Boolean).map(key));
   const lost = sh.stdout.split('\n').filter(Boolean).map(key).filter((k) => !cur.has(k));
   return lost.length ? `${lost.length} ledger entr${lost.length === 1 ? 'y' : 'ies'} of ${bref} removed or modified in ${rel(LEDGER)} (truncation/rewrite; only appends or tdd merge-ledger are allowed)` : null;
 }
@@ -1207,7 +1248,12 @@ function testRegionSha(p, id) {
     return sha(ls.slice(at, end).filter((l) => !/@id\s+CODE-/.test(l)).join('\n').trim());
   } catch { return undefined; }
 }
+const evidenceLedgerProblems = new WeakMap();
 function evidenceStatus(testId, testPath, entries) {
+  // Evidence checks share an immutable ledger snapshot; hash it once, not once per test.
+  if (!evidenceLedgerProblems.has(entries)) evidenceLedgerProblems.set(entries, verifyChain(entries));
+  const problem = evidenceLedgerProblems.get(entries);
+  if (problem) return { ok: false, why: `invalid ledger: ${problem}` };
   const es = entries.filter((e) => e.test === testId);
   // reverting to content that already has Green/Refactor evidence recovers it, even after a later refactor recorded against moved setup (#274)
   const gs = es.filter((e) => e.type === 'green');
@@ -4153,22 +4199,35 @@ function mergeLedger() {
   const kept = [];
   let prefixOpen = true;
   let prev = '';
+  let at = -Infinity;
   for (const l of fs.readFileSync(LEDGER, 'utf8').split('\n')) {
     if (!l.trim() || /^(<{7}|={7}|>{7})/.test(l)) { if (l.trim()) prefixOpen = false; continue; }
     let e;
     try { e = JSON.parse(l); } catch { out(`LEDGER CORRUPT: cannot parse line: ${l.slice(0, 80)}`); return 2; }
+    const problem = ledgerEventProblem(e);
+    if (problem) { out(`LEDGER FAIL: invalid event at seq ${e?.seq ?? es.length + kept.length + 1}: ${problem}`); return 1; }
     const { seq, prev: pv, hash, ...rest } = e;
     const k = JSON.stringify(rest);
-    if (prefixOpen && pv === prev && seq === kept.length + 1 && hash === entryHash(e)) { kept.push(l); seen.add(k); prev = hash; continue; }
+    if (prefixOpen && pv === prev && seq === kept.length + 1 && hash === entryHash(e) && Date.parse(e.at) >= at) { kept.push(l); seen.add(k); prev = hash; at = Date.parse(e.at); continue; }
     prefixOpen = false;
     if (seen.has(k)) continue;
     seen.add(k);
     es.push(rest);
   }
-  es.sort((a, b) => String(a.at).localeCompare(String(b.at)));
-  const outLines = [...kept, ...es.map((e, i) => { const full = { v: 1, seq: kept.length + i + 1, ...e, prev }; delete full.hash; full.hash = entryHash(full); prev = full.hash; return JSON.stringify(full); })];
+  // An older branch event can precede the intact prefix; preserve only its chronologically safe part.
+  const earliest = es.reduce((min, e) => Math.min(min, Date.parse(e.at)), Infinity);
+  const moved = [];
+  while (kept.length && Date.parse(JSON.parse(kept.at(-1)).at) > earliest) {
+    const { seq, prev: pv, hash, ...rest } = JSON.parse(kept.pop());
+    moved.push(rest);
+  }
+  prev = kept.length ? JSON.parse(kept.at(-1)).hash : '';
+  const tail = [...moved.reverse(), ...es].sort((a, b) => Date.parse(a.at) - Date.parse(b.at));
+  const outLines = [...kept, ...tail.map((e, i) => { const full = { v: 1, seq: kept.length + i + 1, ...e, prev }; delete full.hash; full.hash = entryHash(full); prev = full.hash; return JSON.stringify(full); })];
+  const problem = verifyChain(outLines.map((l) => JSON.parse(l)));
+  if (problem) { out(`LEDGER FAIL: ${problem}`); return 1; }
   fs.writeFileSync(LEDGER, outLines.join('\n') + '\n');
-  out(`ledger merged: ${outLines.length} entries (${kept.length} unchanged, ${es.length} re-chained; review with git diff; tdd check)`);
+  out(`ledger merged: ${outLines.length} entries (${kept.length} unchanged, ${tail.length} re-chained; review with git diff; tdd check)`);
   return 0;
 }
 
@@ -4632,6 +4691,8 @@ function cmdTdd() {
   if (needsLock(spec) && approvalState(spec) !== 'ok') { out(`REFUSED: ${spec.tier} feature ${spec.feature} approval is ${approvalState(spec)}. run: ${spec.approval === 'human' ? `approve prepare ${spec.feature}, then approve record ${spec.feature} --by <human name>` : `approve record ${spec.feature} --by ai:<reviewer> --review <.sdd/review.md|summary>`}`); return 1; }
 
   const entries = readLedger();
+  const ledgerProblem = verifyChain(entries) ?? ledgerRegression();
+  if (ledgerProblem) { out(`REFUSED: invalid ledger: ${ledgerProblem}`); return 1; }
   const before = testSha(t.path, id);
   const rawBefore = sha(fs.readFileSync(path.join(ROOT, t.path)));
   const prior = entries.filter((e) => e.test === id);
@@ -4914,7 +4975,9 @@ function cmdTdd() {
   // human-approved code baseline follows the first implementation: refresh until the feature is fully Green (#92)
   const humanSpecs = sub === 'red' ? [] : loadSpecs().filter((x) => x.approval === 'human' && x.reqs.some((q) => t.refs.verifies.includes(q.id)));
   const wasDone = new Map(humanSpecs.map((x) => [x.feature, featureGreen(x)]));
-  appendLedger({ type: sub, test: id, req, reqSha: reqShaOf(req), reqShas: Object.fromEntries([...new Set([req, ...t.refs.verifies])].map((r) => [r, reqShaOf(r)]).filter(([, v]) => v)), file: t.path, fileSha: after, protectedFiles: oracleDependencyFiles, produced: Object.keys(producedShas).length ? producedShas : undefined, oracleShas: oracleDependencyFiles.length ? oracleDependencyShas : undefined, artifactShas: sub === 'red' ? undefined : artifactShasFor(t.path, id), checkDefShas: sub === 'red' ? undefined : checkDefShas(cfg), cmdSha: sha(cmd.join('\0')), exit: res.exit, ms: res.ms, testSha0: sub === 'red' ? testOwnSha(t.path, id) : undefined, regSha: testRegionSha(t.path, id), rebaselined: rebaselined || undefined, weak: weakRed ? true : undefined, suspect: suspect ? true : undefined, weakWhy: setupSym ? `setup:${setupSym}` : charac ? 'characterization' : retestWeak ? 'retest' : undefined, characterization: charac || undefined, retest: retestWeak || rebaselined ? retest : undefined, priorStrongRed: retestWeak && prior.some((e) => e.type === 'red' && !e.weak && !e.retest) ? true : undefined, implFiles: sub === 'red' ? undefined : Object.fromEntries([...new Set([...ents.values()].filter((c) => c.kind === 'CODE' && c.refs.implements.some((r) => t.refs.verifies.includes(r))).map((c) => c.path))].map((f) => [f, fileSha(f)])), implBlocks: sub === 'red' ? undefined : Object.fromEntries([...ents.values()].filter((c) => c.kind === 'CODE' && c.refs.implements.some((r) => t.refs.verifies.includes(r))).map((c) => [`${c.path}:${c.id}`, implRegionSha(c)]).filter(([, v]) => v)), moved: sub === 'refactor' && prior.filter((e) => e.type === 'green' || e.type === 'refactor').at(-1)?.fileSha !== after && prior.some((e) => e.type === 'green' || e.type === 'refactor') ? true : undefined });
+  // Whole-file runners may fail a sibling while observably passing the selected test.
+  const outcomeExit = targetPassed ? 0 : res.exit;
+  appendLedger({ type: sub, test: id, req, reqSha: reqShaOf(req), reqShas: Object.fromEntries([...new Set([req, ...t.refs.verifies])].map((r) => [r, reqShaOf(r)]).filter(([, v]) => v)), file: t.path, fileSha: after, protectedFiles: oracleDependencyFiles, produced: Object.keys(producedShas).length ? producedShas : undefined, oracleShas: oracleDependencyFiles.length ? oracleDependencyShas : undefined, artifactShas: sub === 'red' ? undefined : artifactShasFor(t.path, id), checkDefShas: sub === 'red' ? undefined : checkDefShas(cfg), cmdSha: sha(cmd.join('\0')), exit: outcomeExit, runnerExit: outcomeExit !== res.exit ? res.exit : undefined, ms: res.ms, testSha0: sub === 'red' ? testOwnSha(t.path, id) : undefined, regSha: testRegionSha(t.path, id), rebaselined: rebaselined || undefined, weak: weakRed ? true : undefined, suspect: suspect ? true : undefined, weakWhy: setupSym ? `setup:${setupSym}` : charac ? 'characterization' : retestWeak ? 'retest' : undefined, characterization: charac || undefined, retest: retestWeak || rebaselined ? retest : undefined, priorStrongRed: retestWeak && prior.some((e) => e.type === 'red' && !e.weak && !e.retest) ? true : undefined, implFiles: sub === 'red' ? undefined : Object.fromEntries([...new Set([...ents.values()].filter((c) => c.kind === 'CODE' && c.refs.implements.some((r) => t.refs.verifies.includes(r))).map((c) => c.path))].map((f) => [f, fileSha(f)])), implBlocks: sub === 'red' ? undefined : Object.fromEntries([...ents.values()].filter((c) => c.kind === 'CODE' && c.refs.implements.some((r) => t.refs.verifies.includes(r))).map((c) => [`${c.path}:${c.id}`, implRegionSha(c)]).filter(([, v]) => v)), moved: sub === 'refactor' && prior.filter((e) => e.type === 'green' || e.type === 'refactor').at(-1)?.fileSha !== after && prior.some((e) => e.type === 'green' || e.type === 'refactor') ? true : undefined });
   for (const x of humanSpecs) if (!wasDone.get(x.feature)) {
     const all = readJson(APPROVALS, {});
     if (all[x.feature]?.code) { all[x.feature].code = implFileShas(x); writeJson(APPROVALS, all); }
