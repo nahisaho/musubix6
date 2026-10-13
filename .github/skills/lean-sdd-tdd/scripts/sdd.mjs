@@ -501,7 +501,7 @@ function pythonConftests(file, text = '') {
   }
   return found;
 }
-function scriptOracleImports(file, text) {
+function scriptOracleImports(file, text, all = false) {
   const found = [], exts = ['', '.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs', '.mts', '.cts', '.json', '/index.ts', '/index.js', '/index.mjs'];
   const specs = [...text.matchAll(/\b(?:import|export)\b[^'";]*?\bfrom\s*(['"])([^'"]+)\1|\bimport\s*(['"])([^'"]+)\3|\b(?:require|import)\s*\(\s*(['"`])([^'"`$]+)\5\s*\)/g)].map((m) => m[2] ?? m[4] ?? m[6]);
   for (const spec of specs) {
@@ -511,7 +511,7 @@ function scriptOracleImports(file, text) {
     if (!hit) continue;
     let code = true;
     try { code = !/\.json$/i.test(hit) && fs.readFileSync(hit, 'utf8').includes('@id CODE-'); } catch {}
-    if (!code && (testSupportPath(hit) || /\.(?:json|csv|txt|ya?ml)$/i.test(hit))) found.push(hit);
+    if (all || (!code && (testSupportPath(hit) || /\.(?:json|csv|txt|ya?ml)$/i.test(hit)))) found.push(hit);
   }
   return found;
 }
@@ -1120,9 +1120,25 @@ function changedOracleDeps(entry, p, id) {
 }
 // opt-in `artifactStaleness`: config `artifacts` files the test file names (path or basename) are hashed into Green/Refactor evidence (#309)
 // artifactGranularity "test": only the test's own lines plus the file's shared preamble (text before the first @id) count as readers (#312)
+// a declared artifact whose configured consumer a test reaches through imports (transitively) is also a dependency of that test (#321)
+function importClosure(p) {
+  const seen = new Set([path.join(ROOT, p)]), queue = [...seen];
+  while (queue.length && seen.size < 500) {
+    const f = queue.shift();
+    let text; try { text = fs.readFileSync(f, 'utf8').replace(/\r\n/g, '\n'); } catch { continue; }
+    let next = []; try { next = /^\.(?:[cm]?[jt]s|[jt]sx)$/.test(path.extname(f)) ? scriptOracleImports(f, text, true) : localSourceDependencies(f, text, f === path.join(ROOT, p)); } catch { continue; }
+    for (const d of next) if (d.startsWith(ROOT + path.sep) && !seen.has(d)) { seen.add(d); queue.push(d); }
+  }
+  return new Set([...seen].map(rel));
+}
+let artifactsShapeWarned = false;
 function artifactShasFor(p, id) {
   const cfg = readJson(CONFIG, null) ?? {};
   if (cfg.artifactStaleness !== true || !cfg.artifacts || typeof cfg.artifacts !== 'object') return undefined;
+  if (Array.isArray(cfg.artifacts)) {
+    if (!artifactsShapeWarned) { artifactsShapeWarned = true; process.stdout.write('! config `artifacts` must be an object {"contract/x.json": ["src/consumer.ts"]}, not an array; treating each entry as an artifact without consumers\n'); }
+    cfg.artifacts = Object.fromEntries(cfg.artifacts.filter((x) => typeof x === 'string').map((x) => [x, []]));
+  }
   let text = '';
   try { text = fs.readFileSync(path.join(ROOT, p), 'utf8'); } catch { return undefined; }
   if (cfg.artifactGranularity === 'test' && id) {
@@ -1135,9 +1151,13 @@ function artifactShasFor(p, id) {
     }
   }
   const out = {};
-  for (const a of Object.keys(cfg.artifacts)) {
+  let reach;
+  for (const [a, users] of Object.entries(cfg.artifacts)) {
     const n = normDep(a), abs = path.join(ROOT, n);
-    if (!text.includes(n) && !text.includes(path.basename(n))) continue;
+    if (!text.includes(n) && !text.includes(path.basename(n))) {
+      reach ??= importClosure(p);
+      if (![].concat(users).some((u) => reach.has(normDep(u)))) continue;
+    }
     try { out[n] = fs.statSync(abs).isDirectory() ? 'dir' : fileSha(n); } catch { out[n] = 'missing'; }
   }
   return Object.keys(out).length ? out : undefined;

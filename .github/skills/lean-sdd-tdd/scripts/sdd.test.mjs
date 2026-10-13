@@ -9280,3 +9280,36 @@ test('r27e changed .cargo/config.toml alias behind a cargo check warns', () => {
   const d = r27eProj('[alias]\nt = "test one"\n', '.cargo/config.toml', '[alias]\nt = "test"\n', ['cargo', 't']);
   assert.match(sdd(d, 'gate', '--changed').out, /! scope: .*cargo alias "t"/);
 });
+
+// ---- r27b (#321 artifactStaleness consumer via imports; array-shaped artifacts) ----
+const r27b = (artifacts) => {
+  const d = mini(SPEC2, { 'a.test.mjs': "// @id TEST-A-001 @verifies REQ-A-001\nimport './src/impl.mjs';\n", 'src/impl.mjs': "import './arity.mjs';\n", 'src/arity.mjs': 'export const x = 1;\n', 'contract/primitives.json': '[1]\n' }, FAIL);
+  const cp = path.join(d, '.sdd/config.json');
+  const c = JSON.parse(fs.readFileSync(cp, 'utf8'));
+  Object.assign(c, { artifacts, artifactStaleness: true });
+  fs.writeFileSync(cp, JSON.stringify(c));
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-A-001').code, 0);
+  setCmd(d, PASS);
+  const g = sdd(d, 'tdd', 'green', 'TEST-A-001');
+  assert.equal(g.code, 0, g.out);
+  return { d, g };
+};
+
+test('r27b artifactStaleness: a test reaching the configured consumer via imports goes stale when the artifact changes', () => {
+  const { d } = r27b({ 'contract/primitives.json': ['src/arity.mjs'] });
+  fs.writeFileSync(path.join(d, 'contract/primitives.json'), '[2]\n');
+  assert.match(sdd(d, 'gate', '--no-run').out, /artifact contract\/primitives\.json changed/);
+});
+
+test('r27b artifactStaleness: an unreached consumer does not stale the test', () => {
+  const { d } = r27b({ 'contract/primitives.json': ['src/other.mjs'] });
+  fs.writeFileSync(path.join(d, 'contract/primitives.json'), '[2]\n');
+  assert.doesNotMatch(sdd(d, 'gate', '--no-run').out, /artifact contract\/primitives\.json changed/);
+});
+
+test('r27b artifactStaleness: `artifacts` given as an array is explained and not recorded as keys 0/1', () => {
+  const { d, g } = r27b(['contract/primitives.json', 'src/arity.mjs']);
+  assert.match(g.out, /`artifacts` must be an object/, g.out);
+  const last = fs.readFileSync(path.join(d, '.sdd/tdd.jsonl'), 'utf8').trim().split('\n').map((l) => JSON.parse(l)).at(-1);
+  assert.doesNotMatch(JSON.stringify(last.artifactShas ?? {}), /"[01]"/);
+});
