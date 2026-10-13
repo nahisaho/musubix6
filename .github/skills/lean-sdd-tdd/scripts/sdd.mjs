@@ -5037,6 +5037,45 @@ function changedFiles() {
 const TEST_FILE = /\.(test|spec)\.[cm]?[jt]sx?$|(^|\/)test_[^/]*\.py$|_test\.(py|go|exs)$/;
 // dependsOn entries: `./contract`, `contract\\` and `contract/` all name the same repo-relative path (#146)
 const normDep = (d) => path.posix.normalize(String(d).replace(/\\/g, '/')).replace(/^\.\//, '').replace(/\/+$/, '');
+// conservative loosening classifier for what the gate runs/scopes (checks, test/changed cmds, dependsOn, artifacts, generated, artifactProducers) vs the baseline (#331)
+function cfgRunLoosening(bc, cfg) {
+  const weak = [];
+  const toks = (c) => (Array.isArray(c) ? c.map(String) : typeof c === 'string' ? c.trim().split(/\s+/) : []);
+  const noop = (c) => {
+    let t = toks(c);
+    if (t.length >= 3 && /^(ba|z)?sh$/.test(t[0]) && t[1] === '-c') t = t.slice(2).join(' ').replace(/^["']|["']$/g, '').trim().split(/\s+/);
+    return t.length === 0 || t[0] === 'true' || t[0] === ':' || t[0] === 'echo' || (t[0] === 'exit' && (t[1] === undefined || t[1] === '0'));
+  };
+  const cmdLoosened = (b, c) => b !== undefined && !noop(b) && (c === undefined || noop(c));
+  const scope = (label, b, c) => {
+    for (const k of ['testCmd', 'changedCmd']) if (cmdLoosened(b?.[k], c?.[k])) weak.push(`${label} ${k} ${c?.[k] === undefined ? 'removed' : 'replaced by a no-op'}`);
+    const cur = new Map((c?.checks ?? []).map((x) => [x.name, x]));
+    const gone = (b?.checks ?? []).filter((x) => !cur.has(x.name));
+    if (gone.length) weak.push(`${label} checks removed: ${gone.map((x) => x.name).join(', ')}`);
+    for (const x of b?.checks ?? []) for (const k of ['cmd', 'changedCmd']) if (cur.has(x.name) && cmdLoosened(x[k], cur.get(x.name)[k])) weak.push(`${label} check ${x.name} ${k} ${cur.get(x.name)[k] === undefined ? 'removed' : 'replaced by a no-op'}`);
+  };
+  scope('root', bc, cfg);
+  const cp = new Map((cfg.projects ?? []).map((p) => [normDep(p.root), p]));
+  for (const bp of bc.projects ?? []) {
+    const p = cp.get(normDep(bp.root));
+    if (!p) { weak.push(`project ${bp.root} removed`); continue; }
+    scope(`project ${bp.root}`, bp, p);
+    const dm = [].concat(bp.dependsOn ?? []).map(normDep).filter((d) => !new Set([].concat(p.dependsOn ?? []).map(normDep)).has(d));
+    if (dm.length) weak.push(`project ${bp.root} dependsOn removed: ${dm.join(', ')}`);
+  }
+  const art = (a) => (Array.isArray(a) ? Object.fromEntries(a.map((x) => [x, []])) : a && typeof a === 'object' ? a : {});
+  const ba = art(bc.artifacts), ca = art(cfg.artifacts);
+  for (const [a, u] of Object.entries(ba)) {
+    if (!(a in ca)) { weak.push(`artifacts entry ${a} removed`); continue; }
+    const cu = [].concat(ca[a]).map(normDep), lost = [].concat(u).map(normDep).filter((x) => !cu.includes(x));
+    if (lost.length) weak.push(`artifacts ${a} consumers removed: ${lost.join(', ')}`);
+  }
+  const bg = [].concat(bc.generated ?? []).map(String), ng = [].concat(cfg.generated ?? []).map(String).filter((g) => !bg.includes(g));
+  if (ng.length) weak.push(`generated += ${ng.join(', ')}`);
+  const np = Object.keys(cfg.artifactProducers ?? {}).filter((k) => !(k in (bc.artifactProducers ?? {})));
+  if (np.length) weak.push(`artifactProducers += ${np.join(', ')}`);
+  return weak;
+}
 // hashes of the text that selects what each gate check runs (package.json script, pytest config, cargo alias); recorded at Green/refactor, compared by the full gate (#325)
 function checkDefShas(cfg) {
   const all = [...(cfg.checks ?? []), ...(cfg.projects ?? []).flatMap((p) => (p.checks ?? []).map((c) => ({ ...c, name: `${p.root}:${c.name}`, cwd: p.root })))];
@@ -5527,6 +5566,18 @@ function cmdGate() {
   }
   if (!flags['no-run'] && !allChecks.length) { lines.push('! commands: none configured — nothing was run'); incomplete = true; }
 
+    if (!flags.changed) {
+      // full gate: compare with the HEAD version of the config (untracked or unchanged = nothing to report) (#331)
+      const bs = spawnSync('git', ['show', 'HEAD:./.sdd/config.json'], { cwd: ROOT, encoding: 'utf8' });
+      let bc = null;
+      try { bc = bs.status === 0 ? JSON.parse(bs.stdout) : null; } catch { /* unparsable baseline */ }
+      const weak = bc && typeof bc === 'object' ? cfgRunLoosening(bc, cfg) : [];
+      if (weak.length) {
+        const wm = `config: .sdd/config.json loosens what the gate runs vs HEAD: ${weak.join('; ')}`;
+        if (bc.scopePolicy === 'strict' && !flags['allow-config-weaken']) add(false, `${wm} (baseline scopePolicy strict; accept with --allow-config-weaken)`);
+        else lines.push(`! ${wm}${bc.scopePolicy === 'strict' ? ' (accepted by --allow-config-weaken)' : ''}`);
+      }
+    }
     if (!flags.changed && !flags['no-run']) {
       // full gate: a check-defining file that differs from the last Green/refactor record may have narrowed the run (#325); no record = no warning
       const rec = readLedger().reverse().find((e) => e.checkDefShas)?.checkDefShas;
@@ -5594,6 +5645,7 @@ function cmdGate() {
         if (nu.length) weak.push(`unscoped += ${nu.join(', ')}`);
         if (bc.artifactStaleness === true && cfg.artifactStaleness !== true) weak.push('artifactStaleness turned off');
         if (bc.artifactGranularity !== undefined && cfg.artifactGranularity === undefined) weak.push('artifactGranularity removed');
+        weak.push(...cfgRunLoosening(bc, cfg));
         if (weak.length) {
           const wm = `config: .sdd/config.json weakens gate strictness vs ${bref}: ${weak.join('; ')}`;
           if (bc.scopePolicy === 'strict' && !flags['allow-config-weaken']) add(false, `${wm} (baseline scopePolicy strict; accept with --allow-config-weaken)`);
