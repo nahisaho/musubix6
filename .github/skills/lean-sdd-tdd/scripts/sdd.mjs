@@ -5279,7 +5279,9 @@ function cmdGate() {
   const cargoOwned = cargoMembersOf;
   // a root manifest/lockfile/toolchain file widens to every project of that ecosystem (design 3.1)
   const widenOwned = (f) => { const w = WORKSPACE_ROOT.find(([re]) => re.test(f)); return w ? (cfg.projects ?? []).filter((p) => w[1].some((m) => m instanceof RegExp ? (fs.existsSync(path.join(ROOT, p.root)) && fs.readdirSync(path.join(ROOT, p.root)).some((x) => m.test(x))) : fs.existsSync(path.join(ROOT, p.root, m)))).map((p) => normDep(p.root)) : []; };
-  const artConsumers = (f) => { const u = Object.entries(cfg.artifacts ?? {}).find(([a]) => normDep(a) === f)?.[1]; return [...(u === undefined ? [] : [].concat(u).map(normDep)), ...cargoOwned(f), ...widenOwned(f)]; };
+  // projects that dependsOn (transitively) a package rebuilt by a root manifest change are consumers too (#322)
+  const withDependents = (roots) => [...roots, ...(cfg.projects ?? []).filter((p) => depClosure(p).some((d) => roots.some((r) => d === r || d.startsWith(r + '/') || r.startsWith(d + '/')))).map((p) => normDep(p.root))];
+  const artConsumers = (f) => { const u = Object.entries(cfg.artifacts ?? {}).find(([a]) => normDep(a) === f)?.[1]; const w = [...cargoOwned(f), ...widenOwned(f)]; return [...(u === undefined ? [] : [].concat(u).map(normDep)), ...(w.length ? withDependents(w) : [])]; };
   const scopeCount = { exact: 0, widened: 0, unknown: 0 };
   const explain = [];
   const allChecks = [...(cfg.checks ?? []), ...(cfg.projects ?? []).flatMap((p) => (p.checks ?? []).map((c) => ({ ...c, name: `${p.root}:${c.name}`, cwd: p.root, dependsOn: depClosure(p) })))];
@@ -5297,6 +5299,12 @@ function cmdGate() {
     const coveredBy = (f) => artConsumers(f).some((u) => pr.some((r) => (u + '/').startsWith(r))) || cfg.projects.some((p) => depClosure(p).some((d) => { const x = normDep(d); return f === x || f.startsWith(x + '/'); }));
     const dataOnly = [...changedFiles()].filter((f) => !f.startsWith('.sdd/') && !pr.some((r) => f.startsWith(r)) && !EXT.test(f) && !coveredBy(f));
     if (dataOnly.length) { sharedHinted = true; lines.push(`! root-owned data/config changes: ${dataOnly.slice(0, 3).join(', ')}${dataOnly.length > 3 ? ', …' : ''} — if a project reads these, add the path to its \`dependsOn\` in .sdd/config.json so that project's checks run too`); }
+  }
+  // a project reached only through dependsOn of a widened package with no check of its own is never re-verified (#322)
+  if (flags.changed) {
+    const unver = new Set();
+    for (const f of changedFiles()) { const w = [...cargoOwned(f), ...widenOwned(f)]; if (w.length) for (const r of withDependents(w).slice(w.length)) { const p = (cfg.projects ?? []).find((q) => normDep(q.root) === r); if (p && !(p.checks ?? []).length) unver.add(r); } }
+    if (unver.size) { lines.push(`! project(s) ${[...unver].join(', ')} dependsOn a package rebuilt by a root manifest change but have no check — not re-verified, result is INCOMPLETE (add checks to the project)`); incomplete = true; }
   }
   for (const c of allChecks) {
     let cmd = c.cmd;
