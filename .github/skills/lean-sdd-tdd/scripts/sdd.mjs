@@ -5037,7 +5037,8 @@ function changedFiles() {
 const TEST_FILE = /\.(test|spec)\.[cm]?[jt]sx?$|(^|\/)test_[^/]*\.py$|_test\.(py|go|exs)$/;
 // dependsOn entries: `./contract`, `contract\\` and `contract/` all name the same repo-relative path (#146)
 const normDep = (d) => path.posix.normalize(String(d).replace(/\\/g, '/')).replace(/^\.\//, '').replace(/\/+$/, '');
-// conservative loosening classifier for what the gate runs/scopes (checks, test/changed cmds, dependsOn, artifacts, generated, artifactProducers) vs the baseline (#331)
+// conservative loosening classifier for what the gate runs/scopes vs the baseline (#331, #332)
+/** @id CODE-RUNNER-SELECTION-001 @implements REQ-RUNNER-SELECTION-001 */
 function cfgRunLoosening(bc, cfg) {
   const weak = [];
   const toks = (c) => (Array.isArray(c) ? c.map(String) : typeof c === 'string' ? c.trim().split(/\s+/) : []);
@@ -5046,13 +5047,34 @@ function cfgRunLoosening(bc, cfg) {
     if (t.length >= 3 && /^(ba|z)?sh$/.test(t[0]) && t[1] === '-c') t = t.slice(2).join(' ').replace(/^["']|["']$/g, '').trim().split(/\s+/);
     return t.length === 0 || t[0] === 'true' || t[0] === ':' || t[0] === 'echo' || (t[0] === 'exit' && (t[1] === undefined || t[1] === '0'));
   };
-  const cmdLoosened = (b, c) => b !== undefined && !noop(b) && (c === undefined || noop(c));
+  const runner = (c) => {
+    let t = toks(c), exe = path.basename(t[0] ?? '');
+    if (/^(ba|z)?sh$/.test(exe) && /^-[a-z]*c[a-z]*$/.test(t[1] ?? '')) {
+      t = t.slice(2).join(' ').replace(/^["']|["']$/g, '').trim().split(/\s+/);
+      exe = path.basename(t[0] ?? '');
+    }
+    if (/^(cargo|go|dotnet|mix)$/.test(exe)) return t.slice(1).includes('test');
+    if (/^python[\d.]*$/.test(exe)) { const m = t.indexOf('-m'); return m >= 1 && t[m + 1] === 'pytest'; }
+    if (exe === 'node') return t.slice(1).some((x) => /^--test(?:=|$)/.test(x));
+    if (/^(npm|pnpm|yarn|bun)$/.test(exe) && /^(test|t|run|run-script)$/.test(t[1] ?? '')) return true;
+    if (/^(npx|bunx)$/.test(exe)) return /^(pytest|jest|vitest|mocha|ava|playwright)$/.test(t[t[1] === 'exec' ? 2 : 1] ?? '');
+    if (/^(npm|pnpm|yarn|bun)$/.test(exe) && t[1] === 'exec') return /^(pytest|jest|vitest|mocha|ava|playwright)$/.test(t[2] ?? '');
+    return /^(pytest|jest|vitest|mocha|ava|playwright|mvn|mvnw|gradle|gradlew)$/.test(exe);
+  };
+  const cmdLoosened = (b, c) => {
+    if (b === undefined || noop(b)) return null;
+    if (c === undefined) return 'removed';
+    if (noop(c)) return 'replaced by a no-op';
+    // Runner arguments can select fewer tests even when both commands genuinely execute.
+    if (runner(b) && JSON.stringify(toks(b)) !== JSON.stringify(toks(c))) return 'runner arguments/selection changed (may narrow coverage)';
+    return null;
+  };
   const scope = (label, b, c) => {
-    for (const k of ['testCmd', 'changedCmd']) if (cmdLoosened(b?.[k], c?.[k])) weak.push(`${label} ${k} ${c?.[k] === undefined ? 'removed' : 'replaced by a no-op'}`);
+    for (const k of ['testCmd', 'changedCmd']) { const why = cmdLoosened(b?.[k], c?.[k]); if (why) weak.push(`${label} ${k} ${why}`); }
     const cur = new Map((c?.checks ?? []).map((x) => [x.name, x]));
     const gone = (b?.checks ?? []).filter((x) => !cur.has(x.name));
     if (gone.length) weak.push(`${label} checks removed: ${gone.map((x) => x.name).join(', ')}`);
-    for (const x of b?.checks ?? []) for (const k of ['cmd', 'changedCmd']) if (cur.has(x.name) && cmdLoosened(x[k], cur.get(x.name)[k])) weak.push(`${label} check ${x.name} ${k} ${cur.get(x.name)[k] === undefined ? 'removed' : 'replaced by a no-op'}`);
+    for (const x of b?.checks ?? []) for (const k of ['cmd', 'changedCmd']) if (cur.has(x.name)) { const why = cmdLoosened(x[k], cur.get(x.name)[k]); if (why) weak.push(`${label} check ${x.name} ${k} ${why}`); }
   };
   scope('root', bc, cfg);
   const cp = new Map((cfg.projects ?? []).map((p) => [normDep(p.root), p]));

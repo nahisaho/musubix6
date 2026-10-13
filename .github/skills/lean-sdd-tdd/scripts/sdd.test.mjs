@@ -9549,3 +9549,81 @@ test('r29e full gate skips an untracked config', () => {
   const d = mini('---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | x shall hold. | TEST-A-001 |\n', {}, PASS);
   assert.doesNotMatch(sdd(d, 'gate', '--no-run').out, /config:/);
 });
+
+/** @id TEST-RUNNER-SELECTION-001 @verifies REQ-RUNNER-SELECTION-001 */
+test('#332 TEST-RUNNER-SELECTION-001 runner argument changes require acknowledgement under strict policy', () => {
+  for (const [before, after] of [
+    [['cargo', 'test'], ['cargo', 'test', 'wire_round_trip']],
+    [['python3', '-m', 'pytest', 'tests'], ['python3', '-m', 'pytest', 'tests', '-k', 'test_x']],
+    [['pytest', 'tests'], ['pytest', 'tests/test_one.py']],
+    [['go', 'test', './...'], ['go', 'test', './...', '-run', 'TestOne']],
+    [['npm', 'test'], ['npm', 'test', '--', '--grep', 'one']],
+    [['sh', '-c', 'cargo test'], ['sh', '-c', 'cargo test wire_round_trip']],
+  ]) {
+    for (const location of ['root check', 'root testCmd', 'root changedCmd', 'project check', 'project testCmd', 'project changedCmd']) {
+      const scope = (cmd) => location.endsWith('check') ? { checks: [{ name: 'test', cmd, changedCmd: cmd }] } : { [location.split(' ')[1]]: cmd };
+      const config = (cmd) => location.startsWith('project') ? { projects: [{ root: 'p', ...scope(cmd) }] } : scope(cmd);
+      const d = r28b({ scopePolicy: 'strict', ...config(before) }, config(after));
+      for (const args of [['--no-run'], ['--changed', '--baseline', 'HEAD', '--no-run']]) {
+        const bad = sdd(d, 'gate', ...args);
+        assert.equal(bad.code, 1, `${location}: ${bad.out}`);
+        assert.match(bad.out, /✗ config: .*runner arguments\/selection changed/, bad.out);
+        const accepted = sdd(d, 'gate', ...args, '--allow-config-weaken');
+        assert.match(accepted.out, /! config: .*accepted by --allow-config-weaken/, accepted.out);
+        assert.doesNotMatch(accepted.out, /✗ config:/, accepted.out);
+      }
+    }
+  }
+  const d = r28b({ scopePolicy: 'warn', checks: [{ name: 'test', cmd: ['cargo', 'test'] }] }, { checks: [{ name: 'test', cmd: ['cargo', 'test', 'one'] }] });
+  assert.match(sdd(d, 'gate', '--no-run').out, /! config: .*runner arguments\/selection changed/);
+  const unchanged = r28b({ scopePolicy: 'strict', checks: [{ name: 'test', cmd: ['cargo', 'test'] }] }, {});
+  assert.doesNotMatch(sdd(unchanged, 'gate', '--no-run').out, /config:/);
+});
+
+test('#332 narrowed Node runner cannot silently hide an independently failing test', () => {
+  const before = ['node', '--test', 'runner.test.mjs'];
+  const after = ['node', '--test', '--test-name-pattern=passing', 'runner.test.mjs'];
+  const d = r28b({ scopePolicy: 'strict', checks: [{ name: 'test', cmd: before }] }, {});
+  fs.writeFileSync(path.join(d, 'runner.test.mjs'), "import { test } from 'node:test';\nimport assert from 'node:assert/strict';\n// @id TEST-A-001 @verifies REQ-A-001\ntest('TEST-A-001 passing', () => assert.ok(true));\ntest('regression', () => assert.fail('omitted regression'));\n");
+  setCmd(d, FAIL);
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-A-001').code, 0);
+  setCmd(d, PASS);
+  assert.equal(sdd(d, 'tdd', 'green', 'TEST-A-001').code, 0);
+  assert.equal(spawnSync(before[0], before.slice(1), { cwd: d, env: ENV }).status, 1);
+  assert.equal(spawnSync(after[0], after.slice(1), { cwd: d, env: ENV }).status, 0);
+  const cp = path.join(d, '.sdd/config.json');
+  fs.writeFileSync(cp, JSON.stringify({ ...JSON.parse(fs.readFileSync(cp, 'utf8')), checks: [{ name: 'test', cmd: after }] }));
+  for (const args of [[], ['--changed', '--baseline', 'HEAD']]) {
+    const bad = sdd(d, 'gate', ...args);
+    assert.equal(bad.code, 1, bad.out);
+    assert.match(bad.out, /✗ config: .*runner arguments\/selection changed/, bad.out);
+    const accepted = sdd(d, 'gate', ...args, '--allow-config-weaken');
+    assert.equal(accepted.code, 0, accepted.out);
+    assert.match(accepted.out, /! config: .*accepted by --allow-config-weaken/, accepted.out);
+  }
+});
+
+test('#332 runner wrappers and argv boundaries retain selection integrity', () => {
+  for (const [before, after] of [
+    [['pnpm', 'exec', 'vitest', 'run'], ['pnpm', 'exec', 'vitest', 'run', 'one.test.js']],
+    [['npx', 'jest'], ['npx', 'jest', '--testNamePattern=one']],
+    [['sh', '-lc', 'node --test'], ['sh', '-lc', 'node --test --test-name-pattern=one']],
+    [['/usr/bin/pytest', '-k', 'one two'], ['/usr/bin/pytest', '-k', 'one', 'two']],
+  ]) {
+    const d = r28b({ scopePolicy: 'strict', checks: [{ name: 'test', cmd: before }] }, { checks: [{ name: 'test', cmd: after }] });
+    for (const args of [['--no-run'], ['--changed', '--no-run']]) {
+      const bad = sdd(d, 'gate', ...args);
+      assert.equal(bad.code, 1, bad.out);
+      assert.match(bad.out, /✗ config: .*runner arguments\/selection changed/, bad.out);
+    }
+  }
+});
+
+test('#332 runner global options cannot hide selector changes', () => {
+  for (const before of [['cargo', '+nightly', 'test'], ['python3', '-u', '-m', 'pytest'], ['go', '-C', 'pkg', 'test', './...']]) {
+    const d = r28b({ scopePolicy: 'strict', checks: [{ name: 'test', cmd: before }] }, { checks: [{ name: 'test', cmd: [...before, 'one'] }] });
+    const bad = sdd(d, 'gate', '--no-run');
+    assert.equal(bad.code, 1, bad.out);
+    assert.match(bad.out, /✗ config: .*runner arguments\/selection changed/, bad.out);
+  }
+});

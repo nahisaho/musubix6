@@ -1,0 +1,13 @@
+{
+  "runner-selection": {
+    "by": "ai:r30f-peer-review",
+    "kind": "ai",
+    "review": "Independent peer diff review: runner selection integrity spec and implementation reviewed; pnpm exec and global-option findings fixed, no remaining high-confidence Open findings; targeted tests validated separately.",
+    "at": "2026-10-13T14:26:39.728Z",
+    "artifacts": {
+      ".sdd/specs/runner-selection.md": "88c38a8a303ce7d2fe604767daa57022e9a911597a9c9f4f360f18aa2547102c"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  }
+}
