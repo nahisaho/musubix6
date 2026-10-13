@@ -1051,6 +1051,22 @@ function designProblem(s) {
 }
 
 // ---------- approval ----------
+// The first human-approved implementation refreshes `code`; it is not a new spec approval.
+const approvalSha = (a) => sha(JSON.stringify([a.by, a.kind, a.review, a.reviewSha, a.at, a.tier, a.requireHuman, Object.entries(a.artifacts ?? {}).sort(([x], [y]) => x < y ? -1 : x > y ? 1 : 0)]));
+function approvalProvenance(feature, a) {
+  const entries = readLedger();
+  if (verifyChain(entries)) return false;
+  const events = entries.filter((e) => e.type === 'approval' && e.feature === feature);
+  if (events.length) return events.some((e) => e.approvalSha === approvalSha(a));
+  // Pre-event locks remain valid only while unchanged from committed history.
+  const committed = spawnSync('git', ['show', 'HEAD:./.sdd/approvals.json'], { cwd: ROOT, encoding: 'utf8' });
+  if (committed.status !== 0) return false;
+  const history = spawnSync('git', ['show', 'HEAD:./.sdd/tdd.jsonl'], { cwd: ROOT, encoding: 'utf8' });
+  if (history.status === 0) {
+    try { if (history.stdout.split('\n').filter(Boolean).some((l) => { const e = JSON.parse(l); return e.type === 'approval' && e.feature === feature; })) return false; } catch { return false; }
+  }
+  try { const old = JSON.parse(committed.stdout)[feature]; return !!old && approvalSha(old) === approvalSha(a); } catch { return false; }
+}
 function approvalState(spec) {
   const a = readJson(APPROVALS, {})[spec.feature];
   if (!a) return 'missing';
@@ -1060,6 +1076,7 @@ function approvalState(spec) {
   }
   // the cited review file is part of the lock: deleted or edited after record => stale (#122)
   if (a.kind === 'ai' && a.review && a.reviewSha && (!fs.existsSync(path.resolve(ROOT, a.review)) || fileSha(a.review) !== a.reviewSha)) return 'stale';
+  if (!approvalProvenance(spec.feature, a)) return 'invalid provenance (run approve record after review)';
   return 'ok';
 }
 
@@ -1728,9 +1745,16 @@ function cmdApprove() {
       const prep = readJson(PREPARE_SHOWN, {})[spec.feature];
       if (prep !== artifactSha(spec.path)) { out(`REFUSED: no matching \`approve prepare ${spec.feature}\` for the current spec — run it, show the human the exact paths/hashes, then record (after any spec/design edit, prepare again)`); return 1; }
     }
-    const all = readJson(APPROVALS, {});
-    all[spec.feature] = { by: flags.by, kind: isAi ? 'ai' : 'human', review: review || undefined, reviewSha: reviewIsFile ? fileSha(review) : undefined, at: new Date().toISOString(), artifacts: Object.fromEntries(spec.artifacts.map((p) => [p, artifactSha(p)])), tier: spec.tier, requireHuman: spec.approval === 'human', code: spec.approval === 'human' ? implFileShas(spec) : undefined };
-    writeJson(APPROVALS, all);
+    const recorded = withLedgerLock(() => {
+      const problem = verifyChain(readLedger()) || ledgerRegression();
+      if (problem) { out(`REFUSED: approval provenance ledger: ${problem}`); return false; }
+      const all = readJson(APPROVALS, {});
+      all[spec.feature] = { by: flags.by, kind: isAi ? 'ai' : 'human', review: review || undefined, reviewSha: reviewIsFile ? fileSha(review) : undefined, at: new Date().toISOString(), artifacts: Object.fromEntries(spec.artifacts.map((p) => [p, artifactSha(p)])), tier: spec.tier, requireHuman: spec.approval === 'human', code: spec.approval === 'human' ? implFileShas(spec) : undefined };
+      appendLedgerLocked({ type: 'approval', feature: spec.feature, approvalSha: approvalSha(all[spec.feature]) });
+      writeJson(APPROVALS, all);
+      return true;
+    });
+    if (!recorded) return 1;
     out(needsLock(spec) ? `locked ${spec.feature} by ${flags.by}: ${spec.artifacts.join(', ')}` : `recorded ${spec.feature} by ${flags.by}: ${spec.artifacts.join(', ')} — note: ${spec.tier} specs without approval: human are NOT lock-enforced (only T2 / approval: human are verified by gate)`);
     return 0;
   }
