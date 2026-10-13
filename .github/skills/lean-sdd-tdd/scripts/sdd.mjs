@@ -1386,7 +1386,7 @@ function projectFor(p) {
 
 // `dotnet test` builds on every call. Within one sdd process (batch `tdd red A B C`, several checks) a second call on the same target gets --no-build only when the previous call built cleanly and no tracked file changed since (#137)
 const dotnetBuilt = new Map();
-// Only runtime/tool locations and presentation settings may be inherited; runner flags must be explicit in the reviewed command (#341).
+// Inherit runtime settings and literal application inputs; runner overrides must be explicit in the reviewed command (#341).
 const RUNNER_ENV_ALLOWLIST = [
   'PATH', 'HOME', 'USER', 'LOGNAME', 'SHELL', 'TMPDIR', 'TMP', 'TEMP', 'TZ',
   'LANG', 'LANGUAGE', 'LC_ALL', 'LC_CTYPE', 'LC_COLLATE', 'LC_MESSAGES', 'LC_NUMERIC', 'LC_TIME', 'LC_MONETARY',
@@ -1395,13 +1395,45 @@ const RUNNER_ENV_ALLOWLIST = [
   'JAVA_HOME', 'JDK_HOME', 'DOTNET_ROOT', 'DOTNET_ROOT_X64', 'DOTNET_ROOT_X86', 'DOTNET_CLI_HOME',
   'RUSTUP_HOME', 'CARGO_HOME', 'CI', 'TERM', 'NO_COLOR', 'FORCE_COLOR',
 ];
-function runnerEnv() {
+function runnerEnv(cmd = [], cwd = '.') {
   const allowed = new Set(RUNNER_ENV_ALLOWLIST);
+  const blocked = /^(?:PYTEST_.*|PYTHONPATH|NODE_OPTIONS|NODE_TEST_CONTEXT|GOFLAGS|RUSTFLAGS|RUSTDOCFLAGS|CARGO_.*(?:RUSTFLAGS|RUNNER)|JAVA_TOOL_OPTIONS|JDK_JAVA_OPTIONS|MAVEN_OPTS|GRADLE_OPTS|RUBYOPT|PERL5OPT)$|_(?:SELECTOR|FILTER|OPTIONS|FLAGS|OPTS|PLUGINS?)$/i;
+  const inspect = (text) => {
+    const patterns = [
+      /\bprocess\.env\.([A-Za-z_]\w*)/g,
+      /\b(?:process\.env|os\.environ|ENV)\s*\[\s*['"]([A-Za-z_]\w*)['"]\s*\]/g,
+      /\b(?:os\.(?:Getenv|LookupEnv|getenv)|os\.environ\.get)\s*\(\s*['"]([A-Za-z_]\w*)['"]/g,
+      /\$(?:\{([A-Za-z_]\w*)\}|([A-Za-z_]\w*))/g,
+    ];
+    for (const re of patterns) for (const m of text.matchAll(re)) {
+      const name = m[1] ?? m[2];
+      if (!blocked.test(name)) allowed.add(name.toUpperCase());
+    }
+  };
+  // Literal application inputs are declared by the reviewed program; runner overrides remain blocked.
+  for (const arg of cmd) inspect(String(arg));
+  const base = path.resolve(ROOT, cwd);
+  for (const f of listFiles()) if (path.resolve(ROOT, f).startsWith(base + path.sep)) {
+    try { inspect(fs.readFileSync(path.join(ROOT, f), 'utf8')); } catch { /* unreadable application source */ }
+  }
+  const exe = cmd[0];
+  if (exe) for (const p of /[/\\]/.test(exe) ? [path.resolve(base, exe)] : (process.env.PATH ?? '').split(path.delimiter).map((d) => path.join(d, exe))) {
+    let fd;
+    try {
+      if (!(fs.statSync(p).mode & 0o111)) continue;
+      fd = fs.openSync(p, 'r');
+      const prefix = Buffer.alloc(2);
+      fs.readSync(fd, prefix, 0, 2, 0);
+      if (prefix.toString() === '#!') inspect(fs.readFileSync(p, 'utf8'));
+      break;
+    } catch { /* try the next executable location */ }
+    finally { if (fd !== undefined) fs.closeSync(fd); }
+  }
   return Object.fromEntries(Object.entries(process.env).filter(([key]) => allowed.has(key.toUpperCase())));
 }
-function runnerEnvRecord() {
-  const allowed = new Set(RUNNER_ENV_ALLOWLIST);
-  return { allowlist: RUNNER_ENV_ALLOWLIST, inherited: Object.keys(runnerEnv()).sort(), removed: Object.keys(process.env).filter((key) => !allowed.has(key.toUpperCase())).sort() };
+function runnerEnvRecord(cmd = []) {
+  const inherited = Object.keys(runnerEnv(cmd)).sort(), allowed = new Set(inherited.map((k) => k.toUpperCase()));
+  return { allowlist: RUNNER_ENV_ALLOWLIST, inherited, removed: Object.keys(process.env).filter((key) => !allowed.has(key.toUpperCase())).sort() };
 }
 function dotnetStamp(abs) {
   const r = spawnSync('git', ['ls-files', '-co', '--exclude-standard'], { cwd: abs, encoding: 'utf8', maxBuffer: 64e6 });
@@ -1429,7 +1461,7 @@ function run1(cmd, timeoutMs, cwd = '.') {
   // PHPUnit/Pest runaway tests can outlive a killed sdd (the group is detached, so nothing signals it): a watchdog in the group kills it once this process is gone (#237)
   const guarded = process.platform !== 'win32' && /phpunit|\bpest\b/.test(cmd.join(' '));
   const argv = guarded ? ['sh', '-c', 'G=$$; P=$1; shift; ( while kill -0 "$P" 2>/dev/null && kill -0 "$G" 2>/dev/null; do sleep 1; done; kill -0 "$P" 2>/dev/null || kill -s KILL -- "-$G" 2>/dev/null ) </dev/null >/dev/null 2>&1 & exec "$@"', 'sdd-watchdog', String(process.pid), ...cmd] : cmd;
-  const r = spawnSync(argv[0], argv.slice(1), { cwd: path.resolve(ROOT, cwd), env: runnerEnv(), encoding: 'utf8', timeout: timeoutMs, maxBuffer: 64e6, detached: true });
+  const r = spawnSync(argv[0], argv.slice(1), { cwd: path.resolve(ROOT, cwd), env: runnerEnv(cmd, cwd), encoding: 'utf8', timeout: timeoutMs, maxBuffer: 64e6, detached: true });
   const timedOut = r.error?.code === 'ETIMEDOUT';
   // spawnSync's timeout signals only the launcher (cargo, npm, mvn); the detached group also holds the hung test binary (#225)
   if (timedOut && r.pid) { try { process.kill(-r.pid, 'SIGKILL'); } catch { /* group already gone */ } }
@@ -1438,7 +1470,7 @@ function run1(cmd, timeoutMs, cwd = '.') {
 }
 // Scope placeholders for changedCmd. An empty result means "cannot scope" and the caller falls back to the full check.
 function cmdOut(cmd, cwd) {
-  const r = spawnSync(cmd[0], cmd.slice(1), { cwd, env: runnerEnv(), encoding: 'utf8', timeout: 60000, maxBuffer: 64e6 });
+  const r = spawnSync(cmd[0], cmd.slice(1), { cwd, env: runnerEnv(cmd, cwd), encoding: 'utf8', timeout: 60000, maxBuffer: 64e6 });
   return r.status === 0 ? r.stdout : null;
 }
 function nearestDir(abs, rel, marker) {
@@ -4589,6 +4621,18 @@ function greenReqs(ents) {
   return out;
 }
 
+function sharedImplStale(t, ents, entries) {
+  const mine = new Set(t.refs.verifies);
+  const implFiles = [...ents.values()].filter((e) => e.kind === 'CODE' && e.refs.implements.some((r) => mine.has(r))).map((e) => e.path);
+  const mtime = (f) => { try { return fs.statSync(path.join(ROOT, f)).mtimeMs; } catch { return 0; } };
+  return [...ents.values()].filter((e) => {
+    if (e.kind !== 'TEST' || e.id === t.id) return false;
+    const last = entries.filter((x) => x.test === e.id && (x.type === 'green' || x.type === 'refactor')).at(-1);
+    const shared = [...ents.values()].filter((c) => c.kind === 'CODE' && implFiles.includes(c.path) && c.refs.implements.some((r) => e.refs.verifies.includes(r)));
+    return last && shared.some((c) => (last.implBlocks ? last.implBlocks[`${c.path}:${c.id}`] !== implRegionSha(c) : mtime(c.path) > Date.parse(last.at)));
+  });
+}
+
 function cmdTdd() {
   const sub = pos[1];
   if (sub === 'merge-ledger') return mergeLedger();
@@ -4709,7 +4753,12 @@ function cmdTdd() {
 
   const entries = readLedger();
   const ledgerProblem = verifyChain(entries) ?? ledgerRegression();
-  if (ledgerProblem) { out(`REFUSED: invalid ledger: ${ledgerProblem}`); return 1; }
+  if (ledgerProblem) {
+    out(`REFUSED: invalid ledger: ${ledgerProblem}`);
+    const stale = sub === 'green' ? sharedImplStale(t, ents, entries) : [];
+    if (stale.length) out(`⚠ implementation shared with other REQs may have changed: ${stale.map((e) => e.id).join(', ')} (untrusted ledger; no evidence recorded)`);
+    return 1;
+  }
   const before = testSha(t.path, id);
   const rawBefore = sha(fs.readFileSync(path.join(ROOT, t.path)));
   const prior = entries.filter((e) => e.test === id);
@@ -4994,7 +5043,7 @@ function cmdTdd() {
   const wasDone = new Map(humanSpecs.map((x) => [x.feature, featureGreen(x)]));
   // Whole-file runners may fail a sibling while observably passing the selected test.
   const outcomeExit = targetPassed ? 0 : res.exit;
-  appendLedger({ type: sub, test: id, req, reqSha: reqShaOf(req), reqShas: Object.fromEntries([...new Set([req, ...t.refs.verifies])].map((r) => [r, reqShaOf(r)]).filter(([, v]) => v)), file: t.path, fileSha: after, protectedFiles: oracleDependencyFiles, produced: Object.keys(producedShas).length ? producedShas : undefined, oracleShas: oracleDependencyFiles.length ? oracleDependencyShas : undefined, artifactShas: sub === 'red' ? undefined : artifactShasFor(t.path, id), checkDefShas: sub === 'red' ? undefined : checkDefShas(cfg), runnerEnv: runnerEnvRecord(), cmdSha: sha(cmd.join('\0')), exit: outcomeExit, runnerExit: outcomeExit !== res.exit ? res.exit : undefined, ms: res.ms, testSha0: sub === 'red' ? testOwnSha(t.path, id) : undefined, regSha: testRegionSha(t.path, id), rebaselined: rebaselined || undefined, weak: weakRed ? true : undefined, suspect: suspect ? true : undefined, weakWhy: setupSym ? `setup:${setupSym}` : charac ? 'characterization' : retestWeak ? 'retest' : undefined, characterization: charac || undefined, retest: retestWeak || rebaselined ? retest : undefined, priorStrongRed: retestWeak && prior.some((e) => e.type === 'red' && !e.weak && !e.retest) ? true : undefined, implFiles: sub === 'red' ? undefined : Object.fromEntries([...new Set([...ents.values()].filter((c) => c.kind === 'CODE' && c.refs.implements.some((r) => t.refs.verifies.includes(r))).map((c) => c.path))].map((f) => [f, fileSha(f)])), implBlocks: sub === 'red' ? undefined : Object.fromEntries([...ents.values()].filter((c) => c.kind === 'CODE' && c.refs.implements.some((r) => t.refs.verifies.includes(r))).map((c) => [`${c.path}:${c.id}`, implRegionSha(c)]).filter(([, v]) => v)), moved: sub === 'refactor' && prior.filter((e) => e.type === 'green' || e.type === 'refactor').at(-1)?.fileSha !== after && prior.some((e) => e.type === 'green' || e.type === 'refactor') ? true : undefined });
+  appendLedger({ type: sub, test: id, req, reqSha: reqShaOf(req), reqShas: Object.fromEntries([...new Set([req, ...t.refs.verifies])].map((r) => [r, reqShaOf(r)]).filter(([, v]) => v)), file: t.path, fileSha: after, protectedFiles: oracleDependencyFiles, produced: Object.keys(producedShas).length ? producedShas : undefined, oracleShas: oracleDependencyFiles.length ? oracleDependencyShas : undefined, artifactShas: sub === 'red' ? undefined : artifactShasFor(t.path, id), checkDefShas: sub === 'red' ? undefined : checkDefShas(cfg), runnerEnv: runnerEnvRecord(cmd), cmdSha: sha(cmd.join('\0')), exit: outcomeExit, runnerExit: outcomeExit !== res.exit ? res.exit : undefined, ms: res.ms, testSha0: sub === 'red' ? testOwnSha(t.path, id) : undefined, regSha: testRegionSha(t.path, id), rebaselined: rebaselined || undefined, weak: weakRed ? true : undefined, suspect: suspect ? true : undefined, weakWhy: setupSym ? `setup:${setupSym}` : charac ? 'characterization' : retestWeak ? 'retest' : undefined, characterization: charac || undefined, retest: retestWeak || rebaselined ? retest : undefined, priorStrongRed: retestWeak && prior.some((e) => e.type === 'red' && !e.weak && !e.retest) ? true : undefined, implFiles: sub === 'red' ? undefined : Object.fromEntries([...new Set([...ents.values()].filter((c) => c.kind === 'CODE' && c.refs.implements.some((r) => t.refs.verifies.includes(r))).map((c) => c.path))].map((f) => [f, fileSha(f)])), implBlocks: sub === 'red' ? undefined : Object.fromEntries([...ents.values()].filter((c) => c.kind === 'CODE' && c.refs.implements.some((r) => t.refs.verifies.includes(r))).map((c) => [`${c.path}:${c.id}`, implRegionSha(c)]).filter(([, v]) => v)), moved: sub === 'refactor' && prior.filter((e) => e.type === 'green' || e.type === 'refactor').at(-1)?.fileSha !== after && prior.some((e) => e.type === 'green' || e.type === 'refactor') ? true : undefined });
   for (const x of humanSpecs) if (!wasDone.get(x.feature)) {
     const all = readJson(APPROVALS, {});
     if (all[x.feature]?.code) { all[x.feature].code = implFileShas(x); writeJson(APPROVALS, all); }
@@ -5010,13 +5059,7 @@ function cmdTdd() {
   if (sub === 'red' && res.exit !== 0 && typeof flags.characterization === 'string' && flags.characterization.trim()) out(`! --characterization ignored for ${id}: the test failed, so this is a normal Red (the flag only applies to a test that passes without implementation)`);
   if (sub === 'green') {
     const mine = new Set(t.refs.verifies), implFiles = [...ents.values()].filter((e) => e.kind === 'CODE' && e.refs.implements.some((r) => mine.has(r))).map((e) => e.path);
-    const mtime = (f) => { try { return fs.statSync(path.join(ROOT, f)).mtimeMs; } catch { return 0; } };
-    const stale = [...ents.values()].filter((e) => {
-      if (e.kind !== 'TEST' || e.id === id) return false;
-      const last = entries.filter((x) => x.test === e.id && (x.type === 'green' || x.type === 'refactor')).at(-1);
-      const shared = [...ents.values()].filter((c) => c.kind === 'CODE' && implFiles.includes(c.path) && c.refs.implements.some((r) => e.refs.verifies.includes(r)));
-      return last && shared.some((c) => (last.implBlocks ? last.implBlocks[`${c.path}:${c.id}`] !== implRegionSha(c) : mtime(c.path) > Date.parse(last.at)));
-    });
+    const stale = sharedImplStale(t, ents, entries);
     if (!implFiles.length && !entries.some((x) => x.test === id && (x.type === 'green' || x.type === 'refactor')) && !loadSpecs().flatMap((x) => x.reqs).filter((q) => mine.has(q.id)).every((q) => q.testOnly || q.srcs.length)) out(`⚠ ${id}: no code carries @implements ${[...mine].join(', ')} — annotate the implementation so impact/trace can find it (#276); without it the shared-implementation staleness check cannot run (comment-only \`@id CODE-… @implements …\` is enough, the code itself stays unchanged)${dups.some((x) => /^CODE-/.test(x)) ? `; duplicate @id found (${dups.filter((x) => /^CODE-/.test(x)).slice(0, 3).join(', ')}) — only one annotation per id is read, rename the duplicate` : ''}`);
     if (stale.length) out(`⚠ implementation shared with other REQs changed since their Green: ${stale.map((e) => e.id).join(', ')} — re-run them (tdd refactor ${stale.map((e) => e.id).join(' ')}) or the project tests; their evidence is not re-checked automatically`);
   }
@@ -5244,9 +5287,12 @@ function checkDefClosure(cfg, read = (f) => { try { return fs.readFileSync(path.
     const put = (f, text, label = `check ${c.name} (${f} changed)`) => {
       defs.set(`${c.name}|${f}`, { sha: sha(text), label });
     };
-    const file = (abs, cwd, label) => {
+    const file = (abs, cwd, label, definition = false) => {
       const f = relative(abs), t = rd(f);
       if (t === null) return;
+      // Tests and their implementation are protected by evidence, not whole-file definition hashes.
+      if (!definition && (TEST_FILE.test(f) || /@id\s+(?:TEST|CODE)-|@(?:verifies|implements)\b/.test(t))) return;
+      if (!definition && !/\.(?:[cm]?[jt]sx?|py|sh|bash|zsh|rb|pl|php|ps1|cmd|bat|mk)$/.test(f) && !/^#!/.test(t)) return;
       put(f, t, label);
       const key = `${f}\0${cwd}`;
       if (visited.has(key) || activeFiles.has(f) || t.includes('\0')) return;
@@ -5305,16 +5351,16 @@ function checkDefClosure(cfg, read = (f) => { try { return fs.readFileSync(path.
           for (let dir = cwd; ; dir = path.dirname(dir)) {
             for (const m of ['.cargo/config.toml', '.cargo/config', 'rust-toolchain.toml', 'rust-toolchain']) {
               const f = relative(path.join(dir, m));
-              file(path.join(dir, m), cwd, `check ${c.name} runs cargo alias "${alias ?? 'test'}" (${f} changed)`);
+              file(path.join(dir, m), cwd, `check ${c.name} runs cargo alias "${alias ?? 'test'}" (${f} changed)`, true);
             }
             if (dir === path.dirname(dir)) break;
           }
           const home = path.resolve(cwd, process.env.CARGO_HOME ?? path.join(os.homedir(), '.cargo'));
-          for (const m of ['config.toml', 'config']) file(path.join(home, m), cwd);
+          for (const m of ['config.toml', 'config']) file(path.join(home, m), cwd, undefined, true);
         }
         if (/^(make|gmake)$/.test(exe)) {
           const makeCwd = ts[i + 1] === '-C' && ts[i + 2] ? path.resolve(cwd, ts[i + 2]) : cwd;
-          for (const m of ['GNUmakefile', 'makefile', 'Makefile']) file(path.join(makeCwd, m), makeCwd);
+          for (const m of ['GNUmakefile', 'makefile', 'Makefile']) file(path.join(makeCwd, m), makeCwd, undefined, true);
         }
         // Keep argv boundaries (including paths with spaces), and literal paths inside wrapper source.
         const candidate = token.replace(/^--?[\w-]+=/, '');
@@ -5326,7 +5372,10 @@ function checkDefClosure(cfg, read = (f) => { try { return fs.readFileSync(path.
       }
     };
     for (const cmd of [c.cmd, c.changedCmd, c.hubFallbackCmd]) if (cmd) {
-      const argv = (Array.isArray(cmd) ? cmd : [cmd]).map(String), cwd = path.resolve(ROOT, c.cwd ?? '.');
+      const raw = (Array.isArray(cmd) ? cmd : [cmd]).map(String);
+      const inline = /^(?:node|python[\d.]*|ruby|perl)$/.test(path.basename(raw[0] ?? ''));
+      const argv = raw.filter((_, i) => !inline || !/^(?:-e|--eval|-p|--print|-c)$/.test(raw[i - 1] ?? ''));
+      const cwd = path.resolve(ROOT, c.cwd ?? '.');
       inspect(argv, cwd);
       inspect(argv.flatMap(tokens), cwd);
     }
@@ -5974,7 +6023,7 @@ function cmdGate() {
     };
     const baselineDefs = checkDefClosure(cfg, baselineRead);
     const defs = [...new Set([...currentDefs.keys(), ...baselineDefs.keys()])]
-      .filter((k) => currentDefs.get(k)?.sha !== baselineDefs.get(k)?.sha)
+      .filter((k) => tree.status === 0 && currentDefs.get(k)?.sha !== baselineDefs.get(k)?.sha)
       .map((k) => (currentDefs.get(k) ?? baselineDefs.get(k)).label);
     if (defs.length) {
       const msg = `scope: a changed file defines what a gate check runs — ${defs.join('; ')} — the test run may have been narrowed; review the diff`;
