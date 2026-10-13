@@ -9549,3 +9549,52 @@ test('r29e full gate skips an untracked config', () => {
   const d = mini('---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | x shall hold. | TEST-A-001 |\n', {}, PASS);
   assert.doesNotMatch(sdd(d, 'gate', '--no-run').out, /config:/);
 });
+
+test('r30b #333 full gate detects newly introduced check definitions and refreshes their evidence', () => {
+  const cases = [
+    ['pytest.ini', '[pytest]\naddopts = -k test_sum_001\n', 'pytest'],
+    ['tox.ini', '[pytest]\naddopts = -k test_sum_001\n', 'pytest'],
+    ['setup.cfg', '[tool:pytest]\naddopts = -k test_sum_001\n', 'pytest'],
+    ['conftest.py', 'def pytest_collection_modifyitems(items):\n    items[:] = items[:1]\n', 'pytest'],
+    ['tests/conftest.py', 'def pytest_collection_modifyitems(items):\n    items[:] = items[:1]\n', 'pytest'],
+    ['.cargo/config', '[alias]\nversion = "test one"\n', 'cargo'],
+    ['.cargo/config.toml', '[alias]\nversion = "test one"\n', 'cargo'],
+    ['python/pytest.ini', '[pytest]\naddopts = -k test_sum_001\n', 'project'],
+  ];
+  for (const [file, text, kind] of cases) {
+    const cmd = kind === 'cargo' ? ['cargo', 'version'] : ['sh', '-c', 'true # python -m pytest'];
+    const extra = kind === 'project'
+      ? { checks: [], projects: [{ root: 'python', checks: [{ name: 'test', cmd }] }] }
+      : {};
+    const d = mini(T1SPEC, {
+      'a.test.mjs': '// @id TEST-A-001 @verifies REQ-A-001\n',
+      'pyproject.toml': '[tool.pytest.ini_options]\ntestpaths = ["tests"]\n',
+      'python/.gitkeep': '',
+    }, FAIL);
+    const cp = path.join(d, '.sdd/config.json');
+    fs.writeFileSync(cp, JSON.stringify({ ...JSON.parse(fs.readFileSync(cp, 'utf8')), checks: [{ name: 'test', cmd }], scopePolicy: 'warn', ...extra }));
+    assert.equal(sdd(d, 'tdd', 'red', 'TEST-A-001').code, 0);
+    setCmd(d, PASS);
+    assert.equal(sdd(d, 'tdd', 'green', 'TEST-A-001').code, 0);
+    const policy = (scopePolicy) => fs.writeFileSync(cp, JSON.stringify({ ...JSON.parse(fs.readFileSync(cp, 'utf8')), scopePolicy }));
+    assert.equal(sdd(d, 'gate').code, 0);
+    fs.mkdirSync(path.dirname(path.join(d, file)), { recursive: true });
+    fs.writeFileSync(path.join(d, file), text);
+    const gate = () => sdd(d, 'gate');
+    const w = gate();
+    assert.match(w.out, /! scope: .*differs from the last Green record/, `${file}: ${w.out}`);
+    assert.ok(w.out.includes(file), w.out);
+    policy('strict');
+    const s = gate();
+    assert.equal(s.code, 1, `${file}: ${s.out}`);
+    assert.match(s.out, /✗ scope: .*differs from the last Green record/, s.out);
+    assert.equal(sdd(d, 'tdd', 'refactor', 'TEST-A-001').code, 0);
+    const refreshed = gate();
+    assert.equal(refreshed.code, 0, refreshed.out);
+    assert.doesNotMatch(refreshed.out, /differs from the last Green record/);
+    fs.rmSync(path.join(d, file));
+    const removed = gate();
+    assert.equal(removed.code, 1, removed.out);
+    assert.match(removed.out, /no longer defines it/, removed.out);
+  }
+});

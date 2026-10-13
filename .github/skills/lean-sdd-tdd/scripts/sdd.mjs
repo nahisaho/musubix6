@@ -5076,7 +5076,13 @@ function cfgRunLoosening(bc, cfg) {
   if (np.length) weak.push(`artifactProducers += ${np.join(', ')}`);
   return weak;
 }
-// hashes of the text that selects what each gate check runs (package.json script, pytest config, cargo alias); recorded at Green/refactor, compared by the full gate (#325)
+function pytestDefFiles(b) {
+  const configs = ['pyproject.toml', 'pytest.ini', 'setup.cfg', 'tox.ini'].map((m) => b + m);
+  const hooks = workspaceFiles().filter((f) => /(^|\/)conftest\.py$/.test(f) && !SKIP.test(f)
+    && (!b || f.startsWith(b) || f === 'conftest.py' || b.startsWith(path.posix.dirname(f) + '/')));
+  return [...configs, ...hooks];
+}
+// hashes of the text that selects what each gate check runs (package.json script, pytest config/hooks, cargo alias); recorded at Green/refactor, compared by the full gate (#325, #333)
 function checkDefShas(cfg) {
   const all = [...(cfg.checks ?? []), ...(cfg.projects ?? []).flatMap((p) => (p.checks ?? []).map((c) => ({ ...c, name: `${p.root}:${c.name}`, cwd: p.root })))];
   const rd = (f) => { try { return fs.readFileSync(path.join(ROOT, f), 'utf8'); } catch { return null; } };
@@ -5086,10 +5092,10 @@ function checkDefShas(cfg) {
     const line = (c.cmd ?? []).join(' ');
     const sm = line.match(/\b(?:npm|pnpm|yarn|bun)\s+(?:run(?:-script)?\s+)?([\w:.-]+)/);
     if (sm) { const t = rd(b + 'package.json'); let v; try { v = t && JSON.parse(t).scripts?.[sm[1] === 't' ? 'test' : sm[1]]; } catch { /* unparsable */ } if (v !== undefined && v !== null) o[`${c.name}|${b}package.json`] = sha(String(v)); }
-    if (/\bpytest\b/.test(line)) for (const m of ['pyproject.toml', 'pytest.ini', 'setup.cfg', 'tox.ini']) {
-      let t = rd(b + m); if (t === null) continue;
-      if (m === 'pyproject.toml') t = t.split(/^(?=\[)/m).filter((x) => /^\[tool\.pytest/.test(x)).join('');
-      o[`${c.name}|${b}${m}`] = sha(t);
+    if (/\bpytest\b/.test(line)) for (const f of pytestDefFiles(b)) {
+      let t = rd(f); if (t === null) continue;
+      if (path.posix.basename(f) === 'pyproject.toml') t = t.split(/^(?=\[)/m).filter((x) => /^\[tool\.pytest/.test(x)).join('');
+      o[`${c.name}|${f}`] = sha(t);
     }
     if (c.cmd?.[0] === 'cargo' && c.cmd[1]) for (const m of ['.cargo/config.toml', '.cargo/config']) {
       const t = rd(b + m); if (t === null) continue;
@@ -5579,11 +5585,11 @@ function cmdGate() {
       }
     }
     if (!flags.changed && !flags['no-run']) {
-      // full gate: a check-defining file that differs from the last Green/refactor record may have narrowed the run (#325); no record = no warning
+      // Include new definitions: an added higher-precedence config can narrow the run without changing a recorded file (#333).
       const rec = readLedger().reverse().find((e) => e.checkDefShas)?.checkDefShas;
       if (rec) {
         const cur = checkDefShas(cfg);
-        const diff = Object.keys(rec).filter((k) => cur[k] !== rec[k]).map((k) => { const [n, f] = k.split('|'); return `check ${n} (${f}${cur[k] === undefined ? ' no longer defines it' : ' changed'})`; });
+        const diff = [...new Set([...Object.keys(rec), ...Object.keys(cur)])].filter((k) => cur[k] !== rec[k]).map((k) => { const [n, f] = k.split('|'); return `check ${n} (${f}${cur[k] === undefined ? ' no longer defines it' : rec[k] === undefined ? ' now defines it' : ' changed'})`; });
         if (diff.length) {
           const msg = `scope: a file defining what a gate check runs differs from the last Green record — ${diff.join('; ')} — the test run may have been narrowed; review the diff, then re-run \`tdd refactor\` to re-record`;
           if (cfg.scopePolicy === 'strict') add(false, `${msg} (scopePolicy strict)`);
@@ -5667,7 +5673,7 @@ function cmdGate() {
         let prev; try { prev = old.status === 0 ? JSON.parse(old.stdout).scripts?.[script] : undefined; } catch { prev = undefined; }
         if (old.status !== 0 || cur !== prev) defs.push(`check ${c.name} runs package.json script "${script}" (${b}package.json changed)`);
       }
-      if (/\bpytest\b/.test(line)) for (const m of ['pyproject.toml', 'pytest.ini', 'setup.cfg', 'tox.ini']) if (chgSet.has(b + m)) defs.push(`check ${c.name} runs pytest, configured by ${b}${m} (changed)`);
+      if (/\bpytest\b/.test(line)) for (const f of pytestDefFiles(b)) if (chgSet.has(f)) defs.push(`check ${c.name} runs pytest, configured by ${f} (changed)`);
       if (c.cmd?.[0] === 'cargo' && c.cmd[1]) for (const m of ['.cargo/config.toml', '.cargo/config']) {
         if (!chgSet.has(b + m)) continue;
         let txt = ''; try { txt = fs.readFileSync(path.join(ROOT, b + m), 'utf8'); } catch { /* removed */ }
