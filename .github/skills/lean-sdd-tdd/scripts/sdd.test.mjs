@@ -9406,3 +9406,33 @@ test('r29a #327 a check that rewrites the lockfile does not hide the change from
   assert.match(o, /✓ cmd rust\/crates\/b:ok/, o);
   assert.doesNotMatch(o, /skipped/, o);
 });
+
+// r29b #328: a removed/rewritten committed ledger entry fails gate --changed and tdd check
+const r29b = () => {
+  const d = r28a('x.txt', 'x', PASS);
+  const git = (...a) => spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', ...a], { cwd: d });
+  git('add', '-A'); git('commit', '-qm', 'ledger');
+  return { d, lp: path.join(d, '.sdd/tdd.jsonl') };
+};
+test('r29b deleting the last ledger line fails gate --changed and tdd check', () => {
+  const { d, lp } = r29b();
+  fs.writeFileSync(lp, fs.readFileSync(lp, 'utf8').trim().split('\n').slice(0, -1).join('\n') + '\n');
+  const g = sdd(d, 'gate', '--changed');
+  assert.equal(g.code, 1, g.out);
+  assert.match(g.out, /✗ ledger: .*tdd\.jsonl/, g.out);
+  assert.match(sdd(d, 'tdd', 'check').out, /LEDGER FAIL: .*removed or modified/);
+});
+test('r29b a rewritten ledger line fails; a pure append and merge-ledger stay fine', () => {
+  const { d, lp } = r29b();
+  const orig = fs.readFileSync(lp, 'utf8');
+  sdd(d, 'tdd', 'refactor', 'TEST-A-001');
+  assert.doesNotMatch(sdd(d, 'gate', '--changed').out, /✗ ledger/);
+  assert.match(sdd(d, 'tdd', 'check').out, /LEDGER OK/);
+  fs.writeFileSync(lp, orig);
+  sdd(d, 'tdd', 'merge-ledger');
+  assert.doesNotMatch(sdd(d, 'tdd', 'check').out, /LEDGER FAIL/);
+  const ls = orig.trim().split('\n');
+  ls[0] = ls[0].replace('"exit":', '"exit":9,"x":');
+  fs.writeFileSync(lp, ls.join('\n') + '\n');
+  assert.match(sdd(d, 'gate', '--changed').out, /✗ ledger: .*tdd\.jsonl/);
+});
