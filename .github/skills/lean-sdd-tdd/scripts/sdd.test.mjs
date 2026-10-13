@@ -10866,3 +10866,322 @@ test('r32a #347 invalid explicit baseline cannot silently disable ledger compari
   assert.equal(result.code, 1, result.out);
   assert.match(result.out, /cannot read .*ledger.*missing-baseline|cannot read .*missing-baseline.*ledger/i, result.out);
 });
+
+for (const target of ['Cargo.toml', 'crates/core/Cargo.toml', 'crates/core/build.rs', 'crates/core/custom-build.rs']) {
+  test(`r32b #348 Cargo admission closure locks ${target}`, () => {
+    const d = r31aFixture({
+      'Cargo.toml': '[workspace]\nmembers=["crates/core"]\nresolver="2"\n',
+      'crates/core/Cargo.toml': '[package]\nname="core"\nversion="0.1.0"\nbuild="custom-build.rs"\n[features]\ndefault=["verified"]\nverified=[]\n',
+      'crates/core/build.rs': 'fn main() {}\n',
+      'crates/core/custom-build.rs': 'fn main() { println!("cargo:rustc-cfg=verified"); }\n',
+    }, [{ name: 'test', cmd: ['sh', '-c', 'true # cargo test --workspace'] }]);
+    fs.appendFileSync(path.join(d, target), target.endsWith('.rs') ? '// cfg changed\n' : '# admission changed\n');
+    r31aDrift(d, target);
+  });
+}
+
+for (const [cmd, files, target] of [
+  [['tsc', '--noEmit'], { 'tsconfig.json': '{"include":["src/**","types/**"]}' }, 'tsconfig.json'],
+  [['tsc', '-p', 'config/check.json'], { 'config/check.json': '{"extends":"../base.json"}', 'base.json': '{"exclude":[]}' }, 'base.json'],
+  [['tsc', '--project=config/check.json'], { 'config/check.json': '{"extends":["../one.json","../two.json"]}', 'one.json': '{}', 'two.json': '{"include":["types/**"]}' }, 'two.json'],
+  [['tsc', '-b', 'config/check.json'], { 'config/check.json': '{"references":[{"path":"../types"}]}', 'types/tsconfig.json': '{"include":["**/*.ts"]}' }, 'types/tsconfig.json'],
+  [['tsc', '--noEmit'], { 'tsconfig.json': '{"extends":"@fixture/config"}', 'node_modules/@fixture/config/package.json': '{"tsconfig":"base.json"}', 'node_modules/@fixture/config/base.json': '{"include":["types/**"]}' }, 'node_modules/@fixture/config/base.json'],
+  [['tsc', '--noEmit'], { 'tsconfig.json': '// comment\n{"extends":"./base",}', 'base.json': '{"include":["types/**"],}' }, 'base.json'],
+]) {
+  test(`r32b #352 TypeScript admission closure locks ${target} via ${cmd.join(' ')}`, () => {
+    const d = r31aFixture(files, [{ name: 'typecheck', cmd: ['sh', '-c', `true # ${cmd.join(' ')}`] }]);
+    fs.appendFileSync(path.join(d, target), '\n// selection changed\n');
+    r31aDrift(d, target);
+  });
+}
+
+test('r32b #352 TypeScript closure tracks additions removals and project cwd through npm', () => {
+  const d = r31aFixture({
+    'app/package.json': '{"scripts":{"typecheck":"tsc --noEmit"}}',
+    'app/tsconfig.json': '{"extends":"../base.json"}',
+    'base.json': '{}',
+  }, [], [{ root: 'app', checks: [{ name: 'typecheck', cmd: ['sh', '-c', 'true # npm run typecheck'] }] }]);
+  fs.unlinkSync(path.join(d, 'base.json'));
+  r31aDrift(d, 'base.json');
+  assert.equal(sdd(d, 'tdd', 'refactor', 'TEST-A-001').code, 0);
+  fs.writeFileSync(path.join(d, 'base.json'), '{"exclude":["../types/**"]}');
+  r31aDrift(d, 'base.json');
+});
+
+function r32bRustFixture({ nested = false, build = false, manifest = '', attr = '' } = {}) {
+  const prefix = nested ? 'crates/core/' : '';
+  const d = mini(T1SPEC, {
+    ...(nested ? { 'Cargo.toml': '[workspace]\nmembers=["crates/core"]\nresolver="2"\n' } : {}),
+    [`${prefix}Cargo.toml`]: `[package]\nname="r32b"\nversion="0.1.0"\nedition="2021"\n${manifest}\n`,
+    [`${prefix}src/lib.rs`]: '// @id CODE-A-001 @implements REQ-A-001\npub fn answer() -> i32 { 0 }\n',
+    [`${prefix}tests/verified.rs`]: `use r32b::answer;\n// @id TEST-A-001 @verifies REQ-A-001\n${attr}\n#[test]\nfn verified() { assert_eq!(answer(), 1); }\n#[test]\nfn sibling() { assert!(true); }\n`,
+    ...(build ? { [`${prefix}build.rs`]: 'fn main() { println!("cargo:rustc-check-cfg=cfg(hidden)"); }\n' } : {}),
+    '.gitignore': 'target/\n',
+  }, ['cargo', 'test', '{idu}']);
+  const cp = path.join(d, '.sdd/config.json');
+  fs.writeFileSync(cp, JSON.stringify({
+    ...JSON.parse(fs.readFileSync(cp, 'utf8')), scopePolicy: 'warn',
+    checks: [{ name: 'test', cmd: ['cargo', 'test', '--offline'] }],
+  }));
+  const red = sdd(d, 'tdd', 'red', 'TEST-A-001');
+  assert.equal(red.code, 0, red.out);
+  fs.writeFileSync(path.join(d, `${prefix}src/lib.rs`), '// @id CODE-A-001 @implements REQ-A-001\npub fn answer() -> i32 { 1 }\n');
+  const green = sdd(d, 'tdd', 'green', 'TEST-A-001');
+  assert.equal(green.code, 0, green.out);
+  const clean = sdd(d, 'gate');
+  assert.equal(clean.code, 0, clean.out);
+  return { d, prefix, cp };
+}
+
+for (const admission of ['features', 'required-features', 'test=false', 'autotests=false', 'build.rs', 'workspace-member', 'workspace-default-members']) {
+  test(`r32b #348 gate rejects missing executed annotated Rust id: ${admission}`, { skip: !has130('cargo') }, () => {
+    const { d, prefix } = r32bRustFixture({
+      nested: admission.startsWith('workspace-'), build: admission === 'build.rs',
+      manifest: '[features]\ndefault=["verified"]\nverified=[]',
+      attr: admission === 'features' ? '#[cfg(feature="verified")]' : admission === 'build.rs' ? '#[cfg(not(hidden))]' : '',
+    });
+    const mp = path.join(d, `${prefix}Cargo.toml`);
+    if (admission === 'features' || admission === 'build.rs') {
+      if (admission === 'features') fs.writeFileSync(mp, fs.readFileSync(mp, 'utf8').replace('default=["verified"]', 'default=[]'));
+      else fs.writeFileSync(path.join(d, 'build.rs'), 'fn main() { println!("cargo:rustc-check-cfg=cfg(hidden)"); println!("cargo:rustc-cfg=hidden"); }\n');
+    } else if (admission === 'required-features') {
+      fs.appendFileSync(mp, '\n[[test]]\nname="verified"\nrequired-features=["verified"]\n');
+      fs.writeFileSync(mp, fs.readFileSync(mp, 'utf8').replace('default=["verified"]', 'default=[]'));
+    } else if (admission === 'test=false') fs.appendFileSync(mp, '\n[[test]]\nname="verified"\ntest=false\n');
+    else if (admission === 'autotests=false') fs.writeFileSync(mp, fs.readFileSync(mp, 'utf8').replace('[package]', '[package]\nautotests=false'));
+    else {
+      writeAll(d, { 'other/Cargo.toml': '[package]\nname="other"\nversion="0.1.0"\n', 'other/src/lib.rs': '#[test]\nfn sibling() { assert!(true); }\n' });
+      fs.writeFileSync(path.join(d, 'Cargo.toml'), admission === 'workspace-member'
+        ? '[workspace]\nmembers=["other"]\nexclude=["crates/core"]\nresolver="2"\n'
+        : '[workspace]\nmembers=["other","crates/core"]\ndefault-members=["other"]\nresolver="2"\n');
+    }
+    const result = sdd(d, 'gate');
+    assert.equal(result.code, 1, result.out);
+    assert.match(result.out, /TEST-A-001.*(?:not executed|never ran|no owning Cargo target)/, result.out);
+  });
+}
+
+test('r32b #348 zero-execution Cargo gate fails even with scopePolicy warn', { skip: !has130('cargo') }, () => {
+  const { d, cp } = r32bRustFixture();
+  fs.writeFileSync(cp, JSON.stringify({ ...JSON.parse(fs.readFileSync(cp, 'utf8')), checks: [{ name: 'test', cmd: ['cargo', 'test', 'absent_name', '--offline'] }] }));
+  const result = sdd(d, 'gate');
+  assert.equal(result.code, 1, result.out);
+  assert.match(result.out, /TEST-A-001.*not executed/, result.out);
+});
+
+for (const target of ['selected/Cargo.toml', 'support/Cargo.toml', 'support/build.rs', 'selected/cfg.rs']) {
+  test(`r32b #348 explicit manifest and build helper closure locks ${target}`, () => {
+    const d = r31aFixture({
+      'selected/Cargo.toml': '[package]\nname="selected"\n[dependencies]\nsupport={path="../support"}\n',
+      'selected/build.rs': 'mod cfg;\nfn main() { cfg::emit(); }\n',
+      'selected/cfg.rs': 'pub fn emit() { println!("cargo:rustc-cfg=verified"); }\n',
+      'support/Cargo.toml': '[package]\nname="support"\n',
+      'support/build.rs': 'fn main() {}\n',
+    }, [{ name: 'test', cmd: ['sh', '-c', 'true # cargo test --manifest-path=selected/Cargo.toml'] }]);
+    fs.appendFileSync(path.join(d, target), target.endsWith('.rs') ? '// admission changed\n' : '# admission changed\n');
+    r31aDrift(d, target);
+  });
+}
+
+for (const wrapper of [false, true]) {
+  test(`r32b #348 same-named sibling cannot supply an absent annotated target (${wrapper ? 'wrapper' : 'direct'})`, { skip: !has130('cargo') }, () => {
+    const { d, cp } = r32bRustFixture({ manifest: '[features]\ndefault=["verified"]\nverified=[]', attr: '#[cfg(feature="verified")]' });
+    writeAll(d, { 'tests/sibling.rs': '#[test]\nfn verified() { assert!(true); }\n' });
+    if (wrapper) fs.writeFileSync(cp, JSON.stringify({
+      ...JSON.parse(fs.readFileSync(cp, 'utf8')),
+      checks: [{ name: 'test', cmd: ['sh', '-c', 'cargo test --offline --message-format=json'] }],
+    }));
+    const clean = sdd(d, 'gate');
+    assert.equal(clean.code, 0, clean.out);
+    const mp = path.join(d, 'Cargo.toml');
+    fs.writeFileSync(mp, fs.readFileSync(mp, 'utf8').replace('default=["verified"]', 'default=[]'));
+    const result = sdd(d, 'gate');
+    assert.equal(result.code, 1, result.out);
+    assert.match(result.out, /TEST-A-001.*not executed/, result.out);
+  });
+}
+
+test('r32b #352 unchanged ignored package configs stay silent, but their selection drift fails', () => {
+  const files = {
+    '.gitignore': 'node_modules/\n',
+    'tsconfig.json': '{"extends":"@fixture/config"}',
+    'node_modules/@fixture/config/package.json': '{"tsconfig":"base.json"}',
+    'node_modules/@fixture/config/base.json': '{"include":["types/**"]}',
+  };
+  const d = r31aFixture(files, [{ name: 'typecheck', cmd: ['sh', '-c', 'true # tsc --noEmit'] }]);
+  const cp = path.join(d, '.sdd/config.json');
+  fs.writeFileSync(cp, JSON.stringify({ ...JSON.parse(fs.readFileSync(cp, 'utf8')), scopePolicy: 'strict' }));
+  for (const args of [['gate'], ['gate', '--changed']]) {
+    const clean = sdd(d, ...args);
+    assert.equal(clean.code, 0, clean.out);
+    assert.doesNotMatch(clean.out, /scope: .*defin(?:es|ing) what a gate check runs/);
+  }
+  fs.writeFileSync(path.join(d, 'node_modules/@fixture/config/base.json'), '{"include":["src/**"]}');
+  for (const args of [['gate'], ['gate', '--changed']]) {
+    const result = sdd(d, ...args);
+    assert.equal(result.code, 1, result.out);
+    assert.match(result.out, /base\.json.*changed/, result.out);
+  }
+});
+
+test('r32b #348 explicit library ownership survives a shared bin route but cannot hide its test', { skip: !has130('cargo') }, () => {
+  const { d, cp } = r32bRustFixture({ manifest: '[features]\ndefault=["verified"]\nverified=[]' });
+  writeAll(d, {
+    'src/cases.rs': '// @id TEST-A-001 @verifies REQ-A-001\n#[cfg(feature="verified")]\n#[test]\nfn verified() { assert_eq!(crate::answer(), 1); }\n',
+    'src/lib.rs': '// @id CODE-A-001 @implements REQ-A-001\npub fn answer() -> i32 { 1 }\n#[cfg(test)] mod cases;\n',
+    'src/main.rs': 'fn main() {}\nfn answer() -> i32 { 1 }\n#[cfg(test)] mod cases;\n',
+  });
+  fs.unlinkSync(path.join(d, 'tests/verified.rs'));
+  fs.writeFileSync(cp, JSON.stringify({
+    ...JSON.parse(fs.readFileSync(cp, 'utf8')), testCmd: ['cargo', 'test', '--lib', '{idu}'],
+    checks: [{ name: 'test', cmd: ['cargo', 'test', '--lib', '--offline'] }],
+  }));
+  const red = sdd(d, 'tdd', 'red', 'TEST-A-001', '--retest', 'move test into explicitly selected library');
+  assert.equal(red.code, 0, red.out);
+  assert.equal(sdd(d, 'tdd', 'green', 'TEST-A-001').code, 0);
+  const clean = sdd(d, 'gate');
+  assert.equal(clean.code, 0, clean.out);
+  const mp = path.join(d, 'Cargo.toml');
+  fs.writeFileSync(mp, fs.readFileSync(mp, 'utf8').replace('default=["verified"]', 'default=[]'));
+  const result = sdd(d, 'gate');
+  assert.equal(result.code, 1, result.out);
+  assert.match(result.out, /TEST-A-001.*not executed/, result.out);
+});
+
+test('r32c #349 PATH-selected launchers and their symlink targets are Green definitions', () => {
+  const bin = fs.mkdtempSync(path.join(work, 'r32-path-'));
+  const target = path.join(bin, 'launcher');
+  fs.writeFileSync(target, '#!/bin/sh\nexit 0\n', { mode: 0o755 });
+  fs.symlinkSync('launcher', path.join(bin, 'cargo'));
+  const previous = ENV.PATH;
+  ENV.PATH = `${bin}${path.delimiter}${previous}`;
+  const processPath = process.env.PATH;
+  process.env.PATH = ENV.PATH;
+  try {
+    const d = r31aFixture({}, [{ name: 'test', cmd: ['cargo', 'test'] }]);
+    const entry = r24dLedger(d).at(-1);
+    assert.ok(Object.keys(entry.checkDefShas).some((k) => k.endsWith('/cargo')), JSON.stringify(entry.checkDefShas));
+    fs.writeFileSync(target, '#!/bin/sh\n# narrowed suite\nexit 0\n');
+    r31aDrift(d, 'cargo');
+  } finally { ENV.PATH = previous; process.env.PATH = processPath; }
+});
+
+test('r32c #349 unchanged ignored executable does not drift against the Git baseline', () => {
+  const d = r31aFixture({ '.gitignore': 'launcher\n', launcher: '#!/bin/sh\nexit 0\n' }, [{ name: 'test', cmd: ['./launcher'] }]);
+  fs.chmodSync(path.join(d, 'launcher'), 0o755);
+  assert.equal(sdd(d, 'tdd', 'refactor', 'TEST-A-001').code, 0);
+  const cp = path.join(d, '.sdd/config.json');
+  fs.writeFileSync(cp, JSON.stringify({ ...JSON.parse(fs.readFileSync(cp)), scopePolicy: 'strict' }));
+  const unchanged = sdd(d, 'gate', '--changed');
+  assert.equal(unchanged.code, 0, unchanged.out);
+  fs.appendFileSync(path.join(d, 'launcher'), '# selection changed\n');
+  const changed = sdd(d, 'gate', '--changed');
+  assert.equal(changed.code, 1, changed.out);
+  assert.match(changed.out, /launcher.*changed/);
+});
+
+for (const [label, files, cmd, input] of [
+  ['npmrc', { 'package.json': '{"scripts":{"test":"node -e 0"}}', '.npmrc': 'audit=false\n' }, ['npm', 'test'], '.npmrc'],
+  ['protected lifecycle', { 'package.json': '{"scripts":{"test":"node -e 0","pretest":"node hook.mjs"}}', 'hook.mjs': '// @id CODE-HOOK-001 @implements REQ-A-001\n0;\n' }, ['npm', 'test'], 'hook.mjs'],
+  ['extensionless makefile', { rules: 'test:\n\t@true\n' }, ['make', '-f', 'rules', 'test'], 'rules'],
+  ['long makefile option', { rules: 'test:\n\t@true\n' }, ['make', '--file=rules', 'test'], 'rules'],
+  ['pytest plugins', { 'conftest.py': 'pytest_plugins = ["local_plugin"]\n', 'local_plugin.py': 'def pytest_collection_modifyitems(items):\n    pass\n' }, ['sh', '-c', 'true # python3 -m pytest'], 'local_plugin.py'],
+  ['pytest -p plugin', { 'local_plugin.py': 'def pytest_collection_modifyitems(items):\n    pass\n' }, ['sh', '-c', 'true # pytest -p local_plugin'], 'local_plugin.py'],
+]) {
+  test(`r32c #350 #351 closure includes ${label}`, () => {
+    const d = r31aFixture(files, [{ name: 'test', cmd }]);
+    fs.appendFileSync(path.join(d, input), input === '.npmrc' ? 'fund=false\n' : input.endsWith('.mjs') ? '// changed selection\n' : '# changed selection\n');
+    r31aDrift(d, input);
+  });
+}
+
+const r32cPythonAvailable = spawnSync('python3', ['-m', 'pytest', '--version']).status === 0;
+test('r32c #350 successful collect-only checks are incomplete', { skip: !r32cPythonAvailable }, () => {
+  const d = r31aFixture({ 'test_plain.py': 'def test_plain():\n    assert True\n' }, [{ name: 'test', cmd: ['python3', '-m', 'pytest', '--collect-only', '-q'] }]);
+  const result = sdd(d, 'gate');
+  assert.equal(result.code, 2, result.out);
+  assert.match(result.out, /no tests.*INCOMPLETE/);
+});
+
+for (const hook of ['pytest.py', 'sitecustomize.py', 'usercustomize.py']) {
+  test(`r32c #351 ${hook} cannot hollow out Python tests`, { skip: !r32cPythonAvailable }, () => {
+    const d = mini(T1SPEC, {
+      'pytest.ini': '[pytest]\n',
+      'test_a.py': 'from pathlib import Path\n# @id TEST-A-001 @verifies REQ-A-001\ndef test_a_001():\n    assert not Path(".sdd/regression").exists(), "real assertion"\n',
+      '.sdd/regression': 'fail\n',
+      [hook]: hook === 'pytest.py' ? 'print("1 passed in 0.01s")\n' : 'import os\nos._exit(0)\n',
+    }, ['python3', '-m', 'pytest', '-q', 'test_a.py', '-k', '{idu}']);
+    // Seed legitimate evidence without executing the malicious startup surface.
+    const poisoned = fs.readFileSync(path.join(d, hook));
+    fs.unlinkSync(path.join(d, hook));
+    assert.equal(sdd(d, 'tdd', 'red', 'TEST-A-001').code, 0);
+    fs.unlinkSync(path.join(d, '.sdd/regression'));
+    const green = sdd(d, 'tdd', 'green', 'TEST-A-001');
+    assert.equal(green.code, 0, green.out);
+    fs.writeFileSync(path.join(d, hook), poisoned);
+    // Refactor must run the real passing test, not a shadow/startup module.
+    const real = sdd(d, 'tdd', 'refactor', 'TEST-A-001');
+    assert.equal(real.code, 0, real.out);
+    assert.match(real.out, /REFACTOR ok TEST-A-001/);
+    fs.writeFileSync(path.join(d, '.sdd/regression'), 'fail\n');
+    const failed = sdd(d, 'tdd', 'refactor', 'TEST-A-001');
+    assert.equal(failed.code, 1, failed.out);
+    assert.match(failed.out, /real assertion/);
+  });
+}
+
+test('r32c #351 collected but removed annotated pytest ids cannot pass a gate', { skip: !r32cPythonAvailable }, () => {
+  const d = mini(T1SPEC, {
+    'pytest.ini': '[pytest]\n',
+    'test_a.py': '# @id TEST-A-001 @verifies REQ-A-001\ndef test_a_001():\n    assert True\n\ndef test_other():\n    assert True\n',
+    'conftest.py': 'def pytest_collection_modifyitems(items):\n    items[:] = [item for item in items if item.name != "test_a_001"]\n',
+  }, FAIL);
+  const cp = path.join(d, '.sdd/config.json');
+  fs.writeFileSync(cp, JSON.stringify({ ...JSON.parse(fs.readFileSync(cp)), scan: { include: ['test_a.py'] }, checks: [{ name: 'test', cmd: ['python3', '-m', 'pytest', '-q'] }] }));
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-A-001').code, 0);
+  setCmd(d, PASS);
+  assert.equal(sdd(d, 'tdd', 'green', 'TEST-A-001').code, 0);
+  const result = sdd(d, 'gate');
+  assert.notEqual(result.code, 0, result.out);
+  assert.match(result.out, /TEST-A-001.*(?:execut|ran|missing)/i);
+});
+
+test('r32c #350 npmrc preload contents share the startup definition closure', () => {
+  const d = r31aFixture({
+    'package.json': '{"scripts":{"test":"node -e 0"}}',
+    '.npmrc': 'node-options=--require=./preload.cjs\n',
+    'preload.cjs': '0;\n',
+  }, [{ name: 'test', cmd: ['npm', 'test'] }]);
+  fs.appendFileSync(path.join(d, 'preload.cjs'), '// changed selection\n');
+  r31aDrift(d, 'preload.cjs');
+});
+
+test('r32c #351 test-module plugin declarations and transitive plugin imports are definitions', () => {
+  const d = r31aFixture({
+    'test_plain.py': 'pytest_plugins = ["plugins.selector"]\ndef test_plain():\n    assert True\n',
+    'plugins/__init__.py': '',
+    'plugins/selector.py': 'from plugins import helper\n',
+    'plugins/helper.py': 'def pytest_collection_modifyitems(items):\n    pass\n',
+  }, [{ name: 'test', cmd: ['sh', '-c', 'true # pytest'] }]);
+  fs.appendFileSync(path.join(d, 'plugins/helper.py'), '# changed selection\n');
+  r31aDrift(d, 'plugins/helper.py');
+});
+
+test('r32c #351 pytest execution outcomes cannot be replaced by a plugin exit-code override', { skip: !r32cPythonAvailable }, () => {
+  const d = mini(T1SPEC, {
+    'pytest.ini': '[pytest]\n',
+    'test_a.py': 'from pathlib import Path\n# @id TEST-A-001 @verifies REQ-A-001\ndef test_a_001():\n    assert not Path(".sdd/regression").exists(), "real assertion"\n',
+    'conftest.py': 'def pytest_sessionfinish(session):\n    session.exitstatus = 0\n',
+  }, ['python3', '-m', 'pytest', '-q', 'test_a.py', '-k', '{idu}']);
+  const cp = path.join(d, '.sdd/config.json');
+  fs.writeFileSync(cp, JSON.stringify({ ...JSON.parse(fs.readFileSync(cp)), checks: [{ name: 'test', cmd: ['python3', '-m', 'pytest', '-q'] }] }));
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-A-001', '--characterization', 'runner-integrity fixture').code, 0);
+  assert.equal(sdd(d, 'tdd', 'green', 'TEST-A-001').code, 0);
+  fs.writeFileSync(path.join(d, '.sdd/regression'), 'fail\n');
+  const refactor = sdd(d, 'tdd', 'refactor', 'TEST-A-001');
+  assert.equal(refactor.code, 1, refactor.out);
+  assert.match(refactor.out, /test failed/);
+  const gate = sdd(d, 'gate');
+  assert.equal(gate.code, 1, gate.out);
+  assert.match(gate.out, /real assertion/);
+});

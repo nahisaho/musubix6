@@ -4492,7 +4492,7 @@ function javaExecutionOwner(scope) {
   if (owners.length !== 1) throw new Error(`REFUSED: Java test ownership is ${owners.length ? 'ambiguous' : 'unresolved'} for ${scope}; declare the annotated test in a concrete test class or wrapper`);
   return owners[0];
 }
-function qualifiedTestScope(testPath, text, at, rust = false) {
+function qualifiedTestScope(testPath, text, at, rust = false, rustMods = null) {
   const pre = maskBraces(text.slice(0, at), rust);
   const stack = [];
   const re = rust ? /\bmod\s+((?:r#)?\w+)\s*\{|([{}])/g : /\b(namespace|class|interface|trait|record(?:\s+(?:class|struct))?)\s+([\w.\\]+)[^{;]*([{;])|([{}])/g;
@@ -4504,7 +4504,7 @@ function qualifiedTestScope(testPath, text, at, rust = false) {
     else stack.pop();
   }
   const pkg = /\.java$/.test(testPath) ? /^package\s+([\w.]+);/m.exec(text)?.[1] : '';
-  const mods = rust ? rustTarget(testPath)?.mods ?? [] : [];
+  const mods = rust ? rustMods ?? rustTarget(testPath)?.mods ?? [] : [];
   if (rust) return [...mods, ...stack.filter(Boolean)].join('::');
   const namespaces = stack.filter((s) => s?.kind === 'namespace').map((s) => s.name);
   const classes = stack.filter((s) => s && s.kind !== 'namespace').map((s) => s.name);
@@ -5295,11 +5295,13 @@ function pytestDefFiles(b) {
   return [...configs, ...hooks];
 }
 // Static, conservative execution-surface closure; never execute wrappers to discover their inputs.
-function checkDefClosure(cfg, read = (f) => { try { return fs.readFileSync(path.resolve(ROOT, f), 'utf8'); } catch { return null; } }) {
+function checkDefClosure(cfg, read = (f) => { try { return fs.readFileSync(path.resolve(ROOT, f), 'utf8'); } catch { return null; } }, knownFiles = null) {
   const all = [...(cfg.checks ?? []), ...(cfg.projects ?? []).flatMap((p) => (p.checks ?? []).map((c) => ({ ...c, name: `${p.root}:${c.name}`, cwd: p.root })))];
   const cache = new Map(), defs = new Map();
   const rd = (f) => { if (!cache.has(f)) cache.set(f, read(f)); return cache.get(f); };
   const relative = (f) => path.relative(ROOT, f).split(path.sep).join('/');
+  let manifests;
+  const cargoManifests = () => manifests ??= (knownFiles ?? gitFiles('*Cargo.toml')).filter((f) => /(^|\/)Cargo\.toml$/.test(f) && !SKIP.test(f));
   const tokens = (text) => {
     const result = [];
     for (const m of String(text).matchAll(/"([^"]*)"|'([^']*)'|`([^`]*)`|([^\s"'`()\[\]{},;|&<>]+)/g)) {
@@ -5350,6 +5352,94 @@ function checkDefClosure(cfg, read = (f) => { try { return fs.readFileSync(path.
           `check ${c.name} runs package.json script "${name}" (${f} changed)`);
       }
     };
+    const cargoDefinitions = (ts, cwd) => {
+      const mp = ts.findIndex((t) => t === '--manifest-path' || t.startsWith('--manifest-path='));
+      let dir = mp < 0 ? cwd : path.dirname(path.resolve(cwd, ts[mp].includes('=') ? ts[mp].slice(ts[mp].indexOf('=') + 1) : ts[mp + 1] ?? 'Cargo.toml'));
+      let root = null;
+      const selected = new Set();
+      for (; ; dir = path.dirname(dir)) {
+        const f = relative(path.join(dir, 'Cargo.toml')), t = rd(f);
+        if (t !== null) {
+          selected.add(f);
+          if (root === null || /^\s*\[workspace\]\s*(?:#.*)?$/m.test(t)) root = dir;
+        }
+        if (dir === path.dirname(dir)) break;
+      }
+      if (root) for (const f of cargoManifests()) {
+        const p = path.resolve(ROOT, f);
+        if (p.startsWith(root + path.sep)) selected.add(f);
+      }
+      const buildSeen = new Set();
+      const buildSource = (abs, entry = abs) => {
+        const f = relative(abs), text = rd(f);
+        if (text === null || buildSeen.has(f)) return;
+        buildSeen.add(f);
+        put(f, text);
+        for (const dep of [...rustLocalModules(abs, text, entry), ...rustIncludedSources(abs, text)]) buildSource(dep.file, entry);
+      };
+      for (const f of selected) {
+        const t = rd(f); if (t === null) continue;
+        put(f, t);
+        const base = path.dirname(path.resolve(ROOT, f));
+        const pkg = t.split(/^\s*(?=\[)/m).find((s) => /^\s*\[package\]/.test(s)) ?? '';
+        const custom = /^\s*build\s*=\s*["']([^"']+)["']/m.exec(pkg)?.[1];
+        for (const name of ['build.rs', ...(custom ? [custom] : [])]) buildSource(path.resolve(base, name));
+        // Local dependency manifests and their build scripts may also emit admission cfg.
+        for (const m of t.matchAll(/\bpath\s*=\s*["']([^"']+)["']/g)) {
+          const dep = relative(path.resolve(base, m[1], 'Cargo.toml'));
+          if (!selected.has(dep) && rd(dep) !== null) selected.add(dep);
+        }
+      }
+    };
+    const tsDefinitions = (ts, cwd) => {
+      const seen = new Set();
+      const resolveConfig = (value, base) => {
+        const p = path.resolve(base, value);
+        return [p, p + '.json', path.join(p, 'tsconfig.json')].find((f) => rd(relative(f)) !== null);
+      };
+      const visit = (abs) => {
+        if (!abs || seen.has(abs)) return;
+        seen.add(abs);
+        const f = relative(abs), text = rd(f);
+        if (text === null) return;
+        put(f, text);
+        let json;
+        try { json = JSON.parse(stripJsonc(text)); } catch { return; }
+        for (const value of [].concat(json.extends ?? []).filter((v) => typeof v === 'string')) {
+          if (/^(?:\.|\/|[A-Za-z]:)/.test(value)) visit(resolveConfig(value, path.dirname(abs)));
+          else for (let dir = path.dirname(abs); ; dir = path.dirname(dir)) {
+            const direct = resolveConfig(path.join('node_modules', value), dir);
+            const parts = value.split('/'), count = value.startsWith('@') ? 2 : 1;
+            const pkgDir = path.join(dir, 'node_modules', ...parts.slice(0, count));
+            const pkgFile = relative(path.join(pkgDir, 'package.json')), pkgText = rd(pkgFile);
+            let entry = direct;
+            if (pkgText !== null) {
+              put(pkgFile, pkgText);
+              if (parts.length === count) {
+                try { const pkg = JSON.parse(pkgText); entry = resolveConfig(pkg.tsconfig ?? 'tsconfig.json', pkgDir) ?? entry; } catch { /* compiler reports invalid package metadata */ }
+              }
+            }
+            if (entry) { visit(entry); break; }
+            if (dir === path.dirname(dir)) break;
+          }
+        }
+        for (const ref of json.references ?? []) if (typeof ref?.path === 'string') visit(resolveConfig(ref.path, path.dirname(abs)));
+      };
+      const project = ts.findIndex((t) => /^(?:-p|--project)(?:=|$)/.test(t));
+      const build = ts.findIndex((t) => /^(?:-b|--build)(?:=|$)/.test(t));
+      if (project >= 0) {
+        visit(resolveConfig(ts[project].includes('=') ? ts[project].slice(ts[project].indexOf('=') + 1) : ts[project + 1] ?? '.', cwd));
+      } else if (build >= 0) {
+        const names = [...(ts[build].includes('=') ? [ts[build].slice(ts[build].indexOf('=') + 1)] : []), ...ts.slice(build + 1).filter((v) => !v.startsWith('-'))];
+        for (const name of names.length ? names : ['.']) visit(resolveConfig(name, cwd));
+      } else if (!ts.some((t) => /\.[cm]?tsx?$/.test(t))) {
+        for (let dir = cwd; ; dir = path.dirname(dir)) {
+          const p = path.join(dir, 'tsconfig.json');
+          if (rd(relative(p)) !== null) { visit(p); break; }
+          if (dir === path.dirname(dir)) break;
+        }
+      }
+    };
     const inspect = (ts, initialCwd, sourceDir = initialCwd) => {
       let cwd = initialCwd;
       for (let i = 0; i < ts.length; i++) {
@@ -5374,6 +5464,7 @@ function checkDefClosure(cfg, read = (f) => { try { return fs.readFileSync(path.
           }
         }
         if (exe === 'cargo') {
+          cargoDefinitions(ts.slice(i + 1), cwd);
           const alias = ts.slice(i + 1).find((t) => !t.startsWith('+') && !t.startsWith('-'));
           for (let dir = cwd; ; dir = path.dirname(dir)) {
             for (const m of ['.cargo/config.toml', '.cargo/config', 'rust-toolchain.toml', 'rust-toolchain']) {
@@ -5385,6 +5476,7 @@ function checkDefClosure(cfg, read = (f) => { try { return fs.readFileSync(path.
           const home = path.resolve(cwd, process.env.CARGO_HOME ?? path.join(os.homedir(), '.cargo'));
           for (const m of ['config.toml', 'config']) file(path.join(home, m), cwd, undefined, true);
         }
+        if (/^tsc(?:\.cmd)?$/.test(exe)) tsDefinitions(ts.slice(i + 1), cwd);
         if (/^(make|gmake)$/.test(exe)) {
           const makeCwd = ts[i + 1] === '-C' && ts[i + 2] ? path.resolve(cwd, ts[i + 2]) : cwd;
           for (const m of ['GNUmakefile', 'makefile', 'Makefile']) file(path.join(makeCwd, m), makeCwd, undefined, true);
@@ -5411,6 +5503,76 @@ function checkDefClosure(cfg, read = (f) => { try { return fs.readFileSync(path.
 }
 function checkDefShas(cfg) {
   return Object.fromEntries([...checkDefClosure(cfg)].map(([k, v]) => [k, v.sha]));
+}
+function rustGateExecution(ents, cfg, runs) {
+  if (!runs.length) return [];
+  const defs = checkDefClosure(cfg), expected = new Map(), observed = [];
+  const owners = new Map();
+  rustRunnerSelection = null;
+  for (const { c, cmd, scoped, r } of runs) {
+    const plain = r.text.replace(/\x1b\[[0-9;]*m/g, '');
+    const artifacts = new Map();
+    for (const line of plain.split('\n')) if (line.startsWith('{')) {
+      try { const a = JSON.parse(line); if (a.reason === 'compiler-artifact' && a.executable && a.target?.src_path) artifacts.set(path.resolve(a.executable), path.resolve(a.target.src_path)); } catch { /* harness output, not a Cargo message */ }
+    }
+    const headers = [...plain.matchAll(/^\s*(?:Running (?:unittests )?(.+?) \(([^\n]*)\)|Doc-tests\s+(\S+))\s*$/gm)];
+    const blocks = [...plain.matchAll(/^running \d+ tests?\s*\n([\s\S]*?)^test result: [^\n]*/gm)];
+    for (let i = 0; i < blocks.length; i++) {
+      const header = headers.length === blocks.length ? headers[i] : null;
+      for (const row of blocks[i][1].matchAll(/^test (.+?) \.\.\. (ok|FAILED)(?:\s|$)/gm)) {
+        observed.push({ name: row[1], entry: header?.[2] ? artifacts.get(path.resolve(ROOT, c.cwd ?? '.', header[2])) ?? null : null, source: header?.[1] ?? null, docPackage: header?.[3] ?? null, used: false });
+      }
+    }
+    const manifests = new Set([...defs.keys()].filter((k) => k.startsWith(c.name + '|') && /(?:^|\|)Cargo\.toml$|\/Cargo\.toml$/.test(k)).map((k) => k.slice(k.indexOf('|') + 1)));
+    for (const e of ents.values()) {
+      if (e.kind !== 'TEST' || !/\.rs$/.test(e.path)) continue;
+      let dir = path.dirname(path.resolve(ROOT, e.path)), manifest = null;
+      for (; ; dir = path.dirname(dir)) {
+        const f = rel(path.join(dir, 'Cargo.toml'));
+        if (fs.existsSync(path.join(dir, 'Cargo.toml'))) { manifest = f; break; }
+        if (dir === path.dirname(dir)) break;
+      }
+      if (!manifests.has(manifest)) continue;
+      if (!owners.has(e.path)) {
+        const selection = projectFor(e.path)?.testCmd ?? cfg.testCmd ?? [];
+        const target = selection.findIndex((a) => /^(?:--lib|--test|--bin|--example)$/.test(a));
+        const pkg = selection.findIndex((a) => /^(?:-p|--package)$/.test(a));
+        rustRunnerSelection = target < 0 && pkg < 0 ? null : { kind: target < 0 ? null : selection[target], name: selection[target + 1], package: pkg < 0 ? null : selection[pkg + 1] };
+        try { owners.set(e.path, { owner: rustTarget(e.path, path.resolve(ROOT, c.cwd ?? '.')) }); }
+        catch (error) { owners.set(e.path, { error: error.message }); }
+        finally { rustRunnerSelection = null; }
+      }
+      const { owner, error } = owners.get(e.path);
+      if (scoped && owner) {
+        const packages = cmd.flatMap((a, i) => /^(?:-p|--package)$/.test(a) ? [cmd[i + 1]] : a.startsWith('--package=') ? [a.slice(10)] : []);
+        if (packages.length && !packages.includes(owner.package)) continue;
+      }
+      const text = fs.readFileSync(path.join(ROOT, e.path), 'utf8'), doc = rustDocBlock(text, e.id);
+      if (doc) {
+        const lines = text.split('\n'), at = lines.findIndex((l) => new RegExp(`@id\\s+${escapeRe(e.id)}(?![\\w-])`).test(l));
+        let fence = at;
+        while (fence < lines.length && !/^\s*\/\/[/!]\s*(?:```|~~~)/.test(lines[fence])) fence++;
+        expected.set(e.id, { e, owner, error, docLine: fence + 1 });
+      } else {
+        const at = text.search(new RegExp(`@id\\s+${escapeRe(e.id)}(?![\\w-])`));
+        const scope = qualifiedTestScope(e.path, text, at, true, owner?.mods ?? []);
+        expected.set(e.id, { e, owner, error, name: [scope, testName(e.path, e.id)].filter(Boolean).join('::').replace(/\br#/g, '') });
+      }
+    }
+  }
+  const missing = [];
+  for (const { e, owner, error, name, docLine } of expected.values()) {
+    if (!owner || error) { missing.push(`${e.id} not executed: ${error ?? 'no owning Cargo target resolved'}`); continue; }
+    const matches = observed.filter((r) => !r.used && (docLine
+      ? r.name.endsWith(` (line ${docLine})`) && path.resolve(owner.dir, r.name.split(' - ')[0]) === path.resolve(ROOT, e.path) && (!r.docPackage || r.docPackage === owner.package.replace(/-/g, '_'))
+      : r.name === name && !r.docPackage && (r.entry ? r.entry === owner.entry : !r.source || path.resolve(owner.dir, r.source) === owner.entry)));
+    // Without target headers a same-named sibling is not proof of ownership.
+    const ambiguous = !docLine && [...expected.values()].some((x) => x.e.id !== e.id && x.name === name && x.owner?.entry !== owner.entry);
+    const row = matches.find((r) => r.entry || r.docPackage || !ambiguous);
+    if (row) row.used = true;
+    else missing.push(`${e.id} not executed in Cargo test output (${e.path}${name ? `: ${name}` : ''}); missing/ignored tests and zero-execution cannot verify evidence`);
+  }
+  return missing;
 }
 // scope confidence (design 3.1): globs for `unscoped` / --allow-unscoped / default ignores (matched with globRe)
 const SCOPE_IGNORE = ['**/*.md', '.github/**', 'LICENSE', '.sdd/**'];
@@ -5814,6 +5976,7 @@ function cmdGate() {
   const scopeCount = { exact: 0, widened: 0, unknown: 0 };
   const explain = [];
   const allChecks = [...(cfg.checks ?? []), ...(cfg.projects ?? []).flatMap((p) => (p.checks ?? []).map((c) => ({ ...c, name: `${p.root}:${c.name}`, cwd: p.root, dependsOn: depClosure(p) })))];
+  const rustRuns = [];
   let sharedHinted = false;
   // a changed spec puts the projects holding that feature's tests/code in scope; the project check then runs in full
   const specProjects = new Set();
@@ -5909,16 +6072,24 @@ function cmdGate() {
       scoped = !noScope;
       if (!ch.length) { lines.push(`! cmd ${c.name}: only deleted files changed (${gone.slice(0, 3).join(', ')}${gone.length > 3 ? ', …' : ''}) — running the full check`); cmd = c.cmd; scoped = false; widened = true; }
     }
-    let r = run(cmd, scoped ? (c.changedTimeoutMs ?? cfg.changedTimeoutMs ?? 60000) : (c.timeoutMs ?? cfg.timeoutMs ?? 120000), c.cwd);
+    const cargoOutputCmd = (args) => {
+      if (path.basename(args[0] ?? '') !== 'cargo' || !args.includes('test') || ![...ents.values()].some((e) => e.kind === 'TEST' && /\.rs$/.test(e.path)) || args.some((a) => /^--message-format(?:=|$)/.test(a))) return args;
+      const at = args.indexOf('--');
+      return [...args.slice(0, at < 0 ? args.length : at), '--message-format=json', ...(at < 0 ? [] : args.slice(at))];
+    };
+    let r = run(cargoOutputCmd(cmd), scoped ? (c.changedTimeoutMs ?? cfg.changedTimeoutMs ?? 60000) : (c.timeoutMs ?? cfg.timeoutMs ?? 120000), c.cwd);
     if (!checkInputs(`check ${c.name}`)) break;
     // a scoped run that executed no tests (e.g. `vitest related data.json`) proves nothing: run the full check instead
     if (scoped && r.exit === 0 && !r.timedOut && ((ZERO_TESTS.test(r.text) && !RAN_TESTS.test(r.text)) || NO_PASSED.test(r.text) || pytestNoExecution(r.text) || noExecution(r.text))) {
       lines.push(`! cmd ${c.name}: scoped run matched no tests — running the full check instead`);
       scoped = false;
       widened = true;
-      r = run(c.cmd, c.timeoutMs ?? cfg.timeoutMs ?? 120000, c.cwd);
+      cmd = c.cmd;
+      r = run(cargoOutputCmd(cmd), c.timeoutMs ?? cfg.timeoutMs ?? 120000, c.cwd);
       if (!checkInputs(`check ${c.name} full fallback`)) break;
     }
+    const cargoTest = /(?:^|\s)cargo(?:\s+\+\S+)?\s+test(?:\s|$)/.test(cmd.join(' ')) || /(^|:)test$/.test(c.name) || /test result: \w+\.\s*\d+ passed;/.test(r.text);
+    if (cargoTest && [...checkDefClosure({ checks: [{ ...c, cmd, changedCmd: undefined, hubFallbackCmd: undefined }] }).keys()].some((k) => /(?:^|\|)Cargo\.toml$|\/Cargo\.toml$/.test(k))) rustRuns.push({ c, cmd, scoped, r });
     if (flags.changed) note(scoped || (!widened && !c.changedCmd && base && [...changedFiles()].some((f) => f.startsWith(base))) ? 'exact' : 'widened');
     if (flags.changed) scopeCount[scoped || (!widened && !c.changedCmd && base && [...changedFiles()].some((f) => f.startsWith(base))) ? 'exact' : 'widened']++;
     if (r.timedOut) { add(false, `cmd ${c.name} TIMEOUT after ${(r.ms / 1000).toFixed(0)}s ${scoped ? '— narrow changedCmd (e.g. {changedTests} {changedScopes}) or raise changedTimeoutMs; run full gate (no --changed) before merge' : '— raise timeoutMs in .sdd/config.json'}`); continue; }
@@ -5929,8 +6100,9 @@ function cmdGate() {
       const retries = Math.max(0, Number.isInteger(cfg.flaky?.retries) ? cfg.flaky.retries : 1);
       const warnOnly = cfg.flaky?.policy === 'warn';
       for (let i = 0; i < retries; i++) {
-        const r2 = run(cmd, scoped ? (c.changedTimeoutMs ?? cfg.changedTimeoutMs ?? 60000) : (c.timeoutMs ?? cfg.timeoutMs ?? 120000), c.cwd);
+        const r2 = run(cargoOutputCmd(cmd), scoped ? (c.changedTimeoutMs ?? cfg.changedTimeoutMs ?? 60000) : (c.timeoutMs ?? cfg.timeoutMs ?? 120000), c.cwd);
         if (!checkInputs(`check ${c.name} retry ${i + 1}`)) break;
+        if (rustRuns.some((x) => x.c === c)) rustRuns.push({ c, cmd, scoped, r: r2 });
         if (r2.exit === 0 && !r2.timedOut && !NO_PASSED.test(r2.text) && !pytestNoExecution(r2.text) && !noExecution(r2.text)) {
           add(warnOnly, `cmd ${c.name} FLAKY suspected: failed on the first run, passed on re-run ${i + 1}/${retries} (${(r2.ms / 1000).toFixed(1)}s) — a flaky entry was appended to .sdd/tdd.jsonl (commit it)${warnOnly ? ' — accepted by flaky.policy "warn"' : ' — set flaky.policy "warn" in .sdd/config.json to accept, or fix the test (no sleep, injected clock, port 0, generous timeouts)'}`, failTail(r.text, 8).split('\n'));
           appendLedger({ type: 'flaky', check: c.name, retry: i + 1, retries, policy: warnOnly ? 'warn' : 'fail', outcome: warnOnly ? 'accepted' : 'fail' });
@@ -5945,6 +6117,7 @@ function cmdGate() {
     add(r.exit === 0, `cmd ${c.name} (${(r.ms / 1000).toFixed(1)}s)`, r.exit === 0 ? [] : failTail(r.text, 8).split('\n'));
   }
   }
+  if (!flags['no-run'] && inputsStable) for (const error of rustGateExecution(ents, cfg, rustRuns)) add(false, error);
   if (!flags['no-run'] && !allChecks.length) { lines.push('! commands: none configured — nothing was run'); incomplete = true; }
 
     if (!flags.changed) {
@@ -6043,12 +6216,16 @@ function cmdGate() {
       if (f === '..' || f.startsWith('../') || path.isAbsolute(f)) {
         try { return fs.readFileSync(path.resolve(ROOT, f), 'utf8'); } catch { return null; }
       }
-      if (!modes.has(f)) return null;
+      if (!modes.has(f)) {
+        // Installed, ignored package configs have no Git baseline; Green snapshots still protect them.
+        if (/(^|\/)node_modules\//.test(f)) { try { return fs.readFileSync(path.resolve(ROOT, f), 'utf8'); } catch { return null; } }
+        return null;
+      }
       const r = spawnSync('git', ['show', `${bref}:./${f}`], { cwd: ROOT, encoding: 'utf8' });
       if (r.status !== 0) return null;
       return modes.get(f) === '120000' ? baselineRead(rel(path.resolve(ROOT, path.dirname(f), r.stdout)), seen) : r.stdout;
     };
-    const baselineDefs = checkDefClosure(cfg, baselineRead);
+    const baselineDefs = checkDefClosure(cfg, baselineRead, [...modes.keys()]);
     const defs = [...new Set([...currentDefs.keys(), ...baselineDefs.keys()])]
       .filter((k) => tree.status === 0 && currentDefs.get(k)?.sha !== baselineDefs.get(k)?.sha)
       .map((k) => (currentDefs.get(k) ?? baselineDefs.get(k)).label);
