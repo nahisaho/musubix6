@@ -1340,6 +1340,23 @@ function projectFor(p) {
 
 // `dotnet test` builds on every call. Within one sdd process (batch `tdd red A B C`, several checks) a second call on the same target gets --no-build only when the previous call built cleanly and no tracked file changed since (#137)
 const dotnetBuilt = new Map();
+// Only runtime/tool locations and presentation settings may be inherited; runner flags must be explicit in the reviewed command (#341).
+const RUNNER_ENV_ALLOWLIST = [
+  'PATH', 'HOME', 'USER', 'LOGNAME', 'SHELL', 'TMPDIR', 'TMP', 'TEMP', 'TZ',
+  'LANG', 'LANGUAGE', 'LC_ALL', 'LC_CTYPE', 'LC_COLLATE', 'LC_MESSAGES', 'LC_NUMERIC', 'LC_TIME', 'LC_MONETARY',
+  'SYSTEMROOT', 'WINDIR', 'COMSPEC', 'PATHEXT', 'USERPROFILE', 'HOMEDRIVE', 'HOMEPATH',
+  'APPDATA', 'LOCALAPPDATA', 'PROGRAMFILES', 'PROGRAMFILES(X86)', 'PROGRAMDATA',
+  'JAVA_HOME', 'JDK_HOME', 'DOTNET_ROOT', 'DOTNET_ROOT_X64', 'DOTNET_ROOT_X86', 'DOTNET_CLI_HOME',
+  'RUSTUP_HOME', 'CARGO_HOME', 'CI', 'TERM', 'NO_COLOR', 'FORCE_COLOR',
+];
+function runnerEnv() {
+  const allowed = new Set(RUNNER_ENV_ALLOWLIST);
+  return Object.fromEntries(Object.entries(process.env).filter(([key]) => allowed.has(key.toUpperCase())));
+}
+function runnerEnvRecord() {
+  const allowed = new Set(RUNNER_ENV_ALLOWLIST);
+  return { allowlist: RUNNER_ENV_ALLOWLIST, inherited: Object.keys(runnerEnv()).sort(), removed: Object.keys(process.env).filter((key) => !allowed.has(key.toUpperCase())).sort() };
+}
 function dotnetStamp(abs) {
   const r = spawnSync('git', ['ls-files', '-co', '--exclude-standard'], { cwd: abs, encoding: 'utf8', maxBuffer: 64e6 });
   if (r.status !== 0) return null;
@@ -1366,7 +1383,7 @@ function run1(cmd, timeoutMs, cwd = '.') {
   // PHPUnit/Pest runaway tests can outlive a killed sdd (the group is detached, so nothing signals it): a watchdog in the group kills it once this process is gone (#237)
   const guarded = process.platform !== 'win32' && /phpunit|\bpest\b/.test(cmd.join(' '));
   const argv = guarded ? ['sh', '-c', 'G=$$; P=$1; shift; ( while kill -0 "$P" 2>/dev/null && kill -0 "$G" 2>/dev/null; do sleep 1; done; kill -0 "$P" 2>/dev/null || kill -s KILL -- "-$G" 2>/dev/null ) </dev/null >/dev/null 2>&1 & exec "$@"', 'sdd-watchdog', String(process.pid), ...cmd] : cmd;
-  const r = spawnSync(argv[0], argv.slice(1), { cwd: path.resolve(ROOT, cwd), encoding: 'utf8', timeout: timeoutMs, maxBuffer: 64e6, detached: true });
+  const r = spawnSync(argv[0], argv.slice(1), { cwd: path.resolve(ROOT, cwd), env: runnerEnv(), encoding: 'utf8', timeout: timeoutMs, maxBuffer: 64e6, detached: true });
   const timedOut = r.error?.code === 'ETIMEDOUT';
   // spawnSync's timeout signals only the launcher (cargo, npm, mvn); the detached group also holds the hung test binary (#225)
   if (timedOut && r.pid) { try { process.kill(-r.pid, 'SIGKILL'); } catch { /* group already gone */ } }
@@ -1375,7 +1392,7 @@ function run1(cmd, timeoutMs, cwd = '.') {
 }
 // Scope placeholders for changedCmd. An empty result means "cannot scope" and the caller falls back to the full check.
 function cmdOut(cmd, cwd) {
-  const r = spawnSync(cmd[0], cmd.slice(1), { cwd, encoding: 'utf8', timeout: 60000, maxBuffer: 64e6 });
+  const r = spawnSync(cmd[0], cmd.slice(1), { cwd, env: runnerEnv(), encoding: 'utf8', timeout: 60000, maxBuffer: 64e6 });
   return r.status === 0 ? r.stdout : null;
 }
 function nearestDir(abs, rel, marker) {
@@ -4914,7 +4931,7 @@ function cmdTdd() {
   // human-approved code baseline follows the first implementation: refresh until the feature is fully Green (#92)
   const humanSpecs = sub === 'red' ? [] : loadSpecs().filter((x) => x.approval === 'human' && x.reqs.some((q) => t.refs.verifies.includes(q.id)));
   const wasDone = new Map(humanSpecs.map((x) => [x.feature, featureGreen(x)]));
-  appendLedger({ type: sub, test: id, req, reqSha: reqShaOf(req), reqShas: Object.fromEntries([...new Set([req, ...t.refs.verifies])].map((r) => [r, reqShaOf(r)]).filter(([, v]) => v)), file: t.path, fileSha: after, protectedFiles: oracleDependencyFiles, produced: Object.keys(producedShas).length ? producedShas : undefined, oracleShas: oracleDependencyFiles.length ? oracleDependencyShas : undefined, artifactShas: sub === 'red' ? undefined : artifactShasFor(t.path, id), checkDefShas: sub === 'red' ? undefined : checkDefShas(cfg), cmdSha: sha(cmd.join('\0')), exit: res.exit, ms: res.ms, testSha0: sub === 'red' ? testOwnSha(t.path, id) : undefined, regSha: testRegionSha(t.path, id), rebaselined: rebaselined || undefined, weak: weakRed ? true : undefined, suspect: suspect ? true : undefined, weakWhy: setupSym ? `setup:${setupSym}` : charac ? 'characterization' : retestWeak ? 'retest' : undefined, characterization: charac || undefined, retest: retestWeak || rebaselined ? retest : undefined, priorStrongRed: retestWeak && prior.some((e) => e.type === 'red' && !e.weak && !e.retest) ? true : undefined, implFiles: sub === 'red' ? undefined : Object.fromEntries([...new Set([...ents.values()].filter((c) => c.kind === 'CODE' && c.refs.implements.some((r) => t.refs.verifies.includes(r))).map((c) => c.path))].map((f) => [f, fileSha(f)])), implBlocks: sub === 'red' ? undefined : Object.fromEntries([...ents.values()].filter((c) => c.kind === 'CODE' && c.refs.implements.some((r) => t.refs.verifies.includes(r))).map((c) => [`${c.path}:${c.id}`, implRegionSha(c)]).filter(([, v]) => v)), moved: sub === 'refactor' && prior.filter((e) => e.type === 'green' || e.type === 'refactor').at(-1)?.fileSha !== after && prior.some((e) => e.type === 'green' || e.type === 'refactor') ? true : undefined });
+  appendLedger({ type: sub, test: id, req, reqSha: reqShaOf(req), reqShas: Object.fromEntries([...new Set([req, ...t.refs.verifies])].map((r) => [r, reqShaOf(r)]).filter(([, v]) => v)), file: t.path, fileSha: after, protectedFiles: oracleDependencyFiles, produced: Object.keys(producedShas).length ? producedShas : undefined, oracleShas: oracleDependencyFiles.length ? oracleDependencyShas : undefined, artifactShas: sub === 'red' ? undefined : artifactShasFor(t.path, id), checkDefShas: sub === 'red' ? undefined : checkDefShas(cfg), runnerEnv: runnerEnvRecord(), cmdSha: sha(cmd.join('\0')), exit: res.exit, ms: res.ms, testSha0: sub === 'red' ? testOwnSha(t.path, id) : undefined, regSha: testRegionSha(t.path, id), rebaselined: rebaselined || undefined, weak: weakRed ? true : undefined, suspect: suspect ? true : undefined, weakWhy: setupSym ? `setup:${setupSym}` : charac ? 'characterization' : retestWeak ? 'retest' : undefined, characterization: charac || undefined, retest: retestWeak || rebaselined ? retest : undefined, priorStrongRed: retestWeak && prior.some((e) => e.type === 'red' && !e.weak && !e.retest) ? true : undefined, implFiles: sub === 'red' ? undefined : Object.fromEntries([...new Set([...ents.values()].filter((c) => c.kind === 'CODE' && c.refs.implements.some((r) => t.refs.verifies.includes(r))).map((c) => c.path))].map((f) => [f, fileSha(f)])), implBlocks: sub === 'red' ? undefined : Object.fromEntries([...ents.values()].filter((c) => c.kind === 'CODE' && c.refs.implements.some((r) => t.refs.verifies.includes(r))).map((c) => [`${c.path}:${c.id}`, implRegionSha(c)]).filter(([, v]) => v)), moved: sub === 'refactor' && prior.filter((e) => e.type === 'green' || e.type === 'refactor').at(-1)?.fileSha !== after && prior.some((e) => e.type === 'green' || e.type === 'refactor') ? true : undefined });
   for (const x of humanSpecs) if (!wasDone.get(x.feature)) {
     const all = readJson(APPROVALS, {});
     if (all[x.feature]?.code) { all[x.feature].code = implFileShas(x); writeJson(APPROVALS, all); }
@@ -5075,11 +5092,24 @@ function cfgRunLoosening(bc, cfg) {
     return t.length === 0 || t[0] === 'true' || t[0] === ':' || t[0] === 'echo' || (t[0] === 'exit' && (t[1] === undefined || t[1] === '0'));
   };
   const runner = (c) => {
-    let t = toks(c), exe = path.basename(t[0] ?? '');
-    if (/^(ba|z)?sh$/.test(exe) && /^-[a-z]*c[a-z]*$/.test(t[1] ?? '')) {
-      t = t.slice(2).join(' ').replace(/^["']|["']$/g, '').trim().split(/\s+/);
-      exe = path.basename(t[0] ?? '');
+    const words = (s) => (s.match(/(?:[^\s"'\\]+|"(?:\\.|[^"])*"|'[^']*'|\\.)+/g) ?? []).map((w) => w.replace(/^(['"])(.*)\1$/, '$2'));
+    let t = toks(c);
+    while (t.length) {
+      const exe = path.basename(t[0]);
+      if (/^[A-Za-z_]\w*=/.test(t[0])) { t = t.slice(1); continue; }
+      if (/^(ba|z)?sh$/.test(exe) && /^-[a-z]*c[a-z]*$/.test(t[1] ?? '')) { t = words(t[2] ?? ''); continue; }
+      if (exe !== 'env') break;
+      t = t.slice(1);
+      while (t.length) {
+        if (t[0] === '--') { t = t.slice(1); break; }
+        if (/^[A-Za-z_]\w*=/.test(t[0]) || /^(?:-i|--ignore-environment)$|^--(?:unset|chdir)=/.test(t[0])) { t = t.slice(1); continue; }
+        if (/^(?:-u|--unset|-C|--chdir)$/.test(t[0])) { t = t.slice(2); continue; }
+        if (t[0] === '-S' || t[0] === '--split-string') { t = [...words(t[1] ?? ''), ...t.slice(2)]; continue; }
+        if (t[0].startsWith('--split-string=')) { t = [...words(t[0].slice(15)), ...t.slice(1)]; continue; }
+        break;
+      }
     }
+    const exe = path.basename(t[0] ?? '');
     if (/^(cargo|go|dotnet|mix)$/.test(exe)) return t.slice(1).includes('test');
     if (/^python[\d.]*$/.test(exe)) { const m = t.indexOf('-m'); return m >= 1 && t[m + 1] === 'pytest'; }
     if (exe === 'node') return t.slice(1).some((x) => /^--test(?:=|$)/.test(x));
@@ -5840,7 +5870,7 @@ function cmdGate() {
     scopeJson = { ...scopeCount, policy: cfg.scopePolicy === 'strict' ? 'strict' : 'warn', unscoped, waived, ...(newSrc.length ? { unannotated: newSrc } : {}), ...(flags.explain ? { explain } : {}) };
   }
   const verdict = fail ? 'FAIL' : incomplete ? 'INCOMPLETE' : 'PASS';
-  if (flags.json) out(JSON.stringify({ verdict, lines, tdd: { weak: weakIds, suspect: suspectIds }, ...(scopeJson ? { scope: scopeJson } : {}) }));
+  if (flags.json) out(JSON.stringify({ verdict, lines, runnerEnv: runnerEnvRecord(), tdd: { weak: weakIds, suspect: suspectIds }, ...(scopeJson ? { scope: scopeJson } : {}) }));
   else { out(`SDD GATE ${verdict}`); lines.forEach((l) => out(l)); }
   return fail ? 1 : incomplete ? 2 : 0;
 }

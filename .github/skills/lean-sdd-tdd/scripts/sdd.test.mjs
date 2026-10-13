@@ -10204,3 +10204,182 @@ test('r31a #340 script-relative nested wrapper imports belong to the same closur
   fs.appendFileSync(path.join(d, 'tools/nested.mjs'), '// changed selection\n');
   r31aDrift(d, 'tools/nested.mjs');
 });
+
+const r31bPoison = {
+  PYTEST_ADDOPTS: '-k passing',
+  PYTEST_PLUGINS: 'selector_plugin',
+  CARGO_ENCODED_RUSTFLAGS: '--cfg\u001fskip_tests',
+  CARGO_BUILD_RUSTFLAGS: '--cfg skip_tests',
+  CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUNNER: 'true',
+  RUSTFLAGS: '--cfg skip_tests',
+  RUSTDOCFLAGS: '--cfg skip_tests',
+  NODE_OPTIONS: '--no-warnings',
+  GOFLAGS: '-tags=skip_tests',
+  JAVA_TOOL_OPTIONS: '-DskipTests=true',
+  JDK_JAVA_OPTIONS: '-DskipTests=true',
+  MAVEN_OPTS: '-DskipTests=true',
+  GRADLE_OPTS: '-DskipTests=true',
+  SDD_CUSTOM_SELECTOR: 'passing',
+};
+const r31bRun = (d, env, ...args) => {
+  const r = spawnSync('node', [SDD, '--root', d, ...args], { encoding: 'utf8', env: { ...ENV, ...env } });
+  return { code: r.status, out: r.stdout + r.stderr };
+};
+
+test('#341 inherited runner environment is sanitized for TDD prepare root and project checks', () => {
+  const d = mini(T1SPEC, { 'a.test.mjs': jsTest(), 'p/.gitkeep': '' }, FAIL);
+  const probe = `import assert from 'node:assert/strict';
+for (const key of ${JSON.stringify(Object.keys(r31bPoison))}) assert.equal(process.env[key], undefined, key);
+assert.equal(process.env.PATH, ${JSON.stringify(ENV.PATH)});
+assert.equal(process.env.HOME, ${JSON.stringify(ENV.HOME)});
+`;
+  fs.writeFileSync(path.join(d, 'probe.mjs'), probe);
+  const red = sdd(d, 'tdd', 'red', 'TEST-A-001');
+  assert.equal(red.code, 0, red.out);
+  const cp = path.join(d, '.sdd/config.json');
+  fs.writeFileSync(cp, JSON.stringify({
+    ...JSON.parse(fs.readFileSync(cp, 'utf8')),
+    testCmd: ['node', 'probe.mjs'],
+    prepare: { cmd: ['node', 'probe.mjs'] },
+    checks: [{ name: 'probe', cmd: ['node', 'probe.mjs'], changedCmd: ['node', 'probe.mjs'] }],
+    projects: [{ root: 'p', checks: [{ name: 'probe', cmd: ['node', '../probe.mjs'], changedCmd: ['node', '../probe.mjs'] }] }],
+  }));
+  const green = r31bRun(d, r31bPoison, 'tdd', 'green', 'TEST-A-001');
+  assert.equal(green.code, 0, green.out);
+  const entry = fs.readFileSync(path.join(d, '.sdd/tdd.jsonl'), 'utf8').trim().split('\n').map(JSON.parse).at(-1);
+  assert.ok(entry.runnerEnv.allowlist.includes('PATH'));
+  assert.ok(entry.runnerEnv.removed.includes('PYTEST_ADDOPTS'));
+  assert.ok(!entry.runnerEnv.allowlist.includes('NODE_OPTIONS'));
+  for (const args of [[], ['--changed']]) {
+    const result = r31bRun(d, r31bPoison, 'gate', ...args, '--json');
+    assert.equal(result.code, 0, result.out);
+    const report = JSON.parse(result.out);
+    assert.equal(report.verdict, 'PASS');
+    assert.ok(report.runnerEnv.allowlist.includes('PATH'));
+    assert.ok(report.runnerEnv.removed.includes('SDD_CUSTOM_SELECTOR'));
+    assert.ok(report.lines.some((line) => line.includes('cmd p:probe')), result.out);
+    assert.ok(!JSON.stringify(report.runnerEnv).includes('selector_plugin'));
+  }
+});
+
+test('#341 inherited PYTEST_ADDOPTS cannot hide a real pytest regression in full or changed gates', {
+  skip: spawnSync('python3', ['-m', 'pytest', '--version']).status !== 0,
+}, () => {
+  const d = mini(T1SPEC, {
+    'pytest.ini': '[pytest]\n',
+    'test_a.py': `from pathlib import Path
+# @id TEST-A-001 @verifies REQ-A-001
+def test_a_001_passing():
+    assert True
+
+def test_regression():
+    assert not Path(".sdd/regression").exists(), "omitted regression"
+`,
+  }, ['python3', '-m', 'pytest', '-q', 'test_a.py', '-k', 'test_a_001_passing']);
+  const cp = path.join(d, '.sdd/config.json');
+  fs.writeFileSync(cp, JSON.stringify({
+    ...JSON.parse(fs.readFileSync(cp, 'utf8')), flaky: { retries: 0 },
+    checks: [{ name: 'test', cmd: ['python3', '-m', 'pytest', '-q', 'test_a.py'] }],
+  }));
+  const red = sdd(d, 'tdd', 'red', 'TEST-A-001', '--characterization', 'environment fixture');
+  assert.equal(red.code, 0, red.out);
+  const green = sdd(d, 'tdd', 'green', 'TEST-A-001');
+  assert.equal(green.code, 0, green.out);
+  assert.equal(sdd(d, 'gate').code, 0);
+  fs.writeFileSync(path.join(d, '.sdd/regression'), 'fail\n');
+  for (const args of [[], ['--changed']]) {
+    const result = r31bRun(d, { PYTEST_ADDOPTS: '-k test_a_001_passing' }, 'gate', ...args);
+    assert.equal(result.code, 1, result.out);
+    assert.match(result.out, /✗ cmd test/, result.out);
+    assert.match(result.out, /omitted regression/, result.out);
+  }
+});
+
+test('#341 env prefixes and shell assignments retain runner selection integrity', () => {
+  for (const [before, after] of [
+    [['env', 'PYTEST_ADDOPTS=', 'python3', '-m', 'pytest'], ['env', 'PYTEST_ADDOPTS=-k one', 'python3', '-m', 'pytest']],
+    [['/usr/bin/env', '-i', '--', 'cargo', 'test'], ['/usr/bin/env', '-i', '--', 'cargo', 'test', 'one']],
+    [['env', '-u', 'NODE_OPTIONS', 'node', '--test'], ['env', '-u', 'NODE_OPTIONS', 'node', '--test', '--test-name-pattern=one']],
+    [['sh', '-c', "PYTEST_ADDOPTS='' python3 -m pytest"], ['sh', '-c', "PYTEST_ADDOPTS='-k one' python3 -m pytest"]],
+    [['sh', '-lc', 'env CI=1 npm test'], ['sh', '-lc', 'env CI=1 npm test -- --grep one']],
+    [['env', 'CI=1', 'sh', '-c', 'go test ./...'], ['env', 'CI=1', 'sh', '-c', 'go test ./... -run One']],
+  ]) {
+    for (const location of ['root check', 'root testCmd', 'root changedCmd', 'project check', 'project testCmd', 'project changedCmd']) {
+      const scope = (cmd) => location.endsWith('check') ? { checks: [{ name: 'test', cmd, changedCmd: cmd }] } : { [location.split(' ')[1]]: cmd };
+      const config = (cmd) => location.startsWith('project') ? { projects: [{ root: 'p', ...scope(cmd) }] } : scope(cmd);
+      const d = r28b({ scopePolicy: 'strict', ...config(before) }, config(after));
+      for (const args of [['--no-run'], ['--changed', '--baseline', 'HEAD', '--no-run']]) {
+        const result = sdd(d, 'gate', ...args);
+        assert.equal(result.code, 1, `${location}: ${result.out}`);
+        assert.match(result.out, /✗ config: .*runner arguments\/selection changed/, result.out);
+      }
+      const acknowledged = sdd(d, 'gate', '--no-run', '--allow-config-weaken');
+      assert.match(acknowledged.out, /accepted by --allow-config-weaken/, acknowledged.out);
+      assert.doesNotMatch(acknowledged.out, /✗ config:/, acknowledged.out);
+    }
+  }
+  const cmd = ['env', 'PYTEST_ADDOPTS=', 'python3', '-m', 'pytest'];
+  const unchanged = r28b({ scopePolicy: 'strict', checks: [{ name: 'test', cmd }] }, {});
+  assert.doesNotMatch(sdd(unchanged, 'gate', '--no-run').out, /config:/);
+  const warning = r28b({ scopePolicy: 'warn', checks: [{ name: 'test', cmd }] }, {
+    checks: [{ name: 'test', cmd: ['env', 'PYTEST_ADDOPTS=-k one', 'python3', '-m', 'pytest'] }],
+  });
+  assert.match(sdd(warning, 'gate', '--no-run').out, /! config: .*runner arguments\/selection changed/);
+});
+
+test('#341 extended env options cannot obscure runner selection changes', () => {
+  for (const before of [
+    ['env', '--ignore-environment', '--unset=NODE_OPTIONS', '--chdir=.', 'node', '--test'],
+    ['env', '-C', '.', '--unset', 'NODE_OPTIONS', 'node', '--test'],
+    ['env', '-S', 'node --test'],
+    ['env', '--split-string', 'node --test'],
+    ['env', '--split-string=node --test'],
+  ]) {
+    const after = [...before, '--test-name-pattern=one'];
+    const d = r28b({ scopePolicy: 'strict', checks: [{ name: 'test', cmd: before }] }, {
+      checks: [{ name: 'test', cmd: after }],
+    });
+    const result = sdd(d, 'gate', '--no-run');
+    assert.match(result.out, /✗ config: .*runner arguments\/selection changed/, result.out);
+  }
+});
+
+test('#341 explicit PYTEST_ADDOPTS prefix requires review before hiding a real regression', {
+  skip: spawnSync('python3', ['-m', 'pytest', '--version']).status !== 0,
+}, () => {
+  const before = ['env', 'PYTEST_ADDOPTS=', 'python3', '-m', 'pytest', '-q', 'test_a.py'];
+  const d = mini(T1SPEC, {
+    'pytest.ini': '[pytest]\n',
+    'test_a.py': `from pathlib import Path
+# @id TEST-A-001 @verifies REQ-A-001
+def test_a_001_passing():
+    assert True
+
+def test_regression():
+    assert not Path(".sdd/regression").exists(), "omitted regression"
+`,
+  }, ['python3', '-m', 'pytest', '-q', 'test_a.py', '-k', 'test_a_001_passing']);
+  const cp = path.join(d, '.sdd/config.json');
+  const config = {
+    ...JSON.parse(fs.readFileSync(cp, 'utf8')), scopePolicy: 'strict', flaky: { retries: 0 },
+    checks: [{ name: 'test', cmd: before }],
+  };
+  fs.writeFileSync(cp, JSON.stringify(config));
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-A-001', '--characterization', 'env prefix fixture').code, 0);
+  assert.equal(sdd(d, 'tdd', 'green', 'TEST-A-001').code, 0);
+  assert.equal(sdd(d, 'gate').code, 0);
+  assert.equal(spawnSync('git', ['add', '-A'], { cwd: d }).status, 0);
+  assert.equal(spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'baseline'], { cwd: d }).status, 0);
+  fs.writeFileSync(path.join(d, '.sdd/regression'), 'fail\n');
+  fs.writeFileSync(cp, JSON.stringify({
+    ...config, checks: [{ name: 'test', cmd: ['env', 'PYTEST_ADDOPTS=-k test_a_001_passing', ...before.slice(2)] }],
+  }));
+  for (const args of [[], ['--changed', '--baseline', 'HEAD']]) {
+    const result = sdd(d, 'gate', ...args);
+    assert.equal(result.code, 1, result.out);
+    assert.match(result.out, /✗ config: .*runner arguments\/selection changed/, result.out);
+    const acknowledged = sdd(d, 'gate', ...args, '--allow-config-weaken');
+    assert.equal(acknowledged.code, 0, acknowledged.out);
+    assert.match(acknowledged.out, /accepted by --allow-config-weaken/, acknowledged.out);
+  }
+});
