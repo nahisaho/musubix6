@@ -1472,11 +1472,18 @@ function missingDeliverable(text) {
 }
 // a compile error located in a generated `SDD-TODO(stub)` placeholder (design 3.2): never a Red, the type must be filled by hand
 const stubTodoHit = (text) => {
-  for (const file of workspaceFiles().filter((f) => /\.rs$/.test(f))) {
+  for (const file of workspaceFiles().filter((f) => /\.(?:rs|py|[cm]?[jt]sx?)$/.test(f))) {
     let lines;
     try { lines = fs.readFileSync(path.join(ROOT, file), 'utf8').split('\n'); } catch { continue; }
+    const rust = file.endsWith('.rs'), esc = file.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     for (let i = 0; i < lines.length; i++) {
-      const el = /SDD-TODO\(stub\)/.test(lines[i]) && /\b(?:const|static|fn|struct|enum)\s+(\w+)/.exec(lines[i])?.[1];
+      if (!/SDD-TODO\(stub\)/.test(lines[i])) continue;
+      if (!rust) {
+        const el = /^\s*(?:export\s+)?(?:(?:const|let|var)\s+)?([\w$]+)\s*(?::[^=]+)?=/.exec(lines[i])?.[1];
+        if (el && new RegExp(`${esc}:${i + 1}(?!\\d)|${esc}\\(${i + 1},|${esc}", line ${i + 1}\\b`).test(text.replace(/\\/g, '/'))) return `error in the SDD-TODO(stub) element ${el} (${file}:${i + 1}): the stub could not infer its type/value, so this is not a Red — fill ${el} by hand, then re-run tdd red`;
+        continue;
+      }
+      const el = /\b(?:const|static|fn|struct|enum)\s+(\w+)/.exec(lines[i])?.[1];
       if (el && (text.includes(`${file}:${i + 1}:`) || new RegExp(`error[^\\n]*\\b${el}\\b|-->[^\\n]*\\n[^]*?\\b${el}\\b`).test(text))) return `compile error in the SDD-TODO(stub) element ${el} (${file}:${i + 1}): the stub could not infer its type, so this is not a Red — fill the type of ${el} by hand, then re-run tdd red`;
     }
   }
@@ -2270,22 +2277,37 @@ function stubRust(testPath, src, dir, made) {
     // a float literal beside the const (`EPSILON / 2.0`, `assert_eq!(EPSILON, 1e-5)`) makes it f64 (#310)
     const FL = '-?(?:\\d+\\.\\d+(?:[eE][+-]?\\d+)?|\\d+[eE][+-]?\\d+)(?:_?f(?:32|64))?\\b|-?\\d+_?f(?:32|64)\\b';
     if (new RegExp(`\\b${n}\\s*(?:[-+*/<>]=?|[=!]=)\\s*(?:${FL})|(?:${FL})\\s*(?:[-+*/<>]=?|[=!]=)\\s*${n}\\b|assert(?:_eq|_ne)?!\\(\\s*${n}\\s*,\\s*(?:${FL})|assert(?:_eq|_ne)?!\\(\\s*(?:${FL})\\s*,\\s*${n}\\b`).test(srcNoUse)) return fit('f64');
-    return new RegExp(`\\b${n}\\s*\\.\\s*(?:len|iter|is_empty)\\b|\\b${n}\\s*\\[`).test(srcNoUse) ? `pub const ${n}: &[i64] = &[];\n` : null;
+    if (new RegExp(`\\b${n}\\s*\\.\\s*(?:len|iter|is_empty)\\b|\\b${n}\\s*\\[`).test(srcNoUse)) return `pub const ${n}: &[i64] = &[];\n`;
+    // last resort, the type is literally written in the test: `let x: f64 = LIMIT;` / `LIMIT as f64`
+    const lit = new RegExp(`\\blet\\s+(?:mut\\s+)?\\w+\\s*:\\s*([^=;]+?)\\s*=\\s*${n}\\s*;`).exec(srcNoUse)?.[1] ?? new RegExp(`\\b${n}\\s+as\\s+([iuf](?:8|16|32|64|128|size))\\b`).exec(srcNoUse)?.[1];
+    return lit ? fit(lit.trim()) : null;
   };
   // `tdd stub --report`: confidence (shown | inferred | guessed) and the first test line that mentions the element (design 3.2)
   const report = [];
   const evidenceLine = (n) => { let full = src; try { full = fs.readFileSync(path.join(ROOT, testPath), 'utf8'); } catch { /* scoped source only */ } const at = full.split('\n').findIndex((l) => !/^\s*use\s/.test(l) && new RegExp(`\\b${n}\\b`).test(l)); return at < 0 ? testPath : `${testPath}:${at + 1}`; };
-  const note = (element, confidence) => { if (!report.some((r) => r.element === element)) report.push({ element, confidence, evidence: evidenceLine(element) }); };
+  const note = (element, confidence, extra = {}) => { if (!report.some((r) => r.element === element)) report.push({ element, confidence, evidence: evidenceLine(element), ...extra }); };
+  const reEsc = (x) => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  // report-only: a free fn whose return type is literally annotated in the test is `shown`; one defaulted to i64 with no evidence is `guessed` (the emitted code is unchanged)
+  const noteFn = (n, rr, cret, ret) => {
+    if (rr && new RegExp(`\\blet\\s+(?:mut\\s+)?\\w+\\s*:\\s*${reEsc(rr)}\\s*=\\s*&?[\\w.:]*(?<![\\w.])${n}\\s*(?:::\\s*<[^;(){}]*?>)?\\s*\\(`).test(srcNoUse)) return note(n, 'shown');
+    if (!rr && !cret) return note(n, 'guessed', { unmarked: `return type defaulted to ${ret}` });
+    note(n, 'inferred');
+  };
+  // a const typed in the test itself: `let x: f64 = LIMIT;` or `LIMIT as f64`, and the emitted type is that type
+  const shownConst = (n, cs) => {
+    const ty = new RegExp(`\\blet\\s+(?:mut\\s+)?\\w+\\s*:\\s*([^=;]+?)\\s*=\\s*&?${n}\\s*;`).exec(srcNoUse)?.[1] ?? new RegExp(`\\b${n}\\s+as\\s+([iuf](?:8|16|32|64|128|size))\\b`).exec(srcNoUse)?.[1];
+    return !!ty && cs.startsWith(`pub const ${n}: ${ty.trim()} =`);
+  };
   const itemStub = (n, crate_ = ownPkg) => {
     if (/^[A-Z][A-Z0-9_]+$/.test(n)) {
       const cs = constStub(n, crate_);
-      note(n, cs ? 'inferred' : 'guessed');
+      note(n, cs ? (shownConst(n, cs) ? 'shown' : 'inferred') : 'guessed');
       // no evidence for the type: a wrong concrete type would give a misleading Red, so the placeholder fails to compile at this element
       return cs ?? `pub const ${n}: () = (); // SDD-TODO(stub): type unknown — write the real type and value by hand\n`;
     }
     return itemStub0(n, crate_);
   };
-  const itemStub0 = (n, crate_ = ownPkg) => { if (/^[A-Z]/.test(n)) { const ts = traitStub(n) ?? typeStub(n, crate_); if (ts) note(n, 'inferred'); return ts; } const c = callInfo(src, n); c.ret ??= viaVar(`(?<![\\w.])(?:\\w+::)*${n}`); const ga = genericArgs(n, true)?.filter((a) => !a.startsWith("'")), pty = ga ? [] : argTypes(`(?<![\\w.])(?:\\w+::)*${n}`), g = ga ? genNames(ga) : c.args.map((_, i) => `A${i}`).filter((_, i) => !pty[i]); const rr = rustRet(`(?<![\\w.])(?:\\w+::)*${n}`, crate_); return `pub fn ${n}${g.length ? `<${g.join(', ')}>` : ''}(${c.args.map((_, i) => `_a${i}: ${ga ? 'impl Sized' : pty[i] ?? `A${i}`}`).join(', ')}) -> ${rr ?? (c.ret?.startsWith('opt:') ? `Option<${c.ret.slice(4)}>` : T[c.ret] ?? 'i64')} {\n    unimplemented!("${n}")\n}\n`; };
+  const itemStub0 = (n, crate_ = ownPkg) => { if (/^[A-Z]/.test(n)) { const ts = traitStub(n) ?? typeStub(n, crate_); if (ts) note(n, 'inferred'); return ts; } const c = callInfo(src, n); c.ret ??= viaVar(`(?<![\\w.])(?:\\w+::)*${n}`); const ga = genericArgs(n, true)?.filter((a) => !a.startsWith("'")), pty = ga ? [] : argTypes(`(?<![\\w.])(?:\\w+::)*${n}`), g = ga ? genNames(ga) : c.args.map((_, i) => `A${i}`).filter((_, i) => !pty[i]); const rr = rustRet(`(?<![\\w.])(?:\\w+::)*${n}`, crate_); const ret = rr ?? (c.ret?.startsWith('opt:') ? `Option<${c.ret.slice(4)}>` : T[c.ret] ?? 'i64'); noteFn(n, rr, c.ret, ret); return `pub fn ${n}${g.length ? `<${g.join(', ')}>` : ''}(${c.args.map((_, i) => `_a${i}: ${ga ? 'impl Sized' : pty[i] ?? `A${i}`}`).join(', ')}) -> ${ret} {\n    unimplemented!("${n}")\n}\n`; };
   // `use <crate>::a::b::{X, f};` => missing modules `a`, `a/b` (declared in the parent) holding the imported items (#69). Existing modules are never touched.
   const pkgName = (toml) => /\[package\][^[]*?^\s*name\s*=\s*"([^"]+)"/ms.exec(fs.readFileSync(toml, 'utf8'))?.[1]?.replace(/-/g, '_');
   // every workspace member crate by name, so `use other_crate::a::X` is stubbed in that crate (#76)
@@ -3381,6 +3403,13 @@ function stubFor(testPath, id) {
   const dir = path.resolve(ROOT, path.dirname(testPath));
   const made = [];
   const add = (abs, body) => { if (fs.existsSync(abs)) return; fs.mkdirSync(path.dirname(abs), { recursive: true }); fs.writeFileSync(abs, body); made.push(rel(abs)); };
+  // `tdd stub --report` rows for Python/TS elements: a pure-guess element also carries an SDD-TODO(stub) marker (design 3.2)
+  const report = [];
+  const note = (element, confidence) => {
+    if (report.some((r) => r.element === element)) return;
+    const at = src.split('\n').findIndex((l) => !/^\s*(?:from|import)\s/.test(l) && new RegExp(`(?<![\\w$])${element.replace(/\$/g, '\\$')}\\b`).test(l));
+    report.push({ element, confidence, evidence: at < 0 ? testPath : `${testPath}:${at + 1}` });
+  };
   const names = (clause) => {
     const typeOnly = /^type\s+[{*\w$]/.test(clause);
     const c = clause.replace(/^type\s+(?=[{*\w$])/, '');
@@ -3441,7 +3470,8 @@ function stubFor(testPath, id) {
     if (dflt) return `export default function ${n}${fnBody}`;
     if (new RegExp(`(?<![\\w$.])${n.replace(/\$/g, '\\$')}\\s*\\(`).test(S)) return `export function ${n}${fnBody}`;
     const plainConst = /^[A-Z][A-Z0-9_]+$/.test(n) && !new RegExp(`(?<![\\w$.])${n}\\s*[.\\[]`).test(S);
-    return plainConst ? `export const ${n}${ts ? ': any' : ''} = undefined;\n` : valueStub(n);
+    if (plainConst) note(n, 'guessed');
+    return plainConst ? `export const ${n}${ts ? ': any' : ''} = undefined; // SDD-TODO(stub): type unknown — write the real value by hand\n` : valueStub(n);
   };
   if (/\.py$/.test(testPath)) {
     // class stubs must construct: a throwing __init__ in a fixture/setup makes every test a weak Red
@@ -3485,7 +3515,7 @@ function stubFor(testPath, id) {
       const isConst = (n) => /^[A-Z][A-Z0-9_]+$/.test(n) && !new RegExp(`\\b${n}\\s*\\(`).test(scoped);
       // a name used only as an annotation (never called, no attribute access) is a typing.Protocol (#288)
       const isProto = (n) => /^[A-Z]/.test(n) && !isExc(n) && !isConst(n) && new RegExp(`(?:(?<!['"]\\s*):|->|\\[|\\|)\\s*${n}\\b`).test(scan) && !new RegExp(`(?<![\\w.])${n}\\s*[(.]|\\bisinstance\\([^)]*\\b${n}\\b|\\(\\s*${n}\\s*[,)]\\s*:?`).test(scan.replace(new RegExp(`^\\s*from[^\\n]*\\bimport[^\\n]*`, 'gm'), ''));
-      const stubOf = (n) => isProto(n) ? `class ${n}(Protocol):\n${methodsOf(scoped, n).map((k) => `    def ${k}(self, *a, **k): ...\n`).join('') || '    ...\n'}` : isExc(n) ? `class ${n}(Exception):\n    pass\n` : isConst(n) ? `${n} = ${new RegExp(`parametrize\\([^\\n]*\\b${n}\\b|\\bin\\s+${n}\\b|\\b${n}\\s*\\[`).test(scoped) ? '[]' : 'None'}\n` : /^[A-Z]/.test(n) ? `class ${n}:\n    def __init__(self, *a, **k):\n        pass\n${new RegExp(`\\bwith\\s[^\\n]*\\b${n}\\s*\\(`).test(scan) ? '\n    def __enter__(self, *a, **k):\n        return self\n\n    def __exit__(self, *a, **k):\n        return False\n' : ''}${methodsOf(scoped, n).map((k) => `\n    def ${k}(self, *a, **k):\n        raise NotImplementedError("${k}")\n`).join('')}` : `def ${n}(*a, **k):\n    raise NotImplementedError("${n}")\n`;
+      const stubOf = (n) => isProto(n) ? `class ${n}(Protocol):\n${methodsOf(scoped, n).map((k) => `    def ${k}(self, *a, **k): ...\n`).join('') || '    ...\n'}` : isExc(n) ? `class ${n}(Exception):\n    pass\n` : isConst(n) ? `${n} = ${new RegExp(`parametrize\\([^\\n]*\\b${n}\\b|\\bin\\s+${n}\\b|\\b${n}\\s*\\[`).test(scoped) ? (note(n, 'inferred'), '[]') : (note(n, 'guessed'), 'None  # SDD-TODO(stub): type unknown — write the real value by hand')}\n` : /^[A-Z]/.test(n) ? `class ${n}:\n    def __init__(self, *a, **k):\n        pass\n${new RegExp(`\\bwith\\s[^\\n]*\\b${n}\\s*\\(`).test(scan) ? '\n    def __enter__(self, *a, **k):\n        return self\n\n    def __exit__(self, *a, **k):\n        return False\n' : ''}${methodsOf(scoped, n).map((k) => `\n    def ${k}(self, *a, **k):\n        raise NotImplementedError("${k}")\n`).join('')}` : `def ${n}(*a, **k):\n    raise NotImplementedError("${n}")\n`;
       // `from pkg import mod` used only as `mod.f(...)` is a submodule: stub pkg/mod.py, never `def mod` in the package (#291)
       const isSub = (n) => !mod.startsWith('.') && /^[a-z_]\w*$/.test(n) && new RegExp(`\\b${localOf(n)}\\.\\w`).test(scoped) && !new RegExp(`(?<![\\w.])${localOf(n)}\\s*\\(`).test(scoped);
       const subBody = (n) => [...new Set([...scoped.matchAll(new RegExp(`\\b${localOf(n)}\\.([A-Za-z_]\\w*)\\s*\\(`, 'g'))].map((x) => x[1]))].map((f) => `def ${f}(*a, **k):\n    raise NotImplementedError("${f}")\n`).join('\n\n') || 'pass\n';
@@ -3539,7 +3569,7 @@ function stubFor(testPath, id) {
       }
       add(absOut, (ns.some(isProto) ? 'from typing import Protocol\n\n\n' : '') + ns.map(stubOf).join('\n\n'));
     }
-    return Object.assign([...new Set(made)], { realMissing: made.realMissing, notes: made.notes, checked });
+    return Object.assign([...new Set(made)], { realMissing: made.realMissing, notes: made.notes, checked, report });
   }
   if (/_test\.go$/.test(testPath)) return stubGo(testPath, scoped, dir, add, made);
   if (/\.rs$/.test(testPath)) return stubRust(testPath, scoped, dir, made);
@@ -3581,7 +3611,7 @@ function stubFor(testPath, id) {
     let changed = false;
     // an earlier value stub (`export const X: any = undefined;` / Proxy) of a name the test now constructs becomes a class (#257)
     for (const n of named) {
-      const val = new RegExp(`^export const ${n}(?:: any)? = (?:undefined;|new Proxy\\(function \\(\\) \\{\\}, \\{[\\s\\S]*?\\n\\}\\);)\\n`, 'm');
+      const val = new RegExp(`^export const ${n}(?:: any)? = (?:undefined;(?: \\/\\/ SDD-TODO\\(stub\\)[^\\n]*)?|new Proxy\\(function \\(\\) \\{\\}, \\{[\\s\\S]*?\\n\\}\\);)\\n`, 'm');
       if (isCls(S, n) && val.test(cur)) { cur = cur.replace(val, () => exportOf(n, S)); changed = true; }
     }
     for (const n of [...named, def].filter((x) => x && has(x))) {
@@ -3647,6 +3677,7 @@ function stubFor(testPath, id) {
     const target = /\.[cm]?[jt]sx?$/.test(abs) ? (ts ? stem + '.ts' : abs) : abs + (ts ? '.ts' : '.js');
     add(target, body(m[1]));
   }
+  made.report = report;
   return made;
 }
 
@@ -3807,12 +3838,16 @@ function setupOrigin(line, testPath, id, text = '') {
       const derived = bl.filter((_, i) => !bf[i]).flatMap((l) => { const m = /^\s*(?:(?:const|let|var)\s+)?([A-Za-z_$][\w$]*)\s*(?::[^=]+)?=(?!=)(.*)$/.exec(l); return m && vars.some((v) => plainRe(v).test(m[2])) ? [m[1]] : []; })
         // `const [a, b] = r` / `const { a, b: c } = r` destructure the stored result; `r.forEach((x) => ...)` binds its elements
         .concat(bl.flatMap((l) => { const m = /^\s*(?:const|let|var)\s+[\[{]([^\]}=]*)[\]}]\s*=(?!=)(.*)$/.exec(l); return m && vars.some((v) => plainRe(v).test(m[2])) ? m[1].split(',').map((n) => /([A-Za-z_$][\w$]*)\s*$/.exec(n.replace(/=.*$/, ''))?.[1]).filter(Boolean) : []; }))
-        .concat(bl.flatMap((l) => vars.flatMap((v) => { const m = new RegExp(`(?<![\\w$])${esc(v)}\\.\\w+\\(\\s*(?:async\\s*)?\\(?\\s*([A-Za-z_$][\\w$]*(?:\\s*,\\s*[A-Za-z_$][\\w$]*)*)\\s*\\)?\\s*=>`).exec(l); return m ? m[1].split(/\s*,\s*/) : []; })));
+        .concat(bl.flatMap((l) => vars.flatMap((v) => { const m = new RegExp(`(?<![\\w$])${esc(v)}\\.\\w+\\(\\s*(?:async\\s*)?\\(?\\s*([A-Za-z_$][\\w$]*(?:\\s*,\\s*[A-Za-z_$][\\w$]*)*)\\s*\\)?\\s*=>`).exec(l); return m ? m[1].split(/\s*,\s*/) : []; })))
+        // `for p in &s.polygons` / `for (const p of s.items)` / `for x in r:` bind the elements of the stored result (r25d)
+        .concat(bl.flatMap((l) => { const m = /^\s*for\s+(?:await\s+)?\(?\s*(?:(?:const|let|var)\s+)?(?:mut\s+)?([A-Za-z_$][\w$]*)\s+(?:of|in)\s+(.*?)\)?\s*(?:\{|:)?\s*$/.exec(l); return m && vars.some((v) => plainRe(v).test(m[2])) ? [m[1]] : []; }));
       vars = [...new Set([...vars, ...derived])];
     }
     vars = [...new Set([...vars, ...stateVars])];
     const goIf = (v) => new RegExp(`\\bif\\b[^{]*?(?<![\\w$.])${v.replace(/[$]/g, '\\$&')}(?![\\w$])`);
-    return vars.some((v) => body.some((l) => subject(v).test(l) || goIf(v).test(l) || plain(v).test(l))) || recvVars.some((v) => body.some((l) => new RegExp(`(?<![\\w$.])${esc(v)}(?:\\.|->)[\\w$]+\\s*\\(`).test(l))) || withVars.some((v) => body.some((l) => plain(v).test(l)));
+    // the stored result (or an argument the call filled) is the receiver of an asserted expression (`s.get()`, `out.getvalue()`, `r.lines()`): the call is the act whatever it is named (r25d)
+    const recvAsserted = (v) => new RegExp(`(?<![\\w$.])${esc(v)}(?:\\.|\\[)`);
+    return vars.some((v) => body.some((l) => subject(v).test(l) || goIf(v).test(l) || plain(v).test(l) || (recvAsserted(v).test(l) && !feeds(v, l)))) || recvVars.some((v) => body.some((l) => new RegExp(`(?<![\\w$.])${esc(v)}(?:\\.|->)[\\w$]+\\s*\\(`).test(l))) || withVars.some((v) => body.some((l) => plain(v).test(l)));
   };
   // `save(p, x)` then `got = load(p); assert got == x`: a bare stub call that shares an argument with the call whose bound result is asserted is the act (#283)
   const pairedAct = (hitLines) => {
@@ -4424,7 +4459,7 @@ function cmdTdd() {
     else out(scripted ? (made.checked ? `nothing to stub in ${t.path}: checked ${made.checked.rel + made.checked.abs} from-import(s) (${made.checked.rel} relative, ${made.checked.abs} absolute${made.checked.conftest ? `, ${made.checked.conftest} in conftest.py` : ''}); each resolves to an installed/existing module or is not a missing project module. Plain \`import x\` lines and non-Python subjects are not checked` : `no missing relative imports in ${t.path}`) : made.verified === 'ok' ? `nothing to stub for ${t.id} in ${t.path} (compile-checked)` : `nothing to stub for ${t.id} in ${t.path} (nothing new to generate: referenced code is already stubbed/defined, or the generator does not cover this construct); run tdd red, and if the test does not compile write the missing code by hand`);
     if (made.verified === 'partial') out(`! ${made.verifyError} — the requested test has no compile errors of its own; stub or implement the other tests (\`tdd stub <their ID>\`) before running the project's tests`);
     for (const n of [...new Set(made.notes ?? [])]) out(`! ${n}`);
-    for (const r of made.report ?? []) if (r.confidence === 'guessed') out(`! ${r.element}: type unknown (${r.evidence}) — emitted an SDD-TODO(stub) placeholder, fill the type by hand`);
+    for (const r of made.report ?? []) if (r.confidence === 'guessed') out(r.unmarked ? `! ${r.element}: ${r.unmarked} with no evidence (${r.evidence}) — check it by hand (not marked)` : `! ${r.element}: type unknown (${r.evidence}) — emitted an SDD-TODO(stub) placeholder, fill the type by hand`);
     if (flags.report) { out('stub report (element | confidence | evidence):'); for (const r of made.report ?? []) out(`  ${r.element} | ${r.confidence} | ${r.evidence}`); if (!made.report?.length) out('  (no inferred elements)'); }
     if (made.realMissing?.length) out(`! not stubbed: ${made.realMissing.join('; ')} — those modules hold real code, which stubs never edit: add the names by hand`);
     if (made.warnings?.length) out(`! not stubbed: ${[...new Set(made.warnings)].join('; ')} — add the exports by hand`);
@@ -5237,6 +5272,12 @@ function cmdGate() {
       const chg = [...changedFiles()].filter((f) => !f.startsWith('.sdd/'));
       const outside = chg.filter((f) => !pRoots.some((r) => f.startsWith(r)));
       const testLike = /\b(?:tests?|spec|jest|vitest|pytest|mocha|unit)\b/i.test(`${c.name} ${(c.cmd ?? []).join(' ')}`);
+      // skipping the root test check is only safe if the touched nested projects run checks of their own (r25b)
+      const bare = chg.length && !outside.length && testLike ? (cfg.projects ?? []).filter((p) => !(p.checks ?? []).length && chg.some((f) => f.startsWith(p.root.replace(/\/$/, '') + '/'))).map((p) => p.root.replace(/\/$/, '') + '/') : [];
+      if (bare.length) {
+        const bmsg = `cmd ${c.name}: root test check skipped but nested project ${bare.join(', ')} has no check of its own — nothing verifies these changes (add checks to the project, or run the root check)`;
+        if (cfg.scopePolicy === 'strict') add(false, `${bmsg} (scopePolicy strict)`); else lines.push(`! ${bmsg} (scopePolicy warn: set "scopePolicy": "strict" to fail)`);
+      }
       if (chg.length && !outside.length && testLike) { lines.push(`! cmd ${c.name}: all changed files are inside nested projects (${pRoots.filter((r) => chg.some((f) => f.startsWith(r))).join(', ')}) — root test check skipped`); continue; }
       if (chg.length && !outside.length) lines.push(`! cmd ${c.name}: changes are inside nested projects but this root check is workspace-wide tooling — running it`);
     }
@@ -5246,7 +5287,9 @@ function cmdGate() {
     if (flags.changed && c.changedCmd && ownChanged) {
       const ch = [...changedFiles()].filter((f) => !f.startsWith('.sdd/') && fs.existsSync(path.join(ROOT, f)) && fs.statSync(path.join(ROOT, f)).isFile());
       const tests = ch.filter((f) => /\.(test|spec)\.[cm]?[jt]sx?$|(^|\/)test_[^/]*\.py$|_test\.(py|go|exs)$/.test(f));
-      if (!ch.length) { lines.push(`! cmd ${c.name}: no changed files (input closure computed from ${changedFiles().size} changed path(s): none is an existing non-.sdd file) — skipped`); note('skipped'); continue; }
+      // a deletion is a change: the check must run in full, not skip as "no changed files" (r25b)
+      const gone = [...changedFiles()].filter((f) => !f.startsWith('.sdd/') && !fs.existsSync(path.join(ROOT, f)) && (!base || f.startsWith(base)));
+      if (!ch.length && !gone.length) { lines.push(`! cmd ${c.name}: no changed files (input closure computed from ${changedFiles().size} changed path(s): none is an existing non-.sdd file) — skipped`); note('skipped'); continue; }
       const scopes = [...new Set(ch.filter((f) => !tests.includes(f)).map((f) => /^(packages|apps|libs)\/[^/]+/.exec(f)?.[0] ?? path.posix.dirname(f)))];
       const rel2 = relatedTests(ch);
       const limit = c.hubThreshold ?? cfg.hubThreshold ?? 0.25;
@@ -5284,6 +5327,7 @@ function cmdGate() {
       if (!noScope) cmd = cmd.flatMap((a) => subst[a] ?? [a]);
       if (!noScope && Object.keys(scopeVals).length) lines.push(`! cmd ${c.name}: scoped → ${cmd.join(' ').slice(0, 200)}`);
       scoped = !noScope;
+      if (!ch.length) { lines.push(`! cmd ${c.name}: only deleted files changed (${gone.slice(0, 3).join(', ')}${gone.length > 3 ? ', …' : ''}) — running the full check`); cmd = c.cmd; scoped = false; widened = true; }
     }
     let r = run(cmd, scoped ? (c.changedTimeoutMs ?? cfg.changedTimeoutMs ?? 60000) : (c.timeoutMs ?? cfg.timeoutMs ?? 120000), c.cwd);
     // a scoped run that executed no tests (e.g. `vitest related data.json`) proves nothing: run the full check instead
