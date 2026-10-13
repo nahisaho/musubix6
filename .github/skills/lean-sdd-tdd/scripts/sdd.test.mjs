@@ -9384,6 +9384,7 @@ test('r28b a config change that does not weaken stays silent', () => {
   assert.doesNotMatch(sdd(d, 'gate', '--changed').out, /config:/);
 });
 
+<<<<<<< HEAD
 // r29a #327: a lockfile in a workspace sub-root widens like its manifest; the change set survives a check that rewrites it
 const r29a = (files, lock, firstCmd) => {
   const d = mini('---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | x shall hold. | TEST-A-001 |\n', { ...files, [lock]: 'v1\n' });
@@ -9435,4 +9436,33 @@ test('r29b a rewritten ledger line fails; a pure append and merge-ledger stay fi
   ls[0] = ls[0].replace('"exit":', '"exit":9,"x":');
   fs.writeFileSync(lp, ls.join('\n') + '\n');
   assert.match(sdd(d, 'gate', '--changed').out, /✗ ledger: .*tdd\.jsonl/);
+=======
+const r29c = () => {
+  const spec = T1SPEC + '| REQ-A-002 | two shall hold. | TEST-A-002 |\n';
+  const d = mini(spec, { 'a.test.mjs': jsTest('// @id TEST-A-002 @verifies REQ-A-002\ntest(\'TEST-A-002 y\', () => {\n  assert.ok(1);\n});\n') }, PASS);
+  for (const t of ['TEST-A-001', 'TEST-A-002']) { sdd(d, 'tdd', 'red', t, '--characterization', 'x'); assert.equal(sdd(d, 'tdd', 'green', t).code, 0); }
+  fs.writeFileSync(specPath(d), T1SPEC);
+  fs.writeFileSync(path.join(d, 'a.test.mjs'), jsTest());
+  return d;
+};
+
+test('r29c a REQ with Green evidence deleted from the spec warns, fails under strict, and approve retire clears it (#329)', () => {
+  const d = r29c();
+  const cp = path.join(d, '.sdd/config.json');
+  fs.writeFileSync(cp, JSON.stringify({ ...JSON.parse(fs.readFileSync(cp, 'utf8')), scopePolicy: 'warn' }));
+  for (const a of [['gate'], ['gate', '--changed']]) {
+    const w = sdd(d, ...a);
+    assert.match(w.out, /! req REQ-A-002: has Green evidence.*approve retire REQ-A-002/, w.out);
+  }
+  fs.writeFileSync(cp, JSON.stringify({ ...JSON.parse(fs.readFileSync(cp, 'utf8')), scopePolicy: 'strict' }));
+  for (const a of [['gate'], ['gate', '--changed']]) {
+    const s = sdd(d, ...a);
+    assert.equal(s.code, 1, s.out);
+    assert.match(s.out, /✗ req REQ-A-002/, s.out);
+  }
+  assert.match(sdd(d, 'approve', 'retire', 'REQ-A-002', '--by', 'ai:x').out, /REFUSED/);
+  assert.match(sdd(d, 'approve', 'retire', 'REQ-A-001', '--by', 'alice').out, /REFUSED.*still exists/);
+  assert.equal(sdd(d, 'approve', 'retire', 'REQ-A-002', '--by', 'alice').code, 0);
+  assert.doesNotMatch(sdd(d, 'gate').out, /req REQ-A-002/);
+>>>>>>> fix/r29c
 });

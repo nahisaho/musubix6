@@ -32,6 +32,7 @@ const CONFIG = path.join(SDD, 'config.json');
 const APPROVALS = path.join(SDD, 'approvals.json');
 const PREPARE_SHOWN = path.join(SDD, 'prepare-shown.json');
 const LEDGER = path.join(SDD, 'tdd.jsonl');
+const RETIRED_REQS = path.join(SDD, 'retired-reqs.json');
 
 const sha = (b) => createHash('sha256').update(b).digest('hex');
 const rel = (p) => path.relative(ROOT, p).split(path.sep).join('/');
@@ -1668,6 +1669,14 @@ function cmdApprove() {
   const specs = loadSpecs();
   const feature = pos[2];
   if (sub && !['prepare', 'record', 'retire'].includes(sub) && !feature && specs.some((s) => s.feature === sub)) { out(`unknown approve subcommand "${sub}" — "${sub}" is a feature. usage: approve prepare ${sub} | approve record ${sub} --by <name>`); return 2; }
+  if (sub === 'retire' && /^REQ-/.test(feature ?? '')) {
+    if (specs.some((s) => s.reqs.some((q) => q.id === feature))) { out(`REFUSED: ${feature} still exists in a spec; retire only applies to removed REQs`); return 1; }
+    const by = typeof flags.by === 'string' ? flags.by.normalize('NFKC').replace(/[\u200b-\u200f\u2060\ufeff\u202a-\u202e\u2066-\u2069\u00ad]/g, '').trim() : '';
+    if (!by || /^ai\s*(:|$)/i.test(by)) { out('REFUSED: retiring a REQ needs a human approver: approve retire <REQ-ID> --by <human name>'); return 1; }
+    writeJson(RETIRED_REQS, { ...readJson(RETIRED_REQS, {}), [feature]: { by, at: new Date().toISOString() } });
+    out(`retired ${feature} by ${by}`);
+    return 0;
+  }
   if (sub === 'retire') {
     const all = readJson(APPROVALS, {});
     if (!all[feature]) { out(`no lock for "${feature ?? ''}"`); return 2; }
@@ -5250,6 +5259,14 @@ function cmdGate() {
   for (const s of specs.filter(needsLock)) { const st = approvalState(s); const ap = readJson(APPROVALS, {})[s.feature]; add(st === 'ok', `lock ${s.feature}: ${st}${ap ? ` [${ap.kind}${ap.kind === 'ai' ? `, review ${ap.review ? (ap.reviewSha ? 'file' : 'summary') : 'none'}` : ''}]` : ''}${s.approval === 'human' ? ' (human required)' : ''}${lockDrift(s) ? ` (policy loosened: ${lockDrift(s)} — human re-approval needed)` : ''}`); const dp = designProblem(s); if (dp) add(false, `design ${s.feature}: missing`, [dp]); }
   for (const [f, a] of Object.entries(readJson(APPROVALS, {}))) if (!specs.some((s) => s.feature === f) && (a.tier === 'T2' || a.requireHuman)) add(false, `lock ${f}: spec removed`, [`a locked ${a.tier === 'T2' ? 'T2' : 'human'} spec disappeared — if intended: approve retire ${f} --by <human name>`]);
 
+  {
+    const live = new Set(specs.flatMap((x) => x.reqs.map((q) => q.id))), retired = readJson(RETIRED_REQS, {});
+    const gone = [...new Set(readLedger().filter((e) => e.type === 'green' && e.req && !live.has(e.req) && !retired[e.req]).map((e) => e.req))];
+    for (const r of gone) {
+      const msg = `req ${r}: has Green evidence but no longer exists in any spec — if the removal is intended: approve retire ${r} --by <human name>; otherwise restore the REQ`;
+      if (readJson(CONFIG, {}).scopePolicy === 'strict') add(false, `${msg} (scopePolicy strict)`); else lines.push(`! ${msg} (scopePolicy warn: set "scopePolicy": "strict" to fail)`);
+    }
+  }
   const t = applyBaseline(traceCheck(ents, dups, specs));
   add(!t.errors.length, `trace: ${[...t.reqs.values()].filter((r) => !r.deferred).length} REQ${[...t.reqs.values()].some((r) => r.deferred) ? ` (+${[...t.reqs.values()].filter((r) => r.deferred).length} deferred, not tested: ${[...t.reqs.values()].filter((r) => r.deferred).map((r) => r.id).join(', ')})` : ''}, ${t.errors.length} errors${t.warnings.length ? `, ${t.warnings.length} warnings` : ''}`, [...t.errors.slice(0, 6), ...t.warnings.slice(0, flags.verbose ? t.warnings.length : 3).map((w) => `warning: ${w}`), ...(t.warnings.length > 3 && !flags.verbose ? [`… +${t.warnings.length - 3} more warnings (all: trace --verbose)`] : [])]);
 
