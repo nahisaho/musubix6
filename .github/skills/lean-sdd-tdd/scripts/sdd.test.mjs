@@ -8628,3 +8628,30 @@ test('r24c suspect Red: heuristic setup-call Red is recorded as suspect, accepte
   assert.equal(sdd(d, 'tdd', 'green', 'TEST-CALC-001').code, 0);
   assert.match(sdd(d, 'gate', '--no-run').out, /1 suspect Red.*TEST-CALC-001/);
 });
+
+// ---- r25c ----
+test('r25c gate --json exposes weak/suspect Reds', () => {
+  const d = mini('---\nfeature: calc\ntier: T1\n---\n| REQ-CALC-001 | calc shall add. | TEST-CALC-001 |\n', {});
+  const j = JSON.parse(sdd(d, 'gate', '--no-run', '--json').out);
+  assert.deepEqual(j.tdd, { weak: [], suspect: [] });
+});
+test('r25c gate --changed --explain prints closure and per-file claims; default output unchanged', () => {
+  const d = scopeProj();
+  fs.appendFileSync(path.join(d, 'app/x.mjs'), '// c\n');
+  const e = sdd(d, 'gate', '--changed', '--explain');
+  assert.match(e.out, /explain app:ok: scope=exact closure=1 \[app\]/, e.out);
+  assert.match(e.out, /app\/x\.mjs: claimed: under app/, e.out);
+  assert.doesNotMatch(sdd(d, 'gate', '--changed').out, /explain/);
+  assert.ok(JSON.parse(sdd(d, 'gate', '--changed', '--explain', '--json').out).scope.explain.length);
+});
+for (const [name, manifest, rootFile] of [['go', 'go.mod', 'go.sum'], ['java', 'pom.xml', 'build.gradle.kts'], ['elixir', 'mix.exs', 'mix.lock'], ['csharp', 'App.csproj', 'Directory.Build.props']]) {
+  test(`r25c root ${rootFile} change widens to ${name} projects`, () => {
+    const d = scopeProj({}, { [`app/${manifest}`]: '', [rootFile]: 'a\n' });
+    spawnSync('git', ['add', '-A'], { cwd: d });
+    spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'm'], { cwd: d });
+    fs.appendFileSync(path.join(d, rootFile), 'b\n');
+    const r = sdd(d, 'gate', '--changed');
+    assert.match(r.out, /✓ cmd app:ok/, r.out);
+    assert.match(r.out, /scope: exact=0 widened=1 unknown=0/, r.out);
+  });
+}

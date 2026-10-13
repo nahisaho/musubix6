@@ -8,7 +8,7 @@ import os from 'node:os';
 import { builtinModules } from 'node:module';
 import path from 'node:path';
 
-const BOOL = new Set(['allow-setup-red', 'missing-module', 'baseline', 'weak', 'changed', 'json', 'no-run', 'verbose', 'help', 'stale', 'report']);
+const BOOL = new Set(['allow-setup-red', 'missing-module', 'baseline', 'weak', 'changed', 'json', 'no-run', 'verbose', 'help', 'stale', 'report', 'explain']);
 function parseArgs(argv) {
   const pos = [];
   const flags = {};
@@ -4904,6 +4904,10 @@ const WORKSPACE_ROOT = [
   [/^(Cargo\.(toml|lock)|rust-toolchain(\.toml)?|\.cargo\/config(\.toml)?)$/, ['Cargo.toml']],
   [/^(package\.json|package-lock\.json|npm-shrinkwrap\.json|pnpm-lock\.yaml|pnpm-workspace\.yaml|yarn\.lock|bun\.lockb?)$/, ['package.json']],
   [/^(pyproject\.toml|requirements[^/]*\.txt|uv\.lock|poetry\.lock)$/, ['pyproject.toml', 'requirements.txt', 'pytest.ini']],
+  [/^(go\.(mod|sum|work|work\.sum))$/, ['go.mod']],
+  [/^(pom\.xml|build\.gradle(\.kts)?|settings\.gradle(\.kts)?|gradle\.properties)$/, ['pom.xml', 'build.gradle', 'build.gradle.kts', 'settings.gradle', 'settings.gradle.kts']],
+  [/^(mix\.exs|mix\.lock)$/, ['mix.exs']],
+  [/^([^/]+\.(csproj|sln|slnx)|Directory\.(Build|Packages)\.(props|targets)|global\.json|nuget\.config)$/i, [/\.(csproj|sln|slnx)$/]],
 ];
 function gitFiles(glob) {
   const r = spawnSync('git', ['ls-files', '-co', '--exclude-standard', glob], { cwd: ROOT, encoding: 'utf8' });
@@ -5196,9 +5200,10 @@ function cmdGate() {
   // a root Cargo.toml/Cargo.lock of a workspace whose members live under a project dir belongs to that project (#308)
   const cargoOwned = cargoMembersOf;
   // a root manifest/lockfile/toolchain file widens to every project of that ecosystem (design 3.1)
-  const widenOwned = (f) => { const w = WORKSPACE_ROOT.find(([re]) => re.test(f)); return w ? (cfg.projects ?? []).filter((p) => w[1].some((m) => fs.existsSync(path.join(ROOT, p.root, m)))).map((p) => normDep(p.root)) : []; };
+  const widenOwned = (f) => { const w = WORKSPACE_ROOT.find(([re]) => re.test(f)); return w ? (cfg.projects ?? []).filter((p) => w[1].some((m) => m instanceof RegExp ? (fs.existsSync(path.join(ROOT, p.root)) && fs.readdirSync(path.join(ROOT, p.root)).some((x) => m.test(x))) : fs.existsSync(path.join(ROOT, p.root, m)))).map((p) => normDep(p.root)) : []; };
   const artConsumers = (f) => { const u = Object.entries(cfg.artifacts ?? {}).find(([a]) => normDep(a) === f)?.[1]; return [...(u === undefined ? [] : [].concat(u).map(normDep)), ...cargoOwned(f), ...widenOwned(f)]; };
   const scopeCount = { exact: 0, widened: 0, unknown: 0 };
+  const explain = [];
   const allChecks = [...(cfg.checks ?? []), ...(cfg.projects ?? []).flatMap((p) => (p.checks ?? []).map((c) => ({ ...c, name: `${p.root}:${c.name}`, cwd: p.root, dependsOn: depClosure(p) })))];
   let sharedHinted = false;
   // a changed spec puts the projects holding that feature's tests/code in scope; the project check then runs in full
@@ -5219,7 +5224,14 @@ function cmdGate() {
     let cmd = c.cmd;
     const base = c.cwd ? c.cwd.replace(/\/$/, '') + '/' : '';
     const inDeps = (f) => (c.dependsOn ?? []).some((d) => { const x = normDep(d); return f === x || f.startsWith(x + '/'); }) || (!!base && artConsumers(f).some((u) => (u + '/').startsWith(base)));
-    if (c.cwd && flags.changed && !specOwned(c.cwd) && ![...changedFiles()].some((f) => f.startsWith(base) || inDeps(f))) { lines.push(`! cmd ${c.name}: no changed files in ${c.cwd}${c.dependsOn?.length ? ` or its dependencies (${c.dependsOn.join(', ')})` : ''} — skipped (input closure: ${c.cwd} + ${(c.dependsOn ?? []).length} dependsOn, disjoint from ${changedFiles().size} changed path(s))`); continue; }
+    const note = (scope) => {
+      if (!flags.explain || !flags.changed) return;
+      const chg = [...changedFiles()].filter((f) => !f.startsWith('.sdd/'));
+      const closure = c.cwd ? [c.cwd.replace(/\/$/, ''), ...(c.dependsOn ?? []).map(normDep)] : chg;
+      const why = (f) => specOwned(c.cwd ?? '') && c.cwd ? 'claimed: changed spec owns this project' : base && f.startsWith(base) ? `claimed: under ${c.cwd}` : (c.dependsOn ?? []).some((d) => { const x = normDep(d); return f === x || f.startsWith(x + '/'); }) ? 'claimed: dependsOn' : base && artConsumers(f).some((u) => (u + '/').startsWith(base)) ? 'claimed: artifact/workspace-root consumer' : c.cwd ? 'not claimed by this check' : 'claimed: root check covers it';
+      explain.push({ check: c.name, scope, closureSize: closure.length, closure: closure.slice(0, 10), files: chg.map((f) => ({ file: f, why: why(f) })) });
+    };
+    if (c.cwd && flags.changed && !specOwned(c.cwd) && ![...changedFiles()].some((f) => f.startsWith(base) || inDeps(f))) { lines.push(`! cmd ${c.name}: no changed files in ${c.cwd}${c.dependsOn?.length ? ` or its dependencies (${c.dependsOn.join(', ')})` : ''} — skipped (input closure: ${c.cwd} + ${(c.dependsOn ?? []).length} dependsOn, disjoint from ${changedFiles().size} changed path(s))`); note('skipped'); continue; }
     const pRoots = (cfg.projects ?? []).map((p) => p.root.replace(/\/$/, '') + '/');
     if (!c.cwd && flags.changed && pRoots.length) {
       const chg = [...changedFiles()].filter((f) => !f.startsWith('.sdd/'));
@@ -5234,7 +5246,7 @@ function cmdGate() {
     if (flags.changed && c.changedCmd && ownChanged) {
       const ch = [...changedFiles()].filter((f) => !f.startsWith('.sdd/') && fs.existsSync(path.join(ROOT, f)) && fs.statSync(path.join(ROOT, f)).isFile());
       const tests = ch.filter((f) => /\.(test|spec)\.[cm]?[jt]sx?$|(^|\/)test_[^/]*\.py$|_test\.(py|go|exs)$/.test(f));
-      if (!ch.length) { lines.push(`! cmd ${c.name}: no changed files (input closure computed from ${changedFiles().size} changed path(s): none is an existing non-.sdd file) — skipped`); continue; }
+      if (!ch.length) { lines.push(`! cmd ${c.name}: no changed files (input closure computed from ${changedFiles().size} changed path(s): none is an existing non-.sdd file) — skipped`); note('skipped'); continue; }
       const scopes = [...new Set(ch.filter((f) => !tests.includes(f)).map((f) => /^(packages|apps|libs)\/[^/]+/.exec(f)?.[0] ?? path.posix.dirname(f)))];
       const rel2 = relatedTests(ch);
       const limit = c.hubThreshold ?? cfg.hubThreshold ?? 0.25;
@@ -5281,6 +5293,7 @@ function cmdGate() {
       widened = true;
       r = run(c.cmd, c.timeoutMs ?? cfg.timeoutMs ?? 120000, c.cwd);
     }
+    if (flags.changed) note(scoped || (!widened && !c.changedCmd && base && [...changedFiles()].some((f) => f.startsWith(base))) ? 'exact' : 'widened');
     if (flags.changed) scopeCount[scoped || (!widened && !c.changedCmd && base && [...changedFiles()].some((f) => f.startsWith(base))) ? 'exact' : 'widened']++;
     if (r.timedOut) { add(false, `cmd ${c.name} TIMEOUT after ${(r.ms / 1000).toFixed(0)}s ${scoped ? '— narrow changedCmd (e.g. {changedTests} {changedScopes}) or raise changedTimeoutMs; run full gate (no --changed) before merge' : '— raise timeoutMs in .sdd/config.json'}`); continue; }
     if (r.exit === 0 && (NO_PASSED.test(r.text) || pytestNoExecution(r.text) || noExecution(r.text))) { lines.push(`! cmd ${c.name}: ${ZERO_TESTS.test(r.text) && !NO_PASSED.test(r.text) ? 'no tests found or ran' : 'all tests skipped/todo/xfail'} — INCOMPLETE, no passing assertions`); incomplete = true; continue; }
@@ -5337,10 +5350,14 @@ function cmdGate() {
       appendLedger({ type: 'scope-waiver', globs: flagGlobs, files: waived.flag.slice(0, 50) });
     }
     lines.push(`scope: exact=${scopeCount.exact} widened=${scopeCount.widened} unknown=${scopeCount.unknown}`);
-    scopeJson = { ...scopeCount, policy: cfg.scopePolicy === 'strict' ? 'strict' : 'warn', unscoped, waived };
+    if (flags.explain) {
+      for (const x of explain) { lines.push(`explain ${x.check}: scope=${x.scope} closure=${x.closureSize} [${x.closure.join(', ')}${x.closureSize > 10 ? ', …' : ''}]`); for (const f of x.files.slice(0, 20)) lines.push(`  ${f.file}: ${f.why}`); }
+      for (const f of unscoped) lines.push(`explain unknown: ${f}: not claimed by any check/project`);
+    }
+    scopeJson = { ...scopeCount, policy: cfg.scopePolicy === 'strict' ? 'strict' : 'warn', unscoped, waived, ...(flags.explain ? { explain } : {}) };
   }
   const verdict = fail ? 'FAIL' : incomplete ? 'INCOMPLETE' : 'PASS';
-  if (flags.json) out(JSON.stringify({ verdict, lines, ...(scopeJson ? { scope: scopeJson } : {}) }));
+  if (flags.json) out(JSON.stringify({ verdict, lines, tdd: { weak: weakIds, suspect: suspectIds }, ...(scopeJson ? { scope: scopeJson } : {}) }));
   else { out(`SDD GATE ${verdict}`); lines.forEach((l) => out(l)); }
   return fail ? 1 : incomplete ? 2 : 0;
 }
