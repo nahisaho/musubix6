@@ -8864,3 +8864,52 @@ test('r24d ledger invariant: merge-ledger is idempotent (merge twice = merge onc
     assert.equal(fs.readFileSync(ledgerPath, 'utf8'), once, 'second merge changed the ledger');
   }
 });
+
+test('#r25a TS const with no evidence gets an SDD-TODO(stub) marker and is reported guessed; called/class output is unchanged', () => {
+  const d = mini(R24B_SPEC, { 'test/h.test.ts': "import { MAX, run } from '../src/lib';\n\n/** @id TEST-H-001 @verifies REQ-H-001 */\ntest('h', () => { expect(MAX).toBe(1); run(); });\n" });
+  const r = sdd(d, 'tdd', 'stub', 'TEST-H-001', '--report');
+  const lib = fs.readFileSync(path.join(d, 'src/lib.ts'), 'utf8');
+  assert.match(lib, /export const MAX: any = undefined; \/\/ SDD-TODO\(stub\): type unknown/, lib);
+  assert.match(lib, /export function run\(\.\.\._args: any\[\]\): any \{/, lib);
+  assert.doesNotMatch(lib, /run[^\n]*SDD-TODO/, lib);
+  assert.match(r.out, /MAX \| guessed \| test\/h\.test\.ts:\d+/, r.out);
+  assert.match(r.out, /! MAX: type unknown/, r.out);
+});
+
+test('#r25a Python const with no evidence gets an SDD-TODO(stub) marker; an evidenced `[]` const stays unmarked', () => {
+  const d = mini(R24B_SPEC, { 'test_h.py': 'from lib import LIMIT, ROWS\n\n# @id TEST-H-001 @verifies REQ-H-001\ndef test_h():\n    assert LIMIT\n    assert ROWS[0] == 1\n' });
+  const r = sdd(d, 'tdd', 'stub', 'TEST-H-001', '--report');
+  const lib = fs.readFileSync(path.join(d, 'lib.py'), 'utf8');
+  assert.match(lib, /^LIMIT = None  # SDD-TODO\(stub\): type unknown/m, lib);
+  assert.match(lib, /^ROWS = \[\]$/m, lib);
+  assert.match(r.out, /LIMIT \| guessed \| test_h\.py:\d+/, r.out);
+  assert.match(r.out, /ROWS \| inferred \|/, r.out);
+});
+
+test('#r25a tdd red rejects a load error located in a marked TS/JS stub element', () => {
+  const d = mini(R24B_SPEC, { 'h.test.mjs': "import { MAX } from './lib.mjs';\n\n/** @id TEST-H-001 @verifies REQ-H-001 */\ntest('h', () => { MAX; });\n", 'lib.mjs': 'export const MAX = ; // SDD-TODO(stub): type unknown\n' }, ['node', '--test', 'h.test.mjs']);
+  const r = sdd(d, 'tdd', 'red', 'TEST-H-001');
+  assert.match(r.out, /REJECTED[^\n]*SDD-TODO\(stub\) element MAX[^\n]*fill MAX by hand/, r.out);
+});
+
+test('#r25a tdd red rejects a load error located in a marked Python stub element', () => {
+  const d = mini(R24B_SPEC, { 'test_h.py': 'from lib import LIMIT\n\n# @id TEST-H-001 @verifies REQ-H-001\ndef test_h():\n    assert LIMIT\n', 'lib.py': 'LIMIT = (  # SDD-TODO(stub): type unknown\n' }, ['python3', '-m', 'pytest', '-q', 'test_h.py']);
+  const r = sdd(d, 'tdd', 'red', 'TEST-H-001');
+  assert.match(r.out, /REJECTED[^\n]*SDD-TODO\(stub\) element LIMIT[^\n]*fill LIMIT by hand/, r.out);
+});
+
+test('#r25a Rust: a const typed in the test is reported shown; a fn with no return evidence is guessed (report-only, code unchanged)', cargoOk, () => {
+  const d = mini(R24B_SPEC, {
+    'Cargo.toml': '[package]\nname = "repro"\nversion = "0.1.0"\nedition = "2021"\n',
+    'src/lib.rs': '',
+    'tests/h_test.rs': 'use repro::{LIMIT, run, size};\n\n// @id TEST-H-001\n// @verifies REQ-H-001\n#[test]\nfn test_h_001() {\n    let x: f64 = LIMIT;\n    let n: usize = size(2);\n    run(1);\n    assert!(x > 0.0 && n > 0);\n}\n',
+  });
+  const r = sdd(d, 'tdd', 'stub', 'TEST-H-001', '--report');
+  const lib = fs.readFileSync(path.join(d, 'src/lib.rs'), 'utf8');
+  assert.match(r.out, /LIMIT \| shown \|/, r.out);
+  assert.match(r.out, /size \| shown \|/, r.out);
+  assert.match(r.out, /run \| guessed \|/, r.out);
+  assert.match(r.out, /! run: return type defaulted to i64 with no evidence/, r.out);
+  assert.match(lib, /pub fn run[^\n]*-> i64 \{/, lib);
+  assert.doesNotMatch(lib, /run[^\n]*SDD-TODO/, lib);
+});
