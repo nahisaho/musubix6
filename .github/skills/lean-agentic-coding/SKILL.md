@@ -27,10 +27,12 @@ Unsure → pick the higher tier. Escalate mid-task if a T2 trigger appears; neve
 Keep one file per feature (`docs/contract/<feature>.md` or the repo's existing equivalent) with: goal, `REQ-<F>-nnn` EARS lines, non-goals, verification command per REQ. No second requirements/design copy. Missing → write ≤30 lines, not a long spec. See `references/contract-template.md`.
 
 ## 3. T1 loop
-1. Failing test first, named/annotated with its REQ ID (`@verifies REQ-F-001`). Run it, confirm Red for the right reason.
+0. **PASS conditions and counterexamples first**: use GPT-6.1 Sol to define observable success conditions and concrete violations in the existing contract (`REQ | PASS condition | counterexample | TEST/command | evidence`). Check contract, inputs, execution, verdict, history and integration risks; explain non-applicable stages. Derive expectations from the contract or an independent reference, never the implementation's output.
+1. Failing test first, named/annotated with its REQ ID (`@verifies REQ-F-001`). Run it, confirm Red for the right assertion, not a setup/compile failure or skip. Add valid-input controls and relevant boundary/error cases.
 2. Minimal code to Green; `@implements REQ-F-001` on the code. Refactor only after Green.
-3. `scripts/gate.sh` (typecheck + lint + tests). Fix, rerun; stop after 3 identical failures and report the blocker.
-4. Never weaken tests, skip checks, or count skipped as passed.
+3. For each distinct changed failure mechanism, apply an isolated, bounded mutation and confirm the regression catches it; restore it and rerun affected checks. A gate fix must reject invalid evidence AND accept valid evidence. Record the command and observed result in the contract; mark unrun checks explicitly.
+4. `scripts/gate.sh` (typecheck + lint + tests). Fix, rerun; stop after 3 identical failures and report the blocker.
+5. Never weaken tests, skip checks, or count skipped as passed. Missing or unparseable evidence does not establish completion. Counterexample quality and mutation coverage are agent obligations, not mechanically enforced by this skill.
 
 ## 4. T2 additions (see `references/t2-protocol.md`)
 1. **Spike**: isolated scratch run of the riskiest assumption (real runtime, all command shapes) before design is final; record result in 3–5 lines.
