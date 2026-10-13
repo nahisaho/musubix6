@@ -5409,6 +5409,67 @@ function pytestPluginDeclarations(text, file) {
   }
   return declarations;
 }
+function cargoWrapperTokens(text) {
+  const result = [];
+  const refuse = (why) => { throw new Error(`REFUSED: unresolved Cargo compiler wrapper TOML: ${why}`); };
+  for (let i = 0; i < text.length;) {
+    const ch = text[i];
+    if (ch === '#') { while (i < text.length && text[i] !== '\n') i++; continue; }
+    if (ch === '\n') { result.push({ kind: 'separator', value: '\n' }); i++; continue; }
+    if (/\s/.test(ch)) { i++; continue; }
+    if (ch === '"' || ch === "'") {
+      const quote = ch, multi = text.slice(i, i + 3) === ch.repeat(3);
+      i += multi ? 3 : 1;
+      if (multi && text.slice(i, i + 2) === '\r\n') i += 2;
+      else if (multi && text[i] === '\n') i++;
+      let value = '', closed = false;
+      while (i < text.length) {
+        if (text[i] === quote) {
+          let end = i;
+          while (text[end] === quote) end++;
+          const count = end - i;
+          if (!multi || count >= 3) {
+            if (multi && count > 5) refuse('excess closing quotes');
+            value += multi ? quote.repeat(count - 3) : '';
+            i += multi ? count : 1;
+            closed = true;
+            break;
+          }
+          value += quote.repeat(count); i = end; continue;
+        }
+        if (quote === '"' && text[i] === '\\') {
+          i++;
+          if (multi && /^[ \t]*(?:\r?\n)/.test(text.slice(i))) {
+            while (/[ \t\r\n]/.test(text[i] ?? '') && i < text.length) i++;
+            continue;
+          }
+          const escape = text[i++];
+          const escapes = { b: '\b', t: '\t', n: '\n', f: '\f', r: '\r', '"': '"', '\\': '\\' };
+          if (Object.hasOwn(escapes, escape)) { value += escapes[escape]; continue; }
+          if (escape !== 'u' && escape !== 'U') refuse('unsupported string escape');
+          const digits = escape === 'u' ? 4 : 8, hex = text.slice(i, i + digits);
+          if (!new RegExp(`^[0-9a-fA-F]{${digits}}$`).test(hex)) refuse('invalid Unicode escape');
+          const cp = Number.parseInt(hex, 16);
+          if (cp > 0x10ffff || cp >= 0xd800 && cp <= 0xdfff) refuse('invalid Unicode scalar');
+          value += String.fromCodePoint(cp); i += digits; continue;
+        }
+        if (text.slice(i, i + 2) === '\r\n' && multi) { value += '\n'; i += 2; continue; }
+        if (/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f\r]/.test(text[i]) || !multi && text[i] === '\n')
+          refuse('invalid string control character');
+        value += text[i++];
+      }
+      if (!closed) refuse('unterminated string');
+      result.push({ kind: 'string', value });
+    } else if ('={}[],.'.includes(ch)) {
+      result.push({ kind: 'punctuation', value: ch }); i++;
+    } else {
+      const start = i;
+      while (i < text.length && !/[\s#"'={}[\],.]/.test(text[i])) i++;
+      result.push({ kind: 'bare', value: text.slice(start, i) });
+    }
+  }
+  return result;
+}
 // Static, conservative execution-surface closure; never execute wrappers to discover their inputs.
 function checkDefClosure(cfg, read = null, knownFiles = null) {
   const live = read === null;
@@ -5499,12 +5560,51 @@ function checkDefClosure(cfg, read = null, knownFiles = null) {
       });
       file(abs, cwd, undefined, true);
     };
-    const cargoWrappers = (text, cwd, base) => {
-      for (const m of text.matchAll(/(?:^|[\s.])(?:["']?)(rustc(?:-workspace)?-wrapper|RUSTC(?:_WORKSPACE)?_WRAPPER)(?:["']?)\s*=\s*(?:["']([^"']*)["']|(\{[^\n}]*\})|([^\s"'{}]+))/g)) {
-        let value = m[2] ?? m[4] ?? /\bvalue\s*=\s*["']([^"']*)["']/.exec(m[3] ?? '')?.[1];
-        const env = m[1].startsWith('RUSTC');
-        if (value && env && /\brelative\s*=\s*true\b/.test(m[3] ?? '')) value = path.resolve(base, value);
-        compilerWrapper(value, cwd, env && !/\brelative\s*=\s*true\b/.test(m[3] ?? '') ? cwd : base, m[1].toLowerCase().replaceAll('_', '-'));
+    const cargoWrappers = (text, cwd, base, cli = false) => {
+      // Preserve legacy quote-stripped CLI paths, but never guess lost escape semantics.
+      if (cli) text = text.replace(/^((?:[\w-]+\.)*(?:rustc(?:-workspace)?-wrapper|RUSTC(?:_WORKSPACE)?_WRAPPER)\s*=\s*)([^"'{}[\]\s]+)$/, (all, key, value) => {
+        if (value.includes('\\')) throw new Error('REFUSED: unresolved Cargo compiler wrapper --config escape; use a TOML config file');
+        return key + JSON.stringify(value);
+      });
+      const ts = cargoWrapperTokens(text);
+      const refuse = (key) => { throw new Error(`REFUSED: unresolved Cargo compiler wrapper ${key}; use a TOML string or literal env value/relative table`); };
+      for (let i = 0; i < ts.length; i++) {
+        const key = ts[i].value;
+        if (!/^(?:rustc(?:-workspace)?-wrapper|RUSTC(?:_WORKSPACE)?_WRAPPER)$/.test(key)) continue;
+        if (ts[i + 1]?.value !== '=') {
+          if (['.', ']'].includes(ts[i + 1]?.value)) refuse(key);
+          continue;
+        }
+        const env = key.startsWith('RUSTC');
+        let entry = ts[i + 2], relative = false, end = i + 3;
+        if (entry?.value === '{' && entry.kind === 'punctuation' && env) {
+          let value = null;
+          const fields = new Set();
+          for (end = i + 3; ts[end]?.value !== '}';) {
+            const field = ts[end]?.value, token = ts[end + 2];
+            if (!['value', 'relative', 'force'].includes(field) || fields.has(field) || ts[end + 1]?.value !== '=') refuse(key);
+            fields.add(field);
+            if (field === 'value') {
+              if (token?.kind !== 'string') refuse(key);
+              value = token;
+            } else {
+              if (token?.kind !== 'bare' || !['true', 'false'].includes(token.value)) refuse(key);
+              if (field === 'relative') relative = token.value === 'true';
+            }
+            end += 3;
+            if (ts[end]?.value === '}') break;
+            if (ts[end]?.value !== ',') refuse(key);
+            end++;
+          }
+          if (!value) refuse(key);
+          entry = value; end++;
+        }
+        if (entry?.kind !== 'string') refuse(key);
+        if (ts[end] && ts[end].kind !== 'separator') refuse(key);
+        if (entry.value.includes('\0')) refuse(key);
+        const value = relative ? path.resolve(base, entry.value) : entry.value;
+        compilerWrapper(value, cwd, env && !relative ? cwd : base, key.toLowerCase().replaceAll('_', '-'));
+        i = end - 1;
       }
     };
     const packageScript = (cwd, name, manager) => {
@@ -5686,7 +5786,7 @@ function checkDefClosure(cfg, read = null, knownFiles = null) {
           for (let j = i + 1; j < ts.length; j++) if (/^--config(?:=|$)/.test(ts[j])) {
             let value = ts[j].includes('=') ? ts[j].slice(9) : ts[++j] ?? '';
             if (value.endsWith('=') && ts[j + 1]) value += ts[++j];
-            if (value.includes('=')) cargoWrappers(value, cwd, cwd);
+            if (value.includes('=')) cargoWrappers(value, cwd, cwd, true);
             else {
               const abs = path.resolve(cwd, value);
               file(abs, cwd, undefined, true);

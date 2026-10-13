@@ -11510,3 +11510,250 @@ test('r33b #355 skipped annotated Node target cannot recover a flaky check under
   assert.doesNotMatch(gate.out, /FLAKY suspected/);
   assert.equal(fs.readFileSync(ledger, 'utf8'), before);
 });
+
+function r34aWrapperFixture(selection) {
+  const d = mini(T1SPEC, {
+    'a.test.mjs': jsTest(), '.cargo/config.toml': selection,
+    'tools/compiler': Buffer.from([0x7f, 0x45, 0x4c, 0x46, 0, 0xff]),
+    '.gitignore': 'tools/compiler\n',
+  }, FAIL);
+  const cp = path.join(d, '.sdd/config.json');
+  fs.writeFileSync(cp, JSON.stringify({
+    ...JSON.parse(fs.readFileSync(cp)), scan: { include: ['a.test.mjs'] }, scopePolicy: 'strict',
+    checks: [{ name: 'test', cmd: ['sh', '-c', 'true # cargo test'] }],
+  }));
+  return d;
+}
+
+for (const [kind, selection] of [
+  ['plain basic', '[build]\nrustc-wrapper = "tools/compiler"\n'],
+  ['plain literal', "[build]\nrustc-wrapper = 'tools/compiler'\n"],
+  ['Unicode basic', '[build]\nrustc-wrapper = "tools/compil\\u0065r"\n'],
+  ['Unicode long', '[build]\nrustc-wrapper = "tools/compil\\U00000065r"\n'],
+  ['multiline literal', "[build]\nrustc-wrapper = '''\ntools/compiler'''\n"],
+  ['multiline basic', '[build]\nrustc-wrapper = """\ntools/compil\\u0065r"""\n'],
+  ['line folding', '[build]\nrustc-wrapper = """tools/\\\n   \n  compiler"""\n'],
+  ['CRLF folding', '[build]\r\nrustc-wrapper = """\r\ntools/\\\r\n  compiler"""\r\n'],
+  ['workspace wrapper', '[build]\nrustc-workspace-wrapper = "tools/compil\\u0065r"\n'],
+  ['quoted key', '[build]\n"rustc\\u002dwrapper" = "tools/compil\\u0065r"\n'],
+  ['env relative', '[env]\nRUSTC_WRAPPER = { relative = true, value = "tools/compil\\u0065r" }\n'],
+  ['env multiline', "[env]\nRUSTC_WORKSPACE_WRAPPER = { value = '''tools/compiler''', relative = true }\n"],
+]) {
+  test(`r34a #357 decoded Cargo wrapper preserves gate and admission provenance (${kind})`, () => {
+    const d = r34aWrapperFixture(selection);
+    const binary = path.join(d, 'tools/compiler'), original = fs.readFileSync(binary);
+    const red = sdd(d, 'tdd', 'red', 'TEST-A-001');
+    assert.equal(red.code, 0, red.out);
+    const ledger = path.join(d, '.sdd/tdd.jsonl'), before = fs.readFileSync(ledger, 'utf8');
+    const admission = JSON.parse(before.trim().split('\n').at(-1)).admissionShas;
+    assert.ok(Object.keys(admission).some((key) => key.endsWith('|tools/compiler')), JSON.stringify(admission));
+    setCmd(d, PASS);
+    fs.appendFileSync(binary, Buffer.from([1]));
+    const driftGreen = sdd(d, 'tdd', 'green', 'TEST-A-001');
+    assert.equal(driftGreen.code, 1, driftGreen.out);
+    assert.match(driftGreen.out, /check definition changed since Red/);
+    assert.equal(fs.readFileSync(ledger, 'utf8'), before);
+    fs.writeFileSync(binary, original);
+    const green = sdd(d, 'tdd', 'green', 'TEST-A-001');
+    assert.equal(green.code, 0, green.out);
+    assert.equal(spawnSync('git', ['add', '-A'], { cwd: d }).status, 0);
+    assert.equal(spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'decoded wrapper evidence'], { cwd: d }).status, 0);
+    for (const args of [['gate'], ['gate', '--changed', '--baseline', 'HEAD']]) {
+      const clean = sdd(d, ...args);
+      assert.equal(clean.code, 0, clean.out);
+      fs.appendFileSync(binary, Buffer.from([1]));
+      const drift = sdd(d, ...args);
+      assert.equal(drift.code, 1, drift.out);
+      assert.match(drift.out, /tools\/compiler.*changed/);
+      fs.writeFileSync(binary, original);
+      const restored = sdd(d, ...args);
+      assert.equal(restored.code, 0, restored.out);
+    }
+  });
+}
+
+for (const value of [
+  '"tools/compil\\qr"', '"tools/compil\\uD800r"', '"tools/compil\\U00110000r"',
+  '"tools/compil\\u006r"', '"tools/compiler', '"""tools/compiler',
+  '["tools/compiler"]', '123', '{ value = ["tools/compiler"], relative = true }',
+  '{ relative = true }', '{ value = "tools/compiler", relative = "true" }',
+]) {
+  test(`r34a #357 unsupported Cargo wrapper decoding refuses before evidence (${value})`, () => {
+    const d = r34aWrapperFixture(`[env]\nRUSTC_WRAPPER = ${value}\n`);
+    const red = sdd(d, 'tdd', 'red', 'TEST-A-001');
+    assert.equal(red.code, 1, red.out);
+    assert.match(red.out, /REFUSED:.*Cargo.*wrapper/i);
+    assert.ok(!fs.existsSync(path.join(d, '.sdd/tdd.jsonl')));
+  });
+}
+
+test('r34a #357 empty wrapper disables selection and comments/string contents are not declarations', () => {
+  const d = r34aWrapperFixture('[build]\nrustc-wrapper = ""\n# rustc-wrapper = "tools/compiler"\n[alias]\nnote = """rustc-wrapper = \'tools/compiler\'"""\n');
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-A-001').code, 0);
+  setCmd(d, PASS);
+  const green = sdd(d, 'tdd', 'green', 'TEST-A-001');
+  assert.equal(green.code, 0, green.out);
+  const evidence = JSON.parse(fs.readFileSync(path.join(d, '.sdd/tdd.jsonl'), 'utf8').trim().split('\n').at(-1));
+  assert.ok(!Object.keys(evidence.checkDefShas).some((key) => key.endsWith('|tools/compiler')));
+});
+
+test('r34a #357 real Cargo selects escaped and multiline compiled adapters', { skip: !has130('cargo') || !has130('rustc') }, () => {
+  const d = mini(T1SPEC, {
+    'Cargo.toml': '[package]\nname="r34_wrapper"\nversion="0.1.0"\nedition="2021"\n',
+    'src/lib.rs': '// @id CODE-A-001 @implements REQ-A-001\npub fn answer() -> i32 { 0 }\n// @id TEST-A-001 @verifies REQ-A-001\n#[test]\nfn test_a_001() { assert_eq!(answer(), 1); }\n',
+    'tools/wrapper.rs': 'use std::{env,process::{Command,exit}}; fn main(){ let mut a=env::args_os().skip(1); let c=a.next().unwrap(); exit(Command::new(c).args(a).status().unwrap().code().unwrap_or(1)); }\n',
+    '.gitignore': 'target/\ntools/compiler\n',
+  }, ['cargo', 'test', '{idu}', '--offline']);
+  const build = spawnSync('rustc', ['tools/wrapper.rs', '-o', 'tools/compiler'], { cwd: d, encoding: 'utf8' });
+  assert.equal(build.status, 0, build.stderr);
+  const cp = path.join(d, '.sdd/config.json');
+  fs.writeFileSync(cp, JSON.stringify({
+    ...JSON.parse(fs.readFileSync(cp)), scan: { include: ['src/**/*.rs'] }, scopePolicy: 'strict',
+    checks: [{ name: 'test', cmd: ['cargo', 'test', '--offline'] }],
+  }));
+  for (const value of ['"tools/compil\\u0065r"', "'''tools/compiler'''", '"""\ntools/\\\n compiler"""']) {
+    writeAll(d, { '.cargo/config.toml': `[build]\nrustc-wrapper = ${value}\n` });
+    const source = path.join(d, 'src/lib.rs');
+    fs.writeFileSync(source, fs.readFileSync(source, 'utf8').replace('{ 1 }', '{ 0 }'));
+    const red = sdd(d, 'tdd', 'red', 'TEST-A-001');
+    assert.equal(red.code, 0, red.out);
+    fs.writeFileSync(source, fs.readFileSync(source, 'utf8').replace('{ 0 }', '{ 1 }'));
+    const binary = path.join(d, 'tools/compiler'), original = fs.readFileSync(binary);
+    fs.appendFileSync(binary, Buffer.from([1]));
+    const bad = sdd(d, 'tdd', 'green', 'TEST-A-001');
+    assert.equal(bad.code, 1, bad.out);
+    assert.match(bad.out, /check definition changed since Red/);
+    fs.writeFileSync(binary, original);
+    const green = sdd(d, 'tdd', 'green', 'TEST-A-001');
+    assert.equal(green.code, 0, green.out);
+    const clean = sdd(d, 'gate');
+    assert.equal(clean.code, 0, clean.out);
+    fs.appendFileSync(binary, Buffer.from([1]));
+    const drift = sdd(d, 'gate');
+    assert.equal(drift.code, 1, drift.out);
+    assert.match(drift.out, /tools\/compiler.*changed/);
+    fs.writeFileSync(binary, original);
+    assert.equal(sdd(d, 'gate').code, 0);
+  }
+});
+
+for (const [value, selected] of [
+  ['"tools/compil\\\\er"', 'tools/compil\\er'],
+  ['"tools/compil\\"er"', 'tools/compil"er'],
+  ['"tools/compil\\ter"', 'tools/compil\ter'],
+  ["'tools/compil\"er'", 'tools/compil"er'],
+  ["'''tools/compil'er'''", "tools/compil'er"],
+  ['"""tools/compiler""""', 'tools/compiler"'],
+  ["'''tools/compiler'''''", "tools/compiler''"],
+  ["'tools/compil\\u0065r'", 'tools/compil\\u0065r'],
+  ['"tools/compil#er" # trailing comment', 'tools/compil#er'],
+]) {
+  test(`r34a #357 TOML string boundary resolves exact wrapper bytes (${value})`, () => {
+    const d = r34aWrapperFixture(`[build]\nrustc-wrapper = ${value}\n`);
+    writeAll(d, { [selected]: Buffer.from([0x7f, 0x45, 0x4c, 0x46, 0, 0xfe]) });
+    const red = sdd(d, 'tdd', 'red', 'TEST-A-001');
+    assert.equal(red.code, 0, red.out);
+    const admission = JSON.parse(fs.readFileSync(path.join(d, '.sdd/tdd.jsonl'), 'utf8').trim().split('\n').at(-1)).admissionShas;
+    assert.ok(Object.keys(admission).some((key) => key.endsWith(`|${selected}`)), JSON.stringify(admission));
+    setCmd(d, PASS);
+    const binary = path.join(d, selected), original = fs.readFileSync(binary);
+    fs.appendFileSync(binary, Buffer.from([1]));
+    const drift = sdd(d, 'tdd', 'green', 'TEST-A-001');
+    assert.equal(drift.code, 1, drift.out);
+    assert.match(drift.out, /check definition changed since Red/);
+    fs.writeFileSync(binary, original);
+    const restored = sdd(d, 'tdd', 'green', 'TEST-A-001');
+    assert.equal(restored.code, 0, restored.out);
+  });
+}
+
+test('r34a #357 unsupported selection refuses Green and both gates without rewriting evidence', () => {
+  const d = r34aWrapperFixture('[build]\nrustc-wrapper = "tools/compiler"\n');
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-A-001').code, 0);
+  setCmd(d, PASS);
+  assert.equal(sdd(d, 'tdd', 'green', 'TEST-A-001').code, 0);
+  assert.equal(spawnSync('git', ['add', '-A'], { cwd: d }).status, 0);
+  assert.equal(spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'valid wrapper evidence'], { cwd: d }).status, 0);
+  const ledger = path.join(d, '.sdd/tdd.jsonl'), before = fs.readFileSync(ledger, 'utf8');
+  for (const selection of [
+    '[build]\nrustc-wrapper = "tools/compil\\er"\n',
+    '[env.RUSTC_WRAPPER]\nvalue = "tools/compiler"\n',
+    '[env]\nRUSTC_WRAPPER.value = "tools/compiler"\n',
+    '[build]\nrustc-wrapper = "tools/compiler" + "ignored"\n',
+  ]) {
+    fs.writeFileSync(path.join(d, '.cargo/config.toml'), selection);
+    for (const args of [['gate'], ['gate', '--changed', '--baseline', 'HEAD'], ['tdd', 'green', 'TEST-A-001']]) {
+      const rejected = sdd(d, ...args);
+      assert.equal(rejected.code, 1, rejected.out);
+      assert.match(rejected.out, /REFUSED:.*Cargo.*wrapper/i);
+      assert.equal(fs.readFileSync(ledger, 'utf8'), before);
+    }
+  }
+  fs.writeFileSync(path.join(d, '.cargo/config.toml'), '[build]\nrustc-wrapper = "tools/compiler"\n');
+  const restored = sdd(d, 'gate');
+  assert.equal(restored.code, 0, restored.out);
+});
+
+test('r34a #357 quote-stripped CLI escapes explicitly refuse rather than guess a wrapper', () => {
+  const d = r34aWrapperFixture('[build]\nrustc-wrapper = ""\n');
+  const cp = path.join(d, '.sdd/config.json'), cfg = JSON.parse(fs.readFileSync(cp));
+  cfg.checks = [{ name: 'test', cmd: ['sh', '-c', 'true # cargo --config build.rustc-wrapper="tools/compil\\u0065r" test'] }];
+  fs.writeFileSync(cp, JSON.stringify(cfg));
+  const red = sdd(d, 'tdd', 'red', 'TEST-A-001');
+  assert.equal(red.code, 1, red.out);
+  assert.match(red.out, /REFUSED:.*Cargo.*wrapper --config escape/);
+  assert.ok(!fs.existsSync(path.join(d, '.sdd/tdd.jsonl')));
+});
+
+for (const relative of [true, false]) {
+  test(`r34a #357 decoded env wrapper preserves nested check base (relative=${relative})`, () => {
+    const d = r34aWrapperFixture(`[env]\nRUSTC_WRAPPER = { value = "tools/compil\\u0065r", relative = ${relative}, force = true }\n`);
+    writeAll(d, { 'child/tools/compiler': Buffer.from([0x7f, 0x45, 0x4c, 0x46, 0, 0xfe]) });
+    const cp = path.join(d, '.sdd/config.json'), cfg = JSON.parse(fs.readFileSync(cp));
+    cfg.checks[0].cwd = 'child';
+    fs.writeFileSync(cp, JSON.stringify(cfg));
+    const red = sdd(d, 'tdd', 'red', 'TEST-A-001');
+    assert.equal(red.code, 0, red.out);
+    const admission = JSON.parse(fs.readFileSync(path.join(d, '.sdd/tdd.jsonl'), 'utf8').trim().split('\n').at(-1)).admissionShas;
+    const selected = relative ? 'tools/compiler' : 'child/tools/compiler';
+    assert.ok(Object.keys(admission).some((key) => key.endsWith(`|${selected}`)), JSON.stringify(admission));
+    setCmd(d, PASS);
+    const binary = path.join(d, selected), original = fs.readFileSync(binary);
+    fs.appendFileSync(binary, Buffer.from([1]));
+    const drift = sdd(d, 'tdd', 'green', 'TEST-A-001');
+    assert.equal(drift.code, 1, drift.out);
+    assert.match(drift.out, /check definition changed since Red/);
+    fs.writeFileSync(binary, original);
+    const restored = sdd(d, 'tdd', 'green', 'TEST-A-001');
+    assert.equal(restored.code, 0, restored.out);
+  });
+}
+
+test('r34a #357 multiline CRLF content selects the LF-normalized literal filename', () => {
+  const d = r34aWrapperFixture("[build]\r\nrustc-wrapper = '''\r\ntools/compil\r\ner'''\r\n");
+  const selected = 'tools/compil\ner';
+  writeAll(d, { [selected]: Buffer.from([0x7f, 0x45, 0x4c, 0x46, 0, 0xfe]) });
+  const red = sdd(d, 'tdd', 'red', 'TEST-A-001');
+  assert.equal(red.code, 0, red.out);
+  const admission = JSON.parse(fs.readFileSync(path.join(d, '.sdd/tdd.jsonl'), 'utf8').trim().split('\n').at(-1)).admissionShas;
+  assert.ok(Object.keys(admission).some((key) => key.endsWith(`|${selected}`)), JSON.stringify(admission));
+  setCmd(d, PASS);
+  const binary = path.join(d, selected), original = fs.readFileSync(binary);
+  fs.appendFileSync(binary, Buffer.from([1]));
+  const drift = sdd(d, 'tdd', 'green', 'TEST-A-001');
+  assert.equal(drift.code, 1, drift.out);
+  assert.match(drift.out, /check definition changed since Red/);
+  fs.writeFileSync(binary, original);
+  const restored = sdd(d, 'tdd', 'green', 'TEST-A-001');
+  assert.equal(restored.code, 0, restored.out);
+});
+
+for (const value of ['"tools/compil\\u0000r"', '"tools/compil\\xr"', '"""tools/compiler""""""', '"tools/compil\ner"']) {
+  test(`r34a #357 invalid path or string boundary explicitly refuses (${JSON.stringify(value)})`, () => {
+    const d = r34aWrapperFixture(`[build]\nrustc-wrapper = ${value}\n`);
+    const red = sdd(d, 'tdd', 'red', 'TEST-A-001');
+    assert.equal(red.code, 1, red.out);
+    assert.match(red.out, /REFUSED:.*Cargo.*wrapper/i);
+    assert.ok(!fs.existsSync(path.join(d, '.sdd/tdd.jsonl')));
+  });
+}
