@@ -2470,14 +2470,15 @@ test('#117 PHP: `use Ns\\Cls` stubs a namespaced PSR-4 file; --missing-module ac
   assert.doesNotMatch(r.out, /REJECTED/, r.out);
 });
 
-test('#118 tdd refactor warns when the test body changed since Green', () => {
+test('#118 tdd refactor --wording refuses when the test body changed since Green', () => {
   const d = mini(T1SPEC, { 'a.test.mjs': jsTest() }, PASS);
   sdd(d, 'tdd', 'red', 'TEST-A-001', '--characterization', 'x');
   sdd(d, 'tdd', 'green', 'TEST-A-001');
   const f = path.join(d, 'a.test.mjs');
   fs.writeFileSync(f, fs.readFileSync(f, 'utf8').replace(/\)\s*;?\s*\}\);?\s*$/, ') ; void 0; });\n'));
   const r = sdd(d, 'tdd', 'refactor', 'TEST-A-001', '--wording', 'x');
-  assert.match(r.out, /test body changed since the last Green/, r.out);
+  assert.equal(r.code, 1, r.out);
+  assert.match(r.out, /--wording only covers spec rows/, r.out);
 });
 
 test('#119 Node file-level pass with no ID match is rejected for red --characterization and green', () => {
@@ -7631,7 +7632,7 @@ test('#302 tdd refactor on T1 after a test change needs --wording', () => {
   const r = sdd(d, 'tdd', 'refactor', 'TEST-A-001');
   assert.equal(r.code, 1, r.out);
   assert.match(r.out, /--wording/);
-  assert.equal(sdd(d, 'tdd', 'refactor', 'TEST-A-001', '--wording', 'rename only').code, 0);
+  assert.equal(sdd(d, 'tdd', 'refactor', 'TEST-A-001', '--wording', 'rename only').code, 1);
 });
 
 test('#302 gate trace line names deferred REQs', () => {
@@ -9227,4 +9228,22 @@ test('r27c #322 gate --changed: a dependent project with no check of its own mak
   const r = sdd(r27c([]), 'gate', '--changed');
   assert.match(r.out, /py\/p[^\n]*not re-verified/, r.out);
   assert.match(r.out, /INCOMPLETE/, r.out);
+});
+
+test('r27d tdd refactor --wording is refused when the test body changed since Green', () => {
+  const d = mini('---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | x shall work. | TEST-A-001 |\n', { 'a.test.mjs': '// @id TEST-A-001 @verifies REQ-A-001\n// assert total == 3\n' }, FAIL);
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-A-001').code, 0);
+  setCmd(d, PASS);
+  assert.equal(sdd(d, 'tdd', 'green', 'TEST-A-001').code, 0);
+  fs.writeFileSync(path.join(d, 'a.test.mjs'), '// @id TEST-A-001 @verifies REQ-A-001\n// assert total >= 0\n');
+  const r = sdd(d, 'tdd', 'refactor', 'TEST-A-001', '--wording', 'just wording');
+  assert.equal(r.code, 1, r.out);
+  assert.match(r.out, /--wording only covers spec rows.*tdd red/s, r.out);
+});
+
+test('r27d a new test file carrying @id TEST-/@verifies is not an unannotated source under strict', () => {
+  const d = scopeProj();
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ ...JSON.parse(fs.readFileSync(path.join(d, '.sdd/config.json'), 'utf8')), scopePolicy: 'strict' }));
+  fs.writeFileSync(path.join(d, 'app/check.mjs'), '// @id TEST-A-009 @verifies REQ-A-001\nexport const t = 1;\n');
+  assert.doesNotMatch(sdd(d, 'gate', '--changed').out, /new source file/);
 });
