@@ -5225,6 +5225,12 @@ function cmdGate() {
       const chg = [...changedFiles()].filter((f) => !f.startsWith('.sdd/'));
       const outside = chg.filter((f) => !pRoots.some((r) => f.startsWith(r)));
       const testLike = /\b(?:tests?|spec|jest|vitest|pytest|mocha|unit)\b/i.test(`${c.name} ${(c.cmd ?? []).join(' ')}`);
+      // skipping the root test check is only safe if the touched nested projects run checks of their own (r25b)
+      const bare = chg.length && !outside.length && testLike ? (cfg.projects ?? []).filter((p) => !(p.checks ?? []).length && chg.some((f) => f.startsWith(p.root.replace(/\/$/, '') + '/'))).map((p) => p.root.replace(/\/$/, '') + '/') : [];
+      if (bare.length) {
+        const bmsg = `cmd ${c.name}: root test check skipped but nested project ${bare.join(', ')} has no check of its own — nothing verifies these changes (add checks to the project, or run the root check)`;
+        if (cfg.scopePolicy === 'strict') add(false, `${bmsg} (scopePolicy strict)`); else lines.push(`! ${bmsg} (scopePolicy warn: set "scopePolicy": "strict" to fail)`);
+      }
       if (chg.length && !outside.length && testLike) { lines.push(`! cmd ${c.name}: all changed files are inside nested projects (${pRoots.filter((r) => chg.some((f) => f.startsWith(r))).join(', ')}) — root test check skipped`); continue; }
       if (chg.length && !outside.length) lines.push(`! cmd ${c.name}: changes are inside nested projects but this root check is workspace-wide tooling — running it`);
     }
@@ -5234,7 +5240,9 @@ function cmdGate() {
     if (flags.changed && c.changedCmd && ownChanged) {
       const ch = [...changedFiles()].filter((f) => !f.startsWith('.sdd/') && fs.existsSync(path.join(ROOT, f)) && fs.statSync(path.join(ROOT, f)).isFile());
       const tests = ch.filter((f) => /\.(test|spec)\.[cm]?[jt]sx?$|(^|\/)test_[^/]*\.py$|_test\.(py|go|exs)$/.test(f));
-      if (!ch.length) { lines.push(`! cmd ${c.name}: no changed files (input closure computed from ${changedFiles().size} changed path(s): none is an existing non-.sdd file) — skipped`); continue; }
+      // a deletion is a change: the check must run in full, not skip as "no changed files" (r25b)
+      const gone = [...changedFiles()].filter((f) => !f.startsWith('.sdd/') && !fs.existsSync(path.join(ROOT, f)) && (!base || f.startsWith(base)));
+      if (!ch.length && !gone.length) { lines.push(`! cmd ${c.name}: no changed files (input closure computed from ${changedFiles().size} changed path(s): none is an existing non-.sdd file) — skipped`); continue; }
       const scopes = [...new Set(ch.filter((f) => !tests.includes(f)).map((f) => /^(packages|apps|libs)\/[^/]+/.exec(f)?.[0] ?? path.posix.dirname(f)))];
       const rel2 = relatedTests(ch);
       const limit = c.hubThreshold ?? cfg.hubThreshold ?? 0.25;
@@ -5272,6 +5280,7 @@ function cmdGate() {
       if (!noScope) cmd = cmd.flatMap((a) => subst[a] ?? [a]);
       if (!noScope && Object.keys(scopeVals).length) lines.push(`! cmd ${c.name}: scoped → ${cmd.join(' ').slice(0, 200)}`);
       scoped = !noScope;
+      if (!ch.length) { lines.push(`! cmd ${c.name}: only deleted files changed (${gone.slice(0, 3).join(', ')}${gone.length > 3 ? ', …' : ''}) — running the full check`); cmd = c.cmd; scoped = false; widened = true; }
     }
     let r = run(cmd, scoped ? (c.changedTimeoutMs ?? cfg.changedTimeoutMs ?? 60000) : (c.timeoutMs ?? cfg.timeoutMs ?? 120000), c.cwd);
     // a scoped run that executed no tests (e.g. `vitest related data.json`) proves nothing: run the full check instead

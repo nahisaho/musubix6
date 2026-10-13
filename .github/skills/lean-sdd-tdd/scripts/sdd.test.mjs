@@ -8628,3 +8628,31 @@ test('r24c suspect Red: heuristic setup-call Red is recorded as suspect, accepte
   assert.equal(sdd(d, 'tdd', 'green', 'TEST-CALC-001').code, 0);
   assert.match(sdd(d, 'gate', '--no-run').out, /1 suspect Red.*TEST-CALC-001/);
 });
+
+// ---- r25b (gate fail-open audit) ----
+function failOpenProj(cfg, files = {}) {
+  const d = mini('---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | x shall hold. | TEST-A-001 |\n', { 'app/package.json': '{}', 'app/x.mjs': 'export {};\n', 'lib.mjs': 'export {};\n', ...files });
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ testCmd: PASS, ...cfg }));
+  spawnSync('git', ['add', '-A'], { cwd: d });
+  spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'i'], { cwd: d });
+  return d;
+}
+test('r25b deleting a file does not let a changedCmd check skip as "no changed files"', () => {
+  const full = ['node', '-e', "process.exit(require('fs').existsSync('lib.mjs')?0:1)"];
+  const d = failOpenProj({ checks: [{ name: 'unit', cmd: full, changedCmd: ['node', '-e', '0', '{changedFiles}'] }] });
+  fs.rmSync(path.join(d, 'lib.mjs'));
+  const r = sdd(d, 'gate', '--changed');
+  assert.equal(r.code, 1, r.out);
+  assert.match(r.out, /deleted/, r.out);
+});
+test('r25b a root test check skipped for a nested project without checks fails under scopePolicy strict, warns otherwise', () => {
+  const cfg = { checks: [{ name: 'test', cmd: FAIL }], projects: [{ root: 'app', testCmd: PASS }] };
+  const d = failOpenProj(cfg);
+  fs.appendFileSync(path.join(d, 'app/x.mjs'), '// c\n');
+  const w = sdd(d, 'gate', '--changed');
+  assert.match(w.out, /! .*app\/ has no check of its own/, w.out);
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ testCmd: PASS, ...cfg, scopePolicy: 'strict' }));
+  const s = sdd(d, 'gate', '--changed');
+  assert.equal(s.code, 1, s.out);
+  assert.match(s.out, /✗ .*no check of its own/, s.out);
+});
