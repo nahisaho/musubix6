@@ -44,7 +44,7 @@ Batch: write all tests for a feature, then red each, implement, green each, **on
 - Spec lock (T2, `approval: human`); REQ line changed after its test's Green ⇒ evidence stale (`tdd refactor` for wording-only, `tdd red`/`green` for behaviour; new requirement = edit spec first, then test).
 - Red before Green with identical test hash; hash-chained `.sdd/tdd.jsonl` (conflict ⇒ `tdd merge-ledger`).
 - Every REQ has a test, every annotation resolves (orphan/unknown REQ = error); skipped checks ⇒ `INCOMPLETE` (exit 2), never PASS.
-- Human approvals: `--by` must be a real name (generic/`ai` names refused); `approve prepare` first; later `@implements` code change ⇒ gate warning.
+- Human approvals: `--by` must be a real name (generic/`ai` names refused); `approve prepare` first; later `@implements` code change ⇒ gate warning. A REQ with Green evidence deleted from every spec warns (fails under `scopePolicy: strict`) until `approve retire <REQ-ID> --by <human>` (recorded in `.sdd/retired-reqs.json`).
 - Not enforced (agent discipline): test quality, mutation, security review. Do not claim them.
 
 ## 3a. Config, runners, stubs (read only when needed)
