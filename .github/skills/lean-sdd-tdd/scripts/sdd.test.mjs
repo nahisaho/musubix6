@@ -8628,3 +8628,46 @@ test('r24c suspect Red: heuristic setup-call Red is recorded as suspect, accepte
   assert.equal(sdd(d, 'tdd', 'green', 'TEST-CALC-001').code, 0);
   assert.match(sdd(d, 'gate', '--no-run').out, /1 suspect Red.*TEST-CALC-001/);
 });
+
+// ---- r25d: flow-based ACT classification (design 3.3 follow-up) ----
+test('r25d py: the constructed SUT is the receiver of the asserted expression (act, not setup)', () => {
+  const src = 'class Store:\n    def __init__(self):\n        raise NotImplementedError("Store")\n\n    def append(self, v):\n        pass\n\n    def get(self):\n        return []\n';
+  const d = r14c(src, 's = Store()\n    assert [1] == s.get()');
+  const r = sdd(d, 'tdd', 'red', 'TEST-W-001');
+  assert.match(r.out, /RED ok/, r.out);
+  assert.doesNotMatch(r.out, /\[weak\]|setup call/, r.out);
+});
+
+test('r25d py: a bare act whose output stream is read through a method (`out.getvalue()`) is the act', () => {
+  const src = 'def serve(i, o):\n    raise NotImplementedError("serve")\n';
+  const d = r14c(src, 'import io\n    i, o = io.StringIO("x"), io.StringIO()\n    serve(i, o)\n    assert "x" == o.getvalue()');
+  const r = sdd(d, 'tdd', 'red', 'TEST-W-001');
+  assert.doesNotMatch(r.out, /\[weak\]|setup call/, r.out);
+});
+
+test('r25d js: identical shapes get identical verdicts whatever the helper is named; iteration over the result flows into the assertion', () => {
+  const mod = "export class Store { constructor() { throw new Error('not implemented: Store'); } }\nexport const sphere = () => { throw new Error('not implemented: sphere'); };\n";
+  for (const body of [
+    ['  const s = new Store();', '  await s.append(1);', '  assert.deepEqual(await s.get(), [1]);'],
+    ['  const s = new Store();', '  assert.equal(1, s.get().length);'],
+    ['  const s = sphere();', '  for (const p of s.polygons) {', '    assert.ok(p.x > 0);', '  }'],
+    ['  const s = sphere();', '  s.polygons.forEach((p) => assert.ok(p.x > 0));'],
+  ]) {
+    const d = approved();
+    fs.writeFileSync(path.join(d, 'add.mjs'), mod);
+    testFile(d, body);
+    fs.writeFileSync(path.join(d, 'add.test.mjs'), fs.readFileSync(path.join(d, 'add.test.mjs'), 'utf8').replace('{ add }', '{ Store, sphere }').replace('() => {\n', 'async () => {\n'));
+    const r = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
+    assert.doesNotMatch(r.out, /\[weak\]|setup call/, `${body.join('\n')}\n${r.out}`);
+  }
+});
+
+test('r25d rust: a `for p in &s.polygons { assert!(..) }` over the stub result is the act', () => {
+  const r = weak263(null, `${rsOut}sphere\n`, 'a.test.mjs', rs271('', ['  let s = sphere(1);', '  for p in &s.polygons {', '    assert!(p.x > 0);', '  }']));
+  assert.doesNotMatch(r.out, /\[weak\]|setup call/, r.out);
+});
+
+test('r25d conservative: a stub result never used by the assertion stays setup', () => {
+  const r = weak263(null, `${rsOut}sphere\n`, 'a.test.mjs', rs271('', ['  let s = sphere(1);', '  assert_eq!(other(), 2);']));
+  assert.match(r.out, /\[weak\].*setup call "sphere"/, r.out);
+});
