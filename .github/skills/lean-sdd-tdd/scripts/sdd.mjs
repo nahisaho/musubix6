@@ -2423,7 +2423,7 @@ function stubRust(testPath, src, dir, made) {
   let out = cargoTest();
   // variants the test uses that an existing enum lacks are added to it (#290)
   const variantNotes = [];
-  const missingVariants = [...new Map([...out.matchAll(/no variant[^`\n]*named `(\w+)` found for enum `(\w+)`/g)].map((m) => [m[2] + '::' + m[1], m])).values()];
+  const missingVariants = [...new Map([...out.matchAll(/no variant[^`\n]*named `(\w+)` found for enum `(?:\w+::)*(\w+)`/g)].map((m) => [m[2] + '::' + m[1], m])).values()];
   if (missingVariants.length) {
     const srcFiles = (d) => fs.existsSync(d) ? fs.readdirSync(d, { withFileTypes: true }).flatMap((e) => e.isDirectory() ? srcFiles(path.join(d, e.name)) : e.name.endsWith('.rs') ? [path.join(d, e.name)] : []) : [];
     const files = [...new Set([root, ...crates.values()])].flatMap((c) => srcFiles(path.join(c, 'src')));
@@ -2454,7 +2454,7 @@ function stubRust(testPath, src, dir, made) {
   const growMembers = () => {
     for (let round = 0; round < 4; round++) {
       const want = new Map();
-      for (const m of out.matchAll(/no (method|associated function or constant|function or associated item) named `(\w+)` found for (?:struct|enum) `(\w+)/g)) {
+      for (const m of out.matchAll(/no (method|associated function or constant|function or associated item) named `(\w+)` found for (?:struct|enum) `(?:\w+::)*(\w+)/g)) {
         const e = want.get(m[3]) ?? { assoc: new Set(), inst: new Set() };
         e[m[1] === 'method' ? 'inst' : 'assoc'].add(m[2]);
         want.set(m[3], e);
@@ -2466,7 +2466,7 @@ function stubRust(testPath, src, dir, made) {
         const at = files.map((f) => ({ f, text: fs.readFileSync(f, 'utf8') })).find((x) => new RegExp(`\\b(?:struct|enum)\\s+${t}\\b`).test(x.text));
         if (!at) continue;
         const owner = [...crates].find(([, r]) => at.f.startsWith(r + path.sep))?.[0] ?? ownPkg;
-        const blocks = fnBlocks(rustImpl(t, null, owner, { assoc: [...assoc], inst: [...inst] })).filter((f) => !new RegExp(`\\bfn\\s+${f[1]}\\b`).test(at.text)).map((f) => f[0]);
+        const blocks = fnBlocks(rustImpl(t, null, owner, { assoc: [...assoc], inst: [...inst] })).filter((f) => !new RegExp(`\\bfn\\s+${f[1]}\\b`).test(at.text)).map((f) => { note(`${t}::${f[1]}`, 'guessed'); return f[0].replace(/\{\n/, '{ // SDD-TODO(stub): signature guessed from the test — check types\n'); });
         const next = addToImpl(at.text, t, blocks, true);
         if (next === at.text) continue;
         fs.writeFileSync(at.f, next);
@@ -2492,7 +2492,7 @@ function stubRust(testPath, src, dir, made) {
     if (/mismatched types|E0308/.test(after)) notes.push('a stub return type does not match how the test uses it (Option/Result/bool/collections): fix the stub signature by hand');
     return { verified: 'fail', verifyError: err[0].slice(0, 160), notes };
   };
-  const withNotes = (r) => { if (report.length) r.report = report; if (variantNotes.length) r.notes = [...(r.notes ?? []), ...variantNotes]; return r; };
+  const withNotes = (r) => { if (/\bmacro_rules!/.test(fullNoUse)) variantNotes.push('macro_rules! in the test file: macros are not stubbed, the rest is stubbed as far as it compiles — finish by hand'); if (/^\s*use\s+(?:crate|\w+)::(?:\w+::)*\*\s*;/m.test(src + '\n' + fullNoUse) || /^\s*use\s[^;]*\*\s*;/m.test(src)) variantNotes.push('wildcard `use ...::*` in the test: names are stubbed from compiler errors only (partial stubs) — check them by hand'); if (report.length) r.report = report; if (variantNotes.length) r.notes = [...(r.notes ?? []), ...variantNotes]; return r; };
   if (!names.length) { if (probeFile && !made.length) fs.rmSync(ownLib); return withNotes(Object.assign([...new Set(made)], verified())); }
   const prev = fs.readFileSync(ownLib, 'utf8');
   // names the library already defines are not appended again, and an unchanged lib.rs is never reported as stubbed (#290)
@@ -3479,11 +3479,15 @@ function stubFor(testPath, id) {
     const fnBody = ts ? `(..._args: any[]): any {\n  throw new Error('not implemented: ${n}');\n}\n` : `() {\n  throw new Error('not implemented: ${n}');\n}\n`;
     // error types (`FooError`, `toThrow(Foo)`, `instanceof`-checked names ending in Error/Exception) extend Error so `new Foo()` and `instanceof` behave (#151)
     if (isError(S, n)) return `export ${dflt ? 'default ' : ''}class ${n} extends ${errParent(S, n, peers) ?? 'Error'} {\n  constructor(..._args${ts ? ': any[]' : ''}) {\n    super(typeof _args[0] === 'string' ? _args[0] : undefined);\n    this.name = '${n}';\n  }\n${[...staticsOf(S, n).map((k) => mth(n, k, true)), ...methodsOf(S, n).map((k) => mth(n, k))].join('')}}\n`;
+    if (isCls(S, n)) note(n, 'inferred');
     if (isCls(S, n)) return `export ${dflt ? 'default ' : ''}class ${n} {\n  constructor(..._args${ts ? ': any[]' : ''}) {${throwCtor() ? `\n    throw new Error('not implemented: ${n}');\n  ` : ''}}\n${[...staticsOf(S, n).map((k) => mth(n, k, true)), ...methodsOf(S, n).map((k) => mth(n, k))].join('')}}\n`;
     if (dflt) return `export default function ${n}${fnBody}`;
-    if (new RegExp(`(?<![\\w$.])${n.replace(/\$/g, '\\$')}\\s*\\(`).test(S)) return `export function ${n}${fnBody}`;
+    if (new RegExp(`(?<![\\w$.])${n.replace(/\$/g, '\\$')}\\s*\\(`).test(S)) { note(n, 'guessed', { unmarked: ts ? 'signature is (...args: any[]) => any' : 'arguments and return value are not inferred' }); return `export function ${n}${fnBody}`; }
     const plainConst = /^[A-Z][A-Z0-9_]+$/.test(n) && !new RegExp(`(?<![\\w$.])${n}\\s*[.\\[]`).test(S);
-    if (plainConst) note(n, 'guessed');
+    // a type the test itself shows (`const x: number = LIMIT`) replaces `any`
+    const tsTy = ts && plainConst ? new RegExp(`:\\s*(number|string|boolean)\\s*=\\s*${n}\\s*;`).exec(S)?.[1] ?? null : null;
+    if (plainConst) note(n, tsTy ? 'inferred' : 'guessed');
+    if (tsTy) return `export const ${n}: ${tsTy} = undefined as never; // SDD-TODO(stub): type taken from the test, value unknown — write the real value by hand\n`;
     return plainConst ? `export const ${n}${ts ? ': any' : ''} = undefined; // SDD-TODO(stub): type unknown — write the real value by hand\n` : valueStub(n);
   };
   if (/\.py$/.test(testPath)) {
