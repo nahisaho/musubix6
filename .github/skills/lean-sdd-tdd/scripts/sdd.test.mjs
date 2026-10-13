@@ -11510,3 +11510,210 @@ test('r33b #355 skipped annotated Node target cannot recover a flaky check under
   assert.doesNotMatch(gate.out, /FLAKY suspected/);
   assert.equal(fs.readFileSync(ledger, 'utf8'), before);
 });
+
+// r34 #361: observable annotated execution, not reporter silence or an ID-bearing container.
+function r34eNodeFixture(reporter = 'spec', parent = false) {
+  const flags = reporter ? [`--test-reporter=${reporter}`] : [];
+  const d = mini(T1SPEC, {
+    'a.test.mjs': [
+      "import test from 'node:test';",
+      "import assert from 'node:assert/strict';",
+      "import fs from 'node:fs';",
+      "import { answer } from './answer.mjs';",
+      "const state = fs.existsSync('.sdd/outcome') ? fs.readFileSync('.sdd/outcome', 'utf8') : '';",
+      "const retry = fs.existsSync('.sdd/retry-mode');",
+      "const first = retry && !fs.existsSync('.sdd/attempt');",
+      "if (retry) fs.writeFileSync('.sdd/attempt', 'ran');",
+      ...(parent ? ["test('TEST-A-001 container', async (t) => {"] : []),
+      '/** @id TEST-A-001 @verifies REQ-A-001 */',
+      `${parent ? 'await t.test' : 'test'}('TEST-A-001 child', { skip: state === 'skip' && !first, todo: state === 'todo' && !first }, () => {`,
+      "  assert.equal(answer(), 1);",
+      "  if (first) assert.fail('native first attempt');",
+      '});',
+      ...(parent ? ['});'] : []),
+      "test('unannotated control', () => assert.ok(true));",
+      "test('optional unannotated skip', { skip: true }, () => assert.fail());",
+      '',
+    ].join('\n'),
+    'answer.mjs': '// @id CODE-A-001 @implements REQ-A-001\nexport const answer = () => 0;\n',
+  });
+  const cp = path.join(d, '.sdd/config.json');
+  const cfg = { ...JSON.parse(fs.readFileSync(cp)), scopePolicy: 'warn',
+    scan: { include: ['a.test.mjs', 'answer.mjs'] },
+    testCmd: ['node', '--test', ...flags, '--test-name-pattern', '{id}', '{file}'],
+    checks: [{ name: 'test', cmd: ['node', '--test', ...flags, 'a.test.mjs'],
+      changedCmd: ['node', '--test', ...flags, '{changedTests}'] }],
+    flaky: { retries: 1, policy: 'warn' } };
+  fs.writeFileSync(cp, JSON.stringify(cfg));
+  const red = sdd(d, 'tdd', 'red', 'TEST-A-001');
+  assert.equal(red.code, 0, red.out);
+  fs.writeFileSync(path.join(d, 'answer.mjs'), '// @id CODE-A-001 @implements REQ-A-001\nexport const answer = () => 1;\n');
+  const green = sdd(d, 'tdd', 'green', 'TEST-A-001');
+  assert.equal(green.code, 0, green.out);
+  assert.equal(spawnSync('git', ['add', '-A'], { cwd: d }).status, 0);
+  assert.equal(spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'r34 native evidence'], { cwd: d }).status, 0);
+  fs.appendFileSync(path.join(d, 'a.test.mjs'), '\n');
+  return { d, cp, cfg, ledger: path.join(d, '.sdd/tdd.jsonl') };
+}
+
+/** @id TEST-R34-NODE-001 @verifies REQ-R34-NODE-001 */
+test('r34e #361 opaque native reporters cannot establish TDD or full/changed gate coverage', () => {
+  const { d, cp, cfg, ledger } = r34eNodeFixture();
+  const before = fs.readFileSync(ledger, 'utf8');
+  cfg.testCmd[2] = '--test-reporter=dot';
+  cfg.checks[0].cmd[2] = '--test-reporter=dot';
+  cfg.checks[0].changedCmd[2] = '--test-reporter=dot';
+  fs.writeFileSync(cp, JSON.stringify(cfg));
+  fs.writeFileSync(path.join(d, '.sdd/outcome'), 'skip');
+  for (const args of [
+    ['tdd', 'green', 'TEST-A-001'], ['tdd', 'refactor', 'TEST-A-001'],
+    ['tdd', 'red', 'TEST-A-001', '--characterization', 'silence is not execution'],
+    ['gate'], ['gate', '--changed', '--baseline', 'HEAD'],
+  ]) {
+    const result = sdd(d, ...args);
+    assert.notEqual(result.code, 0, `${args.join(' ')} accepted native dot evidence:\n${result.out}`);
+    assert.match(result.out, /Node|no test matched|unobservable/, result.out);
+    assert.equal(fs.readFileSync(ledger, 'utf8'), before);
+  }
+  fs.rmSync(path.join(d, '.sdd/outcome'));
+  assert.notEqual(sdd(d, 'gate').code, 0, 'opaque passing output is still not coverage');
+  cfg.checks[0].cmd.splice(2, 0, '--test-name-pattern', 'unannotated control');
+  fs.writeFileSync(cp, JSON.stringify(cfg));
+  assert.notEqual(sdd(d, 'gate').code, 0, 'explicit selection cannot authorize an unobservable reporter');
+});
+
+for (const reporter of ['spec', 'tap', null]) {
+  for (const outcome of ['skip', 'todo']) {
+    /** @id TEST-R34-NODE-002 @verifies REQ-R34-NODE-001 */
+    test(`r34e #361 ${reporter ?? 'default'} annotated ${outcome} child cannot borrow its parent`, () => {
+      const { d, cp, cfg, ledger } = r34eNodeFixture(reporter, true);
+      const before = fs.readFileSync(ledger, 'utf8');
+      fs.writeFileSync(path.join(d, '.sdd/outcome'), outcome);
+      // The parent's ID also matches the selector; only the annotated child's outcome counts.
+      for (const sub of ['green', 'refactor']) {
+        const result = sdd(d, 'tdd', sub, 'TEST-A-001');
+        assert.equal(result.code, 1, `${sub} accepted an unannotated parent:\n${result.out}`);
+        assert.match(result.out, /no test matched|skipped|todo/);
+        assert.equal(fs.readFileSync(ledger, 'utf8'), before);
+      }
+      for (const args of [['gate'], ['gate', '--changed', '--baseline', 'HEAD']]) {
+        const result = sdd(d, ...args);
+        assert.equal(result.code, 1, result.out);
+        assert.match(result.out, /TEST-A-001.*missing executed Node test ids/);
+      }
+      fs.rmSync(path.join(d, '.sdd/outcome'));
+      for (const sub of ['green', 'refactor']) assert.equal(sdd(d, 'tdd', sub, 'TEST-A-001').code, 0);
+      assert.equal(sdd(d, 'gate').code, 0);
+      assert.equal(sdd(d, 'gate', '--changed', '--baseline', 'HEAD').code, 0);
+      // Preserve reviewed explicit gate selection; omitted siblings do not widen the command.
+      cfg.checks[0].cmd.splice(2, 0, '--test-name-pattern', 'unannotated control');
+      fs.writeFileSync(cp, JSON.stringify(cfg));
+      const selected = sdd(d, 'gate');
+      assert.equal(selected.code, 0, selected.out);
+      // TDD must still verify its child even when a literal skip selector was explicitly configured.
+      cfg.testCmd.splice(2, 0, '--test-skip-pattern', 'child');
+      fs.writeFileSync(cp, JSON.stringify(cfg));
+      assert.equal(sdd(d, 'tdd', 'refactor', 'TEST-A-001').code, 1);
+    });
+  }
+}
+
+/** @id TEST-R34-NODE-003 @verifies REQ-R34-NODE-001 */
+test('r34e #361 native flaky recovery requires observable passing annotated children', () => {
+  for (const [reporter, parent, outcome, accepted] of [
+    ['dot', false, 'skip', false], ['dot', false, '', false],
+    ['spec', true, 'skip', false], ['tap', true, 'todo', false],
+    ['spec', true, '', true], ['tap', false, '', true],
+  ]) {
+    const { d, cp, cfg, ledger } = r34eNodeFixture('spec', parent);
+    cfg.checks[0].cmd[2] = `--test-reporter=${reporter}`;
+    cfg.checks[0].changedCmd[2] = `--test-reporter=${reporter}`;
+    fs.writeFileSync(cp, JSON.stringify(cfg));
+    fs.writeFileSync(path.join(d, '.sdd/outcome'), outcome);
+    fs.writeFileSync(path.join(d, '.sdd/retry-mode'), '');
+    for (const args of [['gate'], ['gate', '--changed', '--baseline', 'HEAD']]) {
+      fs.rmSync(path.join(d, '.sdd/attempt'), { force: true });
+      const before = fs.readFileSync(ledger, 'utf8');
+      const result = sdd(d, ...args);
+      assert.equal(result.code, accepted ? 0 : 1, `${reporter}/${parent}/${outcome} ${args}:\n${result.out}`);
+      if (accepted) {
+        assert.match(result.out, /FLAKY suspected/);
+        assert.equal(JSON.parse(fs.readFileSync(ledger, 'utf8').trim().split('\n').at(-1)).type, 'flaky');
+        assert.equal(sdd(d, 'tdd', 'check').code, 0);
+      } else {
+        assert.doesNotMatch(result.out, /FLAKY suspected/);
+        assert.equal(fs.readFileSync(ledger, 'utf8'), before);
+      }
+    }
+  }
+});
+
+/** @id TEST-R34-NODE-004 @verifies REQ-R34-NODE-001 */
+test('r34e #361 parser binds literal titles and rejects ambiguous, missing and malformed evidence', () => {
+  const d = mini(T1SPEC);
+  const file = path.join(d, 'a.test.mjs');
+  const source = fs.readFileSync(SDD, 'utf8');
+  const start = source.indexOf('function nodeTestCommand(');
+  const helpers = source.slice(start < 0 ? source.indexOf('function nodeTestRan(') : start, source.indexOf('// ---------- commands ----------'));
+  const { nodeTestRan, nodeTestReport } = new Function('fs', 'path', 'ROOT', 'testBody', 'escapeRe', 'readJson',
+    `${helpers}\nreturn { nodeTestRan, nodeTestReport: typeof nodeTestReport === 'function' ? nodeTestReport : null };`)(fs, path, d,
+    () => fs.readFileSync(file, 'utf8').split('\n').slice(1),
+    (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), () => null);
+  fs.writeFileSync(file, "// @id TEST-A-001 @verifies REQ-A-001\ntest('TEST-A-001 child', () => {});\n");
+  for (const row of ['✔ TEST-A-001 child (1ms)', '    ok 1 - TEST-A-001 child', '✔ TEST-A-001 child (0.001s)']) {
+    assert.equal(nodeTestRan(row + '\n﹣ optional unannotated skip (1ms) # SKIP', 'TEST-A-001', 'a.test.mjs', true), true, row);
+  }
+  for (const row of [
+    '✔ TEST-A-001 container (1ms)', 'ok 1 - TEST-A-001 container',
+    '﹣ TEST-A-001 child (1ms) # SKIP', 'ok 1 - TEST-A-001 child # SKIP',
+    '✔ TEST-A-001 child (1ms) # TODO', 'not ok 1 - TEST-A-001 child # TODO',
+    'ok 1 - TEST-A-0011 child', '✔ a.test.mjs (1ms)', '',
+  ]) assert.equal(nodeTestRan(row, 'TEST-A-001', 'a.test.mjs', true), false, row);
+  assert.equal(nodeTestRan('✖ TEST-A-001 child (1ms)', 'TEST-A-001', 'a.test.mjs'), true);
+  assert.equal(nodeTestRan('not ok 1 - TEST-A-001 child', 'TEST-A-001', 'a.test.mjs', true), false);
+  for (const text of ['', '...', '# tests unknown', 'ℹ tests NaN'])
+    assert.equal(nodeTestReport(text), false, text);
+  for (const text of ['# tests 3', 'ℹ tests 3'])
+    assert.equal(nodeTestReport(text), true, text);
+  fs.writeFileSync(file, "// @id TEST-A-001 @verifies REQ-A-001\ntest(`TEST-A-001 ${kind}`, () => {});\n");
+  assert.equal(nodeTestRan('✔ TEST-A-001 child (1ms)', 'TEST-A-001', 'a.test.mjs'), false);
+  fs.writeFileSync(file, "// @id TEST-A-001 @verifies REQ-A-001\ntest('TEST-A-001 (2ms)', () => {});\n");
+  assert.equal(nodeTestRan('✔ TEST-A-001 (2ms) (1ms)', 'TEST-A-001', 'a.test.mjs', true), true);
+  fs.writeFileSync(file, "// @id TEST-A-001 @verifies REQ-A-001\ntest('TEST-A-001 https://oracle/\\u{2714}', () => {});\n");
+  assert.equal(nodeTestRan('ok 1 - TEST-A-001 https://oracle/✔', 'TEST-A-001', 'a.test.mjs', true), true);
+  fs.writeFileSync(file, '// @id TEST-A-001 @verifies REQ-A-001\nawait t.test("TEST-A-001 child", () => {});\ntest(\'TEST-A-001 child\', () => {});\n');
+  assert.equal(nodeTestRan('✔ TEST-A-001 child (1ms)', 'TEST-A-001', 'a.test.mjs', true), false,
+    'identical parent/child titles without observable ownership must fail closed');
+});
+
+/** @id TEST-R34-NODE-005 @verifies REQ-R34-NODE-001 */
+test('r34e #361 shell and package-script native dot reports cannot bypass coverage', () => {
+  for (const shape of ['shell', 'package']) {
+    const { d, cp, cfg, ledger } = r34eNodeFixture();
+    const before = fs.readFileSync(ledger, 'utf8');
+    fs.writeFileSync(path.join(d, '.sdd/outcome'), 'skip');
+    if (shape === 'package') fs.writeFileSync(path.join(d, 'package.json'), JSON.stringify({
+      scripts: { test: 'npm run native', native: 'node --test --test-reporter=dot a.test.mjs' } }));
+    const cmd = shape === 'shell' ? ['sh', '-c', 'node --test --test-reporter=dot a.test.mjs'] : ['npm', 'test'];
+    cfg.testCmd = cmd;
+    cfg.checks = [{ name: 'test', cmd }];
+    fs.writeFileSync(cp, JSON.stringify(cfg));
+    for (const args of [['tdd', 'green', 'TEST-A-001'], ['gate'], ['gate', '--changed', '--baseline', 'HEAD']]) {
+      const result = sdd(d, ...args);
+      assert.equal(result.code, 1, `${shape} ${args}:\n${result.out}`);
+      assert.match(result.out, /unobservable Node output/);
+      assert.equal(fs.readFileSync(ledger, 'utf8'), before);
+    }
+    fs.rmSync(path.join(d, '.sdd/outcome'));
+    if (shape === 'package') {
+      const pkg = JSON.parse(fs.readFileSync(path.join(d, 'package.json')));
+      pkg.scripts.native = pkg.scripts.native.replace('=dot', '=tap');
+      fs.writeFileSync(path.join(d, 'package.json'), JSON.stringify(pkg));
+    } else {
+      cfg.testCmd[2] = cfg.checks[0].cmd[2] = cfg.testCmd[2].replace('=dot', '=spec');
+      fs.writeFileSync(cp, JSON.stringify(cfg));
+    }
+    const valid = sdd(d, 'gate');
+    assert.equal(valid.code, 0, valid.out);
+  }
+});
