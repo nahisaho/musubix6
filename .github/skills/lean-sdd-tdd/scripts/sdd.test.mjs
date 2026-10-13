@@ -9181,3 +9181,36 @@ test('r26d gate compact output names the trace warnings', () => {
   assert.match(r.out, /warnings/, r.out);
   assert.match(r.out, /warning: REQ-A-001 has no @implements code/, r.out);
 });
+
+// ---- r27e (#324 manifest defining a check command) ----
+const r27eProj = (manifest, name, body, cmd, extra = {}) => {
+  const d = mini('---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | x shall hold. | TEST-A-001 |\n', { [name]: body });
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ testCmd: PASS, checks: [{ name: 'test', cmd }], ...extra }));
+  spawnSync('git', ['add', '-A'], { cwd: d });
+  spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'i'], { cwd: d });
+  fs.writeFileSync(path.join(d, name), manifest);
+  return d;
+};
+test('r27e changed package.json script behind `npm run test` warns, fails under strict', () => {
+  const old = '{"scripts":{"test":"node --test"}}', nw = '{"scripts":{"test":"node --test one.test.mjs"}}';
+  const d = r27eProj(nw, 'package.json', old, ['sh', '-c', 'npm run test || true']);
+  const w = sdd(d, 'gate', '--changed');
+  assert.match(w.out, /! scope: .*check test runs package\.json script "test"/, w.out);
+  const cp = path.join(d, '.sdd/config.json');
+  fs.writeFileSync(cp, JSON.stringify({ ...JSON.parse(fs.readFileSync(cp, 'utf8')), scopePolicy: 'strict' }));
+  const s = sdd(d, 'gate', '--changed');
+  assert.equal(s.code, 1, s.out);
+  assert.match(s.out, /✗ scope:.*script "test"/, s.out);
+});
+test('r27e unrelated package.json script change does not warn', () => {
+  const d = r27eProj('{"scripts":{"test":"node --test","lint":"x"}}', 'package.json', '{"scripts":{"test":"node --test"}}', ['sh', '-c', 'npm run test || true']);
+  assert.doesNotMatch(sdd(d, 'gate', '--changed').out, /defines what a gate check runs/);
+});
+test('r27e changed pyproject.toml behind a pytest check warns', () => {
+  const d = r27eProj('[tool.pytest.ini_options]\naddopts="-k one"\n', 'pyproject.toml', '[tool.pytest.ini_options]\n', ['python3', '-m', 'pytest', '--version']);
+  assert.match(sdd(d, 'gate', '--changed').out, /! scope: .*check test runs pytest, configured by pyproject\.toml/);
+});
+test('r27e changed .cargo/config.toml alias behind a cargo check warns', () => {
+  const d = r27eProj('[alias]\nt = "test one"\n', '.cargo/config.toml', '[alias]\nt = "test"\n', ['cargo', 't']);
+  assert.match(sdd(d, 'gate', '--changed').out, /! scope: .*cargo alias "t"/);
+});
