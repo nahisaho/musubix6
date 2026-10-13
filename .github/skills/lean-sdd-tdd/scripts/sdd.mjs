@@ -481,7 +481,7 @@ function javaModuleRoot(file) {
   return configured ? path.resolve(ROOT, configured.root) : ROOT;
 }
 // Test-support files are oracles; production files (annotated CODE-, or outside test-like locations) are not (#181, #214, #219, #224).
-const testSupportPath = (f) => /(^|\/)(?:tests?|__tests__|specs?|fixtures?|__fixtures__|__mocks__|testdata|test-data|testthat|e2e|support|helpers?)\//i.test(rel(f)) || /(?:^|[/.-])(?:test|spec|helper|fixture|oracle|setup|mock)s?[^/]*$/i.test(rel(f));
+const testSupportPath = (f) => /(^|\/)(?:tests?|__tests__|specs?|fixtures?|__fixtures__|__mocks__|testdata|test-data|testthat|e2e|support|helpers?|oracles?)\//i.test(rel(f)) || /(?:^|[/.-])(?:test|spec|helper|fixture|oracle|setup|mock)s?[^/]*$/i.test(rel(f));
 // a conftest that only defines plain (non-autouse) fixtures the test never names cannot change the test's outcome
 function conftestUnused(conftest, testText) {
   let c = '';
@@ -505,8 +505,20 @@ function pythonConftests(file, text = '') {
 function scriptOracleImports(file, text, all = false) {
   const found = [], exts = ['', '.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs', '.mts', '.cts', '.json', '/index.ts', '/index.js', '/index.mjs'];
   const specs = [...text.matchAll(/\b(?:import|export)\b[^'";]*?\bfrom\s*(['"])([^'"]+)\1|\bimport\s*(['"])([^'"]+)\3|\b(?:require|import)\s*\(\s*(['"`])([^'"`$]+)\5\s*\)/g)].map((m) => m[2] ?? m[4] ?? m[6]);
+  let aliases, files;
   for (const spec of specs) {
-    if (!/^\.{1,2}\//.test(spec)) continue;
+    if (!/^\.{1,2}\//.test(spec)) {
+      if (spec.startsWith('node:')) continue;
+      files ??= new Set(workspaceFiles());
+      aliases ??= aliasMap(files);
+      for (const target of aliasSources(aliases, files, spec, rel(file))) {
+        const hit = path.join(ROOT, target);
+        let code = false;
+        try { code = fs.readFileSync(hit, 'utf8').includes('@id CODE-'); } catch {}
+        if (all || (!code && (testSupportPath(hit) || /\.(?:json|csv|txt|ya?ml)$/i.test(hit)))) found.push(hit);
+      }
+      continue;
+    }
     const base = path.resolve(path.dirname(file), spec);
     const hit = exts.map((e) => base + e).concat(spec.endsWith('.js') ? [base.replace(/\.js$/, '.ts'), base.replace(/\.js$/, '.tsx')] : []).find((f) => { try { return fs.statSync(f).isFile(); } catch { return false; } });
     if (!hit) continue;
@@ -4840,12 +4852,23 @@ function cmdTdd() {
   const before = testSha(t.path, id);
   const rawBefore = sha(fs.readFileSync(path.join(ROOT, t.path)));
   const prior = entries.filter((e) => e.test === id);
+  const cfg = loadConfig();
   if (sub === 'green') {
     const r = prior.filter((e) => e.type === 'red').at(-1);
     if (!r) { out(`REFUSED: no Red recorded for ${id}`); return 1; }
     // reverting a wrong edit back to content that already has a Red is fine, not only the very last Red (#100)
     // a dependency that is new since the matching Red (e.g. a stub-annotated support file replaced by unannotated code) is not covered by the raw-region hash match (#265)
     const matchedRed = prior.filter((e) => e.type === 'red' && shaMatches(e.fileSha, t.path, id)).at(-1);
+    const admissionRed = matchedRed ?? r;
+    if (admissionRed.admissionShas) {
+      const current = checkAdmissionShas(cfg, admissionRed.admissionShas);
+      const drift = [...new Set([...Object.keys(admissionRed.admissionShas), ...Object.keys(current)])]
+        .filter((k) => admissionRed.admissionShas[k] !== current[k]);
+      if (drift.length) {
+        out(`REFUSED: check definition changed since Red (${drift.map((k) => k.slice(k.indexOf('|') + 1)).join(', ')}); restore the resolution/compiler inputs or record a fresh assertion Red before Green`);
+        return 1;
+      }
+    }
     const newDeps = matchedRed && !matchedRed.oracleShas && !/\.(?:py|jl)$/.test(t.path) && !BRACE_TEST.test(t.path) && (testSha(t.path, id), oracleDependencyFiles.length > 0);
     if (!matchedRed || newDeps) {
       const promoted = (r.protectedFiles ?? []).filter((f) => {
@@ -4871,19 +4894,6 @@ function cmdTdd() {
     if (lastG && !shaMatches(lastG.fileSha, t.path, id) && !(typeof flags.wording === 'string' && flags.wording.trim())) { const shared = lastG.regSha && lastG.regSha === testRegionSha(t.path, id); out(`REFUSED: ${id}: ${flags.wording !== undefined ? '--wording needs a non-empty reason; ' : ''}the test changed since its last Green and ${spec.tier} specs have no approval lock, so a refactor would bless a behaviour change without a Red. ${shared ? `Only shared test-file content (imports/header/setup) changed, not this test's own lines: tdd refactor ${id} --wording "<why>"` : `The test's own lines changed. Expectation changed: tdd red ${id} --retest "<reason>", then tdd green. Behaviour/assertions changed: tdd red then tdd green. Wording/formatting only: tdd refactor ${id} --wording "<why>"`}`); return 1; }
   }
 
-  const cfg = loadConfig();
-  if (sub === 'green') {
-    const red = prior.filter((e) => e.type === 'red' && shaMatches(e.fileSha, t.path, id)).at(-1);
-    if (red?.admissionShas) {
-      const current = checkAdmissionShas(cfg, red.admissionShas);
-      const drift = [...new Set([...Object.keys(red.admissionShas), ...Object.keys(current)])]
-        .filter((k) => red.admissionShas[k] !== current[k]);
-      if (drift.length) {
-        out(`REFUSED: check definition changed since Red (${drift.map((k) => k.slice(k.indexOf('|') + 1)).join(', ')}); restore the resolution/compiler inputs or record a fresh assertion Red before Green`);
-        return 1;
-      }
-    }
-  }
   const proj = projectFor(t.path);
   const fileArg = proj ? path.posix.relative(proj.root, t.path) : t.path;
   const baseCmd = proj?.testCmd ?? cfg.testCmd;
@@ -5892,9 +5902,10 @@ const stripJsonc = (t) => t.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:"'])
 // bare-specifier aliases: workspace package names and tsconfig paths -> source file candidates
 function aliasMap(set, allowMissing = false) {
   const map = [];
-  const pick = (dir, target, missing = allowMissing) => {
+  const pick = (dir, target, missing = allowMissing, exact = false) => {
     if (typeof target !== 'string') return null;
     const t = path.posix.normalize(path.posix.join(dir, String(target)));
+    if (exact) return t;
     const stem = t.replace(/\.[cm]?[jt]sx?$/, '');
     const srcStem = stem.replace(/^((?:.*\/)?)(dist|build|lib)\//, '$1src/');
     for (const c of [stem, srcStem]) for (const e of ['.ts', '.tsx', '.js', '.mjs', '.jsx', '/index.ts', '/index.js']) if (set.has(c + e)) return c + e;
@@ -5904,24 +5915,45 @@ function aliasMap(set, allowMissing = false) {
   for (const pf of gitFiles('*package.json')) {
     const dir = path.posix.dirname(pf);
     const pkg = readJson(path.join(ROOT, pf), null);
-    if (!pkg?.name) continue;
+    if (!pkg) continue;
     const ex = typeof pkg.exports === 'string' || (pkg.exports && typeof pkg.exports === 'object' && !Object.keys(pkg.exports).some((k) => k.startsWith('.'))) ? { '.': pkg.exports } : pkg.exports ?? {};
-    const entry = (v) => typeof v === 'string' ? v : v && typeof v === 'object' ? entry(v.import ?? v.default ?? v.require ?? Object.values(v)[0]) : null;
-    const root = entry(ex['.']) ?? pkg.main ?? pkg.module ?? 'src/index.ts';
-    const f = pick(dir, root) ?? pick(dir, 'src/index');
-    if (f) map.push([pkg.name, f, false]);
-    for (const [k, v] of Object.entries(ex)) if (k.startsWith('./') && !k.includes('*')) { const t = pick(dir, entry(v)); if (t) map.push([`${pkg.name}/${k.slice(2)}`, t, false]); }
-    // wildcard subpaths: "./*" or "./feat/*" -> "./src/*.ts" (#213)
-    const wild = (v) => { const e = entry(v); const i = typeof e === 'string' ? e.indexOf('*') : -1; if (i < 0) return null; const n = path.posix.normalize(path.posix.join(dir, e.slice(0, i))).replace(/\/+$/, '').replace(/^\.$/, ''); return { pre: n + (n && /\/$/.test(e.slice(0, i)) ? '/' : ''), suf: e.slice(i + 1) }; };
-    for (const [k, v] of Object.entries(ex)) if (k.startsWith('./') && /^\.\/(?:[^*]*\/)?\*$/.test(k) && wild(v)) map.push([k === './*' ? pkg.name : `${pkg.name}/${k.slice(2, -2)}`, dir === '.' ? '' : dir, true, { wild: wild(v) }]);
+    // The graph is shared by different runners. Widen across every ordered
+    // condition/array branch instead of guessing import/default/require (#358).
+    const entries = (v) => typeof v === 'string' ? [v] : v && typeof v === 'object' ? Object.values(v).flatMap(entries) : [];
+    const packageAlias = (name, value, extra = {}) => {
+      const targets = entries(value);
+      if (!targets.length) map.push([name, null, false, { ...extra, unresolved: pf }]);
+      for (const target of targets) {
+        if (!target.startsWith('./') || target.split('/').includes('..')) { map.push([name, null, false, { ...extra, unresolved: pf }]); continue; }
+        if (name.endsWith('/*') && target.includes('*')) {
+          const i = target.indexOf('*'), pre = path.posix.normalize(path.posix.join(dir, target.slice(0, i)));
+          map.push([name.slice(0, -2), '', true, { ...extra, wild: { pre: pre.replace(/\/+$/, '') + (target.slice(0, i).endsWith('/') ? '/' : ''), suf: target.slice(i + 1), exact: true } }]);
+        } else if (!name.includes('*') && !target.includes('*')) {
+          const exact = pick(dir, target, true, !allowMissing);
+          map.push([name, exact, false, extra]);
+          // Emitted TS entrypoints also retain their existing source edge, but
+          // never replace the runtime target (including its missing sentinel).
+          const source = !allowMissing && !set.has(exact) ? pick(dir, target, false) : null;
+          if (source && source !== exact) map.push([name, source, false, extra]);
+        } else map.push([name, null, false, { ...extra, unresolved: pf }]);
+      }
+    };
+    if (pkg.name) {
+      if (pkg.exports !== undefined) {
+        packageAlias(pkg.name, ex['.'], { package: true });
+        for (const [k, v] of Object.entries(ex)) if (k.startsWith('./')) packageAlias(`${pkg.name}/${k.slice(2)}`, v, { package: true });
+      } else {
+        const f = pick(dir, pkg.main ?? pkg.module ?? 'src/index.ts') ?? pick(dir, 'src/index');
+        if (f) map.push([pkg.name, f, false]);
+        map.push([pkg.name, dir === '.' ? '' : dir, true]);
+      }
+    }
     // package.json "imports" (#alias) apply only inside this package (#213)
     for (const [k, v] of Object.entries(pkg.imports ?? {})) {
       if (!k.startsWith('#')) continue;
       const scope = dir === '.' ? '' : dir;
-      if (!k.includes('*')) { const t = pick(dir, entry(v)); if (t) map.push([k, t, false, { scope }]); }
-      else if (/\/\*$/.test(k) && wild(v)) map.push([k.slice(0, -2), scope, true, { scope, wild: wild(v) }]);
+      packageAlias(k, v, { scope });
     }
-    map.push([pkg.name, dir === '.' ? '' : dir, true]);
   }
   for (const tf of gitFiles('*tsconfig*.json')) {
     const dir = path.posix.dirname(tf);
@@ -5934,6 +5966,40 @@ function aliasMap(set, allowMissing = false) {
     }
   }
   return map.sort((a, b) => b[0].length - a[0].length);
+}
+
+function aliasSources(aliases, set, spec, from = '') {
+  const found = [];
+  let owner = path.posix.dirname(from);
+  if (spec.startsWith('#')) {
+    while (owner !== '.' && !fs.existsSync(path.join(ROOT, owner, 'package.json'))) owner = path.posix.dirname(owner);
+    if (owner === '.') owner = '';
+  }
+  for (const [name, target, isDir, extra] of aliases) {
+    if (extra?.scope !== undefined && extra.scope !== owner) continue;
+    const unsupportedPattern = extra?.unresolved && name.includes('*') && new RegExp('^' + name.split('*').map(escapeRe).join('.*') + '$').test(spec);
+    if (spec !== name && !(isDir && spec.startsWith(name + '/')) && !unsupportedPattern) continue;
+    if (extra?.unresolved) throw new Error(`REFUSED: unresolved Node package target ${spec} in ${extra.unresolved} — use local literal imports/exports targets or explicit relative oracle imports`);
+    if (spec === name && !isDir) { found.push(target); continue; }
+    if (extra?.wild && spec.startsWith(name + '/')) {
+      const b = extra.wild.pre + spec.slice(name.length + 1) + extra.wild.suf;
+      if (extra.wild.exact) {
+        found.push(b);
+        if (!set.has(b)) {
+          const stem = b.replace(/\.[cm]?[jt]sx?$/, ''), src = stem.replace(/^((?:.*\/)?)(dist|build|lib)\//, '$1src/');
+          const source = [src + '.ts', ...['.ts', '.tsx', '.js', '.mjs', '.cjs', '.jsx', '/index.ts', '/index.js'].map((e) => stem + e)].find((c) => set.has(c));
+          if (source) found.push(source);
+        }
+        continue;
+      }
+    }
+    if (isDir && !extra?.wild) {
+      const base = path.posix.join(target, spec === name ? '' : spec.slice(name.length + 1)), stem = base.replace(/\.[cm]?[jt]sx?$/, '');
+      const hit = [base, ...['.ts', '.tsx', '.js', '.mjs', '.cjs', '.jsx', '/index.ts', '/index.js', '/src/index.ts'].map((e) => stem + e)].find((c) => set.has(c));
+      if (hit) found.push(hit);
+    }
+  }
+  return [...new Set(found)];
 }
 
 // exported symbols touched by the uncommitted diff of a JS/TS file.
@@ -6012,25 +6078,6 @@ function jsRev(files) {
     return null;
   };
   const aliases = aliasMap(set);
-  const resolveBare = (spec, from = '') => {
-    for (const [name, target, isDir, extra] of aliases) {
-      if (extra?.scope !== undefined && extra.scope && !from.startsWith(extra.scope + '/')) continue;
-      if (spec === name && !isDir) return target;
-      if (extra?.wild && spec.startsWith(name + '/')) {
-        const b = extra.wild.pre + spec.slice(name.length + 1) + extra.wild.suf;
-        const stem = b.replace(/\.[cm]?[jt]sx?$/, '');
-        for (const c of [b, stem.replace(/^((?:.*\/)?)(dist|build|lib)\//, '$1src/') + '.ts', ...['.ts', '.tsx', '.js', '.mjs', '.jsx', '/index.ts', '/index.js'].map((e) => stem + e)]) if (set.has(c)) return c;
-        continue;
-      }
-      if (isDir && !extra?.wild && (spec === name || spec.startsWith(name + '/'))) {
-        const sub = spec === name ? '' : spec.slice(name.length + 1);
-        const base = path.posix.join(target, sub);
-        const stem = base.replace(/\.[cm]?[jt]sx?$/, '');
-        for (const c of [base, ...['.ts', '.tsx', '.js', '.mjs', '.jsx', '/index.ts', '/index.js', '/src/index.ts'].map((e) => stem + e)]) if (set.has(c)) return c;
-      }
-    }
-    return null;
-  };
   const rev = new Map();
   for (const f of files.filter((x) => !/\.json$/.test(x))) {
     // type-only imports are erased at runtime and do not propagate a change (#111)
@@ -6038,8 +6085,8 @@ function jsRev(files) {
       .replace(/\bimport\s+type\b[^;'"]*?from\s*['"][^'"\n]+['"]/g, '')
       .replace(/\bimport\s*\{([^}]*)\}\s*from\s*(['"][^'"\n]+['"])/g, (all, specs, q) => (specs.trim() && specs.split(',').filter((x) => x.trim()).every((x) => /^\s*type\s/.test(x)) ? '' : all));
     for (const m of src.matchAll(/(?:from\s+|import\s*\(?\s*|require\(\s*)['"]([^'"\n]+)['"]/g)) {
-      const t = m[1].startsWith('.') ? resolve(f, m[1]) : resolveBare(m[1], f);
-      if (t) { if (!rev.has(t)) rev.set(t, []); rev.get(t).push(f); }
+      const targets = m[1].startsWith('.') ? [resolve(f, m[1])] : aliasSources(aliases, set, m[1], f);
+      for (const t of targets) if (t) { if (!rev.has(t)) rev.set(t, []); rev.get(t).push(f); }
     }
   }
   return rev;
