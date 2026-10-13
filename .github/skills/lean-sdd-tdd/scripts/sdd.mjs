@@ -5552,7 +5552,7 @@ function cmdGate() {
       const warnOnly = cfg.flaky?.policy === 'warn';
       for (let i = 0; i < retries; i++) {
         const r2 = run(cmd, scoped ? (c.changedTimeoutMs ?? cfg.changedTimeoutMs ?? 60000) : (c.timeoutMs ?? cfg.timeoutMs ?? 120000), c.cwd);
-        if (r2.exit === 0 && !r2.timedOut) {
+        if (r2.exit === 0 && !r2.timedOut && !NO_PASSED.test(r2.text) && !pytestNoExecution(r2.text) && !noExecution(r2.text)) {
           add(warnOnly, `cmd ${c.name} FLAKY suspected: failed on the first run, passed on re-run ${i + 1}/${retries} (${(r2.ms / 1000).toFixed(1)}s) — a flaky entry was appended to .sdd/tdd.jsonl (commit it)${warnOnly ? ' — accepted by flaky.policy "warn"' : ' — set flaky.policy "warn" in .sdd/config.json to accept, or fix the test (no sleep, injected clock, port 0, generous timeouts)'}`, failTail(r.text, 8).split('\n'));
           appendLedger({ type: 'flaky', check: c.name, retry: i + 1, retries, policy: warnOnly ? 'warn' : 'fail', outcome: warnOnly ? 'accepted' : 'fail' });
           r = null;
