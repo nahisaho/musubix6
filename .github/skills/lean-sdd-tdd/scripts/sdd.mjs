@@ -3838,12 +3838,16 @@ function setupOrigin(line, testPath, id, text = '') {
       const derived = bl.filter((_, i) => !bf[i]).flatMap((l) => { const m = /^\s*(?:(?:const|let|var)\s+)?([A-Za-z_$][\w$]*)\s*(?::[^=]+)?=(?!=)(.*)$/.exec(l); return m && vars.some((v) => plainRe(v).test(m[2])) ? [m[1]] : []; })
         // `const [a, b] = r` / `const { a, b: c } = r` destructure the stored result; `r.forEach((x) => ...)` binds its elements
         .concat(bl.flatMap((l) => { const m = /^\s*(?:const|let|var)\s+[\[{]([^\]}=]*)[\]}]\s*=(?!=)(.*)$/.exec(l); return m && vars.some((v) => plainRe(v).test(m[2])) ? m[1].split(',').map((n) => /([A-Za-z_$][\w$]*)\s*$/.exec(n.replace(/=.*$/, ''))?.[1]).filter(Boolean) : []; }))
-        .concat(bl.flatMap((l) => vars.flatMap((v) => { const m = new RegExp(`(?<![\\w$])${esc(v)}\\.\\w+\\(\\s*(?:async\\s*)?\\(?\\s*([A-Za-z_$][\\w$]*(?:\\s*,\\s*[A-Za-z_$][\\w$]*)*)\\s*\\)?\\s*=>`).exec(l); return m ? m[1].split(/\s*,\s*/) : []; })));
+        .concat(bl.flatMap((l) => vars.flatMap((v) => { const m = new RegExp(`(?<![\\w$])${esc(v)}\\.\\w+\\(\\s*(?:async\\s*)?\\(?\\s*([A-Za-z_$][\\w$]*(?:\\s*,\\s*[A-Za-z_$][\\w$]*)*)\\s*\\)?\\s*=>`).exec(l); return m ? m[1].split(/\s*,\s*/) : []; })))
+        // `for p in &s.polygons` / `for (const p of s.items)` / `for x in r:` bind the elements of the stored result (r25d)
+        .concat(bl.flatMap((l) => { const m = /^\s*for\s+(?:await\s+)?\(?\s*(?:(?:const|let|var)\s+)?(?:mut\s+)?([A-Za-z_$][\w$]*)\s+(?:of|in)\s+(.*?)\)?\s*(?:\{|:)?\s*$/.exec(l); return m && vars.some((v) => plainRe(v).test(m[2])) ? [m[1]] : []; }));
       vars = [...new Set([...vars, ...derived])];
     }
     vars = [...new Set([...vars, ...stateVars])];
     const goIf = (v) => new RegExp(`\\bif\\b[^{]*?(?<![\\w$.])${v.replace(/[$]/g, '\\$&')}(?![\\w$])`);
-    return vars.some((v) => body.some((l) => subject(v).test(l) || goIf(v).test(l) || plain(v).test(l))) || recvVars.some((v) => body.some((l) => new RegExp(`(?<![\\w$.])${esc(v)}(?:\\.|->)[\\w$]+\\s*\\(`).test(l))) || withVars.some((v) => body.some((l) => plain(v).test(l)));
+    // the stored result (or an argument the call filled) is the receiver of an asserted expression (`s.get()`, `out.getvalue()`, `r.lines()`): the call is the act whatever it is named (r25d)
+    const recvAsserted = (v) => new RegExp(`(?<![\\w$.])${esc(v)}(?:\\.|\\[)`);
+    return vars.some((v) => body.some((l) => subject(v).test(l) || goIf(v).test(l) || plain(v).test(l) || (recvAsserted(v).test(l) && !feeds(v, l)))) || recvVars.some((v) => body.some((l) => new RegExp(`(?<![\\w$.])${esc(v)}(?:\\.|->)[\\w$]+\\s*\\(`).test(l))) || withVars.some((v) => body.some((l) => plain(v).test(l)));
   };
   // `save(p, x)` then `got = load(p); assert got == x`: a bare stub call that shares an argument with the call whose bound result is asserted is the act (#283)
   const pairedAct = (hitLines) => {
