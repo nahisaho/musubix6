@@ -9549,3 +9549,46 @@ test('r29e full gate skips an untracked config', () => {
   const d = mini('---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | x shall hold. | TEST-A-001 |\n', {}, PASS);
   assert.doesNotMatch(sdd(d, 'gate', '--no-run').out, /config:/);
 });
+
+/** @id TEST-GATESNAPSHOT-001 @verifies REQ-GATESNAPSHOT-001 */
+test('TEST-GATESNAPSHOT-001 #337 prepare lockfile rewrites preserve workspace and transitive consumer checks', () => {
+  for (const exit of [0, 1]) {
+    const d = mini(T1SPEC, {
+      'a.test.mjs': jsTest(),
+      'lib.mjs': '// @id CODE-A-001 @implements REQ-A-001\nexport const value = 1;\n',
+      'rust/Cargo.toml': '[workspace]\nmembers = ["crates/*"]\n',
+      'rust/Cargo.lock': 'v1\n',
+      'rust/crates/a/Cargo.toml': '[package]\nname = "a"\n',
+      'rust/crates/b/Cargo.toml': '[package]\nname = "b"\n',
+      'python/direct/pyproject.toml': '[project]\nname = "direct"\n',
+      'python/transitive/pyproject.toml': '[project]\nname = "transitive"\n',
+      'unrelated/package.json': '{}',
+    }, FAIL);
+    assert.equal(sdd(d, 'tdd', 'red', 'TEST-A-001').code, 0);
+    setCmd(d, PASS);
+    assert.equal(sdd(d, 'tdd', 'green', 'TEST-A-001').code, 0);
+    fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({
+      testCmd: PASS,
+      checks: [],
+      prepare: { cmd: ['git', 'checkout', '--', 'rust/Cargo.lock'] },
+      projects: [
+        { root: 'rust/crates/a', checks: [{ name: 'probe', cmd: ['node', '-e', `process.exit(${exit})`] }] },
+        { root: 'rust/crates/b', checks: [{ name: 'ok', cmd: PASS }] },
+        { root: 'python/direct', dependsOn: ['rust/crates/a'], checks: [{ name: 'ok', cmd: PASS }] },
+        { root: 'python/transitive', dependsOn: ['python/direct'], checks: [{ name: 'ok', cmd: PASS }] },
+        { root: 'unrelated', checks: [{ name: 'ok', cmd: FAIL }] },
+      ],
+    }));
+    assert.equal(spawnSync('git', ['add', '-A'], { cwd: d }).status, 0);
+    assert.equal(spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'baseline'], { cwd: d }).status, 0);
+    fs.appendFileSync(path.join(d, 'rust/Cargo.lock'), '# normalize me\n');
+    const g = sdd(d, 'gate', '--changed', '--baseline', 'HEAD', '--explain');
+    assert.equal(fs.readFileSync(path.join(d, 'rust/Cargo.lock'), 'utf8'), 'v1\n');
+    assert.match(g.out, /✓ prepare \(/, g.out);
+    assert.match(g.out, new RegExp(`${exit ? '✗' : '✓'} cmd rust/crates/a:probe`), g.out);
+    for (const root of ['rust/crates/b', 'python/direct', 'python/transitive']) assert.ok(g.out.includes(`✓ cmd ${root}:ok`), g.out);
+    assert.match(g.out, /cmd unrelated:ok: no changed files.*skipped/, g.out);
+    assert.equal(g.code, exit, g.out);
+    assert.match(g.out, new RegExp(`SDD GATE ${exit ? 'FAIL' : 'PASS'}`), g.out);
+  }
+});
