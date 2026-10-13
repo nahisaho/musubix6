@@ -1782,7 +1782,7 @@ function pytestNoExecution(text) {
 }
 
 function nodeTestRan(text, id, testPath) {
-  const token = new RegExp(`${id}(?![0-9a-z])`, 'i');
+  const token = new RegExp(`${escapeRe(id)}(?![\\w-])`, 'i');
   return text.split('\n').some((line) => {
     const m = /^\s*(?:[✔✖]\s+|(?:not )?ok\s+\d+\s+-\s+)(.+)$/.exec(line);
     if (!m || /#\s*(TODO|SKIP)\b/i.test(m[1])) return false;
@@ -5026,6 +5026,7 @@ function cmdTdd() {
     const i = cmd.indexOf(fileArg);
     if (i > 1) cmd[i] = `${fileArg}:${ex.line}`;
   }
+  checkDefClosure(cfg);
   const res = run(cmd, cfg.timeoutMs ?? 120000, proj?.root);
   const after = testSha(t.path, id);
   // a clean C/C++ build writes compile_commands.json, which feeds the hash context; only a changed test file is a real edit (#221)
@@ -5363,8 +5364,38 @@ function pytestDefFiles(b) {
   const hooks = files.filter((f) => !SKIP.test(f)
     && (!b || f.startsWith(b) || f === 'conftest.py' || b.startsWith(path.posix.dirname(f) + '/'))
     && (/(^|\/)(?:conftest|pytest|sitecustomize|usercustomize)\.py$/.test(f)
-      || (() => { try { return /\bpytest_plugins\s*=/.test(fs.readFileSync(path.join(ROOT, f), 'utf8')); } catch { return false; } })()));
+      || (() => { try { return /^[ \t]*pytest_plugins\b/m.test(fs.readFileSync(path.join(ROOT, f), 'utf8')); } catch { return false; } })()));
   return [...configs, ...hooks];
+}
+function pytestPluginDeclarations(text, file) {
+  const declarations = [];
+  const literal = String.raw`(?:'[A-Za-z_]\w*(?:\.[A-Za-z_]\w*)*'|"[A-Za-z_]\w*(?:\.[A-Za-z_]\w*)*")`;
+  const sequence = String.raw`\s*(?:${literal}\s*(?:,\s*${literal}\s*)*,?\s*)?`;
+  const valid = new RegExp(`^(?:${literal}|\\[${sequence}\\]|\\(${sequence}\\))$`);
+  for (const m of text.matchAll(/^[ \t]*pytest_plugins[ \t]*(?::[^=\n]+)?[ \t]*(\+?=)[ \t]*/gm)) {
+    let end = m.index + m[0].length, depth = 0, quote = null, value = '';
+    for (; end < text.length; end++) {
+      const ch = text[end];
+      if (quote) {
+        value += ch;
+        if (ch === '\\') value += text[++end] ?? '';
+        else if (ch === quote) quote = null;
+      } else if (ch === '#') {
+        while (end < text.length && text[end] !== '\n') end++;
+        if (!depth) break;
+        value += '\n';
+      } else if ((ch === '\n' || ch === ';') && !depth) break;
+      else {
+        value += ch;
+        if (ch === "'" || ch === '"') quote = ch;
+        else if ('[('.includes(ch)) depth++;
+        else if ('])'.includes(ch)) depth--;
+      }
+    }
+    if (m[1] !== '=' || !valid.test(value.trim())) throw new Error(`REFUSED: unresolved pytest_plugins in ${file}; use literal module names (a string, list or tuple), not computed expressions`);
+    declarations.push({ text: text.slice(m.index, end), names: [...value.matchAll(/['"]([\w.]+)['"]/g)].map((n) => n[1]) });
+  }
+  return declarations;
 }
 // Static, conservative execution-surface closure; never execute wrappers to discover their inputs.
 function checkDefClosure(cfg, read = null, knownFiles = null) {
@@ -5402,6 +5433,8 @@ function checkDefClosure(cfg, read = null, knownFiles = null) {
       if (visited.has(key) || activeFiles.has(f) || t.includes('\0')) return;
       visited.add(key);
       activeFiles.add(f);
+      if (definition && /\.py$/.test(f)) for (const declaration of pytestPluginDeclarations(t, f))
+        for (const name of declaration.names) pythonModule(name, cwd, path.dirname(abs));
       inspect(tokens(t), cwd, path.dirname(abs));
       if (path.basename(f) === '.npmrc') inspect(tokens(t.replace(/^[\w-]+\s*=/gm, '')), cwd, path.dirname(abs), true);
       activeFiles.delete(f);
@@ -5549,14 +5582,15 @@ function checkDefClosure(cfg, read = null, knownFiles = null) {
           for (const f of pytestDefFiles(prefix)) {
             let t = rd(f); if (t === null) continue;
             if (path.posix.basename(f) === 'pyproject.toml') t = t.split(/^(?=\[)/m).filter((x) => /^\[tool\.pytest/.test(x)).join('');
-            if (TEST_FILE.test(f)) t = [...t.matchAll(/\bpytest_plugins\s*=\s*(\[[\s\S]*?\]|\([\s\S]*?\)|['"][^'"]+['"])/g)].map((m) => m[0]).join('\n');
+            const declarations = /\.py$/.test(f) ? pytestPluginDeclarations(t, f) : [];
+            if (TEST_FILE.test(f)) t = declarations.map((d) => d.text).join('\n');
             put(f, t, `check ${c.name} runs pytest, configured by ${f} (changed)`);
             const configKey = `pytest:${f}`;
             if (visited.has(configKey)) continue;
             visited.add(configKey);
             inspect(tokens(t), cwd, path.dirname(path.resolve(ROOT, f)));
-            for (const m of t.matchAll(/\bpytest_plugins\s*=\s*(\[[\s\S]*?\]|\([\s\S]*?\)|['"][^'"]+['"])/g))
-              for (const n of m[1].matchAll(/['"]([\w.]+)['"]/g)) pythonModule(n[1], cwd, path.dirname(path.resolve(ROOT, f)));
+            for (const declaration of declarations)
+              for (const name of declaration.names) pythonModule(name, cwd, path.dirname(path.resolve(ROOT, f)));
           }
           for (let j = i + 1; j < ts.length; j++) if (ts[j] === '-p' && ts[j + 1]) pythonModule(ts[++j], cwd);
         }
@@ -5713,6 +5747,23 @@ function missingPytestIds(result, cmd, cwd, ents) {
     && path.resolve(ROOT, e.path).startsWith(base + path.sep)
     && (!operands.length || operands.some((p) => { const f = path.resolve(base, p.split('::')[0]), target = path.resolve(ROOT, e.path); return target === f || target.startsWith(f + path.sep); }))
     && !executed.some((r) => { const parts = (r.nodeid ?? '').split('::'); return path.resolve(base, parts[0]) === path.resolve(ROOT, e.path) && parts.at(-1).replace(/\[.*$/, '') === testName(e.path, e.id); })).map((e) => e.id);
+}
+function missingNodeIds(result, cmd, cwd, ents) {
+  const text = result.text.replace(/\x1b\[[0-9;]*m/g, '');
+  if (!/^(?:ℹ |# )tests \d+\b/m.test(text)) return [];
+  // Explicit name filters retain the existing command/config provenance policy.
+  if (cmd.some((a) => /^--test-(?:name|skip)-pattern(?:=|$)/.test(a))) return [];
+  const base = path.resolve(ROOT, cwd ?? '.');
+  const at = cmd.indexOf('--test');
+  const operands = at < 0 ? [] : cmd.slice(at + 1).filter((a) => !a.startsWith('-')
+    && (/\.[cm]?[jt]sx?$/.test(a) || fs.existsSync(path.resolve(base, a))));
+  return [...ents.values()].filter((e) => e.kind === 'TEST' && /\.[cm]?[jt]sx?$/.test(e.path)
+    && path.resolve(ROOT, e.path).startsWith(base + path.sep)
+    && (!operands.length || operands.some((p) => {
+      const target = path.resolve(ROOT, e.path), f = path.resolve(base, p);
+      return target === f || target.startsWith(f + path.sep) || globRe(f.split(path.sep).join('/')).test(target.split(path.sep).join('/'));
+    }))
+    && !nodeTestRan(text, e.id, e.path)).map((e) => e.id);
 }
 // scope confidence (design 3.1): globs for `unscoped` / --allow-unscoped / default ignores (matched with globRe)
 const SCOPE_IGNORE = ['**/*.md', '.github/**', 'LICENSE', '.sdd/**'];
@@ -6237,6 +6288,8 @@ function cmdGate() {
     if (r.exit === 0 && (NO_PASSED.test(r.text) || pytestNoExecution(r.text) || noExecution(r.text) || (r.pytestResults && !r.pytestResults.some((x) => /^(passed|failed)$/.test(x.outcome))))) { lines.push(`! cmd ${c.name}: ${ZERO_TESTS.test(r.text) && !NO_PASSED.test(r.text) || r.pytestResults?.length === 0 ? 'no tests found or ran' : 'all tests skipped/todo/xfail'} — INCOMPLETE, no passing assertions`); incomplete = true; continue; }
     const missingIds = missingPytestIds(r, cmd, c.cwd, ents);
     if (missingIds.length) { add(false, `cmd ${c.name}: ${missingIds.join(', ')} missing executed pytest test ids`); continue; }
+    const missingNode = missingNodeIds(r, cmd, c.cwd, ents);
+    if (missingNode.length) { add(false, `cmd ${c.name}: ${missingNode.join(', ')} missing executed Node test ids (skipped/todo results cannot verify evidence)`); continue; }
     if (r.exit !== 0 && ZERO_TESTS.test(r.text) && !RAN_TESTS.test(r.text)) { lines.push(`! cmd ${c.name}: no tests exist yet (runner exit ${r.exit}) — INCOMPLETE, not a failure`); incomplete = true; continue; }
     // a failed test check is re-run (flaky.retries, default 1): a pass on re-run is reported as "flaky suspected", never as a plain pass (#303)
     if (r.exit !== 0 && /(^|:)test$/.test(c.name)) {
@@ -6246,7 +6299,7 @@ function cmdGate() {
         const r2 = run(cargoOutputCmd(cmd), scoped ? (c.changedTimeoutMs ?? cfg.changedTimeoutMs ?? 60000) : (c.timeoutMs ?? cfg.timeoutMs ?? 120000), c.cwd);
         if (!checkInputs(`check ${c.name} retry ${i + 1}`)) break;
         if (rustRuns.some((x) => x.c === c)) rustRuns.push({ c, cmd, scoped, r: r2 });
-        if (r2.exit === 0 && !r2.timedOut && !NO_PASSED.test(r2.text) && !pytestNoExecution(r2.text) && !noExecution(r2.text) && (!r2.pytestResults || (r2.pytestResults.some((x) => x.outcome === 'passed') && !r2.pytestResults.some((x) => x.outcome === 'failed'))) && !missingPytestIds(r2, cmd, c.cwd, ents).length) {
+        if (r2.exit === 0 && !r2.timedOut && !NO_PASSED.test(r2.text) && !pytestNoExecution(r2.text) && !noExecution(r2.text) && (!r2.pytestResults || (r2.pytestResults.some((x) => x.outcome === 'passed') && !r2.pytestResults.some((x) => x.outcome === 'failed'))) && !missingPytestIds(r2, cmd, c.cwd, ents).length && !missingNodeIds(r2, cmd, c.cwd, ents).length) {
           add(warnOnly, `cmd ${c.name} FLAKY suspected: failed on the first run, passed on re-run ${i + 1}/${retries} (${(r2.ms / 1000).toFixed(1)}s) — a flaky entry was appended to .sdd/tdd.jsonl (commit it)${warnOnly ? ' — accepted by flaky.policy "warn"' : ' — set flaky.policy "warn" in .sdd/config.json to accept, or fix the test (no sleep, injected clock, port 0, generous timeouts)'}`, failTail(r.text, 8).split('\n'));
           appendLedger({ type: 'flaky', check: c.name, retry: i + 1, retries, policy: warnOnly ? 'warn' : 'fail', outcome: warnOnly ? 'accepted' : 'fail' });
           inputSnapshot.set(rel(LEDGER), gatePathSha(rel(LEDGER)));
@@ -6920,7 +6973,7 @@ if (fn && flags.help && !['impact'].includes(pos[0])) {
 }
 try { process.exit(fn() ?? 0); }
 catch (error) {
-  if (!/^REFUSED: unresolved Rust include (?:oracle|ownership)/.test(error.message)) throw error;
+  if (!/^REFUSED: unresolved (?:Rust include (?:oracle|ownership)|pytest_plugins)/.test(error.message)) throw error;
   out(error.message);
   process.exit(1);
 }

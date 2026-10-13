@@ -11185,3 +11185,160 @@ test('r32c #351 pytest execution outcomes cannot be replaced by a plugin exit-co
   assert.equal(gate.code, 1, gate.out);
   assert.match(gate.out, /real assertion/);
 });
+
+function r33bNodeFixture(reporter = 'spec', nested = false) {
+  const prefix = nested ? 'packages/core/' : '';
+  const d = mini(T1SPEC, {
+    [`${prefix}a.test.mjs`]: `import { test } from 'node:test';\nimport assert from 'node:assert/strict';\nimport { answer } from './answer.mjs';\n/** @id TEST-A-001 @verifies REQ-A-001 */\ntest('TEST-A-001 target', { skip: process.env.CI === 'r33-skip', todo: process.env.CI === 'r33-todo' }, () => assert.equal(answer(), 1));\ntest('unannotated control', () => assert.ok(true));\ntest('unannotated skip', { skip: true }, () => assert.fail());\n`,
+    [`${prefix}answer.mjs`]: '// @id CODE-A-001 @implements REQ-A-001\nexport const answer = () => 0;\n',
+  });
+  const cp = path.join(d, '.sdd/config.json');
+  const testCmd = ['node', '--test', `--test-reporter=${reporter}`, '--test-name-pattern', '{id}', '{file}'];
+  const check = { name: 'test', cmd: ['node', '--test', `--test-reporter=${reporter}`, 'a.test.mjs'] };
+  fs.writeFileSync(cp, JSON.stringify({
+    ...JSON.parse(fs.readFileSync(cp)), scan: { include: [`${prefix}*.mjs`] }, scopePolicy: 'warn',
+    ...(nested ? { checks: [], projects: [{ root: 'packages/core', testCmd, checks: [check] }] } : { testCmd, checks: [check] }),
+  }));
+  const red = sdd(d, 'tdd', 'red', 'TEST-A-001');
+  assert.equal(red.code, 0, red.out);
+  fs.writeFileSync(path.join(d, `${prefix}answer.mjs`), '// @id CODE-A-001 @implements REQ-A-001\nexport const answer = () => 1;\n');
+  const green = sdd(d, 'tdd', 'green', 'TEST-A-001');
+  assert.equal(green.code, 0, green.out);
+  const clean = sdd(d, 'gate');
+  assert.equal(clean.code, 0, clean.out);
+  assert.equal(spawnSync('git', ['add', '-A'], { cwd: d }).status, 0);
+  assert.equal(spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'genuine Node evidence'], { cwd: d }).status, 0);
+  return { d, prefix, cp };
+}
+
+for (const reporter of ['spec', 'tap']) {
+  for (const outcome of ['skip', 'todo']) {
+    /** @id TEST-R33-NODE-001 @verifies REQ-R33-NODE-001 */
+    test(`r33b #355 ${reporter} mixed ${outcome} annotated target fails full and changed gates`, () => {
+      const { d, prefix } = r33bNodeFixture(reporter);
+      fs.writeFileSync(path.join(d, `${prefix}answer.mjs`), '// @id CODE-A-001 @implements REQ-A-001\nexport const answer = () => -100;\n');
+      const previous = ENV.CI;
+      ENV.CI = `r33-${outcome}`;
+      try {
+        for (const args of [['gate'], ['gate', '--changed', '--baseline', 'HEAD']]) {
+          const gate = sdd(d, ...args);
+          assert.equal(gate.code, 1, gate.out);
+          assert.match(gate.out, /TEST-A-001.*missing executed Node test ids/, gate.out);
+        }
+      } finally { if (previous === undefined) delete ENV.CI; else ENV.CI = previous; }
+    });
+  }
+}
+
+/** @id TEST-R33-NODE-002 @verifies REQ-R33-NODE-001 */
+test('r33b #355 Node execution verification respects project and selected file ownership', () => {
+  const { d, cp } = r33bNodeFixture('tap', true);
+  fs.writeFileSync(path.join(d, 'packages/core/other.test.mjs'), `import { test } from 'node:test';\n/** @id TEST-A-002 @verifies REQ-A-001 */\ntest('TEST-A-002 omitted', { skip: true }, () => {});\n`);
+  // Narrowing the scanned surface here isolates execution verification from evidence requirements.
+  const cfg = JSON.parse(fs.readFileSync(cp));
+  cfg.scan.include = ['packages/core/a.test.mjs'];
+  fs.writeFileSync(cp, JSON.stringify(cfg));
+  const clean = sdd(d, 'gate');
+  assert.equal(clean.code, 0, clean.out);
+  cfg.projects[0].checks[0].cmd = ['node', '--test', '--test-reporter=tap', '*.test.mjs'];
+  cfg.scan.include = ['packages/core/a.test.mjs'];
+  fs.writeFileSync(cp, JSON.stringify(cfg));
+  const previous = ENV.CI;
+  ENV.CI = 'r33-skip';
+  try {
+    const gate = sdd(d, 'gate');
+    assert.equal(gate.code, 1, gate.out);
+    assert.match(gate.out, /TEST-A-001.*missing executed Node test ids/);
+  } finally { if (previous === undefined) delete ENV.CI; else ENV.CI = previous; }
+});
+
+for (const declaration of [
+  "pytest_plugins = ['qa_' + 'hooks']",
+  "pytest_plugins = PLUGINS",
+  "pytest_plugins = [f'qa_{SUFFIX}']",
+  "pytest_plugins = [plugin_name()]",
+  "pytest_plugins = ['qa_hooks'] + EXTRA",
+  "pytest_plugins = (\n    'qa_' + 'hooks',\n)",
+  "pytest_plugins: list[str] = ['qa_' + 'hooks']",
+  "pytest_plugins += ['qa_hooks']",
+]) {
+  /** @id TEST-R33-PYTEST-001 @verifies REQ-R33-PYTEST-001 */
+  test(`r33b #356 unresolved plugin declaration fails closed: ${declaration.replaceAll('\n', ' ')}`, () => {
+    const d = r31aFixture({
+      'conftest.py': "pytest_plugins = ['qa_hooks']\n",
+      'src/qa_hooks.py': 'def pytest_collection_modifyitems(items):\n    pass\n',
+    }, [{ name: 'test', cmd: ['sh', '-c', 'true # pytest'] }]);
+    fs.writeFileSync(path.join(d, 'conftest.py'), `${declaration}\n`);
+    fs.writeFileSync(path.join(d, 'src/qa_hooks.py'), 'def pytest_collection_modifyitems(items):\n    for item in items:\n        item.obj = lambda: None\n');
+    for (const args of [['gate'], ['gate', '--changed', '--baseline', 'HEAD'], ['tdd', 'green', 'TEST-A-001']]) {
+      const result = sdd(d, ...args);
+      assert.equal(result.code, 1, result.out);
+      assert.match(result.out, /REFUSED: unresolved pytest_plugins.*conftest\.py/, result.out);
+    }
+  });
+}
+
+/** @id TEST-R33-PYTEST-002 @verifies REQ-R33-PYTEST-001 */
+test('r33b #356 computed plugin refuses real pytest execution before any evidence write', { skip: !r32cPythonAvailable }, () => {
+  const d = mini(T1SPEC, {
+    'pytest.ini': '[pytest]\npythonpath = src\n',
+    'test_a.py': 'from subject import answer\n# @id TEST-A-001 @verifies REQ-A-001\ndef test_a_001():\n    assert answer() == 1\n',
+    'conftest.py': "pytest_plugins = ['qa_' + 'hooks']\n",
+    'src/qa_hooks.py': 'from pathlib import Path\nPath(".sdd/plugin-ran").write_text("executed")\ndef pytest_collection_modifyitems(items):\n    pass\n',
+    'src/subject.py': '# @id CODE-A-001 @implements REQ-A-001\ndef answer():\n    return 0\n',
+  }, ['python3', '-m', 'pytest', '-q', 'test_a.py', '-k', '{idu}']);
+  const cp = path.join(d, '.sdd/config.json');
+  fs.writeFileSync(cp, JSON.stringify({ ...JSON.parse(fs.readFileSync(cp)), scan: { include: ['test_a.py', 'src/subject.py'] }, checks: [{ name: 'test', cmd: ['python3', '-m', 'pytest', '-q'] }] }));
+  const red = sdd(d, 'tdd', 'red', 'TEST-A-001');
+  assert.equal(red.code, 1, red.out);
+  assert.match(red.out, /REFUSED: unresolved pytest_plugins/);
+  assert.ok(!fs.existsSync(path.join(d, '.sdd/tdd.jsonl')));
+  assert.ok(!fs.existsSync(path.join(d, '.sdd/plugin-ran')));
+});
+
+/** @id TEST-R33-PYTEST-003 @verifies REQ-R33-PYTEST-001 */
+test('r33b #356 transitive literal plugins reject a computed nested declaration before evidence writes', () => {
+  const d = r31aFixture({
+    'conftest.py': "pytest_plugins = (\n    'qa_hooks', # literal tuple\n)\n",
+    'src/qa_hooks.py': 'import helper\npytest_plugins = "nested_hooks"\n',
+    'src/helper.py': 'VALUE = 1\n',
+    'src/nested_hooks.py': 'def pytest_collection_modifyitems(items):\n    pass\n',
+  }, [{ name: 'test', cmd: ['sh', '-c', 'true # python3 -m pytest'] }]);
+  const ledger = path.join(d, '.sdd/tdd.jsonl');
+  const before = fs.readFileSync(ledger, 'utf8');
+  const evidence = JSON.parse(before.trim().split('\n').at(-1));
+  for (const file of ['src/qa_hooks.py', 'src/helper.py', 'src/nested_hooks.py'])
+    assert.ok(Object.keys(evidence.checkDefShas).some((key) => key.endsWith(`|${file}`)), file);
+  fs.writeFileSync(path.join(d, 'src/qa_hooks.py'), "import helper\npytest_plugins = ['nested_' + 'hooks']\n");
+  for (const args of [['gate'], ['gate', '--changed', '--baseline', 'HEAD'], ['tdd', 'green', 'TEST-A-001']]) {
+    const result = sdd(d, ...args);
+    assert.equal(result.code, 1, result.out);
+    assert.match(result.out, /REFUSED: unresolved pytest_plugins.*src\/qa_hooks\.py/);
+    assert.equal(fs.readFileSync(ledger, 'utf8'), before);
+  }
+});
+
+/** @id TEST-R33-NODE-003 @verifies REQ-R33-NODE-001 */
+test('r33b #355 skipped annotated Node target cannot recover a flaky check under warn policy', () => {
+  const { d, cp } = r33bNodeFixture();
+  fs.writeFileSync(path.join(d, 'check.mjs'), [
+    "import fs from 'node:fs';",
+    "import { spawnSync } from 'node:child_process';",
+    "const marker = '.sdd/r33-retry';",
+    "if (!fs.existsSync(marker)) { fs.writeFileSync(marker, 'retry'); console.error('AssertionError: first run'); process.exit(1); }",
+    "const result = spawnSync(process.execPath, ['--test', '--test-reporter=spec', 'a.test.mjs'], { stdio: 'inherit', env: { ...process.env, CI: 'r33-skip' } });",
+    "process.exit(result.status ?? 1);",
+    '',
+  ].join('\n'));
+  const cfg = JSON.parse(fs.readFileSync(cp));
+  cfg.checks = [{ name: 'test', cmd: ['node', 'check.mjs'] }];
+  cfg.flaky = { retries: 1, policy: 'warn' };
+  fs.writeFileSync(cp, JSON.stringify(cfg));
+  fs.writeFileSync(path.join(d, 'answer.mjs'), '// @id CODE-A-001 @implements REQ-A-001\nexport const answer = () => -100;\n');
+  const ledger = path.join(d, '.sdd/tdd.jsonl');
+  const before = fs.readFileSync(ledger, 'utf8');
+  const gate = sdd(d, 'gate');
+  assert.equal(gate.code, 1, gate.out);
+  assert.doesNotMatch(gate.out, /FLAKY suspected/);
+  assert.equal(fs.readFileSync(ledger, 'utf8'), before);
+});
