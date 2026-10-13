@@ -133,3 +133,24 @@ Absolute and root-relative review paths, including paths with spaces, identify t
 - Tracker #314 (r23e): Red of a `(characterization)` REQ prints `(characterization) REQ`, a `(test-only)` REQ keeps `(test-only) REQ`. `approve <feature>` (no subcommand) names the missing subcommand. The gate evidence note for refactor-recorded tests says `--retest` + Green replaces it. Decisions: `gate` appends to `.sdd/tdd.jsonl` only for a `flaky` retry (the output now says so; commit it) — no opt-out added; flaky retry stays limited to the gate `test` check (`tdd green` is never retried); `[src:]` anchor drift stays a trace warning (no `--strict-src`). Skipped: Green-after-header-change text (a #309 test requires that a header-only refusal does not suggest --retest); skipped as risky: making `tdd refactor` clear the "no new Red" evidence note.
 - Tracker r24a (design 3.1, fail-closed gate): `gate --changed` prints `scope: exact=N widened=N unknown=N`; changed files claimed by nothing are `unknown` and, under `scopePolicy: "strict"` (written by `init` for new configs; absent key = `warn`), fail the gate with the file list. Waivers: config `unscoped` globs, `--allow-unscoped <glob>` (ledger `scope-waiver`), default ignores `**/*.md`, `.github/**`, `LICENSE`, `.sdd/**`. Workspace-root Cargo/JS/Python manifests, lockfiles and toolchain files widen to all projects of that ecosystem. Not done: widening for ecosystems without a project mapping, and a per-file closure for root checks.
 - Tracker r24d (design 3.4, self-verification; tests only, no tool change): `sdd.test.mjs` ends with (1) a scope differential per ecosystem (Cargo/JS/Python fixtures, fake hash-of-inputs checks as oracle: every single-file mutation must keep `gate --changed` scope ⊇ the checks whose result changed; unclaimed file warns, fails under strict), (2) a Rust stub round-trip (each generated const/type is evidence-typed or carries `SDD-TODO(stub)` and is listed by `tdd stub --report`; compiles under cargo or carries a marker; no cargo = counted `SKIP: toolchain missing`), (3) ledger invariants on rechained tdd.jsonl fixtures (Red before Green, no Green on stale evidence, merge-ledger idempotent). Known gaps are recorded as `todo` tests named `r24d TODO stub:` (untyped call returns emitted as `i64` without marker, free fns absent from `--report`, float-compared method stubbed `-> i64`, loop-bound const element types guessed `i64`); not fixed (heuristic long tail, risky).
+
+## Gate fail-open audit (r25b)
+
+Audit of `gate` paths that could end PASS (exit 0) with missing or unverifiable evidence (classes per docs/design-sdd-hardening.md §3.5). Repros are in `sdd.test.mjs` (`r25b …`).
+
+| Path | Repro | Class | Fix / reason |
+|---|---|---|---|
+| `changedCmd` check, only deleted files changed | delete `lib.mjs`, `gate --changed` | S1 | skipped as "no changed files" and passed. Now runs the full check (`only deleted files changed`) |
+| Root test check skipped because all changes are in a nested project that has no checks | `projects:[{root:'app'}]`, root `test` check, edit `app/x.mjs` | S1 | nothing ran. `scopePolicy` strict: `✗` fail; warn (default for existing configs): `!` line naming the project |
+| Unclaimed changed file (no project / dependsOn / check) | r24a | — | already handled by r24a (`scopePolicy`, `unscoped`, `--allow-unscoped`, ledger) |
+| `--changed` with a bad `--baseline` ref | `--baseline nope` | none | REFUSED, exit 2 |
+| git unavailable / `git status` or `git diff` fails | non-repo root | none | falls back to full evidence and checks, not "no changes" |
+| Configured command missing (ENOENT) | `cmd:["nonexistent"]` | none | exit 127 → `✗` fail |
+| Check ran zero tests / all skipped / scoped run matched no tests | `node --test` with no files | none | exit 2 INCOMPLETE; scoped zero-test run re-runs the full check |
+| No spec / `--no-run` / no commands configured | — | none | INCOMPLETE (exit 2), never PASS |
+| Failing check downgraded | flaky retry | S3 | `flaky.policy: "warn"` accepts a pass-on-rerun; opt-in, recorded as a `flaky` ledger entry |
+| Hub change that is comment/whitespace-only skips the hub fallback | symbol-neutral edit | S3 | semantically a no-op; printed as `!` |
+| Changed `.sdd/**` (e.g. config edit) not treated as a change for `changedCmd` | edit `.sdd/config.json` | S3 | `.sdd/**` is a default scope ignore; lock/ledger/approval checks always run |
+| Approval/lock absent | T2 or `approval: human` without lock | none | `✗ lock` fail; spec removal also fails |
+| Stale evidence accepted | edit test/REQ/oracle after Green | none | `evidenceStatus` fails (hash of REQ, test region and oracle deps); changed oracles pull their REQs into `--changed` scope |
+| `prepare` step cached on unchanged inputs | — | none | key covers cmd + input hashes + outputs exist |
