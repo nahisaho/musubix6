@@ -5029,7 +5029,7 @@ function cmdTrace() {
   return t.errors.length ? 1 : 0;
 }
 
-// `gate --changed` fixes its change set before running checks: a check that rewrites a lockfile (cargo test) must not erase the change for the next project (#327)
+// Snapshot before prepare or checks can normalize a changed lockfile and hide it from later projects (#327, #337).
 let changedSnap = null;
 function changedFiles() {
   if (changedSnap) return changedSnap;
@@ -5350,13 +5350,14 @@ function scanless(res) {
   return workspaceFiles().filter((f) => res.some((x) => x.test(f)));
 }
 
+/** @id CODE-GATESNAPSHOT-001 @implements REQ-GATESNAPSHOT-001 */
 function cmdGate() {
   const lines = [];
   if (flags.changed && typeof flags.baseline === 'string' && spawnSync('git', ['rev-parse', '--verify', '--quiet', flags.baseline + '^{commit}'], { cwd: ROOT }).status !== 0) {
     out(`REFUSED: --baseline ${flags.baseline} is not a git ref; gate --changed --baseline <ref> diffs against it`);
     return 2;
   }
-  if (flags.changed && changedFiles() === null) {
+  if (flags.changed && (changedSnap = changedFiles()) === null) {
     lines.push('! Git change discovery unavailable — falling back to full evidence and checks');
     flags.changed = false;
   }
@@ -5466,7 +5467,6 @@ function cmdGate() {
     }
   }
   if (flags.changed) {
-    changedSnap = changedFiles();
     const chg = changedFiles();
     const specFeatures = new Set(loadSpecs().filter((sp) => chg.has(sp.path) || [...chg].some((c) => c.replace(/^\.\//, '') === sp.path)).map((sp) => sp.feature));
     const specImpl = specFeatures.size ? [...scanEntities(listFiles()).ents.values()].filter((e) => e.refs.implements.some((r) => loadSpecs().some((sp) => specFeatures.has(sp.feature) && sp.reqs.some((q) => q.id === r)))).map((e) => e.path) : [];
