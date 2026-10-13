@@ -9985,3 +9985,43 @@ test('#338 vanished secondary REQs in grouped Green evidence warn, fail strict g
     assert.doesNotMatch(result.out, /req REQ-A-002: has Green evidence/);
   }
 });
+
+test('#339 native Node TypeScript parse failures cannot establish Red for any selected ID', () => {
+  const ids = ['TEST-A-001', 'TEST-A-002'];
+  const subject = (body) => `// @id CODE-A-001 @implements REQ-A-001\nexport const answer: number = ${body};\n`;
+  const d = mini(T1SPEC, {
+    'package.json': '{"type":"module"}',
+    'subject.ts': subject('1') + 'const broken = ;\n',
+    'a.test.mjs': [
+      "import { test } from 'node:test';",
+      "import assert from 'node:assert/strict';",
+      "import { answer } from './subject.ts';",
+      ...ids.flatMap((id) => [
+        `// @id ${id} @verifies REQ-A-001`,
+        `test('${id} answer', () => assert.equal(answer, 1));`,
+      ]),
+      '',
+    ].join('\n'),
+  }, ['node', '--test', '--test-reporter=spec', '--test-name-pattern={id}', '{file}']);
+  const parser = spawnSync('node', ['--test', '--test-reporter=spec', 'a.test.mjs'], { cwd: d, encoding: 'utf8', env: ENV });
+  assert.notEqual(parser.status, 0);
+  assert.match(parser.stdout + parser.stderr, /SyntaxError \[ERR_INVALID_TYPESCRIPT_SYNTAX\]:/);
+  const ledger = path.join(d, '.sdd/tdd.jsonl');
+  for (const id of ids) {
+    const red = sdd(d, 'tdd', 'red', id);
+    assert.equal(red.code, 1, red.out);
+    assert.match(red.out, /RED REJECTED.*load\/compile error/);
+    assert.equal(fs.existsSync(ledger), false);
+  }
+  fs.writeFileSync(path.join(d, 'subject.ts'), subject('1'));
+  const noRed = sdd(d, 'tdd', 'green', ids[0]);
+  assert.equal(noRed.code, 1, noRed.out);
+  assert.equal(fs.existsSync(ledger), false);
+  fs.writeFileSync(path.join(d, 'subject.ts'), subject('0'));
+  const red = sdd(d, 'tdd', 'red', ids[0]);
+  assert.equal(red.code, 0, red.out);
+  assert.doesNotMatch(red.out, /\[weak\]/);
+  fs.writeFileSync(path.join(d, 'subject.ts'), subject('1'));
+  const green = sdd(d, 'tdd', 'green', ids[0]);
+  assert.equal(green.code, 0, green.out);
+});
