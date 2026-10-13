@@ -4573,6 +4573,7 @@ function cmdTdd() {
     const lastG = prior.filter((e) => e.type === 'green' || e.type === 'refactor').at(-1);
     const movedRows = Object.entries(lastG?.reqShas ?? {}).filter(([rid, rsha]) => rsha && reqShaOf(rid) && !reqShaSame(rid, rsha)).map(([rid]) => rid);
     if (movedRows.length && readJson(CONFIG, {}).specEditPolicy === 'reapprove' && !(typeof flags.wording === 'string' && flags.wording.trim())) { out(`REFUSED: specEditPolicy reapprove: ${movedRows.join(', ')} changed since the previous Green and ${spec.tier} specs have no approval lock. Re-approve the new wording: tdd refactor ${id} --wording "<why the behaviour is unchanged>" (behaviour changed: tdd red then tdd green)`); return 1; }
+    if (lastG && !shaMatches(lastG.fileSha, t.path, id) && typeof flags.wording === 'string' && flags.wording.trim() && !(lastG.regSha && lastG.regSha === testRegionSha(t.path, id))) { out(`REFUSED: ${id}: --wording only covers spec rows (and shared test-file content), but this test's own lines changed since its last Green, which could weaken an assertion. Expectation changed: tdd red ${id} --retest "<reason>", then tdd green. Behaviour/assertions changed: tdd red then tdd green. Otherwise revert the test edit and run tdd refactor ${id}`); return 1; }
     if (lastG && !shaMatches(lastG.fileSha, t.path, id) && !(typeof flags.wording === 'string' && flags.wording.trim())) { const shared = lastG.regSha && lastG.regSha === testRegionSha(t.path, id); out(`REFUSED: ${id}: ${flags.wording !== undefined ? '--wording needs a non-empty reason; ' : ''}the test changed since its last Green and ${spec.tier} specs have no approval lock, so a refactor would bless a behaviour change without a Red. ${shared ? `Only shared test-file content (imports/header/setup) changed, not this test's own lines: tdd refactor ${id} --wording "<why>"` : `The test's own lines changed. Expectation changed: tdd red ${id} --retest "<reason>", then tdd green. Behaviour/assertions changed: tdd red then tdd green. Wording/formatting only: tdd refactor ${id} --wording "<why>"`}`); return 1; }
   }
 
@@ -5429,7 +5430,7 @@ function cmdGate() {
       if (!/^(\?\?|A.|.A)/.test(l)) continue;
       const f = path.relative(ROOT, path.resolve(gt, l.slice(3))).split(path.sep).join('/');
       if (!pr.some((r) => f.startsWith(r)) || !EXT.test(f) || /\.sh$/.test(f) || TEST_FILE.test(f) || reDefault.some((re) => re.test(f)) || reCfg.some((re) => re.test(f)) || reFlag.some((re) => re.test(f))) continue;
-      try { if (!/@id\s+CODE-|@implements\b/.test(fs.readFileSync(path.join(ROOT, f), 'utf8'))) newSrc.push(f); } catch { /* unreadable */ }
+      try { if (!/@id\s+(CODE|TEST)-|@implements\b|@verifies\b/.test(fs.readFileSync(path.join(ROOT, f), 'utf8'))) newSrc.push(f); } catch { /* unreadable */ }
     }
     if (newSrc.length) {
       const msg = `scope: ${newSrc.length} new source file(s) under a project carry no @id/@implements (not covered by any REQ): ${list(newSrc)} — annotate \`@id CODE-... @implements REQ-...\`, or waive with \`unscoped\` / --allow-unscoped`;

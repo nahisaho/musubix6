@@ -158,3 +158,4 @@ Audit of `gate` paths that could end PASS (exit 0) with missing or unverifiable 
 | Approval/lock absent | T2 or `approval: human` without lock | none | `✗ lock` fail; spec removal also fails |
 | Stale evidence accepted | edit test/REQ/oracle after Green | none | `evidenceStatus` fails (hash of REQ, test region and oracle deps); changed oracles pull their REQs into `--changed` scope |
 | `prepare` step cached on unchanged inputs | — | none | key covers cmd + input hashes + outputs exist |
+- r27d (#323): `tdd refactor --wording` only covers spec rows (and shared test-file content); it is refused when the test's own lines changed since Green (new Red/`--retest` or a real refactor instead). The scope check treats a new file carrying `@id TEST-` / `@verifies` as annotated (no false strict failure).
