@@ -9350,3 +9350,36 @@ test('r28a no recorded check-def hash (old ledger) means no warning', () => {
   fs.writeFileSync(path.join(d, 'package.json'), '{"scripts":{"test":"b"}}');
   assert.doesNotMatch(sdd(d, 'gate').out, /differs from the last Green/);
 });
+
+// r28b #326: weakening a policy key in .sdd/config.json is visible to gate --changed
+const r28b = (base, patch) => {
+  const d = mini('---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | x shall hold. | TEST-A-001 |\n', {}, PASS);
+  const cp = path.join(d, '.sdd/config.json');
+  fs.writeFileSync(cp, JSON.stringify({ ...JSON.parse(fs.readFileSync(cp, 'utf8')), ...base }));
+  const git = (...a) => spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', ...a], { cwd: d });
+  git('add', '-A'); git('commit', '-qm', 'i');
+  fs.writeFileSync(cp, JSON.stringify({ ...JSON.parse(fs.readFileSync(cp, 'utf8')), ...patch }));
+  return d;
+};
+
+test('r28b scopePolicy strict -> warn fails gate --changed unless --allow-config-weaken', () => {
+  const d = r28b({ scopePolicy: 'strict' }, { scopePolicy: 'warn' });
+  const g = sdd(d, 'gate', '--changed');
+  assert.equal(g.code, 1, g.out);
+  assert.match(g.out, /✗ config: .*scopePolicy/, g.out);
+  const ok = sdd(d, 'gate', '--changed', '--allow-config-weaken');
+  assert.match(ok.out, /! config: .*scopePolicy/, ok.out);
+  assert.doesNotMatch(ok.out, /✗ config/, ok.out);
+});
+
+test('r28b weakening keys under a non-strict baseline warn only', () => {
+  const d = r28b({ scopePolicy: 'warn', specEditPolicy: 'reapprove', flaky: { retries: 1 }, artifactStaleness: true }, { specEditPolicy: 'off', flaky: { retries: 3, policy: 'warn' }, artifactStaleness: false, unscoped: ['src/**'] });
+  const g = sdd(d, 'gate', '--changed');
+  for (const k of ['specEditPolicy', 'flaky.retries', 'flaky.policy', 'unscoped', 'artifactStaleness']) assert.match(g.out, new RegExp(`! config: .*${k.replace('.', '\\.')}`), `${k}\n${g.out}`);
+  assert.doesNotMatch(g.out, /✗ config/, g.out);
+});
+
+test('r28b a config change that does not weaken stays silent', () => {
+  const d = r28b({ scopePolicy: 'warn' }, { scopePolicy: 'strict' });
+  assert.doesNotMatch(sdd(d, 'gate', '--changed').out, /config:/);
+});

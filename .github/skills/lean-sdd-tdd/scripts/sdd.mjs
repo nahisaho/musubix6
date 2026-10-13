@@ -8,7 +8,7 @@ import os from 'node:os';
 import { builtinModules } from 'node:module';
 import path from 'node:path';
 
-const BOOL = new Set(['allow-setup-red', 'missing-module', 'baseline', 'weak', 'changed', 'json', 'no-run', 'verbose', 'help', 'stale', 'report', 'explain']);
+const BOOL = new Set(['allow-setup-red', 'allow-config-weaken', 'missing-module', 'baseline', 'weak', 'changed', 'json', 'no-run', 'verbose', 'help', 'stale', 'report', 'explain']);
 function parseArgs(argv) {
   const pos = [];
   const flags = {};
@@ -5504,6 +5504,30 @@ function cmdGate() {
       const msg = `scope: ${newSrc.length} new source file(s) under a project carry no @id/@implements (not covered by any REQ): ${list(newSrc)} — annotate \`@id CODE-... @implements REQ-...\`, or waive with \`unscoped\` / --allow-unscoped`;
       if (cfg.scopePolicy === 'strict') add(false, `${msg} (scopePolicy strict)`);
       else lines.push(`! ${msg} (scopePolicy warn: set "scopePolicy": "strict" to fail)`);
+    }
+    // a .sdd/config.json edit that loosens gate strictness vs the baseline (#326)
+    const bref = typeof flags.baseline === 'string' ? flags.baseline : 'HEAD';
+    const bshow = spawnSync('git', ['show', `${bref}:./.sdd/config.json`], { cwd: ROOT, encoding: 'utf8' });
+    if (bshow.status === 0) {
+      let bc = null;
+      try { bc = JSON.parse(bshow.stdout); } catch { /* unparsable baseline */ }
+      if (bc && typeof bc === 'object') {
+        const weak = [];
+        if (bc.scopePolicy === 'strict' && cfg.scopePolicy !== 'strict') weak.push(`scopePolicy ${JSON.stringify(bc.scopePolicy)} → ${cfg.scopePolicy === undefined ? 'removed' : JSON.stringify(cfg.scopePolicy)}`);
+        if (bc.specEditPolicy === 'reapprove' && cfg.specEditPolicy !== 'reapprove') weak.push(`specEditPolicy "reapprove" → ${cfg.specEditPolicy === undefined ? 'removed' : JSON.stringify(cfg.specEditPolicy)}`);
+        if (cfg.flaky?.policy === 'warn' && bc.flaky?.policy !== 'warn') weak.push('flaky.policy → "warn"');
+        const rt = (c) => (Number.isInteger(c.flaky?.retries) ? c.flaky.retries : 1);
+        if (rt(cfg) > rt(bc)) weak.push(`flaky.retries ${rt(bc)} → ${rt(cfg)}`);
+        const bu = [].concat(bc.unscoped ?? []).map(String), nu = [].concat(cfg.unscoped ?? []).map(String).filter((g) => !bu.includes(g));
+        if (nu.length) weak.push(`unscoped += ${nu.join(', ')}`);
+        if (bc.artifactStaleness === true && cfg.artifactStaleness !== true) weak.push('artifactStaleness turned off');
+        if (bc.artifactGranularity !== undefined && cfg.artifactGranularity === undefined) weak.push('artifactGranularity removed');
+        if (weak.length) {
+          const wm = `config: .sdd/config.json weakens gate strictness vs ${bref}: ${weak.join('; ')}`;
+          if (bc.scopePolicy === 'strict' && !flags['allow-config-weaken']) add(false, `${wm} (baseline scopePolicy strict; accept with --allow-config-weaken)`);
+          else lines.push(`! ${wm}${bc.scopePolicy === 'strict' ? ' (accepted by --allow-config-weaken)' : ''}`);
+        }
+      }
     }
     // a changed manifest that defines what a gate check runs can silently narrow the test run (#324)
     const defs = [];
