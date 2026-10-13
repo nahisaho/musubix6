@@ -10383,3 +10383,215 @@ def test_regression():
     assert.match(acknowledged.out, /accepted by --allow-config-weaken/, acknowledged.out);
   }
 });
+
+function r31cVerifiedProject(extra = {}) {
+  const d = mini(T1SPEC, {
+    'value.mjs': '// @id CODE-A-001 @implements REQ-A-001\nexport const value = 0;\n',
+    'a.test.mjs': "import { test } from 'node:test';\nimport assert from 'node:assert/strict';\nimport { value } from './value.mjs';\n// @id TEST-A-001 @verifies REQ-A-001\ntest('TEST-A-001 value', () => assert.equal(value, 1));\n",
+  });
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({
+    testCmd: ['node', '--test', '--test-name-pattern={id}', '{file}'],
+    checks: [{ name: 'test', cmd: ['node', '--test', 'a.test.mjs'] }],
+    flaky: { retries: 0 },
+    ...extra,
+  }));
+  const red = sdd(d, 'tdd', 'red', 'TEST-A-001');
+  assert.equal(red.code, 0, red.out);
+  fs.writeFileSync(path.join(d, 'value.mjs'), '// @id CODE-A-001 @implements REQ-A-001\nexport const value = 1;\n');
+  const green = sdd(d, 'tdd', 'green', 'TEST-A-001');
+  assert.equal(green.code, 0, green.out);
+  return d;
+}
+
+const r31cMutation = "const f=require('fs');f.writeFileSync('value.mjs',f.readFileSync('value.mjs','utf8').replace('value = 1','value = 0'));f.writeFileSync('a.test.mjs',f.readFileSync('a.test.mjs','utf8').replace('assert.equal(value, 1)','assert.ok(true)'));";
+
+test('r31c #342 prepare cannot rewrite validated tests even when declared as outputs', () => {
+  for (const args of [[], ['--changed']]) {
+    const d = r31cVerifiedProject({
+      prepare: { cmd: ['node', '-e', r31cMutation], outputs: ['a.test.mjs'] },
+    });
+    const r = sdd(d, 'gate', ...args);
+    assert.equal(r.code, 1, r.out);
+    assert.match(r.out, /gate inputs changed.*prepare.*a\.test\.mjs/, r.out);
+    assert.doesNotMatch(r.out, /SDD GATE PASS/);
+    assert.equal(fs.existsSync(path.join(d, '.sdd/prepare-cache.json')), false, 'mutating preparation must not be cached');
+  }
+});
+
+test('r31c #342 checks cannot mutate validated tests specs ledger or policy inputs', () => {
+  for (const target of ['a.test.mjs', '.sdd/specs/a.md', '.sdd/tdd.jsonl', '.sdd/config.json', '.sdd/approvals.json', '.sdd/retired-reqs.json', '.sdd/trace-baseline.json']) {
+    const d = r31cVerifiedProject({
+      checks: [{ name: 'probe', cmd: ['node', '-e', `require('fs').appendFileSync(${JSON.stringify(target)}, '\\n');`] }],
+    });
+    const r = sdd(d, 'gate');
+    assert.equal(r.code, 1, `${target}: ${r.out}`);
+    assert.match(r.out, /gate inputs changed.*check probe/, r.out);
+    assert.ok(r.out.includes(target), r.out);
+  }
+});
+
+test('r31c #342 deleted evidence inputs and newly annotated files cannot keep PASS', () => {
+  for (const script of [
+    "require('fs').unlinkSync('a.test.mjs');",
+    "require('fs').unlinkSync('.sdd/tdd.jsonl');",
+    "require('fs').writeFileSync('.sdd/specs/new.md','---\\nfeature: new\\ntier: T1\\n---\\n');",
+    "require('fs').writeFileSync('new.test.mjs','// @id TEST-A-002 @verifies REQ-A-001\\n');",
+  ]) {
+    const d = r31cVerifiedProject({ checks: [{ name: 'probe', cmd: ['node', '-e', script] }] });
+    const r = sdd(d, 'gate', '--changed');
+    assert.equal(r.code, 1, r.out);
+    assert.match(r.out, /gate inputs changed.*check probe/, r.out);
+  }
+});
+
+test('r31c #342 gate detects oracle changes despite an unchanged annotated test', () => {
+  const d = r31cVerifiedProject();
+  fs.writeFileSync(path.join(d, 'oracle.json'), '1');
+  fs.appendFileSync(path.join(d, 'a.test.mjs'), "\nimport { readFileSync } from 'node:fs';\nconst expected = JSON.parse(readFileSync('oracle.json', 'utf8'));\n");
+  const cfg = JSON.parse(fs.readFileSync(path.join(d, '.sdd/config.json'), 'utf8'));
+  cfg.oracleData = ['oracle.json'];
+  cfg.checks = [{ name: 'probe', cmd: ['node', '-e', "require('fs').writeFileSync('oracle.json','2');"] }];
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify(cfg));
+  fs.writeFileSync(path.join(d, 'value.mjs'), '// @id CODE-A-001 @implements REQ-A-001\nexport const value = 0;\n');
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-A-001').code, 0);
+  fs.writeFileSync(path.join(d, 'value.mjs'), '// @id CODE-A-001 @implements REQ-A-001\nexport const value = 1;\n');
+  assert.equal(sdd(d, 'tdd', 'green', 'TEST-A-001').code, 0);
+  const r = sdd(d, 'gate');
+  assert.equal(r.code, 1, r.out);
+  assert.match(r.out, /gate inputs changed.*oracle\.json/, r.out);
+});
+
+test('r31c #342 mutations are rejected before a later check can restore the test', () => {
+  const d = r31cVerifiedProject({
+    checks: [
+      { name: 'mutate', cmd: ['node', '-e', "const f=require('fs');f.copyFileSync('a.test.mjs','saved.txt');f.appendFileSync('a.test.mjs','\\n// changed\\n');"] },
+      { name: 'restore', cmd: ['node', '-e', "const f=require('fs');f.copyFileSync('saved.txt','a.test.mjs');f.writeFileSync('restored.txt','yes');"] },
+    ],
+  });
+  const r = sdd(d, 'gate');
+  assert.equal(r.code, 1, r.out);
+  assert.match(r.out, /gate inputs changed.*check mutate/, r.out);
+  assert.equal(fs.existsSync(path.join(d, 'restored.txt')), false);
+});
+
+test('r31c #342 test retries cannot normalize a mutated validated test', () => {
+  const d = r31cVerifiedProject({
+    flaky: { retries: 1, policy: 'warn' },
+    checks: [{ name: 'test', cmd: ['node', '-e', "const f=require('fs');if(!f.existsSync('retry.txt')){f.copyFileSync('a.test.mjs','saved.txt');f.appendFileSync('a.test.mjs','\\n// changed\\n');f.writeFileSync('retry.txt','first');console.log('AssertionError: first');process.exit(1);}f.copyFileSync('saved.txt','a.test.mjs');"] }],
+  });
+  const before = fs.readFileSync(path.join(d, '.sdd/tdd.jsonl'), 'utf8');
+  const r = sdd(d, 'gate');
+  assert.equal(r.code, 1, r.out);
+  assert.match(r.out, /gate inputs changed.*check test/, r.out);
+  assert.doesNotMatch(r.out, /FLAKY suspected/);
+  assert.equal(fs.readFileSync(path.join(d, '.sdd/tdd.jsonl'), 'utf8'), before);
+});
+
+test('r31c #342 declared generated outputs and cached preparation remain valid', () => {
+  const d = r31cVerifiedProject({
+    generated: ['dist/**'],
+    prepare: {
+      inputs: ['value.mjs'],
+      outputs: ['dist'],
+      cmd: ['node', '-e', "const f=require('fs');f.mkdirSync('dist',{recursive:true});f.writeFileSync('dist/value.json','1');f.appendFileSync('build-count.txt','1');"],
+    },
+  });
+  for (let i = 0; i < 2; i++) {
+    const r = sdd(d, 'gate');
+    assert.equal(r.code, 0, r.out);
+    if (i) assert.match(r.out, /prepare: up to date/, r.out);
+  }
+  assert.equal(fs.readFileSync(path.join(d, 'build-count.txt'), 'utf8'), '1');
+});
+
+test('r31c #342 gate-owned flaky ledger appends do not count as input tampering', () => {
+  const d = r31cVerifiedProject({
+    flaky: { retries: 1, policy: 'warn' },
+    checks: [
+      { name: 'test', cmd: ['node', '-e', "const f=require('fs');if(!f.existsSync('retry.txt')){f.writeFileSync('retry.txt','first');console.log('AssertionError: first');process.exit(1);}console.log('Tests 1 passed (1)');"] },
+      { name: 'after', cmd: PASS },
+    ],
+  });
+  const r = sdd(d, 'gate');
+  assert.equal(r.code, 0, r.out);
+  assert.match(r.out, /FLAKY suspected/, r.out);
+  assert.doesNotMatch(r.out, /gate inputs changed/);
+  const entries = fs.readFileSync(path.join(d, '.sdd/tdd.jsonl'), 'utf8').trim().split('\n').map(JSON.parse);
+  assert.equal(entries.at(-1).type, 'flaky');
+});
+
+test('r31c #342 scoped and full fallback executions each protect validated inputs', () => {
+  for (const mutateScoped of [true, false]) {
+    const mutate = "require('fs').appendFileSync('a.test.mjs','\\n// mutated\\n');";
+    const d = r31cVerifiedProject({
+      checks: [{
+        name: 'probe',
+        changedCmd: ['node', '-e', `${mutateScoped ? mutate : ''}console.log('No tests found');`],
+        cmd: ['node', '-e', `${mutateScoped ? "require('fs').writeFileSync('unexpected-fallback.txt','ran');" : mutate}`],
+      }],
+    });
+    const r = sdd(d, 'gate', '--changed');
+    assert.equal(r.code, 1, r.out);
+    assert.match(r.out, /gate inputs changed.*check probe/, r.out);
+    if (mutateScoped) assert.equal(fs.existsSync(path.join(d, 'unexpected-fallback.txt')), false);
+    else assert.match(r.out, /gate inputs changed.*full fallback/, r.out);
+  }
+});
+
+test('r31c #342 a passing retry that mutates inputs cannot append flaky evidence', () => {
+  const d = r31cVerifiedProject({
+    flaky: { retries: 1, policy: 'warn' },
+    checks: [{ name: 'test', cmd: ['node', '-e', "const f=require('fs');if(!f.existsSync('retry.txt')){f.writeFileSync('retry.txt','first');console.log('AssertionError: first');process.exit(1);}f.appendFileSync('a.test.mjs','\\n// mutated\\n');"] }],
+  });
+  const before = fs.readFileSync(path.join(d, '.sdd/tdd.jsonl'), 'utf8');
+  const r = sdd(d, 'gate');
+  assert.equal(r.code, 1, r.out);
+  assert.match(r.out, /gate inputs changed.*check test retry 1/, r.out);
+  assert.equal(fs.readFileSync(path.join(d, '.sdd/tdd.jsonl'), 'utf8'), before);
+});
+
+test('r31c #342 local command wrappers and imported helpers share the protected closure', () => {
+  for (const stage of ['prepare', 'check']) {
+    const command = ['node', 'checks/run.mjs'];
+    const d = r31cVerifiedProject(stage === 'prepare'
+      ? { prepare: { cmd: command } }
+      : { checks: [{ name: 'probe', cmd: command }] });
+    fs.mkdirSync(path.join(d, 'checks'));
+    fs.writeFileSync(path.join(d, 'checks/helper.mjs'), 'export const value = 1;\n');
+    fs.writeFileSync(path.join(d, 'checks/run.mjs'), "import './helper.mjs';\nimport fs from 'node:fs';\nfs.writeFileSync('checks/helper.mjs','export const value = 0;\\n');\n");
+    const r = sdd(d, 'gate');
+    assert.equal(r.code, 1, r.out);
+    assert.match(r.out, /gate inputs changed.*checks\/helper\.mjs/, r.out);
+  }
+});
+
+test('r31c #342 declared oracle outputs may be regenerated without exempting evidence', () => {
+  const d = r31cVerifiedProject({
+    oracleData: ['output.json'],
+    prepare: {
+      outputs: ['output.json'],
+      cmd: ['node', '-e', "require('fs').writeFileSync('output.json','1');"],
+    },
+  });
+  const r = sdd(d, 'gate');
+  assert.equal(r.code, 0, r.out);
+  assert.equal(fs.readFileSync(path.join(d, 'output.json'), 'utf8'), '1');
+  assert.doesNotMatch(r.out, /gate inputs changed/);
+});
+
+test('r31c #342 test command imports retain declared generated-output exemptions', () => {
+  const d = r31cVerifiedProject({
+    generated: ['dist/**'],
+    prepare: { outputs: ['dist'], cmd: ['node', '-e', "require('fs').writeFileSync('dist/generated.mjs','export const built = 2;\\n');"] },
+  });
+  fs.mkdirSync(path.join(d, 'dist'));
+  fs.writeFileSync(path.join(d, 'dist/generated.mjs'), 'export const built = 1;\n');
+  fs.appendFileSync(path.join(d, 'a.test.mjs'), "\nimport { built } from './dist/generated.mjs';\n");
+  fs.writeFileSync(path.join(d, 'value.mjs'), '// @id CODE-A-001 @implements REQ-A-001\nexport const value = 0;\n');
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-A-001').code, 0);
+  fs.writeFileSync(path.join(d, 'value.mjs'), '// @id CODE-A-001 @implements REQ-A-001\nexport const value = 1;\n');
+  assert.equal(sdd(d, 'tdd', 'green', 'TEST-A-001').code, 0);
+  const r = sdd(d, 'gate');
+  assert.equal(r.code, 0, r.out);
+  assert.match(fs.readFileSync(path.join(d, 'dist/generated.mjs'), 'utf8'), /built = 2/);
+});
