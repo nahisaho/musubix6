@@ -10780,3 +10780,89 @@ test('r31d #345 merge-ledger preserves Red-before-Green when timestamps are equa
   assert.equal(result.code, 0, result.out);
   assert.match(result.out, /1\/1 tests Red→Green/, result.out);
 });
+
+function r32aLargeLedgerFixture() {
+  const fixture = r31dLedgerFixture();
+  const events = r24dLedger(fixture.d);
+  const audit = { v: 1, type: 'scope-waiver', globs: ['archive/**'], files: ['archive/tail.json'], at: events.at(-1).at };
+  events.push({ ...audit, files: [`archive/${'x'.repeat(3 * 1024 * 1024)}.json`] }, audit);
+  fixture.write(events);
+  assert.equal(spawnSync('git', ['add', '-A'], { cwd: fixture.d }).status, 0);
+  assert.equal(spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'large ledger baseline'], { cwd: fixture.d }).status, 0);
+  return { ...fixture, events };
+}
+
+for (const args of [['tdd', 'check'], ['gate'], ['gate', '--changed'], ['gate', '--changed', '--baseline', 'HEAD']]) {
+  test(`r32a #347 large committed ledger rejects tail removal in ${args.join(' ')}`, () => {
+    const { d, events, write } = r32aLargeLedgerFixture();
+    write(events.slice(0, -1));
+    const result = sdd(d, ...args);
+    assert.equal(result.code, 1, result.out);
+    assert.match(result.out, /1 ledger entry of HEAD removed or modified/, result.out);
+    write(events);
+    const intact = sdd(d, ...args);
+    assert.equal(intact.code, 0, intact.out);
+    write([...events, { ...events.at(-1), files: ['archive/appended.json'] }]);
+    const appended = sdd(d, ...args);
+    assert.equal(appended.code, 0, appended.out);
+  });
+}
+
+test('r32a #347 large ledger rejects whole-file deletion and rewritten re-chained events', () => {
+  const { d, events, write } = r32aLargeLedgerFixture();
+  fs.unlinkSync(path.join(d, '.sdd/tdd.jsonl'));
+  const deleted = sdd(d, 'tdd', 'check');
+  assert.equal(deleted.code, 1, deleted.out);
+  assert.match(deleted.out, /ledger entries of HEAD removed or modified/, deleted.out);
+  write(events.map((e, i) => i === events.length - 2 ? { ...e, files: ['archive/rewritten.json'] } : e));
+  const rewritten = sdd(d, 'gate');
+  assert.equal(rewritten.code, 1, rewritten.out);
+  assert.match(rewritten.out, /1 ledger entry of HEAD removed or modified/, rewritten.out);
+});
+
+test('r32a #347 large explicit baseline rejects deletion after HEAD no longer contains the ledger', () => {
+  const { d, events, write } = r32aLargeLedgerFixture();
+  assert.equal(spawnSync('git', ['tag', 'large-baseline'], { cwd: d }).status, 0);
+  fs.unlinkSync(path.join(d, '.sdd/tdd.jsonl'));
+  assert.equal(spawnSync('git', ['add', '-A'], { cwd: d }).status, 0);
+  assert.equal(spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'ledger removed'], { cwd: d }).status, 0);
+  write(events.slice(0, -1));
+  const result = sdd(d, 'gate', '--changed', '--baseline', 'large-baseline');
+  assert.equal(result.code, 1, result.out);
+  assert.match(result.out, /1 ledger entry of large-baseline removed or modified/, result.out);
+});
+
+for (const [name, fault] of [
+  ['oversized capture', "{ status: null, error: Object.assign(new Error('capture limit'), { code: 'ENOBUFS' }), stdout: '', stderr: '' }"],
+  ['nonzero read', "{ status: 128, stdout: '', stderr: 'fatal: cannot read ledger object' }"],
+  ['partial successful capture with error', "{ status: 0, error: Object.assign(new Error('capture limit'), { code: 'ENOBUFS' }), stdout: '', stderr: '' }"],
+  ['signal during read', "{ status: null, signal: 'SIGTERM', stdout: '', stderr: '' }"],
+]) {
+  test(`r32a #347 committed ledger fails closed on ${name}`, () => {
+    const { d } = r31dLedgerFixture();
+    assert.equal(spawnSync('git', ['add', '-A'], { cwd: d }).status, 0);
+    assert.equal(spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'ledger baseline'], { cwd: d }).status, 0);
+    const preload = path.join(d, 'ledger-read-fault.cjs');
+    fs.writeFileSync(preload, `const cp = require('node:child_process');
+const real = cp.spawnSync;
+cp.spawnSync = (cmd, args, opts) => cmd === 'git' && args[0] === 'show' && args[1]?.endsWith(':./.sdd/tdd.jsonl') ? ${fault} : real(cmd, args, opts);
+require('node:module').syncBuiltinESMExports();
+`);
+    for (const args of [['tdd', 'check'], ['gate'], ['gate', '--changed'], ['tdd', 'refactor', 'TEST-CALC-001']]) {
+      const before = fs.readFileSync(path.join(d, '.sdd/tdd.jsonl'), 'utf8');
+      const result = spawnSync('node', ['--require', preload, SDD, '--root', d, ...args], { encoding: 'utf8', env: ENV });
+      const output = result.stdout + result.stderr;
+      assert.equal(result.status, 1, output);
+      assert.match(output, /cannot read .*ledger.*HEAD|cannot read .*HEAD.*ledger/i, output);
+      assert.doesNotMatch(output, /SDD GATE PASS|LEDGER OK|REFACTOR RECORDED/, output);
+      assert.equal(fs.readFileSync(path.join(d, '.sdd/tdd.jsonl'), 'utf8'), before);
+    }
+  });
+}
+
+test('r32a #347 invalid explicit baseline cannot silently disable ledger comparison', () => {
+  const { d } = r31dLedgerFixture();
+  const result = sdd(d, 'gate', '--baseline', 'missing-baseline');
+  assert.equal(result.code, 1, result.out);
+  assert.match(result.out, /cannot read .*ledger.*missing-baseline|cannot read .*missing-baseline.*ledger/i, result.out);
+});

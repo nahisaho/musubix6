@@ -1164,10 +1164,37 @@ function appendLedgerLocked(e) {
 }
 // every baseline ledger entry must survive (ignoring seq/prev/hash, which merge-ledger re-chains); a removed or rewritten one is tampering (#328)
 function ledgerRegression(bref = 'HEAD') {
-  const sh = spawnSync('git', ['show', `${bref}:./.sdd/tdd.jsonl`], { cwd: ROOT, encoding: 'utf8' });
-  if (sh.status !== 0) return null;
+  const git = (args) => spawnSync('git', args, { cwd: ROOT, encoding: 'utf8', maxBuffer: 64e6, timeout: 60000, env: { ...process.env, LC_ALL: 'C' } });
+  const failed = (r) => r.error || r.signal || r.status !== 0;
+  const unreadable = (r) => `cannot read baseline ledger of ${bref}: ${r.error?.code || r.signal || r.stderr?.trim() || `git exited ${r.status}`}`;
+  const sh = git(['show', `${bref}:./.sdd/tdd.jsonl`]);
+  // A failed/truncated capture is not an absent ledger. Only a successful tree
+  // lookup, a non-repository, or a verified unborn HEAD can establish absence.
+  if (sh.error || sh.signal) return unreadable(sh);
+  if (sh.status !== 0) {
+    const tree = git(['ls-tree', '-z', bref, '--', './.sdd/tdd.jsonl']);
+    if (!failed(tree)) return tree.stdout === '' ? null : unreadable(sh);
+    if (tree.error || tree.signal) return unreadable(tree);
+    const repo = git(['rev-parse', '--is-inside-work-tree']);
+    if (!repo.error && !repo.signal && repo.status === 128 && /not a git repository/.test(repo.stderr)) return null;
+    if (failed(repo)) return unreadable(repo);
+    if (bref === 'HEAD') {
+      const branch = git(['symbolic-ref', '-q', 'HEAD']);
+      if (!failed(branch)) {
+        const ref = git(['show-ref', '--verify', '--quiet', branch.stdout.trim()]);
+        if (!ref.error && !ref.signal && ref.status === 1) return null;
+        if (ref.error || ref.signal) return unreadable(ref);
+      }
+    }
+    return unreadable(tree);
+  }
   const key = (l) => { try { const { seq, prev, hash, ...r } = JSON.parse(l); return JSON.stringify(r); } catch { return l; } };
-  const cur = new Set((fs.existsSync(LEDGER) ? fs.readFileSync(LEDGER, 'utf8') : '').split('\n').filter(Boolean).map(key));
+  let current;
+  try { current = fs.readFileSync(LEDGER, 'utf8'); } catch (err) {
+    if (err.code !== 'ENOENT') return `cannot read current ledger ${rel(LEDGER)}: ${err.code || err.message}`;
+    current = '';
+  }
+  const cur = new Set(current.split('\n').filter(Boolean).map(key));
   const lost = sh.stdout.split('\n').filter(Boolean).map(key).filter((k) => !cur.has(k));
   return lost.length ? `${lost.length} ledger entr${lost.length === 1 ? 'y' : 'ies'} of ${bref} removed or modified in ${rel(LEDGER)} (truncation/rewrite; only appends or tdd merge-ledger are allowed)` : null;
 }
