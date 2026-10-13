@@ -8655,7 +8655,6 @@ for (const [name, manifest, rootFile] of [['go', 'go.mod', 'go.sum'], ['java', '
     assert.match(r.out, /scope: exact=0 widened=1 unknown=0/, r.out);
   });
 }
-});
 
 // ---- r24d (design 3.4 self-verification) ----
 // (1) scope differential: `gate --changed` scope must be a superset of the brute-force oracle's relevant checks
