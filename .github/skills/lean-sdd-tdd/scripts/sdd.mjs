@@ -1681,6 +1681,9 @@ function cmdReview() {
   out('usage: review template <feature|--feature f> | review check <file> --feature <feature|feature>');
   return 2;
 }
+function isHumanApprover(by) {
+  return !!by && !/^ai\s*:/i.test(by) && !/^(bot|agent|copilot|assistant|claude|gpt|human|user|ai|me|test)$/i.test(by);
+}
 function cmdApprove() {
   const sub = pos[1];
   const specs = loadSpecs();
@@ -1689,7 +1692,7 @@ function cmdApprove() {
   if (sub === 'retire' && /^REQ-/.test(feature ?? '')) {
     if (specs.some((s) => s.reqs.some((q) => q.id === feature))) { out(`REFUSED: ${feature} still exists in a spec; retire only applies to removed REQs`); return 1; }
     const by = typeof flags.by === 'string' ? flags.by.normalize('NFKC').replace(/[\u200b-\u200f\u2060\ufeff\u202a-\u202e\u2066-\u2069\u00ad]/g, '').trim() : '';
-    if (!by || /^ai\s*(:|$)/i.test(by)) { out('REFUSED: retiring a REQ needs a human approver: approve retire <REQ-ID> --by <human name>'); return 1; }
+    if (!isHumanApprover(by)) { out('REFUSED: retiring a REQ needs a human approver: approve retire <REQ-ID> --by <human name>'); return 1; }
     writeJson(RETIRED_REQS, { ...readJson(RETIRED_REQS, {}), [feature]: { by, at: new Date().toISOString() } });
     out(`retired ${feature} by ${by}`);
     return 0;
@@ -1699,7 +1702,7 @@ function cmdApprove() {
     if (!all[feature]) { out(`no lock for "${feature ?? ''}"`); return 2; }
     if (specs.some((s) => s.feature === feature)) { out(`REFUSED: spec ${feature} still exists; retire only applies to removed specs`); return 1; }
     const by = typeof flags.by === 'string' ? flags.by.normalize('NFKC').replace(/[\u200b-\u200f\u2060\ufeff\u202a-\u202e\u2066-\u2069\u00ad]/g, '').trim() : '';
-    if (!by || /^ai\s*(:|$)/i.test(by)) { out('REFUSED: retiring a locked spec needs a human approver: approve retire <feature> --by <human name>'); return 1; }
+    if (!isHumanApprover(by)) { out('REFUSED: retiring a locked spec needs a human approver: approve retire <feature> --by <human name>'); return 1; }
     delete all[feature];
     writeJson(APPROVALS, all);
     out(`retired lock ${feature} by ${by}`);
@@ -1741,7 +1744,7 @@ function cmdApprove() {
       if (probs.length) { out(`REFUSED: ${review} is not an acceptable review file`); probs.slice(0, 6).forEach((x) => out(`  ${x}`)); out('  see: review template <feature>'); return 1; }
     }
     if (spec.approval === 'human') {
-      if (/^(bot|agent|copilot|assistant|claude|gpt|human|user|ai|me|test)$/i.test(flags.by)) { out(`REFUSED: "${flags.by}" is not a person's name; approval: human needs the approving human's own name`); return 1; }
+      if (!isHumanApprover(flags.by)) { out(`REFUSED: "${flags.by}" is not a person's name; approval: human needs the approving human's own name`); return 1; }
       const prep = readJson(PREPARE_SHOWN, {})[spec.feature];
       if (prep !== artifactSha(spec.path)) { out(`REFUSED: no matching \`approve prepare ${spec.feature}\` for the current spec — run it, show the human the exact paths/hashes, then record (after any spec/design edit, prepare again)`); return 1; }
     }

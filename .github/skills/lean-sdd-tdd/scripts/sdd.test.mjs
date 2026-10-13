@@ -9829,3 +9829,70 @@ test('#335 a later executed retry may recover after a skipped retry', () => {
   assert.equal(entries[0].retry, 2);
   assert.equal(entries[0].outcome, 'accepted');
 });
+
+test('r30e #336 approve retire refuses generic and normalized automation names without changing records', () => {
+  for (const target of ['REQ-A-002', 'a']) {
+    const d = mini(T1SPEC);
+    fs.rmSync(specPath(d));
+    const file = path.join(d, '.sdd', target.startsWith('REQ-') ? 'retired-reqs.json' : 'approvals.json');
+    const original = JSON.stringify(target.startsWith('REQ-')
+      ? { 'REQ-OTHER-001': { by: 'Alice', at: '2026-01-01T00:00:00Z' } }
+      : { a: { by: 'Alice', tier: 'T2' }, other: { by: 'Bob', tier: 'T2' } });
+    fs.writeFileSync(file, original);
+    for (const by of ['bot', 'agent', 'copilot', 'assistant', 'claude', 'gpt', 'human', 'user', 'ai', 'me', 'test', '', 'ai:probe', ' AI : probe ', ' ＢＯＴ ', 'b\u200bot', 'CoPiLoT']) {
+      const r = sddRaw(d, 'approve', 'retire', target, '--by', by);
+      assert.equal(r.code, 1, `${target} --by ${JSON.stringify(by)}: ${r.out}`);
+      assert.match(r.out, /REFUSED.*human approver/, r.out);
+      assert.equal(fs.readFileSync(file, 'utf8'), original, 'refused retirement must not write records');
+    }
+    const missing = sddRaw(d, 'approve', 'retire', target);
+    assert.equal(missing.code, 1, missing.out);
+    assert.equal(fs.readFileSync(file, 'utf8'), original);
+    const accepted = sddRaw(d, 'approve', 'retire', target, '--by', ' Ａlice\u200b ');
+    assert.equal(accepted.code, 0, accepted.out);
+    const records = JSON.parse(fs.readFileSync(file, 'utf8'));
+    if (target.startsWith('REQ-')) {
+      assert.equal(records[target].by, 'Alice');
+      assert.deepEqual(records['REQ-OTHER-001'], JSON.parse(original)['REQ-OTHER-001']);
+    } else {
+      assert.equal(Object.hasOwn(records, target), false);
+      assert.deepEqual(records.other, JSON.parse(original).other);
+    }
+  }
+});
+
+test('r30e #336 rejected bot retirement does not create a REQ retirement file', () => {
+  const d = mini(T1SPEC);
+  const r = sddRaw(d, 'approve', 'retire', 'REQ-A-002', '--by', 'bot');
+  assert.equal(r.code, 1, r.out);
+  assert.equal(fs.existsSync(path.join(d, '.sdd/retired-reqs.json')), false);
+});
+
+test('r30e #336 strict gate keeps vanished Green REQs failing after bot retirement is refused', () => {
+  const imports = "import { test } from 'node:test';\nimport assert from 'node:assert/strict';\n";
+  const extra = "// @id TEST-A-002 @verifies REQ-A-002\ntest('TEST-A-002 y', () => assert.ok(1));\n";
+  const d = mini(T1SPEC + '| REQ-A-002 | two shall hold. | TEST-A-002 |\n', { 'a.test.mjs': imports + jsTest(extra) }, ['node', '--test', '--test-name-pattern={id}', 'a.test.mjs']);
+  const cp = path.join(d, '.sdd/config.json');
+  fs.writeFileSync(cp, JSON.stringify({ ...JSON.parse(fs.readFileSync(cp, 'utf8')), scopePolicy: 'strict', checks: [{ name: 'test', cmd: ['node', '--test', 'a.test.mjs'] }] }));
+  for (const id of ['TEST-A-001', 'TEST-A-002']) {
+    const red = sdd(d, 'tdd', 'red', id, '--characterization', 'retirement guard fixture');
+    assert.equal(red.code, 0, red.out);
+    const green = sdd(d, 'tdd', 'green', id);
+    assert.equal(green.code, 0, green.out);
+  }
+  fs.writeFileSync(specPath(d), T1SPEC);
+  fs.writeFileSync(path.join(d, 'a.test.mjs'), imports + jsTest());
+  const before = sdd(d, 'gate');
+  assert.equal(before.code, 1, before.out);
+  assert.match(before.out, /✗ req REQ-A-002/, before.out);
+  const refused = sddRaw(d, 'approve', 'retire', 'REQ-A-002', '--by', 'bot');
+  assert.equal(refused.code, 1, refused.out);
+  const after = sdd(d, 'gate');
+  assert.equal(after.code, 1, after.out);
+  assert.match(after.out, /✗ req REQ-A-002/, after.out);
+  const accepted = sddRaw(d, 'approve', 'retire', 'REQ-A-002', '--by', 'Alice');
+  assert.equal(accepted.code, 0, accepted.out);
+  const cleared = sdd(d, 'gate');
+  assert.equal(cleared.code, 0, cleared.out);
+  assert.doesNotMatch(cleared.out, /req REQ-A-002/);
+});
