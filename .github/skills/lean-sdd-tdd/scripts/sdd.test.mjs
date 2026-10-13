@@ -43,7 +43,7 @@ test('#157 pytest descriptive and suffixed names cannot borrow sibling failures'
     const r = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
     assert.equal(r.code, 1, r.out);
     assert.match(r.out, /test passed/);
-    assert.equal(fs.existsSync(path.join(d, '.sdd/tdd.jsonl')), false);
+    assert.equal(testEvidence(d).length, 0);
     fs.writeFileSync(path.join(d, 'test_calc.py'), fs.readFileSync(path.join(d, 'test_calc.py'), 'utf8').replace('assert True', 'assert False, "target only"'));
     const red = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
     assert.equal(red.code, 0, red.out);
@@ -259,7 +259,7 @@ test('#162 Go annotated subtests cannot borrow failures from siblings or the par
     const r = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
     assert.equal(r.code, 1, r.out);
     assert.match(r.out, /itself passes|test passed/);
-    assert.equal(fs.existsSync(path.join(d, '.sdd/tdd.jsonl')), false);
+    assert.equal(testEvidence(d).length, 0);
   }
 });
 
@@ -3795,7 +3795,7 @@ for (const [file, pre] of [['t.cpp', '#include ORACLE_UNKNOWN'], ['t.jl', 'inclu
     const red = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
     assert.equal(red.code, 1, red.out);
     assert.match(red.out, /unresolved.*oracle/i);
-    assert.equal(fs.existsSync(path.join(d, '.sdd/tdd.jsonl')), false);
+    assert.equal(testEvidence(d).length, 0);
   });
 }
 
@@ -3844,7 +3844,7 @@ test('#200 Rust include-owned tests retain lexical modules and reject ambiguous 
   fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ testCmd: ['cargo', 'test', '{idu}'], checks: [] }));
   const red = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
   assert.equal(red.code, 0, red.out);
-  const entry = JSON.parse(rd130(d, '.sdd/tdd.jsonl').trim().split('\n')[0]);
+  const entry = testEvidence(d)[0];
   assert.equal(entry.weak, undefined);
   writeAll(d, { 'src/main.rs': 'fn main() {}\nfn answer() -> i32 { 8 }\n#[cfg(test)] mod embedded { include!("../support/cases.rs"); }\n' });
   const ambiguous = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
@@ -4062,7 +4062,7 @@ test('#189 Rust unresolved include expressions explicitly refuse evidence', () =
   const r = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
   assert.equal(r.code, 1, r.out);
   assert.match(r.out, /unresolved Rust include oracle/);
-  assert.equal(fs.existsSync(path.join(d, '.sdd/tdd.jsonl')), false);
+  assert.equal(testEvidence(d).length, 0);
 });
 
 test('#195 private PHP test-like helpers remain reachable oracles', () => {
@@ -4172,7 +4172,7 @@ test('#195 PHPUnit same-named methods cannot borrow another declaring class fail
   fakeOut(d, 'There was 1 failure:\n1) Actual::testSame\nFailed asserting true\nTests: 1, Assertions: 1, Failures: 1.');
   const r = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
   assert.equal(r.code, 1, r.out);
-  assert.equal(fs.existsSync(path.join(d, '.sdd/tdd.jsonl')), false);
+  assert.equal(testEvidence(d).length, 0);
 });
 
 test('#197 exact .NET method selection aggregates all runtime display-name rows', () => {
@@ -4406,7 +4406,7 @@ test('#185 overloaded JUnit methods in one class fail closed, unrelated classes 
   const red = batch2Run(d, 'mvn', output, cmd, 'tdd', 'red', 'TEST-CALC-001');
   assert.equal(red.code, 1, red.out);
   assert.match(red.out, /overload|ambiguous.*method|unique.*method/i);
-  assert.equal(fs.existsSync(path.join(d, '.sdd/tdd.jsonl')), false);
+  assert.equal(testEvidence(d).length, 0);
   fs.writeFileSync(path.join(d, 'T.java'), body.replace('void test_calc_001(int n)', 'void other(int n)'));
   const control = batch2Run(d, 'mvn', output, cmd, 'tdd', 'red', 'TEST-CALC-001');
   assert.equal(control.code, 1, control.out);
@@ -4432,7 +4432,7 @@ fi
   assert.equal(red.code, 1, red.out);
   assert.match(red.out, /test passed/);
   assert.match(fs.readFileSync(path.join(d, 'args.log'), 'utf8'), /A\/A.csproj/);
-  assert.equal(fs.existsSync(path.join(d, '.sdd/tdd.jsonl')), false);
+  assert.equal(testEvidence(d).length, 0);
 });
 
 test('#186 C standard assert in a reachable transitive helper is strong Red, unrelated helpers cannot excuse crashes', () => {
@@ -4498,7 +4498,7 @@ test('#187 hyphen-extended Julia IDs cannot supply skipped target execution', ()
   assert.match(red.out, /skipped/);
   run('Pass');
   assert.equal(sdd(d, 'tdd', 'red', 'TEST-CALC-001', '--characterization', 'skipped').code, 1);
-  assert.equal(fs.existsSync(path.join(d, '.sdd/tdd.jsonl')), false);
+  assert.equal(testEvidence(d).length, 0);
 });
 
 test('#187 hyphen-extended passing Julia sibling cannot supply Green or Refactor for a skipped target', () => {
@@ -4932,7 +4932,7 @@ for (const [stack, file, body, output] of [
     const r = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
     assert.equal(r.code, 1, r.out);
     assert.match(r.out, /itself passes|test passed/);
-    assert.equal(fs.existsSync(path.join(d, '.sdd/tdd.jsonl')), false);
+    assert.equal(testEvidence(d).length, 0);
   });
 }
 
@@ -5153,7 +5153,7 @@ for (const [ext, body, helper] of [
     assert.match(green.out, /test file changed since Red/);
     assert.equal(fs.readFileSync(path.join(d, 'add.mjs'), 'utf8'), production);
     assert.equal(sdd(d, 'gate', '--no-run').code, 1);
-    assert.equal(fs.readFileSync(path.join(d, '.sdd/tdd.jsonl'), 'utf8').trim().split('\n').length, 1);
+    assert.equal(testEvidence(d).length, 1);
   });
 }
 
@@ -9548,4 +9548,89 @@ test('r29e adding a project, a check, a consumer or editing a command stays sile
 test('r29e full gate skips an untracked config', () => {
   const d = mini('---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | x shall hold. | TEST-A-001 |\n', {}, PASS);
   assert.doesNotMatch(sdd(d, 'gate', '--no-run').out, /config:/);
+});
+
+function testEvidence(d) {
+  const ledger = path.join(d, '.sdd/tdd.jsonl');
+  return fs.existsSync(ledger) ? fs.readFileSync(ledger, 'utf8').trim().split('\n').filter(Boolean).map(JSON.parse).filter((e) => e.test) : [];
+}
+
+/** @id TEST-R30C-001 @verifies REQ-R30C-001 */
+test('r30c #334 hand-rehashed approval and review cannot bless an unreviewed Design edit', async () => {
+  const { createHash } = await import('node:crypto');
+  const d = mini('---\nfeature: a\ntier: T2\n---\n## Design\nPure calculation.\nNo state.\n\n| REQ-A-001 | one shall hold. | TEST-A-001 |\n', { 'a.test.mjs': jsTest() }, PASS);
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ testCmd: PASS, checks: [{ name: 'ok', cmd: PASS }] }));
+  const review = '.sdd/review-a.md';
+  const refreshReview = () => {
+    const hash = sdd(d, 'approve', 'prepare', 'a').out.match(/sha256:([0-9a-f]{64})/)[1];
+    fs.writeFileSync(path.join(d, review), `spec: sha256:${hash}\nverdict: pass\nopen: 0\n`);
+    return hash;
+  };
+  refreshReview();
+  assert.equal(sdd(d, 'approve', 'record', 'a', '--by', 'ai:duck', '--review', review).code, 0);
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-A-001', '--characterization', 'pure fixture').code, 0);
+  assert.equal(sdd(d, 'tdd', 'green', 'TEST-A-001').code, 0);
+  const baseline = sdd(d, 'gate');
+  assert.equal(baseline.code, 0, baseline.out);
+  spawnSync('git', ['add', '-A'], { cwd: d });
+  assert.equal(spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'approved baseline'], { cwd: d }).status, 0);
+  fs.appendFileSync(specPath(d), '\nUnreviewed Design addition.\n');
+  assert.match(sdd(d, 'gate').out, /lock a: stale/);
+  const specHash = refreshReview();
+  const ap = path.join(d, '.sdd/approvals.json');
+  const approvals = JSON.parse(fs.readFileSync(ap, 'utf8'));
+  const oldAt = approvals.a.at;
+  approvals.a.artifacts['.sdd/specs/a.md'] = specHash;
+  approvals.a.reviewSha = createHash('sha256').update(fs.readFileSync(path.join(d, review))).digest('hex');
+  fs.writeFileSync(ap, JSON.stringify(approvals));
+  assert.equal(approvals.a.at, oldAt);
+  for (const args of [['gate'], ['gate', '--changed']]) {
+    const forged = sdd(d, ...args);
+    assert.equal(forged.code, 1, forged.out);
+    assert.match(forged.out, /lock a: .*provenance/, forged.out);
+  }
+  assert.match(sdd(d, 'guard').out, /approval .*provenance/);
+  assert.match(sdd(d, 'tdd', 'red', 'TEST-A-001').out, /REFUSED.*provenance/);
+  assert.equal(sdd(d, 'approve', 'record', 'a', '--by', 'ai:duck', '--review', review).code, 0);
+  assert.equal(sdd(d, 'gate').code, 0);
+});
+
+test('r30c #334 legacy approvals require unchanged committed provenance and can migrate', () => {
+  const d = project();
+  assert.equal(sdd(d, 'approve', 'record', 'calc', '--by', 'ai:duck', '--review', 'no findings').code, 0);
+  const ledger = path.join(d, '.sdd/tdd.jsonl');
+  fs.rmSync(ledger);
+  assert.match(sdd(d, 'guard').out, /provenance/);
+  spawnSync('git', ['add', '-A'], { cwd: d });
+  assert.equal(spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'legacy approval'], { cwd: d }).status, 0);
+  assert.equal(sdd(d, 'guard').code, 0);
+  const ap = path.join(d, '.sdd/approvals.json');
+  const a = JSON.parse(fs.readFileSync(ap, 'utf8'));
+  a.calc.at = '2000-01-01T00:00:00.000Z';
+  fs.writeFileSync(ap, JSON.stringify(a));
+  assert.match(sdd(d, 'guard').out, /provenance/);
+  assert.equal(sdd(d, 'approve', 'record', 'calc', '--by', 'ai:duck', '--review', 'reviewed again').code, 0);
+  assert.equal(sdd(d, 'guard').code, 0);
+  const event = JSON.parse(fs.readFileSync(ledger, 'utf8').trim());
+  assert.equal(event.type, 'approval');
+  assert.equal(event.feature, 'calc');
+  assert.match(event.approvalSha, /^[0-9a-f]{64}$/);
+  spawnSync('git', ['add', '-A'], { cwd: d });
+  assert.equal(spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'migrated approval'], { cwd: d }).status, 0);
+  fs.rmSync(ledger);
+  assert.match(sdd(d, 'guard').out, /provenance/);
+});
+
+test('r30c #334 approval events survive merge-ledger and cannot be written onto a broken chain', () => {
+  const d = project();
+  assert.equal(sdd(d, 'approve', 'record', 'calc', '--by', 'ai:duck', '--review', 'no findings').code, 0);
+  assert.equal(sdd(d, 'tdd', 'merge-ledger').code, 0);
+  assert.equal(sdd(d, 'guard').code, 0);
+  const ledger = path.join(d, '.sdd/tdd.jsonl');
+  const original = fs.readFileSync(ledger, 'utf8');
+  fs.writeFileSync(ledger, original.replace('"approvalSha":"', '"approvalSha":"0'));
+  assert.match(sdd(d, 'guard').out, /provenance/);
+  assert.match(sdd(d, 'approve', 'record', 'calc', '--by', 'ai:duck', '--review', 'no findings').out, /REFUSED.*ledger.*broken/);
+  fs.writeFileSync(ledger, original);
+  assert.equal(sdd(d, 'guard').code, 0);
 });
