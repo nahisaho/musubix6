@@ -5449,6 +5449,32 @@ function cmdGate() {
       if (cfg.scopePolicy === 'strict') add(false, `${msg} (scopePolicy strict)`);
       else lines.push(`! ${msg} (scopePolicy warn: set "scopePolicy": "strict" to fail)`);
     }
+    // a changed manifest that defines what a gate check runs can silently narrow the test run (#324)
+    const defs = [];
+    const chgSet = changedFiles();
+    for (const c of allChecks) {
+      const b = c.cwd ? normDep(c.cwd) + '/' : '';
+      const line = (c.cmd ?? []).join(' ');
+      const sm = line.match(/\b(?:npm|pnpm|yarn|bun)\s+(?:run(?:-script)?\s+)?([\w:.-]+)/);
+      const script = sm ? (sm[1] === 't' ? 'test' : sm[1]) : null;
+      if (script && chgSet.has(b + 'package.json')) {
+        const cur = (() => { try { return JSON.parse(fs.readFileSync(path.join(ROOT, b + 'package.json'), 'utf8')).scripts?.[script]; } catch { return undefined; } })();
+        const old = spawnSync('git', ['show', `HEAD:./${b}package.json`], { cwd: ROOT, encoding: 'utf8' });
+        let prev; try { prev = old.status === 0 ? JSON.parse(old.stdout).scripts?.[script] : undefined; } catch { prev = undefined; }
+        if (old.status !== 0 || cur !== prev) defs.push(`check ${c.name} runs package.json script "${script}" (${b}package.json changed)`);
+      }
+      if (/\bpytest\b/.test(line)) for (const m of ['pyproject.toml', 'pytest.ini', 'setup.cfg', 'tox.ini']) if (chgSet.has(b + m)) defs.push(`check ${c.name} runs pytest, configured by ${b}${m} (changed)`);
+      if (c.cmd?.[0] === 'cargo' && c.cmd[1]) for (const m of ['.cargo/config.toml', '.cargo/config']) {
+        if (!chgSet.has(b + m)) continue;
+        let txt = ''; try { txt = fs.readFileSync(path.join(ROOT, b + m), 'utf8'); } catch { /* removed */ }
+        if (!txt || new RegExp(`^\\s*${c.cmd[1].replace(/[^\w-]/g, '')}\\s*=`, 'm').test(txt)) defs.push(`check ${c.name} runs cargo alias "${c.cmd[1]}" (${b}${m} changed)`);
+      }
+    }
+    if (defs.length) {
+      const msg = `scope: a changed file defines what a gate check runs — ${defs.join('; ')} — the test run may have been narrowed; review the diff`;
+      if (cfg.scopePolicy === 'strict') add(false, `${msg} (scopePolicy strict)`);
+      else lines.push(`! ${msg} (scopePolicy warn: set "scopePolicy": "strict" to fail)`);
+    }
     if (unscoped.length) {
       const strict = cfg.scopePolicy === 'strict';
       const msg = `scope: ${unscoped.length} changed file(s) not claimed by any check/project: ${list(unscoped)} — add them to a project/dependsOn, or waive with \`unscoped\` in .sdd/config.json / --allow-unscoped <glob>`;

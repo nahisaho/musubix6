@@ -1,6 +1,6 @@
 # AI cost log (USD)
 
-- Project: `/home/nahisaho/GitHub/musubix-fix-r27d`
+- Project: `/home/nahisaho/GitHub/musubix-fix-r27e`
 - Updated: 2026-10-13 09:41 UTC
 - Sessions: 0
 - **Total: $0.00**
