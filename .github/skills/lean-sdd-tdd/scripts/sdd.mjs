@@ -5371,7 +5371,7 @@ function cmdGate() {
     const hasRoot = (cfg.checks ?? []).length > 0;
     const claimed = (f) => pr.some((r) => f.startsWith(r)) || artConsumers(f).length > 0
       || (cfg.projects ?? []).some((p) => depClosure(p).some((d) => { const x = normDep(d); return f === x || f.startsWith(x + '/'); }))
-      || (hasRoot && (!pr.length || EXT.test(f) || WORKSPACE_ROOT.some(([re]) => re.test(f)) || MANIFESTS.test(f)));
+      || (hasRoot && (!pr.length || (EXT.test(f) && !/\.sh$/.test(f)) || WORKSPACE_ROOT.some(([re]) => re.test(f)) || MANIFESTS.test(f)));
     const unscoped = [];
     const waived = { config: [], flag: [] };
     if (allChecks.length) for (const f of changedFiles()) {
@@ -5382,6 +5382,21 @@ function cmdGate() {
     }
     scopeCount.unknown = unscoped.length;
     const list = (a) => `${a.slice(0, 6).join(', ')}${a.length > 6 ? `, … (+${a.length - 6})` : ''}`;
+    // a new source file under a project that carries no @id/@implements is unspecced code (#316)
+    const newSrc = [];
+    const gs = spawnSync('git', ['status', '--porcelain', '-z', '-uall'], { cwd: ROOT, encoding: 'utf8' });
+    const gt = spawnSync('git', ['rev-parse', '--show-toplevel'], { cwd: ROOT, encoding: 'utf8' }).stdout.trim();
+    if (gs.status === 0) for (const l of gs.stdout.split('\0')) {
+      if (!/^(\?\?|A.|.A)/.test(l)) continue;
+      const f = path.relative(ROOT, path.resolve(gt, l.slice(3))).split(path.sep).join('/');
+      if (!pr.some((r) => f.startsWith(r)) || !EXT.test(f) || /\.sh$/.test(f) || TEST_FILE.test(f) || reDefault.some((re) => re.test(f)) || reCfg.some((re) => re.test(f)) || reFlag.some((re) => re.test(f))) continue;
+      try { if (!/@id\s+CODE-|@implements\b/.test(fs.readFileSync(path.join(ROOT, f), 'utf8'))) newSrc.push(f); } catch { /* unreadable */ }
+    }
+    if (newSrc.length) {
+      const msg = `scope: ${newSrc.length} new source file(s) under a project carry no @id/@implements (not covered by any REQ): ${list(newSrc)} — annotate \`@id CODE-... @implements REQ-...\`, or waive with \`unscoped\` / --allow-unscoped`;
+      if (cfg.scopePolicy === 'strict') add(false, `${msg} (scopePolicy strict)`);
+      else lines.push(`! ${msg} (scopePolicy warn: set "scopePolicy": "strict" to fail)`);
+    }
     if (unscoped.length) {
       const strict = cfg.scopePolicy === 'strict';
       const msg = `scope: ${unscoped.length} changed file(s) not claimed by any check/project: ${list(unscoped)} — add them to a project/dependsOn, or waive with \`unscoped\` in .sdd/config.json / --allow-unscoped <glob>`;
@@ -5397,8 +5412,9 @@ function cmdGate() {
     if (flags.explain) {
       for (const x of explain) { lines.push(`explain ${x.check}: scope=${x.scope} closure=${x.closureSize} [${x.closure.join(', ')}${x.closureSize > 10 ? ', …' : ''}]`); for (const f of x.files.slice(0, 20)) lines.push(`  ${f.file}: ${f.why}`); }
       for (const f of unscoped) lines.push(`explain unknown: ${f}: not claimed by any check/project`);
+      for (const f of newSrc) lines.push(`explain unannotated: ${f}: new source file without @id/@implements`);
     }
-    scopeJson = { ...scopeCount, policy: cfg.scopePolicy === 'strict' ? 'strict' : 'warn', unscoped, waived, ...(flags.explain ? { explain } : {}) };
+    scopeJson = { ...scopeCount, policy: cfg.scopePolicy === 'strict' ? 'strict' : 'warn', unscoped, waived, ...(newSrc.length ? { unannotated: newSrc } : {}), ...(flags.explain ? { explain } : {}) };
   }
   const verdict = fail ? 'FAIL' : incomplete ? 'INCOMPLETE' : 'PASS';
   if (flags.json) out(JSON.stringify({ verdict, lines, tdd: { weak: weakIds, suspect: suspectIds }, ...(scopeJson ? { scope: scopeJson } : {}) }));

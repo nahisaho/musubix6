@@ -9011,3 +9011,29 @@ test('r25d conservative: a stub result never used by the assertion stays setup',
   const r = weak263(null, `${rsOut}sphere\n`, 'a.test.mjs', rs271('', ['  let s = sphere(1);', '  assert_eq!(other(), 2);']));
   assert.match(r.out, /\[weak\].*setup call "sphere"/, r.out);
 });
+
+// ---- r26a (#316) ----
+test('r26a a new unmapped .sh file is unclaimed like .txt: warn, fail under strict', () => {
+  const d = scopeProj({ checks: [{ name: 'root', cmd: ['node', '-e', '0'] }] }, { 'tools/x.sh': 'echo a\n' });
+  fs.appendFileSync(path.join(d, 'tools/x.sh'), 'echo b\n');
+  const w = sdd(d, 'gate', '--changed');
+  assert.match(w.out, /! scope: 1 changed file\(s\) not claimed.*tools\/x\.sh/, w.out);
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ ...JSON.parse(fs.readFileSync(path.join(d, '.sdd/config.json'), 'utf8')), scopePolicy: 'strict' }));
+  const s = sdd(d, 'gate', '--changed');
+  assert.equal(s.code, 1, s.out);
+  assert.match(s.out, /✗ scope:.*tools\/x\.sh/, s.out);
+});
+test('r26a a new unannotated source file under a project warns, fails under strict, and is listed by --explain', () => {
+  const d = scopeProj();
+  fs.writeFileSync(path.join(d, 'app/stray.mjs'), 'export const z = 1;\n');
+  const w = sdd(d, 'gate', '--changed', '--explain');
+  assert.match(w.out, /! scope: 1 new source file\(s\).*app\/stray\.mjs/, w.out);
+  assert.match(w.out, /explain unannotated: app\/stray\.mjs/, w.out);
+  fs.writeFileSync(path.join(d, 'app/stray.mjs'), '// @id CODE-A-001 @implements REQ-A-001\nexport const z = 1;\n');
+  assert.doesNotMatch(sdd(d, 'gate', '--changed').out, /new source file/);
+  fs.writeFileSync(path.join(d, 'app/stray.mjs'), 'export const z = 1;\n');
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ ...JSON.parse(fs.readFileSync(path.join(d, '.sdd/config.json'), 'utf8')), scopePolicy: 'strict' }));
+  const s = sdd(d, 'gate', '--changed');
+  assert.equal(s.code, 1, s.out);
+  assert.match(s.out, /✗ scope: 1 new source file/, s.out);
+});

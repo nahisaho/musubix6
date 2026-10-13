@@ -145,6 +145,7 @@ Audit of `gate` paths that could end PASS (exit 0) with missing or unverifiable 
 |---|---|---|---|
 | `changedCmd` check, only deleted files changed | delete `lib.mjs`, `gate --changed` | S1 | skipped as "no changed files" and passed. Now runs the full check (`only deleted files changed`) |
 | Root test check skipped because all changes are in a nested project that has no checks | `projects:[{root:'app'}]`, root `test` check, edit `app/x.mjs` | S1 | nothing ran. `scopePolicy` strict: `✗` fail; warn (default for existing configs): `!` line naming the project |
+| New unannotated source file under a project; unmapped `.sh` | r26a (#316) | S2 | `!` warn, `✗` under strict; `--explain` lists `unannotated`; `.sh` is not claimed by root checks |
 | Unclaimed changed file (no project / dependsOn / check) | r24a | — | already handled by r24a (`scopePolicy`, `unscoped`, `--allow-unscoped`, ledger) |
 | `--changed` with a bad `--baseline` ref | `--baseline nope` | none | REFUSED, exit 2 |
 | git unavailable / `git status` or `git diff` fails | non-repo root | none | falls back to full evidence and checks, not "no changes" |
