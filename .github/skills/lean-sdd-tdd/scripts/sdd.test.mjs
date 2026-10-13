@@ -9383,3 +9383,43 @@ test('r28b a config change that does not weaken stays silent', () => {
   const d = r28b({ scopePolicy: 'warn' }, { scopePolicy: 'strict' });
   assert.doesNotMatch(sdd(d, 'gate', '--changed').out, /config:/);
 });
+
+// r29e #331: loosening checks/testCmd/changedCmd/dependsOn/artifacts/generated/artifactProducers is reported like r28b
+const r29eBase = {
+  checks: [{ name: 'a', cmd: ['node', '-e', '0'] }, { name: 'b', cmd: ['node', '-e', '0'] }],
+  projects: [{ root: 'p', testCmd: ['node', '-e', '0'], changedCmd: ['node', '-e', '0'], dependsOn: ['q'], checks: [{ name: 'c', cmd: ['node', '-e', '0'], changedCmd: ['node', '-e', '0'] }] }, { root: 'q' }],
+  artifacts: { 'contract/x.json': ['p/t.js', 'q/t.js'] },
+  generated: ['dist/**'],
+};
+test('r29e no-op check/testCmd/changedCmd, removed checks, dependsOn, artifacts consumers, wider generated, new producers are reported', () => {
+  const t = (patch, re, scopePolicy = 'warn') => {
+    const d = r28b({ ...r29eBase, scopePolicy }, patch);
+    for (const g of [sdd(d, 'gate', '--changed'), sdd(d, 'gate', '--no-run')]) assert.match(g.out, re, g.out);
+    return d;
+  };
+  t({ checks: [{ name: 'a', cmd: ['true'] }, { name: 'b', cmd: ['node', '-e', '0'] }] }, /! config: .*check a cmd replaced by a no-op/);
+  t({ checks: [{ name: 'a', cmd: ['node', '-e', '0'] }] }, /! config: .*root checks removed: b/);
+  t({ projects: [{ ...r29eBase.projects[0], testCmd: ['echo', 'ok'] }, { root: 'q' }] }, /! config: .*project p testCmd replaced by a no-op/);
+  t({ projects: [{ ...r29eBase.projects[0], changedCmd: [':'] }, { root: 'q' }] }, /! config: .*project p changedCmd replaced by a no-op/);
+  t({ projects: [{ ...r29eBase.projects[0], checks: [] }, { root: 'q' }] }, /! config: .*project p checks removed: c/);
+  t({ projects: [{ ...r29eBase.projects[0], dependsOn: [] }, { root: 'q' }] }, /! config: .*project p dependsOn removed: q/);
+  t({ artifacts: {} }, /! config: .*artifacts entry contract\/x\.json removed/);
+  t({ artifacts: { 'contract/x.json': ['p/t.js'] } }, /! config: .*consumers removed: q\/t\.js/);
+  t({ generated: ['dist/**', 'tests/**'] }, /! config: .*generated \+= tests\/\*\*/);
+  t({ artifactProducers: { 'contract/x.json': 'gen' } }, /! config: .*artifactProducers \+= contract\/x\.json/);
+  const d = t({ projects: [{ ...r29eBase.projects[0], testCmd: ['exit', '0'] }, { root: 'q' }] }, /✗ config: .*testCmd/, 'strict');
+  assert.equal(sdd(d, 'gate', '--changed').code, 1);
+  assert.match(sdd(d, 'gate', '--changed', '--allow-config-weaken').out, /! config: .*accepted by --allow-config-weaken/);
+});
+test('r29e adding a project, a check, a consumer or editing a command stays silent', () => {
+  const d = r28b({ ...r29eBase, scopePolicy: 'strict' }, {
+    checks: [...r29eBase.checks, { name: 'new', cmd: ['true'] }],
+    projects: [{ ...r29eBase.projects[0], testCmd: ['node', '-e', '1'], checks: [...r29eBase.projects[0].checks, { name: 'd', cmd: ['true'] }] }, { root: 'q' }, { root: 'r', checks: [{ name: 'e', cmd: ['true'] }] }],
+    artifacts: { ...r29eBase.artifacts, 'contract/y.json': ['p/t.js'] },
+  });
+  for (const g of [sdd(d, 'gate', '--changed'), sdd(d, 'gate', '--no-run')]) assert.doesNotMatch(g.out, /config: .*(weakens|loosens)/, g.out);
+});
+test('r29e full gate skips an untracked config', () => {
+  const d = mini('---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | x shall hold. | TEST-A-001 |\n', {}, PASS);
+  assert.doesNotMatch(sdd(d, 'gate', '--no-run').out, /config:/);
+});
