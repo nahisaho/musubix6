@@ -5350,6 +5350,57 @@ function scanless(res) {
   return workspaceFiles().filter((f) => res.some((x) => x.test(f)));
 }
 
+// Keep the bytes validated by the gate immutable across project-controlled commands (#342).
+function gatePathSha(f, seen = new Set()) {
+  const p = path.resolve(ROOT, f);
+  try {
+    if (!fs.statSync(p).isDirectory()) return fileSha(f);
+    const real = fs.realpathSync(p);
+    if (seen.has(real)) return `cycle:${real}`;
+    const next = new Set([...seen, real]);
+    return sha(fs.readdirSync(p).sort().map((n) => n + '\0' + gatePathSha(path.join(f, n), next)).join('\0'));
+  } catch (e) { return `unreadable:${e.code}`; }
+}
+function gateSpecPaths() {
+  try { return fs.readdirSync(SPECS).filter((f) => f.endsWith('.md')).map((f) => `.sdd/specs/${f}`); } catch { return []; }
+}
+function gateInputSnapshot(specs, ents, cfg) {
+  const paths = new Set([CONFIG, LEDGER, APPROVALS, RETIRED_REQS, BASELINE].map(rel));
+  for (const s of specs) for (const f of s.artifacts) paths.add(rel(path.resolve(ROOT, f)));
+  for (const a of Object.values(readJson(APPROVALS, {}))) if (a.reviewSha && a.review) paths.add(rel(path.resolve(ROOT, a.review)));
+  for (const e of ents.values()) paths.add(e.path);
+  const outputs = [].concat(cfg.prepare?.outputs ?? []).map(normDep);
+  const isOutput = (f) => outputs.some((o) => f === o || f.startsWith(o + '/') || globRe(o).test(f));
+  const testPaths = new Set();
+  for (const e of ents.values()) if (e.kind === 'TEST') {
+    testPaths.add(e.path);
+    testSha(e.path, e.id);
+    for (const f of oracleDependencyFiles) if (!isOutput(f)) paths.add(f);
+    for (const f of Object.keys(artifactShasFor(e.path, e.id) ?? {})) if (!isOutput(f)) paths.add(f);
+  }
+  for (const k of Object.keys(checkDefShas(cfg))) paths.add(k.slice(k.indexOf('|') + 1));
+  // Direct command files and their local imports share the same closure for prepare and checks.
+  for (const c of [cfg.prepare, ...cfg.checks ?? [], ...(cfg.projects ?? []).flatMap((p) => (p.checks ?? []).map((c) => ({ ...c, cwd: p.root })))].filter(Boolean)) {
+    for (const arg of [...c.cmd ?? [], ...c.changedCmd ?? [], ...c.hubFallbackCmd ?? []]) {
+      const f = rel(path.resolve(ROOT, c.cwd ?? '.', arg));
+      if (f.startsWith('../') || path.isAbsolute(f)) continue;
+      try {
+        const p = path.join(ROOT, f);
+        if (fs.statSync(p).isFile() && (EXT.test(f) || arg === c.cmd?.[0] || /^#!/.test(fs.readFileSync(p, 'utf8')))) {
+          paths.add(f);
+          if (!testPaths.has(f)) for (const dep of importClosure(f)) paths.add(dep);
+        }
+      } catch { /* not a local command file */ }
+    }
+  }
+  return new Map([...paths].map((f) => [f, gatePathSha(f)]));
+}
+function changedGateInputs(snapshot, cfg) {
+  const paths = new Set([...snapshot.keys(), ...gateSpecPaths(), ...[...scanEntities(listFiles()).ents.values()].map((e) => e.path)]);
+  for (const k of Object.keys(checkDefShas(cfg))) paths.add(k.slice(k.indexOf('|') + 1));
+  return [...paths].filter((f) => !snapshot.has(f) || snapshot.get(f) !== gatePathSha(f)).sort();
+}
+
 /** @id CODE-GATESNAPSHOT-001 @implements REQ-GATESNAPSHOT-001 */
 function cmdGate() {
   const lines = [];
@@ -5367,6 +5418,18 @@ function cmdGate() {
 
   const specs = loadSpecs();
   const { ents, dups } = scanEntities(listFiles());
+  const cfg = loadConfig();
+  const inputSnapshot = flags['no-run'] ? null : gateInputSnapshot(specs, ents, cfg);
+  let inputsStable = true;
+  const checkInputs = (stage) => {
+    const changed = changedGateInputs(inputSnapshot, cfg);
+    if (changed.length) {
+      add(false, `gate inputs changed after ${stage}: ${changed.slice(0, 6).join(', ')}${changed.length > 6 ? `, … +${changed.length - 6}` : ''} — validated evidence no longer describes the checked files; restore inputs and re-record Red→Green`);
+      if (cfg.prepare) fs.rmSync(PREPARE_CACHE, { force: true });
+      inputsStable = false;
+    }
+    return inputsStable;
+  };
   if (!specs.length) { lines.push('! spec: none in .sdd/specs — T0 changes need no gate; for T1/T2 write .sdd/specs/<feature>.md (result is INCOMPLETE)'); incomplete = true; }
   for (const s of specs.filter((x) => x.approval === 'human')) {
     const ap = readJson(APPROVALS, {})[s.feature];
@@ -5453,7 +5516,6 @@ function cmdGate() {
       if (loadConfig().scopePolicy === 'strict') add(false, `${msg} (scopePolicy strict)`); else lines.push(`! ${msg} (scopePolicy warn: set "scopePolicy": "strict" to fail)`);
     }
   }
-  const cfg = loadConfig();
   if (cfg.prepare && !flags['no-run']) {
     const pc = cfg.prepare;
     const cache = readJson(PREPARE_CACHE, {});
@@ -5462,11 +5524,12 @@ function cmdGate() {
     if (cache.key === key && outsOk) lines.push('✓ prepare: up to date (cached, inputs unchanged)');
     else {
       const r = run(pc.cmd, pc.timeoutMs ?? 1800000);
-      if (r.exit === 0) { writeJson(PREPARE_CACHE, { key, at: new Date().toISOString() }); add(true, `prepare (${(r.ms / 1000).toFixed(1)}s)`); }
+      checkInputs('prepare');
+      if (r.exit === 0) { if (inputsStable) writeJson(PREPARE_CACHE, { key, at: new Date().toISOString() }); add(true, `prepare (${(r.ms / 1000).toFixed(1)}s)`); }
       else add(false, r.timedOut ? `prepare TIMEOUT after ${(r.ms / 1000).toFixed(0)}s (raise prepare.timeoutMs)` : `prepare failed (${(r.ms / 1000).toFixed(1)}s)`, r.timedOut ? [] : tail(r.text, 8).split('\n'));
     }
   }
-  if (flags.changed) {
+  if (flags.changed && inputsStable) {
     const chg = changedFiles();
     const specFeatures = new Set(loadSpecs().filter((sp) => chg.has(sp.path) || [...chg].some((c) => c.replace(/^\.\//, '') === sp.path)).map((sp) => sp.feature));
     const specImpl = specFeatures.size ? [...scanEntities(listFiles()).ents.values()].filter((e) => e.refs.implements.some((r) => loadSpecs().some((sp) => specFeatures.has(sp.feature) && sp.reqs.some((q) => q.id === r)))).map((e) => e.path) : [];
@@ -5496,11 +5559,11 @@ function cmdGate() {
   let sharedHinted = false;
   // a changed spec puts the projects holding that feature's tests/code in scope; the project check then runs in full
   const specProjects = new Set();
-  if (flags.changed) { const chs = changedFiles(); for (const sp of loadSpecs()) if (chs.has(sp.path)) { const ids = new Set(sp.reqs.map((r) => r.id)); for (const e of ents.values()) if ([...e.refs.implements, ...e.refs.verifies].some((r) => ids.has(r))) for (const p of cfg.projects ?? []) if (e.path.startsWith(normDep(p.root) + '/')) specProjects.add(p.root.replace(/\/$/, '')); } }
+  if (flags.changed && inputsStable) { const chs = changedFiles(); for (const sp of loadSpecs()) if (chs.has(sp.path)) { const ids = new Set(sp.reqs.map((r) => r.id)); for (const e of ents.values()) if ([...e.refs.implements, ...e.refs.verifies].some((r) => ids.has(r))) for (const p of cfg.projects ?? []) if (e.path.startsWith(normDep(p.root) + '/')) specProjects.add(p.root.replace(/\/$/, '')); } }
   const specOwned = (cwd) => specProjects.has(cwd.replace(/\/$/, ''));
   for (const p of cfg.projects ?? []) for (const dp of p.dependsOn ?? []) if (!fs.existsSync(path.join(ROOT, normDep(dp)))) lines.push(`! config: project ${p.root} dependsOn "${dp}" does not exist on disk — contract changes will not trigger its checks (typo?)`);
   if (flags['no-run']) { lines.push('! commands: SKIPPED (--no-run) — result is INCOMPLETE'); incomplete = true; }
-  else {
+  else if (inputsStable) {
   // root-owned files no project depends on: hint once, also when the root has no checks of its own (#67)
   if (flags.changed && (cfg.projects ?? []).length) {
     const pr = cfg.projects.map((p) => p.root.replace(/\/$/, '') + '/');
@@ -5589,12 +5652,14 @@ function cmdGate() {
       if (!ch.length) { lines.push(`! cmd ${c.name}: only deleted files changed (${gone.slice(0, 3).join(', ')}${gone.length > 3 ? ', …' : ''}) — running the full check`); cmd = c.cmd; scoped = false; widened = true; }
     }
     let r = run(cmd, scoped ? (c.changedTimeoutMs ?? cfg.changedTimeoutMs ?? 60000) : (c.timeoutMs ?? cfg.timeoutMs ?? 120000), c.cwd);
+    if (!checkInputs(`check ${c.name}`)) break;
     // a scoped run that executed no tests (e.g. `vitest related data.json`) proves nothing: run the full check instead
     if (scoped && r.exit === 0 && !r.timedOut && ((ZERO_TESTS.test(r.text) && !RAN_TESTS.test(r.text)) || NO_PASSED.test(r.text) || pytestNoExecution(r.text) || noExecution(r.text))) {
       lines.push(`! cmd ${c.name}: scoped run matched no tests — running the full check instead`);
       scoped = false;
       widened = true;
       r = run(c.cmd, c.timeoutMs ?? cfg.timeoutMs ?? 120000, c.cwd);
+      if (!checkInputs(`check ${c.name} full fallback`)) break;
     }
     if (flags.changed) note(scoped || (!widened && !c.changedCmd && base && [...changedFiles()].some((f) => f.startsWith(base))) ? 'exact' : 'widened');
     if (flags.changed) scopeCount[scoped || (!widened && !c.changedCmd && base && [...changedFiles()].some((f) => f.startsWith(base))) ? 'exact' : 'widened']++;
@@ -5607,13 +5672,16 @@ function cmdGate() {
       const warnOnly = cfg.flaky?.policy === 'warn';
       for (let i = 0; i < retries; i++) {
         const r2 = run(cmd, scoped ? (c.changedTimeoutMs ?? cfg.changedTimeoutMs ?? 60000) : (c.timeoutMs ?? cfg.timeoutMs ?? 120000), c.cwd);
+        if (!checkInputs(`check ${c.name} retry ${i + 1}`)) break;
         if (r2.exit === 0 && !r2.timedOut && !NO_PASSED.test(r2.text) && !pytestNoExecution(r2.text) && !noExecution(r2.text)) {
           add(warnOnly, `cmd ${c.name} FLAKY suspected: failed on the first run, passed on re-run ${i + 1}/${retries} (${(r2.ms / 1000).toFixed(1)}s) — a flaky entry was appended to .sdd/tdd.jsonl (commit it)${warnOnly ? ' — accepted by flaky.policy "warn"' : ' — set flaky.policy "warn" in .sdd/config.json to accept, or fix the test (no sleep, injected clock, port 0, generous timeouts)'}`, failTail(r.text, 8).split('\n'));
           appendLedger({ type: 'flaky', check: c.name, retry: i + 1, retries, policy: warnOnly ? 'warn' : 'fail', outcome: warnOnly ? 'accepted' : 'fail' });
+          inputSnapshot.set(rel(LEDGER), gatePathSha(rel(LEDGER)));
           r = null;
           break;
         }
       }
+      if (!inputsStable) break;
       if (!r) continue;
     }
     add(r.exit === 0, `cmd ${c.name} (${(r.ms / 1000).toFixed(1)}s)`, r.exit === 0 ? [] : failTail(r.text, 8).split('\n'));
@@ -5633,7 +5701,7 @@ function cmdGate() {
         else lines.push(`! ${wm}${bc.scopePolicy === 'strict' ? ' (accepted by --allow-config-weaken)' : ''}`);
       }
     }
-    if (!flags.changed && !flags['no-run']) {
+    if (!flags.changed && !flags['no-run'] && inputsStable) {
       // Include new definitions: an added higher-precedence config can narrow the run without changing a recorded file (#333).
       const rec = readLedger().reverse().find((e) => e.checkDefShas)?.checkDefShas;
       if (rec) {
