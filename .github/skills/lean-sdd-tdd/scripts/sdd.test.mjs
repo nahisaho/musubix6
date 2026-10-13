@@ -9384,9 +9384,6 @@ test('r28b a config change that does not weaken stays silent', () => {
   assert.doesNotMatch(sdd(d, 'gate', '--changed').out, /config:/);
 });
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
 // r29a #327: a lockfile in a workspace sub-root widens like its manifest; the change set survives a check that rewrites it
 const r29a = (files, lock, firstCmd) => {
   const d = mini('---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | x shall hold. | TEST-A-001 |\n', { ...files, [lock]: 'v1\n' });
@@ -9438,7 +9435,8 @@ test('r29b a rewritten ledger line fails; a pure append and merge-ledger stay fi
   ls[0] = ls[0].replace('"exit":', '"exit":9,"x":');
   fs.writeFileSync(lp, ls.join('\n') + '\n');
   assert.match(sdd(d, 'gate', '--changed').out, /✗ ledger: .*tdd\.jsonl/);
-=======
+});
+
 const r29c = () => {
   const spec = T1SPEC + '| REQ-A-002 | two shall hold. | TEST-A-002 |\n';
   const d = mini(spec, { 'a.test.mjs': jsTest('// @id TEST-A-002 @verifies REQ-A-002\ntest(\'TEST-A-002 y\', () => {\n  assert.ok(1);\n});\n') }, PASS);
@@ -9466,8 +9464,8 @@ test('r29c a REQ with Green evidence deleted from the spec warns, fails under st
   assert.match(sdd(d, 'approve', 'retire', 'REQ-A-001', '--by', 'alice').out, /REFUSED.*still exists/);
   assert.equal(sdd(d, 'approve', 'retire', 'REQ-A-002', '--by', 'alice').code, 0);
   assert.doesNotMatch(sdd(d, 'gate').out, /req REQ-A-002/);
->>>>>>> fix/r29c
-=======
+});
+
 // ---- r29d (#330): stub members on a Green class ----
 const r29d = () => {
   const spec = '---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | a shall hold. | TEST-A-001 |\n| REQ-B-001 | b shall hold. | TEST-B-001 |\n';
@@ -9510,8 +9508,8 @@ test('#330 gate warns (strict: fails) on leftover stub markers in a Green REQ fi
   const s = sdd(d, 'gate');
   assert.match(s.out, /✗ stub: 1 source file/, s.out);
   assert.equal(s.code, 1, s.out);
->>>>>>> fix/r29d
-=======
+});
+
 // r29e #331: loosening checks/testCmd/changedCmd/dependsOn/artifacts/generated/artifactProducers is reported like r28b
 const r29eBase = {
   checks: [{ name: 'a', cmd: ['node', '-e', '0'] }, { name: 'b', cmd: ['node', '-e', '0'] }],
@@ -9550,5 +9548,4 @@ test('r29e adding a project, a check, a consumer or editing a command stays sile
 test('r29e full gate skips an untracked config', () => {
   const d = mini('---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | x shall hold. | TEST-A-001 |\n', {}, PASS);
   assert.doesNotMatch(sdd(d, 'gate', '--no-run').out, /config:/);
->>>>>>> fix/r29e
 });
