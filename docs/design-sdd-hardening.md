@@ -78,6 +78,20 @@ Replace "0 findings in a wave" with severity classes:
 
 Two consecutive waves with S1 = S2 = 0 end the loop. S3 findings go into one tracker Issue (as #309 did) and are fixed only when they reproduce twice.
 
+### 3.6 Trusted-input integrity (G5) — approved 2026-10-13 (@nahisaho); implement as r30
+
+Waves 17–19 S3 findings (#315) share one root cause: the gate trusts inputs (config, manifests/lockfiles, ledger, specs, approvals, artifacts) without validating or pinning them. Handle them in one mechanism instead of per-input patches.
+
+1. **Input registry.** One table `TRUSTED_INPUTS` in `sdd.mjs`: `{kind, path/glob, schema, validator, hashed, failMode}` for `.sdd/config.json`, `.sdd/approvals.json`, `.sdd/tdd.jsonl`, specs, `artifacts`/`artifactProducers` targets, workspace manifests and lockfiles (Cargo/JS/Python roots). Every reader goes through `loadTrusted(kind)`; direct `readJson(CONFIG)` becomes a lint failure in the self-test.
+2. **Schema validation (fail-closed).** Unknown enum values (`scopePolicy`, `specEditPolicy`, …), wrong shapes (`artifacts` as array), and unknown keys are errors with the key path; `gate`, `gate --changed` and `tdd check` all run it first.
+3. **Pinned digest.** `gate` records `inputsSha` (per-kind sha, lockfiles included even if gitignored) in the ledger. `gate --changed --baseline` diffs it: any weakening change (policy, check definitions, test script narrowed, lockfile/workspace member change) is reported by kind; under `scopePolicy: strict` it fails unless `--allow-config-weaken`. Lockfile/manifest change widens to all members (§3.1 rule 2).
+4. **Ledger tail anchor.** Record the head hash and entry count in `.sdd/tdd.head` (committed) at each append; `tdd check` fails when the ledger is shorter or the head does not chain. `merge-ledger` also reconciles `.sdd/approvals.json` (union by id, newest approval wins; stale ones need `approve record`).
+5. **Messages.** Config-kind changes are reported as `config changed: <key>`, not "oracle dependency changed"; recorded-Red artifact producer declarations added later are applied by a single `tdd red --retest --all-affected`.
+
+Acceptance: each §6/#315 area-5 repro (array `artifacts`, `scopePolicy:"off"`, truncated ledger tail, lockfile-only edit, narrowed test script, `UU` approvals.json) fails or reports by kind; a mutation test removes each `loadTrusted` call site and expects a self-test failure.
+
+Out of scope: stub quality and weak-Red heuristics (separate rounds, §3.2/3.3).
+
 ## 4. Rollout
 
 | Round | Content | Depends on |
