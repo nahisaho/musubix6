@@ -14,7 +14,18 @@
     "frozenManifestExists": false,
     "consecutiveCompleteCleanRuns": 0,
     "mainSourcePromoted": false,
-    "reviewedIntegration": "aef76e9",
+    "reviewedIntegration": "a9cd84961aba55971bc651218fd6b0ac6032f521",
+    "preparedCandidate": {
+      "status": "prepared-not-qualifying",
+      "sourceArchiveSha256": "db63dd66d7996432b2a7a57a92781c171a02cf36d8e8d39486236c0673033269",
+      "packageSha256": "8755cb92e78f762af5ae965570eb37e86d110e259b86a828ee28349440482574",
+      "registeredTests": 1113,
+      "expectedPass": 1109,
+      "expectedTodo": 4,
+      "fullSuiteExecuted": false,
+      "reproducibility": "Two independent packs are byte-identical; eight bundled skills and all 74 prior skill payload paths are retained.",
+      "mergeInvariant": "Reviewed Go production is byte-identical; the complete F/H/G/I suite and exact J EOF append are retained. Final C retake evidence and seven valid approval-chain entries are preserved."
+    },
     "reviewedFixtureFix": {
       "issue": 370,
       "commit": "a33a805035047a1eeb09be7971d72e1a6d617946",
@@ -53,13 +64,22 @@
       "result": "Every runtime failed two Rust compile-verdict controls and one reviewed-PYTEST_ADDOPTS positive control. These differ from the local scripts-directory installer failures.",
       "countsAsQualification": false
     },
-    "knownCandidateS2Blockers": [
-      "#372: Rust discarded Cargo process outcome and missed colored diagnostics. Reviewed fix 246520f3fd465b4b4c0a040cb178ebe12f0a0f8e awaits integration and complete validation.",
-      "#373: C/C++ can falsely verify compilation after empty or unparseable nonzero output, termination or startup failure. Isolated correction is in progress."
-    ],
-    "selfHostingEvidenceLimit": "The root scanner excludes the monolithic test file above its existing 512 KiB bound. The Rust change has honest small-runner Red/Green evidence using exact EOF tests; no repository-root gate PASS is claimed.",
-    "qualificationDriver": "Prospective session-only implementation remains under review. Native process controls pass; serial fresh-source preparation, bounded three-runtime regression execution and an exclusive interruption lease must be finalized before freeze.",
-    "next": "Resolve every known in-scope S2, integrate reviewed fixes without losing test tails, prepare new immutable source/package identities and rerun hosted CI. Only then freeze and execute two complete fresh-state matrices."
+    "knownCandidateS2Blockers": [],
+    "reviewedNativeCompilerCorrections": {
+      "rust": "Issue #372, commit 246520f3fd465b4b4c0a040cb178ebe12f0a0f8e: actual Cargo process outcome and one local diagnostic normalization.",
+      "cAndCpp": "Issue #373, commits 1b26d1d76c643b2e134d056c3daf289ab6c1ad39 and 5088c2f: shared raw process-outcome extraction, C-local normalization, explicit failure reasons; genuine final-byte Red retake retained.",
+      "go": "Issue #374, commit f662241c6802ffdd00c710f1d9227afc8d15b9b4: normalized inference and final witness, explicit process failure including no-generation dispatch. Actual Node 20/22/24 each passed 35 focused Go/Rust/C controls; four distinct mutations detected and restored.",
+      "review": "Independent Claude Sonnet 5.5 implementation and final-test/evidence reviews found no remaining actionable findings. Complete frozen-matrix validation remains pending."
+    },
+    "latestHostedCI": {
+      "run": "https://github.com/nahisaho/musubix6/actions/runs/38530019461",
+      "source": "a9cd84961aba55971bc651218fd6b0ac6032f521",
+      "statusWhenRecorded": "in_progress",
+      "countsAsQualification": false
+    },
+    "selfHostingEvidenceLimit": "The root scanner excludes the monolithic test file above its existing 512 KiB bound. Native compiler changes have honest small-runner Red/Green evidence using exact final EOF tests/helpers; no repository-root gate PASS is claimed.",
+    "qualificationDriver": "Reviewed interruption-safe execution uses serial fresh-source/dependency preparation before exactly three bounded full suites, an exclusive lease, all-settled completion, and seven process self-tests. Final prospective inputs also bind the actual Python sources used by the offline wheel fixture. The expanded 29-mechanism mutation catalogue is in preflight, not qualifying evidence.",
+    "next": "Complete final mutation preflight, freeze the source/package/environment and 20 required cells prospectively, then execute two complete fresh-state matrices. Inspect the new hosted CI separately; no tag or publication without genuine human approval."
   },
   "supportContract": {
     "publicBaseline": "README.md, README-ja.md and package.json; no support narrowing authorized",
@@ -86,9 +106,9 @@
     },
     {
       "id": "QUAL-MUTATION",
-      "runtimes": ["24.21.0"],
+      "runtimes": ["20.20.2"],
       "command": null,
-      "expected": "Pinned, isolated counterexamples for changed mechanisms fail by assertion; restored source and valid controls pass. Commands, mutant digests and case IDs fixed before freeze."
+      "expected": "All 29 exact mechanism IDs must fail by assertion under isolated mutations, then pass with exact restored bytes and valid controls. Commands, mutant digests and case IDs fixed before freeze."
     },
     {
       "id": "QUAL-SCOPE-DIFFERENTIAL",
