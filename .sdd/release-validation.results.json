@@ -5,12 +5,57 @@
   "consecutiveCompleteCleanRuns": 0,
   "humanReleaseApproved": false,
   "publishingAuthorized": false,
+  "currentCandidate": {
+    "status": "prepared-not-qualifying",
+    "sourceCommit": "f4a495af013d785d83676f93ffa3102717675ed0",
+    "sourceArchiveSha256": "f0235be18b8f8ca6b151cee5e672334a631cc2df0cb41785652591b562248895",
+    "sourceDigest": "cf233120203e463530a6d78b146665728c15e47755248e6c1d4381fe0e201a71",
+    "packageSha256": "f24429ee79be2a842d1a6b696baa886d3942978aa40ab4f8a527f84971409ead",
+    "registeredTests": 1115,
+    "expectedPass": 1111,
+    "expectedTodo": 4,
+    "fullSuiteExecuted": false,
+    "prospectiveManifestFrozen": false,
+    "focusedPreflight": "Four exact fixture controls pass on each actual Node 20/22/24, with identical complete filesystem hashes before and after. This is not a full suite or qualification.",
+    "packagePreflight": "The byte-identical retained pack passes actual fresh extraction/offline-install and complete bundled-payload controls on Node 20/22/24.",
+    "mutationPreflight": {
+      "runtime": "20.20.2",
+      "assertionDetected": 31,
+      "byteRestored": 31,
+      "validControlsExecuted": 31,
+      "countsAsQualification": false
+    },
+    "retainedArtifacts": {
+      "executionHelpers": {
+        "path": "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/r36-final-f4a495a/execution-helpers.tar",
+        "sha256": "b8c9bc1e2f54883b8c0168078ce7a8b37ab5c99b16c2428cc4ab471cc7590bf4",
+        "files": 21
+      },
+      "focusedPreflight": {
+        "path": "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/r36-kh-focused-preflight-v2.json",
+        "sha256": "805cedfbc390f57e37532caf188c22f1e0aba3ae8526fb6c5163ca038a7724c3"
+      },
+      "mutationPreflight": {
+        "path": "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/r36-kh-mutations-preflight-v2/evidence.json",
+        "sha256": "c1f9eef35152ac2177fc46dd029a982151c7aa6670e17e2f10a733d9b903d369"
+      }
+    },
+    "hostedCI": "https://github.com/nahisaho/musubix6/actions/runs/38537400486",
+    "hostedCIStatusWhenRecorded": "in_progress",
+    "mainSourcePromoted": false,
+    "authorizationEndsAt": "2026-10-14T18:00:00+09:00",
+    "qualificationLauncherDeadline": "The retained driver is intentionally bounded to the current authorization. A renewed session must update and review its execution deadline before a new prospective freeze; do not edit a frozen helper or reuse the superseded manifest.",
+    "next": "Review hosted CI, then prospectively freeze and execute two complete fresh-state matrices under a renewed sufficiently long authorization window. No old-run credit and no publication authority."
+  },
   "epochs": [
     {
       "sourceCommit": "a9cd84961aba55971bc651218fd6b0ac6032f521",
       "manifestSha256": "66f2e621b68c6972b93779aca2f633150fb92d11492e6628de58491f2715169a",
       "packageSha256": "8755cb92e78f762af5ae965570eb37e86d110e259b86a828ee28349440482574",
       "run": "run1",
+      "epochStatus": "explicitly-superseded-after-failure",
+      "preservedManifest": "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/r36-final-a9cd849/frozen-manifest.json",
+      "supersessionRecord": "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/r36-final-a9cd849/supersession.json",
       "status": "FAIL_OR_INCOMPLETE",
       "completedAt": "2026-10-14T08:21:55.580Z",
       "requiredCells": 20,

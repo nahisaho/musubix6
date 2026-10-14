@@ -1,19 +1,21 @@
 {
   "schemaVersion": 1,
-  "status": "frozen-validation-blocked-by-ci",
+  "status": "corrected-candidate-prepared-not-qualifying",
   "targetVersion": "0.1.1",
   "decision": "docs/design-sdd-hardening.md#35-release-readiness-versus-exploratory-dogfooding-g4",
   "candidate": {
-    "sourceCommit": "a9cd84961aba55971bc651218fd6b0ac6032f521",
-    "sourceDigest": "8fccef114269a1f1c266e0c333b36ce1026f59c3f6d6d5bc71a1127fdda197c8",
-    "packagePath": "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/r36-final-a9cd849/package-a/musubix6-0.1.1.tgz",
-    "packageSha256": "8755cb92e78f762af5ae965570eb37e86d110e259b86a828ee28349440482574"
+    "sourceCommit": "f4a495af013d785d83676f93ffa3102717675ed0",
+    "sourceDigest": "cf233120203e463530a6d78b146665728c15e47755248e6c1d4381fe0e201a71",
+    "packagePath": "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/r36-final-f4a495a/package-a/musubix6-0.1.1.tgz",
+    "packageSha256": "f24429ee79be2a842d1a6b696baa886d3942978aa40ab4f8a527f84971409ead"
   },
   "r36CurrentBlockers": {
     "qualifying": false,
-    "frozenManifestExists": true,
+    "frozenManifestExists": false,
     "frozenManifest": {
-      "path": ".sdd/release-validation.v0.1.1.json",
+      "status": "explicitly-superseded",
+      "path": "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/r36-final-a9cd849/frozen-manifest.json",
+      "originalTrackedPath": ".sdd/release-validation.v0.1.1.json",
       "sha256": "66f2e621b68c6972b93779aca2f633150fb92d11492e6628de58491f2715169a",
       "frozenAt": "2026-10-14T07:49:26.775Z",
       "requiredCells": 20,
@@ -28,18 +30,36 @@
     },
     "consecutiveCompleteCleanRuns": 0,
     "mainSourcePromoted": false,
-    "reviewedIntegration": "a9cd84961aba55971bc651218fd6b0ac6032f521",
+    "reviewedIntegration": "f4a495af013d785d83676f93ffa3102717675ed0",
     "preparedCandidate": {
       "status": "prepared-not-qualifying",
-      "sourceArchiveSha256": "db63dd66d7996432b2a7a57a92781c171a02cf36d8e8d39486236c0673033269",
-      "packageSha256": "8755cb92e78f762af5ae965570eb37e86d110e259b86a828ee28349440482574",
-      "registeredTests": 1113,
-      "expectedPass": 1109,
+      "sourceArchiveSha256": "f0235be18b8f8ca6b151cee5e672334a631cc2df0cb41785652591b562248895",
+      "packageSha256": "f24429ee79be2a842d1a6b696baa886d3942978aa40ab4f8a527f84971409ead",
+      "registeredTests": 1115,
+      "expectedPass": 1111,
       "expectedTodo": 4,
-      "fullSuiteExecuted": true,
-      "fullRegressionPerRuntime": "Actual Node 20/22/24 each executed 1113 tests: 1109 pass, zero fail, four TODOs, no skips/cancellations. All three cells still fail the required whole-filesystem guard because the #371 fixture leaves a pytest cache.",
+      "fullSuiteExecuted": false,
+      "previousCandidateFullRegressionPerRuntime": "Prior a9cd849 on actual Node 20/22/24 each executed 1113 tests: 1109 pass, zero fail, four TODOs, no skips/cancellations. All three cells still failed the required whole-filesystem guard. No credit transfers to this corrected candidate.",
       "reproducibility": "Two independent packs are byte-identical; eight bundled skills and all 74 prior skill payload paths are retained.",
-      "mergeInvariant": "Reviewed Go production is byte-identical; the complete F/H/G/I suite and exact J EOF append are retained. Final C retake evidence and seven valid approval-chain entries are preserved."
+      "mergeInvariant": "Production remains byte-identical to a9cd849. The exact reviewed K C-fixture correction, H2 cwd correction and both complete EOF regressions are retained. Prior F/H/G/I/J tests and seven approval-chain entries remain intact except the two reviewed fixture changes."
+    },
+    "correctedCandidatePreflight": {
+      "actualRuntimes": ["20.20.2", "22.23.3", "24.21.0"],
+      "selectedPassPerRuntime": 4,
+      "requiredIds": ["TEST-R36H-PYTEST-001", "TEST-R36H2-CWD-001", "TEST-R36K-PORTABILITY-001", "TEST-R36I-PARSE-COLOR-001"],
+      "completeFilesystemUnchanged": true,
+      "filesystemEntries": 295,
+      "filesystemSha256BeforeAndAfter": "66b4b737950d9e410f7059e758cc16293a8c0c7016424c1957a2e7193884d10d",
+      "packedArtifactControls": "The exact retained archive passes fresh extraction/offline-install version/list/init/SDD and complete-payload controls on actual Node 20/22/24.",
+      "mutationCatalogue": "All 31 exact mechanisms were assertion-detected and byte-restored with valid executed controls on actual Node 20.20.2. This is preflight only.",
+      "countsAsQualification": false
+    },
+    "correctedCandidateHostedCI": {
+      "run": "https://github.com/nahisaho/musubix6/actions/runs/38537400486",
+      "source": "f4a495af013d785d83676f93ffa3102717675ed0",
+      "statusWhenRecorded": "in_progress",
+      "hostedGnu13OutcomeConfirmed": false,
+      "countsAsQualification": false
     },
     "reviewedFixtureFix": {
       "issue": 370,
@@ -109,17 +129,18 @@
       "issue": 375,
       "severity": "S3",
       "worktree": "/home/nahisaho/GitHub/musubix-fix-r36k",
-      "policy": "The running frozen local suites may settle. No heavy corrective validation overlaps them. A changed fixture requires explicit candidate/manifest supersession and a new zero-credit two-run streak; the frozen manifest must not be edited or silently overwritten."
+      "reviewedFix": "6d5bdf5: real C undeclared-address error plus missing-call inference, genuine native warning/error severity controls, original C++ bare-call control retained. Independent Sonnet review found no remaining actionable findings; hosted GNU13 validation remains pending.",
+      "policy": "The old frozen suites settled before corrective validation. The old manifest and failed evidence were explicitly preserved before supersession; the corrected candidate starts with zero qualifying credit."
     },
     "pytestFixtureOutputBlocker": {
       "issue": 371,
       "worktree": "/home/nahisaho/GitHub/musubix-fix-r36h2",
       "cause": "The native pytest fixture does not set cwd; .pytest_cache is written into the calling source checkout.",
-      "requiredCorrection": "Run native pytest in its owned runnerTemp fixture, add an outside-write regression, and retain the complete filesystem guard unchanged."
+      "reviewedFix": "87c9864: run native pytest in its owned runnerTemp fixture and regress outside writes. Independent Sonnet review found no remaining actionable findings. The complete filesystem guard is unchanged."
     },
     "selfHostingEvidenceLimit": "The root scanner excludes the monolithic test file above its existing 512 KiB bound. Native compiler changes have honest small-runner Red/Green evidence using exact final EOF tests/helpers; no repository-root gate PASS is claimed.",
     "qualificationDriver": "Reviewed interruption-safe execution uses serial fresh-source/dependency preparation before exactly three bounded full suites, an exclusive lease, all-settled completion, and seven process self-tests. Final prospective inputs bind the actual Python sources used by the offline wheel fixture. All 29 fixed mutation mechanisms pass the formal run, but the required whole-filesystem guard rejects the pytest fixture leak after otherwise successful full regressions. No preflight or failed run counts toward qualification.",
-    "next": "The old frozen run is complete and failed, with all children settled and its lease released. Finish and review both isolated fixture corrections, explicitly preserve and supersede the old manifest, and freeze new identities. No earlier run may count toward the corrected candidate. No tag or publication without genuine human approval."
+    "next": "Inspect corrected hosted CI and final preflight evidence. Under a renewed authorized time window long enough for two complete matrices, freeze the corrected candidate prospectively and run both fresh-state matrices. The current 18:00 authorization does not leave sufficient time; do not start a knowingly incomplete release qualification or credit old runs. Main source promotion, tag and publication remain unperformed; publication requires genuine human approval."
   },
   "supportContract": {
     "publicBaseline": "README.md, README-ja.md and package.json; no support narrowing authorized",
