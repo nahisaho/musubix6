@@ -1,0 +1,1118 @@
+{
+  "schemaVersion": 1,
+  "status": "frozen-prospective",
+  "targetVersion": "0.1.1",
+  "policy": "docs/design-sdd-hardening.md section 3.5; no retrospective credit or publication authority",
+  "candidate": {
+    "sourceCommit": "a9cd84961aba55971bc651218fd6b0ac6032f521",
+    "sourceDigest": "8fccef114269a1f1c266e0c333b36ce1026f59c3f6d6d5bc71a1127fdda197c8",
+    "sourceArchive": "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/r36-final-a9cd849/source.tar",
+    "sourceArchiveSha256": "db63dd66d7996432b2a7a57a92781c171a02cf36d8e8d39486236c0673033269",
+    "packagePath": "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/r36-final-a9cd849/package-a/musubix6-0.1.1.tgz",
+    "packageSha256": "8755cb92e78f762af5ae965570eb37e86d110e259b86a828ee28349440482574"
+  },
+  "sourceIdentity": "All tracked source, tests, specs, configs, workflows and documentation, including file modes; only exact operational accounting/readiness paths below excluded. The immutable source archive is additionally bound.",
+  "excludedOperationalPaths": [
+    ".sdd/cost-log.md",
+    ".sdd/release-validation.draft.json",
+    ".sdd/release-validation.v0.1.1.json",
+    ".sdd/release-validation.v0.1.1.results.json"
+  ],
+  "sourceFiles": [
+    {
+      "path": ".github/copilot-instructions.md",
+      "mode": "100644",
+      "sha256": "fc1ce3697db69352f7016c9497babd5af82464da72e013357c36c71351834352"
+    },
+    {
+      "path": ".github/skills/agent-watchdog/SKILL.md",
+      "mode": "100644",
+      "sha256": "c8d73c498a3d922a4adfbc31413a3ae125c5f7785dd9c6b4cbe33ebe0981cf85"
+    },
+    {
+      "path": ".github/skills/agent-watchdog/scripts/watchdog.mjs",
+      "mode": "100644",
+      "sha256": "62c2aee3a85f3e140f7c06969cefbd54ee1e644b66e177939cd80ff128571cd6"
+    },
+    {
+      "path": ".github/skills/agent-watchdog/scripts/watchdog.test.mjs",
+      "mode": "100644",
+      "sha256": "b4470fba9397716db46e068e7a2145132b095bb8f00fa7f65d21965afa2fd9fb"
+    },
+    {
+      "path": ".github/skills/japanese-prose/NOTICE.md",
+      "mode": "100644",
+      "sha256": "58da45a92c9a17f96d18beec4af88a4c77702184f1e471b6f2a7759eea47f121"
+    },
+    {
+      "path": ".github/skills/japanese-prose/SKILL.md",
+      "mode": "100644",
+      "sha256": "b5e28be7967d0f5efdb37d78180b5143844a7d88c9002ed9842b3251a4056657"
+    },
+    {
+      "path": ".github/skills/japanese-prose/references/review-workflow.md",
+      "mode": "100644",
+      "sha256": "4968b0d543dfd10544f6b23114a2978e8e51f1de62cab29cc14a7eadf6f12a95"
+    },
+    {
+      "path": ".github/skills/japanese-prose/references/scoring.md",
+      "mode": "100644",
+      "sha256": "580a159fd9e934e8bd475eddb5805f088cb0e60c91acf8f4dd9089e50c09d451"
+    },
+    {
+      "path": ".github/skills/japanese-prose/references/writing-guidelines.md",
+      "mode": "100644",
+      "sha256": "30ae24e05b2270f0876f2c32969a35c1a0e7ee1b65a0b7e4960075c632aece85"
+    },
+    {
+      "path": ".github/skills/japanese-prose/scripts/core.py",
+      "mode": "100644",
+      "sha256": "62ae6ecaec379b08c0bf117ed6c232cfce794c69895fa86fd93059dbe5ae5341"
+    },
+    {
+      "path": ".github/skills/japanese-prose/scripts/fixtures/natural.md",
+      "mode": "100644",
+      "sha256": "010d80b215b0aab888d57722ef32e61e84e06c5ca304dc340f1e16d802ce6105"
+    },
+    {
+      "path": ".github/skills/japanese-prose/scripts/fixtures/unnatural.md",
+      "mode": "100644",
+      "sha256": "701cb5420db38f39b3635df15139437b0bfca92b543e71c6cb40c5af3e38bc1d"
+    },
+    {
+      "path": ".github/skills/japanese-prose/scripts/lint.py",
+      "mode": "100644",
+      "sha256": "06df08d56c86de047d0902a2f602d30b344a9d78a4abb71faa90139dbf1e2797"
+    },
+    {
+      "path": ".github/skills/japanese-prose/scripts/outline.py",
+      "mode": "100644",
+      "sha256": "9b8763fa5dcc28c1d9f9d71e25f410e7c5af40625a1801579d132a5918525633"
+    },
+    {
+      "path": ".github/skills/japanese-prose/scripts/terms.py",
+      "mode": "100644",
+      "sha256": "790b83b8a603320a0216f0c2f39388d0ffb1ba24494960eb291c8761dc5c0a2b"
+    },
+    {
+      "path": ".github/skills/japanese-prose/scripts/test_engine.py",
+      "mode": "100644",
+      "sha256": "fe0915337922a5baf4a60a9965796e9710291b30b00703f69ce32f64c9e17451"
+    },
+    {
+      "path": ".github/skills/lean-agentic-coding/SKILL.md",
+      "mode": "100644",
+      "sha256": "05f12bbfa20548b2e2d8660df474a0f43fd5d443f3469ff09eef9cbe09783af8"
+    },
+    {
+      "path": ".github/skills/lean-agentic-coding/references/contract-template.md",
+      "mode": "100644",
+      "sha256": "6243cf85014750c77ef0ba89bb76a78bf8d55a0d9489789e5d99fefdbe48a720"
+    },
+    {
+      "path": ".github/skills/lean-agentic-coding/references/ledger-format.md",
+      "mode": "100644",
+      "sha256": "d3f79a2e5957d74064ec1551f11c3ca326e9d4df15958cea002d907030bf5a5a"
+    },
+    {
+      "path": ".github/skills/lean-agentic-coding/references/t2-protocol.md",
+      "mode": "100644",
+      "sha256": "0409f75dd91286c80e67786ea7f24d41f9cbdc6275fe123c0ff290cf203728f7"
+    },
+    {
+      "path": ".github/skills/lean-agentic-coding/scripts/gate.sh",
+      "mode": "100755",
+      "sha256": "5c353789a7ced297a0d26f438823506e53e58670389da38112595df6bab85716"
+    },
+    {
+      "path": ".github/skills/lean-sdd-tdd/SKILL.md",
+      "mode": "100644",
+      "sha256": "f04cbebdda0701030e8c34ad0bf73b24b7b925b10dc5e96e4ddea0cdd94e98cc"
+    },
+    {
+      "path": ".github/skills/lean-sdd-tdd/references/config.md",
+      "mode": "100644",
+      "sha256": "2a21d952442c4e043f5c7a43a78c5418160a8e155c6e565f262d58379aafc5a4"
+    },
+    {
+      "path": ".github/skills/lean-sdd-tdd/references/enforced-rules.md",
+      "mode": "100644",
+      "sha256": "744e320bffa8c5f0fc81991c3dec1a04f7618e0177cb29dcc36229a7293deb88"
+    },
+    {
+      "path": ".github/skills/lean-sdd-tdd/references/spec-template.md",
+      "mode": "100644",
+      "sha256": "99d05206e40ed8c86061214bf92938223bca00dc6911ca74533708e495045591"
+    },
+    {
+      "path": ".github/skills/lean-sdd-tdd/references/stubs.md",
+      "mode": "100644",
+      "sha256": "e550a4010527bb5cbeceae466ae8fb32cb1e3a7bc4c168b3937df84cc4105d04"
+    },
+    {
+      "path": ".github/skills/lean-sdd-tdd/references/t2.md",
+      "mode": "100644",
+      "sha256": "7fafa71afe817ce186106f90c9f279d728506a41df3a6e55a1b52bb474a45afa"
+    },
+    {
+      "path": ".github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+      "mode": "100644",
+      "sha256": "de1dba3c43bf122da32bc90f3981da31db4e38b5be84674482da4bdb92e5e49e"
+    },
+    {
+      "path": ".github/skills/lean-sdd-tdd/scripts/sdd.test.mjs",
+      "mode": "100644",
+      "sha256": "2515f9fb5c0569ba90976c36e96ea5b15ebcf855834e3f78d448726593c8fdec"
+    },
+    {
+      "path": ".github/skills/sdd-reverse-spec/SKILL.md",
+      "mode": "100644",
+      "sha256": "82f3ed85cdd59a699d717b6635951f7e67d4335d45ab5a64918dd62bb14eeb41"
+    },
+    {
+      "path": ".github/skills/sdd-spec-interview/SKILL.md",
+      "mode": "100644",
+      "sha256": "9411ddbff861ff6630953569b39785dbd17f18a288823d8a86ca9924e6339a1f"
+    },
+    {
+      "path": ".github/skills/tech-writer/SKILL.md",
+      "mode": "100644",
+      "sha256": "1c4ee8bf7a11c47f1708e07be72afeb531e109236280457ffe49294f78adbc3e"
+    },
+    {
+      "path": ".github/skills/tech-writer/assets/templates/blueprint.md",
+      "mode": "100644",
+      "sha256": "518430610a340b80c3d39b21a713bbb5ff4ea7e1febe688feb9ed3a3e1eb4c0a"
+    },
+    {
+      "path": ".github/skills/tech-writer/assets/templates/design-doc.md",
+      "mode": "100644",
+      "sha256": "e270528289c3eb61a01f69b4c6ca5b056a84e665158fc4b8e671fba1827d138e"
+    },
+    {
+      "path": ".github/skills/tech-writer/assets/templates/migration-plan.md",
+      "mode": "100644",
+      "sha256": "5aefe7997f2205efd0c1e9d447c44f2e6325e71be9ce3f6b93a1e661d56b5080"
+    },
+    {
+      "path": ".github/skills/tech-writer/assets/templates/operations-runbook.md",
+      "mode": "100644",
+      "sha256": "9e007a3b16542432c1f205ec7bf7d45adab2185f40bae2fc72b2e7a9fe5b5ffc"
+    },
+    {
+      "path": ".github/skills/tech-writer/assets/templates/pr-description.md",
+      "mode": "100644",
+      "sha256": "95a2f52bb70d159991103d07da5cd86b3a8ffeb20c43e522d1b139cf3b2dd14c"
+    },
+    {
+      "path": ".github/skills/tech-writer/assets/templates/qiita.md",
+      "mode": "100644",
+      "sha256": "c8ab33e65d03a054fccb75c170ea91f95a4afb479c6c2498bfe8c71ff13a5951"
+    },
+    {
+      "path": ".github/skills/tech-writer/assets/templates/readme.md",
+      "mode": "100644",
+      "sha256": "567a74e59314b08d18fb87514610d39d112fca3929ff2b7892ba19db97300c29"
+    },
+    {
+      "path": ".github/skills/tech-writer/assets/templates/requirements-definition.md",
+      "mode": "100644",
+      "sha256": "00321dc1109978feb97e4b07a24eac3374920891e9f9e53b4ebc3698249a4cd7"
+    },
+    {
+      "path": ".github/skills/tech-writer/assets/templates/rfi.md",
+      "mode": "100644",
+      "sha256": "58198fecdeb45f1dafb36db04ef9947a2892ea32feb7c88ac906631ce8ee57e2"
+    },
+    {
+      "path": ".github/skills/tech-writer/assets/templates/rfp.md",
+      "mode": "100644",
+      "sha256": "aa49cb6a1254ec3c96e725735f2b443f3fc9f66248d1f84e86e10b149d641122"
+    },
+    {
+      "path": ".github/skills/tech-writer/assets/templates/security-design.md",
+      "mode": "100644",
+      "sha256": "3c25cdb4b8b78ec70593bf5dd4d35342071bba4142edc28078b8ebfd775a6313"
+    },
+    {
+      "path": ".github/skills/tech-writer/assets/templates/system-design.md",
+      "mode": "100644",
+      "sha256": "5294199c70dd53381ab622aafe9efe586a3998c8c097f3c403cc25a5f3c35787"
+    },
+    {
+      "path": ".github/skills/tech-writer/assets/templates/technical-proposal.md",
+      "mode": "100644",
+      "sha256": "8108e1557f84c1efa831ff15a428ce262919f2d7ddbd7cd6ac984f4bd03091e1"
+    },
+    {
+      "path": ".github/skills/tech-writer/assets/templates/test-plan.md",
+      "mode": "100644",
+      "sha256": "9f2fe0136a26ea6e5b2a701e34124a1e6a5b3d93ce83c7ca0848dc49d0fb0fda"
+    },
+    {
+      "path": ".github/skills/tech-writer/assets/templates/user-manual.md",
+      "mode": "100644",
+      "sha256": "a57eae29cab1ddcb3dec8a9f029ac840dc0f97397af64b510b3e5b9be2b5af75"
+    },
+    {
+      "path": ".github/skills/tech-writer/assets/templates/white-paper.md",
+      "mode": "100644",
+      "sha256": "e6350747f636598aca0b1e5b1c3ab19aaffaf7a4aaffe9d5736eff90134d9d7d"
+    },
+    {
+      "path": ".github/skills/tech-writer/references/doctypes/api-docs.md",
+      "mode": "100644",
+      "sha256": "d7614c4d1ce7b8811cbe47dbfa5d9f51e3f9ef21d058675b89b0c74ffb364650"
+    },
+    {
+      "path": ".github/skills/tech-writer/references/doctypes/blueprint.md",
+      "mode": "100644",
+      "sha256": "6e391cadb01545a05a3e25e78b732d819d4bfe2dd64959593272c7cf3633eac8"
+    },
+    {
+      "path": ".github/skills/tech-writer/references/doctypes/code-comments.md",
+      "mode": "100644",
+      "sha256": "54afbb07d9a5a7228cf5b6933a757a78a4a6ce004d1976faa1d2251115c44c09"
+    },
+    {
+      "path": ".github/skills/tech-writer/references/doctypes/design-doc.md",
+      "mode": "100644",
+      "sha256": "a0333642a929cd270dd20a11cd43c351421cda0553aa60919df30ad4da9b1ccc"
+    },
+    {
+      "path": ".github/skills/tech-writer/references/doctypes/migration-plan.md",
+      "mode": "100644",
+      "sha256": "78b602a34aa3972a15f1685ad1d960ce498585dafc7d9c5f8cfcfa993a4f07f1"
+    },
+    {
+      "path": ".github/skills/tech-writer/references/doctypes/operations-runbook.md",
+      "mode": "100644",
+      "sha256": "27f57d51025f9c4b56885a69f34f2f6cfc99e7e78864db5bf43c5b15880dc8f5"
+    },
+    {
+      "path": ".github/skills/tech-writer/references/doctypes/pr-commit.md",
+      "mode": "100644",
+      "sha256": "9a3049852bd21eed66ee733912954b4140a086eb27539c0aeeea8e3f954f40b7"
+    },
+    {
+      "path": ".github/skills/tech-writer/references/doctypes/qiita.md",
+      "mode": "100644",
+      "sha256": "4249d4e0513a57120758cf915bf5ccff637d9ac5dd803b966755447978b6df94"
+    },
+    {
+      "path": ".github/skills/tech-writer/references/doctypes/readme.md",
+      "mode": "100644",
+      "sha256": "2b653818ce6c532182b0db1a024efa01a50156dfd6fb424d9690bdbc757a5e45"
+    },
+    {
+      "path": ".github/skills/tech-writer/references/doctypes/release-notes.md",
+      "mode": "100644",
+      "sha256": "3cdffb7a0ec483f8bbd998ee5318f287102b57a254189d5254017603119591b7"
+    },
+    {
+      "path": ".github/skills/tech-writer/references/doctypes/requirements-definition.md",
+      "mode": "100644",
+      "sha256": "d22e29542a76412c8b35bcb4bf36c7b0813eb3eb366c902cb0d10339a651958f"
+    },
+    {
+      "path": ".github/skills/tech-writer/references/doctypes/rfi.md",
+      "mode": "100644",
+      "sha256": "3c8d6f1b6dfd8c0b2783c8eae2472807398da442189e133124dc502aa40f77a9"
+    },
+    {
+      "path": ".github/skills/tech-writer/references/doctypes/rfp.md",
+      "mode": "100644",
+      "sha256": "f8511f5c00b5d43ad2ce5d97e5c81d313cbde89942c6363ea8a5805abf0c411e"
+    },
+    {
+      "path": ".github/skills/tech-writer/references/doctypes/security-design.md",
+      "mode": "100644",
+      "sha256": "f368c15ae1f64f97ddbd20efe40d8a0c44eaab26a18636024852b6ff74daca65"
+    },
+    {
+      "path": ".github/skills/tech-writer/references/doctypes/system-design.md",
+      "mode": "100644",
+      "sha256": "cf006b7a99af19e96751611098e4c44ac28d2fba0ed0ba4fb64c8a927681e387"
+    },
+    {
+      "path": ".github/skills/tech-writer/references/doctypes/technical-proposal.md",
+      "mode": "100644",
+      "sha256": "9046154330775bffde86c490b0a8daab6f2128da2bba08f509d9d324e50a7a3f"
+    },
+    {
+      "path": ".github/skills/tech-writer/references/doctypes/test-plan.md",
+      "mode": "100644",
+      "sha256": "dd01d66a7568bf72cfc493c8b48f5be4113e56425625f5ec91a16b0346da9a22"
+    },
+    {
+      "path": ".github/skills/tech-writer/references/doctypes/user-manual.md",
+      "mode": "100644",
+      "sha256": "9f53b1543eb000363a4624d77f41bb54a9747a5ccbdcce522d06f208850b45cd"
+    },
+    {
+      "path": ".github/skills/tech-writer/references/doctypes/white-paper.md",
+      "mode": "100644",
+      "sha256": "1b01c9881bf4ac307b59ab87ead0de78efc5874b21ce39e755805a0b1a46ce28"
+    },
+    {
+      "path": ".github/skills/tech-writer/references/doctypes/zenn.md",
+      "mode": "100644",
+      "sha256": "6a400fe91c7ba797f014407f0c3046ad4bea7d593725b5d2866f0f95e1f3e888"
+    },
+    {
+      "path": ".github/skills/tech-writer/references/intake.md",
+      "mode": "100644",
+      "sha256": "df6b9ba1619b34aac10ecd1a373af6d49b3e10dedf9216367a90c870edb7906e"
+    },
+    {
+      "path": ".github/skills/tech-writer/references/japanese-prose-optimization.md",
+      "mode": "100644",
+      "sha256": "4a5f7183cfeb5875341eb373aa109d1a57590485c7e6bebdce4585218f8d3cc8"
+    },
+    {
+      "path": ".github/skills/tech-writer/references/review-loop.md",
+      "mode": "100644",
+      "sha256": "5cfe3e1a8230c42079bfbc8ac43dc7f89daf341417df4f853f75bc4c5b04553f"
+    },
+    {
+      "path": ".github/skills/tech-writer/references/style-constitution.md",
+      "mode": "100644",
+      "sha256": "1d6b61c1c5e72f70ea1d8354e27f04f3ca296fb70cc3c4b0d0c7db8a69d742c6"
+    },
+    {
+      "path": ".github/skills/tech-writer/scripts/lint.py",
+      "mode": "100755",
+      "sha256": "1239645ee332695ddf4dfb1838d522ba6bec07b14825f8fc386707f52960e2aa"
+    },
+    {
+      "path": ".github/skills/wslc-containers/SKILL.md",
+      "mode": "100644",
+      "sha256": "9db3711cf7f167404a5790a8af30819c783c3de3730ab54afeb0fd8b2e897bff"
+    },
+    {
+      "path": ".github/skills/wslc-containers/scripts/wslc.sh",
+      "mode": "100755",
+      "sha256": "0bc20279abbfaab99aa4dd1831cd1b0e3ad38daf7c693324346ec3b274198406"
+    },
+    {
+      "path": ".github/workflows/ci.yml",
+      "mode": "100644",
+      "sha256": "e30f59ac69c101fc956e17526e61c6ca5777917c01940306bff881bb7c77d94f"
+    },
+    {
+      "path": ".github/workflows/publish.yml",
+      "mode": "100644",
+      "sha256": "a51ef53db87014e4014c972bcfec47cfb8ba369a77abc6b3b5988d7c4dc59043"
+    },
+    {
+      "path": ".gitignore",
+      "mode": "100644",
+      "sha256": "4d56952b0fb13bf8f9b6c13a6d4c34a075bac3af447636a1df4335d7576e2f97"
+    },
+    {
+      "path": ".sdd/approvals.json",
+      "mode": "100644",
+      "sha256": "9b5938052f29ac2377016ace3d12f394cf6e993d60de9fe2839273a229035652"
+    },
+    {
+      "path": ".sdd/evidence/r36i-parse-color-retake.json",
+      "mode": "100644",
+      "sha256": "844358e0174fe6a8cf373f0af52811b2387fc33a98d0dad9ff9382afee09546f"
+    },
+    {
+      "path": ".sdd/specs/gate-prepare-snapshot.md",
+      "mode": "100644",
+      "sha256": "daf25d90e3584c08d837127b11143efa304b9174b062d05fb147c01fb762a030"
+    },
+    {
+      "path": ".sdd/specs/node20-iterator-compatibility.md",
+      "mode": "100644",
+      "sha256": "3c5b24d33c90681bc7321ad98e1caefdcb6e9b85963de7cde1e64ff099d8debf"
+    },
+    {
+      "path": ".sdd/specs/r36b-node-red.md",
+      "mode": "100644",
+      "sha256": "1123ffcb2483fde4a819c5097face30334aeb754dba804936d1799821a564ad2"
+    },
+    {
+      "path": ".sdd/specs/r36c-compiler-feasibility.md",
+      "mode": "100644",
+      "sha256": "338d9412262746b632d01889e86216b0aed46c98e6373e1779762855b8b818c8"
+    },
+    {
+      "path": ".sdd/specs/r36d-fixture-portability.md",
+      "mode": "100644",
+      "sha256": "76aba9d20727f3c960a13d187cc542b200049aff0c97fa24d61f88675d6bb00d"
+    },
+    {
+      "path": ".sdd/specs/r36e-native-loader.md",
+      "mode": "100644",
+      "sha256": "95f667d0af5ee46ab8e72cd80035a4295901c8b0a81019db220d4c5b4e1c85d1"
+    },
+    {
+      "path": ".sdd/specs/r36f-fixture-layout.md",
+      "mode": "100644",
+      "sha256": "3ef48cb91d5052370ada085fbfa3543c2210ac72476add210ff10364e67b48d0"
+    },
+    {
+      "path": ".sdd/specs/r36g-rust-ci.md",
+      "mode": "100644",
+      "sha256": "f27328fd81a5c5a3a3ed6e4deb98304f97306ccea99973a86586682d0b9d301b"
+    },
+    {
+      "path": ".sdd/specs/r36h-pytest-ci.md",
+      "mode": "100644",
+      "sha256": "a4e742b30fe87c94add6a6af48c3393706d18d1eba684314d51dd96600d8ed74"
+    },
+    {
+      "path": ".sdd/specs/r36i-c-compiler.md",
+      "mode": "100644",
+      "sha256": "d94ea3d59dc48f5202d747e97e78344d85c3a457099d09add9054fd80cafd822"
+    },
+    {
+      "path": ".sdd/specs/r36j-go-compiler.md",
+      "mode": "100644",
+      "sha256": "fd8a8ddce14da4710a3bea0fdda711d0bfb45848427ec52bcdd94cb1f6547fe6"
+    },
+    {
+      "path": ".sdd/specs/runner-selection.md",
+      "mode": "100644",
+      "sha256": "88c38a8a303ce7d2fe604767daa57022e9a911597a9c9f4f360f18aa2547102c"
+    },
+    {
+      "path": ".sdd/tdd.jsonl",
+      "mode": "100644",
+      "sha256": "9ded1d19a466b9d2e4f7beecf52b50271458aa97058be63a968dea02b4644e3e"
+    },
+    {
+      "path": "LICENSE",
+      "mode": "100644",
+      "sha256": "3363377bb6dce0fc69aff81727073c71f93a9dcfce3d42c7f64bcebef644b726"
+    },
+    {
+      "path": "README-ja.md",
+      "mode": "100644",
+      "sha256": "eead33bc34968c2022760d7bcf1fa6cff62845aa5f8316a1de7c329073a51cca"
+    },
+    {
+      "path": "README.md",
+      "mode": "100644",
+      "sha256": "23e3b637c21dc8238466c5b294d6dfe8c9cf98005e920746ad31f46f4c654164"
+    },
+    {
+      "path": "bin/musubix6.mjs",
+      "mode": "100755",
+      "sha256": "23c09a048f5507e3869d123e61039324284d4698d9e17e7b71aaddbde01fd9a1"
+    },
+    {
+      "path": "docs/design-sdd-hardening.md",
+      "mode": "100644",
+      "sha256": "d10c3aacad0decaab30e05c1246f50fa33aca92497c0cb6dee70ec8df55f67f5"
+    },
+    {
+      "path": "docs/tutorial-app-development-1.md",
+      "mode": "100644",
+      "sha256": "954ce0c33fb48044ba5683457d4b4cad70c25341c7cad4d464979030e6cb5bc5"
+    },
+    {
+      "path": "docs/tutorial-app-development-2.md",
+      "mode": "100644",
+      "sha256": "0a06c380008bc2375454ef18ec6e66183350041bd6f2873f4b5b2413bcd057f4"
+    },
+    {
+      "path": "docs/tutorial-app-development-3.md",
+      "mode": "100644",
+      "sha256": "6da5b3a8e406b3bfb95b5fc24a7461a4894a3c3ae40e2c8597c0da1e3a01f489"
+    },
+    {
+      "path": "docs/tutorial-app-development-4.md",
+      "mode": "100644",
+      "sha256": "713fe147d6162a3e9230777527a0f3402679e6120af50f6a6ab6cb1692ebf359"
+    },
+    {
+      "path": "docs/tutorial-app-development-5.md",
+      "mode": "100644",
+      "sha256": "22ae0a29b02870818655a681d57e7d6820ba0babbb335fb2132e0d5c342b97d4"
+    },
+    {
+      "path": "package-lock.json",
+      "mode": "100644",
+      "sha256": "99d957aed4638e0a9ee93fb077441eada6c9c9d55b9570eaa306f71da0f4a6ef"
+    },
+    {
+      "path": "package.json",
+      "mode": "100644",
+      "sha256": "f6bba8b1df2fda2f5e0d640e9fc6e0349c52a9f8653214b3691ee035b31805b4"
+    },
+    {
+      "path": "scripts/cost-log.py",
+      "mode": "100644",
+      "sha256": "758d43a83133a729c1b3c34273b872972f569e021116faa36dba2270a0df4b9d"
+    }
+  ],
+  "support": {
+    "nodeEngine": ">=20",
+    "sampledRuntimes": {
+      "20": {
+        "version": "20.20.2",
+        "node": "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/runtime20/node-v20.20.2-linux-x64/bin/node"
+      },
+      "22": {
+        "version": "22.23.3",
+        "node": "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/runtime22/node-v22.23.3-linux-x64/bin/node"
+      },
+      "24": {
+        "version": "24.21.0",
+        "node": "/home/nahisaho/.nvm/versions/node/v24.21.0/bin/node"
+      }
+    },
+    "platform": "Linux x86_64 / WSL2",
+    "scope": "Existing public support is not narrowed; full regression, actual R/Gradle/WSL and all bundled payloads are required.",
+    "externalAuthenticityBoundary": "Trusted local tools/configuration; not arbitrary executable or OS authenticity."
+  },
+  "environment": {
+    "platform": "linux",
+    "architecture": "x64",
+    "kernel": "6.18.54.1-microsoft-standard-WSL2",
+    "pathSha256": "322b5b21c4dd57c6d5a119a69577061ea3f72c7a5008a0aa33e9728f4ac36128",
+    "versions": {
+      "python3": "Python 3.14.4",
+      "pytest": "pytest 9.1.1",
+      "Rscript": "Rscript (R) version 4.6.1 (2026-06-24)",
+      "cc": "cc (Ubuntu 15.2.0-16ubuntu1) 15.2.0\nCopyright (C) 2025 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+      "c++": "c++ (Ubuntu 15.2.0-16ubuntu1) 15.2.0\nCopyright (C) 2025 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+      "cmake": "cmake version 4.2.3\n\nCMake suite maintained and supported by Kitware (kitware.com/cmake).",
+      "go": "go version go1.26.0 linux/amd64",
+      "cargo": "cargo 1.99.0 (5f94df478 2026-08-27)",
+      "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
+      "java": "openjdk version \"25.0.4.1\" 2026-08-18\nOpenJDK Runtime Environment (build 25.0.4.1+1-1-26.04.4-Ubuntu)\nOpenJDK 64-Bit Server VM (build 25.0.4.1+1-1-26.04.4-Ubuntu, mixed mode, sharing)",
+      "mvn": "Apache Maven 3.9.12\nMaven home: /usr/share/maven\nJava version: 25.0.4.1, vendor: Ubuntu, runtime: /usr/lib/jvm/java-25-openjdk-amd64\nDefault locale: en, platform encoding: UTF-8\nOS name: \"linux\", version: \"6.18.54.1-microsoft-standard-wsl2\", arch: \"amd64\", family: \"unix\"",
+      "dotnet": "10.0.112 [/usr/lib/dotnet/sdk]",
+      "php": "PHP 8.5.4 (cli) (built: Sep  2 2026 14:42:18) (NTS)\nCopyright (c) The PHP Group\nBuilt by Ubuntu\nZend Engine v4.5.4, Copyright (c) Zend Technologies\n    with Zend OPcache v8.5.4, Copyright (c), by Zend Technologies",
+      "phpunit": "PHPUnit 13.0.0 by Sebastian Bergmann and contributors.",
+      "composer": "Composer version 2.9.5 2026-01-29 11:40:53\nPHP version 8.5.4 (/usr/bin/php8.5)\nRun the \"diagnose\" command to get more detailed diagnostics output.",
+      "julia": "julia version 1.13.1",
+      "mix": "Erlang/OTP 27 [erts-15.2.7.4] [source] [64-bit] [smp:16:16] [ds:16:16:10] [async-threads:1] [jit:ns]\n\nMix 1.18.3 (compiled with Erlang/OTP 27)",
+      "uv": "uv 0.12.23 (x86_64-unknown-linux-gnu)",
+      "git": "git version 2.53.0",
+      "tar": "tar (GNU tar) 1.35\nCopyright (C) 2023 Free Software Foundation, Inc.\nLicense GPLv3+: GNU GPL version 3 or later <https://gnu.org/licenses/gpl.html>.\nThis is free software: you are free to change and redistribute it.\nThere is NO WARRANTY, to the extent permitted by law.\n\nWritten by John Gilmore and Jay Fenlason.",
+      "/usr/lib/jvm/java-1.21.0-openjdk-amd64/bin/java": "openjdk version \"21.0.12.1\" 2026-08-18\nOpenJDK Runtime Environment (build 21.0.12.1+1-1-26.04.4-Ubuntu)\nOpenJDK 64-Bit Server VM (build 21.0.12.1+1-1-26.04.4-Ubuntu, mixed mode, sharing)",
+      "/home/nahisaho/.local/share/uv/python/cpython-3.12-linux-x86_64-gnu/bin/python3.12": "Python 3.12.15",
+      "node20": {
+        "version": "20.20.2",
+        "sha256": "6295488653f0d93b0a157841746fef7e72cc4328cfb60c4bbe0ca2668a836ffd"
+      },
+      "npm20": "10.8.2",
+      "node22": {
+        "version": "22.23.3",
+        "sha256": "fde6a4bf8d0562f7751d1a2d6cb9b417c4cfe107bbcb0aa3e9a24e125e348f48"
+      },
+      "npm22": "10.9.9",
+      "node24": {
+        "version": "24.21.0",
+        "sha256": "7fde7b8afa198da66257f42ee2001d874c7355631e6d1579a5fb5ef1f246df4c"
+      },
+      "npm24": "12.2.0",
+      "testthat": "3.3.2"
+    },
+    "executionFlagHashes": {
+      "NODE_OPTIONS": null,
+      "NODE_PATH": null,
+      "NODE_ENV": null,
+      "CARGO_TERM_COLOR": null,
+      "FORCE_COLOR": null,
+      "NO_COLOR": null,
+      "PYTHONPATH": null,
+      "PYTHONHOME": null,
+      "PYTHONNOUSERSITE": null,
+      "PYTEST_ADDOPTS": null,
+      "VIRTUAL_ENV": null,
+      "RUSTUP_TOOLCHAIN": null,
+      "RUSTFLAGS": null,
+      "RUSTC_WRAPPER": null,
+      "RUSTC_WORKSPACE_WRAPPER": null,
+      "CARGO_HOME": null,
+      "RUSTUP_HOME": null,
+      "CARGO_TARGET_DIR": null,
+      "CARGO_BUILD_TARGET": null,
+      "CARGO_BUILD_JOBS": null,
+      "GOCACHE": null,
+      "GOMODCACHE": null,
+      "GOPATH": null,
+      "GOTOOLCHAIN": null,
+      "CGO_ENABLED": null,
+      "MAKEFLAGS": null,
+      "CC": null,
+      "CXX": null,
+      "CFLAGS": null,
+      "CXXFLAGS": null,
+      "CPPFLAGS": null,
+      "LDFLAGS": null,
+      "GOFLAGS": null,
+      "GOWORK": null,
+      "JAVA_HOME": null,
+      "JDK_JAVA_OPTIONS": null,
+      "JAVA_TOOL_OPTIONS": null,
+      "DOTNET_ROOT": null,
+      "MSBuildSDKsPath": null,
+      "COMPOSER_HOME": null,
+      "MIX_ENV": null,
+      "ERL_FLAGS": null,
+      "JULIA_PROJECT": null,
+      "R_LIBS": null,
+      "R_LIBS_USER": null,
+      "R_LIBS_SITE": null,
+      "HOME": "8a583593dceb71b08f6959d3fd42af288bca2de74bce93c0500d118af050555a",
+      "SDD_TEST_TMPDIR": null
+    }
+  },
+  "fileInputs": [
+    {
+      "path": "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/qualification-driver.mjs",
+      "sha256": "9120377176d47f9703da239087e585635cd4cf8281bc388f3b6cfef244f49389"
+    },
+    {
+      "path": "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/qualification-source.mjs",
+      "sha256": "bbc5d0453d641b44e2098ffd07c7a97152ece371e64288f42796367d4d864f1f"
+    },
+    {
+      "path": "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/qualification-process.mjs",
+      "sha256": "f91c73ff4f6b0188d94b1110006ac6422756ee388a90dc72699fc94f4afc000e"
+    },
+    {
+      "path": "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/qualification-process.test.mjs",
+      "sha256": "52ec57e064593cf88d96244e8e1076364ebcdc743ad76ab32f60c09b9a4221e0"
+    },
+    {
+      "path": "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/qualification-pytest-inputs.py",
+      "sha256": "756bb72fa30c787535c9d69fb05f7aa58c8589846be9d29298ee0f1f2691fc62"
+    },
+    {
+      "path": "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/qualification-oracle.mjs",
+      "sha256": "d16439c1d5c88cb55654d1016fc99d6f73fa2d84e5614a3987c5cd109ce5dc75"
+    },
+    {
+      "path": "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/qualification-oracle.test.mjs",
+      "sha256": "cb2ea3efc4a502b5bc76d66f9ef3c34136cbed2767e77ea2a4206de8deea4c9f"
+    },
+    {
+      "path": "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/qualification-mutations.mjs",
+      "sha256": "b36e71aa61eece5f8c654f7b8b2bba8deca33db290fab8facbf0ce63b514e788"
+    },
+    {
+      "path": "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/qualify-package-fixed.mjs",
+      "sha256": "26b5361c47b110943966277bab715257dbb18ebbbf8daa5140eee0d279917d9a"
+    },
+    {
+      "path": "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/qualify-no-change.mjs",
+      "sha256": "d2b753ddaeb356f85901c41a263e5f85bfe865266baff9f2bab3e748e5d586e8"
+    },
+    {
+      "path": "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/qualify-r-native.mjs",
+      "sha256": "6f24218450a253a293e7fad479e96d15056ef1bb29895ecbeb791952f543c0cf"
+    },
+    {
+      "path": "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/qualify-gradle-native.mjs",
+      "sha256": "154274896781f0d970caabfd47bd247b4347dedf43c046a8e34e546372a0d5d5"
+    },
+    {
+      "path": "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/qualify-wslc-native.mjs",
+      "sha256": "5e962bb3d6cf6ff1c26b81fe939dc7240cd40956433a449b57b702bb497e4e46"
+    },
+    {
+      "path": "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/r36-qualification-prepared.json",
+      "sha256": "7ee1d986cdec0b7ab3546c805d6a46389b301cd0fcf3efbe40de168b0618a907"
+    },
+    {
+      "path": "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/r36-final-a9cd849/payload.json",
+      "sha256": "e5d59f3787791e8733cf1dc788fd1a012214d61612ede14a9607b3601b4e97cf"
+    },
+    {
+      "path": "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/r36-final-a9cd849/cases.json",
+      "sha256": "d9480994b7491e1926c040e79843657470673dc1d713f997e9ebac7b27cd8012"
+    },
+    {
+      "path": "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/r36-final-a9cd849/dependency-profiles.json",
+      "sha256": "f0a37a41f5b8454a15e6ed776c2f6147aa7e628a4680d671971e401b5ee6c4f8"
+    },
+    {
+      "path": "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/r36-final-a9cd849/japanese-prose-environment/scripts/test_engine.py.lock",
+      "sha256": "5ebd7bb0bddfa7e28d406f4b82c40637b00522dbaf415766e2bde4302d4559bf"
+    },
+    {
+      "path": "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/r-native-resolved-packages.csv",
+      "sha256": "35c7ee538c015bf9fe438de3926f05b69b4aafb94fe2978468894de3d1f3cf52"
+    },
+    {
+      "path": "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/native-validation-dependencies.json",
+      "sha256": "71a0997bf8566b35ce2a467e5114a092d82466f134bb887b29131f327626482b"
+    }
+  ],
+  "requiredCells": [
+    {
+      "id": "PACKAGE-20",
+      "runtime": "20",
+      "oracle": "json",
+      "args": [
+        "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/qualify-package-fixed.mjs",
+        "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/r36-final-a9cd849/package-a/musubix6-0.1.1.tgz",
+        "8755cb92e78f762af5ae965570eb37e86d110e259b86a828ee28349440482574",
+        "0.1.1",
+        "20.20.2",
+        "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/r36-final-a9cd849/source",
+        "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/r36-final-a9cd849/payload.json"
+      ]
+    },
+    {
+      "id": "WATCHDOG-20",
+      "runtime": "20",
+      "oracle": "watchdog",
+      "args": [
+        "--test",
+        "--test-reporter=tap",
+        "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/r36-final-a9cd849/source/.github/skills/agent-watchdog/scripts/watchdog.test.mjs"
+      ]
+    },
+    {
+      "id": "NO-CHANGE-20",
+      "runtime": "20",
+      "oracle": "json",
+      "args": [
+        "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/qualify-no-change.mjs",
+        "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/r36-final-a9cd849/source/.github/skills/lean-sdd-tdd/scripts/sdd.mjs"
+      ]
+    },
+    {
+      "id": "PACKAGE-22",
+      "runtime": "22",
+      "oracle": "json",
+      "args": [
+        "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/qualify-package-fixed.mjs",
+        "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/r36-final-a9cd849/package-a/musubix6-0.1.1.tgz",
+        "8755cb92e78f762af5ae965570eb37e86d110e259b86a828ee28349440482574",
+        "0.1.1",
+        "22.23.3",
+        "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/r36-final-a9cd849/source",
+        "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/r36-final-a9cd849/payload.json"
+      ]
+    },
+    {
+      "id": "WATCHDOG-22",
+      "runtime": "22",
+      "oracle": "watchdog",
+      "args": [
+        "--test",
+        "--test-reporter=tap",
+        "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/r36-final-a9cd849/source/.github/skills/agent-watchdog/scripts/watchdog.test.mjs"
+      ]
+    },
+    {
+      "id": "NO-CHANGE-22",
+      "runtime": "22",
+      "oracle": "json",
+      "args": [
+        "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/qualify-no-change.mjs",
+        "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/r36-final-a9cd849/source/.github/skills/lean-sdd-tdd/scripts/sdd.mjs"
+      ]
+    },
+    {
+      "id": "PACKAGE-24",
+      "runtime": "24",
+      "oracle": "json",
+      "args": [
+        "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/qualify-package-fixed.mjs",
+        "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/r36-final-a9cd849/package-a/musubix6-0.1.1.tgz",
+        "8755cb92e78f762af5ae965570eb37e86d110e259b86a828ee28349440482574",
+        "0.1.1",
+        "24.21.0",
+        "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/r36-final-a9cd849/source",
+        "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/r36-final-a9cd849/payload.json"
+      ]
+    },
+    {
+      "id": "WATCHDOG-24",
+      "runtime": "24",
+      "oracle": "watchdog",
+      "args": [
+        "--test",
+        "--test-reporter=tap",
+        "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/r36-final-a9cd849/source/.github/skills/agent-watchdog/scripts/watchdog.test.mjs"
+      ]
+    },
+    {
+      "id": "NO-CHANGE-24",
+      "runtime": "24",
+      "oracle": "json",
+      "args": [
+        "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/qualify-no-change.mjs",
+        "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/r36-final-a9cd849/source/.github/skills/lean-sdd-tdd/scripts/sdd.mjs"
+      ]
+    },
+    {
+      "id": "MUTATION",
+      "runtime": "20",
+      "oracle": "mutation",
+      "timeoutSeconds": 600,
+      "args": [
+        "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/qualification-mutations.mjs",
+        "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/r36-final-a9cd849/source.tar",
+        "db63dd66d7996432b2a7a57a92781c171a02cf36d8e8d39486236c0673033269",
+        "@RUN@/mutations"
+      ]
+    },
+    {
+      "id": "SCOPE-DIFFERENTIAL",
+      "runtime": "24",
+      "oracle": "scope",
+      "args": [
+        "--test",
+        "--test-reporter=tap",
+        "--test-name-pattern=r24d scope differential",
+        "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/r36-final-a9cd849/source/.github/skills/lean-sdd-tdd/scripts/sdd.test.mjs"
+      ]
+    },
+    {
+      "id": "NATIVE-R",
+      "runtime": "24",
+      "oracle": "json",
+      "timeoutSeconds": 180,
+      "env": {
+        "HOME": "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/r-native-home"
+      },
+      "unset": [
+        "R_LIBS_USER",
+        "R_LIBS_SITE"
+      ],
+      "args": [
+        "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/qualify-r-native.mjs",
+        "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/r36-final-a9cd849/source/.github/skills/lean-sdd-tdd/scripts/sdd.mjs"
+      ]
+    },
+    {
+      "id": "NATIVE-GRADLE",
+      "runtime": "24",
+      "oracle": "json",
+      "timeoutSeconds": 180,
+      "env": {
+        "JAVA_HOME": "/usr/lib/jvm/java-1.21.0-openjdk-amd64"
+      },
+      "pathPrefix": [
+        "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/runtime-gradle8/gradle-8.14.3/bin",
+        "/usr/lib/jvm/java-1.21.0-openjdk-amd64/bin"
+      ],
+      "args": [
+        "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/qualify-gradle-native.mjs",
+        "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/r36-final-a9cd849/source/.github/skills/lean-sdd-tdd/scripts/sdd.mjs"
+      ]
+    },
+    {
+      "id": "NATIVE-WSLC",
+      "runtime": "24",
+      "oracle": "json",
+      "args": [
+        "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/qualify-wslc-native.mjs",
+        "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/r36-final-a9cd849/source/.github/skills/wslc-containers/scripts/wslc.sh"
+      ]
+    },
+    {
+      "id": "JAPANESE-PROSE",
+      "runtime": "24",
+      "oracle": "prose",
+      "command": "uv",
+      "env": {
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "UV_PYTHON_DOWNLOADS": "never",
+        "UV_OFFLINE": "1"
+      },
+      "args": [
+        "run",
+        "--frozen",
+        "--python",
+        "/home/nahisaho/.local/share/uv/python/cpython-3.12-linux-x86_64-gnu/bin/python3.12",
+        "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/r36-final-a9cd849/japanese-prose-environment/scripts/test_engine.py"
+      ]
+    },
+    {
+      "id": "ORACLE-SELFTEST",
+      "runtime": "24",
+      "oracle": "oracle",
+      "args": [
+        "--test",
+        "--test-reporter=tap",
+        "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/qualification-oracle.test.mjs"
+      ]
+    },
+    {
+      "id": "PROCESS-SELFTEST",
+      "runtime": "24",
+      "oracle": "process",
+      "args": [
+        "--test",
+        "--test-reporter=tap",
+        "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/qualification-process.test.mjs"
+      ]
+    },
+    {
+      "id": "REGRESSION-20",
+      "runtime": "20",
+      "oracle": "suite",
+      "timeoutSeconds": 1750,
+      "freshSource": true,
+      "args": [
+        "--test",
+        "--test-reporter=tap",
+        ".github/skills/lean-sdd-tdd/scripts/sdd.test.mjs"
+      ]
+    },
+    {
+      "id": "REGRESSION-22",
+      "runtime": "22",
+      "oracle": "suite",
+      "timeoutSeconds": 1750,
+      "freshSource": true,
+      "args": [
+        "--test",
+        "--test-reporter=tap",
+        ".github/skills/lean-sdd-tdd/scripts/sdd.test.mjs"
+      ]
+    },
+    {
+      "id": "REGRESSION-24",
+      "runtime": "24",
+      "oracle": "suite",
+      "timeoutSeconds": 1750,
+      "freshSource": true,
+      "args": [
+        "--test",
+        "--test-reporter=tap",
+        ".github/skills/lean-sdd-tdd/scripts/sdd.test.mjs"
+      ]
+    }
+  ],
+  "mutationIds": [
+    "destination",
+    "admission",
+    "compiler-selection",
+    "dependency",
+    "ci-matrix",
+    "publish-restore",
+    "iterator-helper-names",
+    "iterator-frame-sites",
+    "file-load-witness",
+    "owned-assertion-type",
+    "owned-location",
+    "basename-work-bound",
+    "source-directory-helper",
+    "executable-work-bound",
+    "native-loader-refusal",
+    "native-loader-framing",
+    "installer-fixture-containment",
+    "pytest-persist-ci",
+    "pytest-persist-publish",
+    "rust-process-witness",
+    "rust-diagnostic-normalization",
+    "c-process-witness",
+    "c-diagnostic-normalization",
+    "c-process-reason",
+    "legacy-probe-raw-bytes",
+    "go-process-witness",
+    "go-diagnostic-normalization",
+    "go-process-reason",
+    "go-failure-dispatch"
+  ],
+  "materializedSourceTree": {
+    "entries": 292,
+    "sha256": "a133e3238b6998cbc81241860932a3966693aff32faad840f5c16384bc9d0922"
+  },
+  "pytestFixtureInputs": {
+    "packages": [
+      {
+        "name": "pytest",
+        "version": "9.1.1",
+        "metadataSha256": "c5d032518012789cabc870d46589aca3aeda36cf9fa4399ee88bda3d10438451",
+        "files": 83,
+        "sourceSha256": "8c7aac181b5a0f5f95c2c0c0c1febec3a2bfb28bc3def3ec7a34938aaa53727e"
+      },
+      {
+        "name": "iniconfig",
+        "version": "2.3.1",
+        "metadataSha256": "47c2c35d936f5c649d8074c6464719a42966a67b5cebad01e3e5784cf090cfb6",
+        "files": 5,
+        "sourceSha256": "ad1de2b95dfc30b37458878381acf476aeffe83d5053310d2ddd62e94da5ec51"
+      },
+      {
+        "name": "packaging",
+        "version": "26.0",
+        "metadataSha256": "3362bb7d6a26da2962ba8daaa4785cd0bacac21aba908a1195cc8f59580a265a",
+        "files": 18,
+        "sourceSha256": "fdaf9bda0e5755a7ebb1b7246fd095cee5e6d56eb10bc84b2b19bbc50faa35d0"
+      },
+      {
+        "name": "pluggy",
+        "version": "1.6.0",
+        "metadataSha256": "7438c35ee25a095eb7416f84b461c2d74425c5e734ad54c3912453c65244e01c",
+        "files": 9,
+        "sourceSha256": "60c13cea257fc53ebbe28e1c65408f62eb996378e42044fa898edaef584e3391"
+      },
+      {
+        "name": "Pygments",
+        "version": "2.19.2",
+        "metadataSha256": "7ae100d67d67006c6479803dd835fcf47a9b59fac794441ea8e66aa7f5984d82",
+        "files": 338,
+        "sourceSha256": "9e10c438546784d512160bc2586b47a76cd19678a8e0c96a0d88e5d91bc0a4b5"
+      }
+    ],
+    "sourceSha256": "8dd75019a294b4746eaca72728f8d5b28ecebbf279b2223849cca87aefc3a621"
+  },
+  "japaneseProseSource": {
+    "entries": 16,
+    "sha256": "85215001916adf8e57571b7864b1d2869dce0041bf334b5e9abecbe7b17eb4f6"
+  },
+  "developmentDependencies": {
+    "20": {
+      "name": "typescript",
+      "version": "5.9.3",
+      "entries": 152,
+      "sha256": "b004fb6ff01ffd7a4c0b47b8000d92ae4909b2b6ffcca6397874a3dc60f17df1"
+    },
+    "22": {
+      "name": "typescript",
+      "version": "5.9.3",
+      "entries": 152,
+      "sha256": "b004fb6ff01ffd7a4c0b47b8000d92ae4909b2b6ffcca6397874a3dc60f17df1"
+    },
+    "24": {
+      "name": "typescript",
+      "version": "5.9.3",
+      "entries": 152,
+      "sha256": "b004fb6ff01ffd7a4c0b47b8000d92ae4909b2b6ffcca6397874a3dc60f17df1"
+    }
+  },
+  "catalogue": "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/r36-final-a9cd849/cases.json",
+  "expected": {
+    "tests": 1113,
+    "pass": 1109,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 4
+  },
+  "qualification": {
+    "consecutiveCompleteCleanRuns": 2,
+    "priorRunsCount": false,
+    "freshFixturesPerRun": true,
+    "serialPreparationCells": true,
+    "concurrentFreshRegressionCells": 3,
+    "failuresMissingOrUnparseableReset": true,
+    "resourceProfile": "All worktree/dependency preparation is serial before the three isolated full-runtime suites overlap. The unchanged 15s real-compiler control passed on all three simultaneous runtimes before freeze. No other local heavy validation may overlap.",
+    "interruptionPolicy": "A global exclusive lease refuses overlapping runs across candidates. Driver interruption leaves the lease and RUNNING evidence for explicit inspection; no later run or freeze may silently clear it. Every child has an independent deadline before authorization expires."
+  },
+  "residuals": [
+    "Four pre-existing named S3 TODOs remain unresolved and never count as passed.",
+    "Prior shared-load compiler timeout remains FLAKY suspected; successful retries do not erase it.",
+    "WSL swap-limit capability warning is retained; smoke uses network none and a pinned local image.",
+    "Actual remote CI must be inspected separately; it is not retrospective local qualification."
+  ],
+  "humanReleaseApproved": false,
+  "publishingAuthorized": false
+}

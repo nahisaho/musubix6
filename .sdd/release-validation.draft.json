@@ -1,17 +1,26 @@
 {
   "schemaVersion": 1,
-  "status": "draft-not-qualifying",
+  "status": "frozen-validation-in-progress",
   "targetVersion": "0.1.1",
   "decision": "docs/design-sdd-hardening.md#35-release-readiness-versus-exploratory-dogfooding-g4",
   "candidate": {
-    "sourceCommit": null,
-    "sourceDigest": null,
-    "packagePath": null,
-    "packageSha256": null
+    "sourceCommit": "a9cd84961aba55971bc651218fd6b0ac6032f521",
+    "sourceDigest": "8fccef114269a1f1c266e0c333b36ce1026f59c3f6d6d5bc71a1127fdda197c8",
+    "packagePath": "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/r36-final-a9cd849/package-a/musubix6-0.1.1.tgz",
+    "packageSha256": "8755cb92e78f762af5ae965570eb37e86d110e259b86a828ee28349440482574"
   },
   "r36CurrentBlockers": {
     "qualifying": false,
-    "frozenManifestExists": false,
+    "frozenManifestExists": true,
+    "frozenManifest": {
+      "path": ".sdd/release-validation.v0.1.1.json",
+      "sha256": "66f2e621b68c6972b93779aca2f633150fb92d11492e6628de58491f2715169a",
+      "frozenAt": "2026-10-14T07:49:26.775Z",
+      "requiredCells": 20,
+      "mutationMechanisms": 29,
+      "firstRun": "RUNNING",
+      "secondRun": "NOT_STARTED"
+    },
     "consecutiveCompleteCleanRuns": 0,
     "mainSourcePromoted": false,
     "reviewedIntegration": "a9cd84961aba55971bc651218fd6b0ac6032f521",
@@ -78,8 +87,8 @@
       "countsAsQualification": false
     },
     "selfHostingEvidenceLimit": "The root scanner excludes the monolithic test file above its existing 512 KiB bound. Native compiler changes have honest small-runner Red/Green evidence using exact final EOF tests/helpers; no repository-root gate PASS is claimed.",
-    "qualificationDriver": "Reviewed interruption-safe execution uses serial fresh-source/dependency preparation before exactly three bounded full suites, an exclusive lease, all-settled completion, and seven process self-tests. Final prospective inputs also bind the actual Python sources used by the offline wheel fixture. The expanded 29-mechanism mutation catalogue is in preflight, not qualifying evidence.",
-    "next": "Complete final mutation preflight, freeze the source/package/environment and 20 required cells prospectively, then execute two complete fresh-state matrices. Inspect the new hosted CI separately; no tag or publication without genuine human approval."
+    "qualificationDriver": "Reviewed interruption-safe execution uses serial fresh-source/dependency preparation before exactly three bounded full suites, an exclusive lease, all-settled completion, and seven process self-tests. Final prospective inputs bind the actual Python sources used by the offline wheel fixture. All 29 fixed mutation mechanisms were assertion-detected and byte-restored in preflight; the first formal 20-cell run has now started. Prior preflight results do not count toward qualification.",
+    "next": "Complete two fresh-state matrices under the same frozen manifest. Inspect the new hosted CI separately; no tag or publication without genuine human approval."
   },
   "supportContract": {
     "publicBaseline": "README.md, README-ja.md and package.json; no support narrowing authorized",
