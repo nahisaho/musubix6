@@ -5560,14 +5560,73 @@ function cargoWrapperTokens(text) {
   return result;
 }
 // Static, conservative execution-surface closure; never execute wrappers to discover their inputs.
+/** @id CODE-R34-CLOSURE-001 @implements REQ-R34-CLOSURE-001 */
 function checkDefClosure(cfg, read = null, knownFiles = null) {
   const live = read === null;
   read ??= (f) => { try { return fs.readFileSync(path.resolve(ROOT, f), 'utf8'); } catch { return null; } };
   const all = [...(cfg.checks ?? []), ...(cfg.testCmd ? [{ name: 'tdd', cmd: cfg.testCmd }] : []),
     ...(cfg.projects ?? []).flatMap((p) => [...(p.checks ?? []), ...(p.testCmd ? [{ name: 'tdd', cmd: p.testCmd }] : [])].map((c) => ({ ...c, name: `${p.root}:${c.name}`, cwd: p.root })))];
-  const cache = new Map(), defs = new Map();
-  const rd = (f) => { if (!cache.has(f)) cache.set(f, read(f)); return cache.get(f); };
+  const cache = new Map(), defs = new Map(), directories = new Map(), resolutions = new Map(), tokenCache = new Map(), tokenKinds = new Map();
   const relative = (f) => path.relative(ROOT, f).split(path.sep).join('/');
+  let bytes = 0, tokenCount = 0, directoryEntries = 0, inspectionWork = 0;
+  const refuse = (f, reason) => { throw new Error(`REFUSED: check-definition discovery budget (${reason}) at ${f}; simplify the command closure or split its definitions; no evidence recorded`); };
+  const inspectBudget = (count) => {
+    inspectionWork += count;
+    if (inspectionWork > 8000000) refuse('source tokens', '8000000 inspection steps');
+  };
+  const suffix = (ts, start) => { inspectBudget(ts.length - start); return ts.slice(start); };
+  const directory = (abs) => {
+    if (!directories.has(abs)) {
+      if (directories.size >= 4096) refuse(relative(abs), '4096 directories');
+      let entries;
+      try { entries = fs.readdirSync(abs, { withFileTypes: true }); }
+      catch (e) {
+        if (!['ENOENT', 'ENOTDIR', 'ENAMETOOLONG', 'EINVAL'].includes(e.code)) refuse(relative(abs), `directory unreadable: ${e.code}`);
+        entries = [];
+      }
+      directoryEntries += entries.length;
+      if (directoryEntries > 200000) refuse(relative(abs), '200000 directory entries');
+      directories.set(abs, new Map(entries.map((e) => [e.name, e])));
+    }
+    return directories.get(abs);
+  };
+  const rd = (f) => {
+    const abs = path.resolve(ROOT, f);
+    f = relative(abs);
+    if (!cache.has(f)) {
+      if (cache.size >= 200000) refuse(f, '200000 candidate paths');
+      const entry = live ? directory(path.dirname(abs)).get(path.basename(abs)) : null;
+      let text = null;
+      if (!live || (entry && !entry.isDirectory())) {
+        if (live) {
+          let stat;
+          try { stat = fs.statSync(abs); }
+          catch (e) { refuse(f, `input unreadable: ${e.code}`); }
+          if (stat.isDirectory()) { cache.set(f, null); return null; }
+          if (!stat.isFile()) refuse(f, 'non-regular definition');
+          if (stat.size > 16 * 1024 * 1024) refuse(f, '16 MiB definition');
+        }
+        text = read(f);
+        if (live && text === null) refuse(f, 'input unreadable');
+        if (text !== null) {
+          const size = Buffer.byteLength(text);
+          if (size > 16 * 1024 * 1024) refuse(f, '16 MiB definition');
+          bytes += size;
+          if (bytes > 64 * 1024 * 1024) refuse(f, '64 MiB total definitions');
+        }
+      }
+      cache.set(f, text);
+    }
+    return cache.get(f);
+  };
+  const resolve = (token, cwd) => {
+    const key = `${cwd}\0${token}`;
+    if (!resolutions.has(key)) {
+      if (resolutions.size >= 200000) refuse(token, '200000 executable candidates');
+      resolutions.set(key, resolveExecutable(token, cwd));
+    }
+    return resolutions.get(key);
+  };
   let manifests;
   const cargoManifests = () => manifests ??= (knownFiles ?? gitFiles('*Cargo.toml')).filter((f) => /(^|\/)Cargo\.toml$/.test(f) && !SKIP.test(f));
   let packages;
@@ -5578,8 +5637,7 @@ function checkDefClosure(cfg, read = null, knownFiles = null) {
     const dirs = [ROOT];
     while (dirs.length) {
       const dir = dirs.pop();
-      let entries; try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch { continue; }
-      for (const e of entries) {
+      for (const e of directory(dir).values()) {
         const p = path.join(dir, e.name), f = relative(p);
         if (SKIP.test(f.replace(/(^|\/)node_modules(?=\/|$)/g, '$1packages') + '/')) continue;
         if (e.isDirectory()) dirs.push(p);
@@ -5588,29 +5646,45 @@ function checkDefClosure(cfg, read = null, knownFiles = null) {
     }
     return packages;
   };
-  const tokens = (text) => {
+  const tokens = (text, depth = 0) => {
+    if (tokenCache.has(text)) {
+      const result = tokenCache.get(text);
+      tokenCount += result.length;
+      if (tokenCount > 2000000) refuse('source tokens', '2000000 tokens');
+      return result;
+    }
+    if (depth > 16) refuse('source tokens', '16 nested quoted fragments');
     const result = [];
     for (const m of String(text).matchAll(/"([^"]*)"|'([^']*)'|`([^`]*)`|([^\s"'`()\[\]{},;|&<>]+)/g)) {
       const t = m[1] ?? m[2] ?? m[3] ?? m[4];
+      if (++tokenCount > 2000000) refuse('source tokens', '2000000 tokens');
       result.push(t);
-      if (m[4] === undefined && /\s/.test(t)) result.push(...tokens(t));
+      if (m[4] === undefined && /\s/.test(t)) for (const nested of tokens(t, depth + 1)) result.push(nested);
     }
+    tokenCache.set(text, result);
     return result;
   };
   for (const c of all) {
-    const visited = new Set(), activeFiles = new Set(), scripts = new Map(), pythonDefinitions = new Set();
+    const visited = new Set(), activeFiles = new Set(), scripts = new Map(), pythonDefinitions = new Set(), contexts = new Map(), tsConfigs = new Set();
+    let ordinaryCount = 0, candidateCount = 0;
     const put = (f, text, label = `check ${c.name} (${f} changed)`) => {
       defs.set(`${c.name}|${f}`, { sha: sha(text), label, python: pythonDefinitions.has(f) });
     };
     const file = (abs, cwd, label, definition = false, pythonRoot = null) => {
-      const f = relative(abs), t = rd(f);
+      const f = relative(abs), key = `${f}\0${cwd}`;
+      if (visited.has(key) || activeFiles.has(f)) {
+        const entry = defs.get(`${c.name}|${f}`);
+        if (entry && pythonDefinitions.has(f)) entry.python = true;
+        return;
+      }
+      const t = rd(f);
       if (t === null) return;
       // Tests and their implementation are protected by evidence, not whole-file definition hashes.
       if (!definition && (TEST_FILE.test(f) || /@id\s+(?:TEST|CODE)-|@(?:verifies|implements)\b/.test(t))) return;
       if (!definition && !/\.(?:[cm]?[jt]sx?|py|sh|bash|zsh|rb|pl|php|ps1|cmd|bat|mk)$/.test(f) && !/^#!/.test(t)) return;
       put(f, t, label);
-      const key = `${f}\0${cwd}`;
-      if (visited.has(key) || activeFiles.has(f) || t.includes('\0')) return;
+      if (t.includes('\0')) return;
+      if (activeFiles.size >= 128) refuse(f, '128 nested definition files');
       visited.add(key);
       activeFiles.add(f);
       if (definition && /\.py$/.test(f)) {
@@ -5640,7 +5714,7 @@ function checkDefClosure(cfg, read = null, knownFiles = null) {
       if (!value) return;
       const candidates = /[/\\]/.test(value) ? [path.resolve(base, value)]
         : (process.env.PATH ?? '').split(path.delimiter).map((d) => path.resolve(cwd, d || '.', value));
-      const abs = resolveExecutable(/[/\\]/.test(value) ? path.resolve(base, value) : value, cwd)
+      const abs = resolve(/[/\\]/.test(value) ? path.resolve(base, value) : value, cwd)
         ?? candidates.find((p) => rd(relative(p)) !== null) ?? path.resolve(base, value);
       const f = relative(abs), text = rd(f);
       const raw = live ? (() => { try { return fs.readFileSync(abs); } catch { return null; } })() : read.raw?.(f) ?? text;
@@ -5761,7 +5835,7 @@ function checkDefClosure(cfg, read = null, knownFiles = null) {
       }
     };
     const tsDefinitions = (ts, cwd) => {
-      const seen = new Set();
+      const seen = tsConfigs;
       const resolveConfig = (value, base) => {
         const p = path.resolve(base, value);
         return [p, p + '.json', path.join(p, 'tsconfig.json')].find((f) => rd(relative(f)) !== null);
@@ -5895,9 +5969,26 @@ function checkDefClosure(cfg, read = null, knownFiles = null) {
       }
     };
     const inspect = (ts, initialCwd, sourceDir = initialCwd, protectedHook = false, pythonSource = false) => {
-      let cwd = initialCwd;
+      inspectBudget(ts.length);
+      let cwd = initialCwd, contextCwd = null, context;
       for (let i = 0; i < ts.length; i++) {
-        const token = ts[i], exe = path.basename(token);
+        const token = ts[i];
+        if (contextCwd !== cwd) {
+          const key = `${cwd}\0${sourceDir}\0${protectedHook}\0${pythonSource}`;
+          if (!contexts.has(key)) contexts.set(key, { ordinary: new Set(), candidates: new Set() });
+          context = contexts.get(key);
+          contextCwd = cwd;
+        }
+        if (!tokenKinds.has(token)) {
+          const exe = path.basename(token);
+          tokenKinds.set(token, { exe, command: /^(?:cd|import|from|node|npm|pnpm|yarn|bun|npx|bunx|tsc)(?:\.cmd)?$|^(?:python[\d.]*|pytest|cargo|go|dotnet|make|gmake|sh|bash|env)$/.test(exe) || /^(?:CARGO_BUILD_)?RUSTC(?:_WORKSPACE)?_WRAPPER=/.test(token) });
+        }
+        const { exe, command } = tokenKinds.get(token);
+        if (i !== 0 && !command) {
+          if (context.ordinary.has(token)) continue;
+          context.ordinary.add(token);
+          if (++ordinaryCount > 200000) refuse(token, '200000 contextual source tokens');
+        }
         if (token === 'cd' && ts[i + 1]) { cwd = path.resolve(cwd, ts[++i]); continue; }
         if (/^(?:node|npm|pnpm|yarn|bun|npx|bunx)(?:\.cmd)?$/.test(exe)) nodeDefinitions(cwd);
         const wrapperEnv = /^((?:CARGO_BUILD_)?RUSTC(?:_WORKSPACE)?_WRAPPER)=(.*)$/.exec(token);
@@ -5915,7 +6006,7 @@ function checkDefClosure(cfg, read = null, knownFiles = null) {
             file(path.join(dir, '.npmrc'), packageCwd, undefined, true);
             if (dir === path.dirname(dir)) break;
           }
-          for (const f of [path.join(os.homedir(), '.npmrc'), path.join(path.dirname(path.dirname(resolveExecutable(token, cwd) ?? cwd)), 'etc/npmrc')]) file(f, packageCwd, undefined, true);
+          for (const f of [path.join(os.homedir(), '.npmrc'), path.join(path.dirname(path.dirname(resolve(token, cwd) ?? cwd)), 'etc/npmrc')]) file(f, packageCwd, undefined, true);
         }
         if (exe === 'pytest') {
           const b = relative(cwd), prefix = b ? b + '/' : '';
@@ -5932,11 +6023,13 @@ function checkDefClosure(cfg, read = null, knownFiles = null) {
             for (const declaration of declarations)
               for (const name of declaration.names) pythonModule(name, cwd, path.dirname(path.resolve(ROOT, f)));
           }
+          inspectBudget(ts.length - i - 1);
           for (let j = i + 1; j < ts.length; j++) if (ts[j] === '-p' && ts[j + 1]) pythonModule(ts[++j], cwd);
         }
         if (exe === 'cargo') {
-          cargoDefinitions(ts.slice(i + 1), cwd);
-          const alias = ts.slice(i + 1).find((t) => !t.startsWith('+') && !t.startsWith('-'));
+          const args = suffix(ts, i + 1);
+          cargoDefinitions(args, cwd);
+          const alias = args.find((t) => !t.startsWith('+') && !t.startsWith('-'));
           for (let dir = cwd; ; dir = path.dirname(dir)) {
             for (const m of ['.cargo/config.toml', '.cargo/config', 'rust-toolchain.toml', 'rust-toolchain']) {
               const f = relative(path.join(dir, m));
@@ -5963,10 +6056,11 @@ function checkDefClosure(cfg, read = null, knownFiles = null) {
             }
           }
         }
-        if (/^tsc(?:\.cmd)?$/.test(exe)) tsDefinitions(ts.slice(i + 1), cwd);
+        if (/^tsc(?:\.cmd)?$/.test(exe)) tsDefinitions(suffix(ts, i + 1), cwd);
         if (/^(make|gmake)$/.test(exe)) {
           let makeCwd = cwd;
           const inputs = [];
+          inspectBudget(ts.length - i - 1);
           for (let j = i + 1; j < ts.length; j++) {
             if (/^(?:-C|--directory)$/.test(ts[j]) && ts[j + 1]) makeCwd = path.resolve(makeCwd, ts[++j]);
             else if (/^--directory=/.test(ts[j])) makeCwd = path.resolve(makeCwd, ts[j].slice(12));
@@ -5979,7 +6073,7 @@ function checkDefClosure(cfg, read = null, knownFiles = null) {
         if (!pythonSource && (token === 'import' || token === 'from')) {
           if (ts[i + 1]) pythonModule(ts[i + 1], cwd, sourceDir);
         }
-        const resolved = resolveExecutable(token, cwd);
+        const resolved = (i === 0 || /^(?:node|python[\d.]*|pytest|cargo|go|dotnet|npm|pnpm|yarn|bun|make|gmake|sh|bash|env)$/.test(exe)) ? resolve(token, cwd) : null;
         if (resolved && (i === 0 || /^(?:node|python[\d.]*|pytest|cargo|go|dotnet|npm|pnpm|yarn|bun|make|gmake|sh|bash|env)$/.test(exe))) {
           if (/^python[\d.]*$/.test(exe)) file(path.join(path.dirname(path.dirname(resolved)), 'pyvenv.cfg'), cwd, undefined, true);
           const f = relative(resolved), real = fs.realpathSync(resolved);
@@ -5999,6 +6093,9 @@ function checkDefClosure(cfg, read = null, knownFiles = null) {
         // Keep argv boundaries (including paths with spaces), and literal paths inside wrapper source.
         const candidate = token.replace(/^--?[\w-]+=/, '');
         if (!candidate || /[*?{}]/.test(candidate) || candidate.startsWith('-')) continue;
+        if (context.candidates.has(candidate)) continue;
+        context.candidates.add(candidate);
+        if (++candidateCount > 200000) refuse(candidate, '200000 contextual candidates');
         const abs = path.resolve(cwd, candidate);
         if (path.isAbsolute(candidate) && !abs.startsWith(ROOT + path.sep) && !/\.(?:[cm]?[jt]s|py|sh|rb|pl)$/.test(candidate)) continue;
         file(abs, cwd, undefined, protectedHook);

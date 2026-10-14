@@ -12474,3 +12474,137 @@ test('r34e #361 shell and package-script native dot reports cannot bypass covera
     assert.equal(valid.code, 0, valid.out);
   }
 });
+
+function r34fFixture() {
+  const d = mini(T1SPEC, {
+    '.gitignore': 'node_modules/\n',
+    'a.test.mjs': "import test from 'node:test';\nimport assert from 'node:assert/strict';\nimport { answer } from './answer.mjs';\n// @id TEST-A-001 @verifies REQ-A-001\ntest('TEST-A-001', () => assert.equal(answer(), 1));\n",
+    'answer.mjs': '// @id CODE-A-001 @implements REQ-A-001\nexport const answer = () => 0;\n',
+  }, ['node', '--test', '--test-reporter=spec', '--test-name-pattern', '{id}', '{file}']);
+  const cp = path.join(d, '.sdd/config.json');
+  const cfg = JSON.parse(fs.readFileSync(cp));
+  cfg.scan = { include: ['a.test.mjs', 'answer.mjs'] };
+  cfg.scopePolicy = 'strict';
+  cfg.timeoutMs = 5000;
+  return { d, cp, cfg };
+}
+function r34fRun(d, ...args) {
+  const start = performance.now();
+  const result = spawnSync(process.execPath, [SDD, '--root', d, ...args], { encoding: 'utf8', env: ENV, timeout: 15000 });
+  const ms = performance.now() - start;
+  assert.equal(result.error, undefined, `15s feasibility budget exceeded (${ms.toFixed(1)}ms): ${result.error}\n${result.stdout}\n${result.stderr}`);
+  return { code: result.status, out: result.stdout + result.stderr, ms };
+}
+
+/** @id TEST-R34-CLOSURE-001 @verifies REQ-R34-CLOSURE-001 */
+test('r34f #362 structural budget avoids per-identifier PATH and file probes', () => {
+  const { d, cp, cfg } = r34fFixture();
+  fs.mkdirSync(path.join(d, 'tools'));
+  const source = Array.from({ length: 150 }, (_, i) => `// identifier${i}\n`).join('').repeat(2500);
+  assert.ok(Buffer.byteLength(source) > 5 * 1024 * 1024);
+  fs.writeFileSync(path.join(d, 'tools/bundle.cjs'), source);
+  cfg.checks = ['first', 'second'].map((name) => ({ name, cmd: ['node', 'tools/bundle.cjs'] }));
+  fs.writeFileSync(cp, JSON.stringify(cfg));
+  const measured = path.join(work, 'r34-counted.mjs');
+  fs.writeFileSync(measured, fs.readFileSync(SDD, 'utf8').replace("import fs from 'node:fs';", [
+    "import fs from 'node:fs';",
+    'let r34Probes = 0;',
+    "for (const name of ['readFileSync', 'statSync']) { const original = fs[name]; fs[name] = (...args) => { if (++r34Probes > 1000) process.exit(73); return original(...args); }; }",
+    "process.on('exit', () => console.log('R34_PROBES=' + r34Probes));",
+  ].join('\n')));
+  const result = spawnSync(process.execPath, [measured, '--root', d, 'tdd', 'red', 'TEST-A-001'], { encoding: 'utf8', env: ENV, timeout: 15000 });
+  const probes = Number(/R34_PROBES=(\d+)/.exec(result.stdout)?.[1]);
+  assert.ok(probes <= 1000, `shared discovery must use <=1000 reads/stats, observed ${probes}`);
+  assert.equal(result.status, 0, result.stdout + result.stderr);
+  console.log(`r34 structural reads/stats: ${probes}, ${Buffer.byteLength(source)} bytes shared by two checks`);
+});
+
+/** @id TEST-R34-CLOSURE-002 @verifies REQ-R34-CLOSURE-001 */
+test('r34f #362 real installed TypeScript launcher reaches TDD and preserves provenance', () => {
+  const { d, cp, cfg } = r34fFixture();
+  const installed = process.env.SDD_R34_TYPESCRIPT ?? '/home/nahisaho/musubix6-dogfood/dogfood-24/findings/repro-app207-tsc/node_modules/typescript';
+  assert.ok(fs.existsSync(path.join(installed, 'bin/tsc')), `Missing compiler dependency: set SDD_R34_TYPESCRIPT to an existing official installation (${installed})`);
+  const compiler = path.join(d, 'node_modules/typescript');
+  fs.cpSync(installed, compiler, { recursive: true });
+  const pkg = JSON.parse(fs.readFileSync(path.join(compiler, 'package.json')));
+  assert.equal(pkg.version, '5.9.3');
+  const bundle = path.join(compiler, 'lib/_tsc.js');
+  assert.ok(fs.statSync(bundle).size > 5 * 1024 * 1024);
+  fs.writeFileSync(path.join(compiler, 'lib/r34-helper.cjs'), 'module.exports = true;\n');
+  fs.appendFileSync(bundle, '\nrequire("./r34-helper.cjs");\n');
+  fs.writeFileSync(path.join(d, 'tsconfig.json'), '{"compilerOptions":{"noEmit":true,"allowJs":true},"files":["answer.mjs"]}\n');
+  cfg.checks = [{ name: 'types', cmd: ['node', 'node_modules/typescript/bin/tsc', '--noEmit'] }];
+  fs.writeFileSync(cp, JSON.stringify(cfg));
+  const red = r34fRun(d, 'tdd', 'red', 'TEST-A-001');
+  assert.equal(red.code, 0, red.out);
+  assert.match(red.out, /RED/);
+  fs.writeFileSync(path.join(d, 'answer.mjs'), '// @id CODE-A-001 @implements REQ-A-001\nexport const answer = () => 1;\n');
+  const green = r34fRun(d, 'tdd', 'green', 'TEST-A-001');
+  assert.equal(green.code, 0, green.out);
+  const ledger = path.join(d, '.sdd/tdd.jsonl');
+  const evidence = JSON.parse(fs.readFileSync(ledger, 'utf8').trim().split('\n').at(-1));
+  for (const file of ['bin/tsc', 'lib/tsc.js', 'lib/_tsc.js', 'lib/r34-helper.cjs'])
+    assert.ok(Object.keys(evidence.checkDefShas).some((k) => k.endsWith(`|node_modules/typescript/${file}`)), file);
+  assert.ok(Object.hasOwn(evidence.checkDefShas, 'resolution|node_modules/typescript/package.json'));
+  const valid = r34fRun(d, 'gate');
+  assert.equal(valid.code, 0, valid.out);
+  const before = fs.readFileSync(ledger, 'utf8');
+  try {
+    fs.rmSync(ledger);
+    const invalid = r34fRun(d, 'tdd', 'red', 'TEST-A-001');
+    assert.equal(invalid.code, 1, invalid.out);
+    assert.match(invalid.out, /test passed/);
+    assert.ok(!fs.existsSync(ledger));
+  } finally { fs.writeFileSync(ledger, before); }
+  assert.equal(fs.readFileSync(ledger, 'utf8'), before);
+  const controls = [];
+  for (const file of ['lib/_tsc.js', 'lib/r34-helper.cjs', 'package.json']) {
+    const target = path.join(compiler, file), original = fs.readFileSync(target);
+    try {
+      if (file === 'package.json') fs.writeFileSync(target, JSON.stringify({ ...pkg, type: 'module' }));
+      else fs.appendFileSync(target, '\n// provenance mutation\n');
+      const rejected = r34fRun(d, 'gate');
+      assert.equal(rejected.code, 1, `${file}: ${rejected.out}`);
+      assert.match(rejected.out, /defin|resolution|changed|FAIL/);
+      assert.equal(fs.readFileSync(ledger, 'utf8'), before);
+      controls.push(`${file} rejection=${rejected.ms.toFixed(1)}ms`);
+    } finally { fs.writeFileSync(target, original); }
+    const restored = r34fRun(d, 'gate');
+    assert.equal(restored.code, 0, restored.out);
+    controls.push(`${file} restored=${restored.ms.toFixed(1)}ms`);
+  }
+  console.log(`r34 TypeScript ${pkg.version}, ${fs.statSync(bundle).size} bytes: Red=${red.ms.toFixed(1)}ms Green=${green.ms.toFixed(1)}ms gate=${valid.ms.toFixed(1)}ms; ${controls.join('; ')}`);
+});
+
+/** @id TEST-R34-CLOSURE-003 @verifies REQ-R34-CLOSURE-001 */
+test('r34f #362 oversized definition refuses explicitly without writing evidence', () => {
+  const { d, cp, cfg } = r34fFixture();
+  fs.mkdirSync(path.join(d, 'tools'));
+  fs.writeFileSync(path.join(d, 'tools/oversized.cjs'), '// oversized definition\n' + ' '.repeat(17 * 1024 * 1024));
+  cfg.checks = [{ name: 'types', cmd: ['node', 'tools/oversized.cjs'] }];
+  fs.writeFileSync(cp, JSON.stringify(cfg));
+  const result = r34fRun(d, 'tdd', 'red', 'TEST-A-001');
+  assert.equal(result.code, 1, result.out);
+  assert.match(result.out, /REFUSED: check-definition discovery budget.*tools\/oversized\.cjs/);
+  assert.ok(!fs.existsSync(path.join(d, '.sdd/tdd.jsonl')));
+});
+
+/** @id TEST-R34-CLOSURE-004 @verifies REQ-R34-CLOSURE-001 */
+test('r34f #362 token suffix and directory budgets refuse instead of silently truncating', () => {
+  for (const [body, reason] of [
+    ['x '.repeat(2000001), /2000000 tokens/],
+    ['tsc fixture '.repeat(5000), /8000000 inspection steps/],
+    [Array.from({ length: 5000 }, (_, i) => `missing-${i}/helper.cjs`).join('\n'), /4096 directories/],
+  ]) {
+    const { d, cp, cfg } = r34fFixture();
+    fs.mkdirSync(path.join(d, 'tools'));
+    fs.writeFileSync(path.join(d, 'tools/budget.cjs'), body);
+    cfg.checks = [{ name: 'types', cmd: ['node', 'tools/budget.cjs'] }];
+    fs.writeFileSync(cp, JSON.stringify(cfg));
+    const result = r34fRun(d, 'tdd', 'red', 'TEST-A-001');
+    assert.equal(result.code, 1, result.out);
+    assert.match(result.out, /REFUSED: check-definition discovery budget/);
+    assert.match(result.out, reason);
+    assert.ok(!fs.existsSync(path.join(d, '.sdd/tdd.jsonl')));
+  }
+});
