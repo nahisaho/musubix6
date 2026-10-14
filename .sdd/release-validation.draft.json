@@ -68,6 +68,45 @@
     },
     "qualifying": false
   },
+  "r35FeasibilityOnly": {
+    "qualifying": false,
+    "fullSuiteCandidate": "cbcb746ebba29efa2f529f9ef539cf34f0c6e15d",
+    "fullSuites": [
+      { "node": "20.20.2", "tests": 1072, "pass": 1019, "fail": 49, "skip": 0, "cancelled": 0, "todo": 4, "exit": 1 },
+      { "node": "22.23.3", "tests": 1072, "pass": 1063, "fail": 5, "skip": 0, "cancelled": 0, "todo": 4, "exit": 1 },
+      { "node": "24.21.0", "tests": 1072, "pass": 1068, "fail": 0, "skip": 0, "cancelled": 0, "todo": 4, "exit": 0 }
+    ],
+    "preparedCandidate": "1ee528a3f2d0729ce1ca1de900e2b155a3f220f9",
+    "preparedVersion": "0.1.1, untagged and not published; not yet integrated into main",
+    "preparedCandidateControls": "Ten r35 tests passed on each actual Node 20/22/24; eleven combined controls including the real compiler passed on Node 24. These do not replace a full suite.",
+    "registeredCaseCatalogue": {
+      "count": 1075,
+      "unique": 1075,
+      "path": "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/r35-final-case-catalogue.json",
+      "countsAsPassedEvidence": false
+    },
+    "retainedPackage": {
+      "path": "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/r35-final-package-a/musubix6-0.1.1.tgz",
+      "sha256": "7a668e78994409ec5eebeef49846c898ca29234df870a7766440110b494b2e1d",
+      "reproducibility": "Two independent pack invocations produced byte-identical archives.",
+      "controls": "The exact retained archive passed fresh extraction/offline-install version/list/init/sdd controls and invalid-input no-write checks on Node 20/22/24.",
+      "runner": "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/qualify-package.mjs"
+    },
+    "boundedMutations": {
+      "detectedByAssertion": 6,
+      "restoredValidControls": 6,
+      "mechanisms": ["destination selection", "init argument admission", "portable compiler selection", "declared development dependency", "CI runtime coverage", "publish test dependency restoration"],
+      "evidence": "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/r35-bounded-mutation-evidence.json",
+      "logs": "Each mutation and restored control has a retained MUT-R35-*.log; original agent Red/Green logs were not retained, so this is new bounded-mutation evidence, not reconstructed historical logs."
+    },
+    "findings": [
+      "#365: Node 20 unsupported iterator helpers interrupt Red workflows; not all 49 failures have yet been attributed.",
+      "#366: Node 22 misclassifies module-load failures and genuine assertions; four full-suite failures.",
+      "#367: required real compiler gate exceeds the unchanged 15s budget on Node 22; reproduced in both full and isolated runs."
+    ],
+    "rawLogDirectory": "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files",
+    "qualificationImpact": "No readiness claim. New runtime fixes will change candidate/package identities; the manifest remains unfrozen and the clean-run streak remains zero."
+  },
   "knownTodoCases": [
     {
       "name": "r24d TODO stub: a call with no return-type evidence is emitted as a concrete i64 without an SDD-TODO(stub) marker",
@@ -91,8 +130,10 @@
     }
   ],
   "freezeBlockers": [
-    "#363: packed installer ignores explicit destination",
-    "#364: compiler test dependency portability and multi-runtime CI",
+    "#363: reviewed destination/admission fixes and packed controls pass; final integrated validation pending",
+    "#364: portable compiler dependency and non-publishing CI implemented; final integrated validation and actual remote CI pending",
+    "#365 and #366: newly verified in-scope runtime compatibility/verdict defects remain blocking",
+    "#367: required compiler gate fails the unchanged budget on Node 22; final matrix cannot pass with this failure",
     "Full Node 20/22/24 suites on the final candidate not yet complete; 112-case feasibility runs do not qualify",
     "Exact command/runner/configuration support forms, environment versions and fixed case IDs not yet enumerated",
     "Four pre-existing TODOs identified above require residual-risk review; none counts as passed evidence",
