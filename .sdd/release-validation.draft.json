@@ -63,7 +63,7 @@
     "bundledSkills": {
       "agentWatchdog": "7 tests passed on Node 24.21.0",
       "japaneseProse": "8 tests passed via uv run --python 3.12 after declared dependency restoration",
-      "documentationDiagnostics": "Existing structural flags retained; two new README-ja readability warnings await cleanup",
+      "documentationDiagnostics": "README-ja quick prose pass: score 90 to 99; three new findings resolved, one pre-existing introductory genitive chain retained; structural flags remain unchanged",
       "platformSpecificSkills": "Actual WSL runtime coverage not yet established"
     },
     "qualifying": false
@@ -91,8 +91,8 @@
     }
   ],
   "freezeBlockers": [
-    "#363: packed installer ignores explicit destination",
-    "#364: compiler test dependency portability and multi-runtime CI",
+    "#363: destination and invalid-option fixes pass source/packed controls and independent delta review; final integrated full validation pending",
+    "#364: portable compiler dependency and non-publishing Node matrix implemented; final integrated full validation and actual remote CI pending",
     "Full Node 20/22/24 suites on the final candidate not yet complete; 112-case feasibility runs do not qualify",
     "Exact command/runner/configuration support forms, environment versions and fixed case IDs not yet enumerated",
     "Four pre-existing TODOs identified above require residual-risk review; none counts as passed evidence",
