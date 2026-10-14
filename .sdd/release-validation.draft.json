@@ -43,6 +43,36 @@
       "runtimes": ["24.21.0"],
       "command": null,
       "expected": "Changed scope includes relevant checks against full-check reference, including valid no-change and configured policy controls; exact fixture IDs fixed before freeze."
+    },
+    {
+      "id": "QUAL-BUNDLED-WATCHDOG",
+      "runtimes": ["20.20.2", "22.23.3", "24.21.0"],
+      "command": "node --test .github/skills/agent-watchdog/scripts/watchdog.test.mjs",
+      "expected": "Seven tests execute and pass; zero failures, skips or cancellations."
+    },
+    {
+      "id": "QUAL-BUNDLED-JAPANESE-PROSE",
+      "runtimes": ["Python 3.12"],
+      "command": "uv run --python 3.12 .github/skills/japanese-prose/scripts/test_engine.py",
+      "expected": "Eight tests execute and pass; resolved interpreter and declared dependency versions must be recorded before freeze."
+    },
+    {
+      "id": "QUAL-NATIVE-R",
+      "runtimes": ["24.21.0", "R 4.6.1", "testthat 3.3.2"],
+      "command": "qualify-r-native.mjs with candidate SDD and isolated HOME containing the declared R user library; exact paths fixed before freeze",
+      "expected": "Fresh native assertion Red, Green and full gate succeed without changing runner environment policy or global R libraries."
+    },
+    {
+      "id": "QUAL-NATIVE-GRADLE",
+      "runtimes": ["24.21.0", "Gradle 8.14.3", "Java 21.0.12.1", "JUnit 4.13.2"],
+      "command": "qualify-gradle-native.mjs with candidate SDD, isolated Gradle and Java21 PATH; exact paths fixed before freeze",
+      "expected": "Fresh native assertion Red, Green and full gate succeed using an isolated Gradle user home."
+    },
+    {
+      "id": "QUAL-WSLC-NATIVE",
+      "runtimes": ["24.21.0", "wslc 3.0.3.0"],
+      "command": "qualify-wslc-native.mjs with candidate wrapper and pinned local Alpine image ID; exact paths fixed before freeze",
+      "expected": "Actual native offline container success and intentional failure preserve output and exit status; fresh named containers are auto-removed without mounts, ports or external network."
     }
   ],
   "feasibilityOnly": {
@@ -109,7 +139,7 @@
   },
   "r36FeasibilityOnly": {
     "qualifying": false,
-    "integrationCandidate": "5253e14",
+    "integrationCandidate": "58404ad",
     "mainPromotion": "Not yet performed; final full regression and remaining fixes are pending.",
     "iteratorCompatibility": {
       "commit": "7f6ab91",
@@ -150,10 +180,22 @@
       "actualControls": "Three ownership controls pass on each actual Node 20/22/24; literal native glob coverage preserved where supported, explicit operands cover all three.",
       "blockedPart": "#368 TypeScript adaptation stopped because the actual unsupported Node20 loader records implicit weak Red; original #339 remains unchanged. New S1 #369 is blocking."
     },
+    "nativeLoaderAdmission": {
+      "candidateCommit": "6d0a479",
+      "integrationStatus": "Not yet integrated; bounded review follow-up and #368 fixture completion are active.",
+      "actualControls": "Two regression assertions fail before the fix on each actual Node20/22/24; thirteen selected controls pass after the fix on each runtime. Absent/existing ledgers remain unchanged on default refusal; explicit overrides remain covered.",
+      "independentReview": "Claude Sonnet 5.5 raised a potential code-mentioned-inside-ordinary-Error false-refusal gap. Agent is proving or refuting it before any final integration claim.",
+      "evidence": "Retained session r36e-* logs and .sdd/specs/r36e-native-loader.md in the issue worktree."
+    },
     "nativeEnvironmentFeasibility": {
       "r": "Real R 4.6.1/testthat 3.3.2 auto-detection, assertion Red, Green and full gate pass on 58404ad/Node24 using isolated default HOME user-library discovery. System rlang initially failed ABI loading; isolated source restore initially lacked uv.h, then succeeded using fs's documented USE_BUNDLED_LIBUV=1. No global library or runner environment policy change.",
       "rEvidence": "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/r36-native-r-isolated-home.json",
-      "gradle": "System Gradle4.4.1 is not the documented Gradle8 sample. Isolated official Gradle8.14.3 archive SHA256 bd71102213493060956ec229d946beee57158dbd89d0e62b91bca0fa2c5f3531 verified; --version works with installed Java21.0.12.1. Native SDD smoke still pending.",
+      "gradle": "Actual Gradle8.14.3/Java21.0.12.1/JUnit4.13.2 auto-detection, strong assertion Red, Green and full gate pass on 58404ad/Node24. Commands take 14879ms, 14265ms and about 14.1s respectively. Official archive SHA256 bd71102213493060956ec229d946beee57158dbd89d0e62b91bca0fa2c5f3531 verified; isolated Gradle user home, no global Gradle replacement.",
+      "gradleEvidence": "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/r36-native-gradle-feasibility.log",
+      "bundledWatchdog": "Seven tests pass with zero failures/skips on each actual Node20/22/24; retained r36-watchdog-node{20,22,24}.log.",
+      "bundledJapaneseProse": "Eight engine tests pass via uv run --python 3.12; retained r36-japanese-prose-engine.log. Exact resolved environment still to be fixed before qualification.",
+      "wslc": "Actual wslc3.0.3.0 through the bundled wrapper passes fresh offline container success (exit0), intentional failure (exit7), output forwarding and auto-removal. Pinned local image sha256:320994c3b997e2ec6433f717f153e108023c5bec8fefa8d76b83451d16d05ea8; network none, no mounts or published ports. Native swap-limit capability warning retained, not suppressed; it does not prevent these controls.",
+      "wslcEvidence": "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/r36-native-wslc-feasibility.json",
       "dependencyManifest": "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/native-validation-dependencies.json"
     },
     "evidence": "Retained session files r36a-*, r36b-*, r36ab-node{20,22,24}-combined.log, r36-integrated-scope-differential.log and r36ab-no-change-node{20,22,24}.json.",
@@ -185,7 +227,7 @@
     "#363: reviewed destination/admission fixes and packed controls pass; final integrated validation pending",
     "#364: portable compiler dependency and non-publishing CI implemented; final integrated validation and actual remote CI pending",
     "#365 and #366: fixes independently reviewed and locally integrated; final full validation and main promotion remain pending",
-    "#367: required compiler gate fails the unchanged budget on Node 22; final matrix cannot pass with this failure",
+    "#367: reviewed invocation-local optimization passes focused real compiler controls on actual Node20/22/24 under the unchanged budget; final integrated full suites remain required",
     "#368: native runtime fixture preconditions must be made explicit without skipping or weakening the protected behavior",
     "#369: actual unsupported native TypeScript loading is accepted as implicit weak Red on Node20; must reject before writing evidence",
     "Full Node 20/22/24 suites on the final candidate not yet complete; 112-case feasibility runs do not qualify",
