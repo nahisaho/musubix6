@@ -1,0 +1,109 @@
+name: test
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [20, 22, 24]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      - name: Record and verify actual Node runtime
+        env:
+          EXPECTED_NODE: ${{ matrix.node }}
+        run: |
+          mkdir -p test-logs
+          set +e
+          {
+            node --version &&
+            node -e 'console.log("execPath=" + process.execPath); if (process.versions.node.split(".")[0] !== process.env.EXPECTED_NODE) throw new Error("Unexpected Node runtime")' &&
+            npm --version
+          } 2>&1 | tee test-logs/runtime.log
+          status=${PIPESTATUS[0]}
+          printf 'runtime identity exit=%s\n' "$status" | tee -a test-logs/runtime.log
+          exit "$status"
+      - name: Restore development dependencies from lockfile
+        run: |
+          set +e
+          npm ci 2>&1 | tee test-logs/npm-ci.log
+          status=${PIPESTATUS[0]}
+          printf 'npm ci exit=%s\n' "$status" | tee -a test-logs/npm-ci.log
+          exit "$status"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.23.x'
+          cache: false
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+            10.0.x
+      - uses: julia-actions/setup-julia@v2
+        with:
+          version: '1'
+      - uses: erlef/setup-beam@v1
+        with:
+          otp-version: '27'
+          elixir-version: '1.18'
+      - name: Install Python, R and native test toolchains
+        run: |
+          set +e
+          {
+            python3 -m pip install --user pytest &&
+            sudo apt-get update -qq &&
+            sudo apt-get install -y -qq r-base-core build-essential cmake maven php-cli phpunit composer
+          } 2>&1 | tee test-logs/toolchain-install.log
+          status=${PIPESTATUS[0]}
+          printf 'toolchain install exit=%s\n' "$status" | tee -a test-logs/toolchain-install.log
+          exit "$status"
+      - name: Record native toolchain versions
+        run: |
+          set +e
+          {
+            python3 -m pytest --version &&
+            Rscript --version &&
+            cc --version && c++ --version && cmake --version &&
+            go version && cargo --version && rustc --version &&
+            java -version && mvn --version &&
+            dotnet --list-sdks && dotnet --list-runtimes &&
+            php --version && phpunit --version && composer --version &&
+            julia --version && mix --version
+          } 2>&1 | tee test-logs/toolchain-versions.log
+          status=${PIPESTATUS[0]}
+          printf 'toolchain versions exit=%s\n' "$status" | tee -a test-logs/toolchain-versions.log
+          exit "$status"
+      - name: Run full lean-sdd-tdd suite
+        run: |
+          set +e
+          timeout --signal=TERM --kill-after=30s 100m node --test .github/skills/lean-sdd-tdd/scripts/sdd.test.mjs 2>&1 | tee test-logs/sdd.log
+          status=${PIPESTATUS[0]}
+          printf 'node --test exit=%s\n' "$status" | tee -a test-logs/sdd.log
+          exit "$status"
+      - name: Retain failure logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-failure-node-${{ matrix.node }}
+          path: test-logs/
+          retention-days: 14

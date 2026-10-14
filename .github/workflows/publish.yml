@@ -21,6 +21,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
+      - name: Install test dependencies
+        run: npm ci
       - name: Install test toolchains (pytest, R)
         run: |
           python3 -m pip install --user pytest
