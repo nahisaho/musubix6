@@ -24,10 +24,10 @@
   "r36i-c-compiler": {
     "by": "ai:claude-sonnet-5.5",
     "kind": "ai",
-    "review": "Coordinator relayed independent Sonnet conditional approval; exact raw legacy compatibility, unchanged Rust predicate, outcome-first reasons and independently validated colored C parser amendments plus shared raw helper decision are satisfied.",
-    "at": "2026-10-14T07:12:22.399Z",
+    "review": "Coordinator relayed independent Sonnet production review CLEAN and requested final-byte parser retake after fixture repair; genuine G baseline assertion Red and current Green share unchanged final test/helper SHA, with machine-recorded proof logs; requirements unchanged.",
+    "at": "2026-10-14T07:21:51.520Z",
     "artifacts": {
-      ".sdd/specs/r36i-c-compiler.md": "72122432ff6f73372a9dfa30614cb895852e96f200411a61bb8c18bd2913a120"
+      ".sdd/specs/r36i-c-compiler.md": "d94ea3d59dc48f5202d747e97e78344d85c3a457099d09add9054fd80cafd822"
     },
     "tier": "T2",
     "requireHuman": false
