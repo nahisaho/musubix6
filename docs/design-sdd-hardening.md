@@ -14,7 +14,7 @@ Goals
 - G1 No silent pass: when the tool cannot be sure, `gate` must not report green without saying why.
 - G2 A wrong stub or a wrong weak-Red verdict must never block work with no way out, and never pass bad evidence.
 - G3 The tool's own correctness is checked mechanically across TS/Python/Rust, not only by example tests.
-- G4 A stop criterion that ends the dogfood loop.
+- G4 A bounded release-readiness criterion, separate from open-ended exploratory dogfooding.
 
 Non-goals: new languages, splitting `sdd.mjs`, changing default behaviour of existing ledgers (all new behaviour is additive or opt-in with a documented default flip plan).
 
@@ -66,17 +66,47 @@ Example tests (≈665) pin known behaviour. They do not find new classes of erro
 - **Ledger invariants**: replay `tdd.jsonl` fixtures and assert state-machine invariants (Red before Green, no Green for stale evidence, merge-ledger idempotence). Part of the existing suite, but generated rather than hand-written.
 - Toolchain availability: tests that need cargo/pytest/node skip with an explicit `SKIP: toolchain missing` that is counted (the suite must not silently drop to 0 ran).
 
-### 3.5 Stop criterion for dogfooding (G4)
+### 3.5 Release readiness versus exploratory dogfooding (G4)
 
-Replace "0 findings in a wave" with severity classes:
+Decision accepted by @nahisaho on 2026-10-14: replace two clean **expanding exploratory waves** with two clean **fixed-scope validation runs**. Release readiness is evidence for a declared support contract, not a claim that all bugs have been found. This section defines coordinator workflow, not a new check mechanically enforced by `sdd.mjs`.
 
-| Class | Examples | Wave must have |
+| Class | Examples | Release treatment |
 |---|---|---|
-| S1 | crash, gate false-pass, wrong Green accepted, data loss | 0 |
-| S2 | wrong Red/stub that blocks and has no workaround | 0 |
-| S3 | heuristic miss with a documented workaround, message quality | tracked, not blocking |
+| S1 | crash, gate false-pass, wrong Green accepted, data loss | No unresolved in-scope findings |
+| S2 | wrong Red/stub that blocks and has no workaround | No unresolved in-scope findings |
+| S3 | heuristic miss with a documented workaround, message quality | Tracked with workaround and residual-risk assessment |
 
-Two consecutive waves with S1 = S2 = 0 end the loop. S3 findings go into one tracker Issue (as #309 did) and are fixed only when they reproduce twice.
+#### Freeze the support and validation manifest before counting runs
+
+Use one versioned manifest for the release candidate. Record its exact path and SHA-256, candidate source/packaged-artifact digests, and the following fields before the first qualifying run:
+
+| Field | Required contents |
+|---|---|
+| Support contract | Languages, runner/reporter versions, OS/toolchains, command shapes, configuration grammar, trust boundaries and public compatibility promises |
+| Fixed test matrix | Named regression/fixture IDs, commands, expected verdicts, positive controls, mandatory mutation/differential cases, environments and execution budgets |
+| Input interpretation | Supported wrapper/package/plugin forms and explicit rejection tests for unresolved forms; documentation alone does not make silently accepted input safe |
+| Evidence | Exact revisions/digests, environment versions, actual commands/exits, per-case outcomes, exclusions, findings and links to retained logs |
+| Human-only cases | Prepare/refusal checks run automatically; successful human authorization requires a genuine authorized test event or is explicitly excluded from the guarantee and listed for release approval |
+
+Freeze scope prospectively. It must cover the candidate's advertised guarantees; do not remove a supported case, weaken its oracle, or relabel an S1 as S3 merely to obtain a clean run. A narrower public support contract or policy relaxation needs explicit human approval and consistent user-facing documentation.
+
+Every manifest revision records its reason and old/new hashes. Removing required cases/environments or weakening expected results also requires human approval, even when the public support wording is unchanged. Reclassifying an existing S1/S2 as S3 or out of scope requires recorded reproduction/scope evidence and human approval; it remains blocking until that decision is recorded.
+
+Initial status after r34: **not yet frozen or validated**. The manifest must be populated from actual candidate support and evidence; this design change does not itself make the release ready. Prior exploratory waves do not retroactively qualify.
+
+#### Release-readiness checks
+
+1. Resolve every known in-scope S1/S2 and add its reproducer to regression coverage. Investigate uncertain scope or severity; neither an unclassified finding nor a silent PASS on an unresolved input is an exclusion.
+2. Run the unchanged fixed matrix twice consecutively against the same candidate source/artifact digests and manifest hash, using fresh isolated execution state. Each run must cover every required cell with the expected verdict, including valid-input controls. A failed, missing, timed-out, skipped or unparseable required cell makes the run incomplete or failed, never clean.
+3. Pass the integrated full regression suite and the mandatory mutation/differential cases. Verify every declared supported environment and the actual package/install entry point. Existing TODOs or toolchain skips are disclosed; they cannot substitute for a required matrix cell.
+4. A candidate, package, manifest, expected-result or supported-environment change invalidates the two-run streak. A validation failure also resets it; after fixing, start again. A newly discovered in-scope S1/S2 blocks readiness even when found outside the fixed matrix.
+5. Give the human release approver every exact artifact path/hash, manifest, run evidence, exclusions and residual risks. Technical readiness does not authorize tagging/publishing. `NPM_TOKEN` availability and the publishing account are checked without exposing credentials before the separate release approval.
+
+Exploration may continue with new domains and input variants, but is no longer the release stop counter. New findings remain in the ledger with severity, reproduction, first violated condition, scope rationale and disposition. In-scope S1/S2 still block release; genuinely out-of-scope findings may be tracked separately only when the documented boundary and actual rejection behaviour agree. Expanding support creates a new manifest and requires revalidation, rather than moving an active validation target.
+
+S3 findings remain in tracker #315 and normally receive a dedicated fix after two independent reproductions. They are not automatically harmless: escalate severity if impact warrants it, and present unresolved residual risks for release approval.
+
+Alternative rejected: continuing to require zero S1/S2 in ever-expanding waves confounds exploratory yield with readiness and has no stable completion boundary. The fixed-matrix decision trades breadth of each qualifying run for reproducibility; continued exploration, package/environment checks and human residual-risk approval address, but do not eliminate, unknown-defect risk.
 
 ### 3.6 Trusted-input integrity (G5) — approved 2026-10-13 (@nahisaho); implement as r30
 
@@ -103,11 +133,12 @@ Out of scope: stub quality and weak-Red heuristics (separate rounds, §3.2/3.3).
 | r25 | hardening fixes found while landing r24 (stubs, weak-Red, scope) | r24 all |
 | Wave 16 | 5 apps, judged by §3.5. Result: S1=0, S2=8, S3=55 — stop criterion **not met** | r25 |
 | r26a-d | Wave 16 S2 fixes: #316 unmapped/unannotated files, #317 `refactor --stale`, #318 Rust stub signatures, #319 generated oracle + weak-Red helpers | Wave 16 |
-| Wave 17+ | repeat until two consecutive waves have S1 = S2 = 0 | r26 |
+| Waves 17–24 | exploratory hardening; previous expanding-wave stop rule superseded by §3.5 on 2026-10-14 | r26 |
+| Post-r34 validation | freeze the candidate/support manifest, then two clean fixed-scope runs and release approval under §3.5 | r34 integration and support-matrix preparation |
 
 Status: §3.1–§3.4 are implemented (§3.4 as `r24d` tests: scope differential per ecosystem, Rust stub round-trip with counted toolchain skips, ledger invariants).
 
-Defaults: §3.1 rule 1 (fail on unscoped) is **on** for new `init`, off for existing `.sdd/config.json` (key `scopePolicy: "strict" | "warn"`, default `warn` when absent), flipping to `strict` once the §3.5 stop criterion is met. **On hold:** Wave 16 had S2 = 8, so the default stays `warn`.
+Defaults: §3.1 rule 1 (fail on unscoped) is **on** for new `init`, off for existing `.sdd/config.json` (key `scopePolicy: "strict" | "warn"`, default `warn` when absent). Existing-project behaviour is unchanged by this decision. A default flip requires §3.5 readiness evidence for the candidate containing the flip, explicit compatibility/migration documentation and human approval; readiness alone never flips runtime configuration.
 
 ## 5. Risks
 
@@ -118,6 +149,6 @@ Defaults: §3.1 rule 1 (fail on unscoped) is **on** for new `init`, off for exis
 
 ## 6. Open questions
 
-1. ~~`scopePolicy` default~~ Decided (2026-10-13, @nahisaho): existing projects stay `warn`; new `init` writes `strict`; default flips to `strict` once two consecutive waves have S1/S2 = 0 (Wave 16 did not qualify).
-2. Should `suspect` Reds count toward the §3.5 S2 class?
+1. `scopePolicy` default: existing projects stay `warn`; new `init` writes `strict`. The 2026-10-14 decision supersedes the old expanding-wave trigger: evaluate a proposed flip under §3.5 with compatibility/migration evidence and human approval. No runtime default changes in this document update.
+2. `suspect` Reds: advisory diagnostics alone are not S2. Classify observed incorrect behaviour under §3.5: blocking wrong Red without a workaround is S2; a heuristic miss with a documented workaround is S3. Record expected diagnostic/verdict behaviour in the matrix before freezing; do not use a late reclassification to erase a failed run.
 3. Fixture licensing: may snippets from dogfood apps be committed?

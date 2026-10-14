@@ -54,6 +54,7 @@ Batch: write all tests for a feature, then red each, implement, green each, **on
 - `references/stubs.md`: `tdd stub <TEST-ID>` per-language capabilities and limits.
 - Red variants (`--weak`, `--expect`, `--allow-setup-red`, `--missing-module`, `--characterization`), `trace --baseline`, review-file schema (`$S review template|check`): see `references/enforced-rules.md`.
 - Always run the full `gate` (no `--changed`) before merge.
+- Release qualification is separate from exploratory dogfooding: use the fixed support/candidate matrix and two-run evidence rules in `docs/design-sdd-hardening.md` §3.5 when present; otherwise use the release-readiness workflow in `references/enforced-rules.md`. Two arbitrary exploratory waves are not release proof, and technical readiness never replaces human release approval.
 - Without Git, `gate --changed` explicitly falls back to full evidence/checks; manifest discovery, impact and C# stubs use filesystem discovery.
 
 ## 4. Review without humans
