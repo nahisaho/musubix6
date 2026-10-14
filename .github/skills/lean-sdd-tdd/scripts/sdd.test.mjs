@@ -13758,7 +13758,7 @@ test('#373 TEST-R36I-REASON-001 process reasons precede supplementary parsed com
 test('#373 TEST-R36I-PARSE-COLOR-001 colored actual native missing-function names are parsed into valid stubs', () => {
   for (const extension of ['c', 'cpp']) {
     const fixture = r36iFixture(extension, true);
-    fs.writeFileSync(path.join(fixture.d, fixture.file), fixture.source.replace('return 0;', 'return answer(2);'));
+    fs.writeFileSync(path.join(fixture.d, fixture.file), r36kMissingFunctionSource(fixture.source, extension));
     writeAll(fixture.d, { 'tests/missing.h': '' });
     const native = r36iCompile(fixture);
     assert.equal(native.status, 1, native.stderr);
@@ -14085,4 +14085,40 @@ test('#374 TEST-R36J-COLOR-001 colored actual native missing-symbol diagnostics 
   assert.match(fs.readFileSync(path.join(fixture.d, 't.go'), 'utf8'), /func Missing\(\) any/);
   const after = r36jCompile(fixture);
   assert.equal(after.status, 0, after.text);
+});
+
+// A bare C call is only a warning on GCC <=13; an undeclared address is invalid on both defaults.
+const r36kMissingFunctionSource = (source, extension) => source.replace('return 0;', extension === 'c' ? '(void)sizeof(&answer); return answer(2);' : 'return answer(2);');
+
+/** @id TEST-R36K-PORTABILITY-001 @verifies REQ-R36K-001 */
+test('#375 TEST-R36K-PORTABILITY-001 missing-function fixture is natively invalid independently of implicit-call severity', () => {
+  for (const [extension, severity] of [['c', 'warning'], ['c', 'error'], ['cpp', 'default']]) {
+    const fixture = r36iFixture(extension, true);
+    const compile = () => spawnSync(fixture.native, [
+      '-fsyntax-only',
+      ...(severity === 'default' ? [] : [`-W${severity === 'warning' ? 'no-error' : 'error'}=implicit-function-declaration`]),
+      path.join(fixture.d, fixture.file),
+    ], { cwd: fixture.d, encoding: 'utf8', timeout: 20000, env: { ...ENV, LC_ALL: 'C' } });
+    const source = r36kMissingFunctionSource(fixture.source, extension);
+    fs.writeFileSync(path.join(fixture.d, fixture.file), source);
+    writeAll(fixture.d, { 'tests/missing.h': '' });
+    const missing = compile();
+    assert.equal(missing.status, 1, missing.stderr);
+    assert.equal(missing.signal, null);
+    assert.equal(missing.error, undefined);
+    assert.match(missing.stderr, /answer.*(?:undeclared|not declared)|undeclared identifier.*answer/);
+    assert.match(missing.stderr, /implicit declaration of function 'answer'|'answer' was not declared in this scope|use of undeclared identifier 'answer'|call to undeclared function 'answer'/);
+    if (extension === 'c') assert.match(missing.stderr, new RegExp(`${severity}: (?:implicit declaration of function|call to undeclared function) 'answer'`));
+    writeAll(fixture.d, { 'tests/missing.h': 'static int answer(int value) { return value; }\n' });
+    const valid = compile();
+    assert.equal(valid.status, 0, valid.stderr);
+    assert.equal(valid.signal, null);
+    assert.equal(valid.error, undefined);
+    fs.writeFileSync(path.join(fixture.d, fixture.file), '#error r36k_native_invalid\n' + source);
+    const invalid = compile();
+    assert.equal(invalid.status, 1, invalid.stderr);
+    assert.match(invalid.stderr, /r36k_native_invalid/);
+    assert.equal(invalid.signal, null);
+    assert.equal(invalid.error, undefined);
+  }
 });

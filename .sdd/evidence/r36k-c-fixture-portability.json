@@ -1,0 +1,82 @@
+{
+  "productionSha256": "de1dba3c43bf122da32bc90f3981da31db4e38b5be84674482da4bdb92e5e49e",
+  "catalogueSha256": "6a9174cf21abde61d32e05767cd73af9de27da1ed4573a714ae7addf1813b916",
+  "exactRunnerSha256": "5c6b81c84a4ad0863ac7cd5d1536e5b4a950a9b68eb36f47ba95b4ecd5770706",
+  "runtime": "v24.21.0",
+  "runs": {
+    "final-byte-direct-red": {
+      "exit": 1,
+      "sha256": "508e811b9363a45ddb9363ec8cd11e8099f03aa3eb66f312c5cb6e761846914a"
+    },
+    "final-byte-tdd-red": {
+      "exit": 0,
+      "sha256": "3b2ff7cff70366b160ddd0ff41985a81d8a77354b681d75d06e439030303e2f3"
+    },
+    "final-byte-direct-green": {
+      "exit": 0,
+      "sha256": "c701c69fd35371a39dd2745ce693727bdcbd8d894aba676eee8c09267358f304"
+    },
+    "final-byte-tdd-green": {
+      "exit": 0,
+      "sha256": "386f5b1816348dc6670bc6d7ace154f237655caeb2e425810d7b0f77a1b86313"
+    },
+    "proof-only-gate": {
+      "exit": 2,
+      "sha256": "fe61fd1d192e05ebd39e6eeb8fdc5ea0062fa2a401a3e67ffcd8df8b980e3cae"
+    },
+    "c-normalization-mutant": {
+      "exit": 1,
+      "sha256": "22f1d09259e53d9603a98de866d21edb2ed25d5e75f62c385debe6a2fb7e24b8"
+    },
+    "c-normalization-restored": {
+      "exit": 0,
+      "sha256": "6828e4bb6346db0397c6cd6d1d3c95dd338647ce44de770aac3ba9adff6dc2f4"
+    }
+  },
+  "ledger": {
+    "redHash": "e1977b24c524855e6e5920a55e7e432cb2a2e83e4f6153da1441427cec9fe9d5",
+    "greenHash": "aedd08956548ff38a500d79bcc8ae88cec49c6f74d0116a5628ca01b2ba8fb2f",
+    "testHelperSha": "cfb2a1cb2b78f0d0175e944ba4e5628b1da8b527b06c50e30e1740082f67ece5",
+    "registrationSha": "2f5a560d075ea3feea174d32987b8d92a6c6de6cef779c76deddab75609cd679",
+    "redExit": 1,
+    "greenExit": 0
+  },
+  "issue": 375,
+  "baseCommit": "a9cd849",
+  "sourceUnchanged": true,
+  "oldTailsInvariant": "Entire base catalogue unchanged except one colored fixture construction; new portability regression appended at EOF",
+  "nativeCompiler": "cc (Ubuntu 15.2.0-16ubuntu1) 15.2.0",
+  "artifactRoot": "F/r36k-final-proof",
+  "proofGate": "INCOMPLETE exit2; no project commands configured; not root gate",
+  "qualificationCredit": false,
+  "hostedGCC13": "Not run on new candidate; fresh hosted CI required",
+  "fixtureCounterexample": "Explicit external scratch preload rewrites only final C fixture address+call into historical barecall; exact runner/test/common helper bytes preserved across assertion Red and Green",
+  "proofScriptSha256": "7cab64c601c68f9cc3a2990b46765f83167ef5f6d136f27056e48d9adcb3959f",
+  "proofLedgerSha256": "0e6a0cc86c0e6f91199137a88a8fcba3d2ef73336d866c93fa656409a6a5f1c7",
+  "focused": {
+    "v20.20.2": {
+      "sha256": "1192b03e330e658f8911e32102f7b7d8e5100e50c0dc8ed69427599ed4752f6d",
+      "passedSelected": 18,
+      "failed": 0,
+      "selectedSkipped": 0,
+      "cancelled": 0,
+      "catalogueFiltered": 1096
+    },
+    "v22.23.3": {
+      "sha256": "34f3891e79ec05174a70154951f08e7d87652680c5bc58262d9c6ea9434c2dd5",
+      "passedSelected": 18,
+      "failed": 0,
+      "selectedSkipped": 0,
+      "cancelled": 0,
+      "catalogueFiltered": 0
+    },
+    "v24.21.0": {
+      "sha256": "07b92ad9b3f16191aa55efeae08311adc2fb0f08db84e41fdaa826f199b9eee1",
+      "passedSelected": 18,
+      "failed": 0,
+      "selectedSkipped": 0,
+      "cancelled": 0,
+      "catalogueFiltered": 0
+    }
+  }
+}
