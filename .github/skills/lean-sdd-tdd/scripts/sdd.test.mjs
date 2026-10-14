@@ -12236,7 +12236,7 @@ test('r34d #360 literal controls preserve real assertion Red Green and full chan
     const red = sdd(d, 'tdd', 'red', 'TEST-A-001');
     assert.equal(red.code, 0, red.out);
     assert.match(red.out, /fails with: assert 0 == 1/);
-    fs.writeFileSync(path.join(d, 'src/subject.py'), '# @id CODE-A-001 @implements REQ-A-001\ndef answer():\n    return 1\n');
+    r34IntegrationWritePython(path.join(d, 'src/subject.py'), '# @id CODE-A-001 @implements REQ-A-001\ndef answer():\n    return 1\n');
     const green = sdd(d, 'tdd', 'green', 'TEST-A-001');
     assert.equal(green.code, 0, green.out);
     assert.equal(spawnSync('git', ['add', '-A'], { cwd: d }).status, 0);
@@ -12607,4 +12607,29 @@ test('r34f #362 token suffix and directory budgets refuse instead of silently tr
     assert.match(result.out, reason);
     assert.ok(!fs.existsSync(path.join(d, '.sdd/tdd.jsonl')));
   }
+});
+
+function r34IntegrationWritePython(file, text) {
+  const before = fs.statSync(file);
+  fs.writeFileSync(file, text);
+  const next = Math.floor(before.mtimeMs / 1000) + 2;
+  fs.utimesSync(file, next, next);
+}
+
+/** @id TEST-R34-INTEGRATION-001 @verifies REQ-R33-PYTEST-001 */
+test('r34 integration Python fixture rewrites cannot reuse same-size timestamp bytecode', () => {
+  assert.ok(r32cPythonAvailable, 'real Python is required; missing runtime is not passing evidence');
+  const d = r34dPytestFixture(), file = path.join(d, 'src/subject.py');
+  fs.utimesSync(file, 1700000000, 1700000000);
+  const readAnswer = () => spawnSync('python3', ['-I', '-c', "import sys; sys.path.insert(0, 'src'); import subject; print(subject.answer())"], { cwd: d, encoding: 'utf8', env: ENV });
+  const initial = readAnswer();
+  assert.equal(initial.status, 0, initial.stderr);
+  assert.equal(initial.stdout.trim(), '0');
+  assert.ok(fs.readdirSync(path.join(d, 'src/__pycache__')).some((f) => f.startsWith('subject.') && f.endsWith('.pyc')));
+  const originalSize = fs.statSync(file).size;
+  r34IntegrationWritePython(file, '# @id CODE-A-001 @implements REQ-A-001\ndef answer():\n    return 1\n');
+  assert.equal(fs.statSync(file).size, originalSize, 'the edit must exercise the same-size bytecode cache key');
+  const corrected = readAnswer();
+  assert.equal(corrected.status, 0, corrected.stderr);
+  assert.equal(corrected.stdout.trim(), '1', 'native Python must execute the corrected source, not cached answer=0');
 });
