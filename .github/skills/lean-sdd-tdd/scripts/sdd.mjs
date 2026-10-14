@@ -5566,7 +5566,7 @@ function checkDefClosure(cfg, read = null, knownFiles = null) {
   read ??= (f) => { try { return fs.readFileSync(path.resolve(ROOT, f), 'utf8'); } catch { return null; } };
   const all = [...(cfg.checks ?? []), ...(cfg.testCmd ? [{ name: 'tdd', cmd: cfg.testCmd }] : []),
     ...(cfg.projects ?? []).flatMap((p) => [...(p.checks ?? []), ...(p.testCmd ? [{ name: 'tdd', cmd: p.testCmd }] : [])].map((c) => ({ ...c, name: `${p.root}:${c.name}`, cwd: p.root })))];
-  const cache = new Map(), defs = new Map(), directories = new Map(), resolutions = new Map(), tokenCache = new Map(), tokenKinds = new Map();
+  const cache = new Map(), defs = new Map(), directories = new Map(), resolutions = new Map(), pythonDirectories = new Map(), tokenCache = new Map(), tokenKinds = new Map();
   const relative = (f) => path.relative(ROOT, f).split(path.sep).join('/');
   let bytes = 0, tokenCount = 0, directoryEntries = 0, inspectionWork = 0;
   const refuse = (f, reason) => { throw new Error(`REFUSED: check-definition discovery budget (${reason}) at ${f}; simplify the command closure or split its definitions; no evidence recorded`); };
@@ -5886,7 +5886,19 @@ function checkDefClosure(cfg, read = null, knownFiles = null) {
     const pythonDirectory = (base) => {
       const prefix = relative(base) + '/';
       if (knownFiles) return knownFiles.some((f) => f.startsWith(prefix));
-      try { return fs.statSync(base).isDirectory(); } catch { return false; }
+      if (!pythonDirectories.has(base)) {
+        if (pythonDirectories.size >= 200000) refuse(relative(base), '200000 namespace directory candidates');
+        const entry = directory(path.dirname(base)).get(path.basename(base));
+        let exists = entry?.isDirectory() ?? false;
+        if (entry?.isSymbolicLink()) {
+          try { exists = fs.statSync(base).isDirectory(); }
+          catch (e) {
+            if (!['ENOENT', 'ENOTDIR', 'ENAMETOOLONG', 'EINVAL'].includes(e.code)) refuse(relative(base), `namespace unreadable: ${e.code}`);
+          }
+        }
+        pythonDirectories.set(base, exists);
+      }
+      return pythonDirectories.get(base);
     };
     /** @id CODE-R34-PYREL-001 @implements REQ-CHECK-CLOSURE-001 */
     const pythonInput = (base, root, cwd, required = false, namespace = false) => {

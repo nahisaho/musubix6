@@ -12049,13 +12049,13 @@ test('r34c #359 real relative-plugin oracle rejects wrong Green and gates and ac
   assert.equal(red.code, 0, red.out);
   assert.match(red.out, /assert 1 == 2/);
   const ledger = path.join(d, '.sdd/tdd.jsonl'), before = fs.readFileSync(ledger, 'utf8');
-  fs.writeFileSync(path.join(d, 'src/qa/helper.py'), 'EXPECTED = 1\n');
+  r34IntegrationWritePython(path.join(d, 'src/qa/helper.py'), 'EXPECTED = 1\n');
   const wrong = sdd(d, 'tdd', 'green', 'TEST-A-001');
   assert.equal(wrong.code, 1, wrong.out);
   assert.match(wrong.out, /changed|drift|definition/i);
   assert.equal(fs.readFileSync(ledger, 'utf8'), before);
-  fs.writeFileSync(path.join(d, 'src/qa/helper.py'), 'EXPECTED = 2\n');
-  fs.writeFileSync(path.join(d, 'src/subject.py'), '# @id CODE-A-001 @implements REQ-A-001\ndef answer():\n    return 2\n');
+  r34IntegrationWritePython(path.join(d, 'src/qa/helper.py'), 'EXPECTED = 2\n');
+  r34IntegrationWritePython(path.join(d, 'src/subject.py'), '# @id CODE-A-001 @implements REQ-A-001\ndef answer():\n    return 2\n');
   const green = sdd(d, 'tdd', 'green', 'TEST-A-001');
   assert.equal(green.code, 0, green.out);
   assert.equal(spawnSync('git', ['add', '-A'], { cwd: d }).status, 0);
@@ -12064,15 +12064,15 @@ test('r34c #359 real relative-plugin oracle rejects wrong Green and gates and ac
     const valid = sdd(d, ...args);
     assert.equal(valid.code, 0, valid.out);
   }
-  fs.writeFileSync(path.join(d, 'src/qa/helper.py'), 'EXPECTED = 1\n');
-  fs.writeFileSync(path.join(d, 'src/subject.py'), '# @id CODE-A-001 @implements REQ-A-001\ndef answer():\n    return 1\n');
+  r34IntegrationWritePython(path.join(d, 'src/qa/helper.py'), 'EXPECTED = 1\n');
+  r34IntegrationWritePython(path.join(d, 'src/subject.py'), '# @id CODE-A-001 @implements REQ-A-001\ndef answer():\n    return 1\n');
   for (const args of [['gate'], ['gate', '--changed', '--baseline', 'HEAD']]) {
     const drift = sdd(d, ...args);
     assert.equal(drift.code, 1, drift.out);
     assert.match(drift.out, /helper\.py.*changed|helper\.py.*defin|defin.*helper\.py/, drift.out);
   }
-  fs.writeFileSync(path.join(d, 'src/qa/helper.py'), 'EXPECTED = 2\n');
-  fs.writeFileSync(path.join(d, 'src/subject.py'), '# @id CODE-A-001 @implements REQ-A-001\ndef answer():\n    return 2\n');
+  r34IntegrationWritePython(path.join(d, 'src/qa/helper.py'), 'EXPECTED = 2\n');
+  r34IntegrationWritePython(path.join(d, 'src/subject.py'), '# @id CODE-A-001 @implements REQ-A-001\ndef answer():\n    return 2\n');
   assert.equal(sdd(d, 'tdd', 'refactor', 'TEST-A-001').code, 0);
   const restored = sdd(d, 'gate');
   assert.equal(restored.code, 0, restored.out);
@@ -12632,4 +12632,45 @@ test('r34 integration Python fixture rewrites cannot reuse same-size timestamp b
   const corrected = readAnswer();
   assert.equal(corrected.status, 0, corrected.stderr);
   assert.equal(corrected.stdout.trim(), '1', 'native Python must execute the corrected source, not cached answer=0');
+});
+
+/** @id TEST-R34-INTEGRATION-002 @verifies REQ-CHECK-CLOSURE-001 */
+test('r34 integration real relative-plugin restored control invalidates timestamp bytecode', () => {
+  assert.ok(r32cPythonAvailable, 'real pytest is required for the restored relative-plugin control');
+  const d = mini(T1SPEC, {
+    ...r34cPluginFiles('import pytest\nfrom .helper import EXPECTED\n@pytest.fixture\ndef oracle():\n    return EXPECTED\n'),
+    'pytest.ini': '[pytest]\npythonpath = src\n',
+    'test_a.py': 'from subject import answer\n# @id TEST-A-001 @verifies REQ-A-001\ndef test_a_001(oracle):\n    assert answer() == oracle\n',
+    'src/subject.py': '# @id CODE-A-001 @implements REQ-A-001\ndef answer():\n    return 1\n',
+  }, ['python3', '-m', 'pytest', '-q', 'test_a.py', '-k', '{idu}']);
+  const subject = path.join(d, 'src/subject.py');
+  fs.utimesSync(subject, 1700000000, 1700000000);
+  const red = sdd(d, 'tdd', 'red', 'TEST-A-001');
+  assert.equal(red.code, 0, red.out);
+  assert.match(red.out, /assert 1 == 2/);
+  assert.ok(fs.readdirSync(path.join(d, 'src/__pycache__')).some((f) => f.startsWith('subject.') && f.endsWith('.pyc')));
+  r34IntegrationWritePython(subject, '# @id CODE-A-001 @implements REQ-A-001\ndef answer():\n    return 2\n');
+  const green = sdd(d, 'tdd', 'green', 'TEST-A-001');
+  assert.equal(green.code, 0, green.out);
+});
+
+/** @id TEST-R34-INTEGRATION-003 @verifies REQ-R34-CLOSURE-001 */
+test('r34 integration Python namespace probes share the compiler source-discovery budget', () => {
+  const { d, cp, cfg } = r34fFixture();
+  fs.mkdirSync(path.join(d, 'tools'));
+  fs.writeFileSync(path.join(d, 'tools/bundle.cjs'), '// import directory_candidate\n'.repeat(5000));
+  cfg.checks = [{ name: 'types', cmd: ['node', 'tools/bundle.cjs'] }];
+  fs.writeFileSync(cp, JSON.stringify(cfg));
+  const measured = path.join(work, 'r34-integration-counted.mjs');
+  fs.writeFileSync(measured, fs.readFileSync(SDD, 'utf8').replace("import fs from 'node:fs';", [
+    "import fs from 'node:fs';",
+    'let r34Probes = 0;',
+    "for (const name of ['readFileSync', 'statSync']) { const original = fs[name]; fs[name] = (...args) => { if (++r34Probes > 1000) process.exit(73); return original(...args); }; }",
+    "process.on('exit', () => console.log('R34_PROBES=' + r34Probes));",
+  ].join('\n')));
+  const result = spawnSync(process.execPath, [measured, '--root', d, 'tdd', 'red', 'TEST-A-001'], { encoding: 'utf8', env: ENV, timeout: 15000 });
+  const probes = Number(/R34_PROBES=(\d+)/.exec(result.stdout)?.[1]);
+  assert.ok(probes <= 1000, `shared Python namespace discovery must use <=1000 reads/stats, observed ${probes}`);
+  assert.equal(result.status, 0, result.stdout + result.stderr);
+  console.log(`r34 integrated namespace reads/stats: ${probes}`);
 });
