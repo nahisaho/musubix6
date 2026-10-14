@@ -12757,6 +12757,9 @@ test('r34 integration Python namespace probes share the compiler source-discover
 });
 
 const r35aRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../..');
+/** @id CODE-R36F-LAYOUT-001 @implements REQ-R36F-LAYOUT-001 */
+const r35aWork = fs.mkdtempSync(path.join(r35aRoot, '.sdd-test-r35a-work-'));
+after(() => fs.rmSync(r35aWork, { recursive: true, force: true }));
 const r35aSkills = fs.readdirSync(path.join(r35aRoot, '.github/skills'), { withFileTypes: true })
   .filter((entry) => entry.isDirectory()).map((entry) => entry.name).sort();
 const r35aSelected = ['lean-sdd-tdd', 'tech-writer'];
@@ -12765,7 +12768,7 @@ const r35aRun = (bin, cwd, args) => spawnSync(process.execPath, [bin, ...args], 
 });
 
 function r35aInitContract(bin, bundledSkills) {
-  const fixture = fs.mkdtempSync(path.join(work, 'r35a-init-'));
+  const fixture = fs.mkdtempSync(path.join(r35aWork, 'r35a-init-'));
   const cases = [
     ['plain', (target) => [target]],
     ['force after', (target) => [target, '--force']],
@@ -12845,11 +12848,11 @@ test('#363 r35a source init preserves explicit target/cwd invariants and existin
 });
 
 test('#363 r35a packed installation preserves bin version/list/init/sdd contracts', { timeout: 120000 }, () => {
-  const fixture = fs.mkdtempSync(path.join(work, 'r35a-pack-'));
+  const fixture = fs.mkdtempSync(path.join(r35aWork, 'r35a-pack-'));
   const cache = path.join(fixture, 'cache'), packed = path.join(fixture, 'packed');
   fs.mkdirSync(packed);
   const npm = (cwd, args) => spawnSync('npm', [...args, '--cache', cache, '--offline', '--ignore-scripts'], {
-    cwd, env: { ...ENV, TMPDIR: work }, encoding: 'utf8', timeout: 60000,
+    cwd, env: { ...ENV, TMPDIR: r35aWork }, encoding: 'utf8', timeout: 60000,
   });
   const pack = npm(r35aRoot, ['pack', '--json', '--pack-destination', packed]);
   assert.equal(pack.status, 0, pack.stdout + pack.stderr);
@@ -13002,7 +13005,7 @@ function r35aAdmissionContract(bin, kind) {
   for (const options of invalid) {
     for (const destination of ['default', 'relative', 'absolute']) {
       for (const existing of [false, true]) {
-        const area = fs.mkdtempSync(path.join(work, 'r35a-admission-'));
+        const area = fs.mkdtempSync(path.join(r35aWork, 'r35a-admission-'));
         const cwd = path.join(area, 'cwd'), target = path.join(area, 'target');
         fs.mkdirSync(cwd);
         fs.writeFileSync(path.join(cwd, 'sentinel'), 'cwd is unchanged');
@@ -13037,11 +13040,11 @@ test('#363 r35a admission rejects missing or empty --only without writes', () =>
 });
 
 test('#363 r35a admission packed extraction and installation reject invalid init without writes', { timeout: 120000 }, () => {
-  const fixture = fs.mkdtempSync(path.join(work, 'r35a-admission-pack-'));
+  const fixture = fs.mkdtempSync(path.join(r35aWork, 'r35a-admission-pack-'));
   const packed = path.join(fixture, 'packed'), cache = path.join(fixture, 'cache');
   fs.mkdirSync(packed);
   const npm = (cwd, args) => spawnSync('npm', [...args, '--cache', cache, '--offline', '--ignore-scripts'], {
-    cwd, env: { ...ENV, TMPDIR: work }, encoding: 'utf8', timeout: 60000,
+    cwd, env: { ...ENV, TMPDIR: r35aWork }, encoding: 'utf8', timeout: 60000,
   });
   const pack = npm(r35aRoot, ['pack', '--json', '--pack-destination', packed]);
   assert.equal(pack.status, 0, pack.stdout + pack.stderr);
@@ -13491,4 +13494,53 @@ test('#369 TEST-R36E-OWNED-001 owned native loader metadata is not child message
     fixture.failing = fixture.original.replace('assert.equal(add(1, 2), 3);', `return import(${JSON.stringify(specifier)});`);
     r36eRejectLoad(fixture, code);
   }
+});
+
+/** @id TEST-R36F-LAYOUT-001 @verifies REQ-R36F-LAYOUT-001 */
+test('#370 TEST-R36F-LAYOUT-001 r35a fixtures stay outside distributed payload from either cwd', () => {
+  const suite = fileURLToPath(import.meta.url);
+  const probe = fs.mkdtempSync(path.join(r35aRoot, '.sdd-r36f-probe-'));
+  const hook = path.join(probe, 'observe.mjs');
+  fs.writeFileSync(hook, [
+    "import fs from 'node:fs';",
+    "import path from 'node:path';",
+    'const create = fs.mkdtempSync;',
+    'fs.mkdtempSync = (prefix, ...args) => {',
+    '  const directory = create(prefix, ...args);',
+    "  if (/^r35a-(?:init|pack|admission|admission-pack)-$/.test(path.basename(String(prefix)))) {",
+    "    console.log('R36F_FIXTURE=' + JSON.stringify(fs.realpathSync(directory)));",
+    "    throw new Error('R36F_STOP_BEFORE_NATIVE_WORK');",
+    '  }',
+    '  return directory;',
+    '};',
+  ].join('\n'));
+  const payloads = JSON.parse(fs.readFileSync(path.join(r35aRoot, 'package.json'))).files
+    .map((entry) => fs.realpathSync(path.join(r35aRoot, entry)));
+  const controls = [
+    '#363 r35a source init preserves explicit target/cwd invariants and existing options',
+    '#363 r35a packed installation preserves bin version/list/init/sdd contracts',
+    '#363 r35a admission rejects unknown init flags without writes',
+    '#363 r35a admission packed extraction and installation reject invalid init without writes',
+  ];
+  try {
+    for (const cwd of [r35aRoot, path.dirname(suite)]) for (const title of controls) {
+      const pattern = '^' + title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$';
+      const result = spawnSync(process.execPath, [
+        '--import', hook, '--test', '--test-reporter=tap', `--test-name-pattern=${pattern}`, suite,
+      ], { cwd, env: ENV, encoding: 'utf8', timeout: 60000 });
+      const output = result.stdout + result.stderr;
+      assert.equal(result.error, undefined, output);
+      assert.equal(result.status, 1, output);
+      assert.match(output, /R36F_STOP_BEFORE_NATIVE_WORK/, output);
+      const observations = [...output.matchAll(/R36F_FIXTURE=("[^\r\n]+")/g)];
+      assert.equal(observations.length, 1, output);
+      const directory = JSON.parse(observations[0][1]);
+      for (const payload of payloads) {
+        const relative = path.relative(payload, directory);
+        const inside = relative === '' || (!path.isAbsolute(relative) && relative !== '..' && !relative.startsWith(`..${path.sep}`));
+        assert.equal(inside, false, `${title} from ${cwd}: fixture ${directory} must stay outside distributed payload ${payload}`);
+      }
+      console.log(`r36f ${process.version} ${process.execPath}: ${title} from ${cwd} => ${directory}`);
+    }
+  } finally { fs.rmSync(probe, { recursive: true, force: true }); }
 });
