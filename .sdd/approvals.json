@@ -31,5 +31,16 @@
     },
     "tier": "T2",
     "requireHuman": false
+  },
+  "r36j-go-compiler": {
+    "by": "ai:sonnet5.5",
+    "kind": "ai",
+    "review": "Coordinator independent Sonnet approval retained; requirements unchanged, Design reflects approved whole verifyError160 cap; execution evidence appended, not an independent implementation-review claim.",
+    "at": "2026-10-14T07:32:16.376Z",
+    "artifacts": {
+      ".sdd/specs/r36j-go-compiler.md": "fd8a8ddce14da4710a3bea0fdda711d0bfb45848427ec52bcdd94cb1f6547fe6"
+    },
+    "tier": "T2",
+    "requireHuman": false
   }
 }
