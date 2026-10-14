@@ -9986,8 +9986,17 @@ test('#338 vanished secondary REQs in grouped Green evidence warn, fail strict g
   }
 });
 
-test('#339 native Node TypeScript parse failures cannot establish Red for any selected ID', () => {
+/** @id TEST-R36D-TS-001 @verifies REQ-R36D-TS-001 */
+test('#339 native Node TypeScript parse failures cannot establish Red for any selected ID TEST-R36D-TS-001', () => {
   const ids = ['TEST-A-001', 'TEST-A-002'];
+  const child = spawnSync('node', ['-p', 'JSON.stringify([process.version, process.execPath, !!process.features.typescript])'], { encoding: 'utf8', env: ENV });
+  assert.equal(child.status, 0, child.stdout + child.stderr);
+  const runtime = JSON.parse(child.stdout);
+  assert.equal(runtime[0], process.version);
+  assert.equal(fs.realpathSync(runtime[1]), fs.realpathSync(process.execPath));
+  assert.equal(runtime[2], !!process.features.typescript);
+  const stripsTypes = runtime[2];
+  console.log(`r36d #339 actual child=${JSON.stringify(runtime)}`);
   const subject = (body) => `// @id CODE-A-001 @implements REQ-A-001\nexport const answer: number = ${body};\n`;
   const d = mini(T1SPEC, {
     'package.json': '{"type":"module"}',
@@ -10004,8 +10013,11 @@ test('#339 native Node TypeScript parse failures cannot establish Red for any se
     ].join('\n'),
   }, ['node', '--test', '--test-reporter=spec', '--test-name-pattern={id}', '{file}']);
   const parser = spawnSync('node', ['--test', '--test-reporter=spec', 'a.test.mjs'], { cwd: d, encoding: 'utf8', env: ENV });
-  assert.notEqual(parser.status, 0);
-  assert.match(parser.stdout + parser.stderr, /SyntaxError \[ERR_INVALID_TYPESCRIPT_SYNTAX\]:/);
+  assert.equal(parser.status, 1, parser.stdout + parser.stderr);
+  assert.match(parser.stdout + parser.stderr, stripsTypes
+    ? /SyntaxError \[ERR_INVALID_TYPESCRIPT_SYNTAX\]:/
+    : /TypeError \[ERR_UNKNOWN_FILE_EXTENSION\]: Unknown file extension "\.ts"/);
+  console.log(`r36d native invalid typed source exit=${parser.status}\n${parser.stdout}${parser.stderr}`);
   const ledger = path.join(d, '.sdd/tdd.jsonl');
   for (const id of ids) {
     const red = sdd(d, 'tdd', 'red', id);
@@ -10014,16 +10026,70 @@ test('#339 native Node TypeScript parse failures cannot establish Red for any se
     assert.equal(fs.existsSync(ledger), false);
   }
   fs.writeFileSync(path.join(d, 'subject.ts'), subject('1'));
+  const valid = spawnSync('node', ['--test', '--test-reporter=spec', 'a.test.mjs'], { cwd: d, encoding: 'utf8', env: ENV });
+  assert.equal(valid.status, stripsTypes ? 0 : 1, valid.stdout + valid.stderr);
+  if (stripsTypes) {
+    for (const id of ids) assert.match(valid.stdout, new RegExp(`✔ ${id} answer`), valid.stdout);
+  } else assert.match(valid.stdout + valid.stderr, /TypeError \[ERR_UNKNOWN_FILE_EXTENSION\]: Unknown file extension "\.ts"/);
+  console.log(`r36d native valid typed source exit=${valid.status}\n${valid.stdout}${valid.stderr}`);
   const noRed = sdd(d, 'tdd', 'green', ids[0]);
   assert.equal(noRed.code, 1, noRed.out);
   assert.equal(fs.existsSync(ledger), false);
   fs.writeFileSync(path.join(d, 'subject.ts'), subject('0'));
-  const red = sdd(d, 'tdd', 'red', ids[0]);
-  assert.equal(red.code, 0, red.out);
-  assert.doesNotMatch(red.out, /\[weak\]/);
-  fs.writeFileSync(path.join(d, 'subject.ts'), subject('1'));
-  const green = sdd(d, 'tdd', 'green', ids[0]);
-  assert.equal(green.code, 0, green.out);
+  if (stripsTypes) {
+    const red = sdd(d, 'tdd', 'red', ids[0]);
+    assert.equal(red.code, 0, red.out);
+    assert.doesNotMatch(red.out, /\[weak\]/);
+    fs.writeFileSync(path.join(d, 'subject.ts'), subject('1'));
+    const green = sdd(d, 'tdd', 'green', ids[0]);
+    assert.equal(green.code, 0, green.out);
+    assert.deepEqual(testEvidence(d).map(({ type, test, weak }) => [type, test, !!weak]),
+      [['red', ids[0], false], ['green', ids[0], false]]);
+    console.log('r36d genuine native TS strong Red/Green persisted');
+  } else {
+    for (const id of ids) {
+      const unsupported = sdd(d, 'tdd', 'red', id);
+      assert.equal(unsupported.code, 1, unsupported.out);
+      assert.match(unsupported.out, /RED REJECTED.*load\/compile error/, unsupported.out);
+      assert.equal(fs.existsSync(ledger), false);
+    }
+    console.log('r36d unsupported native TS default Red refused for both IDs; ledger absent');
+  }
+
+  for (const body of ['return 0;', "throw new Error('not implemented: answer');"]) {
+    const js = mini(T1SPEC, {
+      'subject.mjs': `// @id CODE-A-001 @implements REQ-A-001\nexport const answer = () => { ${body} };\n`,
+      'a.test.mjs': "import { test } from 'node:test';\nimport assert from 'node:assert/strict';\nimport { answer } from './subject.mjs';\n/** @id TEST-A-001 @verifies REQ-A-001 */\ntest('TEST-A-001 answer', () => assert.equal(answer(), 1));\n",
+    }, ['node', '--test', '--test-reporter=spec', '--test-name-pattern={id}', '{file}']);
+    const native = spawnSync('node', ['--test', '--test-reporter=spec', 'a.test.mjs'], { cwd: js, encoding: 'utf8', env: ENV });
+    assert.equal(native.status, 1, native.stdout + native.stderr);
+    assert.match(native.stdout + native.stderr, body === 'return 0;'
+      ? /AssertionError \[ERR_ASSERTION\]/
+      : /Error: not implemented: answer/);
+    const red = sdd(js, 'tdd', 'red', ids[0]);
+    assert.equal(red.code, 0, red.out);
+    assert.doesNotMatch(red.out, /\[weak\]/);
+    fs.writeFileSync(path.join(js, 'subject.mjs'), '// @id CODE-A-001 @implements REQ-A-001\nexport const answer = () => 1;\n');
+    const green = sdd(js, 'tdd', 'green', ids[0]);
+    assert.equal(green.code, 0, green.out);
+    assert.deepEqual(testEvidence(js).map(({ type, test, weak }) => [type, test, !!weak]),
+      [['red', ids[0], false], ['green', ids[0], false]]);
+    console.log(`r36d JS ${body} native exit=${native.status}; strong Red/Green persisted\n${native.stdout}${native.stderr}`);
+    if (!stripsTypes) {
+      fs.writeFileSync(path.join(js, 'subject.ts'), 'export const answer = (): number => 0;\n');
+      fs.writeFileSync(path.join(js, 'subject.mjs'), "export { answer } from './subject.ts';\n");
+      const jsLedger = path.join(js, '.sdd/tdd.jsonl');
+      const before = fs.readFileSync(jsLedger);
+      const loaded = spawnSync('node', ['--test', '--test-reporter=spec', 'a.test.mjs'], { cwd: js, encoding: 'utf8', env: ENV });
+      assert.equal(loaded.status, 1, loaded.stdout + loaded.stderr);
+      assert.match(loaded.stdout + loaded.stderr, /TypeError \[ERR_UNKNOWN_FILE_EXTENSION\]: Unknown file extension "\.ts"/);
+      const rejected = sdd(js, 'tdd', 'red', ids[0]);
+      assert.equal(rejected.code, 1, rejected.out);
+      assert.match(rejected.out, /RED REJECTED.*load\/compile error/, rejected.out);
+      assert.deepEqual(fs.readFileSync(jsLedger), before);
+      console.log(`r36d unsupported native TS preserves existing JS Red/Green ledger bytes\n${loaded.stdout}${loaded.stderr}`);
+    }
+  }
 });
 
 function r31aFixture(files, checks, projects = []) {
