@@ -12674,3 +12674,141 @@ test('r34 integration Python namespace probes share the compiler source-discover
   assert.equal(result.status, 0, result.stdout + result.stderr);
   console.log(`r34 integrated namespace reads/stats: ${probes}`);
 });
+
+const r35aRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../..');
+const r35aSkills = fs.readdirSync(path.join(r35aRoot, '.github/skills'), { withFileTypes: true })
+  .filter((entry) => entry.isDirectory()).map((entry) => entry.name).sort();
+const r35aSelected = ['lean-sdd-tdd', 'tech-writer'];
+const r35aRun = (bin, cwd, args) => spawnSync(process.execPath, [bin, ...args], {
+  cwd, env: ENV, encoding: 'utf8', timeout: 30000,
+});
+
+function r35aInitContract(bin, bundledSkills) {
+  const fixture = fs.mkdtempSync(path.join(work, 'r35a-init-'));
+  const cases = [
+    ['plain', (target) => [target]],
+    ['force after', (target) => [target, '--force']],
+    ['force before', (target) => ['--force', target]],
+    ['only after', (target) => [target, '--only', r35aSelected.join(',')], true],
+    ['only before', (target) => ['--only', r35aSelected.join(','), target], true],
+    ['both before', (target) => ['--force', '--only', r35aSelected.join(','), target], true],
+    ['both after', (target) => [target, '--only', r35aSelected.join(','), '--force'], true],
+  ];
+  for (const kind of ['relative', 'absolute']) {
+    for (const [name, args, selected] of cases) {
+      const area = fs.mkdtempSync(path.join(fixture, 'case-'));
+      const cwd = path.join(area, 'cwd');
+      const target = path.join(area, 'target');
+      fs.mkdirSync(cwd);
+      fs.writeFileSync(path.join(cwd, 'sentinel'), 'cwd must stay untouched');
+      const input = kind === 'relative' ? '../target' : target;
+      const result = r35aRun(bin, cwd, ['init', ...args(input)]);
+      const label = `${kind} ${name}`;
+      assert.equal(result.status, 0, `${label}: ${result.stdout}${result.stderr}`);
+      assert.ok(fs.existsSync(path.join(target, '.github/skills')), `${label}: explicit destination must contain skills`);
+      assert.deepEqual(fs.readdirSync(cwd), ['sentinel'], `${label}: explicit init must not write to cwd`);
+      assert.equal(fs.readFileSync(path.join(cwd, 'sentinel'), 'utf8'), 'cwd must stay untouched');
+      assert.deepEqual(fs.readdirSync(area).sort(), ['cwd', 'target'], `${label}: no writes outside destination`);
+      const expected = selected ? r35aSelected : r35aSkills;
+      assert.deepEqual(fs.readdirSync(path.join(target, '.github/skills')).sort(), expected);
+      for (const skill of expected) {
+        assert.equal(fs.readFileSync(path.join(target, '.github/skills', skill, 'SKILL.md'), 'utf8'),
+          fs.readFileSync(path.join(bundledSkills, skill, 'SKILL.md'), 'utf8'));
+      }
+    }
+  }
+  for (const args of [[], ['--force'], ['--only', r35aSelected.join(',')], ['--force', '--only', r35aSelected.join(',')]]) {
+    const cwd = fs.mkdtempSync(path.join(fixture, 'default-'));
+    const result = r35aRun(bin, cwd, ['init', ...args]);
+    assert.equal(result.status, 0, result.stdout + result.stderr);
+    assert.deepEqual(fs.readdirSync(cwd), ['.github'], 'omitted destination installs only into isolated cwd');
+    assert.deepEqual(fs.readdirSync(path.join(cwd, '.github/skills')).sort(),
+      args.includes('--only') ? r35aSelected : r35aSkills);
+  }
+  for (const forceFirst of [false, true]) {
+    const area = fs.mkdtempSync(path.join(fixture, 'overwrite-'));
+    const cwd = path.join(area, 'cwd'), target = path.join(area, 'target');
+    fs.mkdirSync(cwd);
+    const initArgs = ['init', target, '--only', r35aSelected[0]];
+    assert.equal(r35aRun(bin, cwd, initArgs).status, 0);
+    const installed = path.join(target, '.github/skills', r35aSelected[0], 'SKILL.md');
+    fs.writeFileSync(installed, 'local edit');
+    const skipped = r35aRun(bin, cwd, initArgs);
+    assert.equal(skipped.status, 0, skipped.stdout + skipped.stderr);
+    assert.match(skipped.stdout, /skip lean-sdd-tdd/);
+    assert.equal(fs.readFileSync(installed, 'utf8'), 'local edit', 'default init preserves existing skill');
+    const forced = r35aRun(bin, cwd, forceFirst
+      ? ['init', '--force', target, '--only', r35aSelected[0]] : [...initArgs, '--force']);
+    assert.equal(forced.status, 0, forced.stdout + forced.stderr);
+    assert.match(forced.stdout, /installed lean-sdd-tdd/);
+    assert.equal(fs.readFileSync(installed, 'utf8'),
+      fs.readFileSync(path.join(bundledSkills, r35aSelected[0], 'SKILL.md'), 'utf8'));
+    assert.deepEqual(fs.readdirSync(cwd), [], 'skip/force must not write to cwd');
+  }
+  for (const placement of ['before', 'after', 'default']) {
+    const area = fs.mkdtempSync(path.join(fixture, 'unknown-'));
+    const cwd = path.join(area, 'cwd'), target = path.join(area, 'target');
+    fs.mkdirSync(cwd);
+    const only = ['--only', `${r35aSelected[0]},not-a-bundled-skill`];
+    const args = placement === 'before' ? [...only, target] : placement === 'after' ? [target, ...only] : only;
+    const result = r35aRun(bin, cwd, ['init', '--force', ...args]);
+    assert.equal(result.status, 2, result.stdout + result.stderr);
+    assert.match(result.stderr, /unknown skill: not-a-bundled-skill/);
+    assert.deepEqual(fs.readdirSync(cwd), [], 'unknown skill must not partially install valid selections');
+    assert.deepEqual(fs.readdirSync(area), ['cwd'], 'unknown skill must not create destination');
+  }
+}
+
+test('#363 r35a source init preserves explicit target/cwd invariants and existing options', () => {
+  r35aInitContract(path.join(r35aRoot, 'bin/musubix6.mjs'), path.join(r35aRoot, '.github/skills'));
+});
+
+test('#363 r35a packed installation preserves bin version/list/init/sdd contracts', { timeout: 120000 }, () => {
+  const fixture = fs.mkdtempSync(path.join(work, 'r35a-pack-'));
+  const cache = path.join(fixture, 'cache'), packed = path.join(fixture, 'packed');
+  fs.mkdirSync(packed);
+  const npm = (cwd, args) => spawnSync('npm', [...args, '--cache', cache, '--offline', '--ignore-scripts'], {
+    cwd, env: { ...ENV, TMPDIR: work }, encoding: 'utf8', timeout: 60000,
+  });
+  const pack = npm(r35aRoot, ['pack', '--json', '--pack-destination', packed]);
+  assert.equal(pack.status, 0, pack.stdout + pack.stderr);
+  const filenames = [];
+  const collect = (value) => {
+    if (!value || typeof value !== 'object') return;
+    if (typeof value.filename === 'string') filenames.push(value.filename);
+    Object.values(value).forEach(collect);
+  };
+  collect(JSON.parse(pack.stdout));
+  assert.equal(filenames.length, 1, 'npm pack JSON must identify exactly one tarball (array or object shape)');
+  assert.deepEqual(fs.readdirSync(packed), filenames);
+  const tarball = path.join(packed, filenames[0]), extracted = path.join(fixture, 'extracted');
+  fs.mkdirSync(extracted);
+  const unpack = spawnSync('tar', ['-xzf', tarball, '-C', extracted], { encoding: 'utf8', timeout: 30000 });
+  assert.equal(unpack.status, 0, unpack.stdout + unpack.stderr);
+  const packageRoot = path.join(extracted, 'package');
+  const installed = path.join(fixture, 'installed');
+  fs.mkdirSync(installed);
+  const install = npm(installed, ['install', '--prefix', installed, '--no-audit', '--no-fund', tarball]);
+  assert.equal(install.status, 0, install.stdout + install.stderr);
+  const bins = [path.join(packageRoot, 'bin/musubix6.mjs'), path.join(installed, 'node_modules/.bin/musubix6')];
+  for (const bin of bins) {
+    const cwd = fs.mkdtempSync(path.join(fixture, 'controls-'));
+    const version = r35aRun(bin, cwd, ['--version']);
+    assert.equal(version.status, 0, version.stdout + version.stderr);
+    assert.equal(version.stdout.trim(), JSON.parse(fs.readFileSync(path.join(r35aRoot, 'package.json'), 'utf8')).version);
+    const list = r35aRun(bin, cwd, ['list']);
+    assert.equal(list.status, 0, list.stdout + list.stderr);
+    assert.deepEqual(list.stdout.trim().split(/\r?\n/).sort(), r35aSkills);
+    for (const args of [['gate', '--help'], ['not-a-command']]) {
+      const direct = spawnSync(process.execPath, [path.join(packageRoot, '.github/skills/lean-sdd-tdd/scripts/sdd.mjs'), ...args],
+        { cwd, env: ENV, encoding: 'utf8', timeout: 30000 });
+      const forwarded = r35aRun(bin, cwd, ['sdd', ...args]);
+      assert.equal(forwarded.status, args[0] === 'gate' ? 0 : 2);
+      assert.equal(forwarded.status, direct.status);
+      assert.equal(forwarded.stdout, direct.stdout, 'SDD arguments and output must be forwarded unchanged');
+      assert.equal(forwarded.stderr, direct.stderr);
+    }
+    assert.deepEqual(fs.readdirSync(cwd), [], 'version/list/sdd controls must not write into cwd');
+    r35aInitContract(bin, path.join(packageRoot, '.github/skills'));
+  }
+});

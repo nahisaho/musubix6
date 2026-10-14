@@ -87,6 +87,9 @@ musubix6 list                  # bundled skills
 musubix6 sdd gate              # run the lean-sdd-tdd CLI
 ```
 
+`init` accepts a relative or absolute destination; omitting it uses the current
+directory. `--force` and `--only a,b` can appear before or after the destination.
+
 To install per-user instead of per repository, copy the skill directories to
 `~/.copilot/skills/`.
 

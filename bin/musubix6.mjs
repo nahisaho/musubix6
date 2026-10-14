@@ -28,7 +28,7 @@ else if (cmd === 'sdd') {
   const force = rest.includes('--force');
   const oi = rest.indexOf('--only');
   const only = oi >= 0 ? (rest[oi + 1] || '').split(',').filter(Boolean) : null;
-  const dir = rest.find((a, i) => !a.startsWith('--') && i !== oi + 1) || '.';
+  const dir = rest.find((a, i) => !a.startsWith('--') && (oi < 0 || i !== oi + 1)) || '.';
   const dest = join(resolve(dir), '.github', 'skills');
   const all = skills();
   const unknown = (only || []).filter((s) => !all.includes(s));
