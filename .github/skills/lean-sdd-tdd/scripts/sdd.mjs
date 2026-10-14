@@ -5566,7 +5566,7 @@ function checkDefClosure(cfg, read = null, knownFiles = null) {
   read ??= (f) => { try { return fs.readFileSync(path.resolve(ROOT, f), 'utf8'); } catch { return null; } };
   const all = [...(cfg.checks ?? []), ...(cfg.testCmd ? [{ name: 'tdd', cmd: cfg.testCmd }] : []),
     ...(cfg.projects ?? []).flatMap((p) => [...(p.checks ?? []), ...(p.testCmd ? [{ name: 'tdd', cmd: p.testCmd }] : [])].map((c) => ({ ...c, name: `${p.root}:${c.name}`, cwd: p.root })))];
-  const cache = new Map(), defs = new Map(), directories = new Map(), resolutions = new Map(), pythonDirectories = new Map(), tokenCache = new Map(), tokenKinds = new Map();
+  const cache = new Map(), defs = new Map(), directories = new Map(), resolutions = new Map(), executableInputs = new Map(), pythonDirectories = new Map(), tokenCache = new Map(), tokenKinds = new Map();
   const relative = (f) => path.relative(ROOT, f).split(path.sep).join('/');
   let bytes = 0, tokenCount = 0, directoryEntries = 0, inspectionWork = 0;
   const refuse = (f, reason) => { throw new Error(`REFUSED: check-definition discovery budget (${reason}) at ${f}; simplify the command closure or split its definitions; no evidence recorded`); };
@@ -6088,18 +6088,23 @@ function checkDefClosure(cfg, read = null, knownFiles = null) {
         const resolved = (i === 0 || /^(?:node|python[\d.]*|pytest|cargo|go|dotnet|npm|pnpm|yarn|bun|make|gmake|sh|bash|env)$/.test(exe)) ? resolve(token, cwd) : null;
         if (resolved && (i === 0 || /^(?:node|python[\d.]*|pytest|cargo|go|dotnet|npm|pnpm|yarn|bun|make|gmake|sh|bash|env)$/.test(exe))) {
           if (/^python[\d.]*$/.test(exe)) file(path.join(path.dirname(path.dirname(resolved)), 'pyvenv.cfg'), cwd, undefined, true);
-          const f = relative(resolved), real = fs.realpathSync(resolved);
-          let digest;
-          if (resolved.startsWith(ROOT + path.sep)) {
-            const text = rd(f);
-            if (text !== null) {
-              digest = live ? executableHash(resolved) : sha(read.raw?.(f) ?? text);
-              file(resolved, cwd, undefined, true);
-            }
-          } else digest = executableHash(resolved);
+          /** @id CODE-R36C-CLOSURE-002 @implements REQ-R36C-CLOSURE-001 */
+          let input = executableInputs.get(resolved);
+          if (!input) {
+            const f = relative(resolved), real = fs.realpathSync(resolved), target = relative(real);
+            let digest;
+            if (resolved.startsWith(ROOT + path.sep)) {
+              const text = rd(f);
+              if (text !== null) digest = live ? executableHash(resolved) : sha(read.raw?.(f) ?? text);
+            } else digest = executableHash(resolved);
+            input = { f, real, target, digest, fingerprint: digest ? sha(`${target}\0${digest}`) : null, targetSha: digest ? sha(digest) : null };
+            executableInputs.set(resolved, input);
+          }
+          const { f, real, target, digest, fingerprint, targetSha } = input;
           if (digest) {
-            defs.set(`executable:${exe}|${f}`, { sha: sha(`${relative(real)}\0${digest}`), label: `check ${c.name} executable ${f} (changed)` });
-            if (real !== resolved) defs.set(`executable:${exe}|${relative(real)}`, { sha: sha(digest), label: `check ${c.name} executable target ${relative(real)} (changed)` });
+            if (resolved.startsWith(ROOT + path.sep)) file(resolved, cwd, undefined, true);
+            defs.set(`executable:${exe}|${f}`, { sha: fingerprint, label: `check ${c.name} executable ${f} (changed)` });
+            if (real !== resolved) defs.set(`executable:${exe}|${target}`, { sha: targetSha, label: `check ${c.name} executable target ${target} (changed)` });
           }
         }
         // Keep argv boundaries (including paths with spaces), and literal paths inside wrapper source.
@@ -6108,6 +6113,10 @@ function checkDefClosure(cfg, read = null, knownFiles = null) {
         if (context.candidates.has(candidate)) continue;
         context.candidates.add(candidate);
         if (++candidateCount > 200000) refuse(candidate, '200000 contextual candidates');
+        /** @id CODE-R36C-CLOSURE-001 @implements REQ-R36C-CLOSURE-001 */
+        // Fresh directory membership avoids normalizing nonexistent source identifiers.
+        if (live && !/[/\\:]/.test(candidate) && !directory(cwd).has(candidate)
+          && (sourceDir === cwd || !directory(sourceDir).has(candidate))) continue;
         const abs = path.resolve(cwd, candidate);
         if (path.isAbsolute(candidate) && !abs.startsWith(ROOT + path.sep) && !/\.(?:[cm]?[jt]s|py|sh|rb|pl)$/.test(candidate)) continue;
         file(abs, cwd, undefined, protectedHook);
