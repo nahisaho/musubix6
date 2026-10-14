@@ -11408,15 +11408,30 @@ test('r33b #355 Node execution verification respects project and selected file o
   fs.writeFileSync(cp, JSON.stringify(cfg));
   const clean = sdd(d, 'gate');
   assert.equal(clean.code, 0, clean.out);
-  cfg.projects[0].checks[0].cmd = ['node', '--test', '--test-reporter=tap', '*.test.mjs'];
+  const glob = spawnSync('node', ['--test', '--test-reporter=tap', '*.test.mjs'], {
+    cwd: path.join(d, 'packages/core'), encoding: 'utf8', env: ENV,
+  });
+  const expandsGlob = glob.status === 0;
+  if (expandsGlob) assert.match(glob.stdout, /ok \d+ - TEST-A-001 target/);
+  else {
+    assert.equal(glob.status, 1, glob.stdout + glob.stderr);
+    assert.match(glob.stdout + glob.stderr, /Could not find '.*\/\*\.test\.mjs'/);
+  }
+  cfg.projects[0].checks[0].cmd = ['node', '--test', '--test-reporter=tap',
+    ...(expandsGlob ? ['*.test.mjs'] : ['a.test.mjs', 'other.test.mjs'])];
+  assert.deepEqual(cfg.projects[0].checks[0].cmd.slice(3),
+    expandsGlob ? ['*.test.mjs'] : ['a.test.mjs', 'other.test.mjs']);
   cfg.scan.include = ['packages/core/a.test.mjs'];
   fs.writeFileSync(cp, JSON.stringify(cfg));
   const previous = ENV.CI;
+  const ledger = path.join(d, '.sdd/tdd.jsonl');
+  const before = fs.readFileSync(ledger, 'utf8');
   ENV.CI = 'r33-skip';
   try {
     const gate = sdd(d, 'gate');
     assert.equal(gate.code, 1, gate.out);
     assert.match(gate.out, /TEST-A-001.*missing executed Node test ids/);
+    assert.equal(fs.readFileSync(ledger, 'utf8'), before);
   } finally { if (previous === undefined) delete ENV.CI; else ENV.CI = previous; }
 });
 
@@ -13223,4 +13238,44 @@ test('r36c #367 repeated executable identifiers share fresh closure fingerprints
   for (const check of ['first', 'second'])
     assert.ok(definitions.includes(`${check}|tools/bundle.cjs`), `missing ${check} compiler closure`);
   console.log(`r36 executable probes=${probes} for 5000 node identifiers shared by two checks`);
+});
+
+/** @id TEST-R36D-OWN-001 @verifies REQ-R36D-OWN-001 */
+test('#368 TEST-R36D-OWN-001 original native ownership fixture passes on the actual runtime', () => {
+  const result = spawnSync(process.execPath, [
+    '--test', '--test-reporter=tap',
+    '--test-name-pattern=^r33b #355 Node execution verification respects project', fileURLToPath(import.meta.url),
+  ], { cwd: process.cwd(), encoding: 'utf8', env: ENV });
+  const output = result.stdout + result.stderr;
+  assert.equal(result.status, 0, `${process.execPath}\n${output}`);
+  assert.match(output, /# pass 1\b/);
+  assert.match(output, /# fail 0\b/);
+});
+
+/** @id TEST-R36D-OWN-002 @verifies REQ-R36D-OWN-001 */
+test('#368 TEST-R36D-OWN-002 explicit project files preserve positive and missing-ID controls', () => {
+  const { d, cp } = r33bNodeFixture('tap', true);
+  fs.writeFileSync(path.join(d, 'packages/core/other.test.mjs'), "import { test } from 'node:test';\n/** @id TEST-A-002 @verifies REQ-A-001 */\ntest('TEST-A-002 omitted', { skip: true }, () => {});\n");
+  const cfg = JSON.parse(fs.readFileSync(cp));
+  cfg.scan.include = ['packages/core/a.test.mjs'];
+  cfg.projects[0].checks[0].cmd = ['node', '--test', '--test-reporter=tap', 'a.test.mjs', 'other.test.mjs'];
+  fs.writeFileSync(cp, JSON.stringify(cfg));
+  const ledger = path.join(d, '.sdd/tdd.jsonl');
+  const before = fs.readFileSync(ledger, 'utf8');
+  const previous = ENV.CI;
+  try {
+    for (const outcome of ['r33-skip', 'r33-run']) {
+      ENV.CI = outcome;
+      for (const args of [['gate'], ['gate', '--changed', '--baseline', 'HEAD']]) {
+        const gate = sdd(d, ...args);
+        assert.equal(gate.code, outcome === 'r33-skip' ? 1 : 0, gate.out);
+        if (outcome === 'r33-skip') assert.match(gate.out, /TEST-A-001.*missing executed Node test ids/, gate.out);
+        else {
+          assert.match(gate.out, /SDD GATE PASS/, gate.out);
+          assert.doesNotMatch(gate.out, /missing executed Node test ids/, gate.out);
+        }
+        assert.equal(fs.readFileSync(ledger, 'utf8'), before);
+      }
+    }
+  } finally { if (previous === undefined) delete ENV.CI; else ENV.CI = previous; }
 });
