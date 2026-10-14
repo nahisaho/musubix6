@@ -1725,7 +1725,9 @@ const stubTodoHit = (text) => {
   }
   return null;
 };
-const isLoadErr = (text) => LOAD_ERR.test(text) && !RUNTIME_FAIL.test(text) && !ASSERT_EXC.test(text) && !missingDeliverable(text);
+/** @id CODE-R36E-LOAD-001 @implements REQ-R36E-LOAD-001 */
+const NATIVE_LOAD_ERR = /^\s*(?:Type|Range)?Error \[ERR_(?:UNKNOWN_(?:FILE_EXTENSION|MODULE_FORMAT)|UNSUPPORTED_(?:ESM_URL_SCHEME|DIR_IMPORT|RESOLVE_REQUEST|NODE_MODULES_TYPE_STRIPPING))\]:/m;
+const isLoadErr = (text, assertion = ASSERT_EXC.test(text), nativeLoad = NATIVE_LOAD_ERR.test(text)) => (LOAD_ERR.test(text) || nativeLoad) && !RUNTIME_FAIL.test(text) && !assertion && !missingDeliverable(text);
 // a repo without any commit has no baseline for `--changed` (#150)
 function hasCommit() { return spawnSync('git', ['rev-parse', '--verify', '-q', 'HEAD'], { cwd: ROOT, stdio: 'ignore' }).status === 0; }
 
@@ -1836,6 +1838,57 @@ function nodeTestRan(text, id, testPath, passing = false) {
   });
   // Duplicate titles with skipped outcomes are ambiguous, not substitute evidence.
   return rows.length > 0 && rows.every((r) => !r.skipped && (!passing || r.passed));
+}
+
+/** @id CODE-R36B-001 @implements REQ-R36B-LOAD-001 REQ-R36B-SYNTAX-001 REQ-R36B-ASSERT-001 */
+function nodeFailureContext(text, id, testPath, cwd = '.') {
+  const tap = /^TAP version 13$/m.test(text);
+  const lines = text.split('\n'), rows = [];
+  for (let i = 0; i < lines.length; i++) {
+    const m = /^(\s*)([✔✖﹣]\s+|(?:not )?ok\s+\d+\s+-\s+)(.+)$/.exec(lines[i]);
+    if (!m) continue;
+    rows.push({ i, indent: m[1], failed: /^(?:✖|not ok)/.test(m[2]),
+      skipped: /^﹣/.test(m[2]) || /#\s*(TODO|SKIP)\b/i.test(m[3]),
+      title: m[3].replace(/\s+#\s*(TODO|SKIP)\b.*$/i, '').replace(/\s+\([\d.]+(?:ms|s|µs)\)$/, '').trim() });
+  }
+  const ownsLocation = (s) => {
+    const file = s.replace(/^['"]|['"]$/g, '').replace(/:\d+(?::\d+)?$/, '');
+    return path.resolve(ROOT, cwd, file) === path.resolve(ROOT, testPath);
+  };
+  const tops = rows.filter((r) => !r.indent && r.title !== 'failing tests:');
+  const fileFailed = !nodeTestRan(text, id, testPath) && tops.length > 0 && tops.every((r) =>
+    r.failed && !r.skipped && (r.title === path.basename(testPath) || path.resolve(ROOT, cwd, r.title) === path.resolve(ROOT, testPath)));
+  const body = testBody(testPath, id).join('\n').replace(/^(?:\s|\/\*[\s\S]*?\*\/|\/\/[^\n]*)*/, '');
+  const name = nodeLiteralTitle(new RegExp(`^(?:await\\s+)?${NODE_REGISTRATION.source}`).exec(body));
+  let assertion = false, syntax = false, nativeLoad = false;
+  if (nodeTestRan(text, id, testPath)) for (const row of rows.filter((r) => r.failed && !r.skipped && r.title === name)) {
+    if (tap) {
+      const indent = row.indent + '  ';
+      if (lines[row.i + 1] !== indent + '---') continue;
+      const end = lines.indexOf(indent + '...', row.i + 2);
+      if (end < 0) continue;
+      // Multiline message/stack values are deeper than diagnostic keys.
+      const fields = new Map(lines.slice(row.i + 2, end).flatMap((line) => {
+        const m = new RegExp(`^${indent}(location|name|code): (.+)$`).exec(line);
+        return m ? [[m[1], m[2].replace(/^['"]|['"]$/g, '')]] : [];
+      }));
+      if (!ownsLocation(fields.get('location') ?? '')) continue;
+      assertion ||= fields.get('name') === 'AssertionError' && fields.get('code') === 'ERR_ASSERTION';
+      syntax ||= fields.get('name') === 'SyntaxError';
+      nativeLoad ||= isLoadErr(`Error [${fields.get('code')}]:`, false);
+    } else {
+      const location = /^test at (.+)$/.exec(lines[row.i - 1] ?? '')?.[1];
+      if (!location || !ownsLocation(location)) continue;
+      assertion ||= /^\s+AssertionError\b/.test(lines[row.i + 1] ?? '');
+      syntax ||= /^\s+SyntaxError\b/.test(lines[row.i + 1] ?? '');
+      nativeLoad ||= isLoadErr(lines[row.i + 1] ?? '', false);
+    }
+  }
+  // Node TAP prefixes process stderr with "# "; never strip arbitrary reporter output.
+  const diagnosticText = (syntax ? 'SyntaxError: native owned exception\n' : '') + (tap ? text.replace(/^# ?/gm, '') : text);
+  // A failed file exposes process stderr, not owned diagnostic fields; only its primary error header counts.
+  if (fileFailed) nativeLoad = isLoadErr(/^(?:Type|Range)?Error(?: \[[^\]\n]+\])?:[^\n]*/m.exec(diagnosticText)?.[0] ?? '', false);
+  return { fileFailed, loadError: isLoadErr(diagnosticText, assertion, nativeLoad) };
 }
 
 // ---------- commands ----------
@@ -2091,9 +2144,19 @@ function callInfo(src, name) {
   // `_, err := New().Record(..)`: the tuple belongs to the chained method, not to this call (#113)
   return { args: args.map(litType), raws: args, ret, multi: /,\s*\w+\s*:?=\s*$/.test(before) && !/^\s*\./.test(after), chained: /^\s*\./.test(after), argc: args.length };
 }
-const probe = (cmd, args, cwd) => { const r = spawnSync(cmd, args, { cwd, encoding: 'utf8', timeout: 120000, env: { ...process.env, LC_ALL: 'C' } }); return (r.stdout ?? '') + (r.stderr ?? ''); };
+/** @id CODE-R36I-001 @implements REQ-R36I-001 REQ-R36I-002 */
+const probeOutcome = (cmd, args, cwd) => {
+  const r = spawnSync(cmd, args, { cwd, encoding: 'utf8', timeout: 120000, env: { ...process.env, LC_ALL: 'C' } });
+  return { text: (r.stdout ?? '') + (r.stderr ?? ''), status: r.status, signal: r.signal, error: r.error };
+};
+const probe = (cmd, args, cwd) => probeOutcome(cmd, args, cwd).text;
 
 function stubGo(testPath, src, dir, add, made) {
+  /** @id CODE-R36J-001 @implements REQ-R36J-001 REQ-R36J-002 */
+  const goTest = () => {
+    const r = probeOutcome('go', ['test', '-count=1', '-gcflags=-e', '-run', '^$', '.'], dir);
+    return { ...r, text: r.text.replace(/\x1b\[[0-9;]*m/g, '') };
+  };
   const pkg = /^package\s+(\w+)/m.exec(src)?.[1]?.replace(/_test$/, '') ?? 'main';
   const T = { int: 'int', float: 'float64', str: 'string', bool: 'bool' };
   const params = (c) => Array.from({ length: c.args.length }, (_, i) => `a${i}`).join(', ') + (c.args.length ? ' any' : '');
@@ -2184,7 +2247,7 @@ function stubGo(testPath, src, dir, add, made) {
       };
       if (!e.hasGo) { fs.mkdirSync(e.idir, { recursive: true }); fs.writeFileSync(e.file, `package ${e.packageName}\n`); }
       for (let pass = 0; pass < 5; pass++) {
-        const out = probe('go', ['test', '-count=1', '-gcflags=-e', '-run', '^$', '.'], dir);
+        const out = goTest().text;
         let grew = false;
         for (const m of out.matchAll(new RegExp(`undefined: ${e.alias}\\.(\\w+)`, 'g'))) {
           const n = m[1];
@@ -2224,7 +2287,7 @@ function stubGo(testPath, src, dir, add, made) {
   }
   // each pass reveals the next layer: undefined names, then methods/fields of the types just created (#69)
   for (let pass = 0; pass < 6 && !extDone; pass++) {
-    const out = probe('go', ['test', '-count=1', '-gcflags=-e', '-run', '^$', '.'], dir);
+    const out = goTest().text;
     let grew = false;
     for (const m of out.matchAll(/undefined: (\w+)/g)) {
       const n = m[1];
@@ -2294,15 +2357,31 @@ function stubGo(testPath, src, dir, add, made) {
   }
   if (!extDone && fs.existsSync(target)) made.push(rel(target));
   // compile-check what was written: an honest verdict instead of an assumed "Red-safe" (#129)
-  const after = made.length ? probe('go', ['test', '-count=1', '-gcflags=-e', '-run', '^$', '.'], dir) : '';
-  const err = /^(?:vet: )?\S+\.go:\d+:\d+: .*$/m.exec(after);
-  return Object.assign([...new Set(made)], made.length ? (err ? { verified: 'fail', verifyError: err[0].slice(0, 160) } : { verified: 'ok' }) : {});
+  /** @id CODE-R36J-002 @implements REQ-R36J-001 REQ-R36J-002 */
+  const after = goTest();
+  const err = /^(?:vet: )?\S+\.go:\d+:\d+: .*$/m.exec(after.text);
+  if (after.status === 0 && !after.signal && !after.error && !err) return Object.assign([...new Set(made)], { verified: 'ok' });
+  const reason = after.error ? `Go compile check failed with error ${after.error.code ?? after.error.message}`
+    : after.signal ? `Go compile check terminated by signal ${after.signal}`
+      : after.status == null ? 'Go compile check failed: status unavailable'
+        : after.status !== 0 ? `Go compile check failed with exit status ${after.status}`
+          : null;
+  return Object.assign([...new Set(made)], {
+    verified: 'fail',
+    verifyError: (reason ? `${reason}${err ? `; ${err[0]}` : ''}` : err[0]).slice(0, 160),
+  });
 }
 
 function stubRust(testPath, src, dir, made) {
   const root = (() => { let d = dir; while (d !== path.dirname(d)) { if (fs.existsSync(path.join(d, 'Cargo.toml'))) return d; d = path.dirname(d); } return null; })();
   if (root && !/(^|\/)tests\//.test(testPath) && /#\[cfg\(test\)\]/.test(src)) made.notes = ['this test is inline in the subject file (#[cfg(test)]): it can only use items of its own crate, so there is nothing to generate — write the code under test by hand'];
   if (!root || !/(^|\/)tests\//.test(testPath)) return made;
+  /** @id CODE-R36G-001 @implements REQ-R36G-001 REQ-R36G-002 */
+  const cargoTest = () => {
+    const r = probeOutcome('cargo', ['test', '--no-run', '--offline', '--test', path.basename(testPath, '.rs')], root);
+    // Cargo can color piped diagnostics; every Rust consumer needs the same plain text.
+    return { ...r, text: r.text.replace(/\x1b\[[0-9;]*m/g, '') };
+  };
   const ownLib = path.join(root, 'src/lib.rs');
   const probeFile = !fs.existsSync(ownLib);
   if (probeFile) { fs.mkdirSync(path.dirname(ownLib), { recursive: true }); fs.writeFileSync(ownLib, ''); }
@@ -2646,7 +2725,7 @@ function stubRust(testPath, src, dir, made) {
   for (const m of (src + '\n' + inline + '\n' + modUse).matchAll(/^\s*use\s+(\w+)((?:::[a-z_]\w*)+)::(\{[^}]*\}|\w+)\s*;/gm)) {
     const croot = crates.get(m[1]);
     if (!croot) continue;
-    preOut ??= probe('cargo', ['test', '--no-run', '--offline', '--test', path.basename(testPath, '.rs')], root);
+    preOut ??= cargoTest().text;
     const items = (m[3].startsWith('{') ? m[3].slice(1, -1).split(',') : [m[3]]).map((x) => x.trim().split(/\s+as\s+/)[0]).filter((x) => /^[A-Za-z_]\w*$/.test(x) && x !== 'self' && new RegExp(`\\b${x}\\b`).test(srcNoUse));
     if (!items.length) continue;
     const lib = path.join(croot, 'src/lib.rs');
@@ -2708,8 +2787,8 @@ function stubRust(testPath, src, dir, made) {
     fs.writeFileSync(lib, text + (text && !text.endsWith('\n') ? '\n' : '') + (text ? '\n' : '') + `#[macro_export]\nmacro_rules! ${name} {\n    ($($t:tt)*) => {\n        unimplemented!("${name}!")\n    };\n}\n`);
     made.push(rel(lib));
   }
-  const cargoTest = () => probe('cargo', ['test', '--no-run', '--offline', '--test', path.basename(testPath, '.rs')], root);
-  let out = cargoTest();
+  let result = cargoTest();
+  let out = result.text;
   // variants the test uses that an existing enum lacks are added to it (#290)
   const variantNotes = [];
   const missingVariants = [...new Map([...out.matchAll(/no variant[^`\n]*named `(\w+)` found for enum `(?:\w+::)*(\w+)`/g)].map((m) => [m[2] + '::' + m[1], m])).values()];
@@ -2737,7 +2816,8 @@ function stubRust(testPath, src, dir, made) {
       made.push(rel(at.f));
       variantNotes.push(`added variant ${e}::${v} to ${rel(at.f)}`);
     }
-    out = cargoTest();
+    result = cargoTest();
+    out = result.text;
   }
   // methods / associated fns the test calls on a type that already exists are added to its impl, found from cargo's E0599 (#298)
   const growMembers = () => {
@@ -2763,23 +2843,29 @@ function stubRust(testPath, src, dir, made) {
         wrote = true;
       }
       if (!wrote) return;
-      out = cargoTest();
+      result = cargoTest();
+      out = result.text;
     }
   };
   growMembers();
   const names = [...new Set([...out.matchAll(/cannot find function `(\w+)`|unresolved import `[\w:]+::(\w+)`|no `(\w+)` in the root|cannot find struct, variant or union type `(\w+)`/g)].map((m) => m[1] ?? m[2] ?? m[3] ?? m[4]))].filter((n) => !modNames.has(n) && !macroNames.has(n) && new RegExp(`\\b${n}\\b`).test(fullNoUse));
   // compile-check what was written: an honest verdict instead of an assumed "Red-safe" (#130)
+  /** @id CODE-R36G-002 @implements REQ-R36G-001 REQ-R36G-002 */
   const verified = () => {
-    const after = made.length || names.length ? cargoTest() : out;
-    const err = /^error(?:\[\w+\])?: .*$/m.exec(after.replace(/^error: could not compile.*$/gm, ''));
-    if (!err) return { verified: 'ok' };
+    const witness = made.length || names.length ? cargoTest() : result;
+    const after = witness.text;
+    const err = /^error(?:\[\w+\])?: .*$/m.exec(after);
+    if (witness.status === 0 && !witness.signal && !witness.error && !err) return { verified: 'ok' };
     // constructs the generator cannot stub: say which ones
     const notes = [];
     for (const m of new Set([...after.matchAll(/cannot find macro `(\w+)`/g)].map((x) => x[1]))) notes.push(`macro ${m}! is not stubbed (macro_rules! cannot be generated): define it by hand`);
     if (/cannot find trait `\w+`|not all trait items implemented|E0046|E0405/.test(after)) notes.push('trait impls / associated types are not stubbed: write the trait and its impl by hand');
     if (/E0107|E0392|type annotations needed|E0282|lifetime|generic argument/.test(after)) notes.push('generic parameters / lifetimes are not stubbed: adjust the stub signatures by hand');
     if (/mismatched types|E0308/.test(after)) notes.push('a stub return type does not match how the test uses it (Option/Result/bool/collections): fix the stub signature by hand');
-    return { verified: 'fail', verifyError: err[0].slice(0, 160), notes };
+    const failure = witness.error ? `Cargo compile check could not run: ${witness.error.code ?? witness.error.message}`
+      : witness.signal ? `Cargo compile check terminated by signal ${witness.signal}`
+        : err?.[0] ?? `Cargo compile check failed with exit status ${witness.status ?? 'unknown'} (no recognizable compiler diagnostic)`;
+    return { verified: 'fail', verifyError: failure.slice(0, 160), notes };
   };
   const withNotes = (r) => { if (/\bmacro_rules!/.test(fullNoUse)) variantNotes.push('macro_rules! in the test file: macros are not stubbed, the rest is stubbed as far as it compiles — finish by hand'); if (/^\s*use\s+(?:crate|\w+)::(?:\w+::)*\*\s*;/m.test(src + '\n' + fullNoUse) || /^\s*use\s[^;]*\*\s*;/m.test(src)) variantNotes.push('wildcard `use ...::*` in the test: names are stubbed from compiler errors only (partial stubs) — check them by hand'); if (report.length) r.report = report; if (variantNotes.length) r.notes = [...(r.notes ?? []), ...variantNotes]; return r; };
   if (!names.length) { if (probeFile && !made.length) fs.rmSync(ownLib); return withNotes(Object.assign([...new Set(made)], verified())); }
@@ -3005,11 +3091,26 @@ function stubC(testPath, src, dir, add, made) {
     break;
   }
   // compile-check the result: an honest verdict instead of an assumed "Red-safe" (#130)
-  const syntax = () => probe(compile.cc, ['-fsyntax-only', ...compile.args, path.join(ROOT, testPath)], compile.cwd);
-  const verified = () => { const o = syntax(); const e = /^[^\n]*\berror:.*$/m.exec(o); return e ? { verified: 'fail', verifyError: e[0].replace(ROOT + '/', '').slice(0, 200) } : { verified: 'ok' }; };
+  /** @id CODE-R36I-002 @implements REQ-R36I-001 REQ-R36I-002 */
+  const syntax = () => {
+    const r = probeOutcome(compile.cc, ['-fsyntax-only', ...compile.args, path.join(ROOT, testPath)], compile.cwd);
+    return { ...r, text: r.text.replace(/\x1b\[[0-9;]*m/g, '') };
+  };
+  const verified = () => {
+    const r = syntax();
+    const e = /^[^\n]*\berror:.*$/m.exec(r.text);
+    if (r.status === 0 && !r.signal && !r.error && !e) return { verified: 'ok' };
+    const diagnostic = e?.[0].replace(ROOT + '/', '').slice(0, 160);
+    const reason = r.error ? `C/C++ compile check failed with error ${r.error.code ?? r.error.message}`
+      : r.signal ? `C/C++ compile check terminated by signal ${r.signal}`
+        : r.status == null ? 'C/C++ compile check failed: status unavailable'
+          : r.status !== 0 ? `C/C++ compile check failed with exit status ${r.status}`
+            : null;
+    return { verified: 'fail', verifyError: reason ? `${reason}${diagnostic ? `; ${diagnostic}` : ''}` : diagnostic };
+  };
   if (!missing.length) return Object.assign(made, verified());
   for (const h of missing) { fs.mkdirSync(path.dirname(path.resolve(dir, h)), { recursive: true }); fs.writeFileSync(path.resolve(dir, h), ''); }
-  const out = syntax();
+  const out = syntax().text;
   // anything an already-present project header declares must not be redeclared (#96)
   const present = gitFiles('*.h').concat(gitFiles('*.hpp')).map((f) => { try { return fs.readFileSync(path.join(ROOT, f), 'utf8'); } catch { return ''; } }).join('\n');
   const declared = (n) => new RegExp(`\\b${n}\\s*\\(`).test(present);
@@ -4113,7 +4214,7 @@ function setupOrigin(line, testPath, id, text = '') {
     if (!d || (i >= start && i < end) || /^test/i.test(d[1])) return [];
     const nx = all.findIndex((q, k) => k > i && (/@id\s/.test(q) || /^\s*(?:pub\s+)?(?:async\s+)?(?:fn|def|function|func)\s/.test(q)));
     return ASSERT_LINE.test(all.slice(i + 1, nx < 0 ? all.length : nx).join('\n')) ? [d[1]] : [];
-  })), ...all.join('\n').matchAll(/\b((?:check|verify|ensure|validate)\w*)\s*\(/gi).map((m) => m[1])];
+  })), ...[...all.join('\n').matchAll(/\b((?:check|verify|ensure|validate)\w*)\s*\(/gi)].map((m) => m[1])];
   const helperExtra = helperNames.length ? new RegExp(`(?<![\\w$.])(?:${helperNames.join('|')})\\s*\\(`) : null;
   const mark = (ls) => markAsserts(ls, helperExtra);
   const inA = new Array(start).fill(false).concat(mark(all.slice(start, end)));
@@ -4201,7 +4302,7 @@ function setupOrigin(line, testPath, id, text = '') {
     return null;
   };
   const base = path.basename(testPath).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const sites = [...new Set([...text.matchAll(new RegExp(`${base}:(?:line )?(\\d+)`, 'g')).map((f) => Number(f[1]) - 1)])].filter((i) => i >= start && i < end);
+  const sites = [...new Set([...text.matchAll(new RegExp(`${base}:(?:line )?(\\d+)`, 'g'))].map((f) => Number(f[1]) - 1))].filter((i) => i >= start && i < end);
   if (sites.length) {
     const hit = sites.filter((i) => re.test(all[i])).map((i) => ({ l: all[i], i }));
     // a call inside `with pytest.raises(...)` / assertRaises / assertThrows on the preceding line is the asserted behaviour
@@ -4819,7 +4920,7 @@ function cmdTdd() {
     if (flags.report) { out('stub report (element | confidence | evidence):'); for (const r of made.report ?? []) out(`  ${r.element} | ${r.confidence} | ${r.evidence}`); if (!made.report?.length) out('  (no inferred elements)'); }
     if (made.realMissing?.length) out(`! not stubbed: ${made.realMissing.join('; ')} — those modules hold real code, which stubs never edit: add the names by hand`);
     if (made.warnings?.length) out(`! not stubbed: ${[...new Set(made.warnings)].join('; ')} — add the exports by hand`);
-    return made.verified === 'fail' && /\.(?:c|cc|cpp|cxx)$/.test(t.path) ? 1 : 0;
+    return made.verified === 'fail' && /\.(?:go|c|cc|cpp|cxx)$/.test(t.path) ? 1 : 0;
   }
   if (!['red', 'green', 'refactor'].includes(sub)) { out('usage: tdd red|green|refactor <TEST-ID> [--req REQ] [--weak] [--expect <text>] [--retest <why>] [--characterization <why>] [--allow-setup-red] [--wording <why> (refactor on T1 after a test change)] | tdd stub <TEST-ID> [<TEST-ID>... | --all] | tdd check | tdd merge-ledger'); return 2; }
   if (sub === 'refactor' && flags.stale && !pos[2]) {
@@ -5093,12 +5194,14 @@ function cmdTdd() {
   const goVerdict = goRunner ? goResult(res.text, goTarget?.name ?? testName(t.path, id)) : null;
   if (goRunner) res.text = goOutput(res.text);
   const plain = res.text.replace(/\x1b\[[0-9;]*m/g, '');
+  const nodeFailure = nodeTestCommand(cmd, proj?.root) && nodeTestReport(plain) ? nodeFailureContext(plain, id, t.path, proj?.root) : null;
+  const loadError = nodeFailure ? nodeFailure.loadError : isLoadErr(res.text);
   // Go t.Skip and JUnit @Disabled: every test that ran was skipped (#84)
   const allSkipped = (/--- SKIP:/.test(plain) && !/--- (PASS|FAIL):/.test(plain)) || [...plain.matchAll(/Tests run: (\d+), Failures: 0, Errors: 0, Skipped: (\d+)/g)].some((m) => m[1] === m[2] && +m[1] > 0 && [...plain.matchAll(/Tests run: (\d+), Failures: 0, Errors: 0, Skipped: (\d+)/g)].every((x) => x[1] === x[2]));
   // PHPUnit skipped / no assertions, dotnet Passed: 0 + Skipped: n executed nothing (#140)
   const noAssert = noExecution(plain);
   // Node >=22 can report a file-level pass: only an executed test result proves the ID matched (#154).
-  const nodeUnobservable = nodeTestCommand(cmd, proj?.root) && !nodeTestReport(plain) && !isLoadErr(plain);
+  const nodeUnobservable = nodeTestCommand(cmd, proj?.root) && !nodeTestReport(plain) && !loadError;
   const nodeNoMatch = nodeUnobservable || (res.exit === 0 && (nodeTestCommand(cmd, proj?.root) || nodeTestReport(plain)) && !nodeTestRan(plain, id, t.path, true));
   const goNoMatch = goRunner && !LOAD_ERR.test(plain) && (!goTarget || !goVerdict || goVerdict === 'skip');
   const javaRunner = /\.java$/.test(t.path) && /(?:^|[/\s])(?:mvn|mvnw|gradle|gradlew)(?:\s|$)/.test(cmd.join(' '));
@@ -5149,8 +5252,8 @@ function cmdTdd() {
     else if (res.exit === 0 && typeof characFlag === 'string' && characFlag.trim()) ok = true;
     else if (res.exit === 0 && vacuousThrows(t.path, id)) { ok = false; why = `test passed: a matcher-less assert.throws / pytest.raises is satisfied by the stub's own "not implemented" error (vacuous test); add a matcher (error type or message) that only the real behaviour satisfies, or record --characterization "<why>"`; }
     else if (res.exit === 0) { ok = false; why = 'test passed; Red needs a real failure (data-only / characterization test? record it explicitly: --characterization "<why no implementation can fail it>"; amending a wrong expectation after Red: --retest "<reason>")'; }
-    else if (isLoadErr(res.text) && stubTodoHit(res.text)) { ok = false; why = stubTodoHit(res.text); }
-    else if (isLoadErr(res.text) && !flags.weak && !(flags['missing-module'] && declaredMissingModule(res.text, t.path))) { ok = false; why = 'load/compile error, not an assertion failure. new module? run `tdd stub <ID>` once (or `--missing-module`); if stub already ran or found nothing, add the missing code by hand; or --weak to record as weak Red' + (/\.py$/.test(t.path) && /ERROR collecting[\s\S]*(?:NotImplementedError|not implemented)/.test(res.text) ? '\nhint: the stub threw at collection time (a call in `@pytest.mark.parametrize` arguments or module level). Build those values inside the test body (or a fixture) so the stub fails at run time as an assertion/Red' : ''); }
+    else if (loadError && stubTodoHit(res.text)) { ok = false; why = stubTodoHit(res.text); }
+    else if (loadError && !flags.weak && !(flags['missing-module'] && declaredMissingModule(res.text, t.path))) { ok = false; why = 'load/compile error, not an assertion failure. new module? run `tdd stub <ID>` once (or `--missing-module`); if stub already ran or found nothing, add the missing code by hand; or --weak to record as weak Red' + (/\.py$/.test(t.path) && /ERROR collecting[\s\S]*(?:NotImplementedError|not implemented)/.test(res.text) ? '\nhint: the stub threw at collection time (a call in `@pytest.mark.parametrize` arguments or module level). Build those values inside the test body (or a fixture) so the stub fails at run time as an assertion/Red' : ''); }
     else if (ownHelperTypeError(res.text, t.path)) { ok = false; why = `TypeError raised inside the test's own helper ${ownHelperTypeError(res.text, t.path)}() (argument/signature mismatch): a test bug, not a Red for the behaviour; fix the test`; }
     else if (typeof flags.expect === 'string' && !(juliaSummaryRows(plain) ? targetOutput ?? '' : res.text).includes(flags.expect)) { ok = false; why = `failure output does not contain --expect "${flags.expect}" (Red for the wrong reason?)`; }
     else ok = true;
@@ -5158,7 +5261,7 @@ function cmdTdd() {
     if (res.timedOut) { ok = false; why = timeoutWhy; }
     else if (crashed) { ok = false; why = crashWhy; }
     else if (siblingFail === 'notrun') { ok = false; why = notRunWhy; }
-    else if (verdict === 'fail' || (res.exit !== 0 && siblingFail !== 'sibling' && verdict !== 'pass')) { ok = false; why = isLoadErr(res.text) ? 'test failed — load/compile error (the build is broken, not an assertion)' : 'test failed'; }
+    else if (verdict === 'fail' || (res.exit !== 0 && siblingFail !== 'sibling' && verdict !== 'pass')) { ok = false; why = loadError ? 'test failed — load/compile error (the build is broken, not an assertion)' : 'test failed'; }
     else if (zero || siblingFail === 'skip') { ok = false; why = 'no test matched the ID' + (nodeUnobservable ? '; unobservable Node output: use --test-reporter=spec or --test-reporter=tap' : ''); }
     else ok = true;
   }
@@ -5166,8 +5269,8 @@ function cmdTdd() {
   const rl = (targetOutput ?? plain).split('\n').map((l) => l.trim());
   const reason = sub === 'red' && res.exit !== 0 && !(retest && targetPassed) ? (rl.find((l) => /^E\s+\S/.test(l) && !/\d+ \/ \d+ \(\d+%\)|^E\s+\[\s*\d+%\]/.test(l))?.replace(/^E\s+/, '') ?? (() => { const i = rl.findIndex((l) => /panicked at/.test(l)); return i >= 0 && rl[i + 1] && !/^note:/.test(rl[i + 1]) ? rl[i + 1] : undefined; })() ?? rl.find((l) => /^(?:\[ERROR\]\s+)?(?:[\w$]+\.)+[\w$]*(?:Exception|Error)\s*$/.test(l))?.replace(/^\[ERROR\]\s+/, '') ?? specificReason(rl) ?? rl.find((l) => /not implemented/i.test(l) && !/^\d+\s*\|/.test(l)) ?? rl.find((l) => /(--- FAIL|AssertionError|Error:|assert |Failed asserting|FAILED|panicked|expected|\(Failed\)|not implemented|Test Failed|Error During Test|\w*Exception:|^Error in )/.test(l) && !/^(FAIL|❯|> Task|The following tests)/.test(l) && !/^\d+\s*\|/.test(l)) ?? rl.find((l) => /^(FAIL|not ok)\s+\S+$/.test(l)) ?? [...rl].reverse().find((l) => l && !/^(npm |note: |error: test failed|test result:|Failed!|Passed!)/.test(l)) ?? '').slice(0, 110) : '';
   // node:test: the file itself failed to load (module-level throw), so no test was registered or executed (#225)
-  const nodeLoadFail = sub === 'red' && /^ℹ tests \d+/m.test(plain) && (() => { const tops = plain.split('\n').filter((l) => /^[✖✔﹣]\s/.test(l) && !/^✖ failing tests:/.test(l)); return tops.length > 0 && tops.every((l) => new RegExp(`^✖ ${escapeRe(path.basename(t.path))} \\(`).test(l)); })();
-  const loadWeak = sub === 'red' && (isLoadErr(res.text) || nodeLoadFail) && !(flags['missing-module'] && declaredMissingModule(res.text, t.path));
+  const nodeLoadFail = sub === 'red' && nodeFailure?.fileFailed;
+  const loadWeak = sub === 'red' && (loadError || nodeLoadFail) && !(flags['missing-module'] && declaredMissingModule(res.text, t.path));
   const setupSym0 = sub === 'red' && !flags['allow-setup-red'] ? setupOrigin(rl.find((l) => /^E\s+.*(not implemented|NotImplementedError|unimplemented|is not a function|has no attribute|context manager protocol)/i.test(l)) ?? rl.find((l) => /not implemented|NotImplementedError|unimplemented|is not a function|has no attribute|context manager protocol/i.test(l) && !/^\d+\s*\|/.test(l)) ?? reason, t.path, id, res.text) : null;
   // --expect naming the setup call itself does not make a setup-origin Red the asserted behaviour (#256)
   // an --expect that names the call but says more than the stub's own message ("not implemented: sphere (layout)") and matches the failure is the asserted behaviour (r26d)
@@ -5566,7 +5669,7 @@ function checkDefClosure(cfg, read = null, knownFiles = null) {
   read ??= (f) => { try { return fs.readFileSync(path.resolve(ROOT, f), 'utf8'); } catch { return null; } };
   const all = [...(cfg.checks ?? []), ...(cfg.testCmd ? [{ name: 'tdd', cmd: cfg.testCmd }] : []),
     ...(cfg.projects ?? []).flatMap((p) => [...(p.checks ?? []), ...(p.testCmd ? [{ name: 'tdd', cmd: p.testCmd }] : [])].map((c) => ({ ...c, name: `${p.root}:${c.name}`, cwd: p.root })))];
-  const cache = new Map(), defs = new Map(), directories = new Map(), resolutions = new Map(), pythonDirectories = new Map(), tokenCache = new Map(), tokenKinds = new Map();
+  const cache = new Map(), defs = new Map(), directories = new Map(), resolutions = new Map(), executableInputs = new Map(), pythonDirectories = new Map(), tokenCache = new Map(), tokenKinds = new Map();
   const relative = (f) => path.relative(ROOT, f).split(path.sep).join('/');
   let bytes = 0, tokenCount = 0, directoryEntries = 0, inspectionWork = 0;
   const refuse = (f, reason) => { throw new Error(`REFUSED: check-definition discovery budget (${reason}) at ${f}; simplify the command closure or split its definitions; no evidence recorded`); };
@@ -6088,18 +6191,23 @@ function checkDefClosure(cfg, read = null, knownFiles = null) {
         const resolved = (i === 0 || /^(?:node|python[\d.]*|pytest|cargo|go|dotnet|npm|pnpm|yarn|bun|make|gmake|sh|bash|env)$/.test(exe)) ? resolve(token, cwd) : null;
         if (resolved && (i === 0 || /^(?:node|python[\d.]*|pytest|cargo|go|dotnet|npm|pnpm|yarn|bun|make|gmake|sh|bash|env)$/.test(exe))) {
           if (/^python[\d.]*$/.test(exe)) file(path.join(path.dirname(path.dirname(resolved)), 'pyvenv.cfg'), cwd, undefined, true);
-          const f = relative(resolved), real = fs.realpathSync(resolved);
-          let digest;
-          if (resolved.startsWith(ROOT + path.sep)) {
-            const text = rd(f);
-            if (text !== null) {
-              digest = live ? executableHash(resolved) : sha(read.raw?.(f) ?? text);
-              file(resolved, cwd, undefined, true);
-            }
-          } else digest = executableHash(resolved);
+          /** @id CODE-R36C-CLOSURE-002 @implements REQ-R36C-CLOSURE-001 */
+          let input = executableInputs.get(resolved);
+          if (!input) {
+            const f = relative(resolved), real = fs.realpathSync(resolved), target = relative(real);
+            let digest;
+            if (resolved.startsWith(ROOT + path.sep)) {
+              const text = rd(f);
+              if (text !== null) digest = live ? executableHash(resolved) : sha(read.raw?.(f) ?? text);
+            } else digest = executableHash(resolved);
+            input = { f, real, target, digest, fingerprint: digest ? sha(`${target}\0${digest}`) : null, targetSha: digest ? sha(digest) : null };
+            executableInputs.set(resolved, input);
+          }
+          const { f, real, target, digest, fingerprint, targetSha } = input;
           if (digest) {
-            defs.set(`executable:${exe}|${f}`, { sha: sha(`${relative(real)}\0${digest}`), label: `check ${c.name} executable ${f} (changed)` });
-            if (real !== resolved) defs.set(`executable:${exe}|${relative(real)}`, { sha: sha(digest), label: `check ${c.name} executable target ${relative(real)} (changed)` });
+            if (resolved.startsWith(ROOT + path.sep)) file(resolved, cwd, undefined, true);
+            defs.set(`executable:${exe}|${f}`, { sha: fingerprint, label: `check ${c.name} executable ${f} (changed)` });
+            if (real !== resolved) defs.set(`executable:${exe}|${target}`, { sha: targetSha, label: `check ${c.name} executable target ${target} (changed)` });
           }
         }
         // Keep argv boundaries (including paths with spaces), and literal paths inside wrapper source.
@@ -6108,6 +6216,10 @@ function checkDefClosure(cfg, read = null, knownFiles = null) {
         if (context.candidates.has(candidate)) continue;
         context.candidates.add(candidate);
         if (++candidateCount > 200000) refuse(candidate, '200000 contextual candidates');
+        /** @id CODE-R36C-CLOSURE-001 @implements REQ-R36C-CLOSURE-001 */
+        // Fresh directory membership avoids normalizing nonexistent source identifiers.
+        if (live && !/[/\\:]/.test(candidate) && !directory(cwd).has(candidate)
+          && (sourceDir === cwd || !directory(sourceDir).has(candidate))) continue;
         const abs = path.resolve(cwd, candidate);
         if (path.isAbsolute(candidate) && !abs.startsWith(ROOT + path.sep) && !/\.(?:[cm]?[jt]s|py|sh|rb|pl)$/.test(candidate)) continue;
         file(abs, cwd, undefined, protectedHook);

@@ -237,7 +237,7 @@
     "bundledSkills": {
       "agentWatchdog": "7 tests passed on Node 24.21.0",
       "japaneseProse": "8 tests passed via uv run --python 3.12 after declared dependency restoration",
-      "documentationDiagnostics": "Existing structural flags retained; two new README-ja readability warnings await cleanup",
+      "documentationDiagnostics": "README-ja quick prose pass: score 90 to 99; three new findings resolved, one pre-existing introductory genitive chain retained; structural flags remain unchanged",
       "platformSpecificSkills": "Actual WSL runtime coverage not yet established"
     },
     "qualifying": false
@@ -368,8 +368,8 @@
     }
   ],
   "historicalFreezeBlockersBeforeCorrectedCandidate": [
-    "#363: reviewed destination/admission fixes and packed controls pass; final integrated validation pending",
-    "#364: portable compiler dependency and non-publishing CI implemented; final integrated validation and actual remote CI pending",
+    "#363: destination and invalid-option fixes pass source/packed controls and independent delta review; final integrated full validation pending",
+    "#364: portable compiler dependency and non-publishing Node matrix implemented; final integrated full validation and actual remote CI pending",
     "#365 and #366: fixes independently reviewed and locally integrated; final full validation and main promotion remain pending",
     "#367: reviewed invocation-local optimization passes focused real compiler controls on actual Node20/22/24 under the unchanged budget; final integrated full suites remain required",
     "#368: native runtime fixture preconditions must be made explicit without skipping or weakening the protected behavior",

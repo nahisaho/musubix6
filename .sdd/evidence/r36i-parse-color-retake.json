@@ -1,0 +1,58 @@
+{
+  "target": "TEST-R36I-PARSE-COLOR-001",
+  "kind": "final-byte fixture-repair retake",
+  "scope": "Small proof runner only; no repository gate or full-suite claim.",
+  "repair": "The committed final compiler.mjs/ESM wrapper validates actual native colored output independently before removing missing.h. The initial 38ac92a Red is not asserted to cover these final repaired bytes.",
+  "productionAndTestsUnchanged": true,
+  "runtime": "v24.21.0",
+  "preFixCommit": "246520f3fd465b4b4c0a040cb178ebe12f0a0f8e",
+  "preFixSourceSha256": "680f5ecd942f3a85e8020fe4a79958c29f83f0bd6ae9189573a321bc7bd991f7",
+  "currentCommit": "1b26d1d76c643b2e134d056c3daf289ab6c1ad39",
+  "currentSourceSha256": "96a228e362906c1d99d26aa2c627e429b8698ad6b36b785e982b05c3101f55d1",
+  "committedCatalogueSha256": "26584822d2589016731b8a782c986eea747f8ce067681a75d6254b758c5a2168",
+  "exactTargetBytesSha256": "5647e54fefd92c7d13b403882b1fd69252789ec00963deccebe23c259bfa897c",
+  "exactCommonHelperBytesSha256": "ab4a5e07d16aba5101981a2c748fb9bc46caab37a82cc23081894bce8007d00e",
+  "proofRunnerSha256": "b75f71a2f92e2a0c53987efdedcceac10b7c831f4cea0f415763b4bcdaf2b0ae",
+  "retakeScriptSha256": "44f2f8d9ececefc4f76a2c7c863651a094bf679498606ea980f89a73b73722c2",
+  "evidenceBase": "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files",
+  "retakeScript": "r36i-final-parse-retake.mjs",
+  "summaryLog": "r36i-final-parse-retake.log",
+  "generatedMetadata": "r36i-final-parse-retake.json",
+  "directRed": {
+    "log": "r36i-final-parse-direct-red.log",
+    "exit": 1,
+    "failure": "AssertionError / ERR_ASSERTION after validated native colored compiler diagnostics",
+    "logSha256": "1478b0139de6a41d1ece3d6229640b46092670f21bd3b49bb04d222ac3ba6971"
+  },
+  "recordedRed": {
+    "log": "r36i-final-parse-tdd-red.log",
+    "commandExit": 0,
+    "testExit": 1,
+    "testHelperSha": "b7bfe2bc474e82f4f98b41a319d4e1e542a0005e17392aa3ca6e65ff675f6cd4",
+    "entryHash": "2d5809a690000969c05f60e3e9ba9a8f9eedf98a13361926f55a6f972a9d0289"
+  },
+  "directGreen": {
+    "log": "r36i-final-parse-direct-green.log",
+    "exit": 0,
+    "logSha256": "713d3c969739b5d8e44e10e90c57b225904afd795a74820bf498f33ece282057"
+  },
+  "recordedGreen": {
+    "log": "r36i-final-parse-tdd-green.log",
+    "commandExit": 0,
+    "testExit": 0,
+    "testHelperSha": "b7bfe2bc474e82f4f98b41a319d4e1e542a0005e17392aa3ca6e65ff675f6cd4",
+    "entryHash": "302669ac78df79c47136e7bb9cf1ac7590d8b2d426b43ceae6edb40bf323a370"
+  },
+  "registrationSha": "ac1aa9e620ade6981e9cc70d982de334e53c0f414338be19631d2663b4685ca1",
+  "proofLedger": {
+    "path": "r36i-final-parse-retake/.sdd/tdd.jsonl",
+    "sha256": "b4a95798d6b138d8e5b0c3e20fcdbb4b11feba6b715c68a014516c96308574de"
+  },
+  "namedWitnessInventory": {
+    "Go": "Shared raw probe final success at sdd.mjs:2355-2357 is independently demonstrated and now separately owned as #374; no Go edits.",
+    "RustAndC": "Structured process outcomes as already validated; approved Rust success predicate unchanged.",
+    "CSharpDotnet": "Separate build helper at sdd.mjs:3464-3473 retains actual r.status and only sets ok on status zero; final made.verified at 3664 consumes res.ok, not absence of textual diagnostics. No shared-probe silent-nonzero success mechanism.",
+    "Java": "stubJava at sdd.mjs:2866 returns generated paths without a verified compilation marker; no shared-probe success witness.",
+    "PhpJuliaR": "Shadowed inference probe at sdd.mjs:3202-3204 guards its own name inference with status zero; it does not supply a compile-checked success witness."
+  }
+}

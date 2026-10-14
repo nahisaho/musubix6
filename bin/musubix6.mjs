@@ -25,10 +25,21 @@ else if (cmd === 'sdd') {
   const r = spawnSync(process.execPath, [join(skillsSrc, 'lean-sdd-tdd', 'scripts', 'sdd.mjs'), ...rest], { stdio: 'inherit' });
   process.exit(r.status ?? 1);
 } else if (cmd === 'init') {
+  for (let i = 0; i < rest.length; i++) {
+    const arg = rest[i];
+    if (arg.startsWith('--') && arg !== '--force' && arg !== '--only') {
+      console.error(`unknown option: ${arg}; supported init options: --force, --only a,b`);
+      process.exit(2);
+    }
+    if (arg === '--only' && (!rest[i + 1] || rest[i + 1].startsWith('--') || !rest[i + 1].split(',').some((s) => s.trim()))) {
+      console.error('--only requires a non-empty comma-separated skill list (e.g. --only lean-sdd-tdd)');
+      process.exit(2);
+    }
+  }
   const force = rest.includes('--force');
   const oi = rest.indexOf('--only');
   const only = oi >= 0 ? (rest[oi + 1] || '').split(',').filter(Boolean) : null;
-  const dir = rest.find((a, i) => !a.startsWith('--') && i !== oi + 1) || '.';
+  const dir = rest.find((a, i) => !a.startsWith('--') && (oi < 0 || i !== oi + 1)) || '.';
   const dest = join(resolve(dir), '.github', 'skills');
   const all = skills();
   const unknown = (only || []).filter((s) => !all.includes(s));

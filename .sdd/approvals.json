@@ -9,5 +9,38 @@
     },
     "tier": "T2",
     "requireHuman": false
+  },
+  "r36g-rust-ci": {
+    "by": "ai:claude-sonnet-5.5",
+    "kind": "ai",
+    "review": "Coordinator relayed independent approval of revised requirements/design; subsequent spec additions record actual execution evidence only.",
+    "at": "2026-10-14T06:48:50.776Z",
+    "artifacts": {
+      ".sdd/specs/r36g-rust-ci.md": "f27328fd81a5c5a3a3ed6e4deb98304f97306ccea99973a86586682d0b9d301b"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "r36i-c-compiler": {
+    "by": "ai:claude-sonnet-5.5",
+    "kind": "ai",
+    "review": "Coordinator relayed independent Sonnet production review CLEAN and requested final-byte parser retake after fixture repair; genuine G baseline assertion Red and current Green share unchanged final test/helper SHA, with machine-recorded proof logs; requirements unchanged.",
+    "at": "2026-10-14T07:21:51.520Z",
+    "artifacts": {
+      ".sdd/specs/r36i-c-compiler.md": "d94ea3d59dc48f5202d747e97e78344d85c3a457099d09add9054fd80cafd822"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "r36j-go-compiler": {
+    "by": "ai:sonnet5.5",
+    "kind": "ai",
+    "review": "Coordinator independent Sonnet approval retained; requirements unchanged, Design reflects approved whole verifyError160 cap; execution evidence appended, not an independent implementation-review claim.",
+    "at": "2026-10-14T07:32:16.376Z",
+    "artifacts": {
+      ".sdd/specs/r36j-go-compiler.md": "fd8a8ddce14da4710a3bea0fdda711d0bfb45848427ec52bcdd94cb1f6547fe6"
+    },
+    "tier": "T2",
+    "requireHuman": false
   }
 }

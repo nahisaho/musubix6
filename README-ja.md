@@ -84,9 +84,27 @@ $S --root <app> gate
 
 ## テスト
 
+リポジトリのルートで、テスト専用のコンパイラーをインストールしてから実行します(Node ≥ 20)。
+
 ```sh
+npm ci
 node --test .github/skills/lean-sdd-tdd/scripts/sdd.test.mjs
 ```
+
+実行時の依存パッケージはありません。テストには `node_modules/typescript` の
+TypeScript 5.9.3 が必要です。別のインストール先を使う場合は、ディレクトリを
+`SDD_R34_TYPESCRIPT` で指定できます。コンパイラーがなければ回帰テストは失敗し、
+スキップしません。コマンドごとの上限は従来どおり 15 秒です。
+
+必須のネイティブ実行テストには Python 3 と pytest、R を用意してください。
+ほかのネイティブテストには、対象に応じたツールチェーンが必要です。
+対象は C/C++ と CMake、Go、Cargo/Rust、JDK と Maven です。
+.NET、PHP と PHPUnit/Composer、Julia、Elixir/OTP も対象です。
+任意のツールチェーンがない場合は、既存のテストがスキップとして報告します。
+[`ci.yml`](.github/workflows/ci.yml) は Linux 上でこれらを用意し、Node 20/22/24 で
+全テストを実行します。各コマンドの終了コードとランタイムのバージョンを記録します。
+失敗時にはログも保存します。このマトリックスは検証用の基盤であり、全構成での合格を
+保証するものではありません。パッケージの公開は行いません。
 
 ## AI コストログ
 

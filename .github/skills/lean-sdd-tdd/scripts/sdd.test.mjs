@@ -9986,8 +9986,17 @@ test('#338 vanished secondary REQs in grouped Green evidence warn, fail strict g
   }
 });
 
-test('#339 native Node TypeScript parse failures cannot establish Red for any selected ID', () => {
+/** @id TEST-R36D-TS-001 @verifies REQ-R36D-TS-001 */
+test('#339 native Node TypeScript parse failures cannot establish Red for any selected ID TEST-R36D-TS-001', () => {
   const ids = ['TEST-A-001', 'TEST-A-002'];
+  const child = spawnSync('node', ['-p', 'JSON.stringify([process.version, process.execPath, !!process.features.typescript])'], { encoding: 'utf8', env: ENV });
+  assert.equal(child.status, 0, child.stdout + child.stderr);
+  const runtime = JSON.parse(child.stdout);
+  assert.equal(runtime[0], process.version);
+  assert.equal(fs.realpathSync(runtime[1]), fs.realpathSync(process.execPath));
+  assert.equal(runtime[2], !!process.features.typescript);
+  const stripsTypes = runtime[2];
+  console.log(`r36d #339 actual child=${JSON.stringify(runtime)}`);
   const subject = (body) => `// @id CODE-A-001 @implements REQ-A-001\nexport const answer: number = ${body};\n`;
   const d = mini(T1SPEC, {
     'package.json': '{"type":"module"}',
@@ -10004,8 +10013,11 @@ test('#339 native Node TypeScript parse failures cannot establish Red for any se
     ].join('\n'),
   }, ['node', '--test', '--test-reporter=spec', '--test-name-pattern={id}', '{file}']);
   const parser = spawnSync('node', ['--test', '--test-reporter=spec', 'a.test.mjs'], { cwd: d, encoding: 'utf8', env: ENV });
-  assert.notEqual(parser.status, 0);
-  assert.match(parser.stdout + parser.stderr, /SyntaxError \[ERR_INVALID_TYPESCRIPT_SYNTAX\]:/);
+  assert.equal(parser.status, 1, parser.stdout + parser.stderr);
+  assert.match(parser.stdout + parser.stderr, stripsTypes
+    ? /SyntaxError \[ERR_INVALID_TYPESCRIPT_SYNTAX\]:/
+    : /TypeError \[ERR_UNKNOWN_FILE_EXTENSION\]: Unknown file extension "\.ts"/);
+  console.log(`r36d native invalid typed source exit=${parser.status}\n${parser.stdout}${parser.stderr}`);
   const ledger = path.join(d, '.sdd/tdd.jsonl');
   for (const id of ids) {
     const red = sdd(d, 'tdd', 'red', id);
@@ -10014,16 +10026,70 @@ test('#339 native Node TypeScript parse failures cannot establish Red for any se
     assert.equal(fs.existsSync(ledger), false);
   }
   fs.writeFileSync(path.join(d, 'subject.ts'), subject('1'));
+  const valid = spawnSync('node', ['--test', '--test-reporter=spec', 'a.test.mjs'], { cwd: d, encoding: 'utf8', env: ENV });
+  assert.equal(valid.status, stripsTypes ? 0 : 1, valid.stdout + valid.stderr);
+  if (stripsTypes) {
+    for (const id of ids) assert.match(valid.stdout, new RegExp(`✔ ${id} answer`), valid.stdout);
+  } else assert.match(valid.stdout + valid.stderr, /TypeError \[ERR_UNKNOWN_FILE_EXTENSION\]: Unknown file extension "\.ts"/);
+  console.log(`r36d native valid typed source exit=${valid.status}\n${valid.stdout}${valid.stderr}`);
   const noRed = sdd(d, 'tdd', 'green', ids[0]);
   assert.equal(noRed.code, 1, noRed.out);
   assert.equal(fs.existsSync(ledger), false);
   fs.writeFileSync(path.join(d, 'subject.ts'), subject('0'));
-  const red = sdd(d, 'tdd', 'red', ids[0]);
-  assert.equal(red.code, 0, red.out);
-  assert.doesNotMatch(red.out, /\[weak\]/);
-  fs.writeFileSync(path.join(d, 'subject.ts'), subject('1'));
-  const green = sdd(d, 'tdd', 'green', ids[0]);
-  assert.equal(green.code, 0, green.out);
+  if (stripsTypes) {
+    const red = sdd(d, 'tdd', 'red', ids[0]);
+    assert.equal(red.code, 0, red.out);
+    assert.doesNotMatch(red.out, /\[weak\]/);
+    fs.writeFileSync(path.join(d, 'subject.ts'), subject('1'));
+    const green = sdd(d, 'tdd', 'green', ids[0]);
+    assert.equal(green.code, 0, green.out);
+    assert.deepEqual(testEvidence(d).map(({ type, test, weak }) => [type, test, !!weak]),
+      [['red', ids[0], false], ['green', ids[0], false]]);
+    console.log('r36d genuine native TS strong Red/Green persisted');
+  } else {
+    for (const id of ids) {
+      const unsupported = sdd(d, 'tdd', 'red', id);
+      assert.equal(unsupported.code, 1, unsupported.out);
+      assert.match(unsupported.out, /RED REJECTED.*load\/compile error/, unsupported.out);
+      assert.equal(fs.existsSync(ledger), false);
+    }
+    console.log('r36d unsupported native TS default Red refused for both IDs; ledger absent');
+  }
+
+  for (const body of ['return 0;', "throw new Error('not implemented: answer');"]) {
+    const js = mini(T1SPEC, {
+      'subject.mjs': `// @id CODE-A-001 @implements REQ-A-001\nexport const answer = () => { ${body} };\n`,
+      'a.test.mjs': "import { test } from 'node:test';\nimport assert from 'node:assert/strict';\nimport { answer } from './subject.mjs';\n/** @id TEST-A-001 @verifies REQ-A-001 */\ntest('TEST-A-001 answer', () => assert.equal(answer(), 1));\n",
+    }, ['node', '--test', '--test-reporter=spec', '--test-name-pattern={id}', '{file}']);
+    const native = spawnSync('node', ['--test', '--test-reporter=spec', 'a.test.mjs'], { cwd: js, encoding: 'utf8', env: ENV });
+    assert.equal(native.status, 1, native.stdout + native.stderr);
+    assert.match(native.stdout + native.stderr, body === 'return 0;'
+      ? /AssertionError \[ERR_ASSERTION\]/
+      : /Error: not implemented: answer/);
+    const red = sdd(js, 'tdd', 'red', ids[0]);
+    assert.equal(red.code, 0, red.out);
+    assert.doesNotMatch(red.out, /\[weak\]/);
+    fs.writeFileSync(path.join(js, 'subject.mjs'), '// @id CODE-A-001 @implements REQ-A-001\nexport const answer = () => 1;\n');
+    const green = sdd(js, 'tdd', 'green', ids[0]);
+    assert.equal(green.code, 0, green.out);
+    assert.deepEqual(testEvidence(js).map(({ type, test, weak }) => [type, test, !!weak]),
+      [['red', ids[0], false], ['green', ids[0], false]]);
+    console.log(`r36d JS ${body} native exit=${native.status}; strong Red/Green persisted\n${native.stdout}${native.stderr}`);
+    if (!stripsTypes) {
+      fs.writeFileSync(path.join(js, 'subject.ts'), 'export const answer = (): number => 0;\n');
+      fs.writeFileSync(path.join(js, 'subject.mjs'), "export { answer } from './subject.ts';\n");
+      const jsLedger = path.join(js, '.sdd/tdd.jsonl');
+      const before = fs.readFileSync(jsLedger);
+      const loaded = spawnSync('node', ['--test', '--test-reporter=spec', 'a.test.mjs'], { cwd: js, encoding: 'utf8', env: ENV });
+      assert.equal(loaded.status, 1, loaded.stdout + loaded.stderr);
+      assert.match(loaded.stdout + loaded.stderr, /TypeError \[ERR_UNKNOWN_FILE_EXTENSION\]: Unknown file extension "\.ts"/);
+      const rejected = sdd(js, 'tdd', 'red', ids[0]);
+      assert.equal(rejected.code, 1, rejected.out);
+      assert.match(rejected.out, /RED REJECTED.*load\/compile error/, rejected.out);
+      assert.deepEqual(fs.readFileSync(jsLedger), before);
+      console.log(`r36d unsupported native TS preserves existing JS Red/Green ledger bytes\n${loaded.stdout}${loaded.stderr}`);
+    }
+  }
 });
 
 function r31aFixture(files, checks, projects = []) {
@@ -11408,15 +11474,30 @@ test('r33b #355 Node execution verification respects project and selected file o
   fs.writeFileSync(cp, JSON.stringify(cfg));
   const clean = sdd(d, 'gate');
   assert.equal(clean.code, 0, clean.out);
-  cfg.projects[0].checks[0].cmd = ['node', '--test', '--test-reporter=tap', '*.test.mjs'];
+  const glob = spawnSync('node', ['--test', '--test-reporter=tap', '*.test.mjs'], {
+    cwd: path.join(d, 'packages/core'), encoding: 'utf8', env: ENV,
+  });
+  const expandsGlob = glob.status === 0;
+  if (expandsGlob) assert.match(glob.stdout, /ok \d+ - TEST-A-001 target/);
+  else {
+    assert.equal(glob.status, 1, glob.stdout + glob.stderr);
+    assert.match(glob.stdout + glob.stderr, /Could not find '.*\/\*\.test\.mjs'/);
+  }
+  cfg.projects[0].checks[0].cmd = ['node', '--test', '--test-reporter=tap',
+    ...(expandsGlob ? ['*.test.mjs'] : ['a.test.mjs', 'other.test.mjs'])];
+  assert.deepEqual(cfg.projects[0].checks[0].cmd.slice(3),
+    expandsGlob ? ['*.test.mjs'] : ['a.test.mjs', 'other.test.mjs']);
   cfg.scan.include = ['packages/core/a.test.mjs'];
   fs.writeFileSync(cp, JSON.stringify(cfg));
   const previous = ENV.CI;
+  const ledger = path.join(d, '.sdd/tdd.jsonl');
+  const before = fs.readFileSync(ledger, 'utf8');
   ENV.CI = 'r33-skip';
   try {
     const gate = sdd(d, 'gate');
     assert.equal(gate.code, 1, gate.out);
     assert.match(gate.out, /TEST-A-001.*missing executed Node test ids/);
+    assert.equal(fs.readFileSync(ledger, 'utf8'), before);
   } finally { if (previous === undefined) delete ENV.CI; else ENV.CI = previous; }
 });
 
@@ -12522,8 +12603,8 @@ test('r34f #362 structural budget avoids per-identifier PATH and file probes', (
 /** @id TEST-R34-CLOSURE-002 @verifies REQ-R34-CLOSURE-001 */
 test('r34f #362 real installed TypeScript launcher reaches TDD and preserves provenance', () => {
   const { d, cp, cfg } = r34fFixture();
-  const installed = process.env.SDD_R34_TYPESCRIPT ?? '/home/nahisaho/musubix6-dogfood/dogfood-24/findings/repro-app207-tsc/node_modules/typescript';
-  assert.ok(fs.existsSync(path.join(installed, 'bin/tsc')), `Missing compiler dependency: set SDD_R34_TYPESCRIPT to an existing official installation (${installed})`);
+  const installed = process.env.SDD_R34_TYPESCRIPT ?? fileURLToPath(new URL('../../../../node_modules/typescript', import.meta.url));
+  assert.ok(fs.existsSync(path.join(installed, 'bin/tsc')), `Missing compiler dependency: run npm ci at the repository root or set SDD_R34_TYPESCRIPT to an existing official installation (${installed})`);
   const compiler = path.join(d, 'node_modules/typescript');
   fs.cpSync(installed, compiler, { recursive: true });
   const pkg = JSON.parse(fs.readFileSync(path.join(compiler, 'package.json')));
@@ -12673,4 +12754,1387 @@ test('r34 integration Python namespace probes share the compiler source-discover
   assert.ok(probes <= 1000, `shared Python namespace discovery must use <=1000 reads/stats, observed ${probes}`);
   assert.equal(result.status, 0, result.stdout + result.stderr);
   console.log(`r34 integrated namespace reads/stats: ${probes}`);
+});
+
+const r35aRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../..');
+/** @id CODE-R36F-LAYOUT-001 @implements REQ-R36F-LAYOUT-001 */
+const r35aWork = fs.mkdtempSync(path.join(r35aRoot, '.sdd-test-r35a-work-'));
+after(() => fs.rmSync(r35aWork, { recursive: true, force: true }));
+const r35aSkills = fs.readdirSync(path.join(r35aRoot, '.github/skills'), { withFileTypes: true })
+  .filter((entry) => entry.isDirectory()).map((entry) => entry.name).sort();
+const r35aSelected = ['lean-sdd-tdd', 'tech-writer'];
+const r35aRun = (bin, cwd, args) => spawnSync(process.execPath, [bin, ...args], {
+  cwd, env: ENV, encoding: 'utf8', timeout: 30000,
+});
+
+function r35aInitContract(bin, bundledSkills) {
+  const fixture = fs.mkdtempSync(path.join(r35aWork, 'r35a-init-'));
+  const cases = [
+    ['plain', (target) => [target]],
+    ['force after', (target) => [target, '--force']],
+    ['force before', (target) => ['--force', target]],
+    ['only after', (target) => [target, '--only', r35aSelected.join(',')], true],
+    ['only before', (target) => ['--only', r35aSelected.join(','), target], true],
+    ['both before', (target) => ['--force', '--only', r35aSelected.join(','), target], true],
+    ['both after', (target) => [target, '--only', r35aSelected.join(','), '--force'], true],
+  ];
+  for (const kind of ['relative', 'absolute']) {
+    for (const [name, args, selected] of cases) {
+      const area = fs.mkdtempSync(path.join(fixture, 'case-'));
+      const cwd = path.join(area, 'cwd');
+      const target = path.join(area, 'target');
+      fs.mkdirSync(cwd);
+      fs.writeFileSync(path.join(cwd, 'sentinel'), 'cwd must stay untouched');
+      const input = kind === 'relative' ? '../target' : target;
+      const result = r35aRun(bin, cwd, ['init', ...args(input)]);
+      const label = `${kind} ${name}`;
+      assert.equal(result.status, 0, `${label}: ${result.stdout}${result.stderr}`);
+      assert.ok(fs.existsSync(path.join(target, '.github/skills')), `${label}: explicit destination must contain skills`);
+      assert.deepEqual(fs.readdirSync(cwd), ['sentinel'], `${label}: explicit init must not write to cwd`);
+      assert.equal(fs.readFileSync(path.join(cwd, 'sentinel'), 'utf8'), 'cwd must stay untouched');
+      assert.deepEqual(fs.readdirSync(area).sort(), ['cwd', 'target'], `${label}: no writes outside destination`);
+      const expected = selected ? r35aSelected : r35aSkills;
+      assert.deepEqual(fs.readdirSync(path.join(target, '.github/skills')).sort(), expected);
+      for (const skill of expected) {
+        assert.equal(fs.readFileSync(path.join(target, '.github/skills', skill, 'SKILL.md'), 'utf8'),
+          fs.readFileSync(path.join(bundledSkills, skill, 'SKILL.md'), 'utf8'));
+      }
+    }
+  }
+  for (const args of [[], ['--force'], ['--only', r35aSelected.join(',')], ['--force', '--only', r35aSelected.join(',')]]) {
+    const cwd = fs.mkdtempSync(path.join(fixture, 'default-'));
+    const result = r35aRun(bin, cwd, ['init', ...args]);
+    assert.equal(result.status, 0, result.stdout + result.stderr);
+    assert.deepEqual(fs.readdirSync(cwd), ['.github'], 'omitted destination installs only into isolated cwd');
+    assert.deepEqual(fs.readdirSync(path.join(cwd, '.github/skills')).sort(),
+      args.includes('--only') ? r35aSelected : r35aSkills);
+  }
+  for (const forceFirst of [false, true]) {
+    const area = fs.mkdtempSync(path.join(fixture, 'overwrite-'));
+    const cwd = path.join(area, 'cwd'), target = path.join(area, 'target');
+    fs.mkdirSync(cwd);
+    const initArgs = ['init', target, '--only', r35aSelected[0]];
+    assert.equal(r35aRun(bin, cwd, initArgs).status, 0);
+    const installed = path.join(target, '.github/skills', r35aSelected[0], 'SKILL.md');
+    fs.writeFileSync(installed, 'local edit');
+    const skipped = r35aRun(bin, cwd, initArgs);
+    assert.equal(skipped.status, 0, skipped.stdout + skipped.stderr);
+    assert.match(skipped.stdout, /skip lean-sdd-tdd/);
+    assert.equal(fs.readFileSync(installed, 'utf8'), 'local edit', 'default init preserves existing skill');
+    const forced = r35aRun(bin, cwd, forceFirst
+      ? ['init', '--force', target, '--only', r35aSelected[0]] : [...initArgs, '--force']);
+    assert.equal(forced.status, 0, forced.stdout + forced.stderr);
+    assert.match(forced.stdout, /installed lean-sdd-tdd/);
+    assert.equal(fs.readFileSync(installed, 'utf8'),
+      fs.readFileSync(path.join(bundledSkills, r35aSelected[0], 'SKILL.md'), 'utf8'));
+    assert.deepEqual(fs.readdirSync(cwd), [], 'skip/force must not write to cwd');
+  }
+  for (const placement of ['before', 'after', 'default']) {
+    const area = fs.mkdtempSync(path.join(fixture, 'unknown-'));
+    const cwd = path.join(area, 'cwd'), target = path.join(area, 'target');
+    fs.mkdirSync(cwd);
+    const only = ['--only', `${r35aSelected[0]},not-a-bundled-skill`];
+    const args = placement === 'before' ? [...only, target] : placement === 'after' ? [target, ...only] : only;
+    const result = r35aRun(bin, cwd, ['init', '--force', ...args]);
+    assert.equal(result.status, 2, result.stdout + result.stderr);
+    assert.match(result.stderr, /unknown skill: not-a-bundled-skill/);
+    assert.deepEqual(fs.readdirSync(cwd), [], 'unknown skill must not partially install valid selections');
+    assert.deepEqual(fs.readdirSync(area), ['cwd'], 'unknown skill must not create destination');
+  }
+}
+
+test('#363 r35a source init preserves explicit target/cwd invariants and existing options', () => {
+  r35aInitContract(path.join(r35aRoot, 'bin/musubix6.mjs'), path.join(r35aRoot, '.github/skills'));
+});
+
+test('#363 r35a packed installation preserves bin version/list/init/sdd contracts', { timeout: 120000 }, () => {
+  const fixture = fs.mkdtempSync(path.join(r35aWork, 'r35a-pack-'));
+  const cache = path.join(fixture, 'cache'), packed = path.join(fixture, 'packed');
+  fs.mkdirSync(packed);
+  const npm = (cwd, args) => spawnSync('npm', [...args, '--cache', cache, '--offline', '--ignore-scripts'], {
+    cwd, env: { ...ENV, TMPDIR: r35aWork }, encoding: 'utf8', timeout: 60000,
+  });
+  const pack = npm(r35aRoot, ['pack', '--json', '--pack-destination', packed]);
+  assert.equal(pack.status, 0, pack.stdout + pack.stderr);
+  const filenames = [];
+  const collect = (value) => {
+    if (!value || typeof value !== 'object') return;
+    if (typeof value.filename === 'string') filenames.push(value.filename);
+    Object.values(value).forEach(collect);
+  };
+  collect(JSON.parse(pack.stdout));
+  assert.equal(filenames.length, 1, 'npm pack JSON must identify exactly one tarball (array or object shape)');
+  assert.deepEqual(fs.readdirSync(packed), filenames);
+  const tarball = path.join(packed, filenames[0]), extracted = path.join(fixture, 'extracted');
+  fs.mkdirSync(extracted);
+  const unpack = spawnSync('tar', ['-xzf', tarball, '-C', extracted], { encoding: 'utf8', timeout: 30000 });
+  assert.equal(unpack.status, 0, unpack.stdout + unpack.stderr);
+  const packageRoot = path.join(extracted, 'package');
+  const installed = path.join(fixture, 'installed');
+  fs.mkdirSync(installed);
+  const install = npm(installed, ['install', '--prefix', installed, '--no-audit', '--no-fund', tarball]);
+  assert.equal(install.status, 0, install.stdout + install.stderr);
+  const bins = [path.join(packageRoot, 'bin/musubix6.mjs'), path.join(installed, 'node_modules/.bin/musubix6')];
+  for (const bin of bins) {
+    const cwd = fs.mkdtempSync(path.join(fixture, 'controls-'));
+    const version = r35aRun(bin, cwd, ['--version']);
+    assert.equal(version.status, 0, version.stdout + version.stderr);
+    assert.equal(version.stdout.trim(), JSON.parse(fs.readFileSync(path.join(r35aRoot, 'package.json'), 'utf8')).version);
+    const list = r35aRun(bin, cwd, ['list']);
+    assert.equal(list.status, 0, list.stdout + list.stderr);
+    assert.deepEqual(list.stdout.trim().split(/\r?\n/).sort(), r35aSkills);
+    for (const args of [['gate', '--help'], ['not-a-command']]) {
+      const direct = spawnSync(process.execPath, [path.join(packageRoot, '.github/skills/lean-sdd-tdd/scripts/sdd.mjs'), ...args],
+        { cwd, env: ENV, encoding: 'utf8', timeout: 30000 });
+      const forwarded = r35aRun(bin, cwd, ['sdd', ...args]);
+      assert.equal(forwarded.status, args[0] === 'gate' ? 0 : 2);
+      assert.equal(forwarded.status, direct.status);
+      assert.equal(forwarded.stdout, direct.stdout, 'SDD arguments and output must be forwarded unchanged');
+      assert.equal(forwarded.stderr, direct.stderr);
+    }
+    assert.deepEqual(fs.readdirSync(cwd), [], 'version/list/sdd controls must not write into cwd');
+    r35aInitContract(bin, path.join(packageRoot, '.github/skills'));
+  }
+});
+
+test('r35b #364 compiler fixture selection is checkout-relative and preserves explicit override', () => {
+  const source = fs.readFileSync(fileURLToPath(import.meta.url), 'utf8');
+  const expression = /const installed = ([^\n]+);/.exec(source)?.[1];
+  assert.ok(expression, 'the real compiler control must select an installation explicitly');
+  const select = new Function('process', 'fileURLToPath', 'suiteUrl',
+    `return ${expression.replaceAll('import.meta.url', 'suiteUrl')};`);
+  for (const root of ['/portable checkout', '/another/checkout']) {
+    const suiteUrl = new URL(`file://${root}/.github/skills/lean-sdd-tdd/scripts/sdd.test.mjs`);
+    assert.equal(select({ env: {} }, fileURLToPath, suiteUrl), `${root}/node_modules/typescript`);
+    assert.equal(select({ env: { SDD_R34_TYPESCRIPT: '/explicit/compiler' } }, fileURLToPath, suiteUrl), '/explicit/compiler');
+    assert.equal(select({ env: { SDD_R34_TYPESCRIPT: '' } }, fileURLToPath, suiteUrl), '',
+      'an invalid explicit override must not silently fall back to the default');
+  }
+});
+
+test('r35b #364 TypeScript is exactly locked as a development-only dependency', () => {
+  const root = fileURLToPath(new URL('../../../../', import.meta.url));
+  const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json')));
+  assert.equal(pkg.devDependencies?.typescript, '5.9.3');
+  assert.equal(Object.keys(pkg.dependencies ?? {}).length, 0, 'runtime remains zero-dependency');
+  assert.equal(Object.keys(pkg.optionalDependencies ?? {}).length, 0);
+  assert.equal((pkg.bundledDependencies ?? pkg.bundleDependencies ?? []).length, 0);
+  const lock = JSON.parse(fs.readFileSync(path.join(root, 'package-lock.json')));
+  assert.equal(lock.packages[''].devDependencies.typescript, '5.9.3');
+  assert.deepEqual(Object.keys(lock.packages).sort(), ['', 'node_modules/typescript']);
+  const compiler = lock.packages['node_modules/typescript'];
+  assert.equal(compiler.version, '5.9.3');
+  assert.equal(compiler.dev, true);
+  assert.match(compiler.resolved, /^https:\/\/registry\.npmjs\.org\/typescript\//);
+  assert.match(compiler.integrity, /^sha512-/);
+});
+
+test('r35b #364 compiler regression requires a real installation and retains the 15s budget', () => {
+  const source = fs.readFileSync(fileURLToPath(import.meta.url), 'utf8');
+  const start = source.indexOf("test('r34f #362 real installed TypeScript");
+  const end = source.indexOf('/** @id TEST-R34-CLOSURE-003', start);
+  const control = source.slice(start, end);
+  assert.doesNotMatch(control, /skip:|t\.skip|catch\s*\(/);
+  assert.match(control, /Missing compiler dependency:.*npm ci/);
+  assert.match(control, /assert\.equal\(pkg\.version, '5\.9\.3'\)/);
+  assert.match(control, /assert\.ok\(fs\.statSync\(bundle\)\.size > 5 \* 1024 \* 1024\)/);
+  assert.match(control, /const valid = r34fRun\(d, 'gate'\)/);
+  assert.match(control, /for \(const file of \['lib\/_tsc\.js', 'lib\/r34-helper\.cjs', 'package\.json'\]\)/);
+  const runner = source.slice(source.indexOf('function r34fRun('), source.indexOf('/** @id TEST-R34-CLOSURE-001'));
+  assert.match(runner, /timeout: 15000/);
+  assert.match(runner, /assert\.equal\(result\.error, undefined/);
+});
+
+test('r35b #364 CI qualifies Node 20/22/24 without publication and retains failure evidence', () => {
+  const root = fileURLToPath(new URL('../../../../', import.meta.url));
+  const workflowPath = path.join(root, '.github/workflows/ci.yml');
+  assert.ok(fs.existsSync(workflowPath), 'non-publishing matrix CI must be checked in');
+  const ci = fs.readFileSync(workflowPath, 'utf8');
+  assert.match(ci, /push:\s*\n\s+pull_request:\s*\n\s+workflow_dispatch:/);
+  assert.match(ci, /permissions:\s*\n\s+contents: read/);
+  assert.doesNotMatch(ci, /secrets\.|id-token:|contents: write|npm publish|environment:|pull_request_target/);
+  assert.match(ci, /runs-on: ubuntu-latest/);
+  assert.match(ci, /node: \[20, 22, 24\]/);
+  assert.match(ci, /fail-fast: false/);
+  assert.match(ci, /node-version: \$\{\{ matrix\.node \}\}/);
+  assert.match(ci, /timeout-minutes: (?:[6-9]\d|1\d\d)/);
+  assert.match(ci, /node --version/);
+  assert.match(ci, /process\.versions\.node/);
+  assert.match(ci, /EXPECTED_NODE/);
+  assert.match(ci, /npm ci/);
+  assert.match(ci, /python3 -m pip install.*pytest/);
+  for (const tool of ['r-base-core', 'build-essential', 'cmake', 'maven', 'phpunit', 'composer'])
+    assert.ok(ci.includes(tool), `native prerequisite: ${tool}`);
+  for (const setup of ['setup-go', 'rust-toolchain', 'setup-java', 'setup-dotnet', 'setup-julia', 'setup-beam'])
+    assert.ok(ci.includes(setup), `native prerequisite: ${setup}`);
+  assert.match(ci, /node --test \.github\/skills\/lean-sdd-tdd\/scripts\/sdd\.test\.mjs/);
+  assert.match(ci, /PIPESTATUS\[0\]/);
+  assert.match(ci, /exit "\$status"/);
+  assert.match(ci, /exit=%s/);
+  assert.match(ci, /if: failure\(\)/);
+  assert.match(ci, /uses: actions\/upload-artifact@v4/);
+  assert.match(ci, /path: test-logs\//);
+});
+
+test('r35b #364 publish test job restores the portable compiler before running its suite', () => {
+  const root = fileURLToPath(new URL('../../../../', import.meta.url));
+  const workflow = fs.readFileSync(path.join(root, '.github/workflows/publish.yml'), 'utf8');
+  const testJob = workflow.slice(workflow.indexOf('  test:'), workflow.indexOf('\n  publish:'));
+  assert.match(testJob, /npm ci/);
+  assert.ok(testJob.indexOf('npm ci') < testJob.indexOf('node --test'), 'restore before compiler regression');
+  assert.doesNotMatch(testJob, /SDD_R34_TYPESCRIPT|secrets\.|npm publish/);
+});
+
+function r35aAdmissionSnapshot(root) {
+  const entries = [];
+  const visit = (dir) => {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) {
+      const file = path.join(dir, entry.name);
+      entries.push([path.relative(root, file), entry.isDirectory() ? null : fs.readFileSync(file, 'utf8')]);
+      if (entry.isDirectory()) visit(file);
+    }
+  };
+  visit(root);
+  return entries;
+}
+
+function r35aAdmissionContract(bin, kind) {
+  const invalid = kind === 'unknown'
+    ? [['--bogus'], ['--froce'], ['--only=lean-sdd-tdd'], ['--force=yes'], ['--only', r35aSelected[0], '--bogus']]
+    : [['--only'], ['--only', ''], ['--only', ',,'], ['--only', '--force'], ['--only', r35aSelected[0], '--only']];
+  for (const options of invalid) {
+    for (const destination of ['default', 'relative', 'absolute']) {
+      for (const existing of [false, true]) {
+        const area = fs.mkdtempSync(path.join(r35aWork, 'r35a-admission-'));
+        const cwd = path.join(area, 'cwd'), target = path.join(area, 'target');
+        fs.mkdirSync(cwd);
+        fs.writeFileSync(path.join(cwd, 'sentinel'), 'cwd is unchanged');
+        if (existing) {
+          const skill = path.join(destination === 'default' ? cwd : target, '.github/skills', r35aSelected[0]);
+          fs.mkdirSync(skill, { recursive: true });
+          fs.writeFileSync(path.join(skill, 'SKILL.md'), 'existing skill must not be overwritten');
+        }
+        const before = r35aAdmissionSnapshot(area);
+        const dir = destination === 'relative' ? '../target' : target;
+        const args = ['init', '--force', ...(destination === 'default' ? [] : [dir]), ...options];
+        const result = r35aRun(bin, cwd, args);
+        const label = `${kind} ${JSON.stringify(args)} (${existing ? 'existing' : 'fresh'})`;
+        assert.equal(result.status, 2, `${label}: invalid init must exit 2; ${result.stdout}${result.stderr}`);
+        assert.deepEqual(r35aAdmissionSnapshot(area), before, `${label}: invalid init must not create or modify any files`);
+        assert.equal(result.stdout, '', `${label}: invalid init must not report an installation`);
+        assert.match(result.stderr, kind === 'unknown'
+          ? /unknown (?:flag|option).*--.*(?:--force|--only)/i
+          : /--only.*(?:requires|expected|missing|non.?empty).*(?:skill|a,b)/i,
+        `${label}: stderr must identify the invalid argument and explain accepted input`);
+      }
+    }
+  }
+}
+
+test('#363 r35a admission rejects unknown init flags without writes', () => {
+  r35aAdmissionContract(path.join(r35aRoot, 'bin/musubix6.mjs'), 'unknown');
+});
+
+test('#363 r35a admission rejects missing or empty --only without writes', () => {
+  r35aAdmissionContract(path.join(r35aRoot, 'bin/musubix6.mjs'), 'only');
+});
+
+test('#363 r35a admission packed extraction and installation reject invalid init without writes', { timeout: 120000 }, () => {
+  const fixture = fs.mkdtempSync(path.join(r35aWork, 'r35a-admission-pack-'));
+  const packed = path.join(fixture, 'packed'), cache = path.join(fixture, 'cache');
+  fs.mkdirSync(packed);
+  const npm = (cwd, args) => spawnSync('npm', [...args, '--cache', cache, '--offline', '--ignore-scripts'], {
+    cwd, env: { ...ENV, TMPDIR: r35aWork }, encoding: 'utf8', timeout: 60000,
+  });
+  const pack = npm(r35aRoot, ['pack', '--json', '--pack-destination', packed]);
+  assert.equal(pack.status, 0, pack.stdout + pack.stderr);
+  const filenames = [];
+  const collect = (value) => {
+    if (!value || typeof value !== 'object') return;
+    if (typeof value.filename === 'string') filenames.push(value.filename);
+    Object.values(value).forEach(collect);
+  };
+  collect(JSON.parse(pack.stdout));
+  assert.equal(filenames.length, 1, 'array or object npm pack JSON must identify one tarball');
+  assert.deepEqual(fs.readdirSync(packed), filenames);
+  const tarball = path.join(packed, filenames[0]), extracted = path.join(fixture, 'extracted');
+  fs.mkdirSync(extracted);
+  const unpack = spawnSync('tar', ['-xzf', tarball, '-C', extracted], { encoding: 'utf8', timeout: 30000 });
+  assert.equal(unpack.status, 0, unpack.stdout + unpack.stderr);
+  const installed = path.join(fixture, 'installed');
+  fs.mkdirSync(installed);
+  const install = npm(installed, ['install', '--prefix', installed, '--no-audit', '--no-fund', tarball]);
+  assert.equal(install.status, 0, install.stdout + install.stderr);
+  for (const bin of [path.join(extracted, 'package/bin/musubix6.mjs'), path.join(installed, 'node_modules/.bin/musubix6')]) {
+    r35aAdmissionContract(bin, 'unknown');
+    r35aAdmissionContract(bin, 'only');
+  }
+});
+
+function r36aRedClassification(body, weak, disableHelpers) {
+  const d = project();
+  fs.writeFileSync(path.join(d, 'add.mjs'), "export const add = () => { throw new Error('not implemented: add'); };\n");
+  fs.writeFileSync(path.join(d, 'add.test.mjs'), [
+    "import { test } from 'node:test';",
+    "import assert from 'node:assert/strict';",
+    "import { add } from './add.mjs';",
+    'function validateSum(value) { assert.equal(value, 3); }',
+    '/** @id TEST-CALC-001 @verifies REQ-CALC-001 */',
+    "test('TEST-CALC-001 adds', () => {",
+    ...body,
+    '});',
+    '',
+  ].join('\n'));
+  const preload = path.join(d, 'without-iterator-helpers.cjs');
+  fs.writeFileSync(preload, [
+    "const assert = require('node:assert/strict');",
+    "const iterator = ''.matchAll(/x/g);",
+    'for (let p = Object.getPrototypeOf(iterator); p; p = Object.getPrototypeOf(p)) {',
+    "  for (const name of ['map', 'filter', 'flatMap', 'reduce', 'toArray', 'some', 'every', 'find', 'forEach', 'take', 'drop']) {",
+    '    if (Object.hasOwn(p, name)) delete p[name];',
+    '  }',
+    '}',
+    'assert.equal(iterator.map, undefined);',
+    "assert.equal(typeof [].map, 'function');",
+    '',
+  ].join('\n'));
+  const approved = sdd(d, 'approve', 'record', 'calc', '--by', 'tester');
+  assert.equal(approved.code, 0, approved.out);
+  const r = spawnSync(process.execPath, [
+    ...(disableHelpers ? ['--require', preload] : []),
+    SDD, '--root', d, 'tdd', 'red', 'TEST-CALC-001',
+  ], { encoding: 'utf8', env: ENV });
+  const out = r.stdout + r.stderr;
+  assert.equal(r.status, 0, out);
+  assert.match(out, /RED.*TEST-CALC-001/);
+  assert.match(out, /not implemented: add/);
+  assert.doesNotMatch(out, /TypeError|load\/compile error/);
+  if (weak) assert.match(out, /\[weak\].*setup call "add"/);
+  else assert.doesNotMatch(out, /\[weak\]/);
+  const reds = testEvidence(d).filter((e) => e.type === 'red' && e.test === 'TEST-CALC-001');
+  assert.equal(reds.length, 1, out);
+  assert.equal(!!reds[0].weak, weak, JSON.stringify(reds[0]));
+}
+
+/** @id TEST-NODE20-001 @verifies REQ-NODE20-001 */
+test('#365 TEST-NODE20-001 iterator-free setup Red retains weakness', () => {
+  for (const disabled of [true, false]) {
+    r36aRedClassification(['  const seed = add(0, 0);', '  assert.equal(add(1, 2), 3 + seed);'], true, disabled);
+  }
+});
+
+/** @id TEST-NODE20-002 @verifies REQ-NODE20-001 */
+test('#365 TEST-NODE20-002 iterator-free validation-helper Red stays strong', () => {
+  for (const disabled of [true, false]) {
+    r36aRedClassification(['  validateSum(add(1, 2));'], false, disabled);
+  }
+});
+
+// Issue #366: the same admission contract must hold for native TAP and spec.
+function r36bFixture(reporter, body, subject = '(a, b) => a + b', extra = '') {
+  const d = project();
+  impl(d, subject);
+  sdd(d, 'init');
+  fs.writeFileSync(path.join(d, 'add.test.mjs'), [
+    "import { test } from 'node:test';",
+    "import assert from 'node:assert/strict';",
+    "import { add } from './add.mjs';",
+    extra,
+    '/** @id TEST-CALC-001 @verifies REQ-CALC-001 */',
+    `test('TEST-CALC-001 target', () => { ${body} });`,
+  ].join('\n'));
+  setCmd(d, ['node', '--test', `--test-reporter=${reporter}`, 'add.test.mjs']);
+  sdd(d, 'approve', 'record', 'calc', '--by', 'tester');
+  return d;
+}
+
+/** @id TEST-R36B-LOAD-001 @verifies REQ-R36B-LOAD-001 */
+test('#366 TEST-R36B-LOAD-001 native module stub is weak but in-body stub is strong', () => {
+  for (const reporter of ['tap', 'spec']) {
+    const subject = '() => { throw new Error("not implemented"); }';
+    const d = r36bFixture(reporter, 'assert.equal(fixture, 3);', subject, 'const fixture = add(1, 2);');
+    const red = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
+    assert.equal(red.code, 0, red.out);
+    assert.match(red.out, /\[weak\]/, red.out);
+    assert.match(red.out, /before any test body ran/, red.out);
+    assert.equal(lastRed(d).weak, true);
+    const control = r36bFixture(reporter, 'assert.equal(add(1, 2), 3);', subject);
+    const strong = sdd(control, 'tdd', 'red', 'TEST-CALC-001');
+    assert.equal(strong.code, 0, strong.out);
+    assert.doesNotMatch(strong.out, /\[weak\]|before any test body ran/, strong.out);
+    assert.equal(!!lastRed(control).weak, false);
+  }
+});
+
+/** @id TEST-R36B-SYNTAX-001 @verifies REQ-R36B-SYNTAX-001 */
+test('#366 TEST-R36B-SYNTAX-001 native marked syntax is rejected even with weak', () => {
+  for (const reporter of ['tap', 'spec']) {
+    const d = r36bFixture(reporter, 'assert.equal(add(1, 2), 3);');
+    fs.writeFileSync(path.join(d, 'add.mjs'), 'export const MAX = ; // SDD-TODO(stub): type unknown\n');
+    for (const flags of [[], ['--weak']]) {
+      const red = sdd(d, 'tdd', 'red', 'TEST-CALC-001', ...flags);
+      assert.equal(red.code, 1, red.out);
+      assert.match(red.out, /SDD-TODO\(stub\) element MAX.*fill MAX by hand/, red.out);
+      assert.equal(testEvidence(d).length, 0);
+    }
+    fs.writeFileSync(path.join(d, 'add.mjs'), 'export const MAX = ;\n');
+    const rejected = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
+    assert.equal(rejected.code, 1, rejected.out);
+    assert.match(rejected.out, /load\/compile error/, rejected.out);
+    assert.equal(testEvidence(d).length, 0);
+    const weak = sdd(d, 'tdd', 'red', 'TEST-CALC-001', '--weak');
+    assert.equal(weak.code, 0, weak.out);
+    assert.equal(lastRed(d).weak, true);
+  }
+});
+
+/** @id TEST-R36B-ASSERT-001 @verifies REQ-R36B-ASSERT-001 */
+test('#366 TEST-R36B-ASSERT-001 native owned assertion outranks embedded child stderr', () => {
+  for (const reporter of ['tap', 'spec']) {
+    const d = r36bFixture(reporter, "assert.equal(1, 0, 'Cannot find module child\\nSyntaxError: embedded child stderr');");
+    const red = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
+    assert.equal(red.code, 0, red.out);
+    assert.doesNotMatch(red.out, /\[weak\]|load\/compile error/, red.out);
+    assert.equal(!!lastRed(d).weak, false);
+  }
+});
+
+test('#366 native diagnostic message and sibling cannot impersonate owned assertion metadata', () => {
+  for (const reporter of ['tap', 'spec']) {
+    for (const extra of ['', "\ntest('TEST-CALC-0011 sibling', () => assert.equal(1, 0));"]) {
+      const d = r36bFixture(reporter, "throw new SyntaxError(\"invalid input\\nname: 'AssertionError'\\ncode: 'ERR_ASSERTION'\");", undefined, extra);
+      const red = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
+      assert.equal(red.code, 1, red.out);
+      assert.match(red.out, /load\/compile error/, red.out);
+      assert.equal(testEvidence(d).length, 0);
+    }
+  }
+});
+
+test('#366 native failure parser requires exact title, location and diagnostic-key ownership', () => {
+  const d = path.join(work, 'r36b-parser');
+  fs.mkdirSync(d);
+  const file = 'TEST-CALC-001.test.mjs';
+  fs.writeFileSync(path.join(d, file), "test('TEST-CALC-001 target', () => {});\n");
+  const source = fs.readFileSync(SDD, 'utf8');
+  const helpers = source.slice(source.indexOf('function nodeTestCommand('), source.indexOf('// ---------- commands ----------'));
+  const { nodeFailureContext } = new Function('fs', 'path', 'ROOT', 'testBody', 'escapeRe', 'readJson', 'isLoadErr',
+    `${helpers}\nreturn { nodeFailureContext };`)(fs, path, d,
+    () => fs.readFileSync(path.join(d, file), 'utf8').split('\n'),
+    (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), () => null,
+    (text, assertion) => /SyntaxError:|Cannot find module/.test(text) && !assertion);
+  const parse = (report) => nodeFailureContext(report, 'TEST-CALC-001', file);
+  for (const title of [file, path.join(d, file)]) {
+    assert.equal(parse(`TAP version 13\nnot ok 1 - ${title}\n# tests 1`).fileFailed, true, title);
+    assert.equal(parse(`✖ ${title} (1ms)\nℹ tests 1`).fileFailed, true, title);
+  }
+  const report = (title = 'TEST-CALC-001 target', location = path.join(d, file), keys = "  code: 'ERR_ASSERTION'\n  name: 'AssertionError'") =>
+    `TAP version 13\nnot ok 1 - ${title}\n  ---\n  location: '${location}:1:1'\n  error: |-\n    Cannot find module child\n${keys}\n  ...\n# tests 1`;
+  assert.equal(parse(report()).loadError, false, 'owned typed assertion wins');
+  for (const text of [
+    report('TEST-CALC-0011 sibling'),
+    report('TEST-CALC-001 target', path.join(d, 'sibling.test.mjs')),
+    report(undefined, undefined, "    code: 'ERR_ASSERTION'\n    name: 'AssertionError'"),
+    report(undefined, undefined, "  code: 'ERR_OTHER'\n  name: 'AssertionError'"),
+    report('TEST-CALC-001 target # TODO'),
+    report('TEST-CALC-001 target # SKIP'),
+    report(undefined, undefined, "  code: 'ERR_OTHER'\n  name: 'SyntaxError'") + '\n' + report('TEST-CALC-0011 sibling'),
+  ]) assert.equal(parse(text).loadError, true, text);
+  assert.equal(parse('TAP version 13\n# SyntaxError: invalid source\nnot ok 1 - ' + file + '\n# tests 1').loadError, true);
+  assert.equal(parse('TAP version 13\nnot ok 1 - sibling.test.mjs\n# tests 1').fileFailed, false);
+  assert.equal(parse('TAP version 13\nnot ok 1 - ' + file + '\nok 2 - TEST-CALC-001 target\n# tests 2').fileFailed, false);
+  fs.appendFileSync(path.join(d, file), "test('TEST-CALC-001 target', () => {});\n");
+  assert.equal(parse(report()).loadError, true, 'duplicate registrations cannot supply assertion ownership');
+});
+
+test('#366 native spec exception ownership excludes AssertionError text embedded in SyntaxError', () => {
+  const d = r36bFixture('spec', "throw new SyntaxError('invalid input\\nAssertionError: child stderr');");
+  const red = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
+  assert.equal(red.code, 1, red.out);
+  assert.match(red.out, /load\/compile error/, red.out);
+  assert.equal(testEvidence(d).length, 0);
+});
+
+/** @id TEST-R36C-CLOSURE-001 @verifies REQ-R36C-CLOSURE-001 */
+test('r36c #367 absent basenames avoid normalization without losing existing helpers', () => {
+  const { d, cp, cfg } = r34fFixture();
+  fs.mkdirSync(path.join(d, 'tools'));
+  fs.writeFileSync(path.join(d, 'tools/bundle.cjs'), Array.from({ length: 4000 }, (_, i) => `// r36ordinary${i}\n`).join(''));
+  fs.writeFileSync(path.join(d, 'r36ordinary0'), '#!/bin/sh\n# root helper\n');
+  fs.writeFileSync(path.join(d, 'tools/r36ordinary1'), '#!/bin/sh\n# source-relative helper\n');
+  cfg.checks = [{ name: 'types', cmd: ['node', 'tools/bundle.cjs'] }];
+  fs.writeFileSync(cp, JSON.stringify(cfg));
+  const measured = path.join(work, 'r36c-counted.mjs');
+  fs.writeFileSync(measured, fs.readFileSync(SDD, 'utf8').replace("import path from 'node:path';", [
+    "import path from 'node:path';",
+    'let r36Resolutions = 0;',
+    'const r36Resolve = path.resolve;',
+    "path.resolve = (...args) => { if (args.some((arg) => /^r36ordinary\\d+$/.test(String(arg)))) r36Resolutions++; return r36Resolve(...args); };",
+    "process.on('exit', () => console.log('R36_RESOLUTIONS=' + r36Resolutions));",
+  ].join('\n')).replace('return defs;\n}', "console.log('R36_FILES=' + JSON.stringify([...defs.keys()])); return defs;\n}"));
+  const result = spawnSync(process.execPath, [measured, '--root', d, 'tdd', 'red', 'TEST-A-001'], { encoding: 'utf8', env: ENV, timeout: 15000 });
+  assert.equal(result.error, undefined, String(result.error));
+  assert.equal(result.status, 0, result.stdout + result.stderr);
+  const resolutions = Number(/R36_RESOLUTIONS=(\d+)/.exec(result.stdout)?.[1]);
+  assert.ok(resolutions <= 16, `absent basenames must not trigger normalization; observed ${resolutions}`);
+  const definitions = JSON.parse(/R36_FILES=(.+)/.exec(result.stdout)?.[1] ?? '[]');
+  for (const file of ['r36ordinary0', 'tools/r36ordinary1', 'tools/bundle.cjs'])
+    assert.ok(definitions.some((key) => key.endsWith(`|${file}`)), `missing helper ${file}`);
+  console.log(`r36 candidate path resolutions=${resolutions} for 4000 basenames; root/source helpers preserved`);
+});
+
+/** @id TEST-R36C-CLOSURE-002 @verifies REQ-R36C-CLOSURE-001 */
+test('r36c #367 repeated executable identifiers share fresh closure fingerprints', () => {
+  const { d, cp, cfg } = r34fFixture();
+  fs.mkdirSync(path.join(d, 'tools'));
+  fs.writeFileSync(path.join(d, 'tools/bundle.cjs'), '// node\n'.repeat(5000));
+  cfg.checks = ['first', 'second'].map((name) => ({ name, cmd: ['node', 'tools/bundle.cjs'] }));
+  fs.writeFileSync(cp, JSON.stringify(cfg));
+  const measured = path.join(work, 'r36c-executables.mjs');
+  fs.writeFileSync(measured, fs.readFileSync(SDD, 'utf8').replace("import fs from 'node:fs';", [
+    "import fs from 'node:fs';",
+    'let r36ExecutableProbes = 0;',
+    "for (const name of ['realpathSync', 'statSync']) { const original = fs[name]; fs[name] = (...args) => { if (args[0] === process.execPath) r36ExecutableProbes++; return original(...args); }; }",
+    "process.on('exit', () => console.log('R36_EXECUTABLE_PROBES=' + r36ExecutableProbes));",
+  ].join('\n')).replace('return defs;\n}', "console.log('R36_FILES=' + JSON.stringify([...defs.keys()])); return defs;\n}"));
+  const result = spawnSync(process.execPath, [measured, '--root', d, 'tdd', 'red', 'TEST-A-001'], { encoding: 'utf8', env: ENV, timeout: 15000 });
+  assert.equal(result.error, undefined, String(result.error));
+  assert.equal(result.status, 0, result.stdout + result.stderr);
+  const probes = Number(/R36_EXECUTABLE_PROBES=(\d+)/.exec(result.stdout)?.[1]);
+  assert.ok(probes <= 16, `executable fingerprint work must be shared within a closure; observed ${probes}`);
+  const definitions = JSON.parse(/R36_FILES=(.+)/.exec(result.stdout)?.[1] ?? '[]');
+  assert.ok(definitions.some((key) => key.startsWith('executable:node|')), 'missing real interpreter fingerprint');
+  for (const check of ['first', 'second'])
+    assert.ok(definitions.includes(`${check}|tools/bundle.cjs`), `missing ${check} compiler closure`);
+  console.log(`r36 executable probes=${probes} for 5000 node identifiers shared by two checks`);
+});
+
+/** @id TEST-R36D-OWN-001 @verifies REQ-R36D-OWN-001 */
+test('#368 TEST-R36D-OWN-001 original native ownership fixture passes on the actual runtime', () => {
+  const result = spawnSync(process.execPath, [
+    '--test', '--test-reporter=tap',
+    '--test-name-pattern=^r33b #355 Node execution verification respects project', fileURLToPath(import.meta.url),
+  ], { cwd: process.cwd(), encoding: 'utf8', env: ENV });
+  const output = result.stdout + result.stderr;
+  assert.equal(result.status, 0, `${process.execPath}\n${output}`);
+  assert.match(output, /# pass 1\b/);
+  assert.match(output, /# fail 0\b/);
+});
+
+/** @id TEST-R36D-OWN-002 @verifies REQ-R36D-OWN-001 */
+test('#368 TEST-R36D-OWN-002 explicit project files preserve positive and missing-ID controls', () => {
+  const { d, cp } = r33bNodeFixture('tap', true);
+  fs.writeFileSync(path.join(d, 'packages/core/other.test.mjs'), "import { test } from 'node:test';\n/** @id TEST-A-002 @verifies REQ-A-001 */\ntest('TEST-A-002 omitted', { skip: true }, () => {});\n");
+  const cfg = JSON.parse(fs.readFileSync(cp));
+  cfg.scan.include = ['packages/core/a.test.mjs'];
+  cfg.projects[0].checks[0].cmd = ['node', '--test', '--test-reporter=tap', 'a.test.mjs', 'other.test.mjs'];
+  fs.writeFileSync(cp, JSON.stringify(cfg));
+  const ledger = path.join(d, '.sdd/tdd.jsonl');
+  const before = fs.readFileSync(ledger, 'utf8');
+  const previous = ENV.CI;
+  try {
+    for (const outcome of ['r33-skip', 'r33-run']) {
+      ENV.CI = outcome;
+      for (const args of [['gate'], ['gate', '--changed', '--baseline', 'HEAD']]) {
+        const gate = sdd(d, ...args);
+        assert.equal(gate.code, outcome === 'r33-skip' ? 1 : 0, gate.out);
+        if (outcome === 'r33-skip') assert.match(gate.out, /TEST-A-001.*missing executed Node test ids/, gate.out);
+        else {
+          assert.match(gate.out, /SDD GATE PASS/, gate.out);
+          assert.doesNotMatch(gate.out, /missing executed Node test ids/, gate.out);
+        }
+        assert.equal(fs.readFileSync(ledger, 'utf8'), before);
+      }
+    }
+  } finally { if (previous === undefined) delete ENV.CI; else ENV.CI = previous; }
+});
+
+function r36eLoadCase(reporter, importSource, files, flags = []) {
+  const d = r36bFixture(reporter, 'assert.equal(add(1, 2), 3);');
+  fs.writeFileSync(path.join(d, 'package.json'), '{"type":"module"}');
+  for (const [file, source] of Object.entries(files)) {
+    fs.mkdirSync(path.dirname(path.join(d, file)), { recursive: true });
+    fs.writeFileSync(path.join(d, file), source);
+  }
+  const original = fs.readFileSync(path.join(d, 'add.test.mjs'), 'utf8');
+  const failing = `${importSource}\n${original}`;
+  setCmd(d, ['node', ...flags, '--test', `--test-reporter=${reporter}`, 'add.test.mjs']);
+  return { d, original, failing };
+}
+
+function r36eRejectLoad(fixture, code) {
+  const { d, original, failing } = fixture;
+  const file = path.join(d, 'add.test.mjs'), ledger = path.join(d, '.sdd/tdd.jsonl');
+  // Both a nonexistent ledger and an already valid chain must remain untouched.
+  for (const seeded of [false, true]) {
+    if (seeded) {
+      fs.writeFileSync(file, original.replace('assert.equal(add(1, 2), 3)', 'assert.equal(add(1, 2), 0)'));
+      const seed = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
+      assert.equal(seed.code, 0, seed.out);
+      assert.equal(!!lastRed(d).weak, false);
+    }
+    fs.writeFileSync(file, failing);
+    const before = fs.existsSync(ledger) ? fs.readFileSync(ledger) : null;
+    const native = spawnSync('node', [
+      ...JSON.parse(fs.readFileSync(path.join(d, '.sdd/config.json'))).testCmd.slice(1),
+    ], { cwd: d, encoding: 'utf8', env: ENV });
+    const output = native.stdout + native.stderr;
+    assert.equal(native.status, 1, output);
+    assert.match(output, new RegExp(`\\b${code}\\b`), output);
+    const rejected = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
+    assert.equal(rejected.code, 1, `${code}\n${rejected.out}`);
+    assert.match(rejected.out, /load\/compile error/, rejected.out);
+    if (before) assert.deepEqual(fs.readFileSync(ledger), before);
+    else assert.equal(fs.existsSync(ledger), false);
+  }
+  const weak = sdd(d, 'tdd', 'red', 'TEST-CALC-001', '--weak');
+  assert.equal(weak.code, 0, weak.out);
+  assert.equal(lastRed(d).weak, true);
+  console.log(`r36e ${code}: absent/existing ledger preserved; explicit --weak accepted`);
+}
+
+/** @id TEST-R36E-LOAD-001 @verifies REQ-R36E-LOAD-001 */
+test('#369 TEST-R36E-LOAD-001 real unsupported native TS rejects default Red', () => {
+  const capable = !!process.features.typescript;
+  const flags = capable ? ['--no-experimental-strip-types'] : [];
+  const child = spawnSync('node', [...flags, '-p', 'JSON.stringify([process.version, process.execPath, !!process.features.typescript])'],
+    { encoding: 'utf8', env: ENV });
+  assert.equal(child.status, 0, child.stdout + child.stderr);
+  const runtime = JSON.parse(child.stdout);
+  assert.equal(runtime[0], process.version);
+  assert.equal(fs.realpathSync(runtime[1]), fs.realpathSync(process.execPath));
+  assert.equal(runtime[2], false, 'flag must actually disable native TypeScript');
+  console.log(`r36e actual child runtime=${JSON.stringify(runtime)} flags=${JSON.stringify(flags)}`);
+  for (const reporter of ['tap', 'spec']) {
+    r36eRejectLoad(r36eLoadCase(reporter, "import { answer } from './subject.ts';",
+      { 'subject.ts': 'export const answer: number = 0;\n' }, flags), 'ERR_UNKNOWN_FILE_EXTENSION');
+    for (const extension of capable ? ['mjs', 'ts'] : ['mjs']) {
+      const d = r36bFixture(reporter, 'assert.equal(answer, 1);');
+      fs.writeFileSync(path.join(d, 'package.json'), '{"type":"module"}');
+      fs.writeFileSync(path.join(d, `subject.${extension}`), `export const answer${extension === 'ts' ? ': number' : ''} = 0;\n`);
+      const file = path.join(d, 'add.test.mjs');
+      fs.writeFileSync(file, `import { answer } from './subject.${extension}';\n` + fs.readFileSync(file, 'utf8'));
+      const red = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
+      assert.equal(red.code, 0, red.out);
+      assert.equal(!!lastRed(d).weak, false);
+      console.log(`r36e ${reporter} native ${extension} genuine assertion strong Red`);
+    }
+  }
+});
+
+/** @id TEST-R36E-FORMAT-001 @verifies REQ-R36E-LOAD-001 */
+test('#369 TEST-R36E-FORMAT-001 native loader error family preserves explicit policy', () => {
+  const cases = [
+    ['ERR_UNKNOWN_FILE_EXTENSION', "import './subject.unknown';", { 'subject.unknown': 'export const answer = 0;\n' }],
+    ['ERR_UNKNOWN_MODULE_FORMAT', "import 'data:text/plain,export default 0';", {}],
+    ['ERR_UNSUPPORTED_ESM_URL_SCHEME', "import 'https://example.invalid/subject.mjs';", {}],
+    ['ERR_UNSUPPORTED_DIR_IMPORT', "import './subject';", { 'subject/index.mjs': 'export default 0;\n' }],
+    ['ERR_UNSUPPORTED_RESOLVE_REQUEST', "import 'data:text/javascript,import%20%22./subject.mjs%22';", {}],
+  ];
+  if (process.features.typescript) cases.push(
+    ['ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING', "import './node_modules/subject/index.ts';",
+      { 'node_modules/subject/index.ts': 'export const answer: number = 0;\n' }],
+    ['ERR_UNSUPPORTED_TYPESCRIPT_SYNTAX', "import './subject.ts';", { 'subject.ts': 'export enum Answer { Zero }\n' }],
+  );
+  for (const reporter of ['tap', 'spec']) for (const [code, source, files] of cases)
+    r36eRejectLoad(r36eLoadCase(reporter, source, files), code);
+});
+
+/** @id TEST-R36E-ASSERT-001 @verifies REQ-R36E-LOAD-001 */
+test('#369 TEST-R36E-ASSERT-001 owned assertions outrank embedded native-loader stderr', () => {
+  for (const reporter of ['tap', 'spec']) for (const body of [
+    "throw new TypeError('ordinary implementation failure');",
+    "assert.equal(1, 0, 'TypeError [ERR_UNKNOWN_FILE_EXTENSION]: child stderr\\nERR_UNKNOWN_MODULE_FORMAT\\nERR_UNSUPPORTED_ESM_URL_SCHEME\\nERR_UNSUPPORTED_DIR_IMPORT\\nERR_UNSUPPORTED_RESOLVE_REQUEST\\nERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING\\nERR_UNSUPPORTED_TYPESCRIPT_SYNTAX');",
+  ]) {
+    const d = r36bFixture(reporter, body);
+    const red = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
+    assert.equal(red.code, 0, red.out);
+    assert.equal(!!lastRed(d).weak, false);
+  }
+});
+
+/** @id TEST-R36E-FRAMING-001 @verifies REQ-R36E-LOAD-001 */
+test('#369 TEST-R36E-FRAMING-001 ordinary Error and wrapper preserve original Red policy', () => {
+  const messages = [
+    "throw new Error('child ERR_UNKNOWN_FILE_EXTENSION ERR_UNKNOWN_MODULE_FORMAT ERR_UNSUPPORTED_ESM_URL_SCHEME ERR_UNSUPPORTED_DIR_IMPORT ERR_UNSUPPORTED_RESOLVE_REQUEST ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING');",
+    "throw new Error('child stderr\\nError [ERR_UNSUPPORTED_DIR_IMPORT]: copied diagnostic');",
+  ];
+  for (const reporter of ['tap', 'spec']) for (const moduleLevel of [false, true]) {
+    for (const failure of [...messages, moduleLevel
+      ? "try { await import('./subject'); } catch (error) { throw new Error('wrapper ' + error.code, { cause: error }); }"
+      : "return import('./subject').catch(error => { throw new Error('wrapper ' + error.code, { cause: error }); });"]) {
+      const d = r36bFixture(reporter, moduleLevel ? 'assert.equal(add(1, 2), 3);' : failure,
+        '(a, b) => a + b', moduleLevel ? failure : '');
+      fs.mkdirSync(path.join(d, 'subject'));
+      fs.writeFileSync(path.join(d, 'subject/index.mjs'), 'export default 0;\n');
+      const red = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
+      assert.equal(red.code, 0, red.out);
+      assert.equal(!!lastRed(d).weak, moduleLevel, red.out);
+      if (moduleLevel) assert.match(red.out, /\[weak\]/, red.out);
+      else assert.doesNotMatch(red.out, /\[weak\]|load\/compile error/, red.out);
+    }
+  }
+});
+
+/** @id TEST-R36E-OWNED-001 @verifies REQ-R36E-LOAD-001 */
+test('#369 TEST-R36E-OWNED-001 owned native loader metadata is not child message text', () => {
+  const cases = [
+    ['ERR_UNKNOWN_FILE_EXTENSION', './subject.unknown', { 'subject.unknown': 'export default 0;\n' }],
+    ['ERR_UNKNOWN_MODULE_FORMAT', 'data:text/plain,export default 0', {}],
+    ['ERR_UNSUPPORTED_ESM_URL_SCHEME', 'https://example.invalid/subject.mjs', {}],
+    ['ERR_UNSUPPORTED_DIR_IMPORT', './subject', { 'subject/index.mjs': 'export default 0;\n' }],
+    ['ERR_UNSUPPORTED_RESOLVE_REQUEST', 'data:text/javascript,import%20%22./subject.mjs%22', {}],
+  ];
+  if (process.features.typescript) cases.push(
+    ['ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING', './node_modules/subject/index.ts',
+      { 'node_modules/subject/index.ts': 'export const answer: number = 0;\n' }],
+  );
+  for (const reporter of ['tap', 'spec']) for (const [code, specifier, files] of cases) {
+    const fixture = r36eLoadCase(reporter, '', files);
+    fixture.failing = fixture.original.replace('assert.equal(add(1, 2), 3);', `return import(${JSON.stringify(specifier)});`);
+    r36eRejectLoad(fixture, code);
+  }
+});
+
+/** @id TEST-R36F-LAYOUT-001 @verifies REQ-R36F-LAYOUT-001 */
+test('#370 TEST-R36F-LAYOUT-001 r35a fixtures stay outside distributed payload from either cwd', () => {
+  const suite = fileURLToPath(import.meta.url);
+  const probe = fs.mkdtempSync(path.join(r35aRoot, '.sdd-r36f-probe-'));
+  const hook = path.join(probe, 'observe.mjs');
+  fs.writeFileSync(hook, [
+    "import fs from 'node:fs';",
+    "import path from 'node:path';",
+    'const create = fs.mkdtempSync;',
+    'fs.mkdtempSync = (prefix, ...args) => {',
+    '  const directory = create(prefix, ...args);',
+    "  if (/^r35a-(?:init|pack|admission|admission-pack)-$/.test(path.basename(String(prefix)))) {",
+    "    console.log('R36F_FIXTURE=' + JSON.stringify(fs.realpathSync(directory)));",
+    "    throw new Error('R36F_STOP_BEFORE_NATIVE_WORK');",
+    '  }',
+    '  return directory;',
+    '};',
+  ].join('\n'));
+  const payloads = JSON.parse(fs.readFileSync(path.join(r35aRoot, 'package.json'))).files
+    .map((entry) => fs.realpathSync(path.join(r35aRoot, entry)));
+  const controls = [
+    '#363 r35a source init preserves explicit target/cwd invariants and existing options',
+    '#363 r35a packed installation preserves bin version/list/init/sdd contracts',
+    '#363 r35a admission rejects unknown init flags without writes',
+    '#363 r35a admission packed extraction and installation reject invalid init without writes',
+  ];
+  try {
+    for (const cwd of [r35aRoot, path.dirname(suite)]) for (const title of controls) {
+      const pattern = '^' + title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$';
+      const result = spawnSync(process.execPath, [
+        '--import', hook, '--test', '--test-reporter=tap', `--test-name-pattern=${pattern}`, suite,
+      ], { cwd, env: ENV, encoding: 'utf8', timeout: 60000 });
+      const output = result.stdout + result.stderr;
+      assert.equal(result.error, undefined, output);
+      assert.equal(result.status, 1, output);
+      assert.match(output, /R36F_STOP_BEFORE_NATIVE_WORK/, output);
+      const observations = [...output.matchAll(/R36F_FIXTURE=("[^\r\n]+")/g)];
+      assert.equal(observations.length, 1, output);
+      const directory = JSON.parse(observations[0][1]);
+      for (const payload of payloads) {
+        const relative = path.relative(payload, directory);
+        const inside = relative === '' || (!path.isAbsolute(relative) && relative !== '..' && !relative.startsWith(`..${path.sep}`));
+        assert.equal(inside, false, `${title} from ${cwd}: fixture ${directory} must stay outside distributed payload ${payload}`);
+      }
+      console.log(`r36f ${process.version} ${process.execPath}: ${title} from ${cwd} => ${directory}`);
+    }
+  } finally { fs.rmSync(probe, { recursive: true, force: true }); }
+});
+
+/** @id TEST-R36H-PYTEST-001 @verifies REQ-R36H-PYTEST-001 */
+test('#371 TEST-R36H-PYTEST-001 hosted provisioning runs actual pytest with user-site disabled', () => {
+  const root = fileURLToPath(new URL('../../../../', import.meta.url));
+  const area = fs.mkdtempSync(path.join(work, 'r36h-pytest-'));
+  const wheels = path.join(area, 'wheels');
+  fs.mkdirSync(wheels);
+  const wheelResult = spawnSync('python3', ['-c', `
+import importlib.metadata as md, importlib.util, pathlib, sys, zipfile
+for name in ("pytest", "iniconfig", "packaging", "pluggy", "pygments"):
+    dist = md.distribution(name)
+    stem = dist.metadata["Name"].replace("-", "_") + "-" + dist.version
+    wheel = pathlib.Path(sys.argv[1]) / (stem + "-py3-none-any.whl")
+    with zipfile.ZipFile(wheel, "w", zipfile.ZIP_DEFLATED) as output:
+        for module in (("pytest", "_pytest", "py") if name == "pytest" else (name,)):
+            origin = pathlib.Path(importlib.util.find_spec(module).origin)
+            if origin.name != "__init__.py":
+                output.write(origin, module + ".py")
+            else:
+                for file in origin.parent.rglob("*"):
+                    if file.is_file() and "__pycache__" not in file.parts:
+                        output.write(file, str(pathlib.Path(module) / file.relative_to(origin.parent)))
+        output.writestr(stem + ".dist-info/METADATA", dist.read_text("METADATA") or dist.read_text("PKG-INFO"))
+        output.writestr(stem + ".dist-info/WHEEL", "Wheel-Version: 1.0\\nRoot-Is-Purelib: true\\nTag: py3-none-any\\n")
+        output.writestr(stem + ".dist-info/RECORD", "")
+`, wheels], { encoding: 'utf8' });
+  assert.equal(wheelResult.status, 0, `Missing declared pytest prerequisite:\n${wheelResult.stdout}${wheelResult.stderr}`);
+  for (const workflow of ['ci.yml', 'publish.yml']) {
+    const source = fs.readFileSync(path.join(root, '.github/workflows', workflow), 'utf8');
+    const step = source.match(/      - name: Provision isolated pytest\n        run: \|\n((?:          .*\n)+)/);
+    assert.ok(step, `${workflow}: pytest must have an independently executable provisioning step`);
+    const runnerTemp = path.join(area, workflow);
+    fs.mkdirSync(runnerTemp);
+    const githubPath = path.join(runnerTemp, 'github-path');
+    fs.writeFileSync(githubPath, '');
+    const result = spawnSync('bash', ['-e', '-o', 'pipefail', '-c', step[1].replace(/^          /gm, '')], {
+      encoding: 'utf8', cwd: root,
+      env: { ...ENV, RUNNER_TEMP: runnerTemp, GITHUB_PATH: githubPath, PIP_NO_INDEX: '1', PIP_FIND_LINKS: wheels },
+    });
+    assert.equal(result.status, 0, `${workflow}: ${result.stdout}${result.stderr}`);
+    const exported = fs.readFileSync(githubPath, 'utf8').trim().split('\n');
+    assert.deepEqual(exported, [path.join(runnerTemp, 'sdd-pytest', 'bin')], `${workflow}: persist the selected interpreter for subsequent steps`);
+    const nativeEnv = { ...ENV, PATH: exported.join(path.delimiter) + path.delimiter + ENV.PATH, PYTHONNOUSERSITE: '1', PYTHONSAFEPATH: '1' };
+    const identity = spawnSync('python3', ['-c', 'import sys,site,pytest; assert sys.prefix != sys.base_prefix; assert not site.ENABLE_USER_SITE; print(sys.executable); print(pytest.__file__)'], { encoding: 'utf8', env: nativeEnv });
+    assert.equal(identity.status, 0, `${workflow}: ${identity.stdout}${identity.stderr}`);
+    assert.ok(identity.stdout.includes(path.join(runnerTemp, 'sdd-pytest')), identity.stdout);
+    const testFile = path.join(runnerTemp, 'test_native.py');
+    fs.writeFileSync(testFile, 'def test_native():\n    assert 1 == 0, "r36h native assertion"\n');
+    const run = () => spawnSync('python3', ['-m', 'pytest', '-q', testFile], { cwd: runnerTemp, encoding: 'utf8', env: nativeEnv });
+    const red = run();
+    assert.equal(red.status, 1, `${red.stdout}${red.stderr}`);
+    assert.match(red.stdout + red.stderr, /r36h native assertion/);
+    fs.writeFileSync(testFile, 'def test_native():\n    assert 1 == 1\n');
+    const green = run();
+    assert.equal(green.status, 0, `${green.stdout}${green.stderr}`);
+    assert.match(green.stdout, /1 passed/);
+  }
+});
+
+const r36iNative = (extension) => {
+  const result = spawnSync('which', [extension === 'c' ? 'cc' : 'c++'], { encoding: 'utf8', env: ENV });
+  assert.equal(result.status, 0, 'C/C++ native compiler is required for #373 oracle controls');
+  return result.stdout.trim();
+};
+const r36iFixture = (extension, missing, invalid = false) => {
+  const file = `tests/t.${extension}`;
+  const source = '// @id TEST-A-001 @verifies REQ-A-001\n'
+    + (missing ? '#include "missing.h"\n' : '')
+    + (invalid ? '#error r36g_native_invalid\n' : '')
+    + 'int main(void) { return 0; }\n';
+  const d = mk130({ [file]: source });
+  return { d, file, source, native: r36iNative(extension) };
+};
+const r36iCompile = (fixture) => spawnSync(fixture.native, ['-fsyntax-only', path.join(fixture.d, fixture.file)], {
+  cwd: fixture.d, encoding: 'utf8', timeout: 20000, env: { ...ENV, LC_ALL: 'C' },
+});
+const r36iCompiler = (fixture, body) => {
+  const executable = path.join(fixture.d, 'tools', 'compiler.mjs');
+  fs.mkdirSync(path.dirname(executable), { recursive: true });
+  if (body !== null) fs.writeFileSync(executable, `#!${process.execPath}\n${body}\n`, { mode: 0o755 });
+  writeAll(fixture.d, { 'compile_commands.json': JSON.stringify([{
+    directory: fixture.d, file: fixture.file, arguments: [executable, '-c', fixture.file],
+  }]) });
+  return executable;
+};
+const r36iStub = (fixture) => {
+  const result = spawnSync('node', [SDD, '--root', fixture.d, 'tdd', 'stub', 'TEST-A-001'], {
+    encoding: 'utf8', timeout: 20000, env: ENV,
+  });
+  assert.equal(result.error, undefined, String(result.error));
+  assert.equal(result.signal, null, 'stub CLI must return an ordinary verdict');
+  return { code: result.status, out: (result.stdout ?? '') + (result.stderr ?? '') };
+};
+const r36iReject = (result, diagnostic) => {
+  assert.equal(result.code, 1, result.out);
+  assert.match(result.out, /does not compile|could not fully stub/, result.out);
+  assert.doesNotMatch(result.out, /\(throwing, compile-checked\)|\(compile-checked\)/, result.out);
+  assert.match(result.out, diagnostic, result.out);
+};
+
+/** @id TEST-R36I-EXIT-001 @verifies REQ-R36I-001 */
+test('#373 TEST-R36I-EXIT-001 native-valid C/C++ cannot verify silent failed compilers', () => {
+  for (const extension of ['c', 'cpp']) for (const missing of [false, true]) {
+    const fixture = r36iFixture(extension, missing);
+    if (missing) writeAll(fixture.d, { 'tests/missing.h': '' });
+    const native = r36iCompile(fixture);
+    assert.equal(native.status, 0, native.stderr);
+    assert.equal(native.signal, null);
+    assert.equal(native.error, undefined);
+    if (missing) fs.rmSync(path.join(fixture.d, 'tests/missing.h'));
+    const compiler = r36iCompiler(fixture, 'process.exit(101);');
+    const controlled = spawnSync(compiler, [], { encoding: 'utf8', timeout: 20000, env: ENV });
+    assert.equal(controlled.status, 101);
+    assert.equal(controlled.stdout + controlled.stderr, '');
+    r36iReject(r36iStub(fixture), /101/);
+  }
+});
+
+/** @id TEST-R36I-INVALID-001 @verifies REQ-R36I-001 */
+test('#373 TEST-R36I-INVALID-001 exact native-invalid fixture never becomes verified with silent exit101', () => {
+  for (const extension of ['c', 'cpp']) {
+    const fixture = r36iFixture(extension, true, true);
+    writeAll(fixture.d, { 'tests/missing.h': '#pragma once\n#include <stdio.h>\n#include <stdlib.h>\n\n' });
+    const native = r36iCompile(fixture);
+    assert.equal(native.status, 1, native.stderr);
+    assert.match(native.stderr, /#error r36g_native_invalid/);
+    fs.rmSync(path.join(fixture.d, 'tests/missing.h'));
+    r36iCompiler(fixture, 'process.exit(101);');
+    const result = r36iStub(fixture);
+    const after = r36iCompile(fixture);
+    assert.equal(after.status, 1, after.stderr);
+    assert.match(after.stderr, /#error r36g_native_invalid/);
+    r36iReject(result, /101/);
+  }
+});
+
+/** @id TEST-R36I-BOUNDARY-001 @verifies REQ-R36I-001 */
+test('#373 TEST-R36I-BOUNDARY-001 failed terminal/unparseable/startup/signal/output-budget outcomes are explicit', () => {
+  for (const extension of ['c', 'cpp']) for (const missing of [false, true]) for (const [body, diagnostic] of [
+    ["process.stderr.write('\\x1b[31m\\x1b[0m'); process.exit(101);", /101/],
+    ["process.stderr.write('opaque compiler refusal'); process.exit(101);", /101|opaque compiler refusal/],
+    ["process.kill(process.pid, 'SIGTERM');", /SIGTERM/],
+    [null, /ENOENT/],
+    ["process.stdout.write(Buffer.alloc(2 * 1024 * 1024, 120));", /ENOBUFS/],
+  ]) {
+    const fixture = r36iFixture(extension, missing);
+    r36iCompiler(fixture, body);
+    r36iReject(r36iStub(fixture), diagnostic);
+  }
+});
+
+/** @id TEST-R36I-DIAGNOSTIC-001 @verifies REQ-R36I-002 */
+test('#373 TEST-R36I-DIAGNOSTIC-001 zero exit cannot erase plain or SGR-decorated compiler errors', () => {
+  for (const extension of ['c', 'cpp']) for (const missing of [false, true]) for (const text of [
+    'tests/t:1: error: controlled syntax rejection\n',
+    'tests/t:1: er\x1b[31mror\x1b[0m: controlled syntax rejection\n',
+  ]) {
+    const fixture = r36iFixture(extension, missing);
+    r36iCompiler(fixture, `process.stderr.write(${JSON.stringify(text)}); process.exit(0);`);
+    r36iReject(r36iStub(fixture), /error: controlled syntax rejection/);
+  }
+});
+
+/** @id TEST-R36I-NATIVE-001 @verifies REQ-R36I-003 */
+test('#373 TEST-R36I-NATIVE-001 real native C/C++ valid and invalid no-op controls retain verdicts', () => {
+  for (const extension of ['c', 'cpp']) for (const invalid of [false, true]) {
+    const fixture = r36iFixture(extension, false, invalid);
+    const native = r36iCompile(fixture);
+    assert.equal(native.status, invalid ? 1 : 0, native.stderr);
+    const result = r36iStub(fixture);
+    if (invalid) r36iReject(result, /r36g_native_invalid/);
+    else {
+      assert.equal(result.code, 0, result.out);
+      assert.match(result.out, /\(compile-checked\)/);
+    }
+  }
+});
+
+/** @id TEST-R36I-PARSE-001 @verifies REQ-R36I-003 */
+test('#373 TEST-R36I-PARSE-001 native diagnostics still generate valid throwing C/C++ function stubs', () => {
+  for (const extension of ['c', 'cpp']) {
+    const fixture = r36iFixture(extension, true);
+    fs.writeFileSync(path.join(fixture.d, fixture.file), fixture.source.replace('return 0;', 'return answer(2);'));
+    const initial = r36iCompile(fixture);
+    assert.equal(initial.status, 1, initial.stderr);
+    const result = r36iStub(fixture);
+    assert.equal(result.code, 0, result.out);
+    assert.match(result.out, /stubbed \(throwing, compile-checked\)/);
+    assert.match(rd130(fixture.d, 'tests/missing.h'), /not implemented: answer/);
+    const generated = r36iCompile(fixture);
+    assert.equal(generated.status, 0, generated.stderr);
+    assert.equal(generated.signal, null);
+    assert.equal(generated.error, undefined);
+  }
+});
+
+/** @id TEST-R36I-REASON-001 @verifies REQ-R36I-001 */
+test('#373 TEST-R36I-REASON-001 process reasons precede supplementary parsed compiler errors', () => {
+  const text = 'tests/t:1: error: controlled syntax rejection\n';
+  for (const extension of ['c', 'cpp']) for (const [body, reason] of [
+    [`process.stdout.write(${JSON.stringify(text)} + 'x'.repeat(2 * 1024 * 1024));`, /error ENOBUFS.*error: controlled syntax rejection/],
+    [`process.stderr.write(${JSON.stringify(text)}); process.kill(process.pid, 'SIGTERM');`, /signal SIGTERM.*error: controlled syntax rejection/],
+    [`process.stderr.write(${JSON.stringify(text)}); process.exit(101);`, /exit status 101.*error: controlled syntax rejection/],
+  ]) {
+    const fixture = r36iFixture(extension, false);
+    r36iCompiler(fixture, body);
+    r36iReject(r36iStub(fixture), reason);
+  }
+});
+
+/** @id TEST-R36I-PARSE-COLOR-001 @verifies REQ-R36I-002 */
+test('#373 TEST-R36I-PARSE-COLOR-001 colored actual native missing-function names are parsed into valid stubs', () => {
+  for (const extension of ['c', 'cpp']) {
+    const fixture = r36iFixture(extension, true);
+    fs.writeFileSync(path.join(fixture.d, fixture.file), r36kMissingFunctionSource(fixture.source, extension));
+    writeAll(fixture.d, { 'tests/missing.h': '' });
+    const native = r36iCompile(fixture);
+    assert.equal(native.status, 1, native.stderr);
+    assert.match(native.stderr, /answer/);
+    const compiler = r36iCompiler(fixture, [
+      "import { spawnSync } from 'node:child_process';",
+      `const r = spawnSync(${JSON.stringify(fixture.native)}, process.argv.slice(2), { encoding: 'utf8', env: { ...process.env, LC_ALL: 'C' } });`,
+      "process.stdout.write((r.stdout ?? '').replaceAll('answer', 'an\\x1b[31mswer\\x1b[0m'));",
+      "process.stderr.write((r.stderr ?? '').replaceAll('answer', 'an\\x1b[31mswer\\x1b[0m'));",
+      'process.exit(r.status ?? 1);',
+    ].join('\n'));
+    const colored = spawnSync(compiler, ['-fsyntax-only', path.join(fixture.d, fixture.file)], {
+      cwd: fixture.d, encoding: 'utf8', timeout: 20000, env: ENV,
+    });
+    assert.equal(colored.status, 1, colored.stderr);
+    assert.match(colored.stderr, /an\x1b\[31mswer\x1b\[0m/);
+    assert.doesNotMatch(colored.stderr, /ReferenceError|SyntaxError/);
+    fs.rmSync(path.join(fixture.d, 'tests/missing.h'));
+    const result = r36iStub(fixture);
+    assert.equal(result.code, 0, result.out);
+    assert.match(result.out, /stubbed \(throwing, compile-checked\)/);
+    assert.match(rd130(fixture.d, 'tests/missing.h'), /not implemented: answer/);
+    const generated = r36iCompile(fixture);
+    assert.equal(generated.status, 0, generated.stderr);
+    assert.equal(generated.signal, null);
+    assert.equal(generated.error, undefined);
+  }
+});
+
+const r36gRunStub = (d, id, env = {}, preload = null) => {
+  const r = spawnSync(process.execPath, [...(preload ? ['--import', preload] : []), SDD, '--root', d, 'tdd', 'stub', id],
+    { encoding: 'utf8', env: { ...ENV, ...env } });
+  assert.equal(r.status, 0, r.stdout + r.stderr);
+  return r.stdout + r.stderr;
+};
+const r36gFixture = (name, files) => mk130({
+  'Cargo.toml': `[package]\nname = "${name}"\nversion = "0.1.0"\nedition = "2021"\n`,
+  ...files,
+});
+
+/** @id TEST-R36G-001 @verifies REQ-R36G-001 */
+test('#372 TEST-R36G-001 native Cargo and rustc witness colored Rust verdicts and generation scope', () => {
+  for (const tool of ['cargo', 'rustc']) {
+    const version = spawnSync(tool, ['--version'], { encoding: 'utf8' });
+    assert.equal(version.status, 0, `${tool} prerequisite required: ${version.stderr}`);
+  }
+  const cases = [
+    ['inline', 's130', 'TEST-A-001', true, { 'tests/t.rs': '// @id TEST-A-001 @verifies REQ-A-001\n#[test]\nfn t10() {\n    let p = s130::geo::Point { x: 1, y: 2 };\n    assert_eq!(p.x, 1);\n}\n' }],
+    ['sibling', 's130', 'TEST-A-002', false, { 'tests/t.rs': 'use s130::util::double;\n// @id TEST-A-001 @verifies REQ-A-001\n#[test]\nfn t9() { assert_eq!(double(2), 4); }\n// @id TEST-A-002 @verifies REQ-A-001\n#[test]\nfn t10() {\n    let p = s130::geo::Point { x: 1, y: 2 };\n    assert_eq!(p.x, 1);\n}\n' }],
+    ['bool', 's280', 'TEST-A-001', true, { 'tests/t.rs': 'use s280::ops::is_ok;\n// @id TEST-A-001 @verifies REQ-A-001\n#[test]\nfn t1() { assert!(is_ok(3)); }\n' }],
+    ['cfg', 's280', 'TEST-A-001', true, { 'src/lib.rs': 'pub mod ops;\n', 'src/ops.rs': '#[cfg(test)]\nmod tests {\n    pub fn double(x: i64) -> i64 { x }\n}\n', 'tests/t.rs': 'use s280::ops::double;\n// @id TEST-A-001 @verifies REQ-A-001\n#[test]\nfn t1() { assert_eq!(double(2), 4); }\n' }],
+    ['macro', 's280', 'TEST-A-001', false, { 'tests/t.rs': '// @id TEST-A-001 @verifies REQ-A-001\n#[test]\nfn t1() { let v = entries![1, 2]; assert_eq!(v.len(), 2); }\n' }],
+  ];
+  const violations = [];
+  for (const [kind, name, id, valid, files] of cases) for (const color of ['never', 'always']) {
+    const d = r36gFixture(name, files);
+    const source = rd130(d, 'tests/t.rs');
+    const out = r36gRunStub(d, id, { CARGO_TERM_COLOR: color });
+    const cargo = spawnSync('cargo', ['test', '--no-run', '--offline', '--test', 't', '--color', color],
+      { cwd: d, encoding: 'utf8', env: { ...ENV, CARGO_TERM_COLOR: color } });
+    assert.equal(cargo.status === 0, valid, `${kind}/${color}: independent Cargo\n${cargo.stderr}`);
+    const lib = path.join(d, `lib${name}.rlib`);
+    const args = ['--edition=2021', '--test', 'tests/t.rs', '-o', path.join(d, 'r36g-tests')];
+    if (fs.existsSync(path.join(d, 'src/lib.rs'))) {
+      const compiled = spawnSync('rustc', ['--edition=2021', '--crate-name', name, '--crate-type', 'lib', 'src/lib.rs', '-o', lib],
+        { cwd: d, encoding: 'utf8' });
+      assert.equal(compiled.status, 0, compiled.stderr);
+      args.push('--extern', `${name}=${lib}`);
+    }
+    const rustc = spawnSync('rustc', args, { cwd: d, encoding: 'utf8' });
+    assert.equal(rustc.status === 0, valid, `${kind}/${color}: independent rustc\n${rustc.stderr}`);
+    assert.equal(rd130(d, 'tests/t.rs'), source, 'requested and sibling tests stay byte-identical');
+    if (kind === 'sibling') assert.ok(!fs.existsSync(path.join(d, 'src/util.rs')), 'unrequested import is not stubbed');
+    if (kind === 'bool') assert.match(rd130(d, 'src/ops.rs'), /pub fn is_ok<A0>\(_a0: A0\) -> bool/);
+    if (kind === 'cfg') assert.match(rd130(d, 'src/ops.rs'), /^pub fn double/m);
+    if (valid ? !/\(throwing, compile-checked\)/.test(out) : /\bcompile-checked\b/.test(out)) violations.push(`${kind}/${color}: ${out.trim()}`);
+    if (kind === 'macro' && !/macro entries! is not stubbed/.test(out)) violations.push(`${kind}/${color}: missing macro guidance: ${out.trim()}`);
+  }
+  assert.deepEqual(violations, [], 'native compile verdicts and macro guidance must agree with both independent tools');
+});
+
+/** @id TEST-R36G-002 @verifies REQ-R36G-002 */
+test('#372 TEST-R36G-002 Cargo process failures cannot become successful compile witnesses', () => {
+  const cases = [
+    ['empty101', 'process.exit(101);', /Cargo.*exit.*101/i],
+    ['terminal101', 'console.error("error: could not compile `s130`"); process.exit(101);', /error: could not compile/],
+    ['opaque101', 'console.error("opaque diagnostic"); process.exit(101);', /Cargo.*exit.*101/i],
+    ['signal', 'process.kill(process.pid, "SIGTERM");', /Cargo.*signal.*SIGTERM/i],
+    ['missing', null, /Cargo.*ENOENT/i],
+    ['buffer', 'process.stdout.write("x".repeat(2 * 1024 * 1024));', /Cargo.*ENOBUFS/i],
+    ['timeout', 'process.exit(0);', /Cargo.*ETIMEDOUT/i],
+    ['zeroError', 'console.error("\\x1b[31merror[E0432]\\x1b[0m: unresolved import `s130::util`"); process.exit(0);', /error\[E0432\]/],
+    ['zeroMacro', 'console.error("\\x1b[31merror\\x1b[0m: cannot find macro `entries` in this scope"); process.exit(0);', /macro entries! is not stubbed/],
+    ['valid', 'process.exit(0);', /\(throwing, compile-checked\)/],
+  ];
+  const violations = [];
+  for (const [kind, body, diagnostic] of cases) {
+    const d = r36gFixture('s130', { 'tests/t.rs': '// @id TEST-A-001 @verifies REQ-A-001\n#[test]\nfn t() { let p = s130::geo::Point { x: 1, y: 2 }; assert_eq!(p.x, 1); }\n' });
+    const bin = path.join(d, 'bin');
+    fs.mkdirSync(bin);
+    fs.symlinkSync(process.execPath, path.join(bin, 'node'));
+    if (body !== null) fs.writeFileSync(path.join(bin, 'cargo'), `#!${process.execPath}\n${body}\n`, { mode: 0o755 });
+    let preload = null;
+    if (kind === 'timeout') {
+      preload = path.join(d, 'timeout.mjs');
+      fs.writeFileSync(preload, 'import cp from "node:child_process"; import { syncBuiltinESMExports } from "node:module";\nconst original = cp.spawnSync;\ncp.spawnSync = (cmd, ...args) => cmd === "cargo" ? { stdout: "", stderr: "", status: null, signal: "SIGTERM", error: Object.assign(new Error("spawnSync cargo ETIMEDOUT"), { code: "ETIMEDOUT" }) } : original(cmd, ...args);\nsyncBuiltinESMExports();\n');
+    }
+    const out = r36gRunStub(d, 'TEST-A-001', { PATH: bin, CARGO_TERM_COLOR: 'never' }, preload);
+    if (!diagnostic.test(out)) violations.push(`${kind}: expected ${diagnostic}, got ${out.trim()}`);
+    if (kind !== 'valid' && /\bcompile-checked\b/.test(out)) violations.push(`${kind}: false compile-checked`);
+  }
+  assert.deepEqual(violations, [], 'completion metadata and normalized diagnostics are mandatory compile witnesses');
+});
+
+/** @id TEST-R36I-LEGACY-001 @verifies REQ-R36I-003 */
+test('#373 TEST-R36I-LEGACY-001 legacy string probing remains raw with identical native spawn options', async () => {
+  const { runInNewContext } = await import('node:vm');
+  const source = fs.readFileSync(SDD, 'utf8');
+  const start = source.includes('const probeOutcome =') ? source.indexOf('const probeOutcome =') : source.indexOf('const probe =');
+  const block = source.slice(start, source.indexOf('\n\nfunction stubGo', start));
+  const calls = [];
+  const error = Object.assign(new Error('controlled startup failure'), { code: 'ENOENT' });
+  const result = { stdout: '\x1b[31mraw stdout\x1b[0m\n', stderr: 'raw stderr\n', status: null, signal: 'SIGTERM', error };
+  const env = { PATH: ENV.PATH, LC_ALL: 'not-C', KEEP: 'sentinel' };
+  const api = runInNewContext(`${block}\n({ probe, outcome: typeof probeOutcome === 'function' ? probeOutcome : null });`, {
+    process: { env }, spawnSync: (cmd, args, options) => { calls.push({ cmd, args, options }); return result; },
+  });
+  assert.equal(api.probe('compiler', ['--flag'], '/owned/cwd'), result.stdout + result.stderr);
+  if (api.outcome) {
+    const outcome = api.outcome('compiler', ['--flag'], '/owned/cwd');
+    assert.equal(outcome.text, result.stdout + result.stderr);
+    assert.equal(outcome.status, result.status);
+    assert.equal(outcome.signal, result.signal);
+    assert.equal(outcome.error, error);
+  }
+  for (const call of calls) {
+    assert.equal(call.cmd, 'compiler');
+    assert.deepEqual(call.args, ['--flag']);
+    assert.equal(call.options.cwd, '/owned/cwd');
+    assert.equal(call.options.encoding, 'utf8');
+    assert.equal(call.options.timeout, 120000);
+    assert.equal(call.options.env.PATH, env.PATH);
+    assert.equal(call.options.env.KEEP, env.KEEP);
+    assert.equal(call.options.env.LC_ALL, 'C');
+  }
+  assert.equal(env.LC_ALL, 'not-C', 'probe must not mutate the inherited environment');
+});
+
+let r36jSequence = 0;
+const r36jArgs = ['test', '-count=1', '-gcflags=-e', '-run', '^$', '.'];
+const r36jFixture = (missing = true, invalid = false) => {
+  const lookup = spawnSync('which', ['go'], { encoding: 'utf8', env: ENV });
+  assert.equal(lookup.status, 0, 'native Go is mandatory for the #374 oracle');
+  const d = path.join(work, `r36j-${++r36jSequence}`);
+  fs.mkdirSync(path.join(d, '.sdd/specs'), { recursive: true });
+  fs.writeFileSync(path.join(d, '.sdd/specs/a.md'), '---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | When called, the system shall return. | TEST-A-001 |\n');
+  fs.writeFileSync(path.join(d, 'go.mod'), 'module r36j_go_oracle\n\ngo 1.20\n');
+  fs.writeFileSync(path.join(d, 't_test.go'), 'package p\nimport "testing"\n'
+    + (invalid ? 'var _ int = "r36i_native_invalid"\n' : '')
+    + '// @id TEST-A-001 @verifies REQ-A-001\n'
+    + `func TestT(t *testing.T) { t.Fatal(${missing ? 'Missing()' : '0'}) }\n`);
+  const fixture = { d, native: lookup.stdout.trim() };
+  spawnSync('git', ['init', '-q'], { cwd: d, env: ENV });
+  return fixture;
+};
+const r36jCompile = (fixture) => {
+  const r = spawnSync(fixture.native, r36jArgs, {
+    cwd: fixture.d, encoding: 'utf8', timeout: 20000, env: { ...ENV, LC_ALL: 'C' },
+  });
+  assert.equal(r.error, undefined, String(r.error));
+  assert.equal(r.signal, null, 'native Go must finish normally');
+  return { ...r, text: (r.stdout ?? '') + (r.stderr ?? '') };
+};
+const r36jControlled = (fixture, body, color = false) => {
+  const bin = path.join(fixture.d, 'bin');
+  fs.mkdirSync(bin);
+  fs.writeFileSync(path.join(bin, 'package.json'), '{"type":"module"}\n');
+  const file = path.join(bin, 'go');
+  const count = path.join(bin, 'calls');
+  fs.writeFileSync(file, `#!${process.execPath}\nimport fs from 'node:fs';\nimport { spawnSync } from 'node:child_process';\n`
+    + `const count=${JSON.stringify(count)}; const n=fs.existsSync(count)?Number(fs.readFileSync(count,'utf8')):0; fs.writeFileSync(count,String(n+1));\n`
+    + `if(n===0${color ? '||true' : ''}) { const r=spawnSync(${JSON.stringify(fixture.native)},process.argv.slice(2),{cwd:process.cwd(),encoding:'utf8',env:process.env});\n`
+    + (color ? 'const decorate=(s)=>s.replace(/Missing/g,"Mis\\x1b[31msing\\x1b[0m"); process.stdout.write(decorate(r.stdout??"")); process.stderr.write(decorate(r.stderr??""));\n' : 'process.stdout.write(r.stdout??""); process.stderr.write(r.stderr??"");\n')
+    + `process.exit(r.status??99); }\n${body}\n`, { mode: 0o755 });
+  return { bin, file, count };
+};
+const r36jStub = (fixture, control = null, outcome = null) => {
+  const args = [];
+  if (outcome) {
+    const preload = path.join(fixture.d, 'outcome.mjs');
+    fs.writeFileSync(preload, 'import cp from "node:child_process"; import { syncBuiltinESMExports } from "node:module";\n'
+      + 'const original=cp.spawnSync; let n=0;\n'
+      + `cp.spawnSync=(cmd,...args)=>cmd==="go"&&++n>1?(${outcome}):original(cmd,...args); syncBuiltinESMExports();\n`);
+    args.push('--import', preload);
+  }
+  args.push(SDD, '--root', fixture.d, 'tdd', 'stub', 'TEST-A-001');
+  const r = spawnSync(process.execPath, args, {
+    cwd: fixture.d, encoding: 'utf8', timeout: 20000,
+    env: { ...ENV, ...(control ? { PATH: control.onlyBin ? control.bin : `${control.bin}:${ENV.PATH}` } : {}) },
+  });
+  assert.equal(r.error, undefined, String(r.error));
+  assert.equal(r.signal, null, 'stub CLI must return an ordinary verdict');
+  return { code: r.status, out: (r.stdout ?? '') + (r.stderr ?? '') };
+};
+const r36jReject = (r, reason) => {
+  assert.equal(r.code, 1, r.out);
+  assert.match(r.out, /does not compile|could not fully stub/, r.out);
+  assert.doesNotMatch(r.out, /\(throwing, compile-checked\)|\(compile-checked\)/, r.out);
+  assert.match(r.out, reason, r.out);
+};
+
+/** @id TEST-R36J-EXIT-001 @verifies REQ-R36J-001 */
+test('#374 TEST-R36J-EXIT-001 silent unsuccessful Go processes never verify generated or native-valid no-op fixtures', () => {
+  for (const missing of [true, false]) {
+    const fixture = r36jFixture(missing);
+    const before = r36jCompile(fixture);
+    assert.equal(before.status, missing ? 1 : 0, before.text);
+    if (missing) assert.match(before.text, /undefined: Missing/);
+    const control = r36jControlled(fixture, 'process.exit(101);');
+    const result = r36jStub(fixture, control);
+    assert.ok(Number(fs.readFileSync(control.count, 'utf8')) >= 2, 'final compiler must actually execute');
+    r36jReject(result, /Go.*exit status 101/);
+  }
+});
+
+/** @id TEST-R36J-INVALID-001 @verifies REQ-R36J-001 REQ-R36J-003 */
+test('#374 TEST-R36J-INVALID-001 exact independently native-invalid fixture stays invalid despite silent final101', () => {
+  const fixture = r36jFixture(true, true);
+  const before = r36jCompile(fixture);
+  assert.equal(before.status, 1, before.text);
+  assert.match(before.text, /r36i_native_invalid/);
+  assert.match(before.text, /undefined: Missing/);
+  const control = r36jControlled(fixture, 'process.exit(101);');
+  const result = r36jStub(fixture, control);
+  assert.match(fs.readFileSync(path.join(fixture.d, 't.go'), 'utf8'), /func Missing\(\) any/);
+  const after = r36jCompile(fixture);
+  assert.equal(after.status, 1, after.text);
+  assert.match(after.text, /r36i_native_invalid/);
+  const actual = spawnSync(control.file, r36jArgs, { cwd: fixture.d, encoding: 'utf8', env: ENV });
+  assert.equal(actual.status, 101);
+  assert.equal(actual.stdout + actual.stderr, '');
+  r36jReject(result, /Go.*exit status 101/);
+});
+
+/** @id TEST-R36J-BOUNDARY-001 @verifies REQ-R36J-001 */
+test('#374 TEST-R36J-BOUNDARY-001 real opaque terminal-only signal missing-command and output-overflow outcomes fail closed', () => {
+  const cases = [
+    ['process.stderr.write("\\x1b[31m\\x1b[0m"); process.exit(101);', /Go.*exit status 101/],
+    ['process.stderr.write("opaque Go failure"); process.exit(101);', /Go.*exit status 101/],
+    ['process.kill(process.pid,"SIGTERM");', /Go.*signal SIGTERM/],
+    ['fs.unlinkSync(process.argv[1]); process.exit(101);', /Go.*error ENOENT/],
+    ['process.stdout.write("x\\n".repeat(1024*1024));', /Go.*error ENOBUFS/],
+  ];
+  for (const [body, reason] of cases) {
+    const fixture = r36jFixture();
+    const control = r36jControlled(fixture, body);
+    if (body.includes('unlinkSync')) control.onlyBin = true;
+    r36jReject(r36jStub(fixture, control), reason);
+  }
+});
+
+/** @id TEST-R36J-MALFORMED-001 @verifies REQ-R36J-001 */
+test('#374 TEST-R36J-MALFORMED-001 deterministic unavailable timeout and inconsistent success outcomes are rejected', () => {
+  const cases = [
+    ['{stdout:"",stderr:"",status:null,signal:null}', /Go.*status unavailable/],
+    ['{stdout:"",stderr:"",signal:null}', /Go.*status unavailable/],
+    ['{stdout:"",stderr:"",status:0,signal:"SIGTERM"}', /Go.*signal SIGTERM/],
+    ['{stdout:"",stderr:"",status:0,signal:null,error:{code:"ENOENT"}}', /Go.*error ENOENT/],
+    ['{stdout:"",stderr:"",status:null,signal:"SIGTERM",error:{code:"ETIMEDOUT"}}', /Go.*error ETIMEDOUT/],
+  ];
+  for (const [outcome, reason] of cases) r36jReject(r36jStub(r36jFixture(), null, outcome), reason);
+});
+
+/** @id TEST-R36J-REASON-001 @verifies REQ-R36J-001 */
+test('#374 TEST-R36J-REASON-001 process reason priority dominates supplementary Go file diagnostics', () => {
+  const cases = [
+    ['{status:101,signal:"SIGTERM",error:{code:"ENOBUFS"}}', /Go.*error ENOBUFS; .*controlled rejection/],
+    ['{status:101,signal:"SIGTERM"}', /Go.*signal SIGTERM; .*controlled rejection/],
+    ['{status:null,signal:null}', /Go.*status unavailable; .*controlled rejection/],
+    ['{status:101,signal:null}', /Go.*exit status 101; .*controlled rejection/],
+  ];
+  for (const [fields, reason] of cases) {
+    const outcome = `{stdout:"",stderr:"t_test.go:5:36: controlled rejection\\n",...${fields}}`;
+    r36jReject(r36jStub(r36jFixture(), null, outcome), reason);
+  }
+});
+
+/** @id TEST-R36J-DIAGNOSTIC-001 @verifies REQ-R36J-002 */
+test('#374 TEST-R36J-DIAGNOSTIC-001 zero exit cannot erase plain or internally SGR-split Go compiler diagnostics', () => {
+  for (const text of ['t_test.go:5:36: controlled rejection\n', 't_test.g\x1b[31mo\x1b[0m:5:36: controlled rejection\n']) {
+    const fixture = r36jFixture();
+    const control = r36jControlled(fixture, `process.stderr.write(${JSON.stringify(text)}); process.exit(0);`);
+    r36jReject(r36jStub(fixture, control), /t_test\.go:5:36: controlled rejection/);
+  }
+});
+
+/** @id TEST-R36J-NATIVE-001 @verifies REQ-R36J-003 */
+test('#374 TEST-R36J-NATIVE-001 independent native Go witnesses valid throwing generation and inferred return type', () => {
+  const valid = r36jFixture(false);
+  assert.equal(r36jCompile(valid).status, 0);
+  const fixture = r36jFixture();
+  const before = r36jCompile(fixture);
+  assert.equal(before.status, 1, before.text);
+  assert.match(before.text, /undefined: Missing/);
+  const result = r36jStub(fixture);
+  assert.equal(result.code, 0, result.out);
+  assert.match(result.out, /stubbed \(throwing, compile-checked\)/, result.out);
+  assert.match(fs.readFileSync(path.join(fixture.d, 't.go'), 'utf8'), /func Missing\(\) any[\s\S]*panic\("not implemented: Missing"\)/);
+  const after = r36jCompile(fixture);
+  assert.equal(after.status, 0, after.text);
+});
+
+/** @id TEST-R36J-COLOR-001 @verifies REQ-R36J-002 */
+test('#374 TEST-R36J-COLOR-001 colored actual native missing-symbol diagnostics retain independently valid inference', () => {
+  const fixture = r36jFixture();
+  const control = r36jControlled(fixture, '', true);
+  const witness = spawnSync(control.file, r36jArgs, { cwd: fixture.d, encoding: 'utf8', env: ENV });
+  assert.equal(witness.status, 1, witness.stdout + witness.stderr);
+  assert.match(witness.stderr, /undefined: Mis\x1b\[31msing\x1b\[0m/);
+  fs.rmSync(control.count);
+  const result = r36jStub(fixture, control);
+  assert.equal(result.code, 0, result.out);
+  assert.match(result.out, /stubbed \(throwing, compile-checked\)/, result.out);
+  assert.match(fs.readFileSync(path.join(fixture.d, 't.go'), 'utf8'), /func Missing\(\) any/);
+  const after = r36jCompile(fixture);
+  assert.equal(after.status, 0, after.text);
+});
+
+// A bare C call is only a warning on GCC <=13; an undeclared address is invalid on both defaults.
+const r36kMissingFunctionSource = (source, extension) => source.replace('return 0;', extension === 'c' ? '(void)sizeof(&answer); return answer(2);' : 'return answer(2);');
+
+/** @id TEST-R36K-PORTABILITY-001 @verifies REQ-R36K-001 */
+test('#375 TEST-R36K-PORTABILITY-001 missing-function fixture is natively invalid independently of implicit-call severity', () => {
+  for (const [extension, severity] of [['c', 'warning'], ['c', 'error'], ['cpp', 'default']]) {
+    const fixture = r36iFixture(extension, true);
+    const compile = () => spawnSync(fixture.native, [
+      '-fsyntax-only',
+      ...(severity === 'default' ? [] : [`-W${severity === 'warning' ? 'no-error' : 'error'}=implicit-function-declaration`]),
+      path.join(fixture.d, fixture.file),
+    ], { cwd: fixture.d, encoding: 'utf8', timeout: 20000, env: { ...ENV, LC_ALL: 'C' } });
+    const source = r36kMissingFunctionSource(fixture.source, extension);
+    fs.writeFileSync(path.join(fixture.d, fixture.file), source);
+    writeAll(fixture.d, { 'tests/missing.h': '' });
+    const missing = compile();
+    assert.equal(missing.status, 1, missing.stderr);
+    assert.equal(missing.signal, null);
+    assert.equal(missing.error, undefined);
+    assert.match(missing.stderr, /answer.*(?:undeclared|not declared)|undeclared identifier.*answer/);
+    assert.match(missing.stderr, /implicit declaration of function 'answer'|'answer' was not declared in this scope|use of undeclared identifier 'answer'|call to undeclared function 'answer'/);
+    if (extension === 'c') assert.match(missing.stderr, new RegExp(`${severity}: (?:implicit declaration of function|call to undeclared function) 'answer'`));
+    writeAll(fixture.d, { 'tests/missing.h': 'static int answer(int value) { return value; }\n' });
+    const valid = compile();
+    assert.equal(valid.status, 0, valid.stderr);
+    assert.equal(valid.signal, null);
+    assert.equal(valid.error, undefined);
+    fs.writeFileSync(path.join(fixture.d, fixture.file), '#error r36k_native_invalid\n' + source);
+    const invalid = compile();
+    assert.equal(invalid.status, 1, invalid.stderr);
+    assert.match(invalid.stderr, /r36k_native_invalid/);
+    assert.equal(invalid.signal, null);
+    assert.equal(invalid.error, undefined);
+  }
+});
+
+/** @id TEST-R36H2-CWD-001 @verifies REQ-R36H2-CWD-001 */
+test('#371 TEST-R36H2-CWD-001 native pytest fixture contains cache from a foreign suite cwd', () => {
+  const foreign = fs.mkdtempSync(path.join(work, 'r36h2-foreign-'));
+  const suite = fileURLToPath(import.meta.url);
+  const result = spawnSync(process.execPath, [
+    '--test', '--test-reporter=tap',
+    '--test-name-pattern=^#371 TEST-R36H-PYTEST-001 hosted provisioning runs actual pytest with user-site disabled$',
+    suite,
+  ], { cwd: foreign, env: ENV, encoding: 'utf8', timeout: 60000, maxBuffer: 8e6 });
+  const output = result.stdout + result.stderr;
+  assert.equal(result.error, undefined, output);
+  assert.equal(result.status, 0, output);
+  assert.match(output, /ok \d+ - \\?#371 TEST-R36H-PYTEST-001 hosted provisioning runs actual pytest with user-site disabled/, output);
+  assert.deepEqual(fs.readdirSync(foreign), [], 'native pytest must not leak .pytest_cache outside owned runnerTemp');
 });
