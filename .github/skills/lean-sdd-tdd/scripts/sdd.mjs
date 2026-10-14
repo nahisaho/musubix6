@@ -1725,7 +1725,7 @@ const stubTodoHit = (text) => {
   }
   return null;
 };
-const isLoadErr = (text) => LOAD_ERR.test(text) && !RUNTIME_FAIL.test(text) && !ASSERT_EXC.test(text) && !missingDeliverable(text);
+const isLoadErr = (text, assertion = ASSERT_EXC.test(text)) => LOAD_ERR.test(text) && !RUNTIME_FAIL.test(text) && !assertion && !missingDeliverable(text);
 // a repo without any commit has no baseline for `--changed` (#150)
 function hasCommit() { return spawnSync('git', ['rev-parse', '--verify', '-q', 'HEAD'], { cwd: ROOT, stdio: 'ignore' }).status === 0; }
 
@@ -1836,6 +1836,53 @@ function nodeTestRan(text, id, testPath, passing = false) {
   });
   // Duplicate titles with skipped outcomes are ambiguous, not substitute evidence.
   return rows.length > 0 && rows.every((r) => !r.skipped && (!passing || r.passed));
+}
+
+/** @id CODE-R36B-001 @implements REQ-R36B-LOAD-001 REQ-R36B-SYNTAX-001 REQ-R36B-ASSERT-001 */
+function nodeFailureContext(text, id, testPath, cwd = '.') {
+  const tap = /^TAP version 13$/m.test(text);
+  const lines = text.split('\n'), rows = [];
+  for (let i = 0; i < lines.length; i++) {
+    const m = /^(\s*)([✔✖﹣]\s+|(?:not )?ok\s+\d+\s+-\s+)(.+)$/.exec(lines[i]);
+    if (!m) continue;
+    rows.push({ i, indent: m[1], failed: /^(?:✖|not ok)/.test(m[2]),
+      skipped: /^﹣/.test(m[2]) || /#\s*(TODO|SKIP)\b/i.test(m[3]),
+      title: m[3].replace(/\s+#\s*(TODO|SKIP)\b.*$/i, '').replace(/\s+\([\d.]+(?:ms|s|µs)\)$/, '').trim() });
+  }
+  const ownsLocation = (s) => {
+    const file = s.replace(/^['"]|['"]$/g, '').replace(/:\d+(?::\d+)?$/, '');
+    return path.resolve(ROOT, cwd, file) === path.resolve(ROOT, testPath);
+  };
+  const tops = rows.filter((r) => !r.indent && r.title !== 'failing tests:');
+  const fileFailed = !nodeTestRan(text, id, testPath) && tops.length > 0 && tops.every((r) =>
+    r.failed && !r.skipped && (r.title === path.basename(testPath) || path.resolve(ROOT, cwd, r.title) === path.resolve(ROOT, testPath)));
+  const body = testBody(testPath, id).join('\n').replace(/^(?:\s|\/\*[\s\S]*?\*\/|\/\/[^\n]*)*/, '');
+  const name = nodeLiteralTitle(new RegExp(`^(?:await\\s+)?${NODE_REGISTRATION.source}`).exec(body));
+  let assertion = false, syntax = false;
+  if (nodeTestRan(text, id, testPath)) for (const row of rows.filter((r) => r.failed && !r.skipped && r.title === name)) {
+    if (tap) {
+      const indent = row.indent + '  ';
+      if (lines[row.i + 1] !== indent + '---') continue;
+      const end = lines.indexOf(indent + '...', row.i + 2);
+      if (end < 0) continue;
+      // Multiline message/stack values are deeper than diagnostic keys.
+      const fields = new Map(lines.slice(row.i + 2, end).flatMap((line) => {
+        const m = new RegExp(`^${indent}(location|name|code): (.+)$`).exec(line);
+        return m ? [[m[1], m[2].replace(/^['"]|['"]$/g, '')]] : [];
+      }));
+      if (!ownsLocation(fields.get('location') ?? '')) continue;
+      assertion ||= fields.get('name') === 'AssertionError' && fields.get('code') === 'ERR_ASSERTION';
+      syntax ||= fields.get('name') === 'SyntaxError';
+    } else {
+      const location = /^test at (.+)$/.exec(lines[row.i - 1] ?? '')?.[1];
+      if (!location || !ownsLocation(location)) continue;
+      assertion ||= /^\s+AssertionError\b/.test(lines[row.i + 1] ?? '');
+      syntax ||= /^\s+SyntaxError\b/.test(lines[row.i + 1] ?? '');
+    }
+  }
+  // Node TAP prefixes process stderr with "# "; never strip arbitrary reporter output.
+  const diagnosticText = (syntax ? 'SyntaxError: native owned exception\n' : '') + (tap ? text.replace(/^# ?/gm, '') : text);
+  return { fileFailed, loadError: isLoadErr(diagnosticText, assertion) };
 }
 
 // ---------- commands ----------
@@ -5093,12 +5140,14 @@ function cmdTdd() {
   const goVerdict = goRunner ? goResult(res.text, goTarget?.name ?? testName(t.path, id)) : null;
   if (goRunner) res.text = goOutput(res.text);
   const plain = res.text.replace(/\x1b\[[0-9;]*m/g, '');
+  const nodeFailure = nodeTestCommand(cmd, proj?.root) && nodeTestReport(plain) ? nodeFailureContext(plain, id, t.path, proj?.root) : null;
+  const loadError = nodeFailure ? nodeFailure.loadError : isLoadErr(res.text);
   // Go t.Skip and JUnit @Disabled: every test that ran was skipped (#84)
   const allSkipped = (/--- SKIP:/.test(plain) && !/--- (PASS|FAIL):/.test(plain)) || [...plain.matchAll(/Tests run: (\d+), Failures: 0, Errors: 0, Skipped: (\d+)/g)].some((m) => m[1] === m[2] && +m[1] > 0 && [...plain.matchAll(/Tests run: (\d+), Failures: 0, Errors: 0, Skipped: (\d+)/g)].every((x) => x[1] === x[2]));
   // PHPUnit skipped / no assertions, dotnet Passed: 0 + Skipped: n executed nothing (#140)
   const noAssert = noExecution(plain);
   // Node >=22 can report a file-level pass: only an executed test result proves the ID matched (#154).
-  const nodeUnobservable = nodeTestCommand(cmd, proj?.root) && !nodeTestReport(plain) && !isLoadErr(plain);
+  const nodeUnobservable = nodeTestCommand(cmd, proj?.root) && !nodeTestReport(plain) && !loadError;
   const nodeNoMatch = nodeUnobservable || (res.exit === 0 && (nodeTestCommand(cmd, proj?.root) || nodeTestReport(plain)) && !nodeTestRan(plain, id, t.path, true));
   const goNoMatch = goRunner && !LOAD_ERR.test(plain) && (!goTarget || !goVerdict || goVerdict === 'skip');
   const javaRunner = /\.java$/.test(t.path) && /(?:^|[/\s])(?:mvn|mvnw|gradle|gradlew)(?:\s|$)/.test(cmd.join(' '));
@@ -5149,8 +5198,8 @@ function cmdTdd() {
     else if (res.exit === 0 && typeof characFlag === 'string' && characFlag.trim()) ok = true;
     else if (res.exit === 0 && vacuousThrows(t.path, id)) { ok = false; why = `test passed: a matcher-less assert.throws / pytest.raises is satisfied by the stub's own "not implemented" error (vacuous test); add a matcher (error type or message) that only the real behaviour satisfies, or record --characterization "<why>"`; }
     else if (res.exit === 0) { ok = false; why = 'test passed; Red needs a real failure (data-only / characterization test? record it explicitly: --characterization "<why no implementation can fail it>"; amending a wrong expectation after Red: --retest "<reason>")'; }
-    else if (isLoadErr(res.text) && stubTodoHit(res.text)) { ok = false; why = stubTodoHit(res.text); }
-    else if (isLoadErr(res.text) && !flags.weak && !(flags['missing-module'] && declaredMissingModule(res.text, t.path))) { ok = false; why = 'load/compile error, not an assertion failure. new module? run `tdd stub <ID>` once (or `--missing-module`); if stub already ran or found nothing, add the missing code by hand; or --weak to record as weak Red' + (/\.py$/.test(t.path) && /ERROR collecting[\s\S]*(?:NotImplementedError|not implemented)/.test(res.text) ? '\nhint: the stub threw at collection time (a call in `@pytest.mark.parametrize` arguments or module level). Build those values inside the test body (or a fixture) so the stub fails at run time as an assertion/Red' : ''); }
+    else if (loadError && stubTodoHit(res.text)) { ok = false; why = stubTodoHit(res.text); }
+    else if (loadError && !flags.weak && !(flags['missing-module'] && declaredMissingModule(res.text, t.path))) { ok = false; why = 'load/compile error, not an assertion failure. new module? run `tdd stub <ID>` once (or `--missing-module`); if stub already ran or found nothing, add the missing code by hand; or --weak to record as weak Red' + (/\.py$/.test(t.path) && /ERROR collecting[\s\S]*(?:NotImplementedError|not implemented)/.test(res.text) ? '\nhint: the stub threw at collection time (a call in `@pytest.mark.parametrize` arguments or module level). Build those values inside the test body (or a fixture) so the stub fails at run time as an assertion/Red' : ''); }
     else if (ownHelperTypeError(res.text, t.path)) { ok = false; why = `TypeError raised inside the test's own helper ${ownHelperTypeError(res.text, t.path)}() (argument/signature mismatch): a test bug, not a Red for the behaviour; fix the test`; }
     else if (typeof flags.expect === 'string' && !(juliaSummaryRows(plain) ? targetOutput ?? '' : res.text).includes(flags.expect)) { ok = false; why = `failure output does not contain --expect "${flags.expect}" (Red for the wrong reason?)`; }
     else ok = true;
@@ -5158,7 +5207,7 @@ function cmdTdd() {
     if (res.timedOut) { ok = false; why = timeoutWhy; }
     else if (crashed) { ok = false; why = crashWhy; }
     else if (siblingFail === 'notrun') { ok = false; why = notRunWhy; }
-    else if (verdict === 'fail' || (res.exit !== 0 && siblingFail !== 'sibling' && verdict !== 'pass')) { ok = false; why = isLoadErr(res.text) ? 'test failed — load/compile error (the build is broken, not an assertion)' : 'test failed'; }
+    else if (verdict === 'fail' || (res.exit !== 0 && siblingFail !== 'sibling' && verdict !== 'pass')) { ok = false; why = loadError ? 'test failed — load/compile error (the build is broken, not an assertion)' : 'test failed'; }
     else if (zero || siblingFail === 'skip') { ok = false; why = 'no test matched the ID' + (nodeUnobservable ? '; unobservable Node output: use --test-reporter=spec or --test-reporter=tap' : ''); }
     else ok = true;
   }
@@ -5166,8 +5215,8 @@ function cmdTdd() {
   const rl = (targetOutput ?? plain).split('\n').map((l) => l.trim());
   const reason = sub === 'red' && res.exit !== 0 && !(retest && targetPassed) ? (rl.find((l) => /^E\s+\S/.test(l) && !/\d+ \/ \d+ \(\d+%\)|^E\s+\[\s*\d+%\]/.test(l))?.replace(/^E\s+/, '') ?? (() => { const i = rl.findIndex((l) => /panicked at/.test(l)); return i >= 0 && rl[i + 1] && !/^note:/.test(rl[i + 1]) ? rl[i + 1] : undefined; })() ?? rl.find((l) => /^(?:\[ERROR\]\s+)?(?:[\w$]+\.)+[\w$]*(?:Exception|Error)\s*$/.test(l))?.replace(/^\[ERROR\]\s+/, '') ?? specificReason(rl) ?? rl.find((l) => /not implemented/i.test(l) && !/^\d+\s*\|/.test(l)) ?? rl.find((l) => /(--- FAIL|AssertionError|Error:|assert |Failed asserting|FAILED|panicked|expected|\(Failed\)|not implemented|Test Failed|Error During Test|\w*Exception:|^Error in )/.test(l) && !/^(FAIL|❯|> Task|The following tests)/.test(l) && !/^\d+\s*\|/.test(l)) ?? rl.find((l) => /^(FAIL|not ok)\s+\S+$/.test(l)) ?? [...rl].reverse().find((l) => l && !/^(npm |note: |error: test failed|test result:|Failed!|Passed!)/.test(l)) ?? '').slice(0, 110) : '';
   // node:test: the file itself failed to load (module-level throw), so no test was registered or executed (#225)
-  const nodeLoadFail = sub === 'red' && /^ℹ tests \d+/m.test(plain) && (() => { const tops = plain.split('\n').filter((l) => /^[✖✔﹣]\s/.test(l) && !/^✖ failing tests:/.test(l)); return tops.length > 0 && tops.every((l) => new RegExp(`^✖ ${escapeRe(path.basename(t.path))} \\(`).test(l)); })();
-  const loadWeak = sub === 'red' && (isLoadErr(res.text) || nodeLoadFail) && !(flags['missing-module'] && declaredMissingModule(res.text, t.path));
+  const nodeLoadFail = sub === 'red' && nodeFailure?.fileFailed;
+  const loadWeak = sub === 'red' && (loadError || nodeLoadFail) && !(flags['missing-module'] && declaredMissingModule(res.text, t.path));
   const setupSym0 = sub === 'red' && !flags['allow-setup-red'] ? setupOrigin(rl.find((l) => /^E\s+.*(not implemented|NotImplementedError|unimplemented|is not a function|has no attribute|context manager protocol)/i.test(l)) ?? rl.find((l) => /not implemented|NotImplementedError|unimplemented|is not a function|has no attribute|context manager protocol/i.test(l) && !/^\d+\s*\|/.test(l)) ?? reason, t.path, id, res.text) : null;
   // --expect naming the setup call itself does not make a setup-origin Red the asserted behaviour (#256)
   // an --expect that names the call but says more than the stub's own message ("not implemented: sphere (layout)") and matches the failure is the asserted behaviour (r26d)

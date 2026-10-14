@@ -12986,3 +12986,128 @@ test('#363 r35a admission packed extraction and installation reject invalid init
     r35aAdmissionContract(bin, 'only');
   }
 });
+
+// Issue #366: the same admission contract must hold for native TAP and spec.
+function r36bFixture(reporter, body, subject = '(a, b) => a + b', extra = '') {
+  const d = project();
+  impl(d, subject);
+  sdd(d, 'init');
+  fs.writeFileSync(path.join(d, 'add.test.mjs'), [
+    "import { test } from 'node:test';",
+    "import assert from 'node:assert/strict';",
+    "import { add } from './add.mjs';",
+    extra,
+    '/** @id TEST-CALC-001 @verifies REQ-CALC-001 */',
+    `test('TEST-CALC-001 target', () => { ${body} });`,
+  ].join('\n'));
+  setCmd(d, ['node', '--test', `--test-reporter=${reporter}`, 'add.test.mjs']);
+  sdd(d, 'approve', 'record', 'calc', '--by', 'tester');
+  return d;
+}
+
+/** @id TEST-R36B-LOAD-001 @verifies REQ-R36B-LOAD-001 */
+test('#366 TEST-R36B-LOAD-001 native module stub is weak but in-body stub is strong', () => {
+  for (const reporter of ['tap', 'spec']) {
+    const subject = '() => { throw new Error("not implemented"); }';
+    const d = r36bFixture(reporter, 'assert.equal(fixture, 3);', subject, 'const fixture = add(1, 2);');
+    const red = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
+    assert.equal(red.code, 0, red.out);
+    assert.match(red.out, /\[weak\]/, red.out);
+    assert.match(red.out, /before any test body ran/, red.out);
+    assert.equal(lastRed(d).weak, true);
+    const control = r36bFixture(reporter, 'assert.equal(add(1, 2), 3);', subject);
+    const strong = sdd(control, 'tdd', 'red', 'TEST-CALC-001');
+    assert.equal(strong.code, 0, strong.out);
+    assert.doesNotMatch(strong.out, /\[weak\]|before any test body ran/, strong.out);
+    assert.equal(!!lastRed(control).weak, false);
+  }
+});
+
+/** @id TEST-R36B-SYNTAX-001 @verifies REQ-R36B-SYNTAX-001 */
+test('#366 TEST-R36B-SYNTAX-001 native marked syntax is rejected even with weak', () => {
+  for (const reporter of ['tap', 'spec']) {
+    const d = r36bFixture(reporter, 'assert.equal(add(1, 2), 3);');
+    fs.writeFileSync(path.join(d, 'add.mjs'), 'export const MAX = ; // SDD-TODO(stub): type unknown\n');
+    for (const flags of [[], ['--weak']]) {
+      const red = sdd(d, 'tdd', 'red', 'TEST-CALC-001', ...flags);
+      assert.equal(red.code, 1, red.out);
+      assert.match(red.out, /SDD-TODO\(stub\) element MAX.*fill MAX by hand/, red.out);
+      assert.equal(testEvidence(d).length, 0);
+    }
+    fs.writeFileSync(path.join(d, 'add.mjs'), 'export const MAX = ;\n');
+    const rejected = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
+    assert.equal(rejected.code, 1, rejected.out);
+    assert.match(rejected.out, /load\/compile error/, rejected.out);
+    assert.equal(testEvidence(d).length, 0);
+    const weak = sdd(d, 'tdd', 'red', 'TEST-CALC-001', '--weak');
+    assert.equal(weak.code, 0, weak.out);
+    assert.equal(lastRed(d).weak, true);
+  }
+});
+
+/** @id TEST-R36B-ASSERT-001 @verifies REQ-R36B-ASSERT-001 */
+test('#366 TEST-R36B-ASSERT-001 native owned assertion outranks embedded child stderr', () => {
+  for (const reporter of ['tap', 'spec']) {
+    const d = r36bFixture(reporter, "assert.equal(1, 0, 'Cannot find module child\\nSyntaxError: embedded child stderr');");
+    const red = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
+    assert.equal(red.code, 0, red.out);
+    assert.doesNotMatch(red.out, /\[weak\]|load\/compile error/, red.out);
+    assert.equal(!!lastRed(d).weak, false);
+  }
+});
+
+test('#366 native diagnostic message and sibling cannot impersonate owned assertion metadata', () => {
+  for (const reporter of ['tap', 'spec']) {
+    for (const extra of ['', "\ntest('TEST-CALC-0011 sibling', () => assert.equal(1, 0));"]) {
+      const d = r36bFixture(reporter, "throw new SyntaxError(\"invalid input\\nname: 'AssertionError'\\ncode: 'ERR_ASSERTION'\");", undefined, extra);
+      const red = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
+      assert.equal(red.code, 1, red.out);
+      assert.match(red.out, /load\/compile error/, red.out);
+      assert.equal(testEvidence(d).length, 0);
+    }
+  }
+});
+
+test('#366 native failure parser requires exact title, location and diagnostic-key ownership', () => {
+  const d = path.join(work, 'r36b-parser');
+  fs.mkdirSync(d);
+  const file = 'TEST-CALC-001.test.mjs';
+  fs.writeFileSync(path.join(d, file), "test('TEST-CALC-001 target', () => {});\n");
+  const source = fs.readFileSync(SDD, 'utf8');
+  const helpers = source.slice(source.indexOf('function nodeTestCommand('), source.indexOf('// ---------- commands ----------'));
+  const { nodeFailureContext } = new Function('fs', 'path', 'ROOT', 'testBody', 'escapeRe', 'readJson', 'isLoadErr',
+    `${helpers}\nreturn { nodeFailureContext };`)(fs, path, d,
+    () => fs.readFileSync(path.join(d, file), 'utf8').split('\n'),
+    (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), () => null,
+    (text, assertion) => /SyntaxError:|Cannot find module/.test(text) && !assertion);
+  const parse = (report) => nodeFailureContext(report, 'TEST-CALC-001', file);
+  for (const title of [file, path.join(d, file)]) {
+    assert.equal(parse(`TAP version 13\nnot ok 1 - ${title}\n# tests 1`).fileFailed, true, title);
+    assert.equal(parse(`✖ ${title} (1ms)\nℹ tests 1`).fileFailed, true, title);
+  }
+  const report = (title = 'TEST-CALC-001 target', location = path.join(d, file), keys = "  code: 'ERR_ASSERTION'\n  name: 'AssertionError'") =>
+    `TAP version 13\nnot ok 1 - ${title}\n  ---\n  location: '${location}:1:1'\n  error: |-\n    Cannot find module child\n${keys}\n  ...\n# tests 1`;
+  assert.equal(parse(report()).loadError, false, 'owned typed assertion wins');
+  for (const text of [
+    report('TEST-CALC-0011 sibling'),
+    report('TEST-CALC-001 target', path.join(d, 'sibling.test.mjs')),
+    report(undefined, undefined, "    code: 'ERR_ASSERTION'\n    name: 'AssertionError'"),
+    report(undefined, undefined, "  code: 'ERR_OTHER'\n  name: 'AssertionError'"),
+    report('TEST-CALC-001 target # TODO'),
+    report('TEST-CALC-001 target # SKIP'),
+    report(undefined, undefined, "  code: 'ERR_OTHER'\n  name: 'SyntaxError'") + '\n' + report('TEST-CALC-0011 sibling'),
+  ]) assert.equal(parse(text).loadError, true, text);
+  assert.equal(parse('TAP version 13\n# SyntaxError: invalid source\nnot ok 1 - ' + file + '\n# tests 1').loadError, true);
+  assert.equal(parse('TAP version 13\nnot ok 1 - sibling.test.mjs\n# tests 1').fileFailed, false);
+  assert.equal(parse('TAP version 13\nnot ok 1 - ' + file + '\nok 2 - TEST-CALC-001 target\n# tests 2').fileFailed, false);
+  fs.appendFileSync(path.join(d, file), "test('TEST-CALC-001 target', () => {});\n");
+  assert.equal(parse(report()).loadError, true, 'duplicate registrations cannot supply assertion ownership');
+});
+
+test('#366 native spec exception ownership excludes AssertionError text embedded in SyntaxError', () => {
+  const d = r36bFixture('spec', "throw new SyntaxError('invalid input\\nAssertionError: child stderr');");
+  const red = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
+  assert.equal(red.code, 1, red.out);
+  assert.match(red.out, /load\/compile error/, red.out);
+  assert.equal(testEvidence(d).length, 0);
+});
