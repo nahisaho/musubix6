@@ -85,6 +85,18 @@
       "review": "Independent Sonnet review approved only the authorized deadline-literal change and matching manifest metadata; all execution budgets, bindings, cells and guards are unchanged."
     },
     "mainSourcePromoted": false,
+    "promotionBinding": {
+      "frozenOperationalExclusions": [
+        ".sdd/cost-log.md",
+        ".sdd/release-validation.draft.json",
+        ".sdd/release-validation.v0.1.1.json",
+        ".sdd/release-validation.v0.1.1.results.json"
+      ],
+      "currentResultsPathExcluded": false,
+      "currentResultsPathPresentInQualifiedSource": false,
+      "requiredBeforePromotion": "Preserve this operational report at the exact already-frozen excluded path .sdd/release-validation.v0.1.1.results.json, removing only its superseded operational filename .sdd/release-validation.results.json. Then verify the complete promoted source index and digest against the frozen candidate. Do not widen exclusions, edit frozen helpers or count a differing source tree as qualified.",
+      "qualificationImpact": "None on the active candidate: frozen qualification executes the retained source checkout, not the canonical main metadata tree. Main promotion is still unperformed."
+    },
     "authorizationEndsAt": "2026-10-15T23:59:00+09:00",
     "qualificationLauncherDeadline": "The explicitly renewed deadline was independently reviewed before this prospective freeze. It is bound by the frozen driver hash and manifest authorizationEndsAt. Do not edit frozen helpers.",
     "publisherPreflight": {
