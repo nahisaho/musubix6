@@ -2356,6 +2356,13 @@ function stubRust(testPath, src, dir, made) {
   const root = (() => { let d = dir; while (d !== path.dirname(d)) { if (fs.existsSync(path.join(d, 'Cargo.toml'))) return d; d = path.dirname(d); } return null; })();
   if (root && !/(^|\/)tests\//.test(testPath) && /#\[cfg\(test\)\]/.test(src)) made.notes = ['this test is inline in the subject file (#[cfg(test)]): it can only use items of its own crate, so there is nothing to generate — write the code under test by hand'];
   if (!root || !/(^|\/)tests\//.test(testPath)) return made;
+  /** @id CODE-R36G-001 @implements REQ-R36G-001 REQ-R36G-002 */
+  const cargoTest = () => {
+    const r = spawnSync('cargo', ['test', '--no-run', '--offline', '--test', path.basename(testPath, '.rs')],
+      { cwd: root, encoding: 'utf8', timeout: 120000, env: { ...process.env, LC_ALL: 'C' } });
+    // Cargo can color piped diagnostics; every Rust consumer needs the same plain text.
+    return { text: ((r.stdout ?? '') + (r.stderr ?? '')).replace(/\x1b\[[0-9;]*m/g, ''), status: r.status, signal: r.signal, error: r.error };
+  };
   const ownLib = path.join(root, 'src/lib.rs');
   const probeFile = !fs.existsSync(ownLib);
   if (probeFile) { fs.mkdirSync(path.dirname(ownLib), { recursive: true }); fs.writeFileSync(ownLib, ''); }
@@ -2699,7 +2706,7 @@ function stubRust(testPath, src, dir, made) {
   for (const m of (src + '\n' + inline + '\n' + modUse).matchAll(/^\s*use\s+(\w+)((?:::[a-z_]\w*)+)::(\{[^}]*\}|\w+)\s*;/gm)) {
     const croot = crates.get(m[1]);
     if (!croot) continue;
-    preOut ??= probe('cargo', ['test', '--no-run', '--offline', '--test', path.basename(testPath, '.rs')], root);
+    preOut ??= cargoTest().text;
     const items = (m[3].startsWith('{') ? m[3].slice(1, -1).split(',') : [m[3]]).map((x) => x.trim().split(/\s+as\s+/)[0]).filter((x) => /^[A-Za-z_]\w*$/.test(x) && x !== 'self' && new RegExp(`\\b${x}\\b`).test(srcNoUse));
     if (!items.length) continue;
     const lib = path.join(croot, 'src/lib.rs');
@@ -2761,8 +2768,8 @@ function stubRust(testPath, src, dir, made) {
     fs.writeFileSync(lib, text + (text && !text.endsWith('\n') ? '\n' : '') + (text ? '\n' : '') + `#[macro_export]\nmacro_rules! ${name} {\n    ($($t:tt)*) => {\n        unimplemented!("${name}!")\n    };\n}\n`);
     made.push(rel(lib));
   }
-  const cargoTest = () => probe('cargo', ['test', '--no-run', '--offline', '--test', path.basename(testPath, '.rs')], root);
-  let out = cargoTest();
+  let result = cargoTest();
+  let out = result.text;
   // variants the test uses that an existing enum lacks are added to it (#290)
   const variantNotes = [];
   const missingVariants = [...new Map([...out.matchAll(/no variant[^`\n]*named `(\w+)` found for enum `(?:\w+::)*(\w+)`/g)].map((m) => [m[2] + '::' + m[1], m])).values()];
@@ -2790,7 +2797,8 @@ function stubRust(testPath, src, dir, made) {
       made.push(rel(at.f));
       variantNotes.push(`added variant ${e}::${v} to ${rel(at.f)}`);
     }
-    out = cargoTest();
+    result = cargoTest();
+    out = result.text;
   }
   // methods / associated fns the test calls on a type that already exists are added to its impl, found from cargo's E0599 (#298)
   const growMembers = () => {
@@ -2816,23 +2824,29 @@ function stubRust(testPath, src, dir, made) {
         wrote = true;
       }
       if (!wrote) return;
-      out = cargoTest();
+      result = cargoTest();
+      out = result.text;
     }
   };
   growMembers();
   const names = [...new Set([...out.matchAll(/cannot find function `(\w+)`|unresolved import `[\w:]+::(\w+)`|no `(\w+)` in the root|cannot find struct, variant or union type `(\w+)`/g)].map((m) => m[1] ?? m[2] ?? m[3] ?? m[4]))].filter((n) => !modNames.has(n) && !macroNames.has(n) && new RegExp(`\\b${n}\\b`).test(fullNoUse));
   // compile-check what was written: an honest verdict instead of an assumed "Red-safe" (#130)
+  /** @id CODE-R36G-002 @implements REQ-R36G-001 REQ-R36G-002 */
   const verified = () => {
-    const after = made.length || names.length ? cargoTest() : out;
-    const err = /^error(?:\[\w+\])?: .*$/m.exec(after.replace(/^error: could not compile.*$/gm, ''));
-    if (!err) return { verified: 'ok' };
+    const witness = made.length || names.length ? cargoTest() : result;
+    const after = witness.text;
+    const err = /^error(?:\[\w+\])?: .*$/m.exec(after);
+    if (witness.status === 0 && !witness.signal && !witness.error && !err) return { verified: 'ok' };
     // constructs the generator cannot stub: say which ones
     const notes = [];
     for (const m of new Set([...after.matchAll(/cannot find macro `(\w+)`/g)].map((x) => x[1]))) notes.push(`macro ${m}! is not stubbed (macro_rules! cannot be generated): define it by hand`);
     if (/cannot find trait `\w+`|not all trait items implemented|E0046|E0405/.test(after)) notes.push('trait impls / associated types are not stubbed: write the trait and its impl by hand');
     if (/E0107|E0392|type annotations needed|E0282|lifetime|generic argument/.test(after)) notes.push('generic parameters / lifetimes are not stubbed: adjust the stub signatures by hand');
     if (/mismatched types|E0308/.test(after)) notes.push('a stub return type does not match how the test uses it (Option/Result/bool/collections): fix the stub signature by hand');
-    return { verified: 'fail', verifyError: err[0].slice(0, 160), notes };
+    const failure = witness.error ? `Cargo compile check could not run: ${witness.error.code ?? witness.error.message}`
+      : witness.signal ? `Cargo compile check terminated by signal ${witness.signal}`
+        : err?.[0] ?? `Cargo compile check failed with exit status ${witness.status ?? 'unknown'} (no recognizable compiler diagnostic)`;
+    return { verified: 'fail', verifyError: failure.slice(0, 160), notes };
   };
   const withNotes = (r) => { if (/\bmacro_rules!/.test(fullNoUse)) variantNotes.push('macro_rules! in the test file: macros are not stubbed, the rest is stubbed as far as it compiles — finish by hand'); if (/^\s*use\s+(?:crate|\w+)::(?:\w+::)*\*\s*;/m.test(src + '\n' + fullNoUse) || /^\s*use\s[^;]*\*\s*;/m.test(src)) variantNotes.push('wildcard `use ...::*` in the test: names are stubbed from compiler errors only (partial stubs) — check them by hand'); if (report.length) r.report = report; if (variantNotes.length) r.notes = [...(r.notes ?? []), ...variantNotes]; return r; };
   if (!names.length) { if (probeFile && !made.length) fs.rmSync(ownLib); return withNotes(Object.assign([...new Set(made)], verified())); }
