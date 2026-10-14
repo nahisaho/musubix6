@@ -13170,3 +13170,57 @@ test('#366 native spec exception ownership excludes AssertionError text embedded
   assert.match(red.out, /load\/compile error/, red.out);
   assert.equal(testEvidence(d).length, 0);
 });
+
+/** @id TEST-R36C-CLOSURE-001 @verifies REQ-R36C-CLOSURE-001 */
+test('r36c #367 absent basenames avoid normalization without losing existing helpers', () => {
+  const { d, cp, cfg } = r34fFixture();
+  fs.mkdirSync(path.join(d, 'tools'));
+  fs.writeFileSync(path.join(d, 'tools/bundle.cjs'), Array.from({ length: 4000 }, (_, i) => `// r36ordinary${i}\n`).join(''));
+  fs.writeFileSync(path.join(d, 'r36ordinary0'), '#!/bin/sh\n# root helper\n');
+  fs.writeFileSync(path.join(d, 'tools/r36ordinary1'), '#!/bin/sh\n# source-relative helper\n');
+  cfg.checks = [{ name: 'types', cmd: ['node', 'tools/bundle.cjs'] }];
+  fs.writeFileSync(cp, JSON.stringify(cfg));
+  const measured = path.join(work, 'r36c-counted.mjs');
+  fs.writeFileSync(measured, fs.readFileSync(SDD, 'utf8').replace("import path from 'node:path';", [
+    "import path from 'node:path';",
+    'let r36Resolutions = 0;',
+    'const r36Resolve = path.resolve;',
+    "path.resolve = (...args) => { if (args.some((arg) => /^r36ordinary\\d+$/.test(String(arg)))) r36Resolutions++; return r36Resolve(...args); };",
+    "process.on('exit', () => console.log('R36_RESOLUTIONS=' + r36Resolutions));",
+  ].join('\n')).replace('return defs;\n}', "console.log('R36_FILES=' + JSON.stringify([...defs.keys()])); return defs;\n}"));
+  const result = spawnSync(process.execPath, [measured, '--root', d, 'tdd', 'red', 'TEST-A-001'], { encoding: 'utf8', env: ENV, timeout: 15000 });
+  assert.equal(result.error, undefined, String(result.error));
+  assert.equal(result.status, 0, result.stdout + result.stderr);
+  const resolutions = Number(/R36_RESOLUTIONS=(\d+)/.exec(result.stdout)?.[1]);
+  assert.ok(resolutions <= 16, `absent basenames must not trigger normalization; observed ${resolutions}`);
+  const definitions = JSON.parse(/R36_FILES=(.+)/.exec(result.stdout)?.[1] ?? '[]');
+  for (const file of ['r36ordinary0', 'tools/r36ordinary1', 'tools/bundle.cjs'])
+    assert.ok(definitions.some((key) => key.endsWith(`|${file}`)), `missing helper ${file}`);
+  console.log(`r36 candidate path resolutions=${resolutions} for 4000 basenames; root/source helpers preserved`);
+});
+
+/** @id TEST-R36C-CLOSURE-002 @verifies REQ-R36C-CLOSURE-001 */
+test('r36c #367 repeated executable identifiers share fresh closure fingerprints', () => {
+  const { d, cp, cfg } = r34fFixture();
+  fs.mkdirSync(path.join(d, 'tools'));
+  fs.writeFileSync(path.join(d, 'tools/bundle.cjs'), '// node\n'.repeat(5000));
+  cfg.checks = ['first', 'second'].map((name) => ({ name, cmd: ['node', 'tools/bundle.cjs'] }));
+  fs.writeFileSync(cp, JSON.stringify(cfg));
+  const measured = path.join(work, 'r36c-executables.mjs');
+  fs.writeFileSync(measured, fs.readFileSync(SDD, 'utf8').replace("import fs from 'node:fs';", [
+    "import fs from 'node:fs';",
+    'let r36ExecutableProbes = 0;',
+    "for (const name of ['realpathSync', 'statSync']) { const original = fs[name]; fs[name] = (...args) => { if (args[0] === process.execPath) r36ExecutableProbes++; return original(...args); }; }",
+    "process.on('exit', () => console.log('R36_EXECUTABLE_PROBES=' + r36ExecutableProbes));",
+  ].join('\n')).replace('return defs;\n}', "console.log('R36_FILES=' + JSON.stringify([...defs.keys()])); return defs;\n}"));
+  const result = spawnSync(process.execPath, [measured, '--root', d, 'tdd', 'red', 'TEST-A-001'], { encoding: 'utf8', env: ENV, timeout: 15000 });
+  assert.equal(result.error, undefined, String(result.error));
+  assert.equal(result.status, 0, result.stdout + result.stderr);
+  const probes = Number(/R36_EXECUTABLE_PROBES=(\d+)/.exec(result.stdout)?.[1]);
+  assert.ok(probes <= 16, `executable fingerprint work must be shared within a closure; observed ${probes}`);
+  const definitions = JSON.parse(/R36_FILES=(.+)/.exec(result.stdout)?.[1] ?? '[]');
+  assert.ok(definitions.some((key) => key.startsWith('executable:node|')), 'missing real interpreter fingerprint');
+  for (const check of ['first', 'second'])
+    assert.ok(definitions.includes(`${check}|tools/bundle.cjs`), `missing ${check} compiler closure`);
+  console.log(`r36 executable probes=${probes} for 5000 node identifiers shared by two checks`);
+});
