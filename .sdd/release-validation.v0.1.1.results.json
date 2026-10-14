@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
   "targetVersion": "0.1.1",
-  "status": "NOT_READY",
-  "consecutiveCompleteCleanRuns": 1,
+  "status": "QUALIFICATION_PASSED_RELEASE_BLOCKED",
+  "consecutiveCompleteCleanRuns": 2,
   "humanReleaseApproved": false,
   "publishingAuthorized": false,
   "currentCandidate": {
-    "status": "qualification-running-one-clean-run",
+    "status": "qualified-awaiting-source-promotion",
     "sourceCommit": "f4a495af013d785d83676f93ffa3102717675ed0",
     "sourceArchiveSha256": "f0235be18b8f8ca6b151cee5e672334a631cc2df0cb41785652591b562248895",
     "sourceDigest": "cf233120203e463530a6d78b146665728c15e47755248e6c1d4381fe0e201a71",
@@ -24,7 +24,7 @@
       "requiredCells": 20,
       "mutationMechanisms": 31,
       "run1": "PASS",
-      "run2": "RUNNING"
+      "run2": "PASS"
     },
     "qualificationRuns": [
       {
@@ -49,6 +49,30 @@
           "requiredCasesObserved": 1115
         },
         "preservation": "All required whole-filesystem, dependency and frozen-input guards passed; failed historical epoch receives no credit."
+      },
+      {
+        "runId": "run2",
+        "status": "PASS",
+        "startedAt": "2026-10-14T10:33:33.916Z",
+        "completedAt": "2026-10-14T11:06:16.353Z",
+        "requiredCells": 20,
+        "passedCells": 20,
+        "report": {
+          "path": "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/r36-final-f4a495a/run2/result.json",
+          "sha256": "8902d7338fc49f477ebd9a11d1edfbae21503201f6d3af827aeb78e34ad5e358"
+        },
+        "logHashesVerified": 20,
+        "fullRegressionPerRuntime": {
+          "actualNodeVersions": ["20.20.2", "22.23.3", "24.21.0"],
+          "tests": 1115,
+          "pass": 1111,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 4,
+          "requiredCasesObserved": 1115
+        },
+        "preservation": "All required whole-filesystem, dependency and frozen-input guards passed. All children settled and the exclusive lease was released."
       }
     ],
     "focusedPreflight": "Four exact fixture controls pass on each actual Node 20/22/24, with identical complete filesystem hashes before and after. This is not a full suite or qualification.",
@@ -92,10 +116,27 @@
         ".sdd/release-validation.v0.1.1.json",
         ".sdd/release-validation.v0.1.1.results.json"
       ],
-      "currentResultsPathExcluded": false,
-      "currentResultsPathPresentInQualifiedSource": false,
-      "requiredBeforePromotion": "Preserve this operational report at the exact already-frozen excluded path .sdd/release-validation.v0.1.1.results.json, removing only its superseded operational filename .sdd/release-validation.results.json. Then verify the complete promoted source index and digest against the frozen candidate. Do not widen exclusions, edit frozen helpers or count a differing source tree as qualified.",
+      "currentResultsPath": ".sdd/release-validation.v0.1.1.results.json",
+      "currentResultsPathExcluded": true,
+      "supersededOperationalFilename": ".sdd/release-validation.results.json",
+      "requiredBeforePromotion": "The operational report is preserved at the exact already-frozen excluded path, and its superseded operational filename is removed. Verify the complete promoted source index and digest against the frozen candidate. Do not widen exclusions, edit frozen helpers or count a differing source tree as qualified.",
       "qualificationImpact": "None on the active candidate: frozen qualification executes the retained source checkout, not the canonical main metadata tree. Main promotion is still unperformed."
+    },
+    "fullRootGate": {
+      "command": "node .github/skills/lean-sdd-tdd/scripts/sdd.mjs gate",
+      "cwd": "/home/nahisaho/GitHub/musubix-fix-r35a",
+      "status": "FAIL",
+      "exitCode": 1,
+      "traceRequirements": 22,
+      "traceErrors": 22,
+      "traceWarnings": 53,
+      "approvalLedgerEntries": 7,
+      "approvalLedgerChainIntact": true,
+      "tddEvidence": "0/0 tests Red-to-Green",
+      "configuredCommands": 0,
+      "log": "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/r36-final-full-root-gate.log",
+      "logSha256": "2c8b47ba520f41425fc109471aabae8a8b29c9b1970603a93be0367d61cf96b2",
+      "residual": "The existing 512 KiB scanner bound excludes the monolithic test file. Small proof gates and complete separate qualification runs do not turn this full self-hosting gate into PASS. No source, scanner limit or evidence policy was changed to hide the failure."
     },
     "authorizationEndsAt": "2026-10-15T23:59:00+09:00",
     "qualificationLauncherDeadline": "The explicitly renewed deadline was independently reviewed before this prospective freeze. It is bound by the frozen driver hash and manifest authorizationEndsAt. Do not edit frozen helpers.",
@@ -118,7 +159,7 @@
       "publishingAuthorized": false,
       "releaseApprovalResidual": "The scoped npm environment contains NPM_TOKEN and the local CLI authenticates as nahisaho, but these facts do not prove that the stored environment token belongs to the same account or permits first publication. No required environment-reviewer gate is configured; real user approval must precede tag creation."
     },
-    "next": "Fresh-state run2 started at 2026-10-14T10:33:33.916Z under the identical frozen source/package/manifest. Require all 20 cells and preservation guards to pass with intact log hashes before declaring two clean runs. No old-run credit and no publication authority."
+    "next": "Both fresh-state qualification runs passed all 20 cells under identical frozen bindings, with all 40 log hashes verified. Preserve the separately failed full self-hosting gate as an explicit residual. Promote only a source-equivalent tree and byte-identical pack; then request genuine human release approval with exact paths/hashes and all residual risks. No publication authority."
   },
   "epochs": [
     {

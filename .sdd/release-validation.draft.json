@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "status": "corrected-candidate-frozen-qualification-running",
+  "status": "two-clean-qualifications-complete-root-gate-failed",
   "targetVersion": "0.1.1",
   "decision": "docs/design-sdd-hardening.md#35-release-readiness-versus-exploratory-dogfooding-g4",
   "candidate": {
@@ -20,7 +20,7 @@
       "requiredCells": 20,
       "mutationMechanisms": 31,
       "firstRun": "PASS",
-      "secondRun": "RUNNING"
+      "secondRun": "PASS"
     },
     "supersededManifest": {
       "status": "explicitly-superseded",
@@ -38,11 +38,11 @@
         "files": 18
       }
     },
-    "consecutiveCompleteCleanRuns": 1,
+    "consecutiveCompleteCleanRuns": 2,
     "mainSourcePromoted": false,
     "reviewedIntegration": "f4a495af013d785d83676f93ffa3102717675ed0",
     "preparedCandidate": {
-      "status": "qualification-running-one-clean-run",
+      "status": "qualified-awaiting-source-promotion",
       "sourceArchiveSha256": "f0235be18b8f8ca6b151cee5e672334a631cc2df0cb41785652591b562248895",
       "packageSha256": "f24429ee79be2a842d1a6b696baa886d3942978aa40ab4f8a527f84971409ead",
       "registeredTests": 1115,
@@ -151,7 +151,7 @@
     },
     "selfHostingEvidenceLimit": "The root scanner excludes the monolithic test file above its existing 512 KiB bound. Native compiler changes have honest small-runner Red/Green evidence using exact final EOF tests/helpers; no repository-root gate PASS is claimed.",
     "qualificationDriver": "Reviewed interruption-safe execution uses serial fresh-source/dependency preparation before exactly three bounded full suites, an exclusive lease, all-settled completion, and seven process self-tests. Final prospective inputs bind the actual Python sources used by the offline wheel fixture. All 29 fixed mutation mechanisms pass the formal run, but the required whole-filesystem guard rejects the pytest fixture leak after otherwise successful full regressions. No preflight or failed run counts toward qualification.",
-    "next": "Run1 completed all 20 cells PASS at 2026-10-14T10:33:09.597Z; all three actual runtimes executed 1115 tests with 1111 pass, zero fail/cancel/skip and four TODOs. All 20 log hashes were verified. Fresh-state run2 started at 2026-10-14T10:33:33.916Z under identical bindings and must also pass completely. Main source promotion, tag and publication remain unperformed; publication requires genuine human approval."
+    "next": "Both fresh-state runs passed all 20 required cells under identical frozen source/package/manifest bindings; all 40 log hashes verified. Run2 completed at 2026-10-14T11:06:16.353Z. Each runtime in each run executed 1115 tests with 1111 pass, zero fail/cancel/skip and four TODOs. Separately, the actual full root gate failed with 22 trace errors and 53 warnings because the existing scanner excludes the monolithic tests; do not call it PASS. Results are preserved at the exact frozen excluded path .sdd/release-validation.v0.1.1.results.json. Source-equivalent main promotion and genuine human release approval remain pending."
   },
   "supportContract": {
     "publicBaseline": "README.md, README-ja.md and package.json; no support narrowing authorized",
@@ -381,7 +381,7 @@
     "Version, candidate/package digests, retained artifact paths and complete runnable commands not yet fixed"
   ],
   "qualification": {
-    "cleanRuns": 1,
+    "cleanRuns": 2,
     "requiredConsecutiveRuns": 2,
     "runEvidence": [
       {
@@ -389,6 +389,15 @@
         "status": "PASS",
         "path": "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/r36-final-f4a495a/run1/result.json",
         "sha256": "ee6ce75400d3e5668c9fd8193b478f31813b7cbfe9d052e37016b12e0aa6b02b",
+        "requiredCells": 20,
+        "passedCells": 20,
+        "logHashesVerified": 20
+      },
+      {
+        "runId": "run2",
+        "status": "PASS",
+        "path": "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/r36-final-f4a495a/run2/result.json",
+        "sha256": "8902d7338fc49f477ebd9a11d1edfbae21503201f6d3af827aeb78e34ad5e358",
         "requiredCells": 20,
         "passedCells": 20,
         "logHashesVerified": 20
