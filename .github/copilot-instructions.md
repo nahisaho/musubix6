@@ -1,5 +1,10 @@
 # Repository instructions
 
+## Release qualification
+
+- Follow `docs/design-sdd-hardening.md` section 3.5: two consecutive clean runs of a frozen support/candidate/test matrix, not two ever-expanding exploratory waves. New in-scope S1/S2 always block readiness; required unknown/skipped results are not passes.
+- Record manifest revisions and reset validation on relevant changes. Scope narrowing, weaker required cases and S1/S2 downgrades need explicit human approval. Technical readiness never authorizes tagging or publishing; release approval includes exact artifact paths/hashes and residual risks.
+
 ## Counterexample-first development (T1/T2)
 
 - Use GPT-6.1 Sol for development. Before implementation, define the conditions required for PASS and construct counterexamples that violate them; do not use the model only to write fixes.
