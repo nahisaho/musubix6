@@ -10,7 +10,7 @@
     "packageSha256": "f24429ee79be2a842d1a6b696baa886d3942978aa40ab4f8a527f84971409ead"
   },
   "r36CurrentBlockers": {
-    "qualifying": false,
+    "qualifying": true,
     "frozenManifestExists": true,
     "frozenManifest": {
       "path": ".sdd/release-validation.v0.1.1.json",
@@ -39,10 +39,13 @@
       }
     },
     "consecutiveCompleteCleanRuns": 2,
-    "mainSourcePromoted": false,
+    "mainSourcePromoted": true,
+    "mainPromotionCommit": "68b95e331fd21e36ff473ca5932f8cb659a49f5b",
+    "mainSourceIndexExactlyMatchesFrozenManifest": true,
+    "mainRepackedArchiveByteIdentical": true,
     "reviewedIntegration": "f4a495af013d785d83676f93ffa3102717675ed0",
     "preparedCandidate": {
-      "status": "qualified-awaiting-source-promotion",
+      "status": "qualified-main-promoted-release-blocked",
       "sourceArchiveSha256": "f0235be18b8f8ca6b151cee5e672334a631cc2df0cb41785652591b562248895",
       "packageSha256": "f24429ee79be2a842d1a6b696baa886d3942978aa40ab4f8a527f84971409ead",
       "registeredTests": 1115,
@@ -151,7 +154,7 @@
     },
     "selfHostingEvidenceLimit": "The root scanner excludes the monolithic test file above its existing 512 KiB bound. Native compiler changes have honest small-runner Red/Green evidence using exact final EOF tests/helpers; no repository-root gate PASS is claimed.",
     "qualificationDriver": "Reviewed interruption-safe execution uses serial fresh-source/dependency preparation before exactly three bounded full suites, an exclusive lease, all-settled completion, and seven process self-tests. Final prospective inputs bind the actual Python sources used by the offline wheel fixture. All 29 fixed mutation mechanisms pass the formal run, but the required whole-filesystem guard rejects the pytest fixture leak after otherwise successful full regressions. No preflight or failed run counts toward qualification.",
-    "next": "Both fresh-state runs passed all 20 required cells under identical frozen source/package/manifest bindings; all 40 log hashes verified. Run2 completed at 2026-10-14T11:06:16.353Z. Each runtime in each run executed 1115 tests with 1111 pass, zero fail/cancel/skip and four TODOs. Separately, the actual full root gate failed with 22 trace errors and 53 warnings because the existing scanner excludes the monolithic tests; do not call it PASS. Results are preserved at the exact frozen excluded path .sdd/release-validation.v0.1.1.results.json. Source-equivalent main promotion and genuine human release approval remain pending."
+    "next": "Both fresh-state runs passed all 20 required cells under identical frozen source/package/manifest bindings; all 40 log hashes verified. Run2 completed at 2026-10-14T11:06:16.353Z. Each runtime in each run executed 1115 tests with 1111 pass, zero fail/cancel/skip and four TODOs. Separately, the actual full root gate failed with 22 trace errors and 53 warnings because the existing scanner excludes the monolithic tests; do not call it PASS. Source-equivalent main promotion 68b95e331fd21e36ff473ca5932f8cb659a49f5b is pushed and its repacked archive is byte-identical. Results are preserved at the exact frozen excluded path .sdd/release-validation.v0.1.1.results.json. Promoted-main hosted CI is running; prepare the exact artifact/hash/residual approval packet. Genuine human release approval remains ungranted."
   },
   "supportContract": {
     "publicBaseline": "README.md, README-ja.md and package.json; no support narrowing authorized",

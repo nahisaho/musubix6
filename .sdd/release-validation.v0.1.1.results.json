@@ -6,7 +6,7 @@
   "humanReleaseApproved": false,
   "publishingAuthorized": false,
   "currentCandidate": {
-    "status": "qualified-awaiting-source-promotion",
+    "status": "qualified-main-promoted-release-blocked",
     "sourceCommit": "f4a495af013d785d83676f93ffa3102717675ed0",
     "sourceArchiveSha256": "f0235be18b8f8ca6b151cee5e672334a631cc2df0cb41785652591b562248895",
     "sourceDigest": "cf233120203e463530a6d78b146665728c15e47755248e6c1d4381fe0e201a71",
@@ -108,7 +108,25 @@
       "files": 21,
       "review": "Independent Sonnet review approved only the authorized deadline-literal change and matching manifest metadata; all execution budgets, bindings, cells and guards are unchanged."
     },
-    "mainSourcePromoted": false,
+    "mainSourcePromoted": true,
+    "mainPromotion": {
+      "mergeCommit": "68b95e331fd21e36ff473ca5932f8cb659a49f5b",
+      "pushedTo": "origin/main",
+      "sourceIndexExactlyMatchesFrozenManifest": true,
+      "sourceDigest": "cf233120203e463530a6d78b146665728c15e47755248e6c1d4381fe0e201a71",
+      "workingBytesAndExecutableModesVerified": true,
+      "repackedArtifact": {
+        "path": "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/r36-main-promotion/pack/musubix6-0.1.1.tgz",
+        "sha256": "f24429ee79be2a842d1a6b696baa886d3942978aa40ab4f8a527f84971409ead",
+        "byteIdenticalToQualifiedPackage": true
+      },
+      "hostedCI": {
+        "run": "https://github.com/nahisaho/musubix6/actions/runs/38554511796",
+        "head": "68b95e331fd21e36ff473ca5932f8cb659a49f5b",
+        "statusWhenRecorded": "in_progress",
+        "qualifiedCandidateHostedCIRemainsSuccessful": true
+      }
+    },
     "promotionBinding": {
       "frozenOperationalExclusions": [
         ".sdd/cost-log.md",
@@ -120,7 +138,7 @@
       "currentResultsPathExcluded": true,
       "supersededOperationalFilename": ".sdd/release-validation.results.json",
       "requiredBeforePromotion": "The operational report is preserved at the exact already-frozen excluded path, and its superseded operational filename is removed. Verify the complete promoted source index and digest against the frozen candidate. Do not widen exclusions, edit frozen helpers or count a differing source tree as qualified.",
-      "qualificationImpact": "None on the active candidate: frozen qualification executes the retained source checkout, not the canonical main metadata tree. Main promotion is still unperformed."
+      "qualificationImpact": "The operational report was moved without changing the frozen exclusions or qualified source. The complete promoted main source index and digest exactly match the frozen candidate, and the repacked archive is byte-identical."
     },
     "fullRootGate": {
       "command": "node .github/skills/lean-sdd-tdd/scripts/sdd.mjs gate",
@@ -159,7 +177,7 @@
       "publishingAuthorized": false,
       "releaseApprovalResidual": "The scoped npm environment contains NPM_TOKEN and the local CLI authenticates as nahisaho, but these facts do not prove that the stored environment token belongs to the same account or permits first publication. No required environment-reviewer gate is configured; real user approval must precede tag creation."
     },
-    "next": "Both fresh-state qualification runs passed all 20 cells under identical frozen bindings, with all 40 log hashes verified. Preserve the separately failed full self-hosting gate as an explicit residual. Promote only a source-equivalent tree and byte-identical pack; then request genuine human release approval with exact paths/hashes and all residual risks. No publication authority."
+    "next": "Both fresh-state qualification runs passed all 20 cells under identical frozen bindings, with all 40 log hashes verified. Source-equivalent main promotion and byte-identical repacking are complete and pushed. Preserve the separately failed full self-hosting gate as an explicit residual. Finish the exact-path/hash approval packet and observe the promoted-main hosted CI before requesting genuine human release approval. No publication authority."
   },
   "epochs": [
     {
