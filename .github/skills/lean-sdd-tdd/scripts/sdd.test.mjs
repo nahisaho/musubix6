@@ -13544,3 +13544,61 @@ test('#370 TEST-R36F-LAYOUT-001 r35a fixtures stay outside distributed payload f
     }
   } finally { fs.rmSync(probe, { recursive: true, force: true }); }
 });
+
+/** @id TEST-R36H-PYTEST-001 @verifies REQ-R36H-PYTEST-001 */
+test('#371 TEST-R36H-PYTEST-001 hosted provisioning runs actual pytest with user-site disabled', () => {
+  const root = fileURLToPath(new URL('../../../../', import.meta.url));
+  const area = fs.mkdtempSync(path.join(work, 'r36h-pytest-'));
+  const wheels = path.join(area, 'wheels');
+  fs.mkdirSync(wheels);
+  const wheelResult = spawnSync('python3', ['-c', `
+import importlib.metadata as md, importlib.util, pathlib, sys, zipfile
+for name in ("pytest", "iniconfig", "packaging", "pluggy", "pygments"):
+    dist = md.distribution(name)
+    stem = dist.metadata["Name"].replace("-", "_") + "-" + dist.version
+    wheel = pathlib.Path(sys.argv[1]) / (stem + "-py3-none-any.whl")
+    with zipfile.ZipFile(wheel, "w", zipfile.ZIP_DEFLATED) as output:
+        for module in (("pytest", "_pytest", "py") if name == "pytest" else (name,)):
+            origin = pathlib.Path(importlib.util.find_spec(module).origin)
+            if origin.name != "__init__.py":
+                output.write(origin, module + ".py")
+            else:
+                for file in origin.parent.rglob("*"):
+                    if file.is_file() and "__pycache__" not in file.parts:
+                        output.write(file, str(pathlib.Path(module) / file.relative_to(origin.parent)))
+        output.writestr(stem + ".dist-info/METADATA", dist.read_text("METADATA") or dist.read_text("PKG-INFO"))
+        output.writestr(stem + ".dist-info/WHEEL", "Wheel-Version: 1.0\\nRoot-Is-Purelib: true\\nTag: py3-none-any\\n")
+        output.writestr(stem + ".dist-info/RECORD", "")
+`, wheels], { encoding: 'utf8' });
+  assert.equal(wheelResult.status, 0, `Missing declared pytest prerequisite:\n${wheelResult.stdout}${wheelResult.stderr}`);
+  for (const workflow of ['ci.yml', 'publish.yml']) {
+    const source = fs.readFileSync(path.join(root, '.github/workflows', workflow), 'utf8');
+    const step = source.match(/      - name: Provision isolated pytest\n        run: \|\n((?:          .*\n)+)/);
+    assert.ok(step, `${workflow}: pytest must have an independently executable provisioning step`);
+    const runnerTemp = path.join(area, workflow);
+    fs.mkdirSync(runnerTemp);
+    const githubPath = path.join(runnerTemp, 'github-path');
+    fs.writeFileSync(githubPath, '');
+    const result = spawnSync('bash', ['-e', '-o', 'pipefail', '-c', step[1].replace(/^          /gm, '')], {
+      encoding: 'utf8', cwd: root,
+      env: { ...ENV, RUNNER_TEMP: runnerTemp, GITHUB_PATH: githubPath, PIP_NO_INDEX: '1', PIP_FIND_LINKS: wheels },
+    });
+    assert.equal(result.status, 0, `${workflow}: ${result.stdout}${result.stderr}`);
+    const exported = fs.readFileSync(githubPath, 'utf8').trim().split('\n');
+    assert.deepEqual(exported, [path.join(runnerTemp, 'sdd-pytest', 'bin')], `${workflow}: persist the selected interpreter for subsequent steps`);
+    const nativeEnv = { ...ENV, PATH: exported.join(path.delimiter) + path.delimiter + ENV.PATH, PYTHONNOUSERSITE: '1', PYTHONSAFEPATH: '1' };
+    const identity = spawnSync('python3', ['-c', 'import sys,site,pytest; assert sys.prefix != sys.base_prefix; assert not site.ENABLE_USER_SITE; print(sys.executable); print(pytest.__file__)'], { encoding: 'utf8', env: nativeEnv });
+    assert.equal(identity.status, 0, `${workflow}: ${identity.stdout}${identity.stderr}`);
+    assert.ok(identity.stdout.includes(path.join(runnerTemp, 'sdd-pytest')), identity.stdout);
+    const testFile = path.join(runnerTemp, 'test_native.py');
+    fs.writeFileSync(testFile, 'def test_native():\n    assert 1 == 0, "r36h native assertion"\n');
+    const run = () => spawnSync('python3', ['-m', 'pytest', '-q', testFile], { encoding: 'utf8', env: nativeEnv });
+    const red = run();
+    assert.equal(red.status, 1, `${red.stdout}${red.stderr}`);
+    assert.match(red.stdout + red.stderr, /r36h native assertion/);
+    fs.writeFileSync(testFile, 'def test_native():\n    assert 1 == 1\n');
+    const green = run();
+    assert.equal(green.status, 0, `${green.stdout}${green.stderr}`);
+    assert.match(green.stdout, /1 passed/);
+  }
+});

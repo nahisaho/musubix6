@@ -23,9 +23,18 @@ jobs:
           node-version: 24
       - name: Install test dependencies
         run: npm ci
-      - name: Install test toolchains (pytest, R)
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Provision isolated pytest
         run: |
-          python3 -m pip install --user pytest
+          python3 -m venv "$RUNNER_TEMP/sdd-pytest"
+          export PATH="$RUNNER_TEMP/sdd-pytest/bin:$PATH"
+          python3 -m pip install pytest
+          printf '%s\n' "$RUNNER_TEMP/sdd-pytest/bin" >> "$GITHUB_PATH"
+          PYTHONNOUSERSITE=1 python3 -m pytest --version
+      - name: Install R test toolchain
+        run: |
           sudo apt-get update -qq && sudo apt-get install -y -qq r-base-core
       - name: Run lean-sdd-tdd suite
         working-directory: .github/skills/lean-sdd-tdd/scripts
