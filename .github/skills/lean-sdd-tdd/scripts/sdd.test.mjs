@@ -13383,3 +13383,46 @@ test('#369 TEST-R36E-ASSERT-001 owned assertions outrank embedded native-loader 
     assert.equal(!!lastRed(d).weak, false);
   }
 });
+
+/** @id TEST-R36E-FRAMING-001 @verifies REQ-R36E-LOAD-001 */
+test('#369 TEST-R36E-FRAMING-001 ordinary Error and wrapper preserve original Red policy', () => {
+  const messages = [
+    "throw new Error('child ERR_UNKNOWN_FILE_EXTENSION ERR_UNKNOWN_MODULE_FORMAT ERR_UNSUPPORTED_ESM_URL_SCHEME ERR_UNSUPPORTED_DIR_IMPORT ERR_UNSUPPORTED_RESOLVE_REQUEST ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING');",
+    "throw new Error('child stderr\\nError [ERR_UNSUPPORTED_DIR_IMPORT]: copied diagnostic');",
+  ];
+  for (const reporter of ['tap', 'spec']) for (const moduleLevel of [false, true]) {
+    for (const failure of [...messages, moduleLevel
+      ? "try { await import('./subject'); } catch (error) { throw new Error('wrapper ' + error.code, { cause: error }); }"
+      : "return import('./subject').catch(error => { throw new Error('wrapper ' + error.code, { cause: error }); });"]) {
+      const d = r36bFixture(reporter, moduleLevel ? 'assert.equal(add(1, 2), 3);' : failure,
+        '(a, b) => a + b', moduleLevel ? failure : '');
+      fs.mkdirSync(path.join(d, 'subject'));
+      fs.writeFileSync(path.join(d, 'subject/index.mjs'), 'export default 0;\n');
+      const red = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
+      assert.equal(red.code, 0, red.out);
+      assert.equal(!!lastRed(d).weak, moduleLevel, red.out);
+      if (moduleLevel) assert.match(red.out, /\[weak\]/, red.out);
+      else assert.doesNotMatch(red.out, /\[weak\]|load\/compile error/, red.out);
+    }
+  }
+});
+
+/** @id TEST-R36E-OWNED-001 @verifies REQ-R36E-LOAD-001 */
+test('#369 TEST-R36E-OWNED-001 owned native loader metadata is not child message text', () => {
+  const cases = [
+    ['ERR_UNKNOWN_FILE_EXTENSION', './subject.unknown', { 'subject.unknown': 'export default 0;\n' }],
+    ['ERR_UNKNOWN_MODULE_FORMAT', 'data:text/plain,export default 0', {}],
+    ['ERR_UNSUPPORTED_ESM_URL_SCHEME', 'https://example.invalid/subject.mjs', {}],
+    ['ERR_UNSUPPORTED_DIR_IMPORT', './subject', { 'subject/index.mjs': 'export default 0;\n' }],
+    ['ERR_UNSUPPORTED_RESOLVE_REQUEST', 'data:text/javascript,import%20%22./subject.mjs%22', {}],
+  ];
+  if (process.features.typescript) cases.push(
+    ['ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING', './node_modules/subject/index.ts',
+      { 'node_modules/subject/index.ts': 'export const answer: number = 0;\n' }],
+  );
+  for (const reporter of ['tap', 'spec']) for (const [code, specifier, files] of cases) {
+    const fixture = r36eLoadCase(reporter, '', files);
+    fixture.failing = fixture.original.replace('assert.equal(add(1, 2), 3);', `return import(${JSON.stringify(specifier)});`);
+    r36eRejectLoad(fixture, code);
+  }
+});
