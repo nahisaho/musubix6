@@ -12155,3 +12155,115 @@ test('r34c #359 continued relative import statements protect their helper', () =
   const green = sdd(d, 'tdd', 'green', 'TEST-A-001');
   assert.equal(green.code, 1, green.out);
 });
+
+function r34dPytestFixture(declaration = "pytest_plugins = ('qa_hooks',)") {
+  assert.ok(r32cPythonAvailable, '#360 requires real pytest; missing pytest is not passing evidence');
+  const d = mini(T1SPEC, {
+    'pytest.ini': '[pytest]\npythonpath = src\n',
+    'test_a.py': 'from subject import answer\n# @id TEST-A-001 @verifies REQ-A-001\ndef test_a_001():\n    assert answer() == 1\n',
+    'conftest.py': `${declaration}\n`,
+    'src/qa_hooks.py': 'def pytest_collection_modifyitems(items):\n    pass\n',
+    'src/subject.py': '# @id CODE-A-001 @implements REQ-A-001\ndef answer():\n    return 0\n',
+  }, ['python3', '-m', 'pytest', '-q', 'test_a.py', '-k', '{idu}']);
+  const cp = path.join(d, '.sdd/config.json');
+  fs.writeFileSync(cp, JSON.stringify({
+    ...JSON.parse(fs.readFileSync(cp)), scan: { include: ['test_a.py', 'src/subject.py'] },
+    checks: [{ name: 'test', cmd: ['python3', '-m', 'pytest', '-q'] }],
+  }));
+  return d;
+}
+
+/** @id TEST-R34-PYTEST-001 @verifies REQ-R33-PYTEST-001 */
+test('r34d #360 semicolon computed reassignment is refused before real assertion Red or evidence append', () => {
+  const d = r34dPytestFixture("pytest_plugins = ('qa_hooks',); pytest_plugins = tuple(['qa_hooks'])");
+  fs.appendFileSync(path.join(d, 'src/qa_hooks.py'), 'from pathlib import Path\nPath(".sdd/plugin-ran").write_text("executed")\n');
+  const red = sdd(d, 'tdd', 'red', 'TEST-A-001');
+  assert.equal(red.code, 1, red.out);
+  assert.match(red.out, /REFUSED: unresolved pytest_plugins.*conftest\.py/);
+  assert.ok(!fs.existsSync(path.join(d, '.sdd/tdd.jsonl')));
+  assert.ok(!fs.existsSync(path.join(d, '.sdd/plugin-ran')));
+});
+
+for (const declaration of [
+  "pytest_plugins = ('qa_hooks',); pytest_plugins = tuple(['qa_hooks'])",
+  "other = 1; pytest_plugins = PLUGINS",
+  "pytest_plugins = ('qa_hooks',); pytest_plugins += ['qa_hooks']",
+  "pytest_plugins = ('qa_hooks',); pytest_plugins *= 2",
+  "pytest_plugins = ('qa_hooks',); pytest_plugins: list[str] = ['qa_' + 'hooks']",
+  "pytest_plugins = ('qa_hooks',); \\\npytest_plugins = tuple(['qa_hooks'])",
+  "pytest_plugins = \\\ntuple(['qa_hooks'])",
+  "pytest_plugins = ('qa_hooks',); alias = pytest_plugins = ['qa_hooks']",
+  "pytest_plugins = ('qa_hooks',); pytest_plugins[0] = 'other'",
+  "pytest_plugins = ('qa_hooks',); pytest_plugins = ['qa_hooks'",
+  "pytest_plugins = ('qa_hooks',); pytest_plugins = 'qa_hooks' \\\n+ EXTRA",
+]) {
+  /** @id TEST-R34-PYTEST-002 @verifies REQ-R33-PYTEST-001 */
+  test(`r34d #360 all statement admission rejects unresolved grammar: ${JSON.stringify(declaration)}`, () => {
+    const d = r31aFixture({
+      'conftest.py': "pytest_plugins = ['qa_hooks']\n",
+      'src/qa_hooks.py': 'def pytest_collection_modifyitems(items):\n    pass\n',
+    }, [{ name: 'test', cmd: ['sh', '-c', 'true # pytest'] }]);
+    fs.writeFileSync(path.join(d, 'conftest.py'), `${declaration}\n`);
+    const ledger = path.join(d, '.sdd/tdd.jsonl'), before = fs.readFileSync(ledger, 'utf8');
+    const cp = path.join(d, '.sdd/config.json'), cfg = JSON.parse(fs.readFileSync(cp));
+    for (const scopePolicy of ['warn', 'strict']) {
+      fs.writeFileSync(cp, JSON.stringify({ ...cfg, scopePolicy }));
+      for (const args of [
+        ['tdd', 'red', 'TEST-A-001'], ['tdd', 'green', 'TEST-A-001'], ['tdd', 'refactor', 'TEST-A-001'],
+        ['gate'], ['gate', '--changed', '--baseline', 'HEAD'],
+      ]) {
+        const result = sdd(d, ...args);
+        assert.equal(result.code, 1, result.out);
+        assert.match(result.out, /REFUSED: unresolved pytest_plugins.*conftest\.py/, result.out);
+        assert.equal(fs.readFileSync(ledger, 'utf8'), before);
+      }
+    }
+  });
+}
+
+/** @id TEST-R34-PYTEST-003 @verifies REQ-R33-PYTEST-001 */
+test('r34d #360 literal controls preserve real assertion Red Green and full changed gates', () => {
+  for (const declaration of [
+    "pytest_plugins = 'qa_hooks'; snapshot = pytest_plugins",
+    "pytest_plugins = ['qa_hooks']",
+    "pytest_plugins = (\n 'qa_hooks', # ; pytest_plugins = computed()\n)",
+    "note = '; pytest_plugins = computed()'; pytest_plugins = ('qa_hooks',); pytest_plugins = ['qa_hooks']",
+    'note = """\npytest_plugins = computed(); ignored\n"""\npytest_plugins = ["qa_hooks"]',
+    "pytest_plugins: tuple[str, ...] = \\\n('qa_hooks',) # ; pytest_plugins += EXTRA",
+    "other = 1; \\\npytest_plugins = [\n 'qa_hooks', # comment with ;\n]",
+  ]) {
+    const d = r34dPytestFixture(declaration);
+    const red = sdd(d, 'tdd', 'red', 'TEST-A-001');
+    assert.equal(red.code, 0, red.out);
+    assert.match(red.out, /fails with: assert 0 == 1/);
+    fs.writeFileSync(path.join(d, 'src/subject.py'), '# @id CODE-A-001 @implements REQ-A-001\ndef answer():\n    return 1\n');
+    const green = sdd(d, 'tdd', 'green', 'TEST-A-001');
+    assert.equal(green.code, 0, green.out);
+    assert.equal(spawnSync('git', ['add', '-A'], { cwd: d }).status, 0);
+    assert.equal(spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', '#360 literal control'], { cwd: d }).status, 0);
+    for (const args of [['tdd', 'refactor', 'TEST-A-001'], ['gate'], ['gate', '--changed', '--baseline', 'HEAD']]) {
+      const result = sdd(d, ...args);
+      assert.equal(result.code, 0, result.out);
+    }
+    const evidence = fs.readFileSync(path.join(d, '.sdd/tdd.jsonl'), 'utf8');
+    assert.match(evidence, /qa_hooks\.py/);
+  }
+});
+
+/** @id TEST-R34-PYTEST-004 @verifies REQ-R33-PYTEST-001 */
+test('r34d #360 shared lexical discovery admits non-hook files and rejects later computed binding', () => {
+  const d = r31aFixture({
+    'src/settings.py': "other = 1; pytest_plugins = ['qa_hooks']\n",
+    'src/qa_hooks.py': 'def pytest_collection_modifyitems(items):\n    pass\n',
+  }, [{ name: 'test', cmd: ['sh', '-c', 'true # pytest'] }]);
+  const ledger = path.join(d, '.sdd/tdd.jsonl'), before = fs.readFileSync(ledger, 'utf8');
+  assert.match(before, /settings\.py/);
+  assert.match(before, /qa_hooks\.py/);
+  fs.appendFileSync(path.join(d, 'src/settings.py'), "other = 2; pytest_plugins = tuple(['qa_hooks'])\n");
+  for (const args of [['tdd', 'green', 'TEST-A-001'], ['gate'], ['gate', '--changed', '--baseline', 'HEAD']]) {
+    const result = sdd(d, ...args);
+    assert.equal(result.code, 1, result.out);
+    assert.match(result.out, /REFUSED: unresolved pytest_plugins.*src\/settings\.py/);
+    assert.equal(fs.readFileSync(ledger, 'utf8'), before);
+  }
+});

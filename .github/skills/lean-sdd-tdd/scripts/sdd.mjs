@@ -5386,36 +5386,79 @@ function pytestDefFiles(b) {
   const hooks = files.filter((f) => !SKIP.test(f)
     && (!b || f.startsWith(b) || f === 'conftest.py' || b.startsWith(path.posix.dirname(f) + '/'))
     && (/(^|\/)(?:conftest|pytest|sitecustomize|usercustomize)\.py$/.test(f)
-      || (() => { try { return /^[ \t]*pytest_plugins\b/m.test(fs.readFileSync(path.join(ROOT, f), 'utf8')); } catch { return false; } })()));
+      || (() => { try { return pythonStatements(fs.readFileSync(path.join(ROOT, f), 'utf8')).some((s) => s.tokens.some((t) => t.kind === 'name' && t.value === 'pytest_plugins')); } catch { return false; } })()));
   return [...configs, ...hooks];
 }
+// Shared lexical boundaries for Python definition discovery and declaration admission.
+function pythonStatements(text) {
+  const statements = [], tokens = [], brackets = [];
+  let unresolved = false;
+  const emit = () => {
+    if (tokens.length) statements.push({ tokens: tokens.splice(0), unresolved });
+    unresolved = false;
+  };
+  for (let i = 0; i < text.length;) {
+    const start = i, ch = text[i];
+    if (ch === '\\' && /^\\\r?\n/.test(text.slice(i, i + 3))) {
+      i += text[i + 1] === '\r' ? 3 : 2;
+      continue;
+    }
+    if (ch === '#') {
+      while (i < text.length && text[i] !== '\n') i++;
+      continue;
+    }
+    if ((ch === '\n' || ch === ';') && !brackets.length) {
+      emit(); i++; continue;
+    }
+    if (/\s/.test(ch)) { i++; continue; }
+    let kind = 'symbol';
+    if (ch === "'" || ch === '"') {
+      kind = 'string';
+      const quote = text.startsWith(ch.repeat(3), i) ? ch.repeat(3) : ch;
+      i += quote.length;
+      let closed = false;
+      while (i < text.length) {
+        if (text[i] === '\\') { i += 2; continue; }
+        if (text.startsWith(quote, i)) { i += quote.length; closed = true; break; }
+        if (quote.length === 1 && /[\r\n]/.test(text[i])) { unresolved = true; break; }
+        i++;
+      }
+      if (!closed) unresolved = true;
+    } else if (/[A-Za-z_]/.test(ch)) {
+      kind = 'name';
+      while (i < text.length && /\w/.test(text[i])) i++;
+    } else {
+      const operator = /^(?:\*\*=|\/\/=|<<=|>>=|[+\-*/%@&|^]=|:=|==|!=|<=|>=|->)/.exec(text.slice(i));
+      i += operator ? operator[0].length : 1;
+      if ('([{'.includes(ch)) brackets.push(ch);
+      else if (')]}'.includes(ch) && brackets.pop() !== ({ ')': '(', ']': '[', '}': '{' })[ch]) unresolved = true;
+      else if (ch === '\\') unresolved = true;
+    }
+    tokens.push({ kind, value: text.slice(start, i), start, end: i });
+  }
+  if (brackets.length) unresolved = true;
+  emit();
+  return statements;
+}
+/** @id CODE-R34-PYTEST-001 @implements REQ-R33-PYTEST-001 */
 function pytestPluginDeclarations(text, file) {
   const declarations = [];
   const literal = String.raw`(?:'[A-Za-z_]\w*(?:\.[A-Za-z_]\w*)*'|"[A-Za-z_]\w*(?:\.[A-Za-z_]\w*)*")`;
   const sequence = String.raw`\s*(?:${literal}\s*(?:,\s*${literal}\s*)*,?\s*)?`;
   const valid = new RegExp(`^(?:${literal}|\\[${sequence}\\]|\\(${sequence}\\))$`);
-  for (const m of text.matchAll(/^[ \t]*pytest_plugins[ \t]*(?::[^=\n]+)?[ \t]*(\+?=)[ \t]*/gm)) {
-    let end = m.index + m[0].length, depth = 0, quote = null, value = '';
-    for (; end < text.length; end++) {
-      const ch = text[end];
-      if (quote) {
-        value += ch;
-        if (ch === '\\') value += text[++end] ?? '';
-        else if (ch === quote) quote = null;
-      } else if (ch === '#') {
-        while (end < text.length && text[end] !== '\n') end++;
-        if (!depth) break;
-        value += '\n';
-      } else if ((ch === '\n' || ch === ';') && !depth) break;
-      else {
-        value += ch;
-        if (ch === "'" || ch === '"') quote = ch;
-        else if ('[('.includes(ch)) depth++;
-        else if ('])'.includes(ch)) depth--;
-      }
-    }
-    if (m[1] !== '=' || !valid.test(value.trim())) throw new Error(`REFUSED: unresolved pytest_plugins in ${file}; use literal module names (a string, list or tuple), not computed expressions`);
-    declarations.push({ text: text.slice(m.index, end), names: [...value.matchAll(/['"]([\w.]+)['"]/g)].map((n) => n[1]) });
+  const assignment = /^(?:=|:=|\*\*=|\/\/=|<<=|>>=|[+\-*/%@&|^]=)$/;
+  for (const statement of pythonStatements(text)) {
+    const ts = statement.tokens;
+    const binding = ts.findIndex((t) => t.kind === 'name' && t.value === 'pytest_plugins');
+    if (binding < 0) continue;
+    if (!ts.slice(binding + 1).some((t) => t.kind === 'symbol' && assignment.test(t.value))
+      && ts[0].value !== 'del' && !(binding === 0 && ts[1]?.value === ':')) continue;
+    let equals = 1;
+    if (ts[1]?.value === ':') equals = ts.findIndex((t) => t.kind === 'symbol' && assignment.test(t.value));
+    const value = ts.slice(equals + 1).map((t) => t.value).join(' ');
+    if (statement.unresolved || ts[0].value !== 'pytest_plugins' || ts[equals]?.value !== '=' || !valid.test(value))
+      throw new Error(`REFUSED: unresolved pytest_plugins in ${file}; use literal module names (a string, list or tuple), not computed expressions`);
+    declarations.push({ text: text.slice(ts[0].start, ts.at(-1).end), names: [...value.matchAll(/['"]([\w.]+)['"]/g)].map((n) => n[1]) });
   }
   return declarations;
 }
