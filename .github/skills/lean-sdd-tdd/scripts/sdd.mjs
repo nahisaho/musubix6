@@ -1726,8 +1726,8 @@ const stubTodoHit = (text) => {
   return null;
 };
 /** @id CODE-R36E-LOAD-001 @implements REQ-R36E-LOAD-001 */
-const NATIVE_LOAD_ERR = /\bERR_(?:UNKNOWN_(?:FILE_EXTENSION|MODULE_FORMAT)|UNSUPPORTED_(?:ESM_URL_SCHEME|DIR_IMPORT|RESOLVE_REQUEST|NODE_MODULES_TYPE_STRIPPING))\b/;
-const isLoadErr = (text, assertion = ASSERT_EXC.test(text)) => (LOAD_ERR.test(text) || NATIVE_LOAD_ERR.test(text)) && !RUNTIME_FAIL.test(text) && !assertion && !missingDeliverable(text);
+const NATIVE_LOAD_ERR = /^\s*(?:Type|Range)?Error \[ERR_(?:UNKNOWN_(?:FILE_EXTENSION|MODULE_FORMAT)|UNSUPPORTED_(?:ESM_URL_SCHEME|DIR_IMPORT|RESOLVE_REQUEST|NODE_MODULES_TYPE_STRIPPING))\]:/m;
+const isLoadErr = (text, assertion = ASSERT_EXC.test(text), nativeLoad = NATIVE_LOAD_ERR.test(text)) => (LOAD_ERR.test(text) || nativeLoad) && !RUNTIME_FAIL.test(text) && !assertion && !missingDeliverable(text);
 // a repo without any commit has no baseline for `--changed` (#150)
 function hasCommit() { return spawnSync('git', ['rev-parse', '--verify', '-q', 'HEAD'], { cwd: ROOT, stdio: 'ignore' }).status === 0; }
 
@@ -1860,7 +1860,7 @@ function nodeFailureContext(text, id, testPath, cwd = '.') {
     r.failed && !r.skipped && (r.title === path.basename(testPath) || path.resolve(ROOT, cwd, r.title) === path.resolve(ROOT, testPath)));
   const body = testBody(testPath, id).join('\n').replace(/^(?:\s|\/\*[\s\S]*?\*\/|\/\/[^\n]*)*/, '');
   const name = nodeLiteralTitle(new RegExp(`^(?:await\\s+)?${NODE_REGISTRATION.source}`).exec(body));
-  let assertion = false, syntax = false;
+  let assertion = false, syntax = false, nativeLoad = false;
   if (nodeTestRan(text, id, testPath)) for (const row of rows.filter((r) => r.failed && !r.skipped && r.title === name)) {
     if (tap) {
       const indent = row.indent + '  ';
@@ -1875,16 +1875,20 @@ function nodeFailureContext(text, id, testPath, cwd = '.') {
       if (!ownsLocation(fields.get('location') ?? '')) continue;
       assertion ||= fields.get('name') === 'AssertionError' && fields.get('code') === 'ERR_ASSERTION';
       syntax ||= fields.get('name') === 'SyntaxError';
+      nativeLoad ||= isLoadErr(`Error [${fields.get('code')}]:`, false);
     } else {
       const location = /^test at (.+)$/.exec(lines[row.i - 1] ?? '')?.[1];
       if (!location || !ownsLocation(location)) continue;
       assertion ||= /^\s+AssertionError\b/.test(lines[row.i + 1] ?? '');
       syntax ||= /^\s+SyntaxError\b/.test(lines[row.i + 1] ?? '');
+      nativeLoad ||= isLoadErr(lines[row.i + 1] ?? '', false);
     }
   }
   // Node TAP prefixes process stderr with "# "; never strip arbitrary reporter output.
   const diagnosticText = (syntax ? 'SyntaxError: native owned exception\n' : '') + (tap ? text.replace(/^# ?/gm, '') : text);
-  return { fileFailed, loadError: isLoadErr(diagnosticText, assertion) };
+  // A failed file exposes process stderr, not owned diagnostic fields; only its primary error header counts.
+  if (fileFailed) nativeLoad = isLoadErr(/^(?:Type|Range)?Error(?: \[[^\]\n]+\])?:[^\n]*/m.exec(diagnosticText)?.[0] ?? '', false);
+  return { fileFailed, loadError: isLoadErr(diagnosticText, assertion, nativeLoad) };
 }
 
 // ---------- commands ----------
