@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "status": "two-clean-qualifications-complete-root-gate-failed",
+  "status": "two-clean-qualifications-complete-publication-held-by-user",
   "targetVersion": "0.1.1",
   "decision": "docs/design-sdd-hardening.md#35-release-readiness-versus-exploratory-dogfooding-g4",
   "candidate": {
@@ -45,7 +45,7 @@
     "mainRepackedArchiveByteIdentical": true,
     "reviewedIntegration": "f4a495af013d785d83676f93ffa3102717675ed0",
     "preparedCandidate": {
-      "status": "qualified-main-promoted-release-blocked",
+      "status": "qualified-main-promoted-publication-held",
       "sourceArchiveSha256": "f0235be18b8f8ca6b151cee5e672334a631cc2df0cb41785652591b562248895",
       "packageSha256": "f24429ee79be2a842d1a6b696baa886d3942978aa40ab4f8a527f84971409ead",
       "registeredTests": 1115,
@@ -414,6 +414,7 @@
   "approval": {
     "humanReleaseApproved": false,
     "publishingAuthorized": false,
+    "humanPublisherDecision": "Authentication not restored; hold publication. Recurring schedule #2 stopped. This is not release approval.",
     "requiredPacket": "Exact artifact paths/hashes, frozen manifest, evidence, exclusions, residual risks, verified publishing account and non-disclosing token availability check."
   }
 }

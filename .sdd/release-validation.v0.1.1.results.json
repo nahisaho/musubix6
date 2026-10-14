@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
   "targetVersion": "0.1.1",
-  "status": "QUALIFICATION_PASSED_PUBLISHER_CHECK_BLOCKED",
+  "status": "PUBLICATION_HELD_BY_USER",
   "consecutiveCompleteCleanRuns": 2,
   "humanReleaseApproved": false,
   "publishingAuthorized": false,
   "currentCandidate": {
-    "status": "qualified-main-promoted-release-blocked",
+    "status": "qualified-main-promoted-publication-held",
     "sourceCommit": "f4a495af013d785d83676f93ffa3102717675ed0",
     "sourceArchiveSha256": "f0235be18b8f8ca6b151cee5e672334a631cc2df0cb41785652591b562248895",
     "sourceDigest": "cf233120203e463530a6d78b146665728c15e47755248e6c1d4381fe0e201a71",
@@ -149,7 +149,7 @@
       "rootGateFailureDisclosed": "https://github.com/nahisaho/musubix6/issues/315#issuecomment-6167016955"
     },
     "releaseApprovalPreparation": {
-      "status": "blocked-current-npm-authentication",
+      "status": "publication-held-by-user-current-npm-authentication-unresolved",
       "isolatedOperationalProject": "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/release-v0.1.1-approval",
       "sourceTreeUnchanged": true,
       "draftArtifacts": [
@@ -239,7 +239,16 @@
       "secretValuesReadOrDisplayed": false,
       "requiredHumanAction": "Resolve the failed local npm identity check before approval preparation. Do not paste token values into conversation. This does not authorize a tag or publication."
     },
-    "next": "Technical qualification, exact-source main promotion, byte-identical npm 10/12 repacking and promoted-main hosted CI are complete. The actual root self-hosting gate remains FAIL and all other residuals remain disclosed. The final local npm identity recheck fails E401; require human resolution before preparing the separate exact-path/hash release approval. No tag, publication or release approval."
+    "humanPublisherDecision": {
+      "date": "2026-10-14",
+      "source": "ask_user",
+      "decision": "Authentication not restored; hold publication.",
+      "publishingAuthorized": false,
+      "releaseApprovalGranted": false,
+      "recurringScheduleStopped": 2,
+      "resumptionPrerequisites": "User restores npm authentication and requests recheck; then actual identity and all artifact bindings must be revalidated before a separate prepared exact-path/hash/residual release-approval request."
+    },
+    "next": "Publication is explicitly held by the user while authentication remains unresolved. Technical qualification, exact-source main promotion, byte-identical npm 10/12 repacking and promoted-main hosted CI are complete. The actual root self-hosting gate remains FAIL and all other residuals remain disclosed. Schedule #2 is stopped. No tag, publication or release approval; do not resume publication without the stated human prerequisites."
   },
   "epochs": [
     {
