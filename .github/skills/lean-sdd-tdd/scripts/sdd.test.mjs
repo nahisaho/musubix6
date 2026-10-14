@@ -11757,3 +11757,180 @@ for (const value of ['"tools/compil\\u0000r"', '"tools/compil\\xr"', '"""tools/c
     assert.ok(!fs.existsSync(path.join(d, '.sdd/tdd.jsonl')));
   });
 }
+
+// #358 PASS: real assertion Red; selected oracle drift cannot establish Green or
+// either gate verdict; restoring the reference and fixing production passes.
+// Runner-specific condition knowledge is not inferred from a wrapper's output.
+function r34bConditionFixture({ target = { node: './oracle/node.mjs', default: './oracle/fallback.mjs' }, field = 'imports', requireMode = false, flags = [], name = true, wildcard = false, relative = false } = {}) {
+  const spec = field === 'imports' ? (wildcard ? '#expected/value' : '#expected') : (wildcard ? 'r34-reference/value' : 'r34-reference');
+  const testFile = requireMode ? 'a.test.cjs' : 'a.test.mjs';
+  const pkg = { ...(name ? { name: 'r34-reference' } : {}), type: 'module', [field]: { [field === 'imports' ? (wildcard ? '#expected/*' : '#expected') : (wildcard ? './*' : '.')]: target } };
+  const body = requireMode
+    ? "const {test} = require('node:test'); const assert = require('node:assert/strict');\nconst {answer} = require('./answer.cjs');\n"
+    : "import {test} from 'node:test'; import assert from 'node:assert/strict';\nimport {answer} from './answer.mjs';\n";
+  const oracleImport = relative ? './oracle/node.mjs' : spec;
+  const files = {
+    'package.json': JSON.stringify(pkg),
+    [testFile]: body + (requireMode ? `const {expected} = require('${oracleImport}');\n` : `import {expected} from '${oracleImport}';\n`)
+      + "/** @id TEST-A-001 @verifies REQ-A-001 */\ntest('TEST-A-001 independent reference', () => assert.equal(answer(), expected()));\n",
+    [requireMode ? 'answer.cjs' : 'answer.mjs']: '/** @id CODE-A-001 @implements REQ-A-001 */\n' + (requireMode ? 'exports.answer' : 'export const answer') + ' = () => 1;\n',
+  };
+  for (const dir of ['oracle', 'oracle/custom', 'oracle/fallback']) for (const ext of ['mjs', 'cjs', 'ts']) {
+    const file = dir === 'oracle' ? `oracle/${ext === 'cjs' ? 'require' : ext === 'ts' ? 'typed' : 'node'}.${ext}` : `${dir}/value.${ext}`;
+    files[file] = ext === 'cjs' ? 'exports.expected = () => 2;\n' : 'export const expected = () => 2;\n';
+  }
+  files['oracle/fallback.mjs'] = 'export const expected = () => 2;\n';
+  const d = mini(T1SPEC, files, ['node', ...flags, '--test', '--test-reporter=spec', '--test-name-pattern={id}', '{file}']);
+  const cp = path.join(d, '.sdd/config.json');
+  fs.writeFileSync(cp, JSON.stringify({ ...JSON.parse(fs.readFileSync(cp)), scopePolicy: 'strict', checks: [{ name: 'test', cmd: ['node', ...flags, '--test', '--test-reporter=spec', testFile] }] }));
+  return { d, testFile };
+}
+
+test('r34b #358 valid relative and conditional resolution controls before drift', () => {
+  for (const relative of [true, false]) {
+    const { d } = r34bConditionFixture({ relative });
+    const red = sdd(d, 'tdd', 'red', 'TEST-A-001');
+    assert.equal(red.code, 0, red.out);
+    assert.match(red.out, /AssertionError|1 !== 2/);
+    fs.writeFileSync(path.join(d, 'answer.mjs'), '/** @id CODE-A-001 @implements REQ-A-001 */\nexport const answer = () => 2;\n');
+    const green = sdd(d, 'tdd', 'green', 'TEST-A-001');
+    assert.equal(green.code, 0, green.out);
+    assert.equal(spawnSync('git', ['add', '-A'], { cwd: d }).status, 0);
+    assert.equal(spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'valid condition control'], { cwd: d }).status, 0);
+    for (const args of [['gate'], ['gate', '--changed', '--baseline', 'HEAD']]) {
+      const gate = sdd(d, ...args);
+      assert.equal(gate.code, 0, gate.out);
+    }
+  }
+});
+
+const r34bSelections = [
+  ['ordered node before default', {}, 'oracle/node.mjs'],
+  ['ordered default before node', { target: { default: './oracle/fallback.mjs', node: './oracle/node.mjs' } }, 'oracle/fallback.mjs'],
+  ['ordered node before import', { target: { node: './oracle/node.mjs', import: './oracle/fallback.mjs' } }, 'oracle/node.mjs'],
+  ['nested node/import conditions', { field: 'exports', target: { node: { import: './oracle/node.mjs', require: './oracle/require.cjs' }, default: './oracle/fallback.mjs' } }, 'oracle/node.mjs'],
+  ['CommonJS require conditions', { requireMode: true, field: 'exports', target: { import: './oracle/fallback.mjs', require: './oracle/require.cjs', default: './oracle/fallback.mjs' } }, 'oracle/require.cjs'],
+  ['configured runtime conditions', { flags: ['--conditions=qa'], target: { qa: { node: './oracle/custom/value.mjs' }, default: './oracle/fallback.mjs' } }, 'oracle/custom/value.mjs'],
+  ['configured short runtime conditions', { flags: ['-C', 'qa'], field: 'exports', target: { qa: './oracle/custom/value.mjs', default: './oracle/fallback.mjs' } }, 'oracle/custom/value.mjs'],
+  ['conditional imports wildcard without package name', { name: false, wildcard: true, target: { node: './oracle/custom/*.mjs', default: './oracle/fallback/*.mjs' } }, 'oracle/custom/value.mjs'],
+  ['conditional exports wildcard', { field: 'exports', wildcard: true, target: { node: './oracle/custom/*.mjs', default: './oracle/fallback/*.mjs' } }, 'oracle/custom/value.mjs'],
+];
+for (const [label, options, selected] of r34bSelections) {
+  test(`r34b #358 ${label} protects the runtime-selected oracle`, () => {
+    const { d, testFile } = r34bConditionFixture(options);
+    // Independent runtime confirms ordering and real assertion failure, not setup Red.
+    const runtime = spawnSync('node', [...options.flags ?? [], '--test', testFile], { cwd: d, encoding: 'utf8', env: ENV });
+    assert.equal(runtime.status, 1, runtime.stdout + runtime.stderr);
+    assert.match(runtime.stdout + runtime.stderr, /AssertionError|1 !== 2/);
+    const red = sdd(d, 'tdd', 'red', 'TEST-A-001');
+    assert.equal(red.code, 0, red.out);
+    assert.match(red.out, /AssertionError|1 !== 2/);
+    const ledger = path.join(d, '.sdd/tdd.jsonl'), before = fs.readFileSync(ledger, 'utf8');
+    const original = fs.readFileSync(path.join(d, selected), 'utf8');
+    fs.writeFileSync(path.join(d, selected), original.replace('=> 2', '=> 1'));
+    const green = sdd(d, 'tdd', 'green', 'TEST-A-001');
+    assert.equal(green.code, 1, `selected source ${selected} must reject Green:\n${green.out}`);
+    assert.match(green.out, /oracle|changed since Red/i);
+    assert.equal(fs.readFileSync(ledger, 'utf8'), before);
+    fs.writeFileSync(path.join(d, selected), original);
+    const production = options.requireMode ? 'answer.cjs' : 'answer.mjs';
+    fs.writeFileSync(path.join(d, production), fs.readFileSync(path.join(d, production), 'utf8').replace('=> 1', '=> 2'));
+    const restored = sdd(d, 'tdd', 'green', 'TEST-A-001');
+    assert.equal(restored.code, 0, restored.out);
+    const evidence = JSON.parse(fs.readFileSync(ledger, 'utf8').trim().split('\n').at(-1));
+    assert.ok(evidence.protectedFiles.includes(selected), JSON.stringify(evidence.protectedFiles));
+    assert.equal(spawnSync('git', ['add', '-A'], { cwd: d }).status, 0);
+    assert.equal(spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'condition oracle baseline'], { cwd: d }).status, 0);
+    for (const args of [['gate'], ['gate', '--changed', '--baseline', 'HEAD']]) {
+      const valid = sdd(d, ...args);
+      assert.equal(valid.code, 0, valid.out);
+    }
+    fs.writeFileSync(path.join(d, selected), original.replace('=> 2', '=> 3'));
+    for (const args of [['gate'], ['gate', '--changed', '--baseline', 'HEAD']]) {
+      const stale = sdd(d, ...args);
+      assert.equal(stale.code, 1, stale.out);
+      assert.match(stale.out, /oracle|changed|stale|test edited/i);
+    }
+    fs.writeFileSync(path.join(d, selected), original);
+    const recheck = sdd(d, 'gate');
+    assert.equal(recheck.code, 0, recheck.out);
+  });
+}
+
+test('r34b #358 exact runtime suffix wins over a TypeScript sibling', () => {
+  const { d } = r34bConditionFixture();
+  fs.writeFileSync(path.join(d, 'oracle/node.ts'), 'export const expected = () => 99;\n');
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-A-001').code, 0);
+  const event = JSON.parse(fs.readFileSync(path.join(d, '.sdd/tdd.jsonl'), 'utf8').trim().split('\n').at(-1));
+  assert.ok(event.protectedFiles?.includes('oracle/node.mjs'), JSON.stringify(event.protectedFiles));
+});
+
+test('r34b #358 uncertain branches widen to every local target, never fallback success', () => {
+  const { d } = r34bConditionFixture({ target: { qa: './oracle/custom/value.mjs', node: './oracle/node.mjs', default: './oracle/fallback.mjs' } });
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-A-001').code, 0);
+  const event = JSON.parse(fs.readFileSync(path.join(d, '.sdd/tdd.jsonl'), 'utf8').trim().split('\n').at(-1));
+  for (const target of ['oracle/custom/value.mjs', 'oracle/node.mjs', 'oracle/fallback.mjs'])
+    assert.ok(event.protectedFiles?.includes(target), `conservative closure omitted ${target}: ${JSON.stringify(event.protectedFiles)}`);
+});
+
+test('r34b #358 unsupported nonlocal conditional target fails actionably before evidence', () => {
+  const { d } = r34bConditionFixture({ target: { node: './oracle/node.mjs', qa: 'unmodeled-reference', default: './oracle/fallback.mjs' } });
+  const red = sdd(d, 'tdd', 'red', 'TEST-A-001');
+  assert.equal(red.code, 1, red.out);
+  assert.match(red.out, /REFUSED: unresolved Node package target #expected.*package\.json.*local literal|explicit relative oracle imports/);
+  assert.ok(!fs.existsSync(path.join(d, '.sdd/tdd.jsonl')));
+});
+
+test('r34b #358 TypeScript paths and emitted-source impact remain conservative', () => {
+  const d = mini(T1SPEC, {
+    'package.json': JSON.stringify({ name: 'r34-ts', type: 'module', exports: { '.': './dist/index.js', './*': './dist/*.js' } }),
+    'tsconfig.json': JSON.stringify({ compilerOptions: { baseUrl: '.', paths: { '@r34/*': ['src/*'] } } }),
+    'src/index.ts': 'export const expected = () => 2;\n',
+    'src/value.ts': 'export const expected = () => 2;\n',
+    'a.test.ts': "import 'r34-ts'; import 'r34-ts/value'; import '@r34/value';\n// @id TEST-A-001 @verifies REQ-A-001\n",
+  }, FAIL);
+  for (const source of ['src/index.ts', 'src/value.ts']) {
+    const impact = sdd(d, 'impact', source, '--json');
+    assert.equal(impact.code, 0, impact.out);
+    assert.ok(JSON.parse(impact.out).reachedFiles.includes('a.test.ts'), impact.out);
+  }
+});
+
+test('r34b #358 package imports stay inside the nearest package scope', () => {
+  const d = mini(T1SPEC, {
+    'package.json': JSON.stringify({ name: 'outer', imports: { '#expected': { node: './oracle/node.mjs', default: './oracle/fallback.mjs' } } }),
+    'nested/package.json': JSON.stringify({ name: 'inner', type: 'module', imports: { '#expected': { node: './oracle/inner.mjs', default: './oracle/fallback.mjs' } } }),
+    'oracle/node.mjs': 'export const expected = () => 2;\n',
+    'oracle/fallback.mjs': 'export const expected = () => 2;\n',
+    'nested/oracle/inner.mjs': 'export const expected = () => 2;\n',
+    'nested/oracle/fallback.mjs': 'export const expected = () => 2;\n',
+    'nested/a.test.mjs': "import '#expected';\n// @id TEST-A-001 @verifies REQ-A-001\n",
+  }, FAIL);
+  const red = sdd(d, 'tdd', 'red', 'TEST-A-001');
+  assert.equal(red.code, 0, red.out);
+  const event = JSON.parse(fs.readFileSync(path.join(d, '.sdd/tdd.jsonl'), 'utf8').trim().split('\n').at(-1));
+  assert.ok(event.protectedFiles.includes('nested/oracle/inner.mjs'), JSON.stringify(event.protectedFiles));
+  assert.ok(!event.protectedFiles.includes('oracle/node.mjs'), JSON.stringify(event.protectedFiles));
+});
+
+test('r34b #358 impact includes every nested conditional source rather than one fallback', () => {
+  const { d } = r34bConditionFixture({ field: 'exports', target: { node: { import: './oracle/node.mjs', require: './oracle/require.cjs' }, qa: './oracle/custom/value.mjs', default: './oracle/fallback.mjs' } });
+  for (const source of ['oracle/node.mjs', 'oracle/require.cjs', 'oracle/custom/value.mjs', 'oracle/fallback.mjs']) {
+    const impact = sdd(d, 'impact', source, '--json');
+    assert.equal(impact.code, 0, impact.out);
+    assert.ok(JSON.parse(impact.out).reachedFiles.includes('a.test.mjs'), `missing conditional edge ${source}: ${impact.out}`);
+  }
+});
+
+test('r34b #358 unmodeled wildcard suffix refuses instead of silently dropping the oracle', () => {
+  const { d } = r34bConditionFixture();
+  fs.writeFileSync(path.join(d, 'package.json'), JSON.stringify({ name: 'r34-reference', type: 'module', imports: { '#expected/*.mjs': { node: './oracle/custom/*.mjs', default: './oracle/fallback/*.mjs' } } }));
+  fs.writeFileSync(path.join(d, 'a.test.mjs'), fs.readFileSync(path.join(d, 'a.test.mjs'), 'utf8').replace("'#expected'", "'#expected/value.mjs'"));
+  const runtime = spawnSync('node', ['--test', 'a.test.mjs'], { cwd: d, encoding: 'utf8', env: ENV });
+  assert.equal(runtime.status, 1, runtime.stdout + runtime.stderr);
+  assert.match(runtime.stdout + runtime.stderr, /AssertionError|1 !== 2/);
+  const red = sdd(d, 'tdd', 'red', 'TEST-A-001');
+  assert.equal(red.code, 1, red.out);
+  assert.match(red.out, /REFUSED: unresolved Node package target #expected\/value\.mjs/);
+  assert.ok(!fs.existsSync(path.join(d, '.sdd/tdd.jsonl')));
+});
