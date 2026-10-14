@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "targetVersion": "0.1.1",
+  "status": "NOT_READY",
+  "consecutiveCompleteCleanRuns": 0,
+  "humanReleaseApproved": false,
+  "publishingAuthorized": false,
+  "epochs": [
+    {
+      "sourceCommit": "a9cd84961aba55971bc651218fd6b0ac6032f521",
+      "manifestSha256": "66f2e621b68c6972b93779aca2f633150fb92d11492e6628de58491f2715169a",
+      "packageSha256": "8755cb92e78f762af5ae965570eb37e86d110e259b86a828ee28349440482574",
+      "run": "run1",
+      "status": "FAIL_OR_INCOMPLETE",
+      "completedAt": "2026-10-14T08:21:55.580Z",
+      "requiredCells": 20,
+      "passedCells": 17,
+      "failedOrIncompleteCells": 3,
+      "fullRegressionPerRuntime": {
+        "actualNodeVersions": ["20.20.2", "22.23.3", "24.21.0"],
+        "tests": 1113,
+        "pass": 1109,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 4
+      },
+      "failure": "Each full regression correctly fails filesystem preservation: the #371 workflow fixture leaks exactly eight .pytest_cache entries into the source cwd. Successful test totals do not override this failed required condition.",
+      "hostedCI": "All three actual runtimes separately complete with 1108 pass, one #375 C-fixture precondition failure, four TODOs and no skips/cancellations.",
+      "report": {
+        "path": "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/r36-final-a9cd849/run1/result.json",
+        "sha256": "338b130c65501743f0d75b13624b1ee71f2211caa380b8df667a7ea99d760e3c"
+      },
+      "childrenSettled": true,
+      "exclusiveLeaseReleased": true,
+      "launcher": "Stopped after the persisted final failure report and released lease; no test result was changed.",
+      "retrospectiveCreditForCorrectedCandidate": false
+    }
+  ]
+}

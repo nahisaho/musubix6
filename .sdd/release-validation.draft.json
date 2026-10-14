@@ -18,8 +18,13 @@
       "frozenAt": "2026-10-14T07:49:26.775Z",
       "requiredCells": 20,
       "mutationMechanisms": 29,
-      "firstRun": "RUNNING",
-      "secondRun": "NOT_STARTED"
+      "firstRun": "FAIL_OR_INCOMPLETE",
+      "secondRun": "NOT_STARTED",
+      "executionHelperArchive": {
+        "path": "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/r36-final-a9cd849/execution-helpers.tar",
+        "sha256": "baec24982e55c3b1bae67b71bb8f7e05e65cadb32d4b056cf4a6a81ba03cfc27",
+        "files": 18
+      }
     },
     "consecutiveCompleteCleanRuns": 0,
     "mainSourcePromoted": false,
@@ -31,7 +36,8 @@
       "registeredTests": 1113,
       "expectedPass": 1109,
       "expectedTodo": 4,
-      "fullSuiteExecuted": false,
+      "fullSuiteExecuted": true,
+      "fullRegressionPerRuntime": "Actual Node 20/22/24 each executed 1113 tests: 1109 pass, zero fail, four TODOs, no skips/cancellations. All three cells still fail the required whole-filesystem guard because the #371 fixture leaves a pytest cache.",
       "reproducibility": "Two independent packs are byte-identical; eight bundled skills and all 74 prior skill payload paths are retained.",
       "mergeInvariant": "Reviewed Go production is byte-identical; the complete F/H/G/I suite and exact J EOF append are retained. Final C retake evidence and seven valid approval-chain entries are preserved."
     },
@@ -83,7 +89,8 @@
     "latestHostedCI": {
       "run": "https://github.com/nahisaho/musubix6/actions/runs/38530019461",
       "source": "a9cd84961aba55971bc651218fd6b0ac6032f521",
-      "statusWhenRecorded": "Node 22 completed with one failure; Node 20 and 24 still running when recorded.",
+      "statusWhenRecorded": "completed-failure; actual Node 20, 22 and 24 each completed with the same single fixture failure.",
+      "sameDispositionOnNodeMajors": [20, 22, 24],
       "node22": {
         "tests": 1113,
         "pass": 1108,
@@ -104,9 +111,15 @@
       "worktree": "/home/nahisaho/GitHub/musubix-fix-r36k",
       "policy": "The running frozen local suites may settle. No heavy corrective validation overlaps them. A changed fixture requires explicit candidate/manifest supersession and a new zero-credit two-run streak; the frozen manifest must not be edited or silently overwritten."
     },
+    "pytestFixtureOutputBlocker": {
+      "issue": 371,
+      "worktree": "/home/nahisaho/GitHub/musubix-fix-r36h2",
+      "cause": "The native pytest fixture does not set cwd; .pytest_cache is written into the calling source checkout.",
+      "requiredCorrection": "Run native pytest in its owned runnerTemp fixture, add an outside-write regression, and retain the complete filesystem guard unchanged."
+    },
     "selfHostingEvidenceLimit": "The root scanner excludes the monolithic test file above its existing 512 KiB bound. Native compiler changes have honest small-runner Red/Green evidence using exact final EOF tests/helpers; no repository-root gate PASS is claimed.",
-    "qualificationDriver": "Reviewed interruption-safe execution uses serial fresh-source/dependency preparation before exactly three bounded full suites, an exclusive lease, all-settled completion, and seven process self-tests. Final prospective inputs bind the actual Python sources used by the offline wheel fixture. All 29 fixed mutation mechanisms were assertion-detected and byte-restored in preflight; the first formal 20-cell run has now started. Prior preflight results do not count toward qualification.",
-    "next": "Let the current frozen local suites settle; finish and review the isolated native-C fixture correction, then explicitly supersede the candidate and freeze new identities. No earlier run may count toward the corrected candidate. No tag or publication without genuine human approval."
+    "qualificationDriver": "Reviewed interruption-safe execution uses serial fresh-source/dependency preparation before exactly three bounded full suites, an exclusive lease, all-settled completion, and seven process self-tests. Final prospective inputs bind the actual Python sources used by the offline wheel fixture. All 29 fixed mutation mechanisms pass the formal run, but the required whole-filesystem guard rejects the pytest fixture leak after otherwise successful full regressions. No preflight or failed run counts toward qualification.",
+    "next": "The old frozen run is complete and failed, with all children settled and its lease released. Finish and review both isolated fixture corrections, explicitly preserve and supersede the old manifest, and freeze new identities. No earlier run may count toward the corrected candidate. No tag or publication without genuine human approval."
   },
   "supportContract": {
     "publicBaseline": "README.md, README-ja.md and package.json; no support narrowing authorized",
