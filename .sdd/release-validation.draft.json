@@ -9,6 +9,58 @@
     "packagePath": null,
     "packageSha256": null
   },
+  "r36CurrentBlockers": {
+    "qualifying": false,
+    "frozenManifestExists": false,
+    "consecutiveCompleteCleanRuns": 0,
+    "mainSourcePromoted": false,
+    "reviewedIntegration": "aef76e9",
+    "reviewedFixtureFix": {
+      "issue": 370,
+      "commit": "a33a805035047a1eeb09be7971d72e1a6d617946",
+      "productionChanged": false,
+      "actualRuntimes": ["20.20.2", "22.23.3", "24.21.0"],
+      "workingDirectories": ["repository root", "scripts directory"],
+      "selectedPassPerCell": 11,
+      "cells": 6,
+      "evidence": "Assertion Red and a detected/restored cwd-layout mutation; independently reviewed. Not a full suite."
+    },
+    "reviewedPytestProvisioningFix": {
+      "issue": 371,
+      "commit": "526479426bd7e6b206696a3dcb8f58be0121326b",
+      "cause": "User-site pytest is unavailable under the required PYTHONNOUSERSITE=1 policy.",
+      "correction": "Both workflow test jobs provision an isolated venv and export its bin directory; execution policy and publication authority are unchanged.",
+      "selectedPassPerRuntime": 8,
+      "actualRuntimes": ["20.20.2", "22.23.3", "24.21.0"],
+      "detectedAndRestoredMutations": 2,
+      "evidence": "Actual isolated Python 3.12 defective-user-site and valid-venv controls; independently reviewed. Not a full suite."
+    },
+    "historicalIntegrationFullSuite": {
+      "source": "ba70c5258c4814a4ffb419997e5ecf6af780a217",
+      "node": "20.20.2",
+      "cwd": "scripts directory",
+      "tests": 1092,
+      "pass": 1085,
+      "fail": 3,
+      "todo": 4,
+      "cause": "All three installer controls recursively embedded their fixtures in the distributed payload; addressed by the reviewed #370 correction.",
+      "countsAsQualification": false
+    },
+    "historicalHostedCI": {
+      "run": "https://github.com/nahisaho/musubix6/actions/runs/38518980309",
+      "source": "ba70c5258c4814a4ffb419997e5ecf6af780a217",
+      "actualNodeMajors": [20, 22, 24],
+      "result": "Every runtime failed two Rust compile-verdict controls and one reviewed-PYTEST_ADDOPTS positive control. These differ from the local scripts-directory installer failures.",
+      "countsAsQualification": false
+    },
+    "knownCandidateS2Blockers": [
+      "#372: Rust discarded Cargo process outcome and missed colored diagnostics. Reviewed fix 246520f3fd465b4b4c0a040cb178ebe12f0a0f8e awaits integration and complete validation.",
+      "#373: C/C++ can falsely verify compilation after empty or unparseable nonzero output, termination or startup failure. Isolated correction is in progress."
+    ],
+    "selfHostingEvidenceLimit": "The root scanner excludes the monolithic test file above its existing 512 KiB bound. The Rust change has honest small-runner Red/Green evidence using exact EOF tests; no repository-root gate PASS is claimed.",
+    "qualificationDriver": "Prospective session-only implementation remains under review. Native process controls pass; serial fresh-source preparation, bounded three-runtime regression execution and an exclusive interruption lease must be finalized before freeze.",
+    "next": "Resolve every known in-scope S2, integrate reviewed fixes without losing test tails, prepare new immutable source/package identities and rerun hosted CI. Only then freeze and execute two complete fresh-state matrices."
+  },
   "supportContract": {
     "publicBaseline": "README.md, README-ja.md and package.json; no support narrowing authorized",
     "nodeEngine": ">=20",
