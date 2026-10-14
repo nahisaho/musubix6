@@ -4113,7 +4113,7 @@ function setupOrigin(line, testPath, id, text = '') {
     if (!d || (i >= start && i < end) || /^test/i.test(d[1])) return [];
     const nx = all.findIndex((q, k) => k > i && (/@id\s/.test(q) || /^\s*(?:pub\s+)?(?:async\s+)?(?:fn|def|function|func)\s/.test(q)));
     return ASSERT_LINE.test(all.slice(i + 1, nx < 0 ? all.length : nx).join('\n')) ? [d[1]] : [];
-  })), ...all.join('\n').matchAll(/\b((?:check|verify|ensure|validate)\w*)\s*\(/gi).map((m) => m[1])];
+  })), ...[...all.join('\n').matchAll(/\b((?:check|verify|ensure|validate)\w*)\s*\(/gi)].map((m) => m[1])];
   const helperExtra = helperNames.length ? new RegExp(`(?<![\\w$.])(?:${helperNames.join('|')})\\s*\\(`) : null;
   const mark = (ls) => markAsserts(ls, helperExtra);
   const inA = new Array(start).fill(false).concat(mark(all.slice(start, end)));
@@ -4201,7 +4201,7 @@ function setupOrigin(line, testPath, id, text = '') {
     return null;
   };
   const base = path.basename(testPath).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const sites = [...new Set([...text.matchAll(new RegExp(`${base}:(?:line )?(\\d+)`, 'g')).map((f) => Number(f[1]) - 1)])].filter((i) => i >= start && i < end);
+  const sites = [...new Set([...text.matchAll(new RegExp(`${base}:(?:line )?(\\d+)`, 'g'))].map((f) => Number(f[1]) - 1))].filter((i) => i >= start && i < end);
   if (sites.length) {
     const hit = sites.filter((i) => re.test(all[i])).map((i) => ({ l: all[i], i }));
     // a call inside `with pytest.raises(...)` / assertRaises / assertThrows on the preceding line is the asserted behaviour

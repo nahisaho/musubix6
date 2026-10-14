@@ -12986,3 +12986,62 @@ test('#363 r35a admission packed extraction and installation reject invalid init
     r35aAdmissionContract(bin, 'only');
   }
 });
+
+function r36aRedClassification(body, weak, disableHelpers) {
+  const d = project();
+  fs.writeFileSync(path.join(d, 'add.mjs'), "export const add = () => { throw new Error('not implemented: add'); };\n");
+  fs.writeFileSync(path.join(d, 'add.test.mjs'), [
+    "import { test } from 'node:test';",
+    "import assert from 'node:assert/strict';",
+    "import { add } from './add.mjs';",
+    'function validateSum(value) { assert.equal(value, 3); }',
+    '/** @id TEST-CALC-001 @verifies REQ-CALC-001 */',
+    "test('TEST-CALC-001 adds', () => {",
+    ...body,
+    '});',
+    '',
+  ].join('\n'));
+  const preload = path.join(d, 'without-iterator-helpers.cjs');
+  fs.writeFileSync(preload, [
+    "const assert = require('node:assert/strict');",
+    "const iterator = ''.matchAll(/x/g);",
+    'for (let p = Object.getPrototypeOf(iterator); p; p = Object.getPrototypeOf(p)) {',
+    "  for (const name of ['map', 'filter', 'flatMap', 'reduce', 'toArray', 'some', 'every', 'find', 'forEach', 'take', 'drop']) {",
+    '    if (Object.hasOwn(p, name)) delete p[name];',
+    '  }',
+    '}',
+    'assert.equal(iterator.map, undefined);',
+    "assert.equal(typeof [].map, 'function');",
+    '',
+  ].join('\n'));
+  const approved = sdd(d, 'approve', 'record', 'calc', '--by', 'tester');
+  assert.equal(approved.code, 0, approved.out);
+  const r = spawnSync(process.execPath, [
+    ...(disableHelpers ? ['--require', preload] : []),
+    SDD, '--root', d, 'tdd', 'red', 'TEST-CALC-001',
+  ], { encoding: 'utf8', env: ENV });
+  const out = r.stdout + r.stderr;
+  assert.equal(r.status, 0, out);
+  assert.match(out, /RED.*TEST-CALC-001/);
+  assert.match(out, /not implemented: add/);
+  assert.doesNotMatch(out, /TypeError|load\/compile error/);
+  if (weak) assert.match(out, /\[weak\].*setup call "add"/);
+  else assert.doesNotMatch(out, /\[weak\]/);
+  const reds = testEvidence(d).filter((e) => e.type === 'red' && e.test === 'TEST-CALC-001');
+  assert.equal(reds.length, 1, out);
+  assert.equal(!!reds[0].weak, weak, JSON.stringify(reds[0]));
+}
+
+/** @id TEST-NODE20-001 @verifies REQ-NODE20-001 */
+test('#365 TEST-NODE20-001 iterator-free setup Red retains weakness', () => {
+  for (const disabled of [true, false]) {
+    r36aRedClassification(['  const seed = add(0, 0);', '  assert.equal(add(1, 2), 3 + seed);'], true, disabled);
+  }
+});
+
+/** @id TEST-NODE20-002 @verifies REQ-NODE20-001 */
+test('#365 TEST-NODE20-002 iterator-free validation-helper Red stays strong', () => {
+  for (const disabled of [true, false]) {
+    r36aRedClassification(['  validateSum(add(1, 2));'], false, disabled);
+  }
+});
