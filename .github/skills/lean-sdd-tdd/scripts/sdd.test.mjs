@@ -13492,3 +13492,182 @@ test('#369 TEST-R36E-OWNED-001 owned native loader metadata is not child message
     r36eRejectLoad(fixture, code);
   }
 });
+
+const r36iNative = (extension) => {
+  const result = spawnSync('which', [extension === 'c' ? 'cc' : 'c++'], { encoding: 'utf8', env: ENV });
+  assert.equal(result.status, 0, 'C/C++ native compiler is required for #373 oracle controls');
+  return result.stdout.trim();
+};
+const r36iFixture = (extension, missing, invalid = false) => {
+  const file = `tests/t.${extension}`;
+  const source = '// @id TEST-A-001 @verifies REQ-A-001\n'
+    + (missing ? '#include "missing.h"\n' : '')
+    + (invalid ? '#error r36g_native_invalid\n' : '')
+    + 'int main(void) { return 0; }\n';
+  const d = mk130({ [file]: source });
+  return { d, file, source, native: r36iNative(extension) };
+};
+const r36iCompile = (fixture) => spawnSync(fixture.native, ['-fsyntax-only', path.join(fixture.d, fixture.file)], {
+  cwd: fixture.d, encoding: 'utf8', timeout: 20000, env: { ...ENV, LC_ALL: 'C' },
+});
+const r36iCompiler = (fixture, body) => {
+  const executable = path.join(fixture.d, 'tools', 'compiler');
+  fs.mkdirSync(path.dirname(executable), { recursive: true });
+  if (body !== null) fs.writeFileSync(executable, `#!${process.execPath}\n${body}\n`, { mode: 0o755 });
+  writeAll(fixture.d, { 'compile_commands.json': JSON.stringify([{
+    directory: fixture.d, file: fixture.file, arguments: [executable, '-c', fixture.file],
+  }]) });
+  return executable;
+};
+const r36iStub = (fixture) => {
+  const result = spawnSync('node', [SDD, '--root', fixture.d, 'tdd', 'stub', 'TEST-A-001'], {
+    encoding: 'utf8', timeout: 20000, env: ENV,
+  });
+  assert.equal(result.error, undefined, String(result.error));
+  assert.equal(result.signal, null, 'stub CLI must return an ordinary verdict');
+  return { code: result.status, out: (result.stdout ?? '') + (result.stderr ?? '') };
+};
+const r36iReject = (result, diagnostic) => {
+  assert.equal(result.code, 1, result.out);
+  assert.match(result.out, /does not compile|could not fully stub/, result.out);
+  assert.doesNotMatch(result.out, /\(throwing, compile-checked\)|\(compile-checked\)/, result.out);
+  assert.match(result.out, diagnostic, result.out);
+};
+
+/** @id TEST-R36I-EXIT-001 @verifies REQ-R36I-001 */
+test('#373 TEST-R36I-EXIT-001 native-valid C/C++ cannot verify silent failed compilers', () => {
+  for (const extension of ['c', 'cpp']) for (const missing of [false, true]) {
+    const fixture = r36iFixture(extension, missing);
+    if (missing) writeAll(fixture.d, { 'tests/missing.h': '' });
+    const native = r36iCompile(fixture);
+    assert.equal(native.status, 0, native.stderr);
+    assert.equal(native.signal, null);
+    assert.equal(native.error, undefined);
+    if (missing) fs.rmSync(path.join(fixture.d, 'tests/missing.h'));
+    const compiler = r36iCompiler(fixture, 'process.exit(101);');
+    const controlled = spawnSync(compiler, [], { encoding: 'utf8', timeout: 20000, env: ENV });
+    assert.equal(controlled.status, 101);
+    assert.equal(controlled.stdout + controlled.stderr, '');
+    r36iReject(r36iStub(fixture), /101/);
+  }
+});
+
+/** @id TEST-R36I-INVALID-001 @verifies REQ-R36I-001 */
+test('#373 TEST-R36I-INVALID-001 exact native-invalid fixture never becomes verified with silent exit101', () => {
+  for (const extension of ['c', 'cpp']) {
+    const fixture = r36iFixture(extension, true, true);
+    writeAll(fixture.d, { 'tests/missing.h': '#pragma once\n#include <stdio.h>\n#include <stdlib.h>\n\n' });
+    const native = r36iCompile(fixture);
+    assert.equal(native.status, 1, native.stderr);
+    assert.match(native.stderr, /#error r36g_native_invalid/);
+    fs.rmSync(path.join(fixture.d, 'tests/missing.h'));
+    r36iCompiler(fixture, 'process.exit(101);');
+    const result = r36iStub(fixture);
+    const after = r36iCompile(fixture);
+    assert.equal(after.status, 1, after.stderr);
+    assert.match(after.stderr, /#error r36g_native_invalid/);
+    r36iReject(result, /101/);
+  }
+});
+
+/** @id TEST-R36I-BOUNDARY-001 @verifies REQ-R36I-001 */
+test('#373 TEST-R36I-BOUNDARY-001 failed terminal/unparseable/startup/signal/output-budget outcomes are explicit', () => {
+  for (const extension of ['c', 'cpp']) for (const missing of [false, true]) for (const [body, diagnostic] of [
+    ["process.stderr.write('\\x1b[31m\\x1b[0m'); process.exit(101);", /101/],
+    ["process.stderr.write('opaque compiler refusal'); process.exit(101);", /101|opaque compiler refusal/],
+    ["process.kill(process.pid, 'SIGTERM');", /SIGTERM/],
+    [null, /ENOENT/],
+    ["process.stdout.write(Buffer.alloc(2 * 1024 * 1024, 120));", /ENOBUFS/],
+  ]) {
+    const fixture = r36iFixture(extension, missing);
+    r36iCompiler(fixture, body);
+    r36iReject(r36iStub(fixture), diagnostic);
+  }
+});
+
+/** @id TEST-R36I-DIAGNOSTIC-001 @verifies REQ-R36I-002 */
+test('#373 TEST-R36I-DIAGNOSTIC-001 zero exit cannot erase plain or SGR-decorated compiler errors', () => {
+  for (const extension of ['c', 'cpp']) for (const missing of [false, true]) for (const text of [
+    'tests/t:1: error: controlled syntax rejection\n',
+    'tests/t:1: er\x1b[31mror\x1b[0m: controlled syntax rejection\n',
+  ]) {
+    const fixture = r36iFixture(extension, missing);
+    r36iCompiler(fixture, `process.stderr.write(${JSON.stringify(text)}); process.exit(0);`);
+    r36iReject(r36iStub(fixture), /error: controlled syntax rejection/);
+  }
+});
+
+/** @id TEST-R36I-NATIVE-001 @verifies REQ-R36I-003 */
+test('#373 TEST-R36I-NATIVE-001 real native C/C++ valid and invalid no-op controls retain verdicts', () => {
+  for (const extension of ['c', 'cpp']) for (const invalid of [false, true]) {
+    const fixture = r36iFixture(extension, false, invalid);
+    const native = r36iCompile(fixture);
+    assert.equal(native.status, invalid ? 1 : 0, native.stderr);
+    const result = r36iStub(fixture);
+    if (invalid) r36iReject(result, /r36g_native_invalid/);
+    else {
+      assert.equal(result.code, 0, result.out);
+      assert.match(result.out, /\(compile-checked\)/);
+    }
+  }
+});
+
+/** @id TEST-R36I-PARSE-001 @verifies REQ-R36I-003 */
+test('#373 TEST-R36I-PARSE-001 native diagnostics still generate valid throwing C/C++ function stubs', () => {
+  for (const extension of ['c', 'cpp']) {
+    const fixture = r36iFixture(extension, true);
+    fs.writeFileSync(path.join(fixture.d, fixture.file), fixture.source.replace('return 0;', 'return answer(2);'));
+    const initial = r36iCompile(fixture);
+    assert.equal(initial.status, 1, initial.stderr);
+    const result = r36iStub(fixture);
+    assert.equal(result.code, 0, result.out);
+    assert.match(result.out, /stubbed \(throwing, compile-checked\)/);
+    assert.match(rd130(fixture.d, 'tests/missing.h'), /not implemented: answer/);
+    const generated = r36iCompile(fixture);
+    assert.equal(generated.status, 0, generated.stderr);
+    assert.equal(generated.signal, null);
+    assert.equal(generated.error, undefined);
+  }
+});
+
+/** @id TEST-R36I-REASON-001 @verifies REQ-R36I-001 */
+test('#373 TEST-R36I-REASON-001 process reasons precede supplementary parsed compiler errors', () => {
+  const text = 'tests/t:1: error: controlled syntax rejection\n';
+  for (const extension of ['c', 'cpp']) for (const [body, reason] of [
+    [`process.stdout.write(${JSON.stringify(text)} + 'x'.repeat(2 * 1024 * 1024));`, /error ENOBUFS.*error: controlled syntax rejection/],
+    [`process.stderr.write(${JSON.stringify(text)}); process.kill(process.pid, 'SIGTERM');`, /signal SIGTERM.*error: controlled syntax rejection/],
+    [`process.stderr.write(${JSON.stringify(text)}); process.exit(101);`, /exit status 101.*error: controlled syntax rejection/],
+  ]) {
+    const fixture = r36iFixture(extension, false);
+    r36iCompiler(fixture, body);
+    r36iReject(r36iStub(fixture), reason);
+  }
+});
+
+/** @id TEST-R36I-PARSE-COLOR-001 @verifies REQ-R36I-002 */
+test('#373 TEST-R36I-PARSE-COLOR-001 colored actual native missing-function names are parsed into valid stubs', () => {
+  for (const extension of ['c', 'cpp']) {
+    const fixture = r36iFixture(extension, true);
+    fs.writeFileSync(path.join(fixture.d, fixture.file), fixture.source.replace('return 0;', 'return answer(2);'));
+    writeAll(fixture.d, { 'tests/missing.h': '' });
+    const native = r36iCompile(fixture);
+    assert.equal(native.status, 1, native.stderr);
+    assert.match(native.stderr, /answer/);
+    fs.rmSync(path.join(fixture.d, 'tests/missing.h'));
+    r36iCompiler(fixture, [
+      "const { spawnSync } = require('node:child_process');",
+      `const r = spawnSync(${JSON.stringify(fixture.native)}, process.argv.slice(2), { encoding: 'utf8', env: { ...process.env, LC_ALL: 'C' } });`,
+      "process.stdout.write((r.stdout ?? '').replaceAll('answer', 'an\\x1b[31mswer\\x1b[0m'));",
+      "process.stderr.write((r.stderr ?? '').replaceAll('answer', 'an\\x1b[31mswer\\x1b[0m'));",
+      'process.exit(r.status ?? 1);',
+    ].join('\n'));
+    const result = r36iStub(fixture);
+    assert.equal(result.code, 0, result.out);
+    assert.match(result.out, /stubbed \(throwing, compile-checked\)/);
+    assert.match(rd130(fixture.d, 'tests/missing.h'), /not implemented: answer/);
+    const generated = r36iCompile(fixture);
+    assert.equal(generated.status, 0, generated.stderr);
+    assert.equal(generated.signal, null);
+    assert.equal(generated.error, undefined);
+  }
+});
