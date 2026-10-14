@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "targetVersion": "0.1.1",
-  "status": "QUALIFICATION_PASSED_RELEASE_BLOCKED",
+  "status": "QUALIFICATION_PASSED_PUBLISHER_CHECK_BLOCKED",
   "consecutiveCompleteCleanRuns": 2,
   "humanReleaseApproved": false,
   "publishingAuthorized": false,
@@ -130,7 +130,16 @@
       "hostedCI": {
         "run": "https://github.com/nahisaho/musubix6/actions/runs/38554511796",
         "head": "68b95e331fd21e36ff473ca5932f8cb659a49f5b",
-        "statusWhenRecorded": "in_progress",
+        "statusWhenRecorded": "completed-success",
+        "actualNodeMajors": [20, 22, 24],
+        "testsPerRuntime": 1115,
+        "passPerRuntime": 1111,
+        "failPerRuntime": 0,
+        "cancelledPerRuntime": 0,
+        "skippedPerRuntime": 0,
+        "todoPerRuntime": 4,
+        "fullLog": "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/r36-promoted-main-ci-full.log",
+        "fullLogSha256": "9895aa39ce5db38fc9d9f9042be44312ac7dd9345e2ea997e3f9f0db5ba0e8fc",
         "qualifiedCandidateHostedCIRemainsSuccessful": true
       }
     },
@@ -140,13 +149,32 @@
       "rootGateFailureDisclosed": "https://github.com/nahisaho/musubix6/issues/315#issuecomment-6167016955"
     },
     "releaseApprovalPreparation": {
-      "status": "draft-no-human-approval",
+      "status": "blocked-current-npm-authentication",
       "isolatedOperationalProject": "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/release-v0.1.1-approval",
       "sourceTreeUnchanged": true,
+      "draftArtifacts": [
+        {
+          "path": "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/release-v0.1.1-approval/.sdd/specs/release-v0.1.1.md",
+          "sha256": "04037657f71fbcba83ab76f5d6905f3bf883dee2d88dbc4e1c9e82905c8355de"
+        },
+        {
+          "path": "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/release-v0.1.1-approval/release-packet.json",
+          "sha256": "700b405878a60e8961e4852c68055c6aa21132318972f1d000b9ca727205e6e3"
+        }
+      ],
+      "documentReview": {
+        "model": "claude-sonnet-5.5",
+        "status": "CLEAN",
+        "reviewer": "e0e037df-558c-43ac-8a24-0d0ed9264f94",
+        "scope": "Independent document review; original gaps corrected, then bounded consent/integrity and final CI/E401 factual-status deltas reviewed. Not a new source audit or human approval.",
+        "structuralLint": "No findings.",
+        "approvePrepareExecuted": false,
+        "humanApprovalRecorded": false
+      },
       "exactProposedTagCommit": "68b95e331fd21e36ff473ca5932f8cb659a49f5b",
       "scope": "A genuine human decision must explicitly cover the exact tag and its consequential public npm publication. The packet includes all exact artifact paths/hashes, actual full-root-gate FAIL and other residuals. It is not an approval record.",
       "publicationVerification": "Before any GitHub release, require successful publishing workflow, exact registry dist integrity/shasum and downloaded tgz SHA-256. A mismatch stops further actions but cannot undo public npm publication. Remediation requires a separate human decision.",
-      "prerequisitesBeforePrepareAndAsk": "Inspect actual promoted-commit hosted CI to completion; finalize and rehash the packet, obtain clean independent document review and run approve prepare in the isolated operational project. Do not write approval files into the qualified source."
+      "prerequisitesBeforePrepareAndAsk": "Promoted-commit CI is successful with exact totals on all three runtimes. The latest npm whoami recheck fails E401, so require human resolution of that publisher prerequisite before approval preparation. Then finalize and rehash the packet, obtain clean independent document review and run approve prepare in the isolated operational project. Do not write approval files into the qualified source or receive secret values in conversation."
     },
     "promotionBinding": {
       "frozenOperationalExclusions": [
@@ -181,6 +209,7 @@
     "qualificationLauncherDeadline": "The explicitly renewed deadline was independently reviewed before this prospective freeze. It is bound by the frozen driver hash and manifest authorizationEndsAt. Do not edit frozen helpers.",
     "publisherPreflight": {
       "checkedAt": "2026-10-14T10:16:51Z",
+      "historicalOnly": true,
       "registry": "https://registry.npmjs.org",
       "localNpmAccount": "nahisaho",
       "repositoryNpmTokenConfigured": false,
@@ -198,7 +227,19 @@
       "publishingAuthorized": false,
       "releaseApprovalResidual": "The scoped npm environment contains NPM_TOKEN and the local CLI authenticates as nahisaho, but these facts do not prove that the stored environment token belongs to the same account or permits first publication. No required environment-reviewer gate is configured; real user approval must precede tag creation."
     },
-    "next": "Both fresh-state qualification runs passed all 20 cells under identical frozen bindings, with all 40 log hashes verified. Source-equivalent main promotion and byte-identical repacking are complete and pushed. Preserve the separately failed full self-hosting gate as an explicit residual. Finish the exact-path/hash approval packet and observe the promoted-main hosted CI before requesting genuine human release approval. No publication authority."
+    "publisherRecheck": {
+      "checkedAt": "2026-10-14T11:32:52Z",
+      "command": "npm whoami",
+      "status": "E401_UNAUTHORIZED",
+      "currentLocalAccountVerified": false,
+      "lastSuccessfulLocalAccount": "nahisaho",
+      "npmEnvironmentTokenConfigured": true,
+      "environmentRequiredReviewerRules": [],
+      "environmentTokenPrincipalVerified": false,
+      "secretValuesReadOrDisplayed": false,
+      "requiredHumanAction": "Resolve the failed local npm identity check before approval preparation. Do not paste token values into conversation. This does not authorize a tag or publication."
+    },
+    "next": "Technical qualification, exact-source main promotion, byte-identical npm 10/12 repacking and promoted-main hosted CI are complete. The actual root self-hosting gate remains FAIL and all other residuals remain disclosed. The final local npm identity recheck fails E401; require human resolution before preparing the separate exact-path/hash release approval. No tag, publication or release approval."
   },
   "epochs": [
     {
