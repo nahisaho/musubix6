@@ -2,11 +2,11 @@
   "schemaVersion": 1,
   "targetVersion": "0.1.1",
   "status": "NOT_READY",
-  "consecutiveCompleteCleanRuns": 0,
+  "consecutiveCompleteCleanRuns": 1,
   "humanReleaseApproved": false,
   "publishingAuthorized": false,
   "currentCandidate": {
-    "status": "prepared-not-qualifying",
+    "status": "qualification-running-one-clean-run",
     "sourceCommit": "f4a495af013d785d83676f93ffa3102717675ed0",
     "sourceArchiveSha256": "f0235be18b8f8ca6b151cee5e672334a631cc2df0cb41785652591b562248895",
     "sourceDigest": "cf233120203e463530a6d78b146665728c15e47755248e6c1d4381fe0e201a71",
@@ -14,7 +14,7 @@
     "registeredTests": 1115,
     "expectedPass": 1111,
     "expectedTodo": 4,
-    "localFullSuiteExecuted": false,
+    "localFullSuiteExecuted": true,
     "hostedFullSuiteExecuted": true,
     "prospectiveManifestFrozen": true,
     "frozenManifest": {
@@ -23,9 +23,34 @@
       "frozenAt": "2026-10-14T10:01:53.942Z",
       "requiredCells": 20,
       "mutationMechanisms": 31,
-      "run1": "RUNNING",
-      "run2": "NOT_STARTED"
+      "run1": "PASS",
+      "run2": "RUNNING"
     },
+    "qualificationRuns": [
+      {
+        "runId": "run1",
+        "status": "PASS",
+        "completedAt": "2026-10-14T10:33:09.597Z",
+        "requiredCells": 20,
+        "passedCells": 20,
+        "report": {
+          "path": "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/r36-final-f4a495a/run1/result.json",
+          "sha256": "ee6ce75400d3e5668c9fd8193b478f31813b7cbfe9d052e37016b12e0aa6b02b"
+        },
+        "logHashesVerified": 20,
+        "fullRegressionPerRuntime": {
+          "actualNodeVersions": ["20.20.2", "22.23.3", "24.21.0"],
+          "tests": 1115,
+          "pass": 1111,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 4,
+          "requiredCasesObserved": 1115
+        },
+        "preservation": "All required whole-filesystem, dependency and frozen-input guards passed; failed historical epoch receives no credit."
+      }
+    ],
     "focusedPreflight": "Four exact fixture controls pass on each actual Node 20/22/24, with identical complete filesystem hashes before and after. This is not a full suite or qualification.",
     "packagePreflight": "The byte-identical retained pack passes actual fresh extraction/offline-install and complete bundled-payload controls on Node 20/22/24.",
     "mutationPreflight": {
@@ -81,7 +106,7 @@
       "publishingAuthorized": false,
       "releaseApprovalResidual": "The scoped npm environment contains NPM_TOKEN and the local CLI authenticates as nahisaho, but these facts do not prove that the stored environment token belongs to the same account or permits first publication. No required environment-reviewer gate is configured; real user approval must precede tag creation."
     },
-    "next": "Complete corrected run1, require a complete clean PASS and intact log hashes, then run2 under the identical source/package/manifest with fresh fixtures. No old-run credit and no publication authority."
+    "next": "Fresh-state run2 started at 2026-10-14T10:33:33.916Z under the identical frozen source/package/manifest. Require all 20 cells and preservation guards to pass with intact log hashes before declaring two clean runs. No old-run credit and no publication authority."
   },
   "epochs": [
     {

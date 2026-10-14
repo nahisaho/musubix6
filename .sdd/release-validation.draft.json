@@ -19,8 +19,8 @@
       "authorizationEndsAt": "2026-10-15T23:59:00+09:00",
       "requiredCells": 20,
       "mutationMechanisms": 31,
-      "firstRun": "RUNNING",
-      "secondRun": "NOT_STARTED"
+      "firstRun": "PASS",
+      "secondRun": "RUNNING"
     },
     "supersededManifest": {
       "status": "explicitly-superseded",
@@ -38,17 +38,17 @@
         "files": 18
       }
     },
-    "consecutiveCompleteCleanRuns": 0,
+    "consecutiveCompleteCleanRuns": 1,
     "mainSourcePromoted": false,
     "reviewedIntegration": "f4a495af013d785d83676f93ffa3102717675ed0",
     "preparedCandidate": {
-      "status": "prepared-not-qualifying",
+      "status": "qualification-running-one-clean-run",
       "sourceArchiveSha256": "f0235be18b8f8ca6b151cee5e672334a631cc2df0cb41785652591b562248895",
       "packageSha256": "f24429ee79be2a842d1a6b696baa886d3942978aa40ab4f8a527f84971409ead",
       "registeredTests": 1115,
       "expectedPass": 1111,
       "expectedTodo": 4,
-      "localFullSuiteExecuted": false,
+      "localFullSuiteExecuted": true,
       "hostedFullSuiteExecuted": true,
       "previousCandidateFullRegressionPerRuntime": "Prior a9cd849 on actual Node 20/22/24 each executed 1113 tests: 1109 pass, zero fail, four TODOs, no skips/cancellations. All three cells still failed the required whole-filesystem guard. No credit transfers to this corrected candidate.",
       "reproducibility": "Two independent packs are byte-identical; eight bundled skills and all 74 prior skill payload paths are retained.",
@@ -151,7 +151,7 @@
     },
     "selfHostingEvidenceLimit": "The root scanner excludes the monolithic test file above its existing 512 KiB bound. Native compiler changes have honest small-runner Red/Green evidence using exact final EOF tests/helpers; no repository-root gate PASS is claimed.",
     "qualificationDriver": "Reviewed interruption-safe execution uses serial fresh-source/dependency preparation before exactly three bounded full suites, an exclusive lease, all-settled completion, and seven process self-tests. Final prospective inputs bind the actual Python sources used by the offline wheel fixture. All 29 fixed mutation mechanisms pass the formal run, but the required whole-filesystem guard rejects the pytest fixture leak after otherwise successful full regressions. No preflight or failed run counts toward qualification.",
-    "next": "Authorization was explicitly extended until 2026-10-15 23:59 JST. The deadline-only execution delta was independently reviewed and the corrected candidate frozen prospectively. Complete run1 and require its full clean PASS before fresh-state run2 under identical bindings. Main source promotion, tag and publication remain unperformed; publication requires genuine human approval."
+    "next": "Run1 completed all 20 cells PASS at 2026-10-14T10:33:09.597Z; all three actual runtimes executed 1115 tests with 1111 pass, zero fail/cancel/skip and four TODOs. All 20 log hashes were verified. Fresh-state run2 started at 2026-10-14T10:33:33.916Z under identical bindings and must also pass completely. Main source promotion, tag and publication remain unperformed; publication requires genuine human approval."
   },
   "supportContract": {
     "publicBaseline": "README.md, README-ja.md and package.json; no support narrowing authorized",
@@ -367,7 +367,7 @@
       "countsAsPassed": false
     }
   ],
-  "freezeBlockers": [
+  "historicalFreezeBlockersBeforeCorrectedCandidate": [
     "#363: reviewed destination/admission fixes and packed controls pass; final integrated validation pending",
     "#364: portable compiler dependency and non-publishing CI implemented; final integrated validation and actual remote CI pending",
     "#365 and #366: fixes independently reviewed and locally integrated; final full validation and main promotion remain pending",
@@ -381,10 +381,20 @@
     "Version, candidate/package digests, retained artifact paths and complete runnable commands not yet fixed"
   ],
   "qualification": {
-    "cleanRuns": 0,
+    "cleanRuns": 1,
     "requiredConsecutiveRuns": 2,
-    "runEvidence": [],
-    "detachedManifestHashRecord": null,
+    "runEvidence": [
+      {
+        "runId": "run1",
+        "status": "PASS",
+        "path": "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/r36-final-f4a495a/run1/result.json",
+        "sha256": "ee6ce75400d3e5668c9fd8193b478f31813b7cbfe9d052e37016b12e0aa6b02b",
+        "requiredCells": 20,
+        "passedCells": 20,
+        "logHashesVerified": 20
+      }
+    ],
+    "detachedManifestHashRecord": "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/r36-final-f4a495a/manifest-sha256.json",
     "freshStatePerRun": true,
     "priorExploratoryOrIntegrationRunsCount": false,
     "readinessClaim": false
