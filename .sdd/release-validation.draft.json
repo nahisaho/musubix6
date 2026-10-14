@@ -133,6 +133,29 @@
       "noChange": "Fresh real assertion Red, Green, full gate with observed native execution, and strict no-change gate pass on actual Node 20/22/24 / 5253e14. Protected source/spec/config/ledger hashes remain unchanged.",
       "runner": "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/qualify-no-change.mjs"
     },
+    "compilerBudget": {
+      "commit": "9d9f28e",
+      "integrated": "b5765b4",
+      "independentReview": "Claude Sonnet 5.5: no actionable findings.",
+      "actualNode20": "25 selected controls pass; valid gate 7861.6ms, maximum 8452.4ms.",
+      "actualNode22": "25 selected controls pass; valid gate 8225.9ms, maximum 8881.1ms.",
+      "actualNode24": "Six selected controls pass; valid gate 5363.1ms, maximum 5455.5ms.",
+      "preserved": "Official TypeScript 5.9.3 bundle 6213122 bytes, launcher/helper/package/executable provenance, unchanged 15000ms command budget.",
+      "residual": "Intermediate shared-load timeout retained as FLAKY suspected; serial targeted success is not qualification."
+    },
+    "ownershipPortability": {
+      "commit": "8658753",
+      "integrated": "58404ad",
+      "independentReview": "Claude Sonnet 5.5: no actionable findings.",
+      "actualControls": "Three ownership controls pass on each actual Node 20/22/24; literal native glob coverage preserved where supported, explicit operands cover all three.",
+      "blockedPart": "#368 TypeScript adaptation stopped because the actual unsupported Node20 loader records implicit weak Red; original #339 remains unchanged. New S1 #369 is blocking."
+    },
+    "nativeEnvironmentFeasibility": {
+      "r": "Real R 4.6.1/testthat 3.3.2 auto-detection, assertion Red, Green and full gate pass on 58404ad/Node24 using isolated default HOME user-library discovery. System rlang initially failed ABI loading; isolated source restore initially lacked uv.h, then succeeded using fs's documented USE_BUNDLED_LIBUV=1. No global library or runner environment policy change.",
+      "rEvidence": "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/r36-native-r-isolated-home.json",
+      "gradle": "System Gradle4.4.1 is not the documented Gradle8 sample. Isolated official Gradle8.14.3 archive SHA256 bd71102213493060956ec229d946beee57158dbd89d0e62b91bca0fa2c5f3531 verified; --version works with installed Java21.0.12.1. Native SDD smoke still pending.",
+      "dependencyManifest": "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/native-validation-dependencies.json"
+    },
     "evidence": "Retained session files r36a-*, r36b-*, r36ab-node{20,22,24}-combined.log, r36-integrated-scope-differential.log and r36ab-no-change-node{20,22,24}.json.",
     "fullSuiteOnThisCandidate": "Not yet run; earlier cbcb746 full-suite results cannot validate this candidate."
   },
@@ -164,6 +187,7 @@
     "#365 and #366: fixes independently reviewed and locally integrated; final full validation and main promotion remain pending",
     "#367: required compiler gate fails the unchanged budget on Node 22; final matrix cannot pass with this failure",
     "#368: native runtime fixture preconditions must be made explicit without skipping or weakening the protected behavior",
+    "#369: actual unsupported native TypeScript loading is accepted as implicit weak Red on Node20; must reject before writing evidence",
     "Full Node 20/22/24 suites on the final candidate not yet complete; 112-case feasibility runs do not qualify",
     "Exact command/runner/configuration support forms, environment versions and fixed case IDs not yet enumerated",
     "Four pre-existing TODOs identified above require residual-risk review; none counts as passed evidence",
