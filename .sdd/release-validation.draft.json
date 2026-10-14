@@ -107,6 +107,35 @@
     "rawLogDirectory": "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files",
     "qualificationImpact": "No readiness claim. New runtime fixes will change candidate/package identities; the manifest remains unfrozen and the clean-run streak remains zero."
   },
+  "r36FeasibilityOnly": {
+    "qualifying": false,
+    "integrationCandidate": "5253e14",
+    "mainPromotion": "Not yet performed; final full regression and remaining fixes are pending.",
+    "iteratorCompatibility": {
+      "commit": "7f6ab91",
+      "independentReview": "Claude Sonnet 5.5: no actionable findings.",
+      "priorCrashControls": "39 baseline Node 20 cases with an actual iterator TypeError were rerun on integrated 2512689: 39 passed, zero failed, no selected skips. Other old failures are not attributed by inference.",
+      "regressionsAndMutations": "Two appended regressions and seven selected controls pass on actual Node 20/22/24; each direct-helper reintroduction fails by assertion and byte-identical restoration passes."
+    },
+    "nativeRedAdmission": {
+      "commit": "ab68314",
+      "independentReview": "Claude Sonnet 5.5: no actionable findings.",
+      "integratedControls": [
+        { "node": "20.20.2", "selected": 49, "pass": 47, "fail": 2, "outsideSelection": 1034, "exit": 1 },
+        { "node": "22.23.3", "selected": 49, "pass": 49, "fail": 0, "exit": 0 },
+        { "node": "24.21.0", "selected": 49, "pass": 49, "fail": 0, "exit": 0 }
+      ],
+      "remainingNode20Failures": "#368: two fixture preconditions assume native TypeScript stripping and CLI test globbing; actual production refusal/positive controls remain to be completed, not silently waived.",
+      "mergeInvariant": "Common 1ee528a suite prefix and both complete lane append tails are byte-identical after integration."
+    },
+    "scopeControls": {
+      "differential": "Six existing Cargo/JS/Python cells pass on 2512689 / Node 24; full-vs-changed independent hash oracle and warn/strict controls.",
+      "noChange": "Fresh real assertion Red, Green, full gate with observed native execution, and strict no-change gate pass on actual Node 20/22/24 / 5253e14. Protected source/spec/config/ledger hashes remain unchanged.",
+      "runner": "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/qualify-no-change.mjs"
+    },
+    "evidence": "Retained session files r36a-*, r36b-*, r36ab-node{20,22,24}-combined.log, r36-integrated-scope-differential.log and r36ab-no-change-node{20,22,24}.json.",
+    "fullSuiteOnThisCandidate": "Not yet run; earlier cbcb746 full-suite results cannot validate this candidate."
+  },
   "knownTodoCases": [
     {
       "name": "r24d TODO stub: a call with no return-type evidence is emitted as a concrete i64 without an SDD-TODO(stub) marker",
@@ -132,8 +161,9 @@
   "freezeBlockers": [
     "#363: reviewed destination/admission fixes and packed controls pass; final integrated validation pending",
     "#364: portable compiler dependency and non-publishing CI implemented; final integrated validation and actual remote CI pending",
-    "#365 and #366: newly verified in-scope runtime compatibility/verdict defects remain blocking",
+    "#365 and #366: fixes independently reviewed and locally integrated; final full validation and main promotion remain pending",
     "#367: required compiler gate fails the unchanged budget on Node 22; final matrix cannot pass with this failure",
+    "#368: native runtime fixture preconditions must be made explicit without skipping or weakening the protected behavior",
     "Full Node 20/22/24 suites on the final candidate not yet complete; 112-case feasibility runs do not qualify",
     "Exact command/runner/configuration support forms, environment versions and fixed case IDs not yet enumerated",
     "Four pre-existing TODOs identified above require residual-risk review; none counts as passed evidence",
