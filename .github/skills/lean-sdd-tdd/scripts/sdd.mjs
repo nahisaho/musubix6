@@ -2144,7 +2144,12 @@ function callInfo(src, name) {
   // `_, err := New().Record(..)`: the tuple belongs to the chained method, not to this call (#113)
   return { args: args.map(litType), raws: args, ret, multi: /,\s*\w+\s*:?=\s*$/.test(before) && !/^\s*\./.test(after), chained: /^\s*\./.test(after), argc: args.length };
 }
-const probe = (cmd, args, cwd) => { const r = spawnSync(cmd, args, { cwd, encoding: 'utf8', timeout: 120000, env: { ...process.env, LC_ALL: 'C' } }); return (r.stdout ?? '') + (r.stderr ?? ''); };
+/** @id CODE-R36I-001 @implements REQ-R36I-001 REQ-R36I-002 */
+const probeOutcome = (cmd, args, cwd) => {
+  const r = spawnSync(cmd, args, { cwd, encoding: 'utf8', timeout: 120000, env: { ...process.env, LC_ALL: 'C' } });
+  return { text: (r.stdout ?? '') + (r.stderr ?? ''), status: r.status, signal: r.signal, error: r.error };
+};
+const probe = (cmd, args, cwd) => probeOutcome(cmd, args, cwd).text;
 
 function stubGo(testPath, src, dir, add, made) {
   const pkg = /^package\s+(\w+)/m.exec(src)?.[1]?.replace(/_test$/, '') ?? 'main';
@@ -2358,10 +2363,9 @@ function stubRust(testPath, src, dir, made) {
   if (!root || !/(^|\/)tests\//.test(testPath)) return made;
   /** @id CODE-R36G-001 @implements REQ-R36G-001 REQ-R36G-002 */
   const cargoTest = () => {
-    const r = spawnSync('cargo', ['test', '--no-run', '--offline', '--test', path.basename(testPath, '.rs')],
-      { cwd: root, encoding: 'utf8', timeout: 120000, env: { ...process.env, LC_ALL: 'C' } });
+    const r = probeOutcome('cargo', ['test', '--no-run', '--offline', '--test', path.basename(testPath, '.rs')], root);
     // Cargo can color piped diagnostics; every Rust consumer needs the same plain text.
-    return { text: ((r.stdout ?? '') + (r.stderr ?? '')).replace(/\x1b\[[0-9;]*m/g, ''), status: r.status, signal: r.signal, error: r.error };
+    return { ...r, text: r.text.replace(/\x1b\[[0-9;]*m/g, '') };
   };
   const ownLib = path.join(root, 'src/lib.rs');
   const probeFile = !fs.existsSync(ownLib);
@@ -3072,11 +3076,26 @@ function stubC(testPath, src, dir, add, made) {
     break;
   }
   // compile-check the result: an honest verdict instead of an assumed "Red-safe" (#130)
-  const syntax = () => probe(compile.cc, ['-fsyntax-only', ...compile.args, path.join(ROOT, testPath)], compile.cwd);
-  const verified = () => { const o = syntax(); const e = /^[^\n]*\berror:.*$/m.exec(o); return e ? { verified: 'fail', verifyError: e[0].replace(ROOT + '/', '').slice(0, 200) } : { verified: 'ok' }; };
+  /** @id CODE-R36I-002 @implements REQ-R36I-001 REQ-R36I-002 */
+  const syntax = () => {
+    const r = probeOutcome(compile.cc, ['-fsyntax-only', ...compile.args, path.join(ROOT, testPath)], compile.cwd);
+    return { ...r, text: r.text.replace(/\x1b\[[0-9;]*m/g, '') };
+  };
+  const verified = () => {
+    const r = syntax();
+    const e = /^[^\n]*\berror:.*$/m.exec(r.text);
+    if (r.status === 0 && !r.signal && !r.error && !e) return { verified: 'ok' };
+    const diagnostic = e?.[0].replace(ROOT + '/', '').slice(0, 160);
+    const reason = r.error ? `C/C++ compile check failed with error ${r.error.code ?? r.error.message}`
+      : r.signal ? `C/C++ compile check terminated by signal ${r.signal}`
+        : r.status == null ? 'C/C++ compile check failed: status unavailable'
+          : r.status !== 0 ? `C/C++ compile check failed with exit status ${r.status}`
+            : null;
+    return { verified: 'fail', verifyError: reason ? `${reason}${diagnostic ? `; ${diagnostic}` : ''}` : diagnostic };
+  };
   if (!missing.length) return Object.assign(made, verified());
   for (const h of missing) { fs.mkdirSync(path.dirname(path.resolve(dir, h)), { recursive: true }); fs.writeFileSync(path.resolve(dir, h), ''); }
-  const out = syntax();
+  const out = syntax().text;
   // anything an already-present project header declares must not be redeclared (#96)
   const present = gitFiles('*.h').concat(gitFiles('*.hpp')).map((f) => { try { return fs.readFileSync(path.join(ROOT, f), 'utf8'); } catch { return ''; } }).join('\n');
   const declared = (n) => new RegExp(`\\b${n}\\s*\\(`).test(present);
