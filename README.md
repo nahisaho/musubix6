@@ -96,9 +96,27 @@ A Japanese walkthrough (interview → spec → TDD → follow-up feature → man
 
 ## Tests
 
+From the repository root, install the development-only compiler fixture before
+running the suite (Node ≥ 20):
+
 ```sh
+npm ci
 node --test .github/skills/lean-sdd-tdd/scripts/sdd.test.mjs
 ```
+
+The runtime remains zero-dependency. Tests require the exact TypeScript 5.9.3
+installation in `node_modules/typescript`; an explicit `SDD_R34_TYPESCRIPT`
+directory overrides that default. A missing compiler fails the regression rather
+than skipping it, and its per-command 15-second budget is unchanged.
+
+Install Python 3 with pytest and R for the required native controls. Other native
+tests use their respective toolchains (C/C++ with CMake, Go, Cargo/Rust, JDK with
+Maven, .NET, PHP with PHPUnit/Composer, Julia, and Elixir/OTP); unavailable optional
+toolchains are reported as skips by the existing suite.
+[`ci.yml`](.github/workflows/ci.yml) provisions these tools on Linux and runs the
+full suite on Node 20/22/24, recording actual runtime versions and command exits
+and uploading failure logs. The matrix is qualification infrastructure, not a
+claim that every cell has already passed; it never publishes a package.
 
 ## AI cost log
 

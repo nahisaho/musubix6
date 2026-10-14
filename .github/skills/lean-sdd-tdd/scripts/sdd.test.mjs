@@ -12522,8 +12522,8 @@ test('r34f #362 structural budget avoids per-identifier PATH and file probes', (
 /** @id TEST-R34-CLOSURE-002 @verifies REQ-R34-CLOSURE-001 */
 test('r34f #362 real installed TypeScript launcher reaches TDD and preserves provenance', () => {
   const { d, cp, cfg } = r34fFixture();
-  const installed = process.env.SDD_R34_TYPESCRIPT ?? '/home/nahisaho/musubix6-dogfood/dogfood-24/findings/repro-app207-tsc/node_modules/typescript';
-  assert.ok(fs.existsSync(path.join(installed, 'bin/tsc')), `Missing compiler dependency: set SDD_R34_TYPESCRIPT to an existing official installation (${installed})`);
+  const installed = process.env.SDD_R34_TYPESCRIPT ?? fileURLToPath(new URL('../../../../node_modules/typescript', import.meta.url));
+  assert.ok(fs.existsSync(path.join(installed, 'bin/tsc')), `Missing compiler dependency: run npm ci at the repository root or set SDD_R34_TYPESCRIPT to an existing official installation (${installed})`);
   const compiler = path.join(d, 'node_modules/typescript');
   fs.cpSync(installed, compiler, { recursive: true });
   const pkg = JSON.parse(fs.readFileSync(path.join(compiler, 'package.json')));
@@ -12673,4 +12673,92 @@ test('r34 integration Python namespace probes share the compiler source-discover
   assert.ok(probes <= 1000, `shared Python namespace discovery must use <=1000 reads/stats, observed ${probes}`);
   assert.equal(result.status, 0, result.stdout + result.stderr);
   console.log(`r34 integrated namespace reads/stats: ${probes}`);
+});
+
+test('r35b #364 compiler fixture selection is checkout-relative and preserves explicit override', () => {
+  const source = fs.readFileSync(fileURLToPath(import.meta.url), 'utf8');
+  const expression = /const installed = ([^\n]+);/.exec(source)?.[1];
+  assert.ok(expression, 'the real compiler control must select an installation explicitly');
+  const select = new Function('process', 'fileURLToPath', 'suiteUrl',
+    `return ${expression.replaceAll('import.meta.url', 'suiteUrl')};`);
+  for (const root of ['/portable checkout', '/another/checkout']) {
+    const suiteUrl = new URL(`file://${root}/.github/skills/lean-sdd-tdd/scripts/sdd.test.mjs`);
+    assert.equal(select({ env: {} }, fileURLToPath, suiteUrl), `${root}/node_modules/typescript`);
+    assert.equal(select({ env: { SDD_R34_TYPESCRIPT: '/explicit/compiler' } }, fileURLToPath, suiteUrl), '/explicit/compiler');
+    assert.equal(select({ env: { SDD_R34_TYPESCRIPT: '' } }, fileURLToPath, suiteUrl), '',
+      'an invalid explicit override must not silently fall back to the default');
+  }
+});
+
+test('r35b #364 TypeScript is exactly locked as a development-only dependency', () => {
+  const root = fileURLToPath(new URL('../../../../', import.meta.url));
+  const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json')));
+  assert.equal(pkg.devDependencies?.typescript, '5.9.3');
+  assert.equal(Object.keys(pkg.dependencies ?? {}).length, 0, 'runtime remains zero-dependency');
+  assert.equal(Object.keys(pkg.optionalDependencies ?? {}).length, 0);
+  assert.equal((pkg.bundledDependencies ?? pkg.bundleDependencies ?? []).length, 0);
+  const lock = JSON.parse(fs.readFileSync(path.join(root, 'package-lock.json')));
+  assert.equal(lock.packages[''].devDependencies.typescript, '5.9.3');
+  assert.deepEqual(Object.keys(lock.packages).sort(), ['', 'node_modules/typescript']);
+  const compiler = lock.packages['node_modules/typescript'];
+  assert.equal(compiler.version, '5.9.3');
+  assert.equal(compiler.dev, true);
+  assert.match(compiler.resolved, /^https:\/\/registry\.npmjs\.org\/typescript\//);
+  assert.match(compiler.integrity, /^sha512-/);
+});
+
+test('r35b #364 compiler regression requires a real installation and retains the 15s budget', () => {
+  const source = fs.readFileSync(fileURLToPath(import.meta.url), 'utf8');
+  const start = source.indexOf("test('r34f #362 real installed TypeScript");
+  const end = source.indexOf('/** @id TEST-R34-CLOSURE-003', start);
+  const control = source.slice(start, end);
+  assert.doesNotMatch(control, /skip:|t\.skip|catch\s*\(/);
+  assert.match(control, /Missing compiler dependency:.*npm ci/);
+  assert.match(control, /assert\.equal\(pkg\.version, '5\.9\.3'\)/);
+  assert.match(control, /assert\.ok\(fs\.statSync\(bundle\)\.size > 5 \* 1024 \* 1024\)/);
+  assert.match(control, /const valid = r34fRun\(d, 'gate'\)/);
+  assert.match(control, /for \(const file of \['lib\/_tsc\.js', 'lib\/r34-helper\.cjs', 'package\.json'\]\)/);
+  const runner = source.slice(source.indexOf('function r34fRun('), source.indexOf('/** @id TEST-R34-CLOSURE-001'));
+  assert.match(runner, /timeout: 15000/);
+  assert.match(runner, /assert\.equal\(result\.error, undefined/);
+});
+
+test('r35b #364 CI qualifies Node 20/22/24 without publication and retains failure evidence', () => {
+  const root = fileURLToPath(new URL('../../../../', import.meta.url));
+  const workflowPath = path.join(root, '.github/workflows/ci.yml');
+  assert.ok(fs.existsSync(workflowPath), 'non-publishing matrix CI must be checked in');
+  const ci = fs.readFileSync(workflowPath, 'utf8');
+  assert.match(ci, /push:\s*\n\s+pull_request:\s*\n\s+workflow_dispatch:/);
+  assert.match(ci, /permissions:\s*\n\s+contents: read/);
+  assert.doesNotMatch(ci, /secrets\.|id-token:|contents: write|npm publish|environment:|pull_request_target/);
+  assert.match(ci, /runs-on: ubuntu-latest/);
+  assert.match(ci, /node: \[20, 22, 24\]/);
+  assert.match(ci, /fail-fast: false/);
+  assert.match(ci, /node-version: \$\{\{ matrix\.node \}\}/);
+  assert.match(ci, /timeout-minutes: (?:[6-9]\d|1\d\d)/);
+  assert.match(ci, /node --version/);
+  assert.match(ci, /process\.versions\.node/);
+  assert.match(ci, /EXPECTED_NODE/);
+  assert.match(ci, /npm ci/);
+  assert.match(ci, /python3 -m pip install.*pytest/);
+  for (const tool of ['r-base-core', 'build-essential', 'cmake', 'maven', 'phpunit', 'composer'])
+    assert.ok(ci.includes(tool), `native prerequisite: ${tool}`);
+  for (const setup of ['setup-go', 'rust-toolchain', 'setup-java', 'setup-dotnet', 'setup-julia', 'setup-beam'])
+    assert.ok(ci.includes(setup), `native prerequisite: ${setup}`);
+  assert.match(ci, /node --test \.github\/skills\/lean-sdd-tdd\/scripts\/sdd\.test\.mjs/);
+  assert.match(ci, /PIPESTATUS\[0\]/);
+  assert.match(ci, /exit "\$status"/);
+  assert.match(ci, /exit=%s/);
+  assert.match(ci, /if: failure\(\)/);
+  assert.match(ci, /uses: actions\/upload-artifact@v4/);
+  assert.match(ci, /path: test-logs\//);
+});
+
+test('r35b #364 publish test job restores the portable compiler before running its suite', () => {
+  const root = fileURLToPath(new URL('../../../../', import.meta.url));
+  const workflow = fs.readFileSync(path.join(root, '.github/workflows/publish.yml'), 'utf8');
+  const testJob = workflow.slice(workflow.indexOf('  test:'), workflow.indexOf('\n  publish:'));
+  assert.match(testJob, /npm ci/);
+  assert.ok(testJob.indexOf('npm ci') < testJob.indexOf('node --test'), 'restore before compiler regression');
+  assert.doesNotMatch(testJob, /SDD_R34_TYPESCRIPT|secrets\.|npm publish/);
 });
