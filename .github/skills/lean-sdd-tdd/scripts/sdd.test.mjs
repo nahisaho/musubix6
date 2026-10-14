@@ -13279,3 +13279,107 @@ test('#368 TEST-R36D-OWN-002 explicit project files preserve positive and missin
     }
   } finally { if (previous === undefined) delete ENV.CI; else ENV.CI = previous; }
 });
+
+function r36eLoadCase(reporter, importSource, files, flags = []) {
+  const d = r36bFixture(reporter, 'assert.equal(add(1, 2), 3);');
+  fs.writeFileSync(path.join(d, 'package.json'), '{"type":"module"}');
+  for (const [file, source] of Object.entries(files)) {
+    fs.mkdirSync(path.dirname(path.join(d, file)), { recursive: true });
+    fs.writeFileSync(path.join(d, file), source);
+  }
+  const original = fs.readFileSync(path.join(d, 'add.test.mjs'), 'utf8');
+  const failing = `${importSource}\n${original}`;
+  setCmd(d, ['node', ...flags, '--test', `--test-reporter=${reporter}`, 'add.test.mjs']);
+  return { d, original, failing };
+}
+
+function r36eRejectLoad(fixture, code) {
+  const { d, original, failing } = fixture;
+  const file = path.join(d, 'add.test.mjs'), ledger = path.join(d, '.sdd/tdd.jsonl');
+  // Both a nonexistent ledger and an already valid chain must remain untouched.
+  for (const seeded of [false, true]) {
+    if (seeded) {
+      fs.writeFileSync(file, original.replace('assert.equal(add(1, 2), 3)', 'assert.equal(add(1, 2), 0)'));
+      const seed = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
+      assert.equal(seed.code, 0, seed.out);
+      assert.equal(!!lastRed(d).weak, false);
+    }
+    fs.writeFileSync(file, failing);
+    const before = fs.existsSync(ledger) ? fs.readFileSync(ledger) : null;
+    const native = spawnSync('node', [
+      ...JSON.parse(fs.readFileSync(path.join(d, '.sdd/config.json'))).testCmd.slice(1),
+    ], { cwd: d, encoding: 'utf8', env: ENV });
+    const output = native.stdout + native.stderr;
+    assert.equal(native.status, 1, output);
+    assert.match(output, new RegExp(`\\b${code}\\b`), output);
+    const rejected = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
+    assert.equal(rejected.code, 1, `${code}\n${rejected.out}`);
+    assert.match(rejected.out, /load\/compile error/, rejected.out);
+    if (before) assert.deepEqual(fs.readFileSync(ledger), before);
+    else assert.equal(fs.existsSync(ledger), false);
+  }
+  const weak = sdd(d, 'tdd', 'red', 'TEST-CALC-001', '--weak');
+  assert.equal(weak.code, 0, weak.out);
+  assert.equal(lastRed(d).weak, true);
+  console.log(`r36e ${code}: absent/existing ledger preserved; explicit --weak accepted`);
+}
+
+/** @id TEST-R36E-LOAD-001 @verifies REQ-R36E-LOAD-001 */
+test('#369 TEST-R36E-LOAD-001 real unsupported native TS rejects default Red', () => {
+  const capable = !!process.features.typescript;
+  const flags = capable ? ['--no-experimental-strip-types'] : [];
+  const child = spawnSync('node', [...flags, '-p', 'JSON.stringify([process.version, process.execPath, !!process.features.typescript])'],
+    { encoding: 'utf8', env: ENV });
+  assert.equal(child.status, 0, child.stdout + child.stderr);
+  const runtime = JSON.parse(child.stdout);
+  assert.equal(runtime[0], process.version);
+  assert.equal(fs.realpathSync(runtime[1]), fs.realpathSync(process.execPath));
+  assert.equal(runtime[2], false, 'flag must actually disable native TypeScript');
+  console.log(`r36e actual child runtime=${JSON.stringify(runtime)} flags=${JSON.stringify(flags)}`);
+  for (const reporter of ['tap', 'spec']) {
+    r36eRejectLoad(r36eLoadCase(reporter, "import { answer } from './subject.ts';",
+      { 'subject.ts': 'export const answer: number = 0;\n' }, flags), 'ERR_UNKNOWN_FILE_EXTENSION');
+    for (const extension of capable ? ['mjs', 'ts'] : ['mjs']) {
+      const d = r36bFixture(reporter, 'assert.equal(answer, 1);');
+      fs.writeFileSync(path.join(d, 'package.json'), '{"type":"module"}');
+      fs.writeFileSync(path.join(d, `subject.${extension}`), `export const answer${extension === 'ts' ? ': number' : ''} = 0;\n`);
+      const file = path.join(d, 'add.test.mjs');
+      fs.writeFileSync(file, `import { answer } from './subject.${extension}';\n` + fs.readFileSync(file, 'utf8'));
+      const red = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
+      assert.equal(red.code, 0, red.out);
+      assert.equal(!!lastRed(d).weak, false);
+      console.log(`r36e ${reporter} native ${extension} genuine assertion strong Red`);
+    }
+  }
+});
+
+/** @id TEST-R36E-FORMAT-001 @verifies REQ-R36E-LOAD-001 */
+test('#369 TEST-R36E-FORMAT-001 native loader error family preserves explicit policy', () => {
+  const cases = [
+    ['ERR_UNKNOWN_FILE_EXTENSION', "import './subject.unknown';", { 'subject.unknown': 'export const answer = 0;\n' }],
+    ['ERR_UNKNOWN_MODULE_FORMAT', "import 'data:text/plain,export default 0';", {}],
+    ['ERR_UNSUPPORTED_ESM_URL_SCHEME', "import 'https://example.invalid/subject.mjs';", {}],
+    ['ERR_UNSUPPORTED_DIR_IMPORT', "import './subject';", { 'subject/index.mjs': 'export default 0;\n' }],
+    ['ERR_UNSUPPORTED_RESOLVE_REQUEST', "import 'data:text/javascript,import%20%22./subject.mjs%22';", {}],
+  ];
+  if (process.features.typescript) cases.push(
+    ['ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING', "import './node_modules/subject/index.ts';",
+      { 'node_modules/subject/index.ts': 'export const answer: number = 0;\n' }],
+    ['ERR_UNSUPPORTED_TYPESCRIPT_SYNTAX', "import './subject.ts';", { 'subject.ts': 'export enum Answer { Zero }\n' }],
+  );
+  for (const reporter of ['tap', 'spec']) for (const [code, source, files] of cases)
+    r36eRejectLoad(r36eLoadCase(reporter, source, files), code);
+});
+
+/** @id TEST-R36E-ASSERT-001 @verifies REQ-R36E-LOAD-001 */
+test('#369 TEST-R36E-ASSERT-001 owned assertions outrank embedded native-loader stderr', () => {
+  for (const reporter of ['tap', 'spec']) for (const body of [
+    "throw new TypeError('ordinary implementation failure');",
+    "assert.equal(1, 0, 'TypeError [ERR_UNKNOWN_FILE_EXTENSION]: child stderr\\nERR_UNKNOWN_MODULE_FORMAT\\nERR_UNSUPPORTED_ESM_URL_SCHEME\\nERR_UNSUPPORTED_DIR_IMPORT\\nERR_UNSUPPORTED_RESOLVE_REQUEST\\nERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING\\nERR_UNSUPPORTED_TYPESCRIPT_SYNTAX');",
+  ]) {
+    const d = r36bFixture(reporter, body);
+    const red = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
+    assert.equal(red.code, 0, red.out);
+    assert.equal(!!lastRed(d).weak, false);
+  }
+});

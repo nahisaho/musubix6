@@ -1725,7 +1725,9 @@ const stubTodoHit = (text) => {
   }
   return null;
 };
-const isLoadErr = (text, assertion = ASSERT_EXC.test(text)) => LOAD_ERR.test(text) && !RUNTIME_FAIL.test(text) && !assertion && !missingDeliverable(text);
+/** @id CODE-R36E-LOAD-001 @implements REQ-R36E-LOAD-001 */
+const NATIVE_LOAD_ERR = /\bERR_(?:UNKNOWN_(?:FILE_EXTENSION|MODULE_FORMAT)|UNSUPPORTED_(?:ESM_URL_SCHEME|DIR_IMPORT|RESOLVE_REQUEST|NODE_MODULES_TYPE_STRIPPING))\b/;
+const isLoadErr = (text, assertion = ASSERT_EXC.test(text)) => (LOAD_ERR.test(text) || NATIVE_LOAD_ERR.test(text)) && !RUNTIME_FAIL.test(text) && !assertion && !missingDeliverable(text);
 // a repo without any commit has no baseline for `--changed` (#150)
 function hasCommit() { return spawnSync('git', ['rev-parse', '--verify', '-q', 'HEAD'], { cwd: ROOT, stdio: 'ignore' }).status === 0; }
 
