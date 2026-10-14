@@ -1793,14 +1793,49 @@ function pytestNoExecution(text) {
   return skipped > 0 && executed === 0;
 }
 
-function nodeTestRan(text, id, testPath) {
+function nodeTestCommand(cmd, cwd = '.', seen = new Set()) {
+  if (cmd.includes('--test') && cmd.some((a) => /^node(?:js|\.exe)?$/.test(path.basename(a)))) return true;
+  if (cmd.some((a) => /(?:^|[\s;&|])(?:[^\s]*[/\\])?node(?:js|\.exe)?\s+[^;&|\n]*?--test(?:\s|$)/.test(a))) return true;
+  const at = cmd.findIndex((a) => /^(?:npm|pnpm|yarn|bun)(?:\.cmd)?$/.test(path.basename(a)));
+  if (at < 0) return false;
+  const action = cmd[at + 1], name = /^(?:run|run-script)$/.test(action ?? '') ? cmd[at + 2] : action === 't' ? 'test' : action;
+  const pkg = path.resolve(ROOT, cwd, 'package.json'), key = `${pkg}|${name}`;
+  if (seen.has(key)) return false;
+  seen.add(key);
+  const script = readJson(pkg, null)?.scripts?.[name];
+  return typeof script === 'string' && nodeTestCommand(script.trim().split(/\s+/), cwd, seen);
+}
+const nodeTestReport = (text) => /^\s*(?:ℹ |# )tests \d+\b/m.test(text);
+const NODE_REGISTRATION = /(?:[$\w]+\s*\.\s*)*[$\w]+\s*\(\s*(["'`])((?:\\[\s\S]|(?!\1)[^\\])*)\1/;
+function nodeLiteralTitle(registration) {
+  if (!registration || (registration[1] === '`' && registration[2].includes('${'))) return null;
+  try {
+    return registration[2].replace(/\\(?:u\{([0-9a-f]+)\}|u([0-9a-f]{4})|x([0-9a-f]{2})|([\s\S]))/gi, (_, cp, unicode, byte, char) =>
+      cp || unicode || byte ? String.fromCodePoint(parseInt(cp ?? unicode ?? byte, 16))
+        : ({ n: '\n', r: '\r', t: '\t', b: '\b', f: '\f', v: '\v', 0: '\0', '\n': '' }[char] ?? char));
+  } catch { return null; }
+}
+/** @id CODE-R34-NODE-001 @implements REQ-R34-NODE-001 */
+function nodeTestRan(text, id, testPath, passing = false) {
   const token = new RegExp(`${escapeRe(id)}(?![\\w-])`, 'i');
-  return text.split('\n').some((line) => {
-    const m = /^\s*(?:[✔✖]\s+|(?:not )?ok\s+\d+\s+-\s+)(.+)$/.exec(line);
-    if (!m || /#\s*(TODO|SKIP)\b/i.test(m[1])) return false;
-    const title = m[1].replace(/\s+\([\d.]+(?:ms|s|µs)\).*$/, '').trim();
-    return token.test(title) && title !== path.basename(testPath) && path.resolve(ROOT, title) !== path.resolve(ROOT, testPath);
+  // Bind the report to the literal registration following @id, never an ID-bearing parent.
+  const body = testBody(testPath, id).join('\n').replace(/^(?:\s|\/\*[\s\S]*?\*\/|\/\/[^\n]*)*/, '');
+  const registration = new RegExp(`^(?:await\\s+)?${NODE_REGISTRATION.source}`).exec(body);
+  const name = nodeLiteralTitle(registration);
+  if (!name || !token.test(name) || name === path.basename(testPath) || path.resolve(ROOT, name) === path.resolve(ROOT, testPath)) return false;
+  const source = fs.readFileSync(path.join(ROOT, testPath), 'utf8');
+  const call = (r) => r[0].slice(0, r[0].indexOf('(')).replace(/^await\s+|\s+/g, '');
+  if ([...source.matchAll(new RegExp(NODE_REGISTRATION.source, 'g'))].filter((r) =>
+    (call(r) === call(registration) || /(?:^|\.)(?:test|it|describe)(?:\.(?:only|skip|todo))?$/.test(call(r)))
+      && nodeLiteralTitle(r) === name).length !== 1) return false;
+  const rows = text.split('\n').flatMap((line) => {
+    const m = /^\s*([✔✖﹣]\s+|(?:not )?ok\s+\d+\s+-\s+)(.+)$/.exec(line);
+    if (!m) return [];
+    const title = m[2].replace(/\s+#\s*(TODO|SKIP)\b.*$/i, '').replace(/\s+\([\d.]+(?:ms|s|µs)\)$/, '').trim();
+    return title === name ? [{ skipped: /^﹣/.test(m[1]) || /#\s*(TODO|SKIP)\b/i.test(m[2]), passed: /^(?:✔|ok)/.test(m[1]) }] : [];
   });
+  // Duplicate titles with skipped outcomes are ambiguous, not substitute evidence.
+  return rows.length > 0 && rows.every((r) => !r.skipped && (!passing || r.passed));
 }
 
 // ---------- commands ----------
@@ -5063,7 +5098,8 @@ function cmdTdd() {
   // PHPUnit skipped / no assertions, dotnet Passed: 0 + Skipped: n executed nothing (#140)
   const noAssert = noExecution(plain);
   // Node >=22 can report a file-level pass: only an executed test result proves the ID matched (#154).
-  const nodeNoMatch = res.exit === 0 && /(^|\n)\s*(ℹ tests \d+|# tests \d+)/.test(plain) && !nodeTestRan(plain, id, t.path);
+  const nodeUnobservable = nodeTestCommand(cmd, proj?.root) && !nodeTestReport(plain) && !isLoadErr(plain);
+  const nodeNoMatch = nodeUnobservable || (res.exit === 0 && (nodeTestCommand(cmd, proj?.root) || nodeTestReport(plain)) && !nodeTestRan(plain, id, t.path, true));
   const goNoMatch = goRunner && !LOAD_ERR.test(plain) && (!goTarget || !goVerdict || goVerdict === 'skip');
   const javaRunner = /\.java$/.test(t.path) && /(?:^|[/\s])(?:mvn|mvnw|gradle|gradlew)(?:\s|$)/.test(cmd.join(' '));
   const runtimeVerdict = dotnetResult(dotnetReport, t.path, id, exactDotnetSelection);
@@ -5108,7 +5144,7 @@ function cmdTdd() {
     else if (siblingFail === 'sibling') { ok = false; why = `${id} itself passes; the failure comes from another test of the same file (whole-file runner)`; }
     else if (verdict === 'pass' && res.exit !== 0) { ok = false; why = `${id} itself passes; the failure comes from another test or suite setup`; }
     else if (goRunner && goVerdict === 'pass' && res.exit !== 0) { ok = false; why = `${id} itself passes; the failure comes from its parent, a sibling or suite setup`; }
-    else if (zero || siblingFail === 'skip') { ok = false; why = 'no test matched the ID, or the test is skipped/todo (check @id vs test title/method name; skipped tests cannot give Red/Green)' + (goRunner && /\[no test files\]/.test(plain) ? '; go printed [no test files]: a //go:build constraint may hide this file (pass -tags in testCmd)' : ''); }
+    else if (zero || siblingFail === 'skip') { ok = false; why = 'no test matched the ID, or the test is skipped/todo (check @id vs test title/method name; skipped tests cannot give Red/Green)' + (nodeUnobservable ? '; unobservable Node output: use --test-reporter=spec or --test-reporter=tap' : '') + (goRunner && /\[no test files\]/.test(plain) ? '; go printed [no test files]: a //go:build constraint may hide this file (pass -tags in testCmd)' : ''); }
     else if (res.exit === 0 && retest) ok = true;
     else if (res.exit === 0 && typeof characFlag === 'string' && characFlag.trim()) ok = true;
     else if (res.exit === 0 && vacuousThrows(t.path, id)) { ok = false; why = `test passed: a matcher-less assert.throws / pytest.raises is satisfied by the stub's own "not implemented" error (vacuous test); add a matcher (error type or message) that only the real behaviour satisfies, or record --characterization "<why>"`; }
@@ -5123,7 +5159,7 @@ function cmdTdd() {
     else if (crashed) { ok = false; why = crashWhy; }
     else if (siblingFail === 'notrun') { ok = false; why = notRunWhy; }
     else if (verdict === 'fail' || (res.exit !== 0 && siblingFail !== 'sibling' && verdict !== 'pass')) { ok = false; why = isLoadErr(res.text) ? 'test failed — load/compile error (the build is broken, not an assertion)' : 'test failed'; }
-    else if (zero || siblingFail === 'skip') { ok = false; why = 'no test matched the ID'; }
+    else if (zero || siblingFail === 'skip') { ok = false; why = 'no test matched the ID' + (nodeUnobservable ? '; unobservable Node output: use --test-reporter=spec or --test-reporter=tap' : ''); }
     else ok = true;
   }
   if (!ok) { out(`${sub.toUpperCase()} REJECTED ${id}: ${why}`); out(rejectTail(res.text)); return 1; }
@@ -6089,7 +6125,7 @@ function missingPytestIds(result, cmd, cwd, ents) {
 }
 function missingNodeIds(result, cmd, cwd, ents) {
   const text = result.text.replace(/\x1b\[[0-9;]*m/g, '');
-  if (!/^(?:ℹ |# )tests \d+\b/m.test(text)) return [];
+  if (!nodeTestReport(text)) return nodeTestCommand(cmd, cwd) ? ['unobservable Node output: use --test-reporter=spec or --test-reporter=tap;'] : [];
   // Explicit name filters retain the existing command/config provenance policy.
   if (cmd.some((a) => /^--test-(?:name|skip)-pattern(?:=|$)/.test(a))) return [];
   const base = path.resolve(ROOT, cwd ?? '.');
@@ -6102,7 +6138,7 @@ function missingNodeIds(result, cmd, cwd, ents) {
       const target = path.resolve(ROOT, e.path), f = path.resolve(base, p);
       return target === f || target.startsWith(f + path.sep) || globRe(f.split(path.sep).join('/')).test(target.split(path.sep).join('/'));
     }))
-    && !nodeTestRan(text, e.id, e.path)).map((e) => e.id);
+    && !nodeTestRan(text, e.id, e.path, result.exit === 0)).map((e) => e.id);
 }
 // scope confidence (design 3.1): globs for `unscoped` / --allow-unscoped / default ignores (matched with globRe)
 const SCOPE_IGNORE = ['**/*.md', '.github/**', 'LICENSE', '.sdd/**'];
@@ -6665,7 +6701,7 @@ function cmdGate() {
     const missingIds = missingPytestIds(r, cmd, c.cwd, ents);
     if (missingIds.length) { add(false, `cmd ${c.name}: ${missingIds.join(', ')} missing executed pytest test ids`); continue; }
     const missingNode = missingNodeIds(r, cmd, c.cwd, ents);
-    if (missingNode.length) { add(false, `cmd ${c.name}: ${missingNode.join(', ')} missing executed Node test ids (skipped/todo results cannot verify evidence)`); continue; }
+    if (missingNode.length && r.exit === 0) { add(false, `cmd ${c.name}: ${missingNode.join(', ')} missing executed Node test ids (unobservable/skipped/todo results cannot verify evidence)`); continue; }
     if (r.exit !== 0 && ZERO_TESTS.test(r.text) && !RAN_TESTS.test(r.text)) { lines.push(`! cmd ${c.name}: no tests exist yet (runner exit ${r.exit}) — INCOMPLETE, not a failure`); incomplete = true; continue; }
     // a failed test check is re-run (flaky.retries, default 1): a pass on re-run is reported as "flaky suspected", never as a plain pass (#303)
     if (r.exit !== 0 && /(^|:)test$/.test(c.name)) {
