@@ -13592,7 +13592,7 @@ for name in ("pytest", "iniconfig", "packaging", "pluggy", "pygments"):
     assert.ok(identity.stdout.includes(path.join(runnerTemp, 'sdd-pytest')), identity.stdout);
     const testFile = path.join(runnerTemp, 'test_native.py');
     fs.writeFileSync(testFile, 'def test_native():\n    assert 1 == 0, "r36h native assertion"\n');
-    const run = () => spawnSync('python3', ['-m', 'pytest', '-q', testFile], { encoding: 'utf8', env: nativeEnv });
+    const run = () => spawnSync('python3', ['-m', 'pytest', '-q', testFile], { cwd: runnerTemp, encoding: 'utf8', env: nativeEnv });
     const red = run();
     assert.equal(red.status, 1, `${red.stdout}${red.stderr}`);
     assert.match(red.stdout + red.stderr, /r36h native assertion/);
@@ -14121,4 +14121,20 @@ test('#375 TEST-R36K-PORTABILITY-001 missing-function fixture is natively invali
     assert.equal(invalid.signal, null);
     assert.equal(invalid.error, undefined);
   }
+});
+
+/** @id TEST-R36H2-CWD-001 @verifies REQ-R36H2-CWD-001 */
+test('#371 TEST-R36H2-CWD-001 native pytest fixture contains cache from a foreign suite cwd', () => {
+  const foreign = fs.mkdtempSync(path.join(work, 'r36h2-foreign-'));
+  const suite = fileURLToPath(import.meta.url);
+  const result = spawnSync(process.execPath, [
+    '--test', '--test-reporter=tap',
+    '--test-name-pattern=^#371 TEST-R36H-PYTEST-001 hosted provisioning runs actual pytest with user-site disabled$',
+    suite,
+  ], { cwd: foreign, env: ENV, encoding: 'utf8', timeout: 60000, maxBuffer: 8e6 });
+  const output = result.stdout + result.stderr;
+  assert.equal(result.error, undefined, output);
+  assert.equal(result.status, 0, output);
+  assert.match(output, /ok \d+ - \\?#371 TEST-R36H-PYTEST-001 hosted provisioning runs actual pytest with user-site disabled/, output);
+  assert.deepEqual(fs.readdirSync(foreign), [], 'native pytest must not leak .pytest_cache outside owned runnerTemp');
 });
