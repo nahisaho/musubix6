@@ -12900,3 +12900,89 @@ test('r35b #364 publish test job restores the portable compiler before running i
   assert.ok(testJob.indexOf('npm ci') < testJob.indexOf('node --test'), 'restore before compiler regression');
   assert.doesNotMatch(testJob, /SDD_R34_TYPESCRIPT|secrets\.|npm publish/);
 });
+
+function r35aAdmissionSnapshot(root) {
+  const entries = [];
+  const visit = (dir) => {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) {
+      const file = path.join(dir, entry.name);
+      entries.push([path.relative(root, file), entry.isDirectory() ? null : fs.readFileSync(file, 'utf8')]);
+      if (entry.isDirectory()) visit(file);
+    }
+  };
+  visit(root);
+  return entries;
+}
+
+function r35aAdmissionContract(bin, kind) {
+  const invalid = kind === 'unknown'
+    ? [['--bogus'], ['--froce'], ['--only=lean-sdd-tdd'], ['--force=yes'], ['--only', r35aSelected[0], '--bogus']]
+    : [['--only'], ['--only', ''], ['--only', ',,'], ['--only', '--force'], ['--only', r35aSelected[0], '--only']];
+  for (const options of invalid) {
+    for (const destination of ['default', 'relative', 'absolute']) {
+      for (const existing of [false, true]) {
+        const area = fs.mkdtempSync(path.join(work, 'r35a-admission-'));
+        const cwd = path.join(area, 'cwd'), target = path.join(area, 'target');
+        fs.mkdirSync(cwd);
+        fs.writeFileSync(path.join(cwd, 'sentinel'), 'cwd is unchanged');
+        if (existing) {
+          const skill = path.join(destination === 'default' ? cwd : target, '.github/skills', r35aSelected[0]);
+          fs.mkdirSync(skill, { recursive: true });
+          fs.writeFileSync(path.join(skill, 'SKILL.md'), 'existing skill must not be overwritten');
+        }
+        const before = r35aAdmissionSnapshot(area);
+        const dir = destination === 'relative' ? '../target' : target;
+        const args = ['init', '--force', ...(destination === 'default' ? [] : [dir]), ...options];
+        const result = r35aRun(bin, cwd, args);
+        const label = `${kind} ${JSON.stringify(args)} (${existing ? 'existing' : 'fresh'})`;
+        assert.equal(result.status, 2, `${label}: invalid init must exit 2; ${result.stdout}${result.stderr}`);
+        assert.deepEqual(r35aAdmissionSnapshot(area), before, `${label}: invalid init must not create or modify any files`);
+        assert.equal(result.stdout, '', `${label}: invalid init must not report an installation`);
+        assert.match(result.stderr, kind === 'unknown'
+          ? /unknown (?:flag|option).*--.*(?:--force|--only)/i
+          : /--only.*(?:requires|expected|missing|non.?empty).*(?:skill|a,b)/i,
+        `${label}: stderr must identify the invalid argument and explain accepted input`);
+      }
+    }
+  }
+}
+
+test('#363 r35a admission rejects unknown init flags without writes', () => {
+  r35aAdmissionContract(path.join(r35aRoot, 'bin/musubix6.mjs'), 'unknown');
+});
+
+test('#363 r35a admission rejects missing or empty --only without writes', () => {
+  r35aAdmissionContract(path.join(r35aRoot, 'bin/musubix6.mjs'), 'only');
+});
+
+test('#363 r35a admission packed extraction and installation reject invalid init without writes', { timeout: 120000 }, () => {
+  const fixture = fs.mkdtempSync(path.join(work, 'r35a-admission-pack-'));
+  const packed = path.join(fixture, 'packed'), cache = path.join(fixture, 'cache');
+  fs.mkdirSync(packed);
+  const npm = (cwd, args) => spawnSync('npm', [...args, '--cache', cache, '--offline', '--ignore-scripts'], {
+    cwd, env: { ...ENV, TMPDIR: work }, encoding: 'utf8', timeout: 60000,
+  });
+  const pack = npm(r35aRoot, ['pack', '--json', '--pack-destination', packed]);
+  assert.equal(pack.status, 0, pack.stdout + pack.stderr);
+  const filenames = [];
+  const collect = (value) => {
+    if (!value || typeof value !== 'object') return;
+    if (typeof value.filename === 'string') filenames.push(value.filename);
+    Object.values(value).forEach(collect);
+  };
+  collect(JSON.parse(pack.stdout));
+  assert.equal(filenames.length, 1, 'array or object npm pack JSON must identify one tarball');
+  assert.deepEqual(fs.readdirSync(packed), filenames);
+  const tarball = path.join(packed, filenames[0]), extracted = path.join(fixture, 'extracted');
+  fs.mkdirSync(extracted);
+  const unpack = spawnSync('tar', ['-xzf', tarball, '-C', extracted], { encoding: 'utf8', timeout: 30000 });
+  assert.equal(unpack.status, 0, unpack.stdout + unpack.stderr);
+  const installed = path.join(fixture, 'installed');
+  fs.mkdirSync(installed);
+  const install = npm(installed, ['install', '--prefix', installed, '--no-audit', '--no-fund', tarball]);
+  assert.equal(install.status, 0, install.stdout + install.stderr);
+  for (const bin of [path.join(extracted, 'package/bin/musubix6.mjs'), path.join(installed, 'node_modules/.bin/musubix6')]) {
+    r35aAdmissionContract(bin, 'unknown');
+    r35aAdmissionContract(bin, 'only');
+  }
+});

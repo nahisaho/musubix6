@@ -89,6 +89,8 @@ musubix6 sdd gate              # run the lean-sdd-tdd CLI
 
 `init` accepts a relative or absolute destination; omitting it uses the current
 directory. `--force` and `--only a,b` can appear before or after the destination.
+Unknown options or a missing/empty `--only` skill list exit with status 2 without
+creating or overwriting files.
 
 To install per-user instead of per repository, copy the skill directories to
 `~/.copilot/skills/`.
