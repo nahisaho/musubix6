@@ -43,6 +43,36 @@
       "runtimes": ["24.21.0"],
       "command": null,
       "expected": "Changed scope includes relevant checks against full-check reference, including valid no-change and configured policy controls; exact fixture IDs fixed before freeze."
+    },
+    {
+      "id": "QUAL-BUNDLED-WATCHDOG",
+      "runtimes": ["20.20.2", "22.23.3", "24.21.0"],
+      "command": "node --test .github/skills/agent-watchdog/scripts/watchdog.test.mjs",
+      "expected": "Seven tests execute and pass; zero failures, skips or cancellations."
+    },
+    {
+      "id": "QUAL-BUNDLED-JAPANESE-PROSE",
+      "runtimes": ["Python 3.12"],
+      "command": "uv run --python 3.12 .github/skills/japanese-prose/scripts/test_engine.py",
+      "expected": "Eight tests execute and pass; resolved interpreter and declared dependency versions must be recorded before freeze."
+    },
+    {
+      "id": "QUAL-NATIVE-R",
+      "runtimes": ["24.21.0", "R 4.6.1", "testthat 3.3.2"],
+      "command": "qualify-r-native.mjs with candidate SDD and isolated HOME containing the declared R user library; exact paths fixed before freeze",
+      "expected": "Fresh native assertion Red, Green and full gate succeed without changing runner environment policy or global R libraries."
+    },
+    {
+      "id": "QUAL-NATIVE-GRADLE",
+      "runtimes": ["24.21.0", "Gradle 8.14.3", "Java 21.0.12.1", "JUnit 4.13.2"],
+      "command": "qualify-gradle-native.mjs with candidate SDD, isolated Gradle and Java21 PATH; exact paths fixed before freeze",
+      "expected": "Fresh native assertion Red, Green and full gate succeed using an isolated Gradle user home."
+    },
+    {
+      "id": "QUAL-WSLC-NATIVE",
+      "runtimes": ["24.21.0", "wslc 3.0.3.0"],
+      "command": "qualify-wslc-native.mjs with candidate wrapper and pinned local Alpine image ID; exact paths fixed before freeze",
+      "expected": "Actual native offline container success and intentional failure preserve output and exit status; fresh named containers are auto-removed without mounts, ports or external network."
     }
   ],
   "feasibilityOnly": {
@@ -107,6 +137,70 @@
     "rawLogDirectory": "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files",
     "qualificationImpact": "No readiness claim. New runtime fixes will change candidate/package identities; the manifest remains unfrozen and the clean-run streak remains zero."
   },
+  "r36FeasibilityOnly": {
+    "qualifying": false,
+    "integrationCandidate": "58404ad",
+    "mainPromotion": "Not yet performed; final full regression and remaining fixes are pending.",
+    "iteratorCompatibility": {
+      "commit": "7f6ab91",
+      "independentReview": "Claude Sonnet 5.5: no actionable findings.",
+      "priorCrashControls": "39 baseline Node 20 cases with an actual iterator TypeError were rerun on integrated 2512689: 39 passed, zero failed, no selected skips. Other old failures are not attributed by inference.",
+      "regressionsAndMutations": "Two appended regressions and seven selected controls pass on actual Node 20/22/24; each direct-helper reintroduction fails by assertion and byte-identical restoration passes."
+    },
+    "nativeRedAdmission": {
+      "commit": "ab68314",
+      "independentReview": "Claude Sonnet 5.5: no actionable findings.",
+      "integratedControls": [
+        { "node": "20.20.2", "selected": 49, "pass": 47, "fail": 2, "outsideSelection": 1034, "exit": 1 },
+        { "node": "22.23.3", "selected": 49, "pass": 49, "fail": 0, "exit": 0 },
+        { "node": "24.21.0", "selected": 49, "pass": 49, "fail": 0, "exit": 0 }
+      ],
+      "remainingNode20Failures": "#368: two fixture preconditions assume native TypeScript stripping and CLI test globbing; actual production refusal/positive controls remain to be completed, not silently waived.",
+      "mergeInvariant": "Common 1ee528a suite prefix and both complete lane append tails are byte-identical after integration."
+    },
+    "scopeControls": {
+      "differential": "Six existing Cargo/JS/Python cells pass on 2512689 / Node 24; full-vs-changed independent hash oracle and warn/strict controls.",
+      "noChange": "Fresh real assertion Red, Green, full gate with observed native execution, and strict no-change gate pass on actual Node 20/22/24 / 5253e14. Protected source/spec/config/ledger hashes remain unchanged.",
+      "runner": "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/qualify-no-change.mjs"
+    },
+    "compilerBudget": {
+      "commit": "9d9f28e",
+      "integrated": "b5765b4",
+      "independentReview": "Claude Sonnet 5.5: no actionable findings.",
+      "actualNode20": "25 selected controls pass; valid gate 7861.6ms, maximum 8452.4ms.",
+      "actualNode22": "25 selected controls pass; valid gate 8225.9ms, maximum 8881.1ms.",
+      "actualNode24": "Six selected controls pass; valid gate 5363.1ms, maximum 5455.5ms.",
+      "preserved": "Official TypeScript 5.9.3 bundle 6213122 bytes, launcher/helper/package/executable provenance, unchanged 15000ms command budget.",
+      "residual": "Intermediate shared-load timeout retained as FLAKY suspected; serial targeted success is not qualification."
+    },
+    "ownershipPortability": {
+      "commit": "8658753",
+      "integrated": "58404ad",
+      "independentReview": "Claude Sonnet 5.5: no actionable findings.",
+      "actualControls": "Three ownership controls pass on each actual Node 20/22/24; literal native glob coverage preserved where supported, explicit operands cover all three.",
+      "blockedPart": "#368 TypeScript adaptation stopped because the actual unsupported Node20 loader records implicit weak Red; original #339 remains unchanged. New S1 #369 is blocking."
+    },
+    "nativeLoaderAdmission": {
+      "candidateCommit": "6d0a479",
+      "integrationStatus": "Not yet integrated; bounded review follow-up and #368 fixture completion are active.",
+      "actualControls": "Two regression assertions fail before the fix on each actual Node20/22/24; thirteen selected controls pass after the fix on each runtime. Absent/existing ledgers remain unchanged on default refusal; explicit overrides remain covered.",
+      "independentReview": "Claude Sonnet 5.5 raised a potential code-mentioned-inside-ordinary-Error false-refusal gap. Agent is proving or refuting it before any final integration claim.",
+      "evidence": "Retained session r36e-* logs and .sdd/specs/r36e-native-loader.md in the issue worktree."
+    },
+    "nativeEnvironmentFeasibility": {
+      "r": "Real R 4.6.1/testthat 3.3.2 auto-detection, assertion Red, Green and full gate pass on 58404ad/Node24 using isolated default HOME user-library discovery. System rlang initially failed ABI loading; isolated source restore initially lacked uv.h, then succeeded using fs's documented USE_BUNDLED_LIBUV=1. No global library or runner environment policy change.",
+      "rEvidence": "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/r36-native-r-isolated-home.json",
+      "gradle": "Actual Gradle8.14.3/Java21.0.12.1/JUnit4.13.2 auto-detection, strong assertion Red, Green and full gate pass on 58404ad/Node24. Commands take 14879ms, 14265ms and about 14.1s respectively. Official archive SHA256 bd71102213493060956ec229d946beee57158dbd89d0e62b91bca0fa2c5f3531 verified; isolated Gradle user home, no global Gradle replacement.",
+      "gradleEvidence": "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/r36-native-gradle-feasibility.log",
+      "bundledWatchdog": "Seven tests pass with zero failures/skips on each actual Node20/22/24; retained r36-watchdog-node{20,22,24}.log.",
+      "bundledJapaneseProse": "Eight engine tests pass via uv run --python 3.12; retained r36-japanese-prose-engine.log. Exact resolved environment still to be fixed before qualification.",
+      "wslc": "Actual wslc3.0.3.0 through the bundled wrapper passes fresh offline container success (exit0), intentional failure (exit7), output forwarding and auto-removal. Pinned local image sha256:320994c3b997e2ec6433f717f153e108023c5bec8fefa8d76b83451d16d05ea8; network none, no mounts or published ports. Native swap-limit capability warning retained, not suppressed; it does not prevent these controls.",
+      "wslcEvidence": "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/r36-native-wslc-feasibility.json",
+      "dependencyManifest": "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/native-validation-dependencies.json"
+    },
+    "evidence": "Retained session files r36a-*, r36b-*, r36ab-node{20,22,24}-combined.log, r36-integrated-scope-differential.log and r36ab-no-change-node{20,22,24}.json.",
+    "fullSuiteOnThisCandidate": "Not yet run; earlier cbcb746 full-suite results cannot validate this candidate."
+  },
   "knownTodoCases": [
     {
       "name": "r24d TODO stub: a call with no return-type evidence is emitted as a concrete i64 without an SDD-TODO(stub) marker",
@@ -132,8 +226,10 @@
   "freezeBlockers": [
     "#363: destination and invalid-option fixes pass source/packed controls and independent delta review; final integrated full validation pending",
     "#364: portable compiler dependency and non-publishing Node matrix implemented; final integrated full validation and actual remote CI pending",
-    "#365 and #366: newly verified in-scope runtime compatibility/verdict defects remain blocking",
-    "#367: required compiler gate fails the unchanged budget on Node 22; final matrix cannot pass with this failure",
+    "#365 and #366: fixes independently reviewed and locally integrated; final full validation and main promotion remain pending",
+    "#367: reviewed invocation-local optimization passes focused real compiler controls on actual Node20/22/24 under the unchanged budget; final integrated full suites remain required",
+    "#368: native runtime fixture preconditions must be made explicit without skipping or weakening the protected behavior",
+    "#369: actual unsupported native TypeScript loading is accepted as implicit weak Red on Node20; must reject before writing evidence",
     "Full Node 20/22/24 suites on the final candidate not yet complete; 112-case feasibility runs do not qualify",
     "Exact command/runner/configuration support forms, environment versions and fixed case IDs not yet enumerated",
     "Four pre-existing TODOs identified above require residual-risk review; none counts as passed evidence",
