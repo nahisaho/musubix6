@@ -13045,6 +13045,7 @@ test('#365 TEST-NODE20-002 iterator-free validation-helper Red stays strong', ()
     r36aRedClassification(['  validateSum(add(1, 2));'], false, disabled);
   }
 });
+
 // Issue #366: the same admission contract must hold for native TAP and spec.
 function r36bFixture(reporter, body, subject = '(a, b) => a + b', extra = '') {
   const d = project();
