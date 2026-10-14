@@ -62,6 +62,25 @@
     "mainSourcePromoted": false,
     "authorizationEndsAt": "2026-10-15T23:59:00+09:00",
     "qualificationLauncherDeadline": "The explicitly renewed deadline was independently reviewed before this prospective freeze. It is bound by the frozen driver hash and manifest authorizationEndsAt. Do not edit frozen helpers.",
+    "publisherPreflight": {
+      "checkedAt": "2026-10-14T10:16:51Z",
+      "registry": "https://registry.npmjs.org",
+      "localNpmAccount": "nahisaho",
+      "repositoryNpmTokenConfigured": false,
+      "npmEnvironmentTokenConfigured": true,
+      "workflowEnvironment": "npm",
+      "secretValuesReadOrDisplayed": false,
+      "environmentTokenPrincipalVerified": false,
+      "requiredEnvironmentReviewersConfigured": false,
+      "existingGitHubReleases": 0,
+      "registryPackageLookup": {
+        "name": "musubix6",
+        "result": "E404",
+        "interpretation": "The registry reports package not found or not accessible. This does not establish package-name availability, token ownership or permission to create the package."
+      },
+      "publishingAuthorized": false,
+      "releaseApprovalResidual": "The scoped npm environment contains NPM_TOKEN and the local CLI authenticates as nahisaho, but these facts do not prove that the stored environment token belongs to the same account or permits first publication. No required environment-reviewer gate is configured; real user approval must precede tag creation."
+    },
     "next": "Complete corrected run1, require a complete clean PASS and intact log hashes, then run2 under the identical source/package/manifest with fresh fixtures. No old-run credit and no publication authority."
   },
   "epochs": [
