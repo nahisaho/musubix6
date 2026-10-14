@@ -45,12 +45,57 @@
       "expected": "Changed scope includes relevant checks against full-check reference, including valid no-change and configured policy controls; exact fixture IDs fixed before freeze."
     }
   ],
+  "feasibilityOnly": {
+    "sourceCommit": "4c1c75c",
+    "node20": {
+      "version": "20.20.2",
+      "selectedPassed": 112,
+      "selectedFailed": 0,
+      "outsideSelection": 953,
+      "logSha256": "4cd5ed59195e8d1a38de8c25a61f10ad685de516f01a01fbd42112f04a5aebce"
+    },
+    "node22": {
+      "version": "22.23.3",
+      "selectedPassed": 112,
+      "selectedFailed": 0,
+      "logSha256": "de13b1e1ee3e1bf0d3a6914b61eea1b0ff2afde85431f5649e5a620866ea3926"
+    },
+    "bundledSkills": {
+      "agentWatchdog": "7 tests passed on Node 24.21.0",
+      "japaneseProse": "8 tests passed via uv run --python 3.12 after declared dependency restoration",
+      "documentationDiagnostics": "Existing structural flags retained; two new README-ja readability warnings await cleanup",
+      "platformSpecificSkills": "Actual WSL runtime coverage not yet established"
+    },
+    "qualifying": false
+  },
+  "knownTodoCases": [
+    {
+      "name": "r24d TODO stub: a call with no return-type evidence is emitted as a concrete i64 without an SDD-TODO(stub) marker",
+      "existingClassification": "S3 stub heuristic with manual type correction workaround",
+      "countsAsPassed": false
+    },
+    {
+      "name": "r24d TODO stub: free functions are generated but not listed by --report",
+      "existingClassification": "S3 report completeness with generated-source inspection workaround",
+      "countsAsPassed": false
+    },
+    {
+      "name": "r24d TODO stub: a method compared with a float literal is stubbed -> i64",
+      "existingClassification": "S3 stub heuristic with manual type correction workaround",
+      "countsAsPassed": false
+    },
+    {
+      "name": "r24d TODO stub: a loop-bound const gets guessed i64 element types reported as inferred",
+      "existingClassification": "S3 stub confidence heuristic with manual declaration review workaround",
+      "countsAsPassed": false
+    }
+  ],
   "freezeBlockers": [
     "#363: packed installer ignores explicit destination",
     "#364: compiler test dependency portability and multi-runtime CI",
-    "Node 20 and 22 feasibility results not yet complete",
+    "Full Node 20/22/24 suites on the final candidate not yet complete; 112-case feasibility runs do not qualify",
     "Exact command/runner/configuration support forms, environment versions and fixed case IDs not yet enumerated",
-    "Four pre-existing TODOs require explicit case-level disposition; none counts as passed evidence",
+    "Four pre-existing TODOs identified above require residual-risk review; none counts as passed evidence",
     "Advertised optional-toolchain and bundled-skill validation coverage not yet mapped",
     "Version, candidate/package digests, retained artifact paths and complete runnable commands not yet fixed"
   ],
