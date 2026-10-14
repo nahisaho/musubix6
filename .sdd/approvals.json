@@ -20,5 +20,16 @@
     },
     "tier": "T2",
     "requireHuman": false
+  },
+  "r36i-c-compiler": {
+    "by": "ai:claude-sonnet-5.5",
+    "kind": "ai",
+    "review": "Coordinator relayed independent Sonnet conditional approval; exact raw legacy compatibility, unchanged Rust predicate, outcome-first reasons and independently validated colored C parser amendments plus shared raw helper decision are satisfied.",
+    "at": "2026-10-14T07:12:22.399Z",
+    "artifacts": {
+      ".sdd/specs/r36i-c-compiler.md": "72122432ff6f73372a9dfa30614cb895852e96f200411a61bb8c18bd2913a120"
+    },
+    "tier": "T2",
+    "requireHuman": false
   }
 }

@@ -13511,7 +13511,7 @@ const r36iCompile = (fixture) => spawnSync(fixture.native, ['-fsyntax-only', pat
   cwd: fixture.d, encoding: 'utf8', timeout: 20000, env: { ...ENV, LC_ALL: 'C' },
 });
 const r36iCompiler = (fixture, body) => {
-  const executable = path.join(fixture.d, 'tools', 'compiler');
+  const executable = path.join(fixture.d, 'tools', 'compiler.mjs');
   fs.mkdirSync(path.dirname(executable), { recursive: true });
   if (body !== null) fs.writeFileSync(executable, `#!${process.execPath}\n${body}\n`, { mode: 0o755 });
   writeAll(fixture.d, { 'compile_commands.json': JSON.stringify([{
@@ -13653,14 +13653,20 @@ test('#373 TEST-R36I-PARSE-COLOR-001 colored actual native missing-function name
     const native = r36iCompile(fixture);
     assert.equal(native.status, 1, native.stderr);
     assert.match(native.stderr, /answer/);
-    fs.rmSync(path.join(fixture.d, 'tests/missing.h'));
-    r36iCompiler(fixture, [
-      "const { spawnSync } = require('node:child_process');",
+    const compiler = r36iCompiler(fixture, [
+      "import { spawnSync } from 'node:child_process';",
       `const r = spawnSync(${JSON.stringify(fixture.native)}, process.argv.slice(2), { encoding: 'utf8', env: { ...process.env, LC_ALL: 'C' } });`,
       "process.stdout.write((r.stdout ?? '').replaceAll('answer', 'an\\x1b[31mswer\\x1b[0m'));",
       "process.stderr.write((r.stderr ?? '').replaceAll('answer', 'an\\x1b[31mswer\\x1b[0m'));",
       'process.exit(r.status ?? 1);',
     ].join('\n'));
+    const colored = spawnSync(compiler, ['-fsyntax-only', path.join(fixture.d, fixture.file)], {
+      cwd: fixture.d, encoding: 'utf8', timeout: 20000, env: ENV,
+    });
+    assert.equal(colored.status, 1, colored.stderr);
+    assert.match(colored.stderr, /an\x1b\[31mswer\x1b\[0m/);
+    assert.doesNotMatch(colored.stderr, /ReferenceError|SyntaxError/);
+    fs.rmSync(path.join(fixture.d, 'tests/missing.h'));
     const result = r36iStub(fixture);
     assert.equal(result.code, 0, result.out);
     assert.match(result.out, /stubbed \(throwing, compile-checked\)/);
@@ -13755,4 +13761,38 @@ test('#372 TEST-R36G-002 Cargo process failures cannot become successful compile
     if (kind !== 'valid' && /\bcompile-checked\b/.test(out)) violations.push(`${kind}: false compile-checked`);
   }
   assert.deepEqual(violations, [], 'completion metadata and normalized diagnostics are mandatory compile witnesses');
+});
+
+/** @id TEST-R36I-LEGACY-001 @verifies REQ-R36I-003 */
+test('#373 TEST-R36I-LEGACY-001 legacy string probing remains raw with identical native spawn options', async () => {
+  const { runInNewContext } = await import('node:vm');
+  const source = fs.readFileSync(SDD, 'utf8');
+  const start = source.includes('const probeOutcome =') ? source.indexOf('const probeOutcome =') : source.indexOf('const probe =');
+  const block = source.slice(start, source.indexOf('\n\nfunction stubGo', start));
+  const calls = [];
+  const error = Object.assign(new Error('controlled startup failure'), { code: 'ENOENT' });
+  const result = { stdout: '\x1b[31mraw stdout\x1b[0m\n', stderr: 'raw stderr\n', status: null, signal: 'SIGTERM', error };
+  const env = { PATH: ENV.PATH, LC_ALL: 'not-C', KEEP: 'sentinel' };
+  const api = runInNewContext(`${block}\n({ probe, outcome: typeof probeOutcome === 'function' ? probeOutcome : null });`, {
+    process: { env }, spawnSync: (cmd, args, options) => { calls.push({ cmd, args, options }); return result; },
+  });
+  assert.equal(api.probe('compiler', ['--flag'], '/owned/cwd'), result.stdout + result.stderr);
+  if (api.outcome) {
+    const outcome = api.outcome('compiler', ['--flag'], '/owned/cwd');
+    assert.equal(outcome.text, result.stdout + result.stderr);
+    assert.equal(outcome.status, result.status);
+    assert.equal(outcome.signal, result.signal);
+    assert.equal(outcome.error, error);
+  }
+  for (const call of calls) {
+    assert.equal(call.cmd, 'compiler');
+    assert.deepEqual(call.args, ['--flag']);
+    assert.equal(call.options.cwd, '/owned/cwd');
+    assert.equal(call.options.encoding, 'utf8');
+    assert.equal(call.options.timeout, 120000);
+    assert.equal(call.options.env.PATH, env.PATH);
+    assert.equal(call.options.env.KEEP, env.KEEP);
+    assert.equal(call.options.env.LC_ALL, 'C');
+  }
+  assert.equal(env.LC_ALL, 'not-C', 'probe must not mutate the inherited environment');
 });
