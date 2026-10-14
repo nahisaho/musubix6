@@ -9,5 +9,16 @@
     },
     "tier": "T2",
     "requireHuman": false
+  },
+  "r36g-rust-ci": {
+    "by": "ai:claude-sonnet-5.5",
+    "kind": "ai",
+    "review": "Coordinator relayed independent approval of revised requirements/design; subsequent spec additions record actual execution evidence only.",
+    "at": "2026-10-14T06:48:50.776Z",
+    "artifacts": {
+      ".sdd/specs/r36g-rust-ci.md": "f27328fd81a5c5a3a3ed6e4deb98304f97306ccea99973a86586682d0b9d301b"
+    },
+    "tier": "T2",
+    "requireHuman": false
   }
 }

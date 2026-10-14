@@ -13492,3 +13492,88 @@ test('#369 TEST-R36E-OWNED-001 owned native loader metadata is not child message
     r36eRejectLoad(fixture, code);
   }
 });
+
+const r36gRunStub = (d, id, env = {}, preload = null) => {
+  const r = spawnSync(process.execPath, [...(preload ? ['--import', preload] : []), SDD, '--root', d, 'tdd', 'stub', id],
+    { encoding: 'utf8', env: { ...ENV, ...env } });
+  assert.equal(r.status, 0, r.stdout + r.stderr);
+  return r.stdout + r.stderr;
+};
+const r36gFixture = (name, files) => mk130({
+  'Cargo.toml': `[package]\nname = "${name}"\nversion = "0.1.0"\nedition = "2021"\n`,
+  ...files,
+});
+
+/** @id TEST-R36G-001 @verifies REQ-R36G-001 */
+test('#372 TEST-R36G-001 native Cargo and rustc witness colored Rust verdicts and generation scope', () => {
+  for (const tool of ['cargo', 'rustc']) {
+    const version = spawnSync(tool, ['--version'], { encoding: 'utf8' });
+    assert.equal(version.status, 0, `${tool} prerequisite required: ${version.stderr}`);
+  }
+  const cases = [
+    ['inline', 's130', 'TEST-A-001', true, { 'tests/t.rs': '// @id TEST-A-001 @verifies REQ-A-001\n#[test]\nfn t10() {\n    let p = s130::geo::Point { x: 1, y: 2 };\n    assert_eq!(p.x, 1);\n}\n' }],
+    ['sibling', 's130', 'TEST-A-002', false, { 'tests/t.rs': 'use s130::util::double;\n// @id TEST-A-001 @verifies REQ-A-001\n#[test]\nfn t9() { assert_eq!(double(2), 4); }\n// @id TEST-A-002 @verifies REQ-A-001\n#[test]\nfn t10() {\n    let p = s130::geo::Point { x: 1, y: 2 };\n    assert_eq!(p.x, 1);\n}\n' }],
+    ['bool', 's280', 'TEST-A-001', true, { 'tests/t.rs': 'use s280::ops::is_ok;\n// @id TEST-A-001 @verifies REQ-A-001\n#[test]\nfn t1() { assert!(is_ok(3)); }\n' }],
+    ['cfg', 's280', 'TEST-A-001', true, { 'src/lib.rs': 'pub mod ops;\n', 'src/ops.rs': '#[cfg(test)]\nmod tests {\n    pub fn double(x: i64) -> i64 { x }\n}\n', 'tests/t.rs': 'use s280::ops::double;\n// @id TEST-A-001 @verifies REQ-A-001\n#[test]\nfn t1() { assert_eq!(double(2), 4); }\n' }],
+    ['macro', 's280', 'TEST-A-001', false, { 'tests/t.rs': '// @id TEST-A-001 @verifies REQ-A-001\n#[test]\nfn t1() { let v = entries![1, 2]; assert_eq!(v.len(), 2); }\n' }],
+  ];
+  const violations = [];
+  for (const [kind, name, id, valid, files] of cases) for (const color of ['never', 'always']) {
+    const d = r36gFixture(name, files);
+    const source = rd130(d, 'tests/t.rs');
+    const out = r36gRunStub(d, id, { CARGO_TERM_COLOR: color });
+    const cargo = spawnSync('cargo', ['test', '--no-run', '--offline', '--test', 't', '--color', color],
+      { cwd: d, encoding: 'utf8', env: { ...ENV, CARGO_TERM_COLOR: color } });
+    assert.equal(cargo.status === 0, valid, `${kind}/${color}: independent Cargo\n${cargo.stderr}`);
+    const lib = path.join(d, `lib${name}.rlib`);
+    const args = ['--edition=2021', '--test', 'tests/t.rs', '-o', path.join(d, 'r36g-tests')];
+    if (fs.existsSync(path.join(d, 'src/lib.rs'))) {
+      const compiled = spawnSync('rustc', ['--edition=2021', '--crate-name', name, '--crate-type', 'lib', 'src/lib.rs', '-o', lib],
+        { cwd: d, encoding: 'utf8' });
+      assert.equal(compiled.status, 0, compiled.stderr);
+      args.push('--extern', `${name}=${lib}`);
+    }
+    const rustc = spawnSync('rustc', args, { cwd: d, encoding: 'utf8' });
+    assert.equal(rustc.status === 0, valid, `${kind}/${color}: independent rustc\n${rustc.stderr}`);
+    assert.equal(rd130(d, 'tests/t.rs'), source, 'requested and sibling tests stay byte-identical');
+    if (kind === 'sibling') assert.ok(!fs.existsSync(path.join(d, 'src/util.rs')), 'unrequested import is not stubbed');
+    if (kind === 'bool') assert.match(rd130(d, 'src/ops.rs'), /pub fn is_ok<A0>\(_a0: A0\) -> bool/);
+    if (kind === 'cfg') assert.match(rd130(d, 'src/ops.rs'), /^pub fn double/m);
+    if (valid ? !/\(throwing, compile-checked\)/.test(out) : /\bcompile-checked\b/.test(out)) violations.push(`${kind}/${color}: ${out.trim()}`);
+    if (kind === 'macro' && !/macro entries! is not stubbed/.test(out)) violations.push(`${kind}/${color}: missing macro guidance: ${out.trim()}`);
+  }
+  assert.deepEqual(violations, [], 'native compile verdicts and macro guidance must agree with both independent tools');
+});
+
+/** @id TEST-R36G-002 @verifies REQ-R36G-002 */
+test('#372 TEST-R36G-002 Cargo process failures cannot become successful compile witnesses', () => {
+  const cases = [
+    ['empty101', 'process.exit(101);', /Cargo.*exit.*101/i],
+    ['terminal101', 'console.error("error: could not compile `s130`"); process.exit(101);', /error: could not compile/],
+    ['opaque101', 'console.error("opaque diagnostic"); process.exit(101);', /Cargo.*exit.*101/i],
+    ['signal', 'process.kill(process.pid, "SIGTERM");', /Cargo.*signal.*SIGTERM/i],
+    ['missing', null, /Cargo.*ENOENT/i],
+    ['buffer', 'process.stdout.write("x".repeat(2 * 1024 * 1024));', /Cargo.*ENOBUFS/i],
+    ['timeout', 'process.exit(0);', /Cargo.*ETIMEDOUT/i],
+    ['zeroError', 'console.error("\\x1b[31merror[E0432]\\x1b[0m: unresolved import `s130::util`"); process.exit(0);', /error\[E0432\]/],
+    ['zeroMacro', 'console.error("\\x1b[31merror\\x1b[0m: cannot find macro `entries` in this scope"); process.exit(0);', /macro entries! is not stubbed/],
+    ['valid', 'process.exit(0);', /\(throwing, compile-checked\)/],
+  ];
+  const violations = [];
+  for (const [kind, body, diagnostic] of cases) {
+    const d = r36gFixture('s130', { 'tests/t.rs': '// @id TEST-A-001 @verifies REQ-A-001\n#[test]\nfn t() { let p = s130::geo::Point { x: 1, y: 2 }; assert_eq!(p.x, 1); }\n' });
+    const bin = path.join(d, 'bin');
+    fs.mkdirSync(bin);
+    fs.symlinkSync(process.execPath, path.join(bin, 'node'));
+    if (body !== null) fs.writeFileSync(path.join(bin, 'cargo'), `#!${process.execPath}\n${body}\n`, { mode: 0o755 });
+    let preload = null;
+    if (kind === 'timeout') {
+      preload = path.join(d, 'timeout.mjs');
+      fs.writeFileSync(preload, 'import cp from "node:child_process"; import { syncBuiltinESMExports } from "node:module";\nconst original = cp.spawnSync;\ncp.spawnSync = (cmd, ...args) => cmd === "cargo" ? { stdout: "", stderr: "", status: null, signal: "SIGTERM", error: Object.assign(new Error("spawnSync cargo ETIMEDOUT"), { code: "ETIMEDOUT" }) } : original(cmd, ...args);\nsyncBuiltinESMExports();\n');
+    }
+    const out = r36gRunStub(d, 'TEST-A-001', { PATH: bin, CARGO_TERM_COLOR: 'never' }, preload);
+    if (!diagnostic.test(out)) violations.push(`${kind}: expected ${diagnostic}, got ${out.trim()}`);
+    if (kind !== 'valid' && /\bcompile-checked\b/.test(out)) violations.push(`${kind}: false compile-checked`);
+  }
+  assert.deepEqual(violations, [], 'completion metadata and normalized diagnostics are mandatory compile witnesses');
+});
