@@ -13796,3 +13796,183 @@ test('#373 TEST-R36I-LEGACY-001 legacy string probing remains raw with identical
   }
   assert.equal(env.LC_ALL, 'not-C', 'probe must not mutate the inherited environment');
 });
+
+let r36jSequence = 0;
+const r36jArgs = ['test', '-count=1', '-gcflags=-e', '-run', '^$', '.'];
+const r36jFixture = (missing = true, invalid = false) => {
+  const lookup = spawnSync('which', ['go'], { encoding: 'utf8', env: ENV });
+  assert.equal(lookup.status, 0, 'native Go is mandatory for the #374 oracle');
+  const d = path.join(work, `r36j-${++r36jSequence}`);
+  fs.mkdirSync(path.join(d, '.sdd/specs'), { recursive: true });
+  fs.writeFileSync(path.join(d, '.sdd/specs/a.md'), '---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | When called, the system shall return. | TEST-A-001 |\n');
+  fs.writeFileSync(path.join(d, 'go.mod'), 'module r36j_go_oracle\n\ngo 1.20\n');
+  fs.writeFileSync(path.join(d, 't_test.go'), 'package p\nimport "testing"\n'
+    + (invalid ? 'var _ int = "r36i_native_invalid"\n' : '')
+    + '// @id TEST-A-001 @verifies REQ-A-001\n'
+    + `func TestT(t *testing.T) { t.Fatal(${missing ? 'Missing()' : '0'}) }\n`);
+  const fixture = { d, native: lookup.stdout.trim() };
+  spawnSync('git', ['init', '-q'], { cwd: d, env: ENV });
+  return fixture;
+};
+const r36jCompile = (fixture) => {
+  const r = spawnSync(fixture.native, r36jArgs, {
+    cwd: fixture.d, encoding: 'utf8', timeout: 20000, env: { ...ENV, LC_ALL: 'C' },
+  });
+  assert.equal(r.error, undefined, String(r.error));
+  assert.equal(r.signal, null, 'native Go must finish normally');
+  return { ...r, text: (r.stdout ?? '') + (r.stderr ?? '') };
+};
+const r36jControlled = (fixture, body, color = false) => {
+  const bin = path.join(fixture.d, 'bin');
+  fs.mkdirSync(bin);
+  fs.writeFileSync(path.join(bin, 'package.json'), '{"type":"module"}\n');
+  const file = path.join(bin, 'go');
+  const count = path.join(bin, 'calls');
+  fs.writeFileSync(file, `#!${process.execPath}\nimport fs from 'node:fs';\nimport { spawnSync } from 'node:child_process';\n`
+    + `const count=${JSON.stringify(count)}; const n=fs.existsSync(count)?Number(fs.readFileSync(count,'utf8')):0; fs.writeFileSync(count,String(n+1));\n`
+    + `if(n===0${color ? '||true' : ''}) { const r=spawnSync(${JSON.stringify(fixture.native)},process.argv.slice(2),{cwd:process.cwd(),encoding:'utf8',env:process.env});\n`
+    + (color ? 'const decorate=(s)=>s.replace(/Missing/g,"Mis\\x1b[31msing\\x1b[0m"); process.stdout.write(decorate(r.stdout??"")); process.stderr.write(decorate(r.stderr??""));\n' : 'process.stdout.write(r.stdout??""); process.stderr.write(r.stderr??"");\n')
+    + `process.exit(r.status??99); }\n${body}\n`, { mode: 0o755 });
+  return { bin, file, count };
+};
+const r36jStub = (fixture, control = null, outcome = null) => {
+  const args = [];
+  if (outcome) {
+    const preload = path.join(fixture.d, 'outcome.mjs');
+    fs.writeFileSync(preload, 'import cp from "node:child_process"; import { syncBuiltinESMExports } from "node:module";\n'
+      + 'const original=cp.spawnSync; let n=0;\n'
+      + `cp.spawnSync=(cmd,...args)=>cmd==="go"&&++n>1?(${outcome}):original(cmd,...args); syncBuiltinESMExports();\n`);
+    args.push('--import', preload);
+  }
+  args.push(SDD, '--root', fixture.d, 'tdd', 'stub', 'TEST-A-001');
+  const r = spawnSync(process.execPath, args, {
+    cwd: fixture.d, encoding: 'utf8', timeout: 20000,
+    env: { ...ENV, ...(control ? { PATH: control.onlyBin ? control.bin : `${control.bin}:${ENV.PATH}` } : {}) },
+  });
+  assert.equal(r.error, undefined, String(r.error));
+  assert.equal(r.signal, null, 'stub CLI must return an ordinary verdict');
+  return { code: r.status, out: (r.stdout ?? '') + (r.stderr ?? '') };
+};
+const r36jReject = (r, reason) => {
+  assert.equal(r.code, 1, r.out);
+  assert.match(r.out, /does not compile|could not fully stub/, r.out);
+  assert.doesNotMatch(r.out, /\(throwing, compile-checked\)|\(compile-checked\)/, r.out);
+  assert.match(r.out, reason, r.out);
+};
+
+/** @id TEST-R36J-EXIT-001 @verifies REQ-R36J-001 */
+test('#374 TEST-R36J-EXIT-001 silent unsuccessful Go processes never verify generated or native-valid no-op fixtures', () => {
+  for (const missing of [true, false]) {
+    const fixture = r36jFixture(missing);
+    const before = r36jCompile(fixture);
+    assert.equal(before.status, missing ? 1 : 0, before.text);
+    if (missing) assert.match(before.text, /undefined: Missing/);
+    const control = r36jControlled(fixture, 'process.exit(101);');
+    const result = r36jStub(fixture, control);
+    assert.ok(Number(fs.readFileSync(control.count, 'utf8')) >= 2, 'final compiler must actually execute');
+    r36jReject(result, /Go.*exit status 101/);
+  }
+});
+
+/** @id TEST-R36J-INVALID-001 @verifies REQ-R36J-001 REQ-R36J-003 */
+test('#374 TEST-R36J-INVALID-001 exact independently native-invalid fixture stays invalid despite silent final101', () => {
+  const fixture = r36jFixture(true, true);
+  const before = r36jCompile(fixture);
+  assert.equal(before.status, 1, before.text);
+  assert.match(before.text, /r36i_native_invalid/);
+  assert.match(before.text, /undefined: Missing/);
+  const control = r36jControlled(fixture, 'process.exit(101);');
+  const result = r36jStub(fixture, control);
+  assert.match(fs.readFileSync(path.join(fixture.d, 't.go'), 'utf8'), /func Missing\(\) any/);
+  const after = r36jCompile(fixture);
+  assert.equal(after.status, 1, after.text);
+  assert.match(after.text, /r36i_native_invalid/);
+  const actual = spawnSync(control.file, r36jArgs, { cwd: fixture.d, encoding: 'utf8', env: ENV });
+  assert.equal(actual.status, 101);
+  assert.equal(actual.stdout + actual.stderr, '');
+  r36jReject(result, /Go.*exit status 101/);
+});
+
+/** @id TEST-R36J-BOUNDARY-001 @verifies REQ-R36J-001 */
+test('#374 TEST-R36J-BOUNDARY-001 real opaque terminal-only signal missing-command and output-overflow outcomes fail closed', () => {
+  const cases = [
+    ['process.stderr.write("\\x1b[31m\\x1b[0m"); process.exit(101);', /Go.*exit status 101/],
+    ['process.stderr.write("opaque Go failure"); process.exit(101);', /Go.*exit status 101/],
+    ['process.kill(process.pid,"SIGTERM");', /Go.*signal SIGTERM/],
+    ['fs.unlinkSync(process.argv[1]); process.exit(101);', /Go.*error ENOENT/],
+    ['process.stdout.write("x\\n".repeat(1024*1024));', /Go.*error ENOBUFS/],
+  ];
+  for (const [body, reason] of cases) {
+    const fixture = r36jFixture();
+    const control = r36jControlled(fixture, body);
+    if (body.includes('unlinkSync')) control.onlyBin = true;
+    r36jReject(r36jStub(fixture, control), reason);
+  }
+});
+
+/** @id TEST-R36J-MALFORMED-001 @verifies REQ-R36J-001 */
+test('#374 TEST-R36J-MALFORMED-001 deterministic unavailable timeout and inconsistent success outcomes are rejected', () => {
+  const cases = [
+    ['{stdout:"",stderr:"",status:null,signal:null}', /Go.*status unavailable/],
+    ['{stdout:"",stderr:"",signal:null}', /Go.*status unavailable/],
+    ['{stdout:"",stderr:"",status:0,signal:"SIGTERM"}', /Go.*signal SIGTERM/],
+    ['{stdout:"",stderr:"",status:0,signal:null,error:{code:"ENOENT"}}', /Go.*error ENOENT/],
+    ['{stdout:"",stderr:"",status:null,signal:"SIGTERM",error:{code:"ETIMEDOUT"}}', /Go.*error ETIMEDOUT/],
+  ];
+  for (const [outcome, reason] of cases) r36jReject(r36jStub(r36jFixture(), null, outcome), reason);
+});
+
+/** @id TEST-R36J-REASON-001 @verifies REQ-R36J-001 */
+test('#374 TEST-R36J-REASON-001 process reason priority dominates supplementary Go file diagnostics', () => {
+  const cases = [
+    ['{status:101,signal:"SIGTERM",error:{code:"ENOBUFS"}}', /Go.*error ENOBUFS; .*controlled rejection/],
+    ['{status:101,signal:"SIGTERM"}', /Go.*signal SIGTERM; .*controlled rejection/],
+    ['{status:null,signal:null}', /Go.*status unavailable; .*controlled rejection/],
+    ['{status:101,signal:null}', /Go.*exit status 101; .*controlled rejection/],
+  ];
+  for (const [fields, reason] of cases) {
+    const outcome = `{stdout:"",stderr:"t_test.go:5:36: controlled rejection\\n",...${fields}}`;
+    r36jReject(r36jStub(r36jFixture(), null, outcome), reason);
+  }
+});
+
+/** @id TEST-R36J-DIAGNOSTIC-001 @verifies REQ-R36J-002 */
+test('#374 TEST-R36J-DIAGNOSTIC-001 zero exit cannot erase plain or internally SGR-split Go compiler diagnostics', () => {
+  for (const text of ['t_test.go:5:36: controlled rejection\n', 't_test.g\x1b[31mo\x1b[0m:5:36: controlled rejection\n']) {
+    const fixture = r36jFixture();
+    const control = r36jControlled(fixture, `process.stderr.write(${JSON.stringify(text)}); process.exit(0);`);
+    r36jReject(r36jStub(fixture, control), /t_test\.go:5:36: controlled rejection/);
+  }
+});
+
+/** @id TEST-R36J-NATIVE-001 @verifies REQ-R36J-003 */
+test('#374 TEST-R36J-NATIVE-001 independent native Go witnesses valid throwing generation and inferred return type', () => {
+  const valid = r36jFixture(false);
+  assert.equal(r36jCompile(valid).status, 0);
+  const fixture = r36jFixture();
+  const before = r36jCompile(fixture);
+  assert.equal(before.status, 1, before.text);
+  assert.match(before.text, /undefined: Missing/);
+  const result = r36jStub(fixture);
+  assert.equal(result.code, 0, result.out);
+  assert.match(result.out, /stubbed \(throwing, compile-checked\)/, result.out);
+  assert.match(fs.readFileSync(path.join(fixture.d, 't.go'), 'utf8'), /func Missing\(\) any[\s\S]*panic\("not implemented: Missing"\)/);
+  const after = r36jCompile(fixture);
+  assert.equal(after.status, 0, after.text);
+});
+
+/** @id TEST-R36J-COLOR-001 @verifies REQ-R36J-002 */
+test('#374 TEST-R36J-COLOR-001 colored actual native missing-symbol diagnostics retain independently valid inference', () => {
+  const fixture = r36jFixture();
+  const control = r36jControlled(fixture, '', true);
+  const witness = spawnSync(control.file, r36jArgs, { cwd: fixture.d, encoding: 'utf8', env: ENV });
+  assert.equal(witness.status, 1, witness.stdout + witness.stderr);
+  assert.match(witness.stderr, /undefined: Mis\x1b\[31msing\x1b\[0m/);
+  fs.rmSync(control.count);
+  const result = r36jStub(fixture, control);
+  assert.equal(result.code, 0, result.out);
+  assert.match(result.out, /stubbed \(throwing, compile-checked\)/, result.out);
+  assert.match(fs.readFileSync(path.join(fixture.d, 't.go'), 'utf8'), /func Missing\(\) any/);
+  const after = r36jCompile(fixture);
+  assert.equal(after.status, 0, after.text);
+});

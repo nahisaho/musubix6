@@ -2152,6 +2152,11 @@ const probeOutcome = (cmd, args, cwd) => {
 const probe = (cmd, args, cwd) => probeOutcome(cmd, args, cwd).text;
 
 function stubGo(testPath, src, dir, add, made) {
+  /** @id CODE-R36J-001 @implements REQ-R36J-001 REQ-R36J-002 */
+  const goTest = () => {
+    const r = probeOutcome('go', ['test', '-count=1', '-gcflags=-e', '-run', '^$', '.'], dir);
+    return { ...r, text: r.text.replace(/\x1b\[[0-9;]*m/g, '') };
+  };
   const pkg = /^package\s+(\w+)/m.exec(src)?.[1]?.replace(/_test$/, '') ?? 'main';
   const T = { int: 'int', float: 'float64', str: 'string', bool: 'bool' };
   const params = (c) => Array.from({ length: c.args.length }, (_, i) => `a${i}`).join(', ') + (c.args.length ? ' any' : '');
@@ -2242,7 +2247,7 @@ function stubGo(testPath, src, dir, add, made) {
       };
       if (!e.hasGo) { fs.mkdirSync(e.idir, { recursive: true }); fs.writeFileSync(e.file, `package ${e.packageName}\n`); }
       for (let pass = 0; pass < 5; pass++) {
-        const out = probe('go', ['test', '-count=1', '-gcflags=-e', '-run', '^$', '.'], dir);
+        const out = goTest().text;
         let grew = false;
         for (const m of out.matchAll(new RegExp(`undefined: ${e.alias}\\.(\\w+)`, 'g'))) {
           const n = m[1];
@@ -2282,7 +2287,7 @@ function stubGo(testPath, src, dir, add, made) {
   }
   // each pass reveals the next layer: undefined names, then methods/fields of the types just created (#69)
   for (let pass = 0; pass < 6 && !extDone; pass++) {
-    const out = probe('go', ['test', '-count=1', '-gcflags=-e', '-run', '^$', '.'], dir);
+    const out = goTest().text;
     let grew = false;
     for (const m of out.matchAll(/undefined: (\w+)/g)) {
       const n = m[1];
@@ -2352,9 +2357,19 @@ function stubGo(testPath, src, dir, add, made) {
   }
   if (!extDone && fs.existsSync(target)) made.push(rel(target));
   // compile-check what was written: an honest verdict instead of an assumed "Red-safe" (#129)
-  const after = made.length ? probe('go', ['test', '-count=1', '-gcflags=-e', '-run', '^$', '.'], dir) : '';
-  const err = /^(?:vet: )?\S+\.go:\d+:\d+: .*$/m.exec(after);
-  return Object.assign([...new Set(made)], made.length ? (err ? { verified: 'fail', verifyError: err[0].slice(0, 160) } : { verified: 'ok' }) : {});
+  /** @id CODE-R36J-002 @implements REQ-R36J-001 REQ-R36J-002 */
+  const after = goTest();
+  const err = /^(?:vet: )?\S+\.go:\d+:\d+: .*$/m.exec(after.text);
+  if (after.status === 0 && !after.signal && !after.error && !err) return Object.assign([...new Set(made)], { verified: 'ok' });
+  const reason = after.error ? `Go compile check failed with error ${after.error.code ?? after.error.message}`
+    : after.signal ? `Go compile check terminated by signal ${after.signal}`
+      : after.status == null ? 'Go compile check failed: status unavailable'
+        : after.status !== 0 ? `Go compile check failed with exit status ${after.status}`
+          : null;
+  return Object.assign([...new Set(made)], {
+    verified: 'fail',
+    verifyError: (reason ? `${reason}${err ? `; ${err[0]}` : ''}` : err[0]).slice(0, 160),
+  });
 }
 
 function stubRust(testPath, src, dir, made) {
@@ -4905,7 +4920,7 @@ function cmdTdd() {
     if (flags.report) { out('stub report (element | confidence | evidence):'); for (const r of made.report ?? []) out(`  ${r.element} | ${r.confidence} | ${r.evidence}`); if (!made.report?.length) out('  (no inferred elements)'); }
     if (made.realMissing?.length) out(`! not stubbed: ${made.realMissing.join('; ')} — those modules hold real code, which stubs never edit: add the names by hand`);
     if (made.warnings?.length) out(`! not stubbed: ${[...new Set(made.warnings)].join('; ')} — add the exports by hand`);
-    return made.verified === 'fail' && /\.(?:c|cc|cpp|cxx)$/.test(t.path) ? 1 : 0;
+    return made.verified === 'fail' && /\.(?:go|c|cc|cpp|cxx)$/.test(t.path) ? 1 : 0;
   }
   if (!['red', 'green', 'refactor'].includes(sub)) { out('usage: tdd red|green|refactor <TEST-ID> [--req REQ] [--weak] [--expect <text>] [--retest <why>] [--characterization <why>] [--allow-setup-red] [--wording <why> (refactor on T1 after a test change)] | tdd stub <TEST-ID> [<TEST-ID>... | --all] | tdd check | tdd merge-ledger'); return 2; }
   if (sub === 'refactor' && flags.stale && !pos[2]) {
