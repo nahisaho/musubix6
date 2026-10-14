@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "status": "frozen-validation-in-progress",
+  "status": "frozen-validation-blocked-by-ci",
   "targetVersion": "0.1.1",
   "decision": "docs/design-sdd-hardening.md#35-release-readiness-versus-exploratory-dogfooding-g4",
   "candidate": {
@@ -83,12 +83,30 @@
     "latestHostedCI": {
       "run": "https://github.com/nahisaho/musubix6/actions/runs/38530019461",
       "source": "a9cd84961aba55971bc651218fd6b0ac6032f521",
-      "statusWhenRecorded": "in_progress",
+      "statusWhenRecorded": "Node 22 completed with one failure; Node 20 and 24 still running when recorded.",
+      "node22": {
+        "tests": 1113,
+        "pass": 1108,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 4,
+        "failingCase": "TEST-R36I-PARSE-COLOR-001",
+        "cause": "The independent native precondition expects exit 1 for an implicit C function declaration. The hosted compiler emits a warning and exits 0.",
+        "issue": 375,
+        "productionFalseSuccessDemonstrated": false
+      },
       "countsAsQualification": false
+    },
+    "newFixturePortabilityBlocker": {
+      "issue": 375,
+      "severity": "S3",
+      "worktree": "/home/nahisaho/GitHub/musubix-fix-r36k",
+      "policy": "The running frozen local suites may settle. No heavy corrective validation overlaps them. A changed fixture requires explicit candidate/manifest supersession and a new zero-credit two-run streak; the frozen manifest must not be edited or silently overwritten."
     },
     "selfHostingEvidenceLimit": "The root scanner excludes the monolithic test file above its existing 512 KiB bound. Native compiler changes have honest small-runner Red/Green evidence using exact final EOF tests/helpers; no repository-root gate PASS is claimed.",
     "qualificationDriver": "Reviewed interruption-safe execution uses serial fresh-source/dependency preparation before exactly three bounded full suites, an exclusive lease, all-settled completion, and seven process self-tests. Final prospective inputs bind the actual Python sources used by the offline wheel fixture. All 29 fixed mutation mechanisms were assertion-detected and byte-restored in preflight; the first formal 20-cell run has now started. Prior preflight results do not count toward qualification.",
-    "next": "Complete two fresh-state matrices under the same frozen manifest. Inspect the new hosted CI separately; no tag or publication without genuine human approval."
+    "next": "Let the current frozen local suites settle; finish and review the isolated native-C fixture correction, then explicitly supersede the candidate and freeze new identities. No earlier run may count toward the corrected candidate. No tag or publication without genuine human approval."
   },
   "supportContract": {
     "publicBaseline": "README.md, README-ja.md and package.json; no support narrowing authorized",
