@@ -11934,3 +11934,224 @@ test('r34b #358 unmodeled wildcard suffix refuses instead of silently dropping t
   assert.match(red.out, /REFUSED: unresolved Node package target #expected\/value\.mjs/);
   assert.ok(!fs.existsSync(path.join(d, '.sdd/tdd.jsonl')));
 });
+
+const r34cPluginFiles = (plugin = 'from .helper import EXPECTED\n') => ({
+  'conftest.py': 'pytest_plugins = ("qa.plugin",)\n',
+  'src/qa/__init__.py': '',
+  'src/qa/plugin.py': plugin,
+  'src/qa/helper.py': 'EXPECTED = 2\n',
+});
+
+for (const [label, files, protectedFile] of [
+  ['sibling helper', r34cPluginFiles(), 'src/qa/helper.py'],
+  ['parenthesized submodule alias', r34cPluginFiles('from . import (\n    helper as oracle,\n)\n'), 'src/qa/helper.py'],
+  ['parent package level', { ...r34cPluginFiles(), 'conftest.py': 'pytest_plugins = "qa.nested.plugin"\n', 'src/qa/nested/__init__.py': '', 'src/qa/nested/plugin.py': 'from ..helper import EXPECTED\n' }, 'src/qa/helper.py'],
+  ['dotted relative package', { ...r34cPluginFiles('from .refs.oracle import EXPECTED\n'), 'src/qa/refs/__init__.py': '', 'src/qa/refs/oracle.py': 'EXPECTED = 2\n' }, 'src/qa/refs/__init__.py'],
+  ['plugin package initializer', { ...r34cPluginFiles(), 'src/qa/plugin.py': undefined, 'src/qa/plugin/__init__.py': 'from .helper import EXPECTED\n', 'src/qa/plugin/helper.py': 'EXPECTED = 2\n' }, 'src/qa/plugin/helper.py'],
+  ['transitive relative helper', { ...r34cPluginFiles(), 'src/qa/helper.py': 'from .refs import oracle\nEXPECTED = oracle.EXPECTED\n', 'src/qa/refs/__init__.py': '', 'src/qa/refs/oracle.py': 'EXPECTED = 2\n' }, 'src/qa/refs/oracle.py'],
+  ['package initializer oracle', { ...r34cPluginFiles('from . import EXPECTED\n'), 'src/qa/__init__.py': 'from .helper import EXPECTED\n' }, 'src/qa/helper.py'],
+  ['namespace package context', { ...r34cPluginFiles(), 'src/qa/__init__.py': undefined }, 'src/qa/helper.py'],
+  ['absolute import control', r34cPluginFiles('from qa.helper import EXPECTED\n'), 'src/qa/helper.py'],
+  ['parent initializer provenance', r34cPluginFiles(), 'src/qa/__init__.py'],
+]) {
+  /** @id TEST-R34-PYREL-001 @verifies REQ-CHECK-CLOSURE-001 */
+  test(`r34c #359 Python plugin closure protects ${label}`, () => {
+    const d = r31aFixture(Object.fromEntries(Object.entries(files).filter(([, text]) => text !== undefined)),
+      [{ name: 'test', cmd: ['sh', '-c', 'true # python3 -m pytest'] }]);
+    const ledger = path.join(d, '.sdd/tdd.jsonl');
+    const before = fs.readFileSync(ledger, 'utf8');
+    const evidence = JSON.parse(before.trim().split('\n').at(-1));
+    assert.ok(Object.keys(evidence.checkDefShas).some((key) => key.endsWith(`|${protectedFile}`)), protectedFile);
+    for (const args of [['gate'], ['gate', '--changed', '--baseline', 'HEAD']]) {
+      const valid = sdd(d, ...args);
+      assert.equal(valid.code, 0, valid.out);
+    }
+    fs.appendFileSync(path.join(d, protectedFile), '# oracle provenance changed\n');
+    const green = sdd(d, 'tdd', 'green', 'TEST-A-001');
+    assert.equal(green.code, 1, green.out);
+    assert.match(green.out, /changed|drift|definition/i);
+    assert.equal(fs.readFileSync(ledger, 'utf8'), before);
+    r31aDrift(d, protectedFile);
+  });
+}
+
+for (const [label, plugin, extra] of [
+  ['missing relative helper', 'from .missing import EXPECTED\n', { 'src/other/missing.py': 'EXPECTED = 2\n', 'src/missing.py': 'EXPECTED = 2\n' }],
+  ['missing imported submodule', 'from . import missing\n', {}],
+  ['beyond top-level package', 'from ..helper import EXPECTED\n', { 'src/helper.py': 'EXPECTED = 2\n' }],
+  ['ambiguous module and package', 'from .helper import EXPECTED\n', { 'src/qa/helper/__init__.py': 'EXPECTED = 2\n' }],
+]) {
+  /** @id TEST-R34-PYREL-002 @verifies REQ-CHECK-CLOSURE-001 */
+  test(`r34c #359 protected Python inputs fail closed: ${label}`, () => {
+    const d = r31aFixture(r34cPluginFiles(), [{ name: 'test', cmd: ['sh', '-c', 'true # pytest'] }]);
+    for (const [f, text] of Object.entries(extra)) {
+      fs.mkdirSync(path.dirname(path.join(d, f)), { recursive: true });
+      fs.writeFileSync(path.join(d, f), text);
+    }
+    fs.writeFileSync(path.join(d, 'src/qa/plugin.py'), plugin);
+    const ledger = path.join(d, '.sdd/tdd.jsonl'), before = fs.readFileSync(ledger, 'utf8');
+    for (const args of [['tdd', 'green', 'TEST-A-001'], ['gate'], ['gate', '--changed', '--baseline', 'HEAD']]) {
+      const result = sdd(d, ...args);
+      assert.equal(result.code, 1, result.out);
+      assert.match(result.out, /REFUSED: unresolved Python (?:relative import|module)/, result.out);
+      assert.equal(fs.readFileSync(ledger, 'utf8'), before);
+    }
+  });
+}
+
+/** @id TEST-R34-PYREL-003 @verifies REQ-CHECK-CLOSURE-001 */
+test('r34c #359 module attributes are not sibling submodules and package boundaries stay local', () => {
+  const d = r31aFixture({
+    ...r34cPluginFiles(),
+    'src/qa/helper.py': 'EXPECTED, UNUSED = 2, 3\n',
+    'src/qa/helper/EXPECTED.py': 'UNRELATED = 1\n',
+    'src/other/__init__.py': '',
+    'src/other/helper.py': 'EXPECTED = 100\n',
+  }, [{ name: 'test', cmd: ['sh', '-c', 'true # pytest'] }]);
+  const evidence = JSON.parse(fs.readFileSync(path.join(d, '.sdd/tdd.jsonl'), 'utf8').trim().split('\n').at(-1));
+  const keys = Object.keys(evidence.checkDefShas);
+  assert.ok(keys.some((key) => key.endsWith('|src/qa/helper.py')));
+  assert.ok(!keys.some((key) => /src\/(?:other\/helper|qa\/helper\/EXPECTED)\.py$/.test(key)));
+  fs.appendFileSync(path.join(d, 'src/other/helper.py'), '# unrelated\n');
+  fs.appendFileSync(path.join(d, 'src/qa/helper/EXPECTED.py'), '# unrelated\n');
+  for (const args of [['gate'], ['gate', '--changed', '--baseline', 'HEAD']]) {
+    const result = sdd(d, ...args);
+    assert.equal(result.code, 0, result.out);
+  }
+});
+
+/** @id TEST-R34-PYREL-004 @verifies REQ-CHECK-CLOSURE-001 */
+test('r34c #359 deleted relative helper cannot disappear from protected inputs', () => {
+  const d = r31aFixture(r34cPluginFiles(), [{ name: 'test', cmd: ['sh', '-c', 'true # pytest'] }]);
+  fs.unlinkSync(path.join(d, 'src/qa/helper.py'));
+  for (const args of [['tdd', 'green', 'TEST-A-001'], ['gate'], ['gate', '--changed', '--baseline', 'HEAD']]) {
+    const result = sdd(d, ...args);
+    assert.equal(result.code, 1, result.out);
+    assert.match(result.out, /REFUSED: unresolved Python relative import/);
+  }
+});
+
+/** @id TEST-R34-PYREL-005 @verifies REQ-CHECK-CLOSURE-001 */
+test('r34c #359 real relative-plugin oracle rejects wrong Green and gates and accepts restored answer', () => {
+  assert.ok(r32cPythonAvailable, 'real pytest is required for the relative-plugin oracle control');
+  const d = mini(T1SPEC, {
+    ...r34cPluginFiles('import pytest\nfrom .helper import EXPECTED\n@pytest.fixture\ndef oracle():\n    return EXPECTED\n'),
+    'pytest.ini': '[pytest]\npythonpath = src\n',
+    'test_a.py': 'from subject import answer\n# @id TEST-A-001 @verifies REQ-A-001\ndef test_a_001(oracle):\n    assert answer() == oracle\n',
+    'src/subject.py': '# @id CODE-A-001 @implements REQ-A-001\ndef answer():\n    return 1\n',
+  }, ['python3', '-m', 'pytest', '-q', 'test_a.py', '-k', '{idu}']);
+  const cp = path.join(d, '.sdd/config.json');
+  fs.writeFileSync(cp, JSON.stringify({
+    ...JSON.parse(fs.readFileSync(cp)), scan: { include: ['test_a.py', 'src/subject.py'] },
+    scopePolicy: 'strict', checks: [{ name: 'test', cmd: ['python3', '-m', 'pytest', '-q'] }],
+  }));
+  const red = sdd(d, 'tdd', 'red', 'TEST-A-001');
+  assert.equal(red.code, 0, red.out);
+  assert.match(red.out, /assert 1 == 2/);
+  const ledger = path.join(d, '.sdd/tdd.jsonl'), before = fs.readFileSync(ledger, 'utf8');
+  fs.writeFileSync(path.join(d, 'src/qa/helper.py'), 'EXPECTED = 1\n');
+  const wrong = sdd(d, 'tdd', 'green', 'TEST-A-001');
+  assert.equal(wrong.code, 1, wrong.out);
+  assert.match(wrong.out, /changed|drift|definition/i);
+  assert.equal(fs.readFileSync(ledger, 'utf8'), before);
+  fs.writeFileSync(path.join(d, 'src/qa/helper.py'), 'EXPECTED = 2\n');
+  fs.writeFileSync(path.join(d, 'src/subject.py'), '# @id CODE-A-001 @implements REQ-A-001\ndef answer():\n    return 2\n');
+  const green = sdd(d, 'tdd', 'green', 'TEST-A-001');
+  assert.equal(green.code, 0, green.out);
+  assert.equal(spawnSync('git', ['add', '-A'], { cwd: d }).status, 0);
+  assert.equal(spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'valid oracle'], { cwd: d }).status, 0);
+  for (const args of [['gate'], ['gate', '--changed', '--baseline', 'HEAD']]) {
+    const valid = sdd(d, ...args);
+    assert.equal(valid.code, 0, valid.out);
+  }
+  fs.writeFileSync(path.join(d, 'src/qa/helper.py'), 'EXPECTED = 1\n');
+  fs.writeFileSync(path.join(d, 'src/subject.py'), '# @id CODE-A-001 @implements REQ-A-001\ndef answer():\n    return 1\n');
+  for (const args of [['gate'], ['gate', '--changed', '--baseline', 'HEAD']]) {
+    const drift = sdd(d, ...args);
+    assert.equal(drift.code, 1, drift.out);
+    assert.match(drift.out, /helper\.py.*changed|helper\.py.*defin|defin.*helper\.py/, drift.out);
+  }
+  fs.writeFileSync(path.join(d, 'src/qa/helper.py'), 'EXPECTED = 2\n');
+  fs.writeFileSync(path.join(d, 'src/subject.py'), '# @id CODE-A-001 @implements REQ-A-001\ndef answer():\n    return 2\n');
+  assert.equal(sdd(d, 'tdd', 'refactor', 'TEST-A-001').code, 0);
+  const restored = sdd(d, 'gate');
+  assert.equal(restored.code, 0, restored.out);
+});
+
+for (const [label, plugin, extra] of [
+  ['missing absolute local module', 'from qa.missing import EXPECTED\n', {}],
+  ['missing absolute package child', 'from qa import missing\n', {}],
+  ['ambiguous literal plugin roots', 'from .helper import EXPECTED\n', { 'qa/__init__.py': '', 'qa/plugin.py': 'EXPECTED = 2\n' }],
+]) {
+  /** @id TEST-R34-PYREL-006 @verifies REQ-CHECK-CLOSURE-001 */
+  test(`r34c #359 absolute local controls fail closed: ${label}`, () => {
+    const d = r31aFixture(r34cPluginFiles(), [{ name: 'test', cmd: ['sh', '-c', 'true # pytest'] }]);
+    fs.writeFileSync(path.join(d, 'src/qa/plugin.py'), plugin);
+    for (const [f, text] of Object.entries(extra)) {
+      fs.mkdirSync(path.dirname(path.join(d, f)), { recursive: true });
+      fs.writeFileSync(path.join(d, f), text);
+    }
+    const ledger = path.join(d, '.sdd/tdd.jsonl'), before = fs.readFileSync(ledger, 'utf8');
+    for (const args of [['tdd', 'green', 'TEST-A-001'], ['gate'], ['gate', '--changed', '--baseline', 'HEAD']]) {
+      const result = sdd(d, ...args);
+      assert.equal(result.code, 1, result.out);
+      assert.match(result.out, /REFUSED: unresolved Python (?:module|relative import)/);
+      assert.equal(fs.readFileSync(ledger, 'utf8'), before);
+    }
+  });
+}
+
+/** @id TEST-R34-PYREL-007 @verifies REQ-CHECK-CLOSURE-001 */
+test('r34c #359 namespace absolute imports and relative star imports retain helper provenance', () => {
+  for (const plugin of ['from qa import helper as oracle\n', 'from .helper import *\n', 'from .helper import EXPECTED as oracle\n']) {
+    const files = r34cPluginFiles(plugin);
+    delete files['src/qa/__init__.py'];
+    const d = r31aFixture(files, [{ name: 'test', cmd: ['sh', '-c', 'true # pytest'] }]);
+    const evidence = JSON.parse(fs.readFileSync(path.join(d, '.sdd/tdd.jsonl'), 'utf8').trim().split('\n').at(-1));
+    assert.ok(Object.keys(evidence.checkDefShas).some((key) => key.endsWith('|src/qa/helper.py')), plugin);
+    const valid = sdd(d, 'gate');
+    assert.equal(valid.code, 0, valid.out);
+    fs.writeFileSync(path.join(d, 'src/qa/helper.py'), 'EXPECTED = 1\n');
+    const green = sdd(d, 'tdd', 'green', 'TEST-A-001');
+    assert.equal(green.code, 1, green.out);
+    assert.match(green.out, /definition changed since Red/);
+  }
+});
+
+/** @id TEST-R34-PYREL-008 @verifies REQ-CHECK-CLOSURE-001 */
+test('r34c #359 deleted package initializer cannot silently become an unpinned namespace', () => {
+  const d = r31aFixture(r34cPluginFiles(), [{ name: 'test', cmd: ['sh', '-c', 'true # pytest'] }]);
+  fs.unlinkSync(path.join(d, 'src/qa/__init__.py'));
+  const green = sdd(d, 'tdd', 'green', 'TEST-A-001');
+  assert.equal(green.code, 1, green.out);
+  assert.match(green.out, /__init__\.py/);
+  r31aDrift(d, 'src/qa/__init__.py');
+});
+
+/** @id TEST-R34-PYREL-009 @verifies REQ-CHECK-CLOSURE-001 */
+test('r34c #359 parent modules cannot masquerade as regular or namespace packages', () => {
+  for (const namespace of [false, true]) {
+    const files = r34cPluginFiles();
+    if (namespace) delete files['src/qa/__init__.py'];
+    const d = r31aFixture(files, [{ name: 'test', cmd: ['sh', '-c', 'true # pytest'] }]);
+    fs.writeFileSync(path.join(d, 'src/qa.py'), 'EXPECTED = 1\n');
+    for (const args of [['tdd', 'green', 'TEST-A-001'], ['gate'], ['gate', '--changed', '--baseline', 'HEAD']]) {
+      const result = sdd(d, ...args);
+      assert.equal(result.code, 1, result.out);
+      assert.match(result.out, /REFUSED: unresolved Python module.*non-package parent/);
+    }
+  }
+});
+
+/** @id TEST-R34-PYREL-010 @verifies REQ-CHECK-CLOSURE-001 */
+test('r34c #359 continued relative import statements protect their helper', () => {
+  const d = r31aFixture(r34cPluginFiles('from .helper \\\n    import EXPECTED\n'),
+    [{ name: 'test', cmd: ['sh', '-c', 'true # pytest'] }]);
+  const evidence = JSON.parse(fs.readFileSync(path.join(d, '.sdd/tdd.jsonl'), 'utf8').trim().split('\n').at(-1));
+  assert.ok(Object.keys(evidence.checkDefShas).some((key) => key.endsWith('|src/qa/helper.py')));
+  const valid = sdd(d, 'gate');
+  assert.equal(valid.code, 0, valid.out);
+  fs.writeFileSync(path.join(d, 'src/qa/helper.py'), 'EXPECTED = 1\n');
+  const green = sdd(d, 'tdd', 'green', 'TEST-A-001');
+  assert.equal(green.code, 1, green.out);
+});
