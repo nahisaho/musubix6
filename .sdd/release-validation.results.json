@@ -14,8 +14,18 @@
     "registeredTests": 1115,
     "expectedPass": 1111,
     "expectedTodo": 4,
-    "fullSuiteExecuted": false,
-    "prospectiveManifestFrozen": false,
+    "localFullSuiteExecuted": false,
+    "hostedFullSuiteExecuted": true,
+    "prospectiveManifestFrozen": true,
+    "frozenManifest": {
+      "path": ".sdd/release-validation.v0.1.1.json",
+      "sha256": "1c7b905ebf26118fb1b079e0b83b12d0326fc86dbf4dec7bd54c38f58106e743",
+      "frozenAt": "2026-10-14T10:01:53.942Z",
+      "requiredCells": 20,
+      "mutationMechanisms": 31,
+      "run1": "RUNNING",
+      "run2": "NOT_STARTED"
+    },
     "focusedPreflight": "Four exact fixture controls pass on each actual Node 20/22/24, with identical complete filesystem hashes before and after. This is not a full suite or qualification.",
     "packagePreflight": "The byte-identical retained pack passes actual fresh extraction/offline-install and complete bundled-payload controls on Node 20/22/24.",
     "mutationPreflight": {
@@ -41,11 +51,18 @@
       }
     },
     "hostedCI": "https://github.com/nahisaho/musubix6/actions/runs/38537400486",
-    "hostedCIStatusWhenRecorded": "in_progress",
+    "hostedCIStatusWhenRecorded": "success; all three actual runtimes complete 1115 tests / 1111 pass / zero fail / four TODOs / zero skips or cancellations",
+    "hostedNativeCompiler": "Ubuntu GCC 13.3.0 on all three jobs; corrected C portability regression passes",
+    "activeExecutionHelpers": {
+      "path": "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/r36-final-f4a495a/execution-helpers-renewed.tar",
+      "sha256": "13b8aa944148005b5ff8a4c19ce937ad89cd96d9fb1c29aedd35336f83bab273",
+      "files": 21,
+      "review": "Independent Sonnet review approved only the authorized deadline-literal change and matching manifest metadata; all execution budgets, bindings, cells and guards are unchanged."
+    },
     "mainSourcePromoted": false,
-    "authorizationEndsAt": "2026-10-14T18:00:00+09:00",
-    "qualificationLauncherDeadline": "The retained driver is intentionally bounded to the current authorization. A renewed session must update and review its execution deadline before a new prospective freeze; do not edit a frozen helper or reuse the superseded manifest.",
-    "next": "Review hosted CI, then prospectively freeze and execute two complete fresh-state matrices under a renewed sufficiently long authorization window. No old-run credit and no publication authority."
+    "authorizationEndsAt": "2026-10-15T23:59:00+09:00",
+    "qualificationLauncherDeadline": "The explicitly renewed deadline was independently reviewed before this prospective freeze. It is bound by the frozen driver hash and manifest authorizationEndsAt. Do not edit frozen helpers.",
+    "next": "Complete corrected run1, require a complete clean PASS and intact log hashes, then run2 under the identical source/package/manifest with fresh fixtures. No old-run credit and no publication authority."
   },
   "epochs": [
     {

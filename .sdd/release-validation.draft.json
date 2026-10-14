@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "status": "corrected-candidate-prepared-not-qualifying",
+  "status": "corrected-candidate-frozen-qualification-running",
   "targetVersion": "0.1.1",
   "decision": "docs/design-sdd-hardening.md#35-release-readiness-versus-exploratory-dogfooding-g4",
   "candidate": {
@@ -11,8 +11,18 @@
   },
   "r36CurrentBlockers": {
     "qualifying": false,
-    "frozenManifestExists": false,
+    "frozenManifestExists": true,
     "frozenManifest": {
+      "path": ".sdd/release-validation.v0.1.1.json",
+      "sha256": "1c7b905ebf26118fb1b079e0b83b12d0326fc86dbf4dec7bd54c38f58106e743",
+      "frozenAt": "2026-10-14T10:01:53.942Z",
+      "authorizationEndsAt": "2026-10-15T23:59:00+09:00",
+      "requiredCells": 20,
+      "mutationMechanisms": 31,
+      "firstRun": "RUNNING",
+      "secondRun": "NOT_STARTED"
+    },
+    "supersededManifest": {
       "status": "explicitly-superseded",
       "path": "/home/nahisaho/.copilot/session-state/ba9f04e0-ab0d-4d64-ac09-eec2b5ef0ba5/files/r36-final-a9cd849/frozen-manifest.json",
       "originalTrackedPath": ".sdd/release-validation.v0.1.1.json",
@@ -38,7 +48,8 @@
       "registeredTests": 1115,
       "expectedPass": 1111,
       "expectedTodo": 4,
-      "fullSuiteExecuted": false,
+      "localFullSuiteExecuted": false,
+      "hostedFullSuiteExecuted": true,
       "previousCandidateFullRegressionPerRuntime": "Prior a9cd849 on actual Node 20/22/24 each executed 1113 tests: 1109 pass, zero fail, four TODOs, no skips/cancellations. All three cells still failed the required whole-filesystem guard. No credit transfers to this corrected candidate.",
       "reproducibility": "Two independent packs are byte-identical; eight bundled skills and all 74 prior skill payload paths are retained.",
       "mergeInvariant": "Production remains byte-identical to a9cd849. The exact reviewed K C-fixture correction, H2 cwd correction and both complete EOF regressions are retained. Prior F/H/G/I/J tests and seven approval-chain entries remain intact except the two reviewed fixture changes."
@@ -57,8 +68,8 @@
     "correctedCandidateHostedCI": {
       "run": "https://github.com/nahisaho/musubix6/actions/runs/38537400486",
       "source": "f4a495af013d785d83676f93ffa3102717675ed0",
-      "statusWhenRecorded": "in_progress",
-      "hostedGnu13OutcomeConfirmed": false,
+      "statusWhenRecorded": "success; actual Node 20/22/24 each complete 1115 tests, 1111 pass, zero fail, four TODOs, zero skips/cancellations",
+      "hostedGnu13OutcomeConfirmed": true,
       "countsAsQualification": false
     },
     "reviewedFixtureFix": {
@@ -129,7 +140,7 @@
       "issue": 375,
       "severity": "S3",
       "worktree": "/home/nahisaho/GitHub/musubix-fix-r36k",
-      "reviewedFix": "6d5bdf5: real C undeclared-address error plus missing-call inference, genuine native warning/error severity controls, original C++ bare-call control retained. Independent Sonnet review found no remaining actionable findings; hosted GNU13 validation remains pending.",
+      "reviewedFix": "6d5bdf5: real C undeclared-address error plus missing-call inference, genuine native warning/error severity controls, original C++ bare-call control retained. Independent Sonnet review found no remaining actionable findings; actual hosted GCC 13.3.0 now passes on all three runtimes.",
       "policy": "The old frozen suites settled before corrective validation. The old manifest and failed evidence were explicitly preserved before supersession; the corrected candidate starts with zero qualifying credit."
     },
     "pytestFixtureOutputBlocker": {
@@ -140,7 +151,7 @@
     },
     "selfHostingEvidenceLimit": "The root scanner excludes the monolithic test file above its existing 512 KiB bound. Native compiler changes have honest small-runner Red/Green evidence using exact final EOF tests/helpers; no repository-root gate PASS is claimed.",
     "qualificationDriver": "Reviewed interruption-safe execution uses serial fresh-source/dependency preparation before exactly three bounded full suites, an exclusive lease, all-settled completion, and seven process self-tests. Final prospective inputs bind the actual Python sources used by the offline wheel fixture. All 29 fixed mutation mechanisms pass the formal run, but the required whole-filesystem guard rejects the pytest fixture leak after otherwise successful full regressions. No preflight or failed run counts toward qualification.",
-    "next": "Inspect corrected hosted CI and final preflight evidence. Under a renewed authorized time window long enough for two complete matrices, freeze the corrected candidate prospectively and run both fresh-state matrices. The current 18:00 authorization does not leave sufficient time; do not start a knowingly incomplete release qualification or credit old runs. Main source promotion, tag and publication remain unperformed; publication requires genuine human approval."
+    "next": "Authorization was explicitly extended until 2026-10-15 23:59 JST. The deadline-only execution delta was independently reviewed and the corrected candidate frozen prospectively. Complete run1 and require its full clean PASS before fresh-state run2 under identical bindings. Main source promotion, tag and publication remain unperformed; publication requires genuine human approval."
   },
   "supportContract": {
     "publicBaseline": "README.md, README-ja.md and package.json; no support narrowing authorized",
