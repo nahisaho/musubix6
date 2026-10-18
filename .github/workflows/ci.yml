@@ -102,7 +102,7 @@ jobs:
       - name: Run full lean-sdd-tdd suite
         run: |
           set +e
-          timeout --signal=TERM --kill-after=30s 100m node --test .github/skills/lean-sdd-tdd/scripts/sdd.test.mjs .github/skills/lean-sdd-tdd/scripts/spec-context.test.mjs 2>&1 | tee test-logs/sdd.log
+          timeout --signal=TERM --kill-after=30s 100m npm test 2>&1 | tee test-logs/sdd.log
           status=${PIPESTATUS[0]}
           printf 'node --test exit=%s\n' "$status" | tee -a test-logs/sdd.log
           exit "$status"

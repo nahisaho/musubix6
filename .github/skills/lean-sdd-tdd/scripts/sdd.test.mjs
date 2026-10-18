@@ -1608,6 +1608,48 @@ const PASS = ['node', '-e', '0'];
 const FAIL = ['node', '-e', 'console.log("AssertionError: boom");process.exit(1)'];
 const setCmd = (d, cmd) => { const cp = path.join(d, '.sdd/config.json'); const c = JSON.parse(fs.readFileSync(cp, 'utf8')); c.testCmd = cmd; fs.writeFileSync(cp, JSON.stringify(c)); };
 
+/** @id TEST-NODE-SUMMARY-001 @verifies REQ-NODE-SUMMARY-001 */
+test('TEST-NODE-SUMMARY-001 executed Node failures are not no-test incompleteness', () => {
+  for (const reporter of ['spec', 'tap']) {
+    const d = mini('---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | answer shall be one. | TEST-A-001 |\n', {
+      'answer.mjs': '/** @id CODE-A-001 @implements REQ-A-001 */\nexport const answer = () => 0;\n',
+      'a.test.mjs': [
+        "import { test } from 'node:test';",
+        "import assert from 'node:assert/strict';",
+        "import { answer } from './answer.mjs';",
+        "if (process.env.SDD_SUMMARY_CASE !== 'empty') {",
+        '/** @id TEST-A-001 @verifies REQ-A-001 */',
+        "test('TEST-A-001 target', { skip: process.env.SDD_SUMMARY_CASE === 'skip' }, () => { assert.equal(answer(), 1); assert.notEqual(process.env.SDD_SUMMARY_CASE, 'allfail', 'owned assertion failure'); });",
+        "test('no tests found', { skip: process.env.SDD_SUMMARY_CASE === 'skip' }, () => assert.ok(!['mixed', 'allfail'].includes(process.env.SDD_SUMMARY_CASE), 'executed assertion failure'));",
+        '}',
+        '',
+      ].join('\n'),
+    });
+    const cmd = ['node', '--test', `--test-reporter=${reporter}`];
+    fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({
+      testCmd: [...cmd, '--test-name-pattern', '{id}', '{file}'],
+      checks: [{ name: 'test', cmd: [...cmd, 'a.test.mjs'] }],
+    }));
+    const red = sdd(d, 'tdd', 'red', 'TEST-A-001');
+    assert.equal(red.code, 0, red.out);
+    fs.writeFileSync(path.join(d, 'answer.mjs'), '/** @id CODE-A-001 @implements REQ-A-001 */\nexport const answer = () => 1;\n');
+    const green = sdd(d, 'tdd', 'green', 'TEST-A-001');
+    assert.equal(green.code, 0, green.out);
+    for (const [mode, expected] of [['pass', 0], ['mixed', 1], ['allfail', 1], ['skip', 2], ['empty', 1]]) {
+      const r = spawnSync('node', [SDD, '--root', d, 'gate'], {
+        encoding: 'utf8', env: { ...ENV, SDD_SUMMARY_CASE: mode },
+      });
+      const text = r.stdout + r.stderr;
+      assert.equal(r.status, expected, `${reporter}/${mode}: gate exit ${r.status}`);
+      if (mode === 'empty') assert.match(text, /missing executed Node test ids/);
+      else if (expected !== 2) {
+        assert.match(text, expected === 0 ? /✓ cmd test \(/ : /✗ cmd test \(/);
+        assert.doesNotMatch(text, /no tests exist yet/);
+      } else assert.match(text, /INCOMPLETE/);
+    }
+  }
+});
+
 test('#56 every @verifies REQ is hash-tracked, not only the first', () => {
   const spec = (w) => `---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | one shall hold. | TEST-A-001 |\n| REQ-A-002 | two ${w} hold. | TEST-A-001 |\n`;
   const d = mini(spec('shall'), { 'a.test.mjs': '// @id TEST-A-001 @verifies REQ-A-001 REQ-A-002\n// test body\n' }, FAIL);
@@ -9683,7 +9725,7 @@ function testEvidence(d) {
 }
 
 /** @id TEST-R30C-001 @verifies REQ-R30C-001 */
-test('r30c #334 hand-rehashed approval and review cannot bless an unreviewed Design edit', async () => {
+test('TEST-R30C-001 r30c #334 hand-rehashed approval and review cannot bless an unreviewed Design edit', async () => {
   const { createHash } = await import('node:crypto');
   const d = mini('---\nfeature: a\ntier: T2\n---\n## Design\nPure calculation.\nNo state.\n\n| REQ-A-001 | one shall hold. | TEST-A-001 |\n', { 'a.test.mjs': jsTest() }, PASS);
   fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ testCmd: PASS, checks: [{ name: 'ok', cmd: PASS }] }));
@@ -10123,7 +10165,7 @@ function r31aDrift(d, file) {
 }
 
 /** @id TEST-CHECK-CLOSURE-001 @verifies REQ-CHECK-CLOSURE-001 */
-test('r31a #340 command closure follows interpreter targets nested wrappers make recipes and cycles', () => {
+test('TEST-CHECK-CLOSURE-001 r31a #340 command closure follows interpreter targets nested wrappers make recipes and cycles', () => {
   const cases = [
     [{ 'tools/run.py': 'import subprocess\nsubprocess.call(["sh", "tools/nested.sh"])\n', 'tools/nested.sh': 'true\n' }, ['sh', '-c', 'true # python3 tools/run.py'], 'tools/nested.sh'],
     [{ 'tools/run.mjs': "import { spawnSync } from 'node:child_process';\nspawnSync('sh', ['tools/nested.sh'], {stdio:'inherit'});\n", 'tools/nested.sh': 'true\n' }, ['node', 'tools/run.mjs'], 'tools/nested.sh'],
@@ -10140,7 +10182,7 @@ test('r31a #340 command closure follows interpreter targets nested wrappers make
 });
 
 /** @id TEST-CHECK-CLOSURE-002 @verifies REQ-CHECK-CLOSURE-001 */
-test('r31a #340 package wrappers include nested script calls project cwd and symlink targets', () => {
+test('TEST-CHECK-CLOSURE-002 r31a #340 package wrappers include nested script calls project cwd and symlink targets', () => {
   const d = r31aFixture({
     'app/package.json': JSON.stringify({ scripts: { test: 'npm run inner', inner: 'node tools/check.mjs' } }),
     'app/tools/check.mjs': 'process.exit(0);\n',
@@ -10154,7 +10196,7 @@ test('r31a #340 package wrappers include nested script calls project cwd and sym
 });
 
 /** @id TEST-CHECK-CLOSURE-003 @verifies REQ-CHECK-CLOSURE-002 */
-test('r31a #343 npm pnpm yarn lifecycle additions edits removals and hook wrappers are definitions', () => {
+test('TEST-CHECK-CLOSURE-003 r31a #343 npm pnpm yarn lifecycle additions edits removals and hook wrappers are definitions', () => {
   for (const manager of ['npm', 'pnpm', 'yarn']) {
     for (const hook of ['pretest', 'posttest']) {
       const files = {
@@ -10185,7 +10227,7 @@ test('r31a #343 npm pnpm yarn lifecycle additions edits removals and hook wrappe
 });
 
 /** @id TEST-CHECK-CLOSURE-004 @verifies REQ-CHECK-CLOSURE-003 */
-test('r31a #344 Cargo closure tracks complete ancestor config and toolchains including additions and removals', () => {
+test('TEST-CHECK-CLOSURE-004 r31a #344 Cargo closure tracks complete ancestor config and toolchains including additions and removals', () => {
   for (const target of ['.cargo/config', '.cargo/config.toml', 'rust-toolchain', 'rust-toolchain.toml', 'workspace/.cargo/config.toml', 'workspace/crate/.cargo/config.toml']) {
     const d = r31aFixture({
       [target]: target.includes('toolchain') ? '# baseline toolchain\n' : '[build]\nrustflags = []\n',
@@ -10207,7 +10249,7 @@ test('r31a #344 Cargo closure tracks complete ancestor config and toolchains inc
 });
 
 /** @id TEST-CHECK-CLOSURE-005 @verifies REQ-CHECK-CLOSURE-001 */
-test('r31a #340 changed checks share closure and committed wrapper drift still fails changed gate', () => {
+test('TEST-CHECK-CLOSURE-005 r31a #340 changed checks share closure and committed wrapper drift still fails changed gate', () => {
   const d = r31aFixture({ 'tools/changed.sh': 'true\n' }, [{ name: 'test', cmd: PASS, changedCmd: ['sh', 'tools/changed.sh'] }]);
   fs.appendFileSync(path.join(d, 'tools/changed.sh'), '# select fewer tests\n');
   assert.equal(spawnSync('git', ['add', '-A'], { cwd: d }).status, 0);
@@ -11445,10 +11487,10 @@ function r33bNodeFixture(reporter = 'spec', nested = false) {
   return { d, prefix, cp };
 }
 
+/** @id TEST-R33-NODE-001 @verifies REQ-R33-NODE-001 */
+test('TEST-R33-NODE-001 r33b #355 mixed skip/todo annotated targets fail full and changed gates', () => {
 for (const reporter of ['spec', 'tap']) {
   for (const outcome of ['skip', 'todo']) {
-    /** @id TEST-R33-NODE-001 @verifies REQ-R33-NODE-001 */
-    test(`r33b #355 ${reporter} mixed ${outcome} annotated target fails full and changed gates`, () => {
       const { d, prefix } = r33bNodeFixture(reporter);
       fs.writeFileSync(path.join(d, `${prefix}answer.mjs`), '// @id CODE-A-001 @implements REQ-A-001\nexport const answer = () => -100;\n');
       const previous = ENV.CI;
@@ -11460,12 +11502,12 @@ for (const reporter of ['spec', 'tap']) {
           assert.match(gate.out, /TEST-A-001.*missing executed Node test ids/, gate.out);
         }
       } finally { if (previous === undefined) delete ENV.CI; else ENV.CI = previous; }
-    });
   }
 }
+});
 
 /** @id TEST-R33-NODE-002 @verifies REQ-R33-NODE-001 */
-test('r33b #355 Node execution verification respects project and selected file ownership', () => {
+test('TEST-R33-NODE-002 r33b #355 Node execution verification respects project and selected file ownership', () => {
   const { d, cp } = r33bNodeFixture('tap', true);
   fs.writeFileSync(path.join(d, 'packages/core/other.test.mjs'), `import { test } from 'node:test';\n/** @id TEST-A-002 @verifies REQ-A-001 */\ntest('TEST-A-002 omitted', { skip: true }, () => {});\n`);
   // Narrowing the scanned surface here isolates execution verification from evidence requirements.
@@ -11501,6 +11543,8 @@ test('r33b #355 Node execution verification respects project and selected file o
   } finally { if (previous === undefined) delete ENV.CI; else ENV.CI = previous; }
 });
 
+/** @id TEST-R33-PYTEST-001 @verifies REQ-R33-PYTEST-001 */
+test('TEST-R33-PYTEST-001 r33b #356 unresolved plugin declarations fail closed', () => {
 for (const declaration of [
   "pytest_plugins = ['qa_' + 'hooks']",
   "pytest_plugins = PLUGINS",
@@ -11511,8 +11555,6 @@ for (const declaration of [
   "pytest_plugins: list[str] = ['qa_' + 'hooks']",
   "pytest_plugins += ['qa_hooks']",
 ]) {
-  /** @id TEST-R33-PYTEST-001 @verifies REQ-R33-PYTEST-001 */
-  test(`r33b #356 unresolved plugin declaration fails closed: ${declaration.replaceAll('\n', ' ')}`, () => {
     const d = r31aFixture({
       'conftest.py': "pytest_plugins = ['qa_hooks']\n",
       'src/qa_hooks.py': 'def pytest_collection_modifyitems(items):\n    pass\n',
@@ -11524,11 +11566,11 @@ for (const declaration of [
       assert.equal(result.code, 1, result.out);
       assert.match(result.out, /REFUSED: unresolved pytest_plugins.*conftest\.py/, result.out);
     }
-  });
 }
+});
 
 /** @id TEST-R33-PYTEST-002 @verifies REQ-R33-PYTEST-001 */
-test('r33b #356 computed plugin refuses real pytest execution before any evidence write', { skip: !r32cPythonAvailable }, () => {
+test('TEST-R33-PYTEST-002 r33b #356 computed plugin refuses real pytest execution before any evidence write', { skip: !r32cPythonAvailable }, () => {
   const d = mini(T1SPEC, {
     'pytest.ini': '[pytest]\npythonpath = src\n',
     'test_a.py': 'from subject import answer\n# @id TEST-A-001 @verifies REQ-A-001\ndef test_a_001():\n    assert answer() == 1\n',
@@ -11546,7 +11588,7 @@ test('r33b #356 computed plugin refuses real pytest execution before any evidenc
 });
 
 /** @id TEST-R33-PYTEST-003 @verifies REQ-R33-PYTEST-001 */
-test('r33b #356 transitive literal plugins reject a computed nested declaration before evidence writes', () => {
+test('TEST-R33-PYTEST-003 r33b #356 transitive literal plugins reject a computed nested declaration before evidence writes', () => {
   const d = r31aFixture({
     'conftest.py': "pytest_plugins = (\n    'qa_hooks', # literal tuple\n)\n",
     'src/qa_hooks.py': 'import helper\npytest_plugins = "nested_hooks"\n',
@@ -11568,7 +11610,7 @@ test('r33b #356 transitive literal plugins reject a computed nested declaration 
 });
 
 /** @id TEST-R33-NODE-003 @verifies REQ-R33-NODE-001 */
-test('r33b #355 skipped annotated Node target cannot recover a flaky check under warn policy', () => {
+test('TEST-R33-NODE-003 r33b #355 skipped annotated Node target cannot recover a flaky check under warn policy', () => {
   const { d, cp } = r33bNodeFixture();
   fs.writeFileSync(path.join(d, 'check.mjs'), [
     "import fs from 'node:fs';",
@@ -12023,6 +12065,8 @@ const r34cPluginFiles = (plugin = 'from .helper import EXPECTED\n') => ({
   'src/qa/helper.py': 'EXPECTED = 2\n',
 });
 
+/** @id TEST-R34-PYREL-001 @verifies REQ-CHECK-CLOSURE-001 */
+test('TEST-R34-PYREL-001 r34c #359 Python plugin closure protects all declared relative forms', () => {
 for (const [label, files, protectedFile] of [
   ['sibling helper', r34cPluginFiles(), 'src/qa/helper.py'],
   ['parenthesized submodule alias', r34cPluginFiles('from . import (\n    helper as oracle,\n)\n'), 'src/qa/helper.py'],
@@ -12035,8 +12079,6 @@ for (const [label, files, protectedFile] of [
   ['absolute import control', r34cPluginFiles('from qa.helper import EXPECTED\n'), 'src/qa/helper.py'],
   ['parent initializer provenance', r34cPluginFiles(), 'src/qa/__init__.py'],
 ]) {
-  /** @id TEST-R34-PYREL-001 @verifies REQ-CHECK-CLOSURE-001 */
-  test(`r34c #359 Python plugin closure protects ${label}`, () => {
     const d = r31aFixture(Object.fromEntries(Object.entries(files).filter(([, text]) => text !== undefined)),
       [{ name: 'test', cmd: ['sh', '-c', 'true # python3 -m pytest'] }]);
     const ledger = path.join(d, '.sdd/tdd.jsonl');
@@ -12053,17 +12095,17 @@ for (const [label, files, protectedFile] of [
     assert.match(green.out, /changed|drift|definition/i);
     assert.equal(fs.readFileSync(ledger, 'utf8'), before);
     r31aDrift(d, protectedFile);
-  });
 }
+});
 
+/** @id TEST-R34-PYREL-002 @verifies REQ-CHECK-CLOSURE-001 */
+test('TEST-R34-PYREL-002 r34c #359 protected Python inputs fail closed for unresolved relative forms', () => {
 for (const [label, plugin, extra] of [
   ['missing relative helper', 'from .missing import EXPECTED\n', { 'src/other/missing.py': 'EXPECTED = 2\n', 'src/missing.py': 'EXPECTED = 2\n' }],
   ['missing imported submodule', 'from . import missing\n', {}],
   ['beyond top-level package', 'from ..helper import EXPECTED\n', { 'src/helper.py': 'EXPECTED = 2\n' }],
   ['ambiguous module and package', 'from .helper import EXPECTED\n', { 'src/qa/helper/__init__.py': 'EXPECTED = 2\n' }],
 ]) {
-  /** @id TEST-R34-PYREL-002 @verifies REQ-CHECK-CLOSURE-001 */
-  test(`r34c #359 protected Python inputs fail closed: ${label}`, () => {
     const d = r31aFixture(r34cPluginFiles(), [{ name: 'test', cmd: ['sh', '-c', 'true # pytest'] }]);
     for (const [f, text] of Object.entries(extra)) {
       fs.mkdirSync(path.dirname(path.join(d, f)), { recursive: true });
@@ -12077,11 +12119,11 @@ for (const [label, plugin, extra] of [
       assert.match(result.out, /REFUSED: unresolved Python (?:relative import|module)/, result.out);
       assert.equal(fs.readFileSync(ledger, 'utf8'), before);
     }
-  });
 }
+});
 
 /** @id TEST-R34-PYREL-003 @verifies REQ-CHECK-CLOSURE-001 */
-test('r34c #359 module attributes are not sibling submodules and package boundaries stay local', () => {
+test('TEST-R34-PYREL-003 r34c #359 module attributes are not sibling submodules and package boundaries stay local', () => {
   const d = r31aFixture({
     ...r34cPluginFiles(),
     'src/qa/helper.py': 'EXPECTED, UNUSED = 2, 3\n',
@@ -12102,7 +12144,7 @@ test('r34c #359 module attributes are not sibling submodules and package boundar
 });
 
 /** @id TEST-R34-PYREL-004 @verifies REQ-CHECK-CLOSURE-001 */
-test('r34c #359 deleted relative helper cannot disappear from protected inputs', () => {
+test('TEST-R34-PYREL-004 r34c #359 deleted relative helper cannot disappear from protected inputs', () => {
   const d = r31aFixture(r34cPluginFiles(), [{ name: 'test', cmd: ['sh', '-c', 'true # pytest'] }]);
   fs.unlinkSync(path.join(d, 'src/qa/helper.py'));
   for (const args of [['tdd', 'green', 'TEST-A-001'], ['gate'], ['gate', '--changed', '--baseline', 'HEAD']]) {
@@ -12113,7 +12155,7 @@ test('r34c #359 deleted relative helper cannot disappear from protected inputs',
 });
 
 /** @id TEST-R34-PYREL-005 @verifies REQ-CHECK-CLOSURE-001 */
-test('r34c #359 real relative-plugin oracle rejects wrong Green and gates and accepts restored answer', () => {
+test('TEST-R34-PYREL-005 r34c #359 real relative-plugin oracle rejects wrong Green and gates and accepts restored answer', () => {
   assert.ok(r32cPythonAvailable, 'real pytest is required for the relative-plugin oracle control');
   const d = mini(T1SPEC, {
     ...r34cPluginFiles('import pytest\nfrom .helper import EXPECTED\n@pytest.fixture\ndef oracle():\n    return EXPECTED\n'),
@@ -12159,13 +12201,13 @@ test('r34c #359 real relative-plugin oracle rejects wrong Green and gates and ac
   assert.equal(restored.code, 0, restored.out);
 });
 
+/** @id TEST-R34-PYREL-006 @verifies REQ-CHECK-CLOSURE-001 */
+test('TEST-R34-PYREL-006 r34c #359 absolute local controls fail closed for unresolved forms', () => {
 for (const [label, plugin, extra] of [
   ['missing absolute local module', 'from qa.missing import EXPECTED\n', {}],
   ['missing absolute package child', 'from qa import missing\n', {}],
   ['ambiguous literal plugin roots', 'from .helper import EXPECTED\n', { 'qa/__init__.py': '', 'qa/plugin.py': 'EXPECTED = 2\n' }],
 ]) {
-  /** @id TEST-R34-PYREL-006 @verifies REQ-CHECK-CLOSURE-001 */
-  test(`r34c #359 absolute local controls fail closed: ${label}`, () => {
     const d = r31aFixture(r34cPluginFiles(), [{ name: 'test', cmd: ['sh', '-c', 'true # pytest'] }]);
     fs.writeFileSync(path.join(d, 'src/qa/plugin.py'), plugin);
     for (const [f, text] of Object.entries(extra)) {
@@ -12179,11 +12221,11 @@ for (const [label, plugin, extra] of [
       assert.match(result.out, /REFUSED: unresolved Python (?:module|relative import)/);
       assert.equal(fs.readFileSync(ledger, 'utf8'), before);
     }
-  });
 }
+});
 
 /** @id TEST-R34-PYREL-007 @verifies REQ-CHECK-CLOSURE-001 */
-test('r34c #359 namespace absolute imports and relative star imports retain helper provenance', () => {
+test('TEST-R34-PYREL-007 r34c #359 namespace absolute imports and relative star imports retain helper provenance', () => {
   for (const plugin of ['from qa import helper as oracle\n', 'from .helper import *\n', 'from .helper import EXPECTED as oracle\n']) {
     const files = r34cPluginFiles(plugin);
     delete files['src/qa/__init__.py'];
@@ -12200,7 +12242,7 @@ test('r34c #359 namespace absolute imports and relative star imports retain help
 });
 
 /** @id TEST-R34-PYREL-008 @verifies REQ-CHECK-CLOSURE-001 */
-test('r34c #359 deleted package initializer cannot silently become an unpinned namespace', () => {
+test('TEST-R34-PYREL-008 r34c #359 deleted package initializer cannot silently become an unpinned namespace', () => {
   const d = r31aFixture(r34cPluginFiles(), [{ name: 'test', cmd: ['sh', '-c', 'true # pytest'] }]);
   fs.unlinkSync(path.join(d, 'src/qa/__init__.py'));
   const green = sdd(d, 'tdd', 'green', 'TEST-A-001');
@@ -12210,7 +12252,7 @@ test('r34c #359 deleted package initializer cannot silently become an unpinned n
 });
 
 /** @id TEST-R34-PYREL-009 @verifies REQ-CHECK-CLOSURE-001 */
-test('r34c #359 parent modules cannot masquerade as regular or namespace packages', () => {
+test('TEST-R34-PYREL-009 r34c #359 parent modules cannot masquerade as regular or namespace packages', () => {
   for (const namespace of [false, true]) {
     const files = r34cPluginFiles();
     if (namespace) delete files['src/qa/__init__.py'];
@@ -12225,7 +12267,7 @@ test('r34c #359 parent modules cannot masquerade as regular or namespace package
 });
 
 /** @id TEST-R34-PYREL-010 @verifies REQ-CHECK-CLOSURE-001 */
-test('r34c #359 continued relative import statements protect their helper', () => {
+test('TEST-R34-PYREL-010 r34c #359 continued relative import statements protect their helper', () => {
   const d = r31aFixture(r34cPluginFiles('from .helper \\\n    import EXPECTED\n'),
     [{ name: 'test', cmd: ['sh', '-c', 'true # pytest'] }]);
   const evidence = JSON.parse(fs.readFileSync(path.join(d, '.sdd/tdd.jsonl'), 'utf8').trim().split('\n').at(-1));
@@ -12255,7 +12297,7 @@ function r34dPytestFixture(declaration = "pytest_plugins = ('qa_hooks',)") {
 }
 
 /** @id TEST-R34-PYTEST-001 @verifies REQ-R33-PYTEST-001 */
-test('r34d #360 semicolon computed reassignment is refused before real assertion Red or evidence append', () => {
+test('TEST-R34-PYTEST-001 r34d #360 semicolon computed reassignment is refused before real assertion Red or evidence append', () => {
   const d = r34dPytestFixture("pytest_plugins = ('qa_hooks',); pytest_plugins = tuple(['qa_hooks'])");
   fs.appendFileSync(path.join(d, 'src/qa_hooks.py'), 'from pathlib import Path\nPath(".sdd/plugin-ran").write_text("executed")\n');
   const red = sdd(d, 'tdd', 'red', 'TEST-A-001');
@@ -12265,6 +12307,8 @@ test('r34d #360 semicolon computed reassignment is refused before real assertion
   assert.ok(!fs.existsSync(path.join(d, '.sdd/plugin-ran')));
 });
 
+/** @id TEST-R34-PYTEST-002 @verifies REQ-R33-PYTEST-001 */
+test('TEST-R34-PYTEST-002 r34d #360 all statement admission rejects unresolved grammar', () => {
 for (const declaration of [
   "pytest_plugins = ('qa_hooks',); pytest_plugins = tuple(['qa_hooks'])",
   "other = 1; pytest_plugins = PLUGINS",
@@ -12278,8 +12322,6 @@ for (const declaration of [
   "pytest_plugins = ('qa_hooks',); pytest_plugins = ['qa_hooks'",
   "pytest_plugins = ('qa_hooks',); pytest_plugins = 'qa_hooks' \\\n+ EXTRA",
 ]) {
-  /** @id TEST-R34-PYTEST-002 @verifies REQ-R33-PYTEST-001 */
-  test(`r34d #360 all statement admission rejects unresolved grammar: ${JSON.stringify(declaration)}`, () => {
     const d = r31aFixture({
       'conftest.py': "pytest_plugins = ['qa_hooks']\n",
       'src/qa_hooks.py': 'def pytest_collection_modifyitems(items):\n    pass\n',
@@ -12299,11 +12341,11 @@ for (const declaration of [
         assert.equal(fs.readFileSync(ledger, 'utf8'), before);
       }
     }
-  });
 }
+});
 
 /** @id TEST-R34-PYTEST-003 @verifies REQ-R33-PYTEST-001 */
-test('r34d #360 literal controls preserve real assertion Red Green and full changed gates', () => {
+test('TEST-R34-PYTEST-003 r34d #360 literal controls preserve real assertion Red Green and full changed gates', () => {
   for (const declaration of [
     "pytest_plugins = 'qa_hooks'; snapshot = pytest_plugins",
     "pytest_plugins = ['qa_hooks']",
@@ -12332,7 +12374,7 @@ test('r34d #360 literal controls preserve real assertion Red Green and full chan
 });
 
 /** @id TEST-R34-PYTEST-004 @verifies REQ-R33-PYTEST-001 */
-test('r34d #360 shared lexical discovery admits non-hook files and rejects later computed binding', () => {
+test('TEST-R34-PYTEST-004 r34d #360 shared lexical discovery admits non-hook files and rejects later computed binding', () => {
   const d = r31aFixture({
     'src/settings.py': "other = 1; pytest_plugins = ['qa_hooks']\n",
     'src/qa_hooks.py': 'def pytest_collection_modifyitems(items):\n    pass\n',
@@ -12395,7 +12437,7 @@ function r34eNodeFixture(reporter = 'spec', parent = false) {
 }
 
 /** @id TEST-R34-NODE-001 @verifies REQ-R34-NODE-001 */
-test('r34e #361 opaque native reporters cannot establish TDD or full/changed gate coverage', () => {
+test('TEST-R34-NODE-001 r34e #361 opaque native reporters cannot establish TDD or full/changed gate coverage', () => {
   const { d, cp, cfg, ledger } = r34eNodeFixture();
   const before = fs.readFileSync(ledger, 'utf8');
   cfg.testCmd[2] = '--test-reporter=dot';
@@ -12420,10 +12462,10 @@ test('r34e #361 opaque native reporters cannot establish TDD or full/changed gat
   assert.notEqual(sdd(d, 'gate').code, 0, 'explicit selection cannot authorize an unobservable reporter');
 });
 
+/** @id TEST-R34-NODE-002 @verifies REQ-R34-NODE-001 */
+test('TEST-R34-NODE-002 r34e #361 annotated skip/todo children cannot borrow parents with any supported reporter', () => {
 for (const reporter of ['spec', 'tap', null]) {
   for (const outcome of ['skip', 'todo']) {
-    /** @id TEST-R34-NODE-002 @verifies REQ-R34-NODE-001 */
-    test(`r34e #361 ${reporter ?? 'default'} annotated ${outcome} child cannot borrow its parent`, () => {
       const { d, cp, cfg, ledger } = r34eNodeFixture(reporter, true);
       const before = fs.readFileSync(ledger, 'utf8');
       fs.writeFileSync(path.join(d, '.sdd/outcome'), outcome);
@@ -12452,12 +12494,12 @@ for (const reporter of ['spec', 'tap', null]) {
       cfg.testCmd.splice(2, 0, '--test-skip-pattern', 'child');
       fs.writeFileSync(cp, JSON.stringify(cfg));
       assert.equal(sdd(d, 'tdd', 'refactor', 'TEST-A-001').code, 1);
-    });
   }
 }
+});
 
 /** @id TEST-R34-NODE-003 @verifies REQ-R34-NODE-001 */
-test('r34e #361 native flaky recovery requires observable passing annotated children', () => {
+test('TEST-R34-NODE-003 r34e #361 native flaky recovery requires observable passing annotated children', () => {
   for (const [reporter, parent, outcome, accepted] of [
     ['dot', false, 'skip', false], ['dot', false, '', false],
     ['spec', true, 'skip', false], ['tap', true, 'todo', false],
@@ -12487,7 +12529,7 @@ test('r34e #361 native flaky recovery requires observable passing annotated chil
 });
 
 /** @id TEST-R34-NODE-004 @verifies REQ-R34-NODE-001 */
-test('r34e #361 parser binds literal titles and rejects ambiguous, missing and malformed evidence', () => {
+test('TEST-R34-NODE-004 r34e #361 parser binds literal titles and rejects ambiguous, missing and malformed evidence', () => {
   const d = mini(T1SPEC);
   const file = path.join(d, 'a.test.mjs');
   const source = fs.readFileSync(SDD, 'utf8');
@@ -12525,7 +12567,7 @@ test('r34e #361 parser binds literal titles and rejects ambiguous, missing and m
 });
 
 /** @id TEST-R34-NODE-005 @verifies REQ-R34-NODE-001 */
-test('r34e #361 shell and package-script native dot reports cannot bypass coverage', () => {
+test('TEST-R34-NODE-005 r34e #361 shell and package-script native dot reports cannot bypass coverage', () => {
   for (const shape of ['shell', 'package']) {
     const { d, cp, cfg, ledger } = r34eNodeFixture();
     const before = fs.readFileSync(ledger, 'utf8');
@@ -12578,7 +12620,7 @@ function r34fRun(d, ...args) {
 }
 
 /** @id TEST-R34-CLOSURE-001 @verifies REQ-R34-CLOSURE-001 */
-test('r34f #362 structural budget avoids per-identifier PATH and file probes', () => {
+test('TEST-R34-CLOSURE-001 r34f #362 structural budget avoids per-identifier PATH and file probes', () => {
   const { d, cp, cfg } = r34fFixture();
   fs.mkdirSync(path.join(d, 'tools'));
   const source = Array.from({ length: 150 }, (_, i) => `// identifier${i}\n`).join('').repeat(2500);
@@ -12601,7 +12643,7 @@ test('r34f #362 structural budget avoids per-identifier PATH and file probes', (
 });
 
 /** @id TEST-R34-CLOSURE-002 @verifies REQ-R34-CLOSURE-001 */
-test('r34f #362 real installed TypeScript launcher reaches TDD and preserves provenance', () => {
+test('TEST-R34-CLOSURE-002 r34f #362 real installed TypeScript launcher reaches TDD and preserves provenance', () => {
   const { d, cp, cfg } = r34fFixture();
   const installed = process.env.SDD_R34_TYPESCRIPT ?? fileURLToPath(new URL('../../../../node_modules/typescript', import.meta.url));
   assert.ok(fs.existsSync(path.join(installed, 'bin/tsc')), `Missing compiler dependency: run npm ci at the repository root or set SDD_R34_TYPESCRIPT to an existing official installation (${installed})`);
@@ -12658,7 +12700,7 @@ test('r34f #362 real installed TypeScript launcher reaches TDD and preserves pro
 });
 
 /** @id TEST-R34-CLOSURE-003 @verifies REQ-R34-CLOSURE-001 */
-test('r34f #362 oversized definition refuses explicitly without writing evidence', () => {
+test('TEST-R34-CLOSURE-003 r34f #362 oversized definition refuses explicitly without writing evidence', () => {
   const { d, cp, cfg } = r34fFixture();
   fs.mkdirSync(path.join(d, 'tools'));
   fs.writeFileSync(path.join(d, 'tools/oversized.cjs'), '// oversized definition\n' + ' '.repeat(17 * 1024 * 1024));
@@ -12671,7 +12713,7 @@ test('r34f #362 oversized definition refuses explicitly without writing evidence
 });
 
 /** @id TEST-R34-CLOSURE-004 @verifies REQ-R34-CLOSURE-001 */
-test('r34f #362 token suffix and directory budgets refuse instead of silently truncating', () => {
+test('TEST-R34-CLOSURE-004 r34f #362 token suffix and directory budgets refuse instead of silently truncating', () => {
   for (const [body, reason] of [
     ['x '.repeat(2000001), /2000000 tokens/],
     ['tsc fixture '.repeat(5000), /8000000 inspection steps/],
@@ -12698,7 +12740,7 @@ function r34IntegrationWritePython(file, text) {
 }
 
 /** @id TEST-R34-INTEGRATION-001 @verifies REQ-R33-PYTEST-001 */
-test('r34 integration Python fixture rewrites cannot reuse same-size timestamp bytecode', () => {
+test('TEST-R34-INTEGRATION-001 r34 integration Python fixture rewrites cannot reuse same-size timestamp bytecode', () => {
   assert.ok(r32cPythonAvailable, 'real Python is required; missing runtime is not passing evidence');
   const d = r34dPytestFixture(), file = path.join(d, 'src/subject.py');
   fs.utimesSync(file, 1700000000, 1700000000);
@@ -12716,7 +12758,7 @@ test('r34 integration Python fixture rewrites cannot reuse same-size timestamp b
 });
 
 /** @id TEST-R34-INTEGRATION-002 @verifies REQ-CHECK-CLOSURE-001 */
-test('r34 integration real relative-plugin restored control invalidates timestamp bytecode', () => {
+test('TEST-R34-INTEGRATION-002 r34 integration real relative-plugin restored control invalidates timestamp bytecode', () => {
   assert.ok(r32cPythonAvailable, 'real pytest is required for the restored relative-plugin control');
   const d = mini(T1SPEC, {
     ...r34cPluginFiles('import pytest\nfrom .helper import EXPECTED\n@pytest.fixture\ndef oracle():\n    return EXPECTED\n'),
@@ -12736,7 +12778,7 @@ test('r34 integration real relative-plugin restored control invalidates timestam
 });
 
 /** @id TEST-R34-INTEGRATION-003 @verifies REQ-R34-CLOSURE-001 */
-test('r34 integration Python namespace probes share the compiler source-discovery budget', () => {
+test('TEST-R34-INTEGRATION-003 r34 integration Python namespace probes share the compiler source-discovery budget', () => {
   const { d, cp, cfg } = r34fFixture();
   fs.mkdirSync(path.join(d, 'tools'));
   fs.writeFileSync(path.join(d, 'tools/bundle.cjs'), '// import directory_candidate\n'.repeat(5000));
@@ -12931,7 +12973,7 @@ test('r35b #364 TypeScript is exactly locked as a development-only dependency', 
 
 test('r35b #364 compiler regression requires a real installation and retains the 15s budget', () => {
   const source = fs.readFileSync(fileURLToPath(import.meta.url), 'utf8');
-  const start = source.indexOf("test('r34f #362 real installed TypeScript");
+  const start = source.indexOf("test('TEST-R34-CLOSURE-002 r34f #362 real installed TypeScript");
   const end = source.indexOf('/** @id TEST-R34-CLOSURE-003', start);
   const control = source.slice(start, end);
   assert.doesNotMatch(control, /skip:|t\.skip|catch\s*\(/);
@@ -12967,7 +13009,11 @@ test('r35b #364 CI qualifies Node 20/22/24 without publication and retains failu
     assert.ok(ci.includes(tool), `native prerequisite: ${tool}`);
   for (const setup of ['setup-go', 'rust-toolchain', 'setup-java', 'setup-dotnet', 'setup-julia', 'setup-beam'])
     assert.ok(ci.includes(setup), `native prerequisite: ${setup}`);
-  assert.match(ci, /node --test \.github\/skills\/lean-sdd-tdd\/scripts\/sdd\.test\.mjs/);
+  assert.match(ci, /100m npm test/);
+  const command = JSON.parse(fs.readFileSync(path.join(root, 'package.json'))).scripts.test;
+  assert.match(command, /^node --test\b/);
+  for (const suite of ['sdd', 'spec-context', 'source-discovery'])
+    assert.ok(command.includes(`.github/skills/lean-sdd-tdd/scripts/${suite}.test.mjs`), `required suite: ${suite}`);
   assert.match(ci, /PIPESTATUS\[0\]/);
   assert.match(ci, /exit "\$status"/);
   assert.match(ci, /exit=%s/);
@@ -12981,7 +13027,8 @@ test('r35b #364 publish test job restores the portable compiler before running i
   const workflow = fs.readFileSync(path.join(root, '.github/workflows/publish.yml'), 'utf8');
   const testJob = workflow.slice(workflow.indexOf('  test:'), workflow.indexOf('\n  publish:'));
   assert.match(testJob, /npm ci/);
-  assert.ok(testJob.indexOf('npm ci') < testJob.indexOf('node --test'), 'restore before compiler regression');
+  assert.match(testJob, /run: npm test/);
+  assert.ok(testJob.indexOf('npm ci') < testJob.indexOf('npm test'), 'restore before compiler regression');
   assert.doesNotMatch(testJob, /SDD_R34_TYPESCRIPT|secrets\.|npm publish/);
 });
 
@@ -13256,7 +13303,7 @@ test('#366 native spec exception ownership excludes AssertionError text embedded
 });
 
 /** @id TEST-R36C-CLOSURE-001 @verifies REQ-R36C-CLOSURE-001 */
-test('r36c #367 absent basenames avoid normalization without losing existing helpers', () => {
+test('TEST-R36C-CLOSURE-001 r36c #367 absent basenames avoid normalization without losing existing helpers', () => {
   const { d, cp, cfg } = r34fFixture();
   fs.mkdirSync(path.join(d, 'tools'));
   fs.writeFileSync(path.join(d, 'tools/bundle.cjs'), Array.from({ length: 4000 }, (_, i) => `// r36ordinary${i}\n`).join(''));
@@ -13284,7 +13331,7 @@ test('r36c #367 absent basenames avoid normalization without losing existing hel
 });
 
 /** @id TEST-R36C-CLOSURE-002 @verifies REQ-R36C-CLOSURE-001 */
-test('r36c #367 repeated executable identifiers share fresh closure fingerprints', () => {
+test('TEST-R36C-CLOSURE-002 r36c #367 repeated executable identifiers share fresh closure fingerprints', () => {
   const { d, cp, cfg } = r34fFixture();
   fs.mkdirSync(path.join(d, 'tools'));
   fs.writeFileSync(path.join(d, 'tools/bundle.cjs'), '// node\n'.repeat(5000));

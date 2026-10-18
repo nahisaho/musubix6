@@ -142,7 +142,7 @@ running the suite (Node ≥ 20):
 
 ```sh
 npm ci
-node --test .github/skills/lean-sdd-tdd/scripts/sdd.test.mjs .github/skills/lean-sdd-tdd/scripts/spec-context.test.mjs
+npm test
 ```
 
 The runtime remains zero-dependency. Tests require the exact TypeScript 5.9.3

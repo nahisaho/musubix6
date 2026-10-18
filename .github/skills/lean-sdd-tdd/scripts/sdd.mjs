@@ -894,9 +894,17 @@ function workspaceFiles(base = ROOT) {
   files = [...new Set(files)]; // an unmerged path is listed once per index stage
   return dotnetOutputFilter(files);
 }
+/** @id CODE-SCAN-001 @implements REQ-SCAN-001 REQ-SCAN-002 REQ-SCAN-003 */
 function listFiles() {
-  const files = workspaceFiles();
-  return scanFilter(files).filter((f) => EXT.test(f) && !SKIP.test(f) && fs.existsSync(path.join(ROOT, f)) && fs.statSync(path.join(ROOT, f)).size < 512 * 1024);
+  const configured = (readJson(CONFIG, null)?.scan ?? {}).maxFileBytes;
+  const maxFileBytes = configured === undefined ? 16 * 1024 * 1024 : configured;
+  if (!Number.isSafeInteger(maxFileBytes) || maxFileBytes <= 0) throw new Error('REFUSED: source scan: scan.maxFileBytes must be a positive safe integer');
+  const files = scanFilter(workspaceFiles()).filter((f) => EXT.test(f) && !SKIP.test(f) && fs.existsSync(path.join(ROOT, f)));
+  for (const file of files) {
+    const size = fs.statSync(path.join(ROOT, file)).size;
+    if (size > maxFileBytes) throw new Error(`REFUSED: source scan: ${file} is ${size} bytes, exceeding scan.maxFileBytes=${maxFileBytes}; explicitly configure the limit or review scan filters`);
+  }
+  return files;
 }
 
 const ID_RE = /[A-Z][A-Z0-9]+(?:-[A-Z0-9]+)+/g;
@@ -1065,6 +1073,7 @@ function designProblem(s) {
 // ---------- approval ----------
 // The first human-approved implementation refreshes `code`; it is not a new spec approval.
 const approvalSha = (a) => sha(JSON.stringify([a.by, a.kind, a.review, a.reviewSha, a.at, a.tier, a.requireHuman, Object.entries(a.artifacts ?? {}).sort(([x], [y]) => x < y ? -1 : x > y ? 1 : 0)]));
+/** @id CODE-R30C-001 @implements REQ-R30C-001 */
 function approvalProvenance(feature, a) {
   const entries = readLedger();
   if (verifyChain(entries)) return false;
@@ -1773,7 +1782,8 @@ function declaredMissingModule(text, testPath) {
 }
 // multi-module builds print a zero-test line for modules without a match; only all-zero counts
 // Go: a package line with a duration but no `[no tests to run]`, or a `--- PASS/FAIL` line, means a test ran (#74)
-const RAN_TESTS = /tests run: [1-9]\d*,|(?:Passed|Failed)!\s+-\s+Failed:\s*\d+,\s*Passed:\s*\d+,\s*Skipped:\s*\d+,\s*Total:\s*[1-9]|^\s*--- (?:PASS|FAIL): |^(?:ok|FAIL)\s+\S+\s+(?:[\d.]+s|\(cached\))(?:(?!\[no tests)[^\n])*$|ran [1-9]\d* tests?\b|[1-9]\d* tests? (completed|successful|passed)|^ok \d+ |^[1-9]\d* (?:doc)?tests?, \d+ failures?/im;
+/** @id CODE-NODE-SUMMARY-001 @implements REQ-NODE-SUMMARY-001 */
+const RAN_TESTS = /tests run: [1-9]\d*,|(?:Passed|Failed)!\s+-\s+Failed:\s*\d+,\s*Passed:\s*\d+,\s*Skipped:\s*\d+,\s*Total:\s*[1-9]|^\s*--- (?:PASS|FAIL): |^(?:ok|FAIL)\s+\S+\s+(?:[\d.]+s|\(cached\))(?:(?!\[no tests)[^\n])*$|ran [1-9]\d* tests?\b|[1-9]\d* tests? (completed|successful|passed)|^ok \d+ |^[1-9]\d* (?:doc)?tests?, \d+ failures?|^(?:# |ℹ )(?:pass|fail) [1-9]\d*[ \t]*$/im;
 // vitest/jest summary that lists no passed test (everything skipped by -t) means nothing ran (#62)
 const NO_PASSED = /^\s*Tests:?\s+(?![^\n]*\d+ (?:passed|failed))[^\n]*\d+ (?:skipped|todo)|^(?:# |ℹ )pass 0\b[^\n]*\n(?:(?:# |ℹ )(?:fail|cancelled|skipped) 0\b[^\n]*\n)*(?:# |ℹ )(?:skipped|todo) [1-9]/im;
 const ZERO_TESTS = /(no tests? (found|ran|collected)|(?:# |ℹ )tests 0\b|ran 0 tests|collected 0 items|0 tests? (ran|found|passed)\b|no test files found|no tests were found|no tests to run|tests run: 0,|no tests executed|no test matches|all tests have been excluded)/i;
@@ -1817,7 +1827,7 @@ function nodeLiteralTitle(registration) {
         : ({ n: '\n', r: '\r', t: '\t', b: '\b', f: '\f', v: '\v', 0: '\0', '\n': '' }[char] ?? char));
   } catch { return null; }
 }
-/** @id CODE-R34-NODE-001 @implements REQ-R34-NODE-001 */
+/** @id CODE-R34-NODE-001 @implements REQ-R34-NODE-001 REQ-R33-NODE-001 */
 function nodeTestRan(text, id, testPath, passing = false) {
   const token = new RegExp(`${escapeRe(id)}(?![\\w-])`, 'i');
   // Bind the report to the literal registration following @id, never an ID-bearing parent.
@@ -5663,7 +5673,7 @@ function cargoWrapperTokens(text) {
   return result;
 }
 // Static, conservative execution-surface closure; never execute wrappers to discover their inputs.
-/** @id CODE-R34-CLOSURE-001 @implements REQ-R34-CLOSURE-001 */
+/** @id CODE-R34-CLOSURE-001 @implements REQ-R34-CLOSURE-001 REQ-CHECK-CLOSURE-001 REQ-CHECK-CLOSURE-002 REQ-CHECK-CLOSURE-003 */
 function checkDefClosure(cfg, read = null, knownFiles = null) {
   const live = read === null;
   read ??= (f) => { try { return fs.readFileSync(path.resolve(ROOT, f), 'utf8'); } catch { return null; } };
@@ -7612,7 +7622,7 @@ if (fn && flags.help && !['impact'].includes(pos[0])) {
 }
 try { process.exit(await fn() ?? 0); }
 catch (error) {
-  if (!/^REFUSED: unresolved (?:Rust include (?:oracle|ownership)|pytest_plugins|Python (?:relative import|module))/.test(error.message)) throw error;
+  if (!/^REFUSED: (?:source scan:|unresolved (?:Rust include (?:oracle|ownership)|pytest_plugins|Python (?:relative import|module)))/.test(error.message)) throw error;
   out(error.message);
   process.exit(1);
 }

@@ -16,6 +16,9 @@
   "engines": {
     "node": ">=20"
   },
+  "scripts": {
+    "test": "node --test --test-reporter=spec .github/skills/lean-sdd-tdd/scripts/sdd.test.mjs .github/skills/lean-sdd-tdd/scripts/spec-context.test.mjs .github/skills/lean-sdd-tdd/scripts/source-discovery.test.mjs"
+  },
   "devDependencies": {
     "typescript": "5.9.3"
   },

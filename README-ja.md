@@ -125,7 +125,7 @@ musubix6 sdd context src/example.mjs --max-bytes 32768
 
 ```sh
 npm ci
-node --test .github/skills/lean-sdd-tdd/scripts/sdd.test.mjs .github/skills/lean-sdd-tdd/scripts/spec-context.test.mjs
+npm test
 ```
 
 実行時の依存パッケージはありません。テストには `node_modules/typescript` の

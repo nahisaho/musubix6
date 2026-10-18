@@ -53,5 +53,87 @@
     },
     "tier": "T2",
     "requireHuman": false
+  },
+  "source-discovery": {
+    "by": "ai:claude-sonnet-5.5",
+    "kind": "ai",
+    "review": ".sdd/review-source-discovery.md",
+    "reviewSha": "9f4aa6e28c5e5e6b485aada1bc6fa995abca671192104ce3c88910466e2c5afd",
+    "at": "2026-10-18T11:35:43.593Z",
+    "artifacts": {
+      ".sdd/specs/source-discovery.md": "976e93a8165dd304b0dbd885e42fc81bd7b847491e5fcc2c6b8887a8d7fe362b"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "legacy-command-closure": {
+    "by": "ai:claude-sonnet-5.5",
+    "kind": "ai",
+    "review": ".sdd/review-legacy-command-closure.md",
+    "reviewSha": "058967fdcf9e8d34d0f413c6535fbc401562ccbc00d855f6d4986dc437d3710d",
+    "at": "2026-10-18T11:35:43.716Z",
+    "artifacts": {
+      ".sdd/specs/legacy-command-closure.md": "4b30d8ee6758c82c571d3394fbb9fdc7e05ef8bd9ac26d37aea5f2f0801840c1"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "legacy-native-verdicts": {
+    "by": "ai:claude-sonnet-5.5",
+    "kind": "ai",
+    "review": ".sdd/review-legacy-native-verdicts.md",
+    "reviewSha": "c6ff82681ed55997175d5d5c2e7bbf77b2e7872f9d4e95ea27f4c57278be584c",
+    "at": "2026-10-18T11:35:43.798Z",
+    "artifacts": {
+      ".sdd/specs/legacy-native-verdicts.md": "c409e8f49e694b35c1be97fbd696b63353436cdd04046e55c3d631e45cf40983"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "legacy-approval-provenance": {
+    "by": "ai:claude-sonnet-5.5",
+    "kind": "ai",
+    "review": ".sdd/review-legacy-approval-provenance.md",
+    "reviewSha": "1b94f29225fd4d4bf55ddaa995c645cd683c9b5264b34c7816d7da443fee6186",
+    "at": "2026-10-18T11:35:43.920Z",
+    "artifacts": {
+      ".sdd/specs/legacy-approval-provenance.md": "750219ae4c881fc8a27002e02562d070c71e421ebdc563858d22e7c7395a2fde"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "r36b-node-red": {
+    "by": "ai:claude-sonnet-5.5",
+    "kind": "ai",
+    "review": "Independent review of existing spec and retained regression contracts supports missing auto lock; no security or release authorization.",
+    "at": "2026-10-18T10:56:46.252Z",
+    "artifacts": {
+      ".sdd/specs/r36b-node-red.md": "1123ffcb2483fde4a819c5097face30334aeb754dba804936d1799821a564ad2"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "r36e-native-loader": {
+    "by": "ai:claude-sonnet-5.5",
+    "kind": "ai",
+    "review": "Independent review of existing loader/ownership contract supports missing auto lock; all assertions retained and current characterization required.",
+    "at": "2026-10-18T10:56:46.338Z",
+    "artifacts": {
+      ".sdd/specs/r36e-native-loader.md": "95f667d0af5ee46ab8e72cd80035a4295901c8b0a81019db220d4c5b4e1c85d1"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "node-summary-verdict": {
+    "by": "ai:claude-sonnet-5.5",
+    "kind": "ai",
+    "review": ".sdd/review-node-summary-verdict.md",
+    "reviewSha": "3f8b4c5f0b5a49ee1df2789218a94d0e0548ccf5fbfdaeabd504836766e66e51",
+    "at": "2026-10-18T13:54:13.896Z",
+    "artifacts": {
+      ".sdd/specs/node-summary-verdict.md": "667669a29cb38ba615836a7449b56d03311a2dff8b4517be7ab878c2ecfffc7a"
+    },
+    "tier": "T2",
+    "requireHuman": false
   }
 }

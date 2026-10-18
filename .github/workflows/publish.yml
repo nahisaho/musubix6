@@ -37,8 +37,7 @@ jobs:
         run: |
           sudo apt-get update -qq && sudo apt-get install -y -qq r-base-core
       - name: Run lean-sdd-tdd suite
-        working-directory: .github/skills/lean-sdd-tdd/scripts
-        run: node --test sdd.test.mjs spec-context.test.mjs
+        run: npm test
 
   publish:
     needs: test

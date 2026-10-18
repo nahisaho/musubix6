@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "testCmd": ["node", "--test", "--test-name-pattern", "{id}(?![0-9A-Za-z])", "{file}"],
+  "checks": [
+    {
+      "name": "test",
+      "cmd": ["npm", "test"],
+      "timeoutMs": 6000000
+    }
+  ],
+  "timeoutMs": 1800000,
+  "changedTimeoutMs": 1800000
+}
