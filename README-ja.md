@@ -115,6 +115,20 @@ musubix6 sdd context src/example.mjs --max-bytes 32768
 走査やメモリーの使用量ではありません。
 抽出結果は検証や承認の証跡にはなりません。検証範囲は変えず、マージ前の全体 `gate` も維持します。
 
+### ソースからのインストール(git clone)
+
+現時点では npm に公開していないため、リポジトリを clone してローカルからインストールします(Node.js 20 以上)。
+
+```sh
+git clone https://github.com/nahisaho/musubix6.git
+cd musubix6
+npm install -g .               # または: npm link
+musubix6 --version
+```
+
+グローバルインストールは clone したディレクトリへのリンクになるため、ディレクトリは削除しないでください。更新は clone 内で `git pull` します。
+`musubix6 init [dir]`(スキルのコピー)、`musubix6 list`、`musubix6 sdd gate` が使えます。
+
 ## チュートリアル
 
 要件定義から追加開発、マニュアル作成までの手順は [`docs/tutorial-app-development-1.md`](docs/tutorial-app-development-1.md) を参照してください。

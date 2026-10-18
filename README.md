@@ -114,7 +114,22 @@ the limit reduces agent input, not machine-side scanning or memory.
 Context is **not validation or approval evidence**: existing checks remain
 unchanged, and the full `gate` is still required before merge.
 
-### Install from npm
+### Install from source (git clone)
+
+The package is not yet published to npm. Clone the repository and install it
+from the local checkout (Node.js ≥ 20):
+
+```bash
+git clone https://github.com/nahisaho/musubix6.git
+cd musubix6
+npm install -g .               # or: npm link
+musubix6 --version
+```
+
+The global install links to this checkout, so keep the directory. Then use the
+`musubix6` commands below. To update: `git pull` in the clone.
+
+### Install from npm (once published)
 
 ```bash
 npm install -g musubix6        # or: npx musubix6 init
