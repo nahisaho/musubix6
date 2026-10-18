@@ -1,9 +1,9 @@
 # AI cost log (USD)
 
 - Project: `/home/nahisaho/GitHub/musubix6`
-- Updated: 2026-10-18 18:20 UTC
-- Sessions: 16
-- **Total: $739.73**
+- Updated: 2026-10-18 22:44 UTC
+- Sessions: 17
+- **Total: $741.28**
 - Basis: `total_nano_aiu` in the Copilot CLI session store / 1e9 = AIU; 1 AIU = 1 AI credit = 0.01 USD (docs.github.com, usage-based billing).
 - Local-machine estimate; the GitHub billing dashboard is authoritative.
 
@@ -14,7 +14,7 @@ Regenerate with `python3 scripts/cost-log.py`. Do not edit by hand.
 | Model | Calls | USD | Input tokens | Output tokens |
 |---|---:|---:|---:|---:|
 | claude-sonnet-5.5 | 21015 | $555.55 | 1798375608 | 19040477 |
-| gpt-6.1-sol | 11327 | $183.85 | 639874327 | 6583773 |
+| gpt-6.1-sol | 11411 | $185.40 | 645516945 | 6628238 |
 | gpt-5.6-terra | 26 | $0.33 | 412537 | 9674 |
 | gpt-5.6-luna | 8 | $0.01 | 47460 | 2438 |
 
@@ -43,4 +43,5 @@ Regenerate with `python3 scripts/cost-log.py`. Do not edit by hand.
 | 2026-10-14T19:41 | `c63580d5` | claude-sonnet-5.5 | 7 | $0.12 | Add npm Install Steps to README |
 | 2026-10-18T10:16 | `43ccc1d9` | gpt-6.1-sol | 1 | $0.06 | Explore GitHub Copilot |
 | 2026-10-18T10:17 | `7bd7a29e` | claude-sonnet-5.5 | 56 | $1.03 | Debug Skill Loading Error |
-| 2026-10-18T10:17 | `7bd7a29e` | gpt-6.1-sol | 168 | $4.57 | Debug Skill Loading Error |
+| 2026-10-18T10:17 | `7bd7a29e` | gpt-6.1-sol | 178 | $4.78 | Debug Skill Loading Error |
+| 2026-10-18T22:19 | `f19a6ec9` | gpt-6.1-sol | 74 | $1.35 | Remove Worktree Directory |

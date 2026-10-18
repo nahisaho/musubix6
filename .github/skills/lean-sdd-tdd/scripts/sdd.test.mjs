@@ -13360,10 +13360,11 @@ test('TEST-R36C-CLOSURE-002 r36c #367 repeated executable identifiers share fres
 test('#368 TEST-R36D-OWN-001 original native ownership fixture passes on the actual runtime', () => {
   const result = spawnSync(process.execPath, [
     '--test', '--test-reporter=tap',
-    '--test-name-pattern=^r33b #355 Node execution verification respects project', fileURLToPath(import.meta.url),
+    '--test-name-pattern=^TEST-R33-NODE-002 ', fileURLToPath(import.meta.url),
   ], { cwd: process.cwd(), encoding: 'utf8', env: ENV });
   const output = result.stdout + result.stderr;
   assert.equal(result.status, 0, `${process.execPath}\n${output}`);
+  assert.match(output, /^ok \d+ - TEST-R33-NODE-002 r33b /m);
   assert.match(output, /# pass 1\b/);
   assert.match(output, /# fail 0\b/);
 });
