@@ -9,7 +9,7 @@ Follow the user's language. Output = `.sdd/specs/<feature>.md` in the `lean-sdd-
 A reverse spec records **current behaviour**, not intent. Every row is labelled so a reader never mistakes "what the code does" for "what it should do".
 
 ## Rules
-1. **Read first, ask later.** Inspect the target (entry points, public API, tests, README, git log, existing `.sdd/specs/`) before any question. Never ask what the code answers.
+1. **Read first, ask later.** Inspect the target (entry points, public API, tests, README, git log) before any question. Read existing `.sdd/specs/` through the bundled `lean-sdd-tdd/scripts/sdd.mjs context <feature|REQ|file>...` (complete feature specs and declared prerequisites; default 16384 UTF-8 bytes, explicit `--max-bytes N` override). Resolve errors/overflow with narrower or explicit selectors, never a bulk read; a new/unannotated target may have no spec yet. Static impact cannot infer undeclared relationships. This reading context does not narrow full validation or replace the full gate. Never ask what the code answers.
 2. **Scope it.** One feature = one cohesive module or entry point. More than ~30 spec lines, or several modules → propose a split and a `.sdd/plan.md` (see `sdd-spec-interview` rule 11); do one feature at a time.
 3. **Evidence per row.** Each REQ cites `path:line` and a confidence: `high` (covered by tests or unambiguous code), `medium` (code only, no test), `low` (inferred, dead or odd code). Put them in a trailing `[src: path:line, conf: medium]`; `path` is **repo-relative** (`py/pkg/mod.py:4`, not `mod.py:4`), otherwise the gate warns the file does not exist.
 4. **Observe, don't assume.** Run the code/tests to confirm a behaviour. A row whose behaviour was not observed is `low`.

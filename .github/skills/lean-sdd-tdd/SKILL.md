@@ -61,6 +61,7 @@ Batch: write all tests for a feature, then red each, implement, green each, **on
 T2 only: parallel sub-agents by risk axis (security · correctness/state · contract · test adequacy), each diff-only, ≤200-word replies, findings to one file per feature, `.sdd/review-<feature>.md` (never share one `review.md` across features: it goes stale when the next feature overwrites it) (one line each: id|sev|path:line|state). Re-review Open items + fix diff only; stop after two clean rounds, then lock/merge.
 
 ## 5. Token rules
+Before reading existing specs, run `$S context <feature|REQ|file>...` (or `--changed` when every changed file maps to specs). It returns complete selected specs, declared artifacts and recursive `plan.md` prerequisites, not a summary. Default stdout budget: 16384 UTF-8 bytes; override explicitly with `--max-bytes N`, use `--json` for automation. On errors/overflow, resolve selectors or narrow the task; never treat partial/missing context as sufficient, and never bulk-read all specs as a fallback. Static file impact cannot infer undeclared relationships: add explicit feature selectors when needed. Context is not approval/test evidence and does not narrow validation; keep the full gate before merge.
 Read the spec and the specific files only; `view` ranges; quiet commands; one parallel batch for independent reads; no plan recaps; cite `path:line`. Suggest `/new` at boundaries. End with ≤8 lines: tier · REQs · gate verdict · open findings · next.
 
 ## Deterministic tests

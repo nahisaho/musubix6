@@ -78,6 +78,42 @@ $S --root <app> tdd green TEST-F-001
 $S --root <app> gate
 ```
 
+### Read only the specifications needed for a change (v0.1.2)
+
+Use `context` instead of loading every requirements file into the agent:
+
+```bash
+node .github/skills/lean-sdd-tdd/scripts/sdd.mjs context spec-context
+# After installing musubix6, run the same command through the wrapper:
+musubix6 sdd context REQ-SPECCTX-001 --json
+# In a target project: replace the example path with an existing source file.
+musubix6 sdd context src/example.mjs --max-bytes 32768
+```
+
+Selectors are exact, case-sensitive feature names, REQ IDs, specification paths,
+or existing project files; multiple selectors form a union. The output includes
+whole selected specs, their declared `artifacts`, and recursive prerequisites
+from `.sdd/plan.md`, with file paths and SHA-256 hashes. File selection reuses
+`impact`, including affected consumer features. It is static and file-granular,
+not semantic search: select additional features explicitly for undeclared
+relationships. No summary, persistent cache, or model service is used.
+
+The default limit is **16384 UTF-8 bytes for the entire output**, including JSON
+escaping and metadata, not an estimated token count. On overflow, exit 2 returns
+no bodies, the required size, and up to 10 feature-size entries. Narrow the task
+or explicitly raise `--max-bytes`. Unknown/ambiguous selectors, missing
+prerequisites/artifacts, duplicate definitions, dependency cycles and paths
+escaping the project root are errors, not partial success.
+
+`--root DIR` chooses the target project (default: working directory).
+`context --changed` uses Git's current staged, unstaged and untracked files;
+every changed file must resolve. Clean trees, deleted/unowned files and missing
+Git fail explicitly; select a feature/REQ instead. Bundled SDD skills now use
+this selective reading workflow. Repository scanning still happens locally;
+the limit reduces agent input, not machine-side scanning or memory.
+Context is **not validation or approval evidence**: existing checks remain
+unchanged, and the full `gate` is still required before merge.
+
 ### Install from npm
 
 ```bash
@@ -106,7 +142,7 @@ running the suite (Node ≥ 20):
 
 ```sh
 npm ci
-node --test .github/skills/lean-sdd-tdd/scripts/sdd.test.mjs
+node --test .github/skills/lean-sdd-tdd/scripts/sdd.test.mjs .github/skills/lean-sdd-tdd/scripts/spec-context.test.mjs
 ```
 
 The runtime remains zero-dependency. Tests require the exact TypeScript 5.9.3

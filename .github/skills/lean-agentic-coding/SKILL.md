@@ -17,6 +17,7 @@ Rule: **rigor scales with risk, context scales with the diff.**
 Unsure → pick the higher tier. Escalate mid-task if a T2 trigger appears; never downgrade silently.
 
 ## 1. Context budget (all tiers)
+- With `.sdd/specs`, run the bundled `lean-sdd-tdd/scripts/sdd.mjs context <feature|REQ|file>...` before reading specs; `--changed` requires every changed file to resolve. Complete feature specs, artifacts and declared prerequisites are returned within 16384 UTF-8 bytes (`--max-bytes N` overrides explicitly). Resolve errors/overflow by narrowing selectors, not by bulk-reading all specs; add explicit selectors for relationships static impact cannot infer. Reading context never replaces approval/evidence or narrows full validation; run the full gate before merge.
 - Read `AGENTS.md` (≤1 KB pointer file) and the single contract file only. Locate with grep/glob; `view` with line ranges; never read whole large files, lockfiles, coverage, `node_modules`, generated output.
 - Run commands with quiet flags and `| tail`/`head`; report only failures + counts. Use `scripts/gate.sh` for compact results.
 - Independent reads/searches in one parallel batch. Delegate to sub-agents only work needing separate context, and give them a bounded goal + stop condition + "return ≤200 words".

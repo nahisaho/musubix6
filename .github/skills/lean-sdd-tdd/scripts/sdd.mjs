@@ -7474,7 +7474,7 @@ function cargoMembersOf(f) {
     });
   } catch { return []; }
 }
-function impactOne(target) {
+function impactOne(target, collect = false) {
   if (!target) { out('usage: impact <REQ-ID|TEST-ID|CODE-ID|file> [--json] [--all]'); return 2; }
   const specs = loadSpecs();
   const { ents } = scanEntities(listFiles());
@@ -7559,6 +7559,7 @@ function impactOne(target) {
     otherReqs: [...affected].map(([r, v]) => ({ req: r, feature: reqFeature.get(r) ?? null, via: [...v] })),
     reachedTests: reached.filter((f) => entsIn(f).some((e) => e.refs.verifies.length) || TEST_FILE.test(f)),
   };
+  if (collect) return result;
   if (flags.json) { out(JSON.stringify(result)); return 0; }
   const lim = flags.all ? Infinity : 8;
   const cap = (a, n = lim) => a.slice(0, n).join(', ') + (a.length > n ? `, … +${a.length - n} more` : '');
@@ -7586,25 +7587,30 @@ function impactOne(target) {
   return 0;
 }
 
-const cmds = { review: cmdReview, init: cmdInit, approve: cmdApprove, guard: cmdGuard, tdd: cmdTdd, trace: cmdTrace, gate: cmdGate, status: cmdStatus, plan: cmdPlan, impact: cmdImpact };
+async function cmdContext() {
+  const { runContext } = await import('./spec-context.mjs');
+  return runContext({ ROOT, pos, flags, loadSpecs, loadPlan, changedFiles, workspaceFiles, impactOne });
+}
+
+const cmds = { review: cmdReview, init: cmdInit, approve: cmdApprove, guard: cmdGuard, tdd: cmdTdd, trace: cmdTrace, gate: cmdGate, status: cmdStatus, plan: cmdPlan, impact: cmdImpact, context: cmdContext };
 const fn = cmds[pos[0]];
 // a mistyped flag (`gate --changd`) must not silently run the full gate (#146)
 // known flags = every flags.<name> / flags['<name>'] this script reads
-const KNOWN_FLAGS = new Set([...fs.readFileSync(new URL(import.meta.url), 'utf8').matchAll(/\bflags(?:\.([\w-]+)|\['([\w-]+)'\])/g)].map((m) => m[1] ?? m[2]).concat(['help']));
+const KNOWN_FLAGS = new Set([...fs.readFileSync(new URL(import.meta.url), 'utf8').matchAll(/\bflags(?:\.([\w-]+)|\['([\w-]+)'\])/g)].map((m) => m[1] ?? m[2]).concat(['help', 'max-bytes']));
 const badFlags = Object.keys(flags).filter((k) => !KNOWN_FLAGS.has(k));
 if (fn && badFlags.length) {
   out(`unknown flag${badFlags.length > 1 ? 's' : ''}: ${badFlags.map((k) => '--' + k).join(', ')} (known: ${[...KNOWN_FLAGS].map((k) => '--' + k).join(' ')})`);
   process.exit(2);
 }
 if (!fn) {
-  out('usage: sdd.mjs init | review template <feature|--feature f> | review check <file> --feature <f> (or positional feature) | approve prepare|record <feature> | guard | tdd red|green|refactor <TEST-ID> | tdd stub <TEST-ID> [<TEST-ID>... | --all] | tdd check | trace [--baseline] | gate [--changed] [--no-run] | status | plan | impact <REQ|TEST|CODE|file> [--json]   [--root dir]\n  tdd red: tdd red --characterization "<reason>" records a data-only/characterization test that cannot fail without implementation (weak Red); --expect <text> requires that text in the failure; --allow-setup-red accepts a stub-in-setup Red; --retest "<reason>" re-records a weak Red after correcting a wrong test expectation (needs a previous Red/Green and a changed test); --missing-module accepts a Red caused by the test own not-yet-created import (non-weak); approve record --by ai:<reviewer> needs --review <path|summary>');
+  out('usage: sdd.mjs init | review template <feature|--feature f> | review check <file> --feature <f> (or positional feature) | approve prepare|record <feature> | guard | tdd red|green|refactor <TEST-ID> | tdd stub <TEST-ID> [<TEST-ID>... | --all] | tdd check | trace [--baseline] | gate [--changed] [--no-run] | status | plan | impact <REQ|TEST|CODE|file> [--json] | context <feature|REQ|file>... | context --changed [--max-bytes N] [--json]   [--root dir]\n  tdd red: tdd red --characterization "<reason>" records a data-only/characterization test that cannot fail without implementation (weak Red); --expect <text> requires that text in the failure; --allow-setup-red accepts a stub-in-setup Red; --retest "<reason>" re-records a weak Red after correcting a wrong test expectation (needs a previous Red/Green and a changed test); --missing-module accepts a Red caused by the test own not-yet-created import (non-weak); approve record --by ai:<reviewer> needs --review <path|summary>');
   process.exit(2);
 }
 if (fn && flags.help && !['impact'].includes(pos[0])) {
-  out(`usage: sdd.mjs ${pos[0]} ${{ gate: '[--changed] [--no-run] [--verbose]', trace: '[--baseline] [--verbose]' }[pos[0]] ?? '(see sdd.mjs --help for all commands)'}`.replace('sdd.mjs gate', 'gate').replace('sdd.mjs trace', 'trace'));
+  out(`usage: sdd.mjs ${pos[0]} ${{ gate: '[--changed] [--no-run] [--verbose]', trace: '[--baseline] [--verbose]', context: '<feature|REQ|file>... [--changed] [--max-bytes N] [--json]' }[pos[0]] ?? '(see sdd.mjs --help for all commands)'}`.replace('sdd.mjs gate', 'gate').replace('sdd.mjs trace', 'trace'));
   process.exit(0);
 }
-try { process.exit(fn() ?? 0); }
+try { process.exit(await fn() ?? 0); }
 catch (error) {
   if (!/^REFUSED: unresolved (?:Rust include (?:oracle|ownership)|pytest_plugins|Python (?:relative import|module))/.test(error.message)) throw error;
   out(error.message);
