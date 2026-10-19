@@ -26,6 +26,19 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: '1.99.0'
+      - uses: actions/setup-python@v5
+        id: diagnostic-python
+        with:
+          python-version: '3.14'
+          update-environment: false
+      - name: Provision pinned diagnostic developer tools
+        run: |
+          "${{ steps.diagnostic-python.outputs.python-path }}" -m venv "$RUNNER_TEMP/sdd-diagnostics"
+          "$RUNNER_TEMP/sdd-diagnostics/bin/python" -m pip install -r scripts/diagnostics-tools.txt
+          printf 'MUSUBIX_DIAGNOSTICS_TEST_VENV=%s\n' "$RUNNER_TEMP/sdd-diagnostics" >> "$GITHUB_ENV"
       - name: Provision isolated pytest
         run: |
           python3 -m venv "$RUNNER_TEMP/sdd-pytest"

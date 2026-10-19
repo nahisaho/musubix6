@@ -114,13 +114,13 @@ the limit reduces agent input, not machine-side scanning or memory.
 Context is **not validation or approval evidence**: existing checks remain
 unchanged, and the full `gate` is still required before merge.
 
-### Diagnose TypeScript before running the final gate (development checkout)
+### Diagnose projects before running the final gate (development checkout)
 
 This feature is available in the development checkout, **not the published
 0.1.2 package**. Install the CLI from that checkout or run its SDD script
 directly. Refresh copied skills separately as described below.
 
-The target project needs `node_modules/typescript` **5.9.x**,
+The default `typescript` profile needs `node_modules/typescript` **5.9.x**,
 `node_modules/eslint` **ESLint 9.x**, a root `tsconfig.json`, and exactly one
 root `eslint.config.js`, `eslint.config.mjs` or `eslint.config.cjs`. Existing
 plugins/parsers must already be installed. Packages may be symlinks; ancestor
@@ -131,27 +131,51 @@ are not supported. Replace `/path/to/project` with your project directory:
 musubix6 sdd diagnostics --root /path/to/project --json
 # Without --json, read the same result as text:
 musubix6 sdd diagnostics --root /path/to/project
+# Explicit profiles; tools must already exist in the target project/environment:
+musubix6 sdd diagnostics --root /path/to/project --profile javascript --json
+musubix6 sdd diagnostics --root /path/to/project --profile python --json
+musubix6 sdd diagnostics --root /path/to/project --profile rust --json
 ```
 
-Omitting `--root` uses the working directory. `--help` must be used alone.
-The command checks the whole tsconfig-selected project and compiler
+Omitting `--root` uses the working directory; omitting `--profile` means
+`typescript`, never language autodetection. `--help` must be used alone.
+The default profile checks the whole tsconfig-selected project and compiler
 dependencies, not just edited files. JavaScript type checking follows
 `allowJs`/`checkJs`. ESLint checks non-declaration script inputs and respects
 ignores and unconfigured file types; its file counts disclose that scope.
 Project references, `--changed`, automatic monorepo selection and LSP/IDE
 connections are not supported.
 
+| Profile | Required tools and scope |
+|---|---|
+| `javascript` | Root-local ESLint 9.x and one root flat config; no TypeScript/tsconfig. Recursively checks `.js/.jsx/.mjs/.cjs` (case-insensitive), excluding `.git/node_modules/.venv` and directory symlinks; respects native ignores/unconfigured inputs. |
+| `python` | Root `.venv` only: Python 3.14.x, Ruff 0.17.1 and mypy 2.4.0, both mandatory. Checks project-wide `.py/.pyi`, excluding `.git/.venv` and directory symlinks; honors native exclusions, but not mypy's configured files/modules/packages. No notebook inputs or PATH/global/ancestor tool fallback. |
+| `rust` | Installed cargo/rustc 1.99.x, root `Cargo.toml` and existing `Cargo.lock`, one root package, existing external Cargo home and cached offline dependencies. Runs `cargo check --all-targets --offline --locked` with default features, not Clippy/all features/multi-package workspaces. |
+
+JavaScript/Python enumeration is conservative: a symlink whose target cannot be
+resolved outside excluded directories makes that provider INCOMPLETE, even for an
+unrelated file extension.
+
+Python startup ignores `.pth`/`PYTHONPATH` and system-site packages. Root config
+priority is Ruff `.ruff.toml` > `ruff.toml` > `pyproject.toml[tool.ruff]`,
+and mypy `mypy.ini` > `.mypy.ini` > `pyproject.toml[tool.mypy]` >
+`setup.cfg[mypy]`. Shared configs without the relevant section do not apply;
+malformed configs are incomplete. No applicable config means isolated defaults,
+not nested/ancestor discovery. Explicit config extensions/imports/plugins are trusted.
+
 | Result | Exit code | Meaning |
 |---|---|---|
-| PASS | 0 | Both providers completed; no errors. Warnings are still reported. |
-| FAIL | 1 | Both providers completed and found errors. |
+| PASS | 0 | All required providers completed; no errors. Warnings are still reported. |
+| FAIL | 1 | All required providers completed and found errors. |
 | INCOMPLETE | 2 | A provider, input or configuration failed; this is not a clean result. |
 
 INCOMPLETE takes precedence over any collected errors. Missing tools,
 unsupported versions, broken config/plugins, no eligible ESLint inputs,
 all inputs ignored, signals, malformed output and limits are not passes.
-Each provider has a **60-second** limit, including config loading, and a
-combined stdout/stderr limit of **8 MiB**. Fix the reported setup issue or
+Each provider has a **60-second** limit (**180 seconds** for cargo-check) and a
+combined native stdout/stderr limit of **8 MiB**, cumulative across probes,
+selection and checking. Worker protocol output has a separate 8-MiB cap.
+Fix the reported setup issue or
 static error, then rerun; do not suppress the failure to claim completion.
 
 JSON uses `schemaVersion: 1`, `profile`, resolved `root`, start/end timestamps,
@@ -161,14 +185,28 @@ file counts and diagnostics (`source`, `file`, 1-based UTF-16 `line`/`column`,
 `code`, `severity`, `message`). Missing file locations are null. Incomplete
 providers have null counts, not zero; TypeScript's checked count includes
 compiler dependencies, so do not sum it with ESLint's count.
+Python counts direct candidates/selected/excluded sources, not imported files;
+imported-file diagnostics remain visible. mypy's columns on non-ASCII lines are
+unreliable and returned as null with an `info/location-unavailable` notice.
+Rust counts distinct metadata target roots/observed roots (ignored=0), not every
+module or feature combination; early errors can leave checked below included.
 
-The command does not install/download tools, fix or emit files, cache results,
-or append TDD history. ESLint configuration/plugins execute local code and
-can have side effects: use only trusted projects; this is not isolation.
+The command does not install/download tools, fix sources, cache diagnostics,
+or append TDD history. Python disables bytecode/Ruff/mypy persistence.
+Rust overrides both target and build directories into private external scratch;
+the parent stops owned workers/ordinary descendants and removes that scratch
+before returning. Cleanup errors force INCOMPLETE. An existing `CARGO_HOME`
+(relative paths resolve from the project), or default `~/.cargo`, must resolve
+outside the project. Normal external Cargo cache management/materialization may
+persist (`.global-cache`, `.package-cache`, `.package-cache-mutate`,
+`registry/src` and registry markers); automatic cache GC is disabled.
+These exceptions are not permission to change project outputs.
+Configurations/plugins/build scripts/proc macros execute trusted local code
+with arbitrary side effects, including possible network access: this is not a sandbox.
+Parent SIGKILL/power loss and self-detached descendants cannot be fully cleaned.
 Results are a **snapshot**, not proof of runtime correctness, TDD Red/Green,
 approval or release readiness. Keep targeted tests and the final full `gate`.
 Only Linux/Node 24 has been exercised locally; macOS/Windows remain unverified.
-Standalone JavaScript without tsconfig, Python and Rust are planned next.
 No measured time or AI-cost reduction is claimed.
 
 ### Install the published npm package
@@ -379,10 +417,13 @@ A Japanese walkthrough (interview → spec → TDD → follow-up feature → man
 ## Tests
 
 From the repository root, install the development-only diagnostic fixtures before
-running the suite (Node ≥ 20):
+running the suite (Node ≥ 20, Python 3.14.x and installed cargo/rustc 1.99.x):
 
 ```sh
 npm ci
+python3.14 -m venv /tmp/musubix6-diagnostic-tools
+/tmp/musubix6-diagnostic-tools/bin/python -m pip install -r scripts/diagnostics-tools.txt
+export MUSUBIX_DIAGNOSTICS_TEST_VENV=/tmp/musubix6-diagnostic-tools
 npm test
 ```
 
@@ -390,6 +431,9 @@ The runtime remains zero-dependency. Tests require the exact TypeScript 5.9.3
 installation in `node_modules/typescript`; an explicit `SDD_R34_TYPESCRIPT`
 directory overrides that default. A missing compiler fails the regression rather
 than skipping it, and its per-command 15-second budget is unchanged.
+The profile regressions also require the pinned Ruff/mypy venv and Rust toolchain;
+missing prerequisites fail, never silently skip. Tests do not download tools.
+Use your own private venv path instead of the example path when sharing a machine.
 
 Install Python 3 with pytest and R for the required native controls. Other native
 tests use their respective toolchains (C/C++ with CMake, Go, Cargo/Rust, JDK with

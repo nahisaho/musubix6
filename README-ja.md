@@ -117,13 +117,13 @@ musubix6 sdd context src/example.mjs --max-bytes 32768
 走査の処理量やメモリー使用量ではありません。
 抽出結果は検証や承認の証跡にはなりません。検証範囲は変えず、マージ前の全体 `gate` も維持します。
 
-### 最終 gate の前に TypeScript を診断する(開発版)
+### 最終 gate の前にプロジェクトを診断する(開発版)
 
 この機能は開発用チェックアウトで利用できます。**公開済みの 0.1.2 には含まれません**。
 チェックアウトから CLI を導入するか、同梱の SDD スクリプトを直接実行してください。
 コピー済みスキルの更新は、後述の手順で別途行います。
 
-対象プロジェクトには、`node_modules/typescript` の **5.9.x** と
+既定の `typescript` プロファイルには、`node_modules/typescript` の **5.9.x** と
 `node_modules/eslint` の **ESLint 9.x**、ルートの `tsconfig.json` が必要です。
 ルートに `eslint.config.js`・`eslint.config.mjs`・`eslint.config.cjs` のいずれか1つを用意し、
 使用するプラグインやパーサーも事前に導入してください。
@@ -135,25 +135,48 @@ musubix6 sdd context src/example.mjs --max-bytes 32768
 musubix6 sdd diagnostics --root /path/to/project --json
 # --json を省くと、人が読めるテキストで表示します。
 musubix6 sdd diagnostics --root /path/to/project
+# 言語を明示する場合。対象のツールは事前に導入してください。
+musubix6 sdd diagnostics --root /path/to/project --profile javascript --json
+musubix6 sdd diagnostics --root /path/to/project --profile python --json
+musubix6 sdd diagnostics --root /path/to/project --profile rust --json
 ```
 
-`--root` を省くと作業ディレクトリを使います。`--help` は単独で指定してください。
-変更ファイルだけでなく、tsconfig が選んだプロジェクト全体とコンパイラーの依存先を検査します。
+`--root` を省くと作業ディレクトリを使います。`--profile` の既定値は `typescript` で、言語の自動判定はしません。
+`--help` は単独で指定してください。既定のプロファイルは、変更ファイルだけでなく、
+tsconfig が選んだプロジェクト全体とコンパイラーの依存先を検査します。
 JavaScript の型検査は `allowJs`・`checkJs` に従います。
 ESLint は宣言ファイル以外のスクリプトを対象とし、ignore や未設定の拡張子を尊重します。
 検査範囲はファイル件数で確認できます。
 project references、`--changed`、モノレポの自動選択、LSP・IDE 接続は未対応です。
 
+| プロファイル | 必要なツールと検査範囲 |
+|---|---|
+| `javascript` | ルートの ESLint 9.x と flat config 1つ。TypeScript と tsconfig は不要です。`.js/.jsx/.mjs/.cjs` を大文字小文字を区別せず再帰的に列挙し、`.git/node_modules/.venv` とディレクトリの symlink を除きます。native の ignore と設定のない入力も尊重します。 |
+| `python` | ルートの `.venv` に Python 3.14.x、Ruff 0.17.1、mypy 2.4.0 が必要です。両ツールで全体の `.py/.pyi` を検査します。`.git/.venv` とディレクトリの symlink、native の除外を尊重し、mypy の files/modules/packages 指定は全体検査で置き換えます。Notebook や PATH・親・global のツールは使いません。 |
+| `rust` | 導入済みの cargo/rustc 1.99.x、ルートの `Cargo.toml` と既存の `Cargo.lock`、単一のルート package が必要です。プロジェクト外に既存の Cargo home と offline 用の依存を用意します。`cargo check --all-targets --offline --locked` を既定の features で実行します。Clippy、全 features、複数 package の workspace は対象外です。 |
+
+JavaScript・Python で候補を列挙するとき、除外ディレクトリの外で symlink のリンク先を確認できなければ、
+拡張子を問わず当該ツールを未完了にします。切れたリンクも黙って無視しない保守的な制限です。
+
+Python は起動時の `.pth`・`PYTHONPATH`・system-site-packages を使いません。
+ルート設定の優先順は、Ruff が `.ruff.toml` → `ruff.toml` → `pyproject.toml[tool.ruff]`、
+mypy が `mypy.ini` → `.mypy.ini` → `pyproject.toml[tool.mypy]` → `setup.cfg[mypy]` です。
+共用設定に対応する section がなければ適用せず、構文が不正なら未完了にします。
+設定がなければ隔離した既定値を使い、親や入れ子の設定は自動探索しません。
+設定で明示した拡張先や import、plugin は信頼するコードとして扱います。
+
 | 結果 | 終了コード | 意味 |
 |---|---|---|
-| PASS | 0 | 両ツールが完了し、error がない状態です。warning は表示します。 |
-| FAIL | 1 | 両ツールが完了し、error がある状態です。 |
+| PASS | 0 | 必須ツールがすべて完了し、error がない状態です。warning は表示します。 |
+| FAIL | 1 | 必須ツールがすべて完了し、error がある状態です。 |
 | INCOMPLETE | 2 | ツール・入力・設定などの問題で未完了です。問題なしとは扱いません。 |
 
 取得できた error があっても、INCOMPLETE を優先します。
 未導入、未対応版、設定やプラグインの不備、ESLint の検査対象なし、
 全件 ignore、signal、不正な出力、実行上限の超過は成功ではありません。
-上限はツールごとに設定読み込みを含めて **60 秒**、標準出力と標準エラーの合計 **8 MiB** です。
+時間の上限はツールごとに **60 秒**、cargo-check だけ **180 秒** です。
+probe・入力選択・検査を通じて、native の標準出力と標準エラーを合計 **8 MiB** に制限します。
+worker の通信出力にも、別に 8 MiB の上限があります。
 報告された設定不備や静的エラーを修正して再実行してください。
 失敗を無視して完了扱いにしないでください。
 
@@ -163,14 +186,28 @@ JSON には `schemaVersion: 1`、`profile`、解決済みの `root`、開始・�
 診断は `source`・`file`・1始まりの UTF-16 位置 `line`／`column`・`code`・`severity`・`message` で表します。
 ファイル位置がない場合は null、未完了の件数も0ではなく null です。
 TypeScript の検査件数にはコンパイラーの依存先も含むため、ESLint の件数とは合算しません。
+Python の件数は直接の候補・選択済み・除外済みソースを表し、import 先は含みません。
+ただし、import 先の診断は表示します。mypy は非 ASCII 行の列が不確かなため、
+`column: null` と `info/location-unavailable` の通知を返します。
+Rust は metadata の target root と観測できた root を重複なく数え、ignored は 0 です。
+全 module や features の網羅数ではありません。早期エラー時には checked が included を下回る場合があります。
 
-診断処理はツールの導入・ダウンロード、自動修正、emit、キャッシュ、TDD 履歴への追記を行いません。
-ただし、ESLint の設定やプラグインはローカルコードとして実行され、副作用を持つ場合があります。
-信頼するプロジェクトでのみ使ってください。隔離実行ではありません。
+診断処理はツールの導入・ダウンロード、自動修正、診断のキャッシュ、TDD 履歴への追記を行いません。
+Python の bytecode と Ruff・mypy の永続キャッシュも無効にします。
+Rust の target と build の出力は、プロジェクト外に作る専用の一時領域へ向けます。
+親プロセスが worker と通常の子孫プロセスを停止し、その領域を削除してから結果を返します。
+削除に失敗した場合は INCOMPLETE です。
+`CARGO_HOME`、未指定なら `~/.cargo` は、実体がプロジェクト外にある既存ディレクトリを使います。
+相対パスはプロジェクトを基準に解決します。
+通常の Cargo cache 管理ファイルや既存 archive の展開結果は残る場合があります。
+対象には `.global-cache`・`.package-cache`・`.package-cache-mutate`・`registry/src` と registry のマーカーを含みます。
+自動 cache GC は無効にし、プロジェクトの既存生成物は変更しません。
+設定、plugin、build script、proc macro は信頼するローカルコードとして実行します。
+任意の副作用やネットワーク利用を防ぐ sandbox ではありません。
+親自身の SIGKILL、電源断、自己 detach した子孫の後始末も保証しません。
 結果は実行時点の **スナップショット** であり、実行時の正しさ、TDD の Red／Green、
 承認、リリース準備完了の証拠にはなりません。対象テストと最終の全体 `gate` は維持してください。
 ローカルで確認した環境は Linux／Node 24 です。macOS／Windows は未確認です。
-tsconfig のない JavaScript 単独プロジェクト、Python、Rust は次期対応です。
 時間や AI コストがどれだけ減るかは未測定です。
 
 ### 公開済みの npm パッケージをインストールする
@@ -377,10 +414,14 @@ CLI を以前の版に戻しても、ユーザー単位のコピーは元に戻�
 
 ## テスト
 
-リポジトリのルートで、診断テスト用の開発依存をインストールしてから実行します(Node ≥ 20)。
+Node ≥ 20、Python 3.14.x、導入済みの cargo/rustc 1.99.x を用意してください。
+リポジトリのルートで、診断テスト用の開発依存をインストールしてから実行します。
 
 ```sh
 npm ci
+python3.14 -m venv /tmp/musubix6-diagnostic-tools
+/tmp/musubix6-diagnostic-tools/bin/python -m pip install -r scripts/diagnostics-tools.txt
+export MUSUBIX_DIAGNOSTICS_TEST_VENV=/tmp/musubix6-diagnostic-tools
 npm test
 ```
 
@@ -388,6 +429,9 @@ npm test
 TypeScript 5.9.3 が必要です。別のインストール先を使う場合は、ディレクトリを
 `SDD_R34_TYPESCRIPT` で指定できます。コンパイラーがなければ回帰テストは失敗し、
 スキップしません。コマンドごとの上限は従来どおり 15 秒です。
+追加プロファイルの回帰テストには、上記の固定版 Ruff・mypy と Rust も必須です。
+前提ツールがなければ失敗し、黙ってスキップしたり自動取得したりはしません。
+共有環境では、例の `/tmp` パスを自分専用の venv に置き換えてください。
 
 必須のネイティブ実行テストには Python 3 と pytest、R を用意してください。
 ほかのネイティブテストには、対象に応じたツールチェーンが必要です。

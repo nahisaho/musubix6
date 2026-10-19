@@ -137,16 +137,19 @@
     "requireHuman": false
   },
   "diagnostics-contract": {
-    "by": "ai:claude-sonnet-5.5",
-    "kind": "ai",
-    "review": ".sdd/review-diagnostics-contract.md",
-    "reviewSha": "2e92edd1e93636f9c1052128ec3c579e3cfafe42f231ae9f1d1ee148e821f56a",
-    "at": "2026-10-19T06:41:14.558Z",
+    "by": "nahisaho",
+    "kind": "human",
+    "at": "2026-10-19T12:26:33.751Z",
     "artifacts": {
-      ".sdd/specs/diagnostics-contract.md": "935375139e865a9495642897d3482f83466c87c04221236cea6c1119e9762cc7"
+      ".sdd/specs/diagnostics-contract.md": "29585c92885d3cc83d6b7f24553d621e4385388fb2b0887a6048db4c7dc033bb"
     },
     "tier": "T2",
-    "requireHuman": false
+    "requireHuman": true,
+    "code": {
+      ".github/skills/lean-sdd-tdd/scripts/diagnostics-native.mjs": "286a5d308345e7154e98efad1bedb174c426d455cc95162563897231d1c3d6d4",
+      ".github/skills/lean-sdd-tdd/scripts/diagnostics-worker.mjs": "8b734433687a6370d49ef77080a2a93bbf66bec47d2039a5297c3e4118c7c108",
+      ".github/skills/lean-sdd-tdd/scripts/diagnostics.mjs": "c32e1a75ed8a33cec4e630b12d89ce27756b33dcdc2affeb36c0a873facfb2d7"
+    }
   },
   "diagnostics-typescript": {
     "by": "ai:claude-sonnet-5.5",
@@ -175,13 +178,50 @@
   "diagnostics-workflow": {
     "by": "ai:claude-sonnet-5.5",
     "kind": "ai",
-    "review": ".sdd/review-diagnostics-workflow.md",
-    "reviewSha": "28e8437ab7e17f0864e307eb017ceeefb8bfa9dc7099705edb10cfab0aa6905e",
-    "at": "2026-10-19T06:41:14.897Z",
+    "review": ".sdd/review-diagnostics-workflow-v2.md",
+    "reviewSha": "81f72c60e2de80d4e64d78a5a85f2a2837206fbdb6094e24d6904b83940620d6",
+    "at": "2026-10-19T16:40:59.770Z",
     "artifacts": {
-      ".sdd/specs/diagnostics-workflow.md": "1ee5c2f93dfbab38059a1d778b4c9b3bf17a60b12498e111a6d60271ce6fa19f"
+      ".sdd/specs/diagnostics-workflow.md": "24b39b56654fc275727b039dcdb955bf2103e5bce70e778bfd7a037b4ba742a6"
     },
     "tier": "T2",
     "requireHuman": false
+  },
+  "diagnostics-javascript": {
+    "by": "ai:claude-sonnet-5.5",
+    "kind": "ai",
+    "review": ".sdd/review-diagnostics-javascript.md",
+    "reviewSha": "ca2886056a8dd9d85c79b08dfde526907d2c0c4fbf8e99dc4c534f451203e9b8",
+    "at": "2026-10-19T12:43:39.641Z",
+    "artifacts": {
+      ".sdd/specs/diagnostics-javascript.md": "5c52b5aee421ded8b8bd0beddc87f7322d322f082385359f51dd758e04a36be4"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "diagnostics-python": {
+    "by": "ai:claude-sonnet-5.5",
+    "kind": "ai",
+    "review": ".sdd/review-diagnostics-python.md",
+    "reviewSha": "e31fe66fea291f2578e3618b244b09f471380d12643d08e6d692b0e49088a2b4",
+    "at": "2026-10-19T12:43:39.924Z",
+    "artifacts": {
+      ".sdd/specs/diagnostics-python.md": "ca4d600e46374ded18a0acc73e7d90321d1a0606a3f2e89d08eb4bb8b307608a"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "diagnostics-rust": {
+    "by": "nahisaho",
+    "kind": "human",
+    "at": "2026-10-19T19:24:53.398Z",
+    "artifacts": {
+      ".sdd/specs/diagnostics-rust.md": "22403034ee9681e0aa55f1587f5a34ca21520e6330b35a7f14886358573411c8"
+    },
+    "tier": "T2",
+    "requireHuman": true,
+    "code": {
+      ".github/skills/lean-sdd-tdd/scripts/diagnostics-rust.mjs": "0e33a254c9dc32ec045588e5e629ba06f83a5c4d2f7351221aae29ad1f00210a"
+    }
   }
 }

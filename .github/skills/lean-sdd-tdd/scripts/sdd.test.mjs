@@ -12998,7 +12998,7 @@ test('r35b #364 CI qualifies Node 20/22/24 without publication and retains failu
   const ci = fs.readFileSync(workflowPath, 'utf8');
   assert.match(ci, /push:\s*\n\s+pull_request:\s*\n\s+workflow_dispatch:/);
   assert.match(ci, /permissions:\s*\n\s+contents: read/);
-  assert.doesNotMatch(ci, /secrets\.|id-token:|contents: write|npm publish|environment:|pull_request_target/);
+  assert.doesNotMatch(ci, /secrets\.|id-token:|contents: write|npm publish|(?<![\w-])environment:|pull_request_target/);
   assert.match(ci, /runs-on: ubuntu-latest/);
   assert.match(ci, /node: \[20, 22, 24\]/);
   assert.match(ci, /fail-fast: false/);
