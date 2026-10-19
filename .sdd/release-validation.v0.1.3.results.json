@@ -1,0 +1,180 @@
+{
+  "schemaVersion": 1,
+  "targetVersion": "0.1.3",
+  "status": "published-qualification-in-progress",
+  "manifestSha256": "b637beb6dcd9093b0f1b2767f156f3109cbf9a8d02b2e12fee88992d0f3f7da0",
+  "consecutiveCompleteCleanRuns": 0,
+  "runs": [
+    {
+      "runId": "run1",
+      "status": "FAIL",
+      "manifestSha256": "efa19b454192e3ae8b27e3a6dedb9b9c7162c3e4a84b4f4ef28541ea8dbc061c",
+      "report": "/home/nahisaho/.copilot/session-state/f19a6ec9-6db2-429b-a409-154bd92f91ad/files/qualification-v013/run1/result.json",
+      "reportSha256": "cd2ad1defdcfad587e00f6af8655a6ceb2a95d51c47460ba64eb2991bb0b25fd"
+    }
+  ],
+  "humanReleaseApproved": false,
+  "publishingAuthorized": false,
+  "published": true,
+  "observedPublication": {
+    "checkedAt": "2026-10-19T22:07:40.403Z",
+    "publishedAt": "2026-10-19T20:33:35.448Z",
+    "registry": "https://registry.npmjs.org/",
+    "version": "0.1.3",
+    "latest": "0.1.3",
+    "tarball": "https://registry.npmjs.org/musubix6/-/musubix6-0.1.3.tgz",
+    "sha256": "71c7e0570e706648340d08b1078dd5054a65ecc3e051437c6558332b606ca063",
+    "integrity": "sha512-YBFX7qro0OAdPIGi8nlPUDqmuXTCgln8uSHqiiL77xPJ+4/laRVAFmNH/q0WmQkbLyErF4n7CntfChfydtIDPQ==",
+    "downloadedBytesIdenticalToFrozenCandidate": true,
+    "publishedCliVersion": "0.1.3",
+    "publicationPerformedByThisAgent": false,
+    "exactArtifactApprovalRecordedBeforePublication": false,
+    "qualificationCompleteAtVerification": false,
+    "evidence": "/home/nahisaho/.copilot/session-state/f19a6ec9-6db2-429b-a409-154bd92f91ad/files/v013-published-verification/musubix6-0.1.3.tgz.verification.json",
+    "evidenceSha256": "e1cb76b4888555c9f9e99bfb5b2828b770a629d2a8bdb392c3e2df76ebd89ed3",
+    "note": "User reported manual npm publication. Public registry now confirms the exact candidate, but this external publication is not two-run qualification or retrospective approval. Do not republish the immutable version or create an automatically publishing tag."
+  },
+  "activeQualificationSnapshot": {
+    "runId": "run2",
+    "manifestSha256": "b637beb6dcd9093b0f1b2767f156f3109cbf9a8d02b2e12fee88992d0f3f7da0",
+    "status": "RUNNING",
+    "completedCells": 18,
+    "requiredCells": 22,
+    "pendingCells": ["REGRESSION-20", "REGRESSION-22", "REGRESSION-24", "INTEGRATED-GATE"],
+    "nextRun": "run3",
+    "cleanRunCredit": 0,
+    "note": "Observation at commit preparation only. Live run reports and eventual final results determine qualification; no pending cell is a PASS."
+  },
+  "qualificationBlocker": {
+    "state": "corrected-requalification-required",
+    "runId": "run1",
+    "cell": "MUTATION",
+    "counts": { "mandatory": 49, "passed": 47, "failed": 1, "blocked": 1 },
+    "completedCells": 9,
+    "requiredCells": 22,
+    "run2Started": false,
+    "sourceRestored": true,
+    "evidence": "/home/nahisaho/.copilot/session-state/f19a6ec9-6db2-429b-a409-154bd92f91ad/files/qualification-v013/run1/mutations/result.json",
+    "nextRequiredAction": "Both definition regressions and isolated previous-definition reverse mutations passed before revision5 freeze. Preserve revision4 failure as a failure, start with zero credit, and execute fresh run2/run3 against the unchanged revision5 matrix. External publication does not confer readiness or authorize any further publish/tag operation."
+  },
+  "candidate": {
+    "baseCommit": "2a9973483e23c63ae3303ca84f88b521bd0b4ef3",
+    "baseCommitPushed": true,
+    "identity": "Frozen source archive/tree include uncommitted0.1.3 metadata and documentation. The base commit alone is not the release candidate identity.",
+    "packagePath": "/home/nahisaho/.copilot/session-state/f19a6ec9-6db2-429b-a409-154bd92f91ad/files/v013-candidate/package/musubix6-0.1.3.tgz",
+    "packageSha256": "71c7e0570e706648340d08b1078dd5054a65ecc3e051437c6558332b606ca063",
+    "sourceArchiveSha256": "8d6ebeaa2d5fac30f53a3b1f7099348cce1a43a47e3ff1ca5a69ee0f5a871e6b",
+    "reproduciblePack": true,
+    "payloadFiles": 92,
+    "payloadBytesAndModesMatchFrozenTrackedSource": true,
+    "payloadSha256": "c34e70c9fdf382aeb24583e4a4dd5e9b719d0d879e87e33ebc2623cfd652d0a7",
+    "payloadEvidence": "/home/nahisaho/.copilot/session-state/f19a6ec9-6db2-429b-a409-154bd92f91ad/files/qualification-v013/package-source-verification.json"
+  },
+  "preparationFindings": [
+    {
+      "id": "REL013-006",
+      "class": "S1",
+      "state": "Fixed",
+      "firstViolatedStage": "verdict",
+      "finding": "Mandatory iterator-helper-names semantic mutant survived the selected TEST-NODE20-002 regression with exit0. Baseline and fresh restored controls passed, but the selected test did not distinguish this mutation.",
+      "observedEvidence": "run1/mutations/iterator-helper-names/{baseline,mutant,restored}.json and retained stdout; mutant oracle reports not an assertion-killed mutant. No production defect is established by survival alone.",
+      "resolution": "Restored the original REQ-NODE20-001 unsupported iterator.map counterexample from its owning spec, not the nondiscriminating helperExtra omission. The existing named regression owns the CLI-status assertion. Real Node20/24 baseline/mutant/fresh-restored controls passed; deliberately restoring the old definition makes the new outer regression assert-fail, then corrected controls pass. No production source/test or candidate bytes changed. Failed revision4 survival remains failed evidence; revised full qualification is pending."
+    },
+    {
+      "id": "REL013-007",
+      "class": "S1",
+      "state": "Fixed",
+      "firstViolatedStage": "trusted inputs",
+      "finding": "Mandatory ownership-child-selector mutant raised ERR_ASSERTION at sdd.test.mjs:13372 (exactly one executed pass), not the declared named-row oracle at line13371. On Node20 the skipped target row matched the existing named-row expression; the pass-count assertion correctly rejected zero execution.",
+      "observedEvidence": "run1/mutations/ownership-child-selector/mutant.stdout and mutant.json; baseline and fresh restored controls passed, mutant exited1, but assessRun rejected undeclared assertion ownership.",
+      "resolution": "Explicitly declare both existing contract-owned row and pass-count assertions. Real Node20 detects the count assertion; Node24 detects the named-row assertion; baseline/fresh-restored controls pass on both. Removing the count declaration again causes the new outer regression to assert-fail; restored declarations pass. Arbitrary assertion locations and setup failures remain rejected by the unchanged strict oracle. Revised full qualification is pending."
+    },
+    {
+      "id": "REL013-001",
+      "class": "S1",
+      "state": "Fixed",
+      "firstViolatedStage": "execution",
+      "finding": "Concurrent full gate and Node24 regression shared one runtime-keyed source clone, allowing cross-cell interference.",
+      "resolution": "Every cell now creates its own fresh source-ID clone and verifies its complete frozen tree. Actual integrated execution remains pending."
+    },
+    {
+      "id": "REL013-002",
+      "class": "S1",
+      "state": "Fixed",
+      "firstViolatedStage": "contract",
+      "finding": "Prospective freeze did not enforce every required mutation/cell count, uniqueness or discovery of named TODO exclusions.",
+      "resolution": "validateManifestMatrix runs at freeze and run. Actual assertion Red, Green and isolated reverse-mutation/restored controls are retained in qualification-v013."
+    },
+    {
+      "id": "REL013-003",
+      "class": "S1",
+      "state": "Fixed",
+      "firstViolatedStage": "trusted inputs",
+      "finding": "Executing the canonical rustup binary instead of the selected cargo/rustc symlink changed dispatch and reported the manager version.",
+      "resolution": "Invoke the selected entry, hash its canonical binary, record both and actual tool version. Genuine native-dispatch assertion Red, Green and reverse mutation/restored controls passed."
+    },
+    {
+      "id": "REL013-004",
+      "class": "S1",
+      "state": "Fixed",
+      "firstViolatedStage": "verdict",
+      "finding": "Helper/scope cells could accept some skipped or omitted subcases if another case executed.",
+      "resolution": "Revision4 froze16 names; revision5 retains them and adds both actual mutation-definition contract tests for18 oracle names. All6 scope differential names and the strict exact-catalogue verifier remain. Positive, missing/skip/duplicate/failure controls and matrix-admission reverse mutation/restoration passed; qualification execution remains pending."
+    },
+    {
+      "id": "REL013-005",
+      "class": "S3",
+      "state": "Fixed",
+      "firstViolatedStage": "integration/distribution",
+      "finding": "Release documentation needed explicit unpublished-version fallback, direct backup/force-refresh guidance and a non-publication date.",
+      "resolution": "Both READMEs gate0.1.3 availability and give0.1.2/source fallback. Changelog date is candidate preparation. Independent document delta review completed two stable clean passes, including bounded reread. Remaining navigation notes were resolved as covered by existing version checks and source/copy instructions."
+    }
+  ],
+  "auxiliaryEvidence": {
+    "hostedCI": {
+      "url": "https://github.com/nahisaho/musubix6/actions/runs/39311327459",
+      "sourceCommit": "2a9973483e23c63ae3303ca84f88b521bd0b4ef3",
+      "status": "success",
+      "jobs": [
+        "test (20)",
+        "test (22)",
+        "test (24)"
+      ],
+      "countsAsCandidateQualification": false
+    },
+    "helperPreflight": {
+      "tests": 18,
+      "pass": 18,
+      "fail": 0,
+      "skip": 0,
+      "evidence": "/home/nahisaho/.copilot/session-state/f19a6ec9-6db2-429b-a409-154bd92f91ad/files/qualification-v013/helper-r5-green.tap",
+      "runnerReverseMutations": "Matrix-admission bypass and symlink-dispatch reversal assertion-detected, originals/restored controls passed.",
+      "extraHelperMutations": "CLI/prose/context-body/Gradle/R/package-cache bypasses assertion-detected by existing selftest loop."
+    },
+    "blockerCorrections": {
+      "contractRed": "qualification-v013/blocker-contract-red.tap:2 actual owned assertion failures,0 pass/skip/TODO.",
+      "contractGreen": "qualification-v013/blocker-contract-green.tap:2 selected regressions passed with actual Node20/24 baseline/assertion-killed mutant/fresh-restored controls.",
+      "reverseMutations": "qualification-v013/blocker-mutation-results.json:both previous-definition reversals detected by owned outer assertions, restored controls passed.",
+      "matrix18Admission": "qualification-v013/oracle-count18-red.tap:prior16-case admission failed the valid required18-case matrix before correction; full18-case suite and matrix-admission bypass/restoration passed afterward.",
+      "scope": "Session-local qualification definitions/tests only; immutable source/package candidate unchanged; no release-run credit or publication authorization."
+    },
+    "japaneseProse": {
+      "mode": "full",
+      "scoreBefore": 98,
+      "scoreAfter": 98,
+      "newFindings": 0,
+      "keptFindings": "Two unchanged pre-existing informational wording flags outside the release delta.",
+      "readingLoadScore": 100,
+      "readingLoadFindings": 0,
+      "outlineAndTermsExecuted": true
+    }
+  },
+  "residualRisks": [
+    "Four exact pre-existing S3 TODO cases and tracker #315 remain; none count as passing required tests.",
+    "Linux/WSL2 and actual Node20.20.2/22.23.3/24.21.0 are the fixed sampled environments; macOS/Windows and other runtime versions are not verified by this qualification.",
+    "Local tools, executable configurations, plugins, build scripts and proc macros are trusted, not sandboxed. Rustup proxy hashes and actual tool version outputs do not establish arbitrary toolchain/OS authenticity.",
+    "Rust may persist normal external Cargo dependency-cache bookkeeping/materialization. Cleanup after parent SIGKILL, power loss or self-detached descendants is not guaranteed.",
+    "Successful genuine human authorization is not simulated; exact-artifact publication approval is still required.",
+    "No previous exploratory run, changed gate, hosted base-commit CI or published0.1.2 result counts toward this candidate's two-run streak."
+  ]
+}

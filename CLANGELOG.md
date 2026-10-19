@@ -3,6 +3,32 @@
 User-facing changes to musubix6, with upgrade guidance and known release limitations.
 Release dates use Japan Standard Time (UTC+09:00).
 
+## [0.1.3] - Candidate prepared 2026-10-20
+
+Release target; publication requires fixed-matrix qualification and separate
+exact-artifact approval.
+
+### Compatibility and upgrade notes
+
+- Use Node.js 20 or later. Upgrade the CLI, back up locally edited skills, then refresh each project's copied skills with `musubix6 init . --force`; updating the global CLI alone does not refresh those copies.
+- Select diagnostics explicitly, for example with `musubix6 sdd diagnostics --profile javascript --json`; the other profiles are `typescript`, `python` and `rust`. Omitting `--profile` selects TypeScript, not automatic language detection.
+- Keep the existing tests, expected-assertion Red, approvals and final full gate. Diagnostics are snapshots, not evidence or a replacement for those checks; no measured time or AI-cost savings are claimed.
+
+### Added
+
+- Add early TypeScript diagnostics using root-local TypeScript 5.9.x and ESLint 9.x, a root `tsconfig.json` and one root flat ESLint config.
+- Add standalone JavaScript diagnostics using root-local ESLint 9.x without requiring TypeScript or `tsconfig.json`.
+- Add Python diagnostics using a root `.venv` with Python 3.14.x, Ruff 0.17.1 and mypy 2.4.0; honor root configuration and native exclusions, and disclose unavailable mypy columns on non-ASCII lines.
+- Add Rust diagnostics using installed cargo/rustc 1.99.x, one root package, `Cargo.lock` and an existing external Cargo home; check all targets offline and locked with default features.
+- Report versioned JSON and explicit exit codes: PASS/0, FAIL/1 for diagnostic errors, and INCOMPLETE/2 for missing prerequisites or unfinished diagnosis.
+
+### Operational limits
+
+- Bound each provider to 60 seconds and 8 MiB of combined native output, except Rust's 180-second budget. Do not install tools, fix files or save diagnostic history automatically.
+- Remove parent-owned private Rust build outputs before returning; normal external Cargo dependency-cache bookkeeping and archive extraction may persist, with automatic cache cleaning disabled.
+- Treat executable configs, plugins, build scripts and proc macros as trusted code, not sandboxed code. Cleanup after parent SIGKILL, power loss or self-detached descendants is not guaranteed.
+- Retain the four pre-existing S3 TODO cases and tracker [#315](https://github.com/nahisaho/musubix6/issues/315); TODOs are not passes. Publication remains subject to prospective fixed-matrix qualification and separate exact-artifact approval.
+
 ## [0.1.2] - 2026-10-19
 
 ### Compatibility and upgrade notes
@@ -51,5 +77,6 @@ Publication evidence and remaining qualification gaps are recorded in
 - Require Node.js 20 or later for the CLI and SDD scripts, with no runtime npm dependencies.
 - Require Python, uv, and GiNZA for Japanese prose diagnostics, and the relevant native toolchains for project tests or WSL container operations.
 
+[0.1.3]: https://www.npmjs.com/package/musubix6/v/0.1.3
 [0.1.2]: https://www.npmjs.com/package/musubix6/v/0.1.2
 [0.1.1]: https://www.npmjs.com/package/musubix6/v/0.1.1

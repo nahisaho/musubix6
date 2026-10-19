@@ -4,7 +4,7 @@ Agent skills for **lean, spec-driven and test-driven development** and for
 **technical writing in Japanese and English**, packaged for GitHub Copilot CLI
 (`.github/skills/`).
 
-[日本語](README-ja.md) | [npm v0.1.2](https://www.npmjs.com/package/musubix6/v/0.1.2) | [Changelog](CLANGELOG.md)
+[日本語](README-ja.md) | [npm](https://www.npmjs.com/package/musubix6) | [Changelog](CLANGELOG.md)
 
 | Skill | Purpose |
 |---|---|
@@ -114,11 +114,13 @@ the limit reduces agent input, not machine-side scanning or memory.
 Context is **not validation or approval evidence**: existing checks remain
 unchanged, and the full `gate` is still required before merge.
 
-### Diagnose projects before running the final gate (development checkout)
+### Diagnose projects before running the final gate (v0.1.3)
 
-This feature is available in the development checkout, **not the published
-0.1.2 package**. Install the CLI from that checkout or run its SDD script
-directly. Refresh copied skills separately as described below.
+This section describes the **0.1.3** diagnostics contract; version 0.1.2
+does not include this feature. Check availability with
+`npm view musubix6@0.1.3 version` before installing, or use the source checkout.
+Back up locally edited skills, then refresh copied skills with
+`musubix6 init . --force`, which overwrites them; see the update steps below.
 
 The default `typescript` profile needs `node_modules/typescript` **5.9.x**,
 `node_modules/eslint` **ESLint 9.x**, a root `tsconfig.json`, and exactly one
@@ -211,17 +213,21 @@ No measured time or AI-cost reduction is claimed.
 
 ### Install the published npm package
 
-Version **0.1.2** was published on **2026-10-19 (JST)**. With Node.js ≥ 20,
-run these commands in the project where you want to install the skills:
+The commands below pin **0.1.3**. Check availability with
+`npm view musubix6@0.1.3 version` before installing. With Node.js ≥ 20,
+run them in the project where you want to install the skills:
+
+If the version check fails, do not run the 0.1.3 install commands: stay on
+0.1.2 or use the source checkout until 0.1.3 is published.
 
 ```sh
-npm install -g musubix6@0.1.2
+npm install -g musubix6@0.1.3
 musubix6 --version
 musubix6 init .
 musubix6 list
 ```
 
-Without a global install, run `npx --yes musubix6@0.1.2 init .` instead.
+Without a global install, run `npx --yes musubix6@0.1.3 init .` instead.
 `init` copies the bundled skills into the target's `.github/skills/`.
 
 `init` accepts a relative or absolute destination; omitting it uses the current
@@ -286,7 +292,7 @@ existing project's `.github/skills/`.
    ```
 
    To install a specific version instead, use a version such as
-   `npm install -g musubix6@0.1.2`. Updating the CLI does not overwrite project
+   `npm install -g musubix6@0.1.3`. Updating the CLI does not overwrite project
    files at this stage.
 
 4. From the target project's root, refresh the bundled skills:
@@ -332,7 +338,7 @@ Review the changes as in step 5. This refreshes the copied skills but does not
 update any separately installed global `musubix6` command. For the SDD gate
 check, use `npx --yes musubix6@latest sdd gate` so that the selected version runs
 instead of an older global CLI. To pin a version, replace `@latest` with
-`@0.1.2` in every npx command, including the gate check.
+`@0.1.3` in every npx command, including the gate check.
 
 ### Update a source checkout
 
