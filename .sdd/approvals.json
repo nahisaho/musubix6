@@ -135,5 +135,53 @@
     },
     "tier": "T2",
     "requireHuman": false
+  },
+  "diagnostics-contract": {
+    "by": "ai:claude-sonnet-5.5",
+    "kind": "ai",
+    "review": ".sdd/review-diagnostics-contract.md",
+    "reviewSha": "2e92edd1e93636f9c1052128ec3c579e3cfafe42f231ae9f1d1ee148e821f56a",
+    "at": "2026-10-19T06:41:14.558Z",
+    "artifacts": {
+      ".sdd/specs/diagnostics-contract.md": "935375139e865a9495642897d3482f83466c87c04221236cea6c1119e9762cc7"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "diagnostics-typescript": {
+    "by": "ai:claude-sonnet-5.5",
+    "kind": "ai",
+    "review": ".sdd/review-diagnostics-typescript.md",
+    "reviewSha": "9ab77046205fb0072ec77ba42f31ffed303e8d5718641626aa989c8db158063f",
+    "at": "2026-10-19T03:57:54.430Z",
+    "artifacts": {
+      ".sdd/specs/diagnostics-typescript.md": "0e0a343d36378c2bb211bbd1e9af20969892ed79a0b5b240e248585fd5d3678a"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "diagnostics-eslint": {
+    "by": "ai:claude-sonnet-5.5",
+    "kind": "ai",
+    "review": ".sdd/review-diagnostics-eslint.md",
+    "reviewSha": "1da6eef6d3d53c9f341d0ab15d517913586bdc0f4ede6c40cf3de74ab6a66661",
+    "at": "2026-10-19T03:57:54.730Z",
+    "artifacts": {
+      ".sdd/specs/diagnostics-eslint.md": "8f7edd077294bedc3c2a3cc58fae94234b775e82e234e7b44217c26444fef301"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "diagnostics-workflow": {
+    "by": "ai:claude-sonnet-5.5",
+    "kind": "ai",
+    "review": ".sdd/review-diagnostics-workflow.md",
+    "reviewSha": "28e8437ab7e17f0864e307eb017ceeefb8bfa9dc7099705edb10cfab0aa6905e",
+    "at": "2026-10-19T06:41:14.897Z",
+    "artifacts": {
+      ".sdd/specs/diagnostics-workflow.md": "1ee5c2f93dfbab38059a1d778b4c9b3bf17a60b12498e111a6d60271ce6fa19f"
+    },
+    "tier": "T2",
+    "requireHuman": false
   }
 }

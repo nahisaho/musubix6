@@ -12963,7 +12963,11 @@ test('r35b #364 TypeScript is exactly locked as a development-only dependency', 
   assert.equal((pkg.bundledDependencies ?? pkg.bundleDependencies ?? []).length, 0);
   const lock = JSON.parse(fs.readFileSync(path.join(root, 'package-lock.json')));
   assert.equal(lock.packages[''].devDependencies.typescript, '5.9.3');
-  assert.deepEqual(Object.keys(lock.packages).sort(), ['', 'node_modules/typescript']);
+  assert.deepEqual(lock.packages[''].devDependencies, pkg.devDependencies);
+  for (const [name, entry] of Object.entries(lock.packages)) {
+    if (name === '') continue;
+    assert.equal(entry.dev, true, `${name} must remain development-only`);
+  }
   const compiler = lock.packages['node_modules/typescript'];
   assert.equal(compiler.version, '5.9.3');
   assert.equal(compiler.dev, true);

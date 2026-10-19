@@ -1,10 +1,10 @@
 # musubix6
 
-[日本語](README-ja.md)
-
 Agent skills for **lean, spec-driven and test-driven development** and for
 **technical writing in Japanese and English**, packaged for GitHub Copilot CLI
 (`.github/skills/`).
+
+[日本語](README-ja.md) | [npm v0.1.2](https://www.npmjs.com/package/musubix6/v/0.1.2) | [Changelog](CLANGELOG.md)
 
 | Skill | Purpose |
 |---|---|
@@ -114,37 +114,263 @@ the limit reduces agent input, not machine-side scanning or memory.
 Context is **not validation or approval evidence**: existing checks remain
 unchanged, and the full `gate` is still required before merge.
 
-### Install from source (git clone)
+### Diagnose TypeScript before running the final gate (development checkout)
 
-The package is not yet published to npm. Clone the repository and install it
-from the local checkout (Node.js ≥ 20):
+This feature is available in the development checkout, **not the published
+0.1.2 package**. Install the CLI from that checkout or run its SDD script
+directly. Refresh copied skills separately as described below.
 
-```bash
-git clone https://github.com/nahisaho/musubix6.git
-cd musubix6
-npm install -g .               # or: npm link
+The target project needs `node_modules/typescript` **5.9.x**,
+`node_modules/eslint` **ESLint 9.x**, a root `tsconfig.json`, and exactly one
+root `eslint.config.js`, `eslint.config.mjs` or `eslint.config.cjs`. Existing
+plugins/parsers must already be installed. Packages may be symlinks; ancestor
+or global installations are not used. Hoisted-only workspaces and Yarn PnP
+are not supported. Replace `/path/to/project` with your project directory:
+
+```sh
+musubix6 sdd diagnostics --root /path/to/project --json
+# Without --json, read the same result as text:
+musubix6 sdd diagnostics --root /path/to/project
+```
+
+Omitting `--root` uses the working directory. `--help` must be used alone.
+The command checks the whole tsconfig-selected project and compiler
+dependencies, not just edited files. JavaScript type checking follows
+`allowJs`/`checkJs`. ESLint checks non-declaration script inputs and respects
+ignores and unconfigured file types; its file counts disclose that scope.
+Project references, `--changed`, automatic monorepo selection and LSP/IDE
+connections are not supported.
+
+| Result | Exit code | Meaning |
+|---|---|---|
+| PASS | 0 | Both providers completed; no errors. Warnings are still reported. |
+| FAIL | 1 | Both providers completed and found errors. |
+| INCOMPLETE | 2 | A provider, input or configuration failed; this is not a clean result. |
+
+INCOMPLETE takes precedence over any collected errors. Missing tools,
+unsupported versions, broken config/plugins, no eligible ESLint inputs,
+all inputs ignored, signals, malformed output and limits are not passes.
+Each provider has a **60-second** limit, including config loading, and a
+combined stdout/stderr limit of **8 MiB**. Fix the reported setup issue or
+static error, then rerun; do not suppress the failure to claim completion.
+
+JSON uses `schemaVersion: 1`, `profile`, resolved `root`, start/end timestamps,
+`status`, `exitCode`, `reason`, `snapshot: true` and per-provider results.
+Each provider includes its version/config path, completion status, reason,
+file counts and diagnostics (`source`, `file`, 1-based UTF-16 `line`/`column`,
+`code`, `severity`, `message`). Missing file locations are null. Incomplete
+providers have null counts, not zero; TypeScript's checked count includes
+compiler dependencies, so do not sum it with ESLint's count.
+
+The command does not install/download tools, fix or emit files, cache results,
+or append TDD history. ESLint configuration/plugins execute local code and
+can have side effects: use only trusted projects; this is not isolation.
+Results are a **snapshot**, not proof of runtime correctness, TDD Red/Green,
+approval or release readiness. Keep targeted tests and the final full `gate`.
+Only Linux/Node 24 has been exercised locally; macOS/Windows remain unverified.
+Standalone JavaScript without tsconfig, Python and Rust are planned next.
+No measured time or AI-cost reduction is claimed.
+
+### Install the published npm package
+
+Version **0.1.2** was published on **2026-10-19 (JST)**. With Node.js ≥ 20,
+run these commands in the project where you want to install the skills:
+
+```sh
+npm install -g musubix6@0.1.2
 musubix6 --version
+musubix6 init .
+musubix6 list
 ```
 
-The global install links to this checkout, so keep the directory. Then use the
-`musubix6` commands below. To update: `git pull` in the clone.
-
-### Install from npm (once published)
-
-```bash
-npm install -g musubix6        # or: npx musubix6 init
-musubix6 init [dir]            # copy skills into <dir>/.github/skills (--force, --only a,b)
-musubix6 list                  # bundled skills
-musubix6 sdd gate              # run the lean-sdd-tdd CLI
-```
+Without a global install, run `npx --yes musubix6@0.1.2 init .` instead.
+`init` copies the bundled skills into the target's `.github/skills/`.
 
 `init` accepts a relative or absolute destination; omitting it uses the current
 directory. `--force` and `--only a,b` can appear before or after the destination.
 Unknown options or a missing/empty `--only` skill list exit with status 2 without
 creating or overwriting files.
 
+See the [changelog](CLANGELOG.md) for changes and known release limitations;
+npm publication does not establish fixed-matrix release qualification.
+
 To install per-user instead of per repository, copy the skill directories to
 `~/.copilot/skills/`.
+
+### Install from source (git clone)
+
+For a development checkout rather than a published npm version:
+
+```sh
+git clone https://github.com/nahisaho/musubix6.git
+cd musubix6
+npm install -g .               # or: npm link
+musubix6 --version
+```
+
+The global install links to this checkout, so keep the directory. To update,
+follow the source-update instructions below. A checkout can contain changes not
+yet published to npm.
+
+## Update the CLI and installed skills
+
+Updating musubix6 has **two separate parts**: update the CLI, then refresh the
+skills copied into each project. `npm install -g` alone does not update an
+existing project's `.github/skills/`.
+
+### Update a project installed from npm
+
+1. Check the installed CLI version and the version published on npm:
+
+   ```sh
+   musubix6 --version
+   npm view musubix6 version
+   ```
+
+2. In the target project's root, back up its existing `.github/skills/` before
+   overwriting anything. This Bash example (Linux, macOS, or WSL) stores the
+   backup under your home directory, outside a typical project checkout:
+
+   ```bash
+   backup_dir="$(mktemp -d "$HOME/musubix6-skills-backup.XXXXXX")"
+   cp -R .github/skills "$backup_dir/skills"
+   printf 'Backup: %s\n' "$backup_dir"
+   ```
+
+   Keep the backup until you have reviewed the update. If this directory does
+   not exist yet, use the installation instructions above instead.
+
+3. Update the global CLI to the latest published version:
+
+   ```sh
+   npm install -g musubix6@latest
+   musubix6 --version
+   ```
+
+   To install a specific version instead, use a version such as
+   `npm install -g musubix6@0.1.2`. Updating the CLI does not overwrite project
+   files at this stage.
+
+4. From the target project's root, refresh the bundled skills:
+
+   ```sh
+   musubix6 init . --force
+   ```
+
+   Without `--force`, existing skill directories are skipped, not updated.
+   With `--force`, bundled files are overwritten; this is not a merge of local
+   edits. Extra local files are not deleted; review obsolete files separately.
+   To refresh only one skill instead of all bundled skills, use:
+
+   ```sh
+   musubix6 init . --only lean-sdd-tdd --force
+   ```
+
+5. Review the copied changes and restore any intentional local customizations
+   from the backup. For a Git-managed project, inspect both tracked changes
+   and newly copied files:
+
+   ```sh
+   git status --short -- .github/skills/
+   git diff -- .github/skills/
+   ```
+
+   Run the project's normal checks. If it already uses SDD, run
+   `musubix6 sdd gate` as well; copying skills alone does not initialize its
+   `.sdd` specifications or evidence. Repeat the backup, refresh, and review
+   steps for **every project** that has a copy of the skills.
+
+### Update without a global install (npx)
+
+Back up the target project's skills as above, then run these commands in its
+root:
+
+```sh
+npx --yes musubix6@latest --version
+npx --yes musubix6@latest init . --force
+```
+
+Review the changes as in step 5. This refreshes the copied skills but does not
+update any separately installed global `musubix6` command. For the SDD gate
+check, use `npx --yes musubix6@latest sdd gate` so that the selected version runs
+instead of an older global CLI. To pin a version, replace `@latest` with
+`@0.1.2` in every npx command, including the gate check.
+
+### Update a source checkout
+
+Run these commands inside the clone used for `npm install -g .` or `npm link`,
+not inside an unrelated target project:
+
+```sh
+git pull --ff-only
+npm install -g .
+musubix6 --version
+```
+
+If Git reports local edits or a diverged branch, stop and reconcile them rather
+than discarding changes. Then return to each target project, back up its skills,
+and run `musubix6 init . --force`. Updating the source checkout does not
+automatically refresh copies in other projects.
+
+### Update per-user skills
+
+Copies in `~/.copilot/skills/` also need a separate refresh. Update the global
+CLI first, as shown above. If you have only used `npx`, install the chosen
+version globally before using this copy procedure. Confirm the global package
+root and the version of the actual copy source:
+
+```sh
+npm root -g
+node "$(npm root -g)/musubix6/bin/musubix6.mjs" --version
+```
+
+The version must match the one you intend to copy. For an `npm link`
+installation, the source is the linked checkout, not a downloaded npm release.
+
+If `~/.copilot/skills/` already exists, back it up outside your project (Bash).
+Skip this backup block if the directory does not exist yet:
+
+```bash
+user_backup_dir="$(mktemp -d "$HOME/musubix6-user-skills-backup.XXXXXX")"
+cp -R "$HOME/.copilot/skills" "$user_backup_dir/skills"
+printf 'Backup: %s\n' "$user_backup_dir"
+```
+
+After confirming the backup succeeded, copy the bundled skills:
+
+```bash
+mkdir -p "$HOME/.copilot/skills"
+cp -R "$(npm root -g)/musubix6/.github/skills/." "$HOME/.copilot/skills/"
+```
+
+This overwrites matching bundled files; review your customizations afterward.
+Do not use `musubix6 init ~/.copilot/skills` for this purpose: `init` appends
+`.github/skills/` to its destination.
+
+### Return to an earlier version
+
+For example, to select the previous published CLI:
+
+```sh
+npm install -g musubix6@0.1.1
+musubix6 --version
+```
+
+Downgrading the CLI does **not** undo changes to copied skills. Restore the
+affected skill directories from your backup, or back up the current copies and
+copy the selected version with `musubix6 init . --force`. Review and rerun the
+project's checks afterward. Recopying an older version can leave files added by
+a newer version; restore the backed-up skill directories if you need an exact
+rollback. Do not reset project specifications or TDD evidence just to change
+the skill version.
+
+Locate your backup using the path printed as `Backup:` when it was created;
+shell variables such as `$user_backup_dir` may no longer be set in a later
+session. For per-user copies, restore the affected directories in
+`~/.copilot/skills/` from the `skills` directory inside that backup. Merging
+backup files can leave files introduced by a newer version in place; replace
+the affected directories with their backed-up versions instead. Downgrading
+the CLI does not restore per-user copies either.
 
 ## Tutorial
 
@@ -152,7 +378,7 @@ A Japanese walkthrough (interview → spec → TDD → follow-up feature → man
 
 ## Tests
 
-From the repository root, install the development-only compiler fixture before
+From the repository root, install the development-only diagnostic fixtures before
 running the suite (Node ≥ 20):
 
 ```sh

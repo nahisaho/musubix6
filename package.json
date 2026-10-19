@@ -17,9 +17,11 @@
     "node": ">=20"
   },
   "scripts": {
-    "test": "node --test --test-reporter=spec .github/skills/lean-sdd-tdd/scripts/sdd.test.mjs .github/skills/lean-sdd-tdd/scripts/spec-context.test.mjs .github/skills/lean-sdd-tdd/scripts/source-discovery.test.mjs"
+    "test": "node --test --test-reporter=spec .github/skills/lean-sdd-tdd/scripts/sdd.test.mjs .github/skills/lean-sdd-tdd/scripts/spec-context.test.mjs .github/skills/lean-sdd-tdd/scripts/source-discovery.test.mjs .github/skills/lean-sdd-tdd/scripts/diagnostics.test.mjs"
   },
   "devDependencies": {
+    "@typescript-eslint/parser": "8.71.2",
+    "eslint": "9.39.5",
     "typescript": "5.9.3"
   },
   "keywords": ["sdd", "tdd", "ears", "copilot", "agent-skills"],

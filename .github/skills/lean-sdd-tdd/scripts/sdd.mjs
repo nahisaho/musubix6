@@ -7602,13 +7602,19 @@ async function cmdContext() {
   return runContext({ ROOT, pos, flags, loadSpecs, loadPlan, changedFiles, workspaceFiles, impactOne });
 }
 
-const cmds = { review: cmdReview, init: cmdInit, approve: cmdApprove, guard: cmdGuard, tdd: cmdTdd, trace: cmdTrace, gate: cmdGate, status: cmdStatus, plan: cmdPlan, impact: cmdImpact, context: cmdContext };
+/** @id CODE-DIAGFLOW-001 @implements REQ-DIAGFLOW-001 REQ-DIAGFLOW-003 */
+async function cmdDiagnostics() {
+  const { runDiagnostics } = await import('./diagnostics.mjs');
+  return runDiagnostics(process.argv.slice(2));
+}
+
+const cmds = { review: cmdReview, init: cmdInit, approve: cmdApprove, guard: cmdGuard, tdd: cmdTdd, trace: cmdTrace, gate: cmdGate, status: cmdStatus, plan: cmdPlan, impact: cmdImpact, context: cmdContext, diagnostics: cmdDiagnostics };
 const fn = cmds[pos[0]];
 // a mistyped flag (`gate --changd`) must not silently run the full gate (#146)
 // known flags = every flags.<name> / flags['<name>'] this script reads
 const KNOWN_FLAGS = new Set([...fs.readFileSync(new URL(import.meta.url), 'utf8').matchAll(/\bflags(?:\.([\w-]+)|\['([\w-]+)'\])/g)].map((m) => m[1] ?? m[2]).concat(['help', 'max-bytes']));
 const badFlags = Object.keys(flags).filter((k) => !KNOWN_FLAGS.has(k));
-if (fn && badFlags.length) {
+if (fn && badFlags.length && pos[0] !== 'diagnostics') {
   out(`unknown flag${badFlags.length > 1 ? 's' : ''}: ${badFlags.map((k) => '--' + k).join(', ')} (known: ${[...KNOWN_FLAGS].map((k) => '--' + k).join(' ')})`);
   process.exit(2);
 }
@@ -7616,7 +7622,7 @@ if (!fn) {
   out('usage: sdd.mjs init | review template <feature|--feature f> | review check <file> --feature <f> (or positional feature) | approve prepare|record <feature> | guard | tdd red|green|refactor <TEST-ID> | tdd stub <TEST-ID> [<TEST-ID>... | --all] | tdd check | trace [--baseline] | gate [--changed] [--no-run] | status | plan | impact <REQ|TEST|CODE|file> [--json] | context <feature|REQ|file>... | context --changed [--max-bytes N] [--json]   [--root dir]\n  tdd red: tdd red --characterization "<reason>" records a data-only/characterization test that cannot fail without implementation (weak Red); --expect <text> requires that text in the failure; --allow-setup-red accepts a stub-in-setup Red; --retest "<reason>" re-records a weak Red after correcting a wrong test expectation (needs a previous Red/Green and a changed test); --missing-module accepts a Red caused by the test own not-yet-created import (non-weak); approve record --by ai:<reviewer> needs --review <path|summary>');
   process.exit(2);
 }
-if (fn && flags.help && !['impact'].includes(pos[0])) {
+if (fn && flags.help && !['impact', 'diagnostics'].includes(pos[0])) {
   out(`usage: sdd.mjs ${pos[0]} ${{ gate: '[--changed] [--no-run] [--verbose]', trace: '[--baseline] [--verbose]', context: '<feature|REQ|file>... [--changed] [--max-bytes N] [--json]' }[pos[0]] ?? '(see sdd.mjs --help for all commands)'}`.replace('sdd.mjs gate', 'gate').replace('sdd.mjs trace', 'trace'));
   process.exit(0);
 }
