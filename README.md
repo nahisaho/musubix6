@@ -216,21 +216,21 @@ No measured time or AI-cost reduction is claimed.
 
 ### Install the published npm package
 
-The commands below pin **0.1.3**. Check availability with
-`npm view musubix6@0.1.3 version` before installing. With Node.js ≥ 20,
+The commands below pin **0.1.4**. Check availability with
+`npm view musubix6@0.1.4 version` before installing. With Node.js ≥ 20,
 run them in the project where you want to install the skills:
 
-If the version check fails, do not run the 0.1.3 install commands: stay on
-0.1.2 or use the source checkout until 0.1.3 is published.
+If the version check fails, do not run the 0.1.4 install commands: stay on
+0.1.3 or use the source checkout until 0.1.4 is published.
 
 ```sh
-npm install -g musubix6@0.1.3
+npm install -g musubix6@0.1.4
 musubix6 --version
 musubix6 init .
 musubix6 list
 ```
 
-Without a global install, run `npx --yes musubix6@0.1.3 init .` instead.
+Without a global install, run `npx --yes musubix6@0.1.4 init .` instead.
 `init` copies the bundled skills into the target's `.github/skills/`.
 
 `init` accepts a relative or absolute destination; omitting it uses the current
@@ -295,7 +295,7 @@ existing project's `.github/skills/`.
    ```
 
    To install a specific version instead, use a version such as
-   `npm install -g musubix6@0.1.3`. Updating the CLI does not overwrite project
+   `npm install -g musubix6@0.1.4`. Updating the CLI does not overwrite project
    files at this stage.
 
 4. From the target project's root, refresh the bundled skills:
@@ -341,7 +341,7 @@ Review the changes as in step 5. This refreshes the copied skills but does not
 update any separately installed global `musubix6` command. For the SDD gate
 check, use `npx --yes musubix6@latest sdd gate` so that the selected version runs
 instead of an older global CLI. To pin a version, replace `@latest` with
-`@0.1.3` in every npx command, including the gate check.
+`@0.1.4` in every npx command, including the gate check.
 
 ### Update a source checkout
 

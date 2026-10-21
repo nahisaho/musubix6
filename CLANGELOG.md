@@ -3,6 +3,34 @@
 User-facing changes to musubix6, with upgrade guidance and known release limitations.
 Release dates use Japan Standard Time (UTC+09:00).
 
+## [0.1.4] - Candidate prepared 2026-10-21
+
+Publication requires two clean fixed-matrix runs for this candidate and separate
+exact-artifact approval; the 0.1.3 qualification does not apply to these changes.
+
+### Compatibility and upgrade notes
+
+- Preserve existing CLI commands, Node.js 20-or-later support and advisory linter exit codes. Back up local skill edits and review the updated workflows before refreshing copied skills with `musubix6 init . --force`.
+- Install `markdown-it-py` alongside the documented GiNZA dependencies when using Japanese prose diagnostics.
+
+### Added
+
+- Bundle `consulting-analyst` and `presentation-planner`, bringing the distributed skill set to ten without adding standalone `obsidian*` skills.
+
+### Changed
+
+- Update `japanese-prose` and `tech-writer` with proofreading checks, hash-bound semantic-review invariants, document templates and analysis/presentation handoffs.
+
+### Fixed
+
+- Detect case-insensitive unfinished markers with optional horizontal whitespace and ASCII or full-width colons, while excluding matching inline-code spans, URLs, link destinations and compound names such as `TODO-cli`.
+- Preserve the existing lower-case todo-app exception and report empty or unclosed tracking annotations without erasing nonempty annotation content.
+
+### Known release limitations
+
+- Keep placeholder detection lexical, not a complete Markdown parser or natural-language intent classifier; use a colon or uppercase marker for ambiguous unpunctuated lowercase text.
+- Retain four pre-existing TODO cases without counting them as passes. The earlier ESLint test failure has not been reproduced or explained; one first-run full-gate success does not establish that its cause is fixed.
+
 ## [0.1.3] - Candidate prepared 2026-10-20
 
 Release target; publication requires fixed-matrix qualification and separate
@@ -77,6 +105,7 @@ Publication evidence and remaining qualification gaps are recorded in
 - Require Node.js 20 or later for the CLI and SDD scripts, with no runtime npm dependencies.
 - Require Python, uv, and GiNZA for Japanese prose diagnostics, and the relevant native toolchains for project tests or WSL container operations.
 
+[0.1.4]: https://www.npmjs.com/package/musubix6/v/0.1.4
 [0.1.3]: https://www.npmjs.com/package/musubix6/v/0.1.3
 [0.1.2]: https://www.npmjs.com/package/musubix6/v/0.1.2
 [0.1.1]: https://www.npmjs.com/package/musubix6/v/0.1.1
