@@ -2,10 +2,11 @@
 
 Agent skills for **lean, spec-driven and test-driven development** and for
 **technical writing in Japanese and English, structured analysis and presentation planning**, packaged for GitHub Copilot CLI
-(`.github/skills/`) and, in v0.2.0 development, Claude Code (`.claude/skills/`).
+(`.github/skills/`) and Claude Code (`.claude/skills/`).
 
-The source checkout is **0.2.0-dev.0**, not a published or release-qualified
-v0.2.0. Claude live-session discovery and interaction remain unverified.
+The source checkout targets **0.2.0**. Check npm availability below before
+installing; a version string does not establish publication or release
+qualification. Claude live-session discovery and interaction remain unverified.
 
 [日本語](README-ja.md) | [npm](https://www.npmjs.com/package/musubix6) | [Changelog](CLANGELOG.md)
 
@@ -220,10 +221,11 @@ approval or release readiness. Keep targeted tests and the final full `gate`.
 Only Linux/Node 24 has been exercised locally; macOS/Windows remain unverified.
 No measured time or AI-cost reduction is claimed.
 
-### Claude Code and dual-host installation (v0.2.0 development)
+### Claude Code and dual-host installation (v0.2.0)
 
-Use the [source checkout](#install-from-source-git-clone) for these new options;
-the 0.1.x npm commands below do not support `--host`.
+Use the 0.2.0 CLI after checking npm availability below, or the
+[source checkout](#install-from-source-git-clone), for these options.
+The 0.1.x npm versions do not support `--host`.
 
 ```sh
 musubix6 init /path/to/project --host claude
@@ -262,21 +264,21 @@ WSL container execution, GiNZA setup and macOS/Windows are not verified by this 
 
 ### Install the published npm package
 
-The commands below pin **0.1.4**. Check availability with
-`npm view musubix6@0.1.4 version` before installing. With Node.js ≥ 20,
+The commands below pin **0.2.0**. Check availability with
+`npm view musubix6@0.2.0 version` before installing. With Node.js ≥ 20,
 run them in the project where you want to install the skills:
 
-If the version check fails, do not run the 0.1.4 install commands: stay on
-0.1.3 or use the source checkout until 0.1.4 is published.
+If the version check fails, do not run the 0.2.0 install commands: stay on
+0.1.4 or use the source checkout until 0.2.0 is published.
 
 ```sh
-npm install -g musubix6@0.1.4
+npm install -g musubix6@0.2.0
 musubix6 --version
 musubix6 init .
 musubix6 list
 ```
 
-Without a global install, run `npx --yes musubix6@0.1.4 init .` instead.
+Without a global install, run `npx --yes musubix6@0.2.0 init .` instead.
 `init` copies the bundled skills into the target's `.github/skills/`.
 
 `init` accepts a relative or absolute destination; omitting it uses the current
@@ -310,7 +312,7 @@ yet published to npm.
 Updating musubix6 has **two separate parts**: update the CLI, then refresh the
 skills copied into each project. `npm install -g` alone does not update an
 existing project's `.github/skills/` or `.claude/skills/`.
-The steps below use the default Copilot host. For the v0.2.0 development CLI,
+The steps below use the default Copilot host. For the v0.2.0 CLI,
 back up/review `.claude/skills/` and add `--host claude` to refresh Claude copies,
 or use `--host both` and back up/review both directories.
 
@@ -344,7 +346,7 @@ or use `--host both` and back up/review both directories.
    ```
 
    To install a specific version instead, use a version such as
-   `npm install -g musubix6@0.1.4`. Updating the CLI does not overwrite project
+   `npm install -g musubix6@0.2.0`. Updating the CLI does not overwrite project
    files at this stage.
 
 4. From the target project's root, refresh the bundled skills:
@@ -378,6 +380,10 @@ or use `--host both` and back up/review both directories.
 
 ### Update without a global install (npx)
 
+Before using 0.2.0 features, check `npm view musubix6@0.2.0 version`.
+Until 0.2.0 is published, `@latest` can still resolve to 0.1.4.
+Use the source checkout if the version check fails.
+
 Back up the target project's skills as above, then run these commands in its
 root:
 
@@ -390,7 +396,7 @@ Review the changes as in step 5. This refreshes the copied skills but does not
 update any separately installed global `musubix6` command. For the SDD gate
 check, use `npx --yes musubix6@latest sdd gate` so that the selected version runs
 instead of an older global CLI. To pin a version, replace `@latest` with
-`@0.1.4` in every npx command, including the gate check.
+`@0.2.0` in every npx command, including the gate check.
 
 ### Update a source checkout
 

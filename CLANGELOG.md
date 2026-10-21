@@ -3,6 +3,96 @@
 User-facing changes to musubix6, with upgrade guidance and known release limitations.
 Release dates use Japan Standard Time (UTC+09:00).
 
+## [0.2.0] - Unreleased draft prepared 2026-10-22
+
+Add Claude Code installation alongside GitHub Copilot CLI without changing
+the default Copilot workflow. The intended npm release is `0.2.0` on `latest`.
+The source package targets `0.2.0`; this draft does not mean that it has been
+published or qualified for release.
+
+### Breaking changes and migration
+
+- Reject repeated `--only` options and multiple `init` destinations instead
+  of guessing which value to use. Update automation to pass one destination
+  and one comma-separated `--only` list.
+- Keep valid existing Copilot commands unchanged: `musubix6 init .` still
+  installs into `.github/skills/`; Node.js 20 or later is still required.
+
+### Added
+
+- Add `musubix6 init [dir] --host copilot|claude|both`; omitting `--host`
+  continues to select Copilot.
+- Install nine shared skills into `.claude/skills/` for Claude Code, or
+  populate both hosts' directories with `--host both`.
+- Report installed/skipped destination paths so dual-host updates can be
+  reviewed separately.
+
+### Changed
+
+- Resolve bundled scripts and references relative to the loaded skill
+  directory rather than assuming a project-level `.github/skills/` path.
+- Use Copilot's `ask_user` or Claude Code's `AskUserQuestion` for questions
+  and approvals. If the tool is unavailable, wait for an explicit response
+  in conversation; never infer or record human approval without it.
+- Preserve skip behavior per host. With `--force`, overwrite bundled files
+  while retaining extra local files; do not merge locally edited contents.
+- Reject missing, unknown or repeated `--host` values before writing.
+  Use space-separated options such as `--host claude`, not `--host=claude`.
+
+### Install and upgrade
+
+Check that the intended version is available before using the npm commands:
+
+```sh
+npm view musubix6@0.2.0 version
+```
+
+If that check fails, do not run the installation below: use the source
+checkout or remain on the published 0.1.x version until 0.2.0 is available.
+After publication, install the CLI and choose the project host:
+
+```sh
+npm install -g musubix6@0.2.0
+musubix6 --version
+
+# Choose one installation target:
+musubix6 init . --host claude
+# Or install for both hosts:
+musubix6 init . --host both
+```
+
+Updating the global CLI alone does not refresh copied skills. Back up the
+selected project's `.claude/skills/` and/or `.github/skills/` first, then
+choose the corresponding refresh command and review the resulting diff:
+
+```sh
+musubix6 init . --host claude --force
+# Or refresh both hosts:
+musubix6 init . --host both --force
+```
+
+Use `--only lean-sdd-tdd,tech-writer` to limit either operation to selected
+skills. `musubix6 sdd` remains a host-independent wrapper.
+
+### Known limitations and release status
+
+- Keep `agent-watchdog` Copilot-only because it depends on Copilot scheduling
+  and agent tools. Full Claude/both installs explain its omission from Claude.
+  Explicit `--only agent-watchdog` with `--host claude` or `both` exits 2
+  before writing either destination.
+- Install no `CLAUDE.md`, hooks, plugins or automatic permission grants.
+  Skill installation does not initialize the target project's `.sdd` state.
+- Do not promise transactional copying: filesystem failures are reported,
+  but a partially completed install is not rolled back.
+- Keep live Claude skill discovery/interaction, actual WSL container execution,
+  GiNZA setup in a new target and macOS/Windows behavior explicitly unverified.
+- Retain the four pre-existing `TODO` cases and the previously documented,
+  unexplained ESLint-flakiness risk; TODOs are not passing results.
+- Treat the successful development gate and host regression/mutation checks
+  as development evidence only. The final 0.2.0 source/artifact and fixed
+  support matrix still require two consecutive clean qualifying runs and
+  separate exact-artifact human approval before publishing.
+
 ## [0.2.0-dev.0] - Development started 2026-10-21
 
 This is the v0.2.0 development line, not a published or qualified release.
