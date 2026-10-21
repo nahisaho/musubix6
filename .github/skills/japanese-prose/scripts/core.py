@@ -76,10 +76,14 @@ def iter_content_lines(text: str) -> Iterable[tuple[int, str]]:
 
         fence = FENCE_RE.match(raw)
         if fence:
-            marker = fence.group(1)[0]
+            marker = fence.group(1)
             if not fence_marker:
                 fence_marker = marker
-            elif marker == fence_marker:
+            elif (
+                marker[0] == fence_marker[0]
+                and len(marker) >= len(fence_marker)
+                and not raw[fence.end():].strip()
+            ):
                 fence_marker = ""
             yield index, ""
             continue

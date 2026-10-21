@@ -4,13 +4,28 @@
   "status": "frozen-prospective",
   "policy": "docs/design-sdd-hardening.md section 3.5",
   "revision": {
-    "number": 5,
-    "previous": "/home/nahisaho/.copilot/session-state/f19a6ec9-6db2-429b-a409-154bd92f91ad/files/qualification-v013/manifest-r4.json",
-    "previousSha256": "efa19b454192e3ae8b27e3a6dedb9b9c7162c3e4a84b4f4ef28541ea8dbc061c",
-    "reason": "Revision4 run1 failed and remains retained with zero clean-run credit. Restore original REQ-NODE20-001 unsupported iterator.map counterexample, declare both existing ownership row/count oracle locations, and bind18 named oracle selftests including actual Node20/24 controls for both definitions. Original49/57 mandatory mechanisms,22 cells,1119 regressions,6 scope cases, support, budgets and4 TODO exclusions remain unchanged; candidate source/package bytes unchanged. Contract Red/Green and isolated previous-definition reversals/restoration observed before freeze. Two entirely new unchanged complete runs required.",
+    "number": 10,
+    "previous": "/home/nahisaho/.copilot/session-state/f19a6ec9-6db2-429b-a409-154bd92f91ad/files/qualification-v013/manifest-r9.json",
+    "previousSha256": "cbed034f11d4ef5d7e33fbe412e3b42b13312ff9486481ceaaeecfe36d72229c",
+    "reason": "User approved recording actual wslc3.0.4.0 and current PATH after revision9/run6 rejected the environment before any cell. Preserve run5 interruption and run6 failure. Only native environment identity and revision/restart metadata change; all required conditions remain unchanged. Start fresh run7/run8 from zero.",
     "historicalMatrix": ".sdd/release-validation.v0.1.1.json",
     "historicalMatrixSha256": "1c7b905ebf26118fb1b079e0b83b12d0326fc86dbf4dec7bd54c38f58106e743",
     "scope": "0.1.2 never qualified. Retain49 mandatory mechanisms, all prior environments/native/package cells and named TODO exclusions; add both diagnostics suites,57 diagnostic mutations and actual full gate. Regression/full-gate budgets12000s prospectively account for observed3333s suite plus four-cell concurrency; no prior runs credited."
+  },
+  "revision9Restart": {
+    "kind": "External-input change and evidence-history reset only; no implementation or requirement behavior change.",
+    "passCondition": "Two fresh complete22-cell runs use this exact manifest and frozen candidate/helpers/support. All1119 named regressions,4 exact TODO exclusions,49 historical plus57 diagnostic mutations and23 oracle cases remain required. No required skip, missing result or input drift counts as PASS.",
+    "counterexample": "Reclassifying failed run4 or either standalone diagnostic as a qualifying run would falsely establish a clean streak. Changing npm configuration during a gate must still invalidate its evidence.",
+    "testCommand": "qualification-run.mjs run run5 && qualification-run.mjs run run6",
+    "observedEvidence": "Revision8/run4 remains failed with zero credit. User confirms npm configuration update near14:43JST. diagnose-r8-npm-test/verification.json and diagnose-r8-gate/verification.json independently match the frozen1119-name catalogue. Full-gate diagnostic PASS used an extra transparent npm recorder and therefore is not unchanged-matrix qualification. Original initial gate test failure remains unreproduced and unknown.",
+    "riskStages": {
+      "contract": "No scope, verdict, required case or approved600-second outer helper budget change.",
+      "trusted inputs": "Record external configuration update without inspecting credentials. Preserve original input-snapshot rejection and before/after frozen identity checks. Do not update npm configuration during the fresh runs.",
+      "execution": "Fresh run5/run6 directories; original unmodified runner and concurrent integrated gate plus three runtime suites. Diagnostic instrumentation is not used for qualification.",
+      "verdict": "Only complete unchanged PASS runs count. The historical initial failure is not declared fixed or attributed solely to configuration drift.",
+      "evidence history": "Archive revision8 unchanged; keep all failed runs and standalone diagnostics; reset streak to zero.",
+      "integration/distribution": "Published package and source bytes remain unchanged. No publishing, tagging, retrospective approval or claim of release readiness."
+    }
   },
   "correctionContract": [
     {
@@ -36,6 +51,39 @@
     "evidence history": "Preserve immutable revision4 and failed run1. Revision5 starts at zero and requires two new complete unchanged runs.",
     "integration/distribution": "Candidate/source/package bytes do not change. Full22-cell qualification, including genuine package/native/full-gate controls, still required before any separate exact-artifact publication approval."
   },
+  "revision6Contract": {
+    "req": "REL013-008 / legacy committed approval materialization",
+    "passCondition": "An isolated cell keeps every candidate file byte unchanged, while git show HEAD:./.sdd/approvals.json and tracked index resolve the real2a99734 committed history from a hash-bound genuine Git bundle. Existing legacy runner-selection approval matches; no new approval is fabricated.",
+    "counterexamples": "Archive-only copy lacks Git and fails approval provenance. Missing bundle, unknown commit or option-shaped commit must be rejected, not silently initialized with a synthetic history or approved anew. Read-only historical lookup must not depend on mutable checkout HEAD.",
+    "testCommand": "node --test qualification-v013/materialization.test.mjs; actual isolated gate preflight followed by the complete gate in fresh qualification",
+    "observedEvidence": "materialization-red.tap:2 genuine assertion failures before helper implementation; materialization-green-final.tap:2 pass; isolated archive-only/guard bypass assertions detected and four restored controls pass; native-exit swallow mutation detected and restored. helper-r6-green.tap:22 pass,0 fail/skip/TODO. gate-provenance-spike-result.json:actual unchanged approval checker accepts runner-selection legacy lock; --no-run exit2/INCOMPLETE is explicitly not a complete gate. nunit-restore-probe-1792458779047/result.json:sequential plus4 concurrent exact native restores pass. nunit-selected-r6-results.json:required regression executes/passes without selected skips on actual Node20/22/24. Previous restore cause remains unknown; raw native recorder added, not a claimed product fix.",
+    "riskStages": {
+      "contract": "All22 cells,1119 regression names,49+57 mutation mechanisms and4 TODO exclusions retained. No new skipped case admitted.",
+      "trusted inputs": "Hash-bind genuine history bundle and exact original base commit; reject missing/unreachable history and invalid IDs.",
+      "execution": "Real isolated Git database/index and original candidate bytes. Run real NUnit selected fixture on each runtime with native restore logs; do not classify transient success as root-cause proof.",
+      "verdict": "Approval checks and exact test catalogue remain unchanged; materialization must accept genuine provenance and reject absent history.",
+      "evidence history": "Revision5/run2 remains FAIL; revised history/environment/materialization resets streak to zero and requires two entirely fresh runs.",
+      "integration/distribution": "No published package/source change. Git metadata is validation-only and excluded explicitly from candidate byte-tree comparison while independently bound by bundle and commit. Full gate and all package/native controls remain required."
+    }
+  },
+  "budgetApproval": {
+    "by": "nahisaho",
+    "response": "承認：600秒へ変更して再実行",
+    "scope": "Only ORACLE-SELFTEST qualification orchestration outer timeout120 to600 seconds, with unchanged required cases and complete two-run reset. Not publication approval.",
+    "basis": "helper-r7-green.tap:23/23 completed in157715.730265ms; run3/ORACLE-SELFTEST.command.json:exit124 at120s."
+  },
+  "revision7Contract": {
+    "req": "REL013-008 / strict candidate metadata admission",
+    "passCondition": "Default frozen tree hashing detects any newly added .git file; only the explicitly bound gate materialization excludes a regular .git pointer and verifies its exact content and genuine HEAD after execution. A .git directory is never admitted by the exception.",
+    "counterexample": "An unexpected gitdir:/untrusted/history pointer must change the immutable candidate digest, not disappear under a global tree exclusion.",
+    "testCommand": "candidate tree rejects unexpected Git metadata unless explicitly bound for the gate cell; materialization-mutations.mjs; full helper suite",
+    "evidence": "git-pointer-red.tap: actual named assertion failure before default guard correction. git-pointer-mutation.tap: isolated permissive default reversed and assertion-detected. materialization-restored.tap:9 passing restored controls. helper-r7-green.tap:23 pass,0 fail/skip/TODO. No revision6 full run started; all prior failed runs retain zero credit.",
+    "riskStages": "Contract/trusted inputs/verdict: exact explicit exemption, no broad ignore. Execution/history: genuine frozen history, original checker, failed runs retained. Integration: immutable package/source unchanged; full gate and complete two-run qualification still required."
+  },
+  "gitHistory": {
+    "bundle": "/home/nahisaho/.copilot/session-state/f19a6ec9-6db2-429b-a409-154bd92f91ad/files/qualification-v013/candidate-history-r6.bundle",
+    "baseCommit": "2a9973483e23c63ae3303ca84f88b521bd0b4ef3"
+  },
   "sourceCommit": "2a9973483e23c63ae3303ca84f88b521bd0b4ef3",
   "sourceCommitMeaning": "Base commit; immutable source archive and tree bind all uncommitted release metadata and documentation updates.",
   "sourceArchive": {
@@ -49,7 +97,7 @@
       "sha256": "467983b785085cfdf582f671739fcb05c15c2bda6da9eec2cb4382cf4728bf7e"
     }
   },
-  "materialization": "Extract sourceArchive; add an absolute node_modules symlink to the frozen repository development dependency tree. No untracked source/cache/bytecode is packed.",
+  "materialization": "Extract sourceArchive; add the frozen absolute node_modules link. Only INTEGRATED-GATE adds a .git pointer to a private external database/index cloned from the hash-bound genuine history bundle at exact base2a99734; every source byte remains unchanged. Exclude only that metadata pointer from payload tree comparison and independently verify pointer/HEAD after gate. Every cell adds an external PATH wrapper that transparently records actual /usr/bin/dotnet invocations/exits without retry or fallback. No source/cache/bytecode is added to the package.",
   "package": {
     "path": "/home/nahisaho/.copilot/session-state/f19a6ec9-6db2-429b-a409-154bd92f91ad/files/v013-candidate/package/musubix6-0.1.3.tgz",
     "sha256": "71c7e0570e706648340d08b1078dd5054a65ecc3e051437c6558332b606ca063"
@@ -61,11 +109,11 @@
     },
     {
       "path": "/home/nahisaho/.copilot/session-state/f19a6ec9-6db2-429b-a409-154bd92f91ad/files/qualification-v013/qualification-run.mjs",
-      "sha256": "7d28e46a9ea609164fcb1a1c2086c83c6597446f1016e98f931e81ea960ecf7a"
+      "sha256": "e309cd2873ba522c2a30b2f5c7a29a93fe1839a6b3fcd51f4101535bec44d35a"
     },
     {
       "path": "/home/nahisaho/.copilot/session-state/f19a6ec9-6db2-429b-a409-154bd92f91ad/files/qualification-v013/qualification-run.test.mjs",
-      "sha256": "52f2df2958293a8ab80ba84e1e67801c1a40f198e8a790963a036bbe1272cc50"
+      "sha256": "1c8981a5a22a478dc024670948c35395e3c7a550ec8f8cec3f89becaa3a5850f"
     },
     {
       "path": "/home/nahisaho/.copilot/session-state/f19a6ec9-6db2-429b-a409-154bd92f91ad/files/qualification-v013/qualification-mutations.mjs",
@@ -102,6 +150,34 @@
     {
       "path": "/home/nahisaho/.copilot/session-state/f19a6ec9-6db2-429b-a409-154bd92f91ad/files/qualification-v013/blocker-mutation-check.mjs",
       "sha256": "ed77b295fcac922d9219ae4775b950765210159675729e0def6f8bce7cfb95dd"
+    },
+    {
+      "path": "/home/nahisaho/.copilot/session-state/f19a6ec9-6db2-429b-a409-154bd92f91ad/files/qualification-v013/materialization.mjs",
+      "sha256": "369c3f4b801986a24c6c384d681050fea70d2b31dd178694aadef7b797d2f980"
+    },
+    {
+      "path": "/home/nahisaho/.copilot/session-state/f19a6ec9-6db2-429b-a409-154bd92f91ad/files/qualification-v013/materialization.test.mjs",
+      "sha256": "b8797f1c8313eee229ee9de47ad79cc17514558846293d354cad7f504637aa20"
+    },
+    {
+      "path": "/home/nahisaho/.copilot/session-state/f19a6ec9-6db2-429b-a409-154bd92f91ad/files/qualification-v013/dotnet-recorder.mjs",
+      "sha256": "8caf018f941cd79e6d1d9b75e951b156927294102b574eec68f9930b7ca15e24"
+    },
+    {
+      "path": "/home/nahisaho/.copilot/session-state/f19a6ec9-6db2-429b-a409-154bd92f91ad/files/qualification-v013/dotnet-recorder.test.mjs",
+      "sha256": "bce59a0598dc923959f5fec5d11359555c8870423facf7c0099dad5a38428b75"
+    },
+    {
+      "path": "/home/nahisaho/.copilot/session-state/f19a6ec9-6db2-429b-a409-154bd92f91ad/files/qualification-v013/candidate-history-r6.bundle",
+      "sha256": "8f42bdefa393e37f3e7e87be13858f822aaa82d30fa308f28df4597063e1527f"
+    },
+    {
+      "path": "/home/nahisaho/.copilot/session-state/f19a6ec9-6db2-429b-a409-154bd92f91ad/files/qualification-v013/manifest-r6-plan.json",
+      "sha256": "b38a319f23d7b9bb08c3ab184b55dee76de0e42e63444c978aebe3b5acc26b37"
+    },
+    {
+      "path": "/home/nahisaho/.copilot/session-state/f19a6ec9-6db2-429b-a409-154bd92f91ad/files/qualification-v013/materialization-mutations.mjs",
+      "sha256": "f526bdf3424beeb89ba772244ecd5ec5143fee736af9f8f50f1bea7fe2f1ee43"
     }
   ],
   "runtimes": {
@@ -153,7 +229,7 @@
   ],
   "nativeEnvironment": {
     "environment": {
-      "PATH": "/home/nahisaho/.nvm/versions/node/v24.21.0/bin:/home/nahisaho/.copilot/session-state/f19a6ec9-6db2-429b-a409-154bd92f91ad/files/qualification-v013/r-bin:/home/nahisaho/.copilot/session-state/f19a6ec9-6db2-429b-a409-154bd92f91ad/files/runtimes/gradle-8.14.3/bin:/mnt/c/Users/nahisaho/AppData/Roaming/orca/wsl-managed-cli/6c61aa6bdd905c7b6b1c:/home/nahisaho/.local/bin:/home/nahisaho/.juliaup/bin:/home/nahisaho/.cargo/bin:/home/nahisaho/.nvm/versions/node/v24.21.0/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/usr/lib/wsl/lib:/usr/lib/linux-tools/6.18.54.1-microsoft-standard-WSL2/bin:/mnt/c/Users/nahisaho/AppData/Local/Programs/orca/resources/bin:/mnt/c/Users/nahisaho/.volta/bin:/mnt/c/Users/nahisaho/.asdf/shims:/mnt/c/Users/nahisaho/.fnm/aliases/default/bin:/mnt/c/Users/nahisaho/.local/share/mise/shims:/mnt/c/Users/nahisaho/.local/bin:/mnt/c/Users/nahisaho/AppData/Roaming/npm:/mnt/c/Users/nahisaho/AppData/Local/pnpm:/mnt/c/Users/nahisaho/AppData/Local/Yarn/bin:/mnt/c/Users/nahisaho/.bun/bin:/mnt/c/windows/system32:/mnt/c/windows:/mnt/c/windows/System32/Wbem:/mnt/c/windows/System32/WindowsPowerShell/v1.0/:/mnt/c/windows/System32/OpenSSH/:/mnt/c/Program Files (x86)/Fujitsu/FJAgent/Core/bin:/mnt/c/Program Files/dotnet/:/mnt/c/Program Files/WSL/:/mnt/c/Program Files/GitHub CLI/:/mnt/c/Program Files/Git/cmd:/mnt/c/Users/nahisaho/AppData/Local/Microsoft/WindowsApps:/mnt/c/Users/nahisaho/AppData/Local/Programs/Microsoft VS Code/bin:/mnt/c/Users/nahisaho/AppData/Local/Microsoft/WinGet/Packages/GitHub.Copilot_Microsoft.Winget.Source_8wekyb3d8bbwe:/snap/bin:/home/nahisaho/.dotnet/tools",
+      "PATH": "/home/nahisaho/.nvm/versions/node/v24.21.0/bin:/home/nahisaho/.copilot/session-state/f19a6ec9-6db2-429b-a409-154bd92f91ad/files/qualification-v013/r-bin:/home/nahisaho/.copilot/session-state/f19a6ec9-6db2-429b-a409-154bd92f91ad/files/runtimes/gradle-8.14.3/bin:/mnt/c/Users/nahisaho/AppData/Roaming/orca/wsl-managed-cli/6c61aa6bdd905c7b6b1c:/home/nahisaho/.local/bin:/home/nahisaho/.juliaup/bin:/home/nahisaho/.cargo/bin:/home/nahisaho/.nvm/versions/node/v24.21.0/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/usr/lib/wsl/lib:/mnt/c/Users/nahisaho/AppData/Local/Programs/orca/resources/bin:/mnt/c/Users/nahisaho/.volta/bin:/mnt/c/Users/nahisaho/.asdf/shims:/mnt/c/Users/nahisaho/.fnm/aliases/default/bin:/mnt/c/Users/nahisaho/.local/share/mise/shims:/mnt/c/Users/nahisaho/.local/bin:/mnt/c/Users/nahisaho/AppData/Roaming/npm:/mnt/c/Users/nahisaho/AppData/Local/pnpm:/mnt/c/Users/nahisaho/AppData/Local/Yarn/bin:/mnt/c/Users/nahisaho/.bun/bin:/mnt/c/windows/system32:/mnt/c/windows:/mnt/c/windows/System32/Wbem:/mnt/c/windows/System32/WindowsPowerShell/v1.0/:/mnt/c/windows/System32/OpenSSH/:/mnt/c/Program Files (x86)/Fujitsu/FJAgent/Core/bin:/mnt/c/Program Files/dotnet/:/mnt/c/Program Files/GitHub CLI/:/mnt/c/Program Files/Git/cmd:/mnt/c/Program Files/WSL/:/mnt/c/Users/nahisaho/AppData/Local/Microsoft/WindowsApps:/mnt/c/Users/nahisaho/AppData/Local/Programs/Microsoft VS Code/bin:/mnt/c/Users/nahisaho/AppData/Local/Microsoft/WinGet/Packages/GitHub.Copilot_Microsoft.Winget.Source_8wekyb3d8bbwe:/snap/bin:/home/nahisaho/.dotnet/tools:/home/nahisaho/.cache/copilot/pkg/linux-x64/1.0.100/ripgrep/bin/linux-x64",
       "JAVA_HOME": "/usr/lib/jvm/java-21-openjdk-amd64",
       "CARGO_HOME": null,
       "RUSTUP_HOME": null,
@@ -314,8 +390,8 @@
         ],
         "entry": "/usr/bin/dotnet",
         "executable": "/usr/lib/dotnet/dotnet",
-        "sha256": "9251c1839dfdfd619ae04eedf581704141e9277e617485b06db97c43e07253d7",
-        "version": "10.0.112\n"
+        "sha256": "bebf5e63396735bdc14caae72d50eaf2d145f9166d9d932b514ec2f9f8b94e2d",
+        "version": "10.0.113\n"
       },
       {
         "command": "php",
@@ -324,8 +400,8 @@
         ],
         "entry": "/usr/bin/php",
         "executable": "/usr/bin/php8.5",
-        "sha256": "07f980290bb866ffe7d82450c2deccd52f9f4834c19ce571d451cbc6120f115e",
-        "version": "PHP 8.5.4 (cli) (built: Sep  2 2026 14:42:18) (NTS)\nCopyright (c) The PHP Group\nBuilt by Ubuntu\nZend Engine v4.5.4, Copyright (c) Zend Technologies\n    with Zend OPcache v8.5.4, Copyright (c), by Zend Technologies\n"
+        "sha256": "3d0e1a1b82ac1ccde4f7bc5b2df4c4bdd818e74ef4fef685c626454bacd40b3b",
+        "version": "PHP 8.5.4 (cli) (built: Oct 13 2026 19:05:38) (NTS)\nCopyright (c) The PHP Group\nBuilt by Ubuntu\nZend Engine v4.5.4, Copyright (c) Zend Technologies\n    with Zend OPcache v8.5.4, Copyright (c), by Zend Technologies\n"
       },
       {
         "command": "composer",
@@ -397,7 +473,7 @@
         "entry": "/usr/bin/bash",
         "executable": "/usr/bin/bash",
         "sha256": "3efccc187bafa75ff1e37d246270ab3e7aa559f242c7a52bf3ec2a1b5450bdbd",
-        "version": "wslc 3.0.3.0\r\n"
+        "version": "wslc 3.0.4.0\r\n"
       }
     ]
   },
@@ -549,7 +625,7 @@
       "id": "ORACLE-SELFTEST",
       "runtime": "24",
       "kind": "oracle",
-      "timeoutSeconds": 120
+      "timeoutSeconds": 600
     },
     {
       "id": "PROCESS-SELFTEST",
@@ -3605,11 +3681,16 @@
     "CLI finite modes and malformed argument controls",
     "bounded isolated oracle mutations are detected, then originals remain passing",
     "bounded replacement rejects missing, duplicate and no-op anchors",
+    "candidate tree rejects unexpected Git metadata unless explicitly bound for the gate cell",
     "file-level success cannot impersonate a missing named target",
     "fixed catalogue accepts real passing controls and named TODO exclusions, never omitted or skipped cases",
+    "gate materialization rejects missing or unbound Git history without changing candidate",
+    "isolated gate source preserves genuine legacy approval history and candidate bytes",
     "isolated oracle mutation is detected and restored without touching production",
     "mandatory iterator mutation is detected by the original runtime compatibility regression",
     "mandatory ownership mutation is detected by its exact target-row or execution-count regression",
+    "native recorder preserves actual stdout stderr and exit0 without treating failure as success",
+    "native recorder preserves actual stdout stderr and exit17 without treating failure as success",
     "native target control rejects zero-test, skipped and NO-SOURCE reports",
     "native version probe preserves symlink dispatch entry while hashing its canonical binary",
     "oracle accepts valid baseline and an owned expected assertion, not excluded Node20 skips",
@@ -3649,5 +3730,25 @@
     "r24d scope differential (js): every single-file mutation keeps scope ⊇ oracle-relevant checks",
     "r24d scope differential (python): an unclaimed file is irrelevant to every check but warns, and fails under strict",
     "r24d scope differential (python): every single-file mutation keeps scope ⊇ oracle-relevant checks"
-  ]
+  ],
+  "revision10Restart": {
+    "approval": {
+      "by": "nahisaho",
+      "response": "現在の wslc 3.0.4.0 と PATH を新しい manifest revision に固定し、全必須条件を維持して2回の完全検証をやり直す",
+      "scope": "Prospective native environment update only. All candidate/helper/runtime/dependency bytes,22 cells,1119 regression names,49+57 mutations,23 oracle cases,4 exact TODO exclusions, command shapes, verdicts and budgets remain unchanged. Two fresh full runs from zero. No release, tagging or publication approval."
+    },
+    "req": "REL013-012 / supported native environment identity",
+    "passCondition": "Original unchanged runner accepts exactly the prospectively frozen current native environment, then all22 required cells pass in two fresh complete unchanged runs. Native WSLC real controls remain mandatory; an updated version string alone is not qualification.",
+    "counterexample": "Actual wslc3.0.4.0 against revision9 expected3.0.3.0, or any unexpected PATH/tool/version change after revision10 freeze, must be rejected before credit. Reusing any run1-run6 partial/failed/diagnostic evidence cannot establish a streak.",
+    "testCommand": "qualification-run.mjs run run7 && qualification-run.mjs run run8",
+    "observedEvidence": "Revision9/run6 failed the original verifyFrozen supported-native-environment assertion before any cell, with actual wslc3.0.4.0 and PATH drift. Fresh runtime probes match the entire old23-tool environment after exactly the approved PATH and wslc-version changes; no other field differs. Complete qualifying runs remain pending, not inferred from probes.",
+    "riskStages": {
+      "contract": "No required condition removed or weakened. User explicitly approved current environment freeze.",
+      "trusted inputs": "Archive exact revision9 bytes/hash; bind current actual probes. Preserve original fail-closed before/after comparisons. Do not fake versions, change shared tools or inspect credentials.",
+      "execution": "Fresh full run7 then run8 only if run7 passes; original runner and helpers execute real native WSLC controls and concurrent full suites/gate.",
+      "verdict": "Positive probes are identity evidence only, not cell passes. Missing/skipped/failed cases or input changes still invalidate a run.",
+      "evidence history": "Keep all prior failures and run5 interruption. Reset to zero; no diagnostic, partial, or revision9 credit.",
+      "integration/distribution": "Candidate/package/support command shapes unchanged. Two clean runs still require residual assessment; no publication, tagging or retrospective release authorization."
+    }
+  }
 }

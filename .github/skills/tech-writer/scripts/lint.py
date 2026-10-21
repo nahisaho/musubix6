@@ -73,7 +73,9 @@ GENERIC_HEADINGS = {
 FENCE_RE = re.compile(r"^(`{3,}|~{3,})(.*)$")
 PLACEHOLDER_RE = re.compile(r"\b(TODO|FIXME|TBD|XXX)\b", re.IGNORECASE)
 MD_LINK_RE = re.compile(r"\[([^\]]*)\]\(([^)]+)\)")
-INLINE_CODE_RE = re.compile(r"`[^`\n]+`")
+INLINE_CODE_RE = re.compile(r"(?<!`)(`+)(?!`)(.+?)(?<!`)\1(?!`)")
+URL_TOKEN_RE = re.compile(r"(?:[a-z][a-z0-9+.-]*://|mailto:|www\.)[^\s<>`]+", re.IGNORECASE)
+COMPOUND_IDENTIFIER_RE = re.compile(r"\w+(?:[-./\\]\w+)+")
 BOLD_RE = re.compile(r"(?<![\\*])\*\*(?!\s)(.+?)(?<!\s)\*\*(?!\*)")
 NON_PARAGRAPH_RE = re.compile(
     r"^(?:[-*+]\s|\d+[.)]\s|>|<!--|\|)|^(?:-{3,}|\*{3,}|_{3,})$"
@@ -189,23 +191,43 @@ def check_heading_hierarchy(lines: list, fence_mask: list) -> list:
     return findings
 
 
+# @id CODE-TW-PH-002
+# @implements REQ-TW-PH-002
+def strip_placeholder_context(line: str) -> str:
+    checked = strip_inline_code(line)
+    for match in MD_LINK_RE.finditer(checked):
+        start, end = match.span(2)
+        checked = checked[:start] + " " * (end - start) + checked[end:]
+    for pattern in (URL_TOKEN_RE, COMPOUND_IDENTIFIER_RE):
+        checked = pattern.sub(lambda match: " " * len(match.group(0)), checked)
+    return checked
+
+
+# @id CODE-TW-PH-001
+# @implements REQ-TW-PH-001
 def check_placeholders(lines: list, fence_mask: list) -> list:
     findings = []
     for i, line in enumerate(lines):
         if fence_mask[i]:
             continue
-        checked = strip_inline_code(line)
+        checked = strip_placeholder_context(line)
         for m in PLACEHOLDER_RE.finditer(checked):
-            # a lower-case/Title-case "todo" is an app or project name (todo-cli), not a marker
-            if m.group(1).lower() == "todo" and not m.group(1).isupper() and checked[m.end():m.end() + 1] != ":":
+            suffix = line[m.end():].lstrip(" \t")
+            # Unpunctuated lower-case names remain ambiguous; require an
+            # explicit colon or annotation before treating them as markers.
+            if (
+                m.group(1).lower() == "todo"
+                and not m.group(1).isupper()
+                and not suffix.startswith((":", "\uff1a", "("))
+            ):
                 continue
             # A justified/tracked marker like "TODO(#123): ..." documents a
             # reason and a tracking reference, which is exactly what this
             # skill's own guidance asks for — don't flag that form. An empty
             # "TODO()" carries no reason at all, so it still gets flagged.
-            if checked[m.end():m.end() + 1] == "(":
-                close_idx = checked.find(")", m.end())
-                content = checked[m.end() + 1:close_idx] if close_idx != -1 else ""
+            if suffix.startswith("("):
+                close_idx = suffix.find(")")
+                content = suffix[1:close_idx] if close_idx != -1 else ""
                 if content.strip():
                     continue
             findings.append(
@@ -349,6 +371,8 @@ def check_intro_paragraph(lines: list, fence_mask: list) -> list:
     ]
 
 
+# @id CODE-TW-PH-003
+# @implements REQ-TW-PH-003
 def run_lint(path: Path, atomic: bool = False) -> LintResult:
     text = path.read_text(encoding="utf-8")
     lines = text.splitlines()

@@ -1,7 +1,7 @@
 # musubix6
 
 Agent skills for **lean, spec-driven and test-driven development** and for
-**technical writing in Japanese and English**, packaged for GitHub Copilot CLI
+**technical writing in Japanese and English, structured analysis and presentation planning**, packaged for GitHub Copilot CLI
 (`.github/skills/`).
 
 [日本語](README-ja.md) | [npm](https://www.npmjs.com/package/musubix6) | [Changelog](CLANGELOG.md)
@@ -12,7 +12,9 @@ Agent skills for **lean, spec-driven and test-driven development** and for
 | [`lean-agentic-coding`](.github/skills/lean-agentic-coding/SKILL.md) | Risk tiers (T0–T2), context budget, delta review and a compact gate to cut token usage while keeping rigor. |
 | [`sdd-spec-interview`](.github/skills/sdd-spec-interview/SKILL.md) | Interviews the user one question at a time and writes the SDD spec (`.sdd/specs/<feature>.md`). |
 | [`tech-writer`](.github/skills/tech-writer/SKILL.md) | Structures README, design docs, test plans, runbooks, proposals, RFI/RFP, Qiita/Zenn articles and more (from [kotonoha](https://github.com/nahisaho/kotonoha), MIT). |
-| [`japanese-prose`](.github/skills/japanese-prose/SKILL.md) | GiNZA-based Japanese prose diagnostics: naturalness, reading load, terminology, AI-like patterns (from kotonoha, MIT). |
+| [`japanese-prose`](.github/skills/japanese-prose/SKILL.md) | GiNZA-based Japanese prose diagnostics and proofreading, with protected-content checks and hash-bound semantic review for edits (from kotonoha, MIT). |
+| [`consulting-analyst`](.github/skills/consulting-analyst/SKILL.md) | Structures decision questions, issue trees, hypotheses, evidence and option comparisons before document or presentation planning (from kotonoha, MIT). |
+| [`presentation-planner`](.github/skills/presentation-planner/SKILL.md) | Plans presentation scenarios, slide outlines and design specifications; hands off PPTX generation to a dedicated skill rather than generating files itself (from kotonoha, MIT). |
 | [`wslc-containers`](.github/skills/wslc-containers/SKILL.md) | Operate Linux containers on Windows via the built-in WSL container CLI (`wslc.exe`), without Docker Desktop (from [wslc-containers-skill](https://github.com/nahisaho/wslc-containers-skill), MIT). |
 | [`agent-watchdog`](.github/skills/agent-watchdog/SKILL.md) | Detects stalled background agents (read-only `watchdog.mjs` for workspace idle time, plus a 5-minute scheduled idle check via `manage_schedule` that finds Idle agents with unfinished work with `list_agents` and resumes them with `write_agent`). |
 
@@ -23,6 +25,7 @@ Agent skills for **lean, spec-driven and test-driven development** and for
 | Node.js ≥ 20 | `lean-sdd-tdd` (`scripts/sdd.mjs`, no `npm install`) |
 | Python ≥ 3.10 and **[uv](https://docs.astral.sh/uv/)** | `japanese-prose` diagnostics and `tech-writer` lint |
 | **[GiNZA](https://github.com/megagonlabs/ginza)** (`ginza`, `ja-ginza`, `spacy`) | `japanese-prose` morphological/dependency analysis |
+| **[markdown-it-py](https://github.com/executablebooks/markdown-it-py)** | `japanese-prose` edit-invariant checks (`uv` resolves the script dependency) |
 | Target stack toolchains (optional) | `gate`/`tdd` run the project's own test runner: Go, Cargo, JDK + Maven/Gradle, CMake, .NET, PHP, Julia, … |
 
 ### Install uv

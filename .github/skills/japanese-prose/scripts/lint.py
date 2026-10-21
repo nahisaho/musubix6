@@ -75,9 +75,11 @@ DOUBLE_NEGATIVE_RULES = (
     re.compile(r"ないわけではない"),
     re.compile(r"ないことはない"),
     re.compile(r"なくはない"),
-    re.compile(r"なくてはならない"),
-    re.compile(r"ざるを得ない"),
 )
+
+BRACKET_PAIRS = dict(zip("（［｛「『【", "）］｝」』】"))
+POLITE_END_RE = re.compile(r"(?:です|ます|でした|ました|ません(?:でした)?|でしょう|ましょう|ください|下さい)$")
+PLAIN_END_RE = re.compile(r"(?:である|だった|だ|る|た|ない)$")
 
 GENRE_LIMITS = {
     "general": {"length": 90, "critical_length": 150, "commas": 5, "depth": 8},
@@ -100,6 +102,64 @@ def add(
     )
 
 
+def proofread(block, doc, findings: list[Finding]) -> None:
+    stack: list[str] = []
+    unbalanced = False
+    for character in block.text:
+        if character in BRACKET_PAIRS:
+            stack.append(character)
+        elif character in BRACKET_PAIRS.values():
+            if not stack or BRACKET_PAIRS[stack[-1]] != character:
+                unbalanced = True
+            else:
+                stack.pop()
+    if stack or unbalanced:
+        add(
+            findings, block.start_line, "unbalanced_brackets", "warning",
+            "括弧の対応が取れていません。引用や数式として意図した表記か確認します。",
+            block.text,
+        )
+
+    for previous, current in zip(doc, doc[1:]):
+        if previous.idx + len(previous.text) != current.idx or previous.text != current.text:
+            continue
+        particle = previous.pos_ == current.pos_ == "ADP"
+        word = (
+            len(current.text) >= 2
+            and previous.pos_ == current.pos_
+            and current.pos_ in {"NOUN", "VERB", "ADJ", "ADV"}
+        )
+        if particle or word:
+            add(
+                findings, sentence_line(block, current.idx),
+                "duplicate_particle" if particle else "duplicate_word", "warning",
+                "同じ助詞が隣接しています。誤入力による重複か確認します。"
+                if particle else "同じ語が隣接しています。意図した反復か確認します。",
+                current.sent.text, {"repeated": current.text},
+            )
+
+    first_style = None
+    for sent in doc.sents:
+        if re.search(r'[「」『』"“”]', sent.text):
+            continue
+        ending = sent.text.strip().rstrip("。！？!?")
+        style = (
+            "polite" if POLITE_END_RE.search(ending)
+            else "plain" if PLAIN_END_RE.search(ending)
+            else None
+        )
+        if style and first_style and style != first_style:
+            add(
+                findings, sentence_line(block, sent.start_char),
+                "mixed_sentence_style", "warning",
+                "同じ段落に敬体と常体が混在しています。引用や意図した使い分けか確認します。",
+                sent.text,
+            )
+            break
+        if style:
+            first_style = style
+
+
 def analyze(path: Path, genre: str, reading_load: bool) -> dict:
     text = read_text(path)
     blocks = iter_prose_blocks(text)
@@ -110,12 +170,17 @@ def analyze(path: Path, genre: str, reading_load: bool) -> dict:
     paragraph_leads: list[tuple[int, str]] = []
 
     for block, doc in zip(blocks, nlp.pipe([item.text for item in blocks])):
+        if not reading_load:
+            proofread(block, doc, findings)
         paragraph_tokens = content_tokens(doc)
         if paragraph_tokens:
             paragraph_leads.append((block.start_line, paragraph_tokens[0].lemma_))
 
         for phrase, (category, message) in PHRASE_RULES.items():
-            if not reading_load and phrase in block.text:
+            pattern = re.escape(phrase)
+            if category == "formulaic_conclusion":
+                pattern += r"(?!か|[?？])"
+            if not reading_load and re.search(pattern, block.text):
                 add(findings, block.start_line, category, "warning", message, block.text)
 
         if not reading_load:

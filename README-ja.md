@@ -1,7 +1,7 @@
 # musubix6
 
 GitHub Copilot CLI 向けのエージェントスキル集です。
-**軽量な仕様駆動(SDD)・テスト駆動(TDD)開発** と **日本語・英語の技術文書作成** を支援します。
+**軽量な仕様駆動(SDD)・テスト駆動(TDD)開発** と **日本語・英語の技術文書作成、課題分析、プレゼン資料の構成設計** を支援します。
 スキルは `.github/skills/` から読み込まれます。
 
 [English](README.md) | [npm](https://www.npmjs.com/package/musubix6) | [変更履歴](CLANGELOG.md)
@@ -12,7 +12,9 @@ GitHub Copilot CLI 向けのエージェントスキル集です。
 | [`lean-agentic-coding`](.github/skills/lean-agentic-coding/SKILL.md) | リスク階層(T0〜T2)、コンテキスト予算、差分レビュー、コンパクトな gate により、厳密さを保ちながらトークンを節約します。 |
 | [`sdd-spec-interview`](.github/skills/sdd-spec-interview/SKILL.md) | 1 問 1 答でヒアリングし、SDD の仕様(`.sdd/specs/<feature>.md`)を作成します。 |
 | [`tech-writer`](.github/skills/tech-writer/SKILL.md) | README、設計書、テスト計画書、運用設計書、提案書、RFI/RFP、Qiita/Zenn 記事などの構成を整えます([kotonoha](https://github.com/nahisaho/kotonoha) 由来、MIT)。 |
-| [`japanese-prose`](.github/skills/japanese-prose/SKILL.md) | GiNZA による日本語の診断です。自然さ、読みやすさ、用語、AI 特有の定型表現を調べます(kotonoha 由来、MIT)。 |
+| [`japanese-prose`](.github/skills/japanese-prose/SKILL.md) | GiNZA による日本語の診断・校正です。保護対象の内容が変わっていないかを検査し、修正内容に対応するハッシュ付きの意味レビューを求めます(kotonoha 由来、MIT)。 |
+| [`consulting-analyst`](.github/skills/consulting-analyst/SKILL.md) | 文書やプレゼン資料を作る前に、判断すべき問い、論点、仮説、根拠、選択肢の比較を整理します(kotonoha 由来、MIT)。 |
+| [`presentation-planner`](.github/skills/presentation-planner/SKILL.md) | プレゼン資料のシナリオ、スライド構成、デザイン仕様を設計します。PPTX ファイルは生成せず、専用スキルへ引き継ぎます(kotonoha 由来、MIT)。 |
 | [`wslc-containers`](.github/skills/wslc-containers/SKILL.md) | Windows の組み込み WSL コンテナー CLI(`wslc.exe`)で、Docker Desktop なしに Linux コンテナーを操作します([wslc-containers-skill](https://github.com/nahisaho/wslc-containers-skill) 由来、MIT)。 |
 | [`agent-watchdog`](.github/skills/agent-watchdog/SKILL.md) | 停止したバックグラウンドエージェントを検知します。読み取り専用の `watchdog.mjs` でワークスペースのアイドル時間を測り、`manage_schedule` の 5 分ごとのアイドルチェックで、未完了のまま Idle のエージェントを `list_agents` で見つけ、`write_agent` で続行を指示します。 |
 
@@ -23,6 +25,7 @@ GitHub Copilot CLI 向けのエージェントスキル集です。
 | Node.js 20 以上 | `lean-sdd-tdd`(`scripts/sdd.mjs`。`npm install` は不要) |
 | Python 3.10 以上と **[uv](https://docs.astral.sh/uv/)** | `japanese-prose` の診断、`tech-writer` の lint |
 | **[GiNZA](https://github.com/megagonlabs/ginza)**(`ginza`、`ja-ginza`、`spacy`) | `japanese-prose` の形態素・係り受け解析 |
+| **[markdown-it-py](https://github.com/executablebooks/markdown-it-py)** | `japanese-prose` の編集前後の保護内容検査(`uv` がスクリプトの依存を解決) |
 | 対象スタックのツールチェーン(任意) | `gate` / `tdd` はプロジェクト自身のテストランナーを実行します。Go、Cargo、JDK + Maven/Gradle、CMake、.NET、PHP、Julia など |
 
 ### uv のインストール

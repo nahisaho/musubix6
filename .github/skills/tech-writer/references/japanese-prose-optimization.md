@@ -50,12 +50,16 @@ Never trade technical precision for conversational phrasing.
    skill-loading mechanism. If the host exposes only skill files, resolve
    `<tech-writer-dir>/../japanese-prose/SKILL.md` first, then check
    `.github/skills/japanese-prose/SKILL.md`,
+   `.claude/skills/japanese-prose/SKILL.md`,
    `.copilot/skills/japanese-prose/SKILL.md`, and
-   `$HOME/.copilot/skills/japanese-prose/SKILL.md`; expand `$HOME`, load the
+   `$HOME/.copilot/skills/japanese-prose/SKILL.md`, then
+   `$HOME/.claude/skills/japanese-prose/SKILL.md`; expand `$HOME`, load the
    discovered skill,
    and follow its workflow.
 2. Ask the loaded skill to review and rewrite only the Japanese prose under
-   the frozen invariants.
+   the frozen invariants. Save an immutable pre-edit copy, pass the frozen
+   proper names and domain terms for `--protect`, and keep necessary
+   corrections separate from optional wording changes.
 3. Let `<japanese-prose-dir>` be the directory containing the loaded
    optimizer's `SKILL.md`. When its diagnostics are available, run the
    optimizer's scripts with their qualified paths:
@@ -82,6 +86,12 @@ Never trade technical precision for conversational phrasing.
    violating edit, give the violated invariant back to the optimizer, and
    retry within the round limit. If the violation cannot be resolved, report
    `Japanese prose optimization did not converge`.
+   Run `<japanese-prose-dir>/scripts/invariants.py` against the immutable
+   original and current target. Require a hash-bound contextual semantic
+   review for changed prose, following the optimizer's review workflow.
+   A `review_required` result or an unavailable/failed invariant gate cannot
+   be treated as completion. Rerun after rubber-duck edits; old review hashes
+   do not approve new text.
 7. Re-run kotonoha's doctype checklist and structural lint before
    rubber-duck review.
 
@@ -91,9 +101,9 @@ When this pass is in scope (a living, multi-section document whose requested
 final language is Japanese, in `write` mode), report exactly one status:
 
 - `Japanese prose optimization completed`: the registered optimizer ran and
-  no actionable prose findings remain. Run diagnostics when available; if
-  `uv` or a diagnostic script is unavailable, note that limitation without
-  changing this status.
+  no actionable prose findings remain, and the invariant gate passed with
+  a current semantic review of any edits. A missing optional diagnostic may
+  be noted, but a missing or failed invariant gate prevents this status.
 - `Japanese prose optimization not performed`: the bundled optimizer was
   missing or unreadable, so no prose review or rewrite ran; include the
   concrete reason. A standard `npx kotonoha install` should prevent this
@@ -102,8 +112,8 @@ final language is Japanese, in `write` mode), report exactly one status:
   unresolved actionable findings or invariant violations, or the optimizer
   started but failed before producing a valid result, a required
   post-rubber-duck rerun failed or could not start because all 15 handoffs
-  were already used; list the findings, violations, failure, and attempted
-  fixes.
+  were already used, or the invariant gate/semantic review could not pass;
+  list the findings, violations, failure, and attempted fixes.
 
 Do not claim natural-language optimization based only on kotonoha's
 structural lint. Documents outside the scope of this pass require no Japanese
