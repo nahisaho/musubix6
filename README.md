@@ -2,7 +2,10 @@
 
 Agent skills for **lean, spec-driven and test-driven development** and for
 **technical writing in Japanese and English, structured analysis and presentation planning**, packaged for GitHub Copilot CLI
-(`.github/skills/`).
+(`.github/skills/`) and, in v0.2.0 development, Claude Code (`.claude/skills/`).
+
+The source checkout is **0.2.0-dev.0**, not a published or release-qualified
+v0.2.0. Claude live-session discovery and interaction remain unverified.
 
 [日本語](README-ja.md) | [npm](https://www.npmjs.com/package/musubix6) | [Changelog](CLANGELOG.md)
 
@@ -64,7 +67,10 @@ GiNZA dependency and license details: [`NOTICE.md`](.github/skills/japanese-pros
 
 ## Usage
 
-Copilot CLI loads the skills from `.github/skills/` automatically. Ask in
+Copilot CLI loads the skills from `.github/skills/`; Claude Code discovers
+project skills in `.claude/skills/`. Examples below use Copilot paths: substitute
+`.claude/skills/` for direct scripts in a Claude installation, or use the
+host-independent `musubix6 sdd` wrapper. Ask in
 natural language, for example:
 
 - "Add rate limiting to the API" → `lean-sdd-tdd` (spec → Red → Green → gate)
@@ -214,6 +220,46 @@ approval or release readiness. Keep targeted tests and the final full `gate`.
 Only Linux/Node 24 has been exercised locally; macOS/Windows remain unverified.
 No measured time or AI-cost reduction is claimed.
 
+### Claude Code and dual-host installation (v0.2.0 development)
+
+Use the [source checkout](#install-from-source-git-clone) for these new options;
+the 0.1.x npm commands below do not support `--host`.
+
+```sh
+musubix6 init /path/to/project --host claude
+musubix6 init /path/to/project --host both
+# Refresh copied Claude skills after backing up .claude/skills:
+musubix6 init /path/to/project --host claude --force
+```
+
+| Host | Destination | Skills |
+|---|---|---|
+| `copilot` (default) | `.github/skills/` | All 10 |
+| `claude` | `.claude/skills/` | 9 shared skills, excluding `agent-watchdog` |
+| `both` | Both directories | The respective set for each host |
+
+`agent-watchdog` is **Copilot-only**. Full Claude/both installs report its
+omission from Claude on stderr. Explicit `--only agent-watchdog` with
+`--host claude` or `both` exits 2 before writing either host.
+`--only lean-sdd-tdd,tech-writer` limits each selected host. Existing directories
+are skipped independently; `--force` overwrites bundled files but retains extra
+local files. Back up and review both directories for a dual-host update.
+
+`--host`, `--only` and `--force` work before or after the destination.
+Use space-separated options (`--host claude`, not `--host=claude`).
+Missing/unknown host values, repeated `--host`/`--only`, unknown options/skills
+and multiple destinations exit 2 with stderr before any file writes.
+Filesystem failures during copying are reported but not rolled back.
+`list` still lists all bundled skills, including the Copilot-only watchdog.
+
+In Claude Code, invoke a shared skill with `/lean-sdd-tdd` or ask naturally.
+Question/approval workflows use the host's native tool; if unavailable, they
+stop for an explicit conversational response rather than inventing approval.
+No `CLAUDE.md`, hooks, plugin configuration or permission grants are installed.
+The same scripts/assets are copied unchanged from the canonical `.github/skills`
+payload. Local relocated-script checks are not live Claude qualification;
+WSL container execution, GiNZA setup and macOS/Windows are not verified by this change.
+
 ### Install the published npm package
 
 The commands below pin **0.1.4**. Check availability with
@@ -263,7 +309,10 @@ yet published to npm.
 
 Updating musubix6 has **two separate parts**: update the CLI, then refresh the
 skills copied into each project. `npm install -g` alone does not update an
-existing project's `.github/skills/`.
+existing project's `.github/skills/` or `.claude/skills/`.
+The steps below use the default Copilot host. For the v0.2.0 development CLI,
+back up/review `.claude/skills/` and add `--host claude` to refresh Claude copies,
+or use `--host both` and back up/review both directories.
 
 ### Update a project installed from npm
 

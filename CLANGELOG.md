@@ -3,6 +3,31 @@
 User-facing changes to musubix6, with upgrade guidance and known release limitations.
 Release dates use Japan Standard Time (UTC+09:00).
 
+## [0.2.0-dev.0] - Development started 2026-10-21
+
+This is the v0.2.0 development line, not a published or qualified release.
+No prior v0.1.x qualification applies, and publishing/tagging requires separate
+exact-artifact approval after fixed-matrix qualification.
+
+### Added
+
+- Add `init --host copilot|claude|both`, preserving the default Copilot destination.
+- Copy nine shared skills into `.claude/skills/` for Claude Code; keep
+  `agent-watchdog` Copilot-only. Implicit full installs explain its omission
+  from Claude; incompatible explicit selections fail before any writes.
+- Add host-policy, overwrite, relocated-helper and real npm-payload regressions.
+
+### Compatibility and upgrade notes
+
+- Update the CLI from source, back up copied skills and refresh with
+  `musubix6 init . --host claude --force` or `--host both --force`.
+- Preserve per-host skip behavior and extra local files with `--force`.
+  Reject repeated value options and multiple destinations instead of guessing.
+- Resolve executable paths from the loaded skill directory and use each host's
+  native question/approval tools without bypassing human confirmation.
+- Keep Claude live-session discovery/interaction, WSL execution, GiNZA setup
+  and other operating systems explicitly unverified until exercised.
+
 ## [0.1.4] - Candidate prepared 2026-10-21
 
 Publication requires two clean fixed-matrix runs for this candidate and separate

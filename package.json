@@ -1,7 +1,7 @@
 {
   "name": "musubix6",
-  "version": "0.1.4",
-  "description": "Spec-driven (SDD) and test-driven (TDD) agent skills for GitHub Copilot CLI: lean-sdd-tdd, sdd-spec-interview, sdd-reverse-spec, tech-writer, japanese-prose and more.",
+  "version": "0.2.0-dev.0",
+  "description": "Spec-driven (SDD) and test-driven (TDD) agent skills for GitHub Copilot CLI and Claude Code: lean-sdd-tdd, sdd-spec-interview, sdd-reverse-spec, tech-writer, japanese-prose and more.",
   "type": "module",
   "bin": {
     "musubix6": "bin/musubix6.mjs"
@@ -10,22 +10,31 @@
     "bin",
     ".github/skills",
     "scripts/kotonoha-skills.test.mjs",
+    "scripts/host-compatibility.test.mjs",
     "README.md",
-    "README-ja.md"
+    "README-ja.md",
+    "CLANGELOG.md"
   ],
   "license": "MIT",
   "engines": {
     "node": ">=20"
   },
   "scripts": {
-    "test": "node --test --test-reporter=spec .github/skills/lean-sdd-tdd/scripts/sdd.test.mjs .github/skills/lean-sdd-tdd/scripts/spec-context.test.mjs .github/skills/lean-sdd-tdd/scripts/source-discovery.test.mjs .github/skills/lean-sdd-tdd/scripts/diagnostics.test.mjs .github/skills/lean-sdd-tdd/scripts/diagnostics-profiles.test.mjs scripts/kotonoha-skills.test.mjs"
+    "test": "node --test --test-reporter=spec .github/skills/lean-sdd-tdd/scripts/sdd.test.mjs .github/skills/lean-sdd-tdd/scripts/spec-context.test.mjs .github/skills/lean-sdd-tdd/scripts/source-discovery.test.mjs .github/skills/lean-sdd-tdd/scripts/diagnostics.test.mjs .github/skills/lean-sdd-tdd/scripts/diagnostics-profiles.test.mjs scripts/kotonoha-skills.test.mjs scripts/host-compatibility.test.mjs"
   },
   "devDependencies": {
     "@typescript-eslint/parser": "8.71.2",
     "eslint": "9.39.5",
     "typescript": "5.9.3"
   },
-  "keywords": ["sdd", "tdd", "ears", "copilot", "agent-skills"],
+  "keywords": [
+    "sdd",
+    "tdd",
+    "ears",
+    "copilot",
+    "claude-code",
+    "agent-skills"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/nahisaho/musubix6.git"

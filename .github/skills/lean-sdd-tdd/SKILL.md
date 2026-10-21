@@ -7,9 +7,16 @@ description: "Use when an AI agent must implement features or fix bugs autonomou
 Follow the user's language. One zero-dependency script enforces the rules; the agent does the thinking.
 `S="node <skill-dir>/scripts/sdd.mjs"` (Node ≥ 20, no install). Output is ≤15 lines: never paste it back.
 
+Resolve `<skill-dir>` to this loaded skill's directory, not a fixed `.github`
+path; `.claude/skills` and personal installations use the same scripts.
+For questions/approvals, use Copilot CLI `ask_user` or Claude Code `AskUserQuestion`.
+If unavailable, ask in conversation and stop for an explicit user response;
+never record human approval without it. Use the host's available independent-agent
+tools for reviews rather than assuming Copilot-specific agent names exist.
+
 ## Autonomy model (human approval is the exception)
 - **Default = auto**: the agent writes the spec, gets an *independent AI review* (rubber-duck / code-review sub-agent, diff-only), fixes findings, then **locks** the spec hash itself. No human prompt.
-- **Human only when the spec says `approval: human`**, which you must set for: loosening a security/policy rule, destructive or irreversible operations (data deletion, force push, release/publish), secrets/credentials handling, or an unresolvable product decision. Then `approve prepare` → show exact paths + hash + residual risks → `ask_user` → `approve record --by <human>`.
+- **Human only when the spec says `approval: human`**, which you must set for: loosening a security/policy rule, destructive or irreversible operations (data deletion, force push, release/publish), secrets/credentials handling, or an unresolvable product decision. Then `approve prepare` → show exact paths + hash + residual risks → host question tool/fallback above → `approve record --by <human>` only after explicit approval.
 - The script refuses `ai:` approvers on `approval: human` specs. Never forge a human name.
 - Blocked or ambiguous → pick the safest reasonable default, record it in the spec "Assumptions", continue. Ask only if the default is irreversible.
 

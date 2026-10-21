@@ -7,6 +7,14 @@ description: "Use when implementing features, fixing bugs, refactoring, reviewin
 Follow the user's language. Detail lives in `references/`; load a file only when its step is reached.
 Rule: **rigor scales with risk, context scales with the diff.**
 
+## Host tools and paths
+Resolve this skill's scripts/references from its loaded directory, whether in
+`.github/skills`, `.claude/skills` or a personal skill directory.
+Use `ask_user` in Copilot CLI or `AskUserQuestion` in Claude Code for questions
+and approvals. If unavailable, ask in conversation and stop until the user
+explicitly responds; never infer approval or record it before that response.
+Use the host's available independent-agent tools for reviews, not tools from another host.
+
 ## 0. Tier first (1 line, before reading code)
 | Tier | When | Required |
 | --- | --- | --- |
@@ -38,7 +46,7 @@ Keep one file per feature (`docs/contract/<feature>.md` or the repo's existing e
 ## 4. T2 additions (see `references/t2-protocol.md`)
 1. **Spike**: isolated scratch run of the riskiest assumption (real runtime, all command shapes) before design is final; record result in 3–5 lines.
 2. **Enumerate** state machines/policy tables fully and test every row.
-3. **Approval**: list exact artifact paths + hash + residual risks, then `ask_user`. Stale artifact (hash changed) → re-approve.
+3. **Approval**: list exact artifact paths + hash + residual risks, then use the host question tool/fallback above. Stale artifact (hash changed) → re-approve.
 4. **Review**: parallel by risk axis (security / correctness / contract), each limited to the diff and the finding ledger; no whole-repo review.
 5. Loosening a policy/security rule needs explicit human sign-off.
 

@@ -1,8 +1,11 @@
 # musubix6
 
-GitHub Copilot CLI 向けのエージェントスキル集です。
+GitHub Copilot CLI と、v0.2.0 開発版では Claude Code でも使えるエージェントスキル集です。
 **軽量な仕様駆動(SDD)・テスト駆動(TDD)開発** と **日本語・英語の技術文書作成、課題分析、プレゼン資料の構成設計** を支援します。
-スキルは `.github/skills/` から読み込まれます。
+Copilot は `.github/skills/`、Claude Code は `.claude/skills/` からスキルを読み込みます。
+
+ソースは **0.2.0-dev.0** です。v0.2.0 の公開版ではなく、リリース適格性も未確認です。
+Claude の実セッションでのスキル検出と対話は、まだ確認していません。
 
 [English](README.md) | [npm](https://www.npmjs.com/package/musubix6) | [変更履歴](CLANGELOG.md)
 
@@ -64,7 +67,10 @@ GiNZA の依存関係とライセンスは [`NOTICE.md`](.github/skills/japanese
 
 ## 使い方
 
-Copilot CLI は `.github/skills/` のスキルを自動で読み込みます。自然な言葉で依頼してください。
+Copilot CLI は `.github/skills/`、Claude Code は `.claude/skills/` のスキルを読み込みます。
+以降の例は Copilot 用です。Claude 側のスクリプトを直接実行する場合は、
+パスを `.claude/skills/` に置き換えてください。
+`musubix6 sdd` ラッパーはホスト共通です。自然な言葉で依頼できます。
 
 - 「API にレート制限を追加して」→ `lean-sdd-tdd`(仕様 → Red → Green → gate)
 - 「〜を作りたい」→ `sdd-spec-interview` が先に仕様を作成します
@@ -215,6 +221,47 @@ Rust の target と build の出力は、プロジェクト外に作る専用の
 ローカルで確認した環境は Linux／Node 24 です。macOS／Windows は未確認です。
 時間や AI コストがどれだけ減るかは未測定です。
 
+### Claude Code または両ホストに導入する(v0.2.0 開発版)
+
+新しいオプションは、後述のソースからのインストールで利用できます。
+0.1.x の npm 版では `--host` を使えません。
+
+```sh
+musubix6 init /path/to/project --host claude
+musubix6 init /path/to/project --host both
+# .claude/skills をバックアップしてからコピーを更新:
+musubix6 init /path/to/project --host claude --force
+```
+
+| ホスト | コピー先 | スキル |
+|---|---|---|
+| `copilot`(既定) | `.github/skills/` | 全 10 件 |
+| `claude` | `.claude/skills/` | `agent-watchdog` を除く共通 9 件 |
+| `both` | 両方のディレクトリ | 各ホストに対応するセット |
+
+`agent-watchdog` は **Copilot 専用** です。全件導入では、Claude 側の除外を stderr に表示します。
+`--only agent-watchdog` と `--host claude` または `both` を組み合わせると、
+どちらにも書き込まず、終了コード 2 で拒否します。
+`--only lean-sdd-tdd,tech-writer` は両ホストの導入対象を絞ります。
+既存ディレクトリはホストごとにスキップします。
+`--force` は同梱ファイルを上書きしますが、追加されたローカルファイルは削除しません。
+両ホストを更新する場合は、両方のディレクトリをバックアップし、差分を確認してください。
+
+`--host`、`--only`、`--force` はコピー先の前後に指定できます。
+値は空白で区切ってください。`--host=claude` 形式は使えません。
+ホストの値がない場合や不明な場合、`--host` / `--only` の重複、不明なオプションやスキル、
+複数のコピー先は、書き込み前に stderr と終了コード 2 で拒否します。
+コピー中のファイルシステムエラーは通知しますが、ロールバックは保証しません。
+`list` は Copilot 専用の watchdog も含めた同梱スキルを表示します。
+
+Claude Code では `/lean-sdd-tdd`、または自然な言葉でスキルを呼び出せます。
+質問・承認には各ホストのツールを使います。ツールがない場合は対話で明示的な回答を待ち、
+承認を推測して記録しません。
+`CLAUDE.md`、hooks、プラグイン設定、権限の自動付与は導入しません。
+元の `.github/skills` から、同じスクリプトと補助ファイルをコピーします。
+移設後のスクリプト確認は、Claude の実セッションでの検証を意味しません。
+WSL コンテナーの実行、GiNZA のセットアップ、macOS / Windows は今回未検証です。
+
 ### 公開済みの npm パッケージをインストールする
 
 次のコマンドでは **0.1.4** を指定します。
@@ -260,7 +307,10 @@ musubix6 --version
 ## CLI と導入済みスキルの更新方法
 
 更新は **CLI** と **プロジェクトごとのスキル** の 2 段階で行います。
-`npm install -g` だけでは、コピー済みの `.github/skills/` は更新されません。
+`npm install -g` だけでは、コピー済みの `.github/skills/` や `.claude/skills/` は更新されません。
+以降は既定の Copilot 用手順です。v0.2.0 開発版で Claude 側を更新する場合は、
+`.claude/skills/` をバックアップしてから `--host claude` を加え、更新後に差分を確認してください。
+`--host both` では、両方のディレクトリをバックアップし、差分を確認します。
 
 ### npm で導入したプロジェクトを更新する
 

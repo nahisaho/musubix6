@@ -4,11 +4,17 @@ description: "Use when the user says what they want to build (a feature, API, ap
 ---
 # SDD spec interview / 要件ヒアリングから spec 作成
 
+Resolve sibling skills and their scripts relative to this loaded skill's
+directory (`../lean-sdd-tdd`), including `.claude/skills` and personal installs.
+Use Copilot CLI `ask_user` or Claude Code `AskUserQuestion` for the questions
+below. If unavailable, ask one question in conversation and stop for an explicit
+response; never fabricate user answers or human approval.
+
 Follow the user's language. Output of this skill = `.sdd/specs/<feature>.md` in the `lean-sdd-tdd` format (see `../lean-sdd-tdd/references/spec-template.md`). Implementation is **not** started here; hand over to `lean-sdd-tdd`.
 
 ## Rules
 1. **Read first, ask later.** Before the first question, inspect the repo (stack, similar code, README) and the user's prompt. For existing `.sdd/specs/`, use the bundled `lean-sdd-tdd/scripts/sdd.mjs context <feature|REQ|file>...` to read only relevant complete specs and declared prerequisites (default 16384 UTF-8 bytes; explicit `--max-bytes N` override). Locate candidate filenames first if the feature is new; resolve errors/overflow with narrower or explicit selectors, never a bulk read. Static impact cannot infer undeclared relationships. This reading context never narrows full validation or replaces the full gate. Never ask what you can find out.
-2. **One question at a time** via `ask_user`, one field per form. Each question gives 2–4 concrete options, a recommended default (pre-selected) and allows free text. No question lists, no questions in plain text.
+2. **One question at a time** via the host's native question tool, one field per form; use the conversational fallback only when that tool is unavailable. Each question gives 2–4 concrete options, a recommended default (pre-selected) and allows free text. No question lists.
 3. **Ask only what changes the spec.** Skip a topic when the answer is obvious from the prompt/repo; state it as an assumption instead. Stop asking as soon as the checklist below is covered or defaulted. Typical total: 3–8 questions; hard cap 10, then proceed with defaults.
 4. **Echo before writing:** after the last answer, show a ≤10-line summary (goal, scope, key behaviours, assumptions) and write the spec unless the user objects.
 5. Record every default you chose in `## Assumptions / risks` with the test or spike that would retire it. The user may answer "おまかせ/default" at any time: take the recommended option.

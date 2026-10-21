@@ -223,5 +223,19 @@
     "code": {
       ".github/skills/lean-sdd-tdd/scripts/diagnostics-rust.mjs": "0e33a254c9dc32ec045588e5e629ba06f83a5c4d2f7351221aae29ad1f00210a"
     }
+  },
+  "claude-code-support": {
+    "by": "nahisaho",
+    "kind": "human",
+    "review": "Human reapproved exact evidence-updated spec 02927b251f32f24d1efa348e474a357bd7227c09eba662d64ea89b5980c1c24d; requirements/design unchanged; no release authorization",
+    "at": "2026-10-21T11:15:48.858Z",
+    "artifacts": {
+      ".sdd/specs/claude-code-support.md": "02927b251f32f24d1efa348e474a357bd7227c09eba662d64ea89b5980c1c24d"
+    },
+    "tier": "T2",
+    "requireHuman": true,
+    "code": {
+      "bin/musubix6.mjs": "ade1dfe6866279c2b39a040228bd4226b43bdde9b18c04d0bb4ac15feee524ad"
+    }
   }
 }
