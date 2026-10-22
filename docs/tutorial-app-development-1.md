@@ -1,589 +1,339 @@
-# チュートリアル: 自然言語だけで musubix6 を使ってアプリを開発する
+# 第1編: 日本語の依頼から ToDo CLI を開発する
 
-このチュートリアルでは、**コマンドを自分で打たず、Copilot CLI への日本語の依頼だけ**で、要件定義から追加開発、マニュアル作成、コンテナーでのテストまでを進めます。題材は、依存パッケージを使わない Node.js のコマンドライン ToDo アプリ `todo-cli` です。
+Copilot CLI へ日本語で依頼し、JSON に保存する ToDo アプリを作るチュートリアルです。
+要件定義、テスト、期限機能の追加、日本語マニュアル、コンテナーでの保存確認までを進めます。
 
-ここに載せたプロンプトと結果は、`/tmp/musubix-tutorial/todo-cli` で実際に開発したときの記録です(Node.js 24、Copilot CLI)。
+対象は、ターミナルの基本操作を知っている読者です。アプリのコードを自分で書く必要はありません。
+musubix6 0.2.0 を使い、2026年10月22日に再実装した結果を反映しています。
 
-## 進め方の約束
+## この編で作るものと完成条件
 
-- 読者が行うのは、**プロンプトを入力すること**と、**エージェントの質問に答えること**だけです。
-- 各節の「入力プロンプト」を、そのまま Copilot CLI に入力します。
-- 「エージェントが実行すること」は、エージェントが内部で行う作業の記録です。読者は実行しません。何が起きるかを理解するために載せています。
-- 例外は、Copilot CLI の起動(`copilot`)だけです。
-- **プロンプトにスキル名は不要です。** 依頼の内容に合わせて、エージェントが必要なスキルを自動で選びます。表の「働くスキル」は、裏で使われるものの説明です。
+`todo-cli` は、追加・一覧・完了を扱う個人用の CLI です。実行時の外部 npm 依存はありません。
 
-| 段階 | 働くスキル | 成果物 |
-|---|---|---|
-| 1. 準備 | `lean-sdd-tdd` | `.sdd/config.json` |
-| 2. 要件定義(対話) | `sdd-spec-interview` | `.sdd/specs/todo-core.md` |
-| 3. 仕様レビューと承認 | `lean-sdd-tdd` | `.sdd/review-todo-core.md`、承認記録 |
-| 4. TDD で実装 | `lean-sdd-tdd` | `test/`、`src/`、`bin/` |
-| 5. 追加要件の開発 | 上記すべて | `.sdd/specs/todo-due.md` と追加実装 |
-| 6. マニュアル作成 | `tech-writer` | `docs/user-manual.md` |
-| 7. 日本語の修正 | `japanese-prose` | 診断スコア 100/100 |
-| 8. コンテナー化とテスト | `wslc-containers` | `Dockerfile`、コンテナー内のテスト 15/15 |
+| 操作 | 完成時の振る舞い |
+|---|---|
+| `add <title...>` | タイトルを保存し、採番した ID を返す |
+| `list` | 未完了・完了を ID 順に表示する |
+| `done <id>` | 指定したタスクを完了にする |
+| `add <title...> --due YYYY-MM-DD` | 実在する日付だけを期限として保存する |
+| `list --overdue` | 今日より前が期限の未完了タスクだけを表示する |
 
-## 0. 前提条件
+完成の判断には、コマンドの成功だけでなく、保存内容、エラー時にファイルが変わらないこと、全体の gate を使います。
+gate は、仕様のロック、要件と実装・テストの対応、TDD 証跡、設定済みの検査コマンドを確認するコマンドです。
+要件そのものの妥当性や、テストの検出力まで自動で証明するものではありません。
 
-- Node.js 20 以上、Git、GitHub Copilot CLI
-- WSL 2.9.3 以降(§8 の `wslc.exe` に使います)
-- Python 3.10 以上と [uv](https://docs.astral.sh/uv/)(日本語診断に使います。GiNZA は初回に自動で取得されます)
-- musubix6 のリポジトリ(スキルのコピー元)
+## 前提条件と今回の実験環境
 
-作業ディレクトリ `/tmp/musubix-tutorial/todo-cli` を用意し、そこで Copilot CLI を起動します。ここだけは読者が操作します。
+| 項目 | 今回使ったもの |
+|---|---|
+| 実行環境 | Linux、Node.js 24.21.0、ESM |
+| 開発支援 | Git、GitHub Copilot CLI、musubix6 0.2.0 |
+| モデル | 開発は GPT-6.1 Sol、独立レビューは Claude Sonnet 5.5 |
+| JavaScript 診断 | 開発用依存の ESLint 9.39.5 と flat config |
+| 日本語診断 | Python、uv、GiNZA を使う同梱の `japanese-prose` |
+| コンテナー確認 | WSL 上の `wslc.exe` 3.0.4.0、`node:24-alpine` |
+
+コンテナー工程には Windows の WSL 環境が必要です。使えない場合は、その工程を未実施と明記します。
+ネイティブ実行の成功を、コンテナーでの成功へ読み替えてはいけません。
+
+ESLint 9.39.5 は今回の診断プロファイルに合わせた固定版で、非推奨の警告があります。
+ESLint 10 をそのまま使えるという説明にはしていません。対応改善は [#378](https://github.com/nahisaho/musubix6/issues/378) に記録しました。
+
+以下の **入力プロンプトは読者向けに短縮・一般化した依頼例** です。実際に送った全文や対話の逐語録ではありません。
+件数や成功・失敗は今回の実測値ですが、AI が生成するファイルやテスト数まで同一になるとは限りません。
+
+今回の実験はダミーデータだけを使い、`approval: auto` と独立した AI レビューで進めました。
+人間への質問や人間承認を行ったという記録ではありません。
+実データの削除、外部公開、課金、権限変更など、人間の判断が必要な操作は別に確認します。
+
+## 作業場所を用意して musubix6 を導入する
+
+読者は、新しい作業ディレクトリで Copilot CLI を起動します。
 
 ```sh
-mkdir -p /tmp/musubix-tutorial/todo-cli && cd /tmp/musubix-tutorial/todo-cli
+mkdir -p /tmp/musubix6-reader/todo-cli
+cd /tmp/musubix6-reader/todo-cli
 copilot
 ```
 
-## 1. 準備
+以降の作業はエージェントへ依頼します。後のコマンド例は、エージェントが実行して結果を確認する内容です。
+`/tmp` は永続保存先ではないため、最後に別の場所へ保存します。
 
-### 入力プロンプト
-
-```text
-このディレクトリを新しい Git リポジトリにして、musubix6 の開発環境を整えて。
-musubix6 は /home/nahisaho/GitHub/musubix6 にある。
-そのスキルを .github/skills にコピーして、SDD を初期化して。
-アプリは依存パッケージなしの Node.js(ESM)で作る。テストは node --test で、npm test から実行できるようにして。
-```
-
-### エージェントが実行すること
-
-<details>
-<summary>実行内容と結果</summary>
-
-`git init`、スキルのコピー、`package.json` の作成、`sdd.mjs init` を行います。
-
-```json
-{
-  "name": "todo-cli",
-  "version": "0.1.0",
-  "type": "module",
-  "bin": { "todo": "bin/todo.mjs" },
-  "scripts": { "test": "node --test test/*.test.mjs" }
-}
-```
+### 入力プロンプト: 開発環境を準備する
 
 ```text
-init ok: .sdd/config.json (testCmd: node --test --test-name-pattern {id}(?![0-9A-Za-z]) {file}; checks: test)
-next: write .sdd/specs/<feature>.md (see references/spec-template.md)
+このディレクトリに todo-cli という新しい Git リポジトリを用意してください。
+Node.js 24 の ESM とし、アプリ実行時の外部 npm 依存は使いません。
+開発用依存は musubix6 0.2.0 と ESLint 9.39.5 を完全固定し、
+package-lock.json も保存してください。
+
+npx musubix6 init . --host copilot でスキルを導入し、
+npx musubix6 sdd init で SDD を初期化してください。
+以後、SDD の入口は npx musubix6 sdd に統一してください。
+
+npm test は node --test test/*.test.mjs を実行する形にしてください。
+.sdd/config.json の scan.include は、src、bin、test のアプリ用ファイルに限定し、
+既定の testCmd と gate の検査を壊さないでください。
+ESLint の flat config と lint コマンドも用意してください。
+コピーしたスキルはアプリの trace・lint 対象に混ぜないでください。
+変更した設定と導入した版を確認して報告してください。
 ```
 
-</details>
+準備後は、同じディレクトリで Copilot CLI を開き直し、導入したスキルを使って次へ進みます。
+スキルをコピーする操作と、SDD を初期化する操作は別です。
+`scan.include` は要件の追跡範囲、ESLint の `files`・`ignores` は診断範囲を指定します。
+片方を設定しても、もう片方は変わりません。
 
-> **メモ**: Node.js 24 では `node --test test/` のようなディレクトリ指定が失敗します(`Cannot find module '.../test'`)。このチュートリアルでは、最初の gate で実際にこの失敗に当たりました。§4 で、エージェントが自分で原因を見つけて直します。
+## 要件・PASS 条件・反例を決める
 
-> コミット時に `Author identity unknown` が出る場合は、「このリポジトリだけ、Git のユーザー名とメールアドレスを tutorial / tutorial@example.com にして」と依頼します。
-
-## 2. 対話で要件定義書を作る
-
-### 入力プロンプト
+### 入力プロンプト: 基本機能を定義する
 
 ```text
-コマンドラインで使える ToDo 管理アプリを作りたい。
+個人用 ToDo CLI を作ってください。
+まず実装せず、.sdd/specs/todo-core.md に要件と設計をまとめてください。
+仕様書を要件の唯一の正とし、REQ ID、対応する TEST ID、
+具体的な入力・期待結果・正常対照・境界・エラーを記載してください。
+
+基本操作は add、list、done とし、入口は bin/todo.mjs にしてください。
+保存先は TODO_FILE、未指定なら todos.json です。
+新規 ID は保存済み ID の最大値 + 1 とし、最初は 1 にしてください。
+不正な ID、空のタイトル、壊れた保存内容は拒否し、保存内容を変えないでください。
+成功は stdout と終了コード 0、失敗は stderr の error: <message> と終了コード 1 です。
+存在しない ID 999 のエラーは task not found: 999 としてください。
+
+同じ仕様書に
+REQ | PASS condition | counterexample | TEST/command | observed evidence
+の表を作ってください。
+契約、信頼する入力、実行、判定、証跡履歴、統合・配布の6段階を確認し、
+非該当なら理由を書いてください。
+複数ライターの同時更新と電源断への耐久性は対象外にしてください。
 ```
 
-「〜を作りたい」という依頼だけで、要件ヒアリングのスキル(`sdd-spec-interview`)が自動で働きます。エージェントは、まずリポジトリを調べます。そのうえで、**1 回に 1 問**、選択肢と推奨値つきで質問します。回答は選択肢でも自由記述でもかまいません。「おまかせ」と答えると、推奨値が採用されます。
+「保存できる」だけでは、何を検査すればよいか決まりません。例えば、次のように成功条件と反例を対にします。
 
-今回の記録は次のとおりです。質問のたびに「おまかせ」と答え、推奨値を採用した想定で、決まった内容を並べています。
-
-| # | 質問(要点) | 回答 |
+| 成功条件 | 反例 | 確認するもの |
 |---|---|---|
-| 1 | 目的と利用者は?(個人用 CLI / チーム共有 / Web API) | 個人用の CLI |
-| 2 | 技術スタックは?(Node.js / Python / Go) | Node.js、依存パッケージなし |
-| 3 | 基本機能は?(追加・一覧・完了 / 削除や編集も) | 追加・一覧・完了だけ |
-| 4 | 空のタイトルなど不正入力の扱いは?(例外 / 無視) | 例外にする。CLI は `error: …` を stderr に出し、終了コード 1 |
-| 5 | 保存方法は?(JSON ファイル / SQLite) | JSON ファイル。保存先は環境変数で変更可能 |
-| 6 | 存在しない ID や壊れた保存ファイルは? | 固定メッセージのエラー。ファイルは変更しない |
+| 初回追加で ID 1 が保存される | 毎回 ID 1 を使う | 戻り値と JSON の内容 |
+| 存在しない ID は拒否される | `done 999` を成功扱いする | stderr、終了コード、変更前後のファイル |
+| 壊れたファイルを上書きしない | 読込み失敗を空配列へ置き換える | 元のファイルと同一のバイト列 |
+| 正常なタイトルは保存できる | すべての追加を拒否する | 日本語タイトルを使う正常対照 |
 
-質問は 6 問で、上限の 10 問に収まりました。最後に、エージェントは 10 行以内の要約を示します。異論がなければ spec を書きます。
+今回の基本機能は、最終的に10要件・10テストになりました。
+公開する CLI 契約と永続化を扱うため、実験では T2 として設計と隔離検証も行いました。
 
-### 成果物: `.sdd/specs/todo-core.md`
+## 実装前に保存操作と CLI の前提を確かめる
 
-最初の版は REQ が 7 件でした。次節のレビューを受けて 8 件になります(最終版を示します)。
-
-```md
----
-feature: todo-core
-tier: T1
-approval: auto
----
-# todo-core
-Goal: 個人用のコマンドラインToDo管理(追加・一覧・完了)を、JSONファイルに保存して提供する。
-Non-goals: 期限・優先度(次回追加)、複数ユーザー、同時書き込みの排他制御、GUI。
-
-| ID | EARS requirement | Test |
-| --- | --- | --- |
-| REQ-TODO-001 | When `addTask(file, title)` is called with a non-blank title, the system shall store a task `{id, title, done:false}` with id = (max existing id)+1 (first id is 1), trim the title, and return the task. | TEST-TODO-001 |
-| REQ-TODO-002 | If the title is empty or whitespace only, then `addTask` shall throw an Error with message `title is required` and shall not change the file. | TEST-TODO-002 |
-| REQ-TODO-003 | When `listTasks(file)` is called, the system shall return all tasks ordered by id ascending, or `[]` if the file does not exist. | TEST-TODO-003 |
-| REQ-TODO-004 | When `completeTask(file, id)` is called with an existing id, the system shall set `done:true` and persist it. | TEST-TODO-004 |
-| REQ-TODO-005 | If the id is not a positive integer or does not exist, then `completeTask` shall throw an Error with message `task not found: <id>`. | TEST-TODO-005 |
-| REQ-TODO-006 | When `todo add <title...>`, `todo list` or `todo done <id>` succeeds, the CLI shall exit 0 and print to stdout `added #<id> <title>`, `[x] #<id> <title>` / `[ ] #<id> <title>` per task, or `done #<id>`; words after `add` are joined by one space. | TEST-TODO-006 |
-| REQ-TODO-007 | If a command fails, is unknown, or has a missing/extra argument, then the CLI shall print `error: <message>` to stderr and exit 1. | TEST-TODO-007 |
-| REQ-TODO-008 | If the storage file is not valid JSON or not an array of `{id:positive integer, title:string, done:boolean}` with unique ids, then every operation shall throw an Error with message `invalid todo file` and shall not change the file. | TEST-TODO-008 |
-
-## Assumptions / risks
-- 保存先は環境変数 `TODO_FILE`、未指定なら `./todos.json`(TEST-TODO-006 で確認)。
-- 同時実行時の競合、書き込み権限エラーの個別メッセージは対象外(エラーは 007 の形式に正規化)。
-```
-
-書き方のポイントは次のとおりです。
-
-- 1 行が 1 つの要件で、EARS 形式(`When …, the system shall …` / `If …, then …`)で書かれます。
-- ID は `REQ-<機能>-nnn` と `TEST-<機能>-nnn` で、リポジトリ内で一意になります。
-- 具体的な値(メッセージ、終了コード)を入れると、テストが一意に決まります。
-- 決めた既定値は `Assumptions / risks` に残ります。
-
-## 3. 仕様の独立レビューと承認
-
-既定の `approval: auto` では、人間の承認は不要です。代わりに、**別のエージェントによる独立レビュー**を受け、指摘を直してから承認を記録します。
-
-### 入力プロンプト
+### 入力プロンプト: 隔離検証と独立レビューを行う
 
 ```text
-.sdd/specs/todo-core.md を、別のエージェント(rubber-duck)に独立レビューさせて。曖昧な点、テストできない点、不足している要件を挙げさせて。
-指摘は spec に反映して、レビュー結果を .sdd/review-todo-core.md に記録し、承認まで済ませて。
+使い捨ての scratch で、保存用一時ファイルの排他的作成、
+同じディレクトリ内の rename、日本語を含む argv、
+安全な整数の上限を実測してください。
+これは設計の成立性の確認であり、本体の実行成功とは区別してください。
+
+基本機能の仕様と反例を、Claude Sonnet 5.5 の独立レビューで確認してください。
+公開契約、入力と保存、状態、テストの十分性を点検し、
+指摘・処置・対象ファイルとハッシュを記録してください。
+ダミーデータのローカル実験として安全な仮定は記録して進め、
+人間の承認を受けたという記録は作らないでください。
 ```
 
-初版(7 件)に対する指摘は次の 5 件でした。
+今回の隔離検証では、一時ファイルの衝突、rename、日本語の引数、安全な整数の境界を確認しました。
+この結果だけで、実際の CLI や同時書込みまで成功したとは判断しません。
 
-| 重大度 | 指摘 | 対応 |
+## Red から Green へ基本機能を実装する
+
+Red は、期待した振る舞いがまだないためにテストの assertion が失敗する状態です。
+import エラーや依存不足で起動できない状態は、この証跡には使いません。
+
+### 入力プロンプト: 失敗を確認してから実装する
+
+```text
+仕様ごとにテストを先に作り、実装前に期待した assertion 失敗を確認してください。
+読めるスタブを使い、誤った戻り値や拒否不足をテストで検出してください。
+Red の実行結果を保存してから、最小実装で Green に進めてください。
+
+要件・実装・テストを REQ/TEST ID で対応づけてください。
+異なる失敗機構ごとに、実装の一部を意図的に壊す mutation を行い、
+回帰テストが検出することを確認してください。
+元のファイルと同一のバイト列に戻し、影響するテストを再実行してください。
+後から行った mutation は、実装前の Red と呼ばないでください。
+
+最後に npx musubix6 sdd gate --json と
+npx musubix6 sdd diagnostics --profile javascript --json を実行してください。
+FAIL、INCOMPLETE、skip、未確認は成功へ読み替えないでください。
+実際の結果を .experiment/evidence/ と .experiment/result-core.json に保存してください。
+```
+
+今回の基本機能では、10件すべてで実装前の assertion Red を確認しました。
+実装後は10テストが成功し、限定した23件の mutation を検出しました。
+それぞれ元のソースへ戻し、影響するテストの成功も確認しています。
+
+保存ファイルについては、不正な31 fixture を3操作へ適用した93セルを確認しました。
+これは固定した検査範囲であり、任意のファイルやファイルシステム障害を網羅したという意味ではありません。
+
+## 期限機能を仕様から追加する
+
+追加要件でも、先にコードを書き換えず、仕様と反例を更新します。
+
+### 入力プロンプト: 期限と期限切れの条件を定義する
+
+```text
+期限機能を追加してください。
+まず .sdd/specs/todo-due.md を作り、基本機能との差分と依存を .sdd/plan.md に記録してください。
+
+add <title...> --due YYYY-MM-DD で期限を保存し、
+list では (due YYYY-MM-DD) を末尾に表示してください。
+list --overdue は、未完了で、期限が今日より前のものだけを返してください。
+今日が期限、未来が期限、期限なし、完了済みは含めません。
+今日の固定値には TODO_TODAY を使い、未指定ならローカル日付を使ってください。
+明示的な空文字や実在しない日付は拒否してください。
+
+閏年、月末、年の境界、重複オプション、-- によるオプション終端を検査してください。
+既存ファイルと既存操作を壊さず、新しい assertion Red を確認してから実装してください。
+追加中に見つけた不具合の回帰 Red と、当初の実装前 Red を区別してください。
+独立レビュー、mutation と復元、全体 gate、JavaScript 診断まで進めてください。
+```
+
+今回の最終結果は19要件・20テストでした。
+日付は2000年から2399年までの月末で、正常・不正の4,800組を生成して検査し、固定した年境界の例も確認しました。
+任意の日付文字列をすべて検査したわけではありません。
+
+この工程では、symlink 経由の起動と負の年の表示にも不具合が見つかりました。
+別の回帰テストで実際の失敗を確認してから修正し、当初の実装前 Red とは区別して記録しています。
+33件の mutation は、assertion による検出が32件、正常な入力を拒否したことによる検出が1件でした。
+いずれも復元後に影響するテストを再実行しました。
+
+## 実際の CLI で追加・完了・期限切れを確認する
+
+### 入力プロンプト: 日付と保存先を固定して動かす
+
+```text
+空の使い捨てディレクトリを保存先にし、実際の bin/todo.mjs を別プロセスで実行してください。
+TODO_TODAY は 2026-10-23 に固定してください。
+過去・今日・未来・期限なし・完了済みのタスクを用意し、
+全件と期限切れの一覧を比較してください。
+各操作の stdout、stderr、終了コードと保存内容を確認し、
+done 999 の失敗でファイルが変わらないことも確認してください。
+```
+
+今回の期限機能の実行例では、未完了の過去期限を ID 1、タイトルを `past` として用意しました。
+他に今日・未来・期限なしと、完了済みの過去期限を用意しています。
+`list --overdue` の stdout は次の1行でした。
+
+```text
+[ ] #1 past (due 2026-10-22)
+```
+
+これは日付を固定した結果です。読者が別の日付やタイトルを使う場合は、仕様から期待結果を計算し直します。
+表示結果をそのままテストの期待値へコピーしてはいけません。
+
+## 日本語マニュアルを作り、掲載コマンドも実行する
+
+同梱の `tech-writer` は文書の構成と不足を確認し、`japanese-prose` は GiNZA を使って日本語の表現を診断します。
+文章の診断スコアだけで、コマンドや説明の正しさまで保証されるわけではありません。
+
+### 入力プロンプト: 初めて使う人向けのマニュアルを書く
+
+```text
+docs/user-manual.md に日本語の利用マニュアルを作ってください。
+対象は、ターミナルは使えるが、このアプリを初めて使う人です。
+導入、追加・一覧・完了、期限、エラー、保存先、制限を説明してください。
+長い文書なので先に構成を確認し、tech-writer と japanese-prose で仕上げてください。
+
+掲載する Bash ブロックを使い捨ての環境で実行し、
+成功例だけでなく、期待した失敗の stderr と終了コードも確認してください。
+日付は固定し、アプリを直して例へ合わせるのではなく、契約から期待結果を決めてください。
+独立レビュー後に文面を変えたら、関係する例と日本語の診断もやり直してください。
+```
+
+今回の最終マニュアルは34個の Bash ブロックを再実行し、期待したエラー12件を含めて確認しました。
+標準出力・標準エラー・終了コードを比較しています。
+GiNZA による表現、読み負荷、構成、用語の診断と、変更前後の技術的な不変条件も確認しました。
+
+最初の検証器にはブロック数の数え間違いがあり、CLI の実行前に失敗しました。
+また、文章変更後の意味レビューが未登録で、不変条件の確認が保留になった回もあります。
+いずれもアプリの成功として数えず、失敗した記録を残してから修正しました。
+
+## WSL コンテナーで保存を引き継ぐ
+
+同梱の `wslc-containers` は、WSL のコンテナー CLI を使うためのスキルです。
+ここでは専用の名前付きボリュームを `/data` に接続し、コンテナーを作り直しても同じ JSON を読めるか確認します。
+
+### 入力プロンプト: テストと保存確認をコンテナーで行う
+
+```text
+wslc-containers の手順で、このアプリ専用のコンテナー検証を行ってください。
+実行用とテスト用を分け、公式 node:24-alpine の実体と版を記録してください。
+テストでは TAP reporter を明示し、全テストの実行・成功・skip を確認してください。
+
+専用の名前付きボリュームを /data へ接続し、
+TODO_FILE=/data/todos.json、TODO_TODAY=2026-10-23 を明示してください。
+別々の使い捨てコンテナーで
+「牛乳を買う」を期限 2026-10-22 で追加、一覧、done 1、一覧の順に実行してください。
+存在しない ID、不正な日付、空の TODO_TODAY の失敗でも保存内容が変わらないことを確認してください。
+
+ポート公開やネットワーク作成は不要です。
+自分が作成したコンテナー、ボリューム、イメージだけを片づけ、
+共有の公式ベースや他のプロジェクトには触れないでください。
+最後にネイティブの全体 gate と JavaScript 診断も再確認してください。
+```
+
+今回のコンテナー内テストは20件すべて成功し、skip は0件でした。
+別のコンテナーから追加・一覧・完了・一覧を実行して、同じ保存内容を引き継げました。
+不正入力による失敗でもファイルが変わらないことを確認しています。
+
+最初の実行では、Node の既定出力が spec 形式だったため、TAP を前提にした集計器が拒否しました。
+テスト自体の20件成功と、検証器の失敗は別です。
+出力形式を明示して再実行し、最初の失敗ログも残しました。
+今回の実行はキャッシュ済みの公式イメージを使っており、新しいレジストリ取得の成功は確認していません。
+
+## 成果物を保存して完了を確認する
+
+今回の実装は `/tmp/musubix6-tutorial-rerun-20261022-OXVa3d/todo-cli` で行いました。
+アプリのソースそのものは、このチュートリアル文書のリポジトリには含めていません。
+次のパスは実験用プロジェクト内の成果物です。
+
+| 成果物 | 今回の保存先 |
+|---|---|
+| 基本機能の仕様 | `.sdd/specs/todo-core.md` |
+| 期限機能の仕様 | `.sdd/specs/todo-due.md` |
+| 機能の順序・依存 | `.sdd/plan.md` |
+| 実装・実行テスト | `src/`、`bin/todo.mjs`、`test/` |
+| 利用・コンテナー説明 | `docs/user-manual.md`、`docs/container.md` |
+| 実行ログと段階別の結果 | `.experiment/evidence/`、`.experiment/result-*.json` |
+
+仕様の標準保存先は `.sdd/specs/<feature>.md` です。
+この実験では、TEST ID、期待結果、反例もそこへまとめました。
+実行可能なテストの `test/` やログの `.experiment/` は、この実験で選んだ配置であり、全プロジェクト共通の固定パスではありません。
+
+今回の最終状態は、19要件・20テストで、全体 gate と JavaScript 診断が PASS でした。
+コンテナー終了後の親セッションでも同じ検査を再実行しています。
+最終の実験記録コミットは `b18eac4ce2f9f30e019ab0381575d541cb6d7ad3` で、ソースと実行ログは `/tmp` 以外にもアーカイブしました。
+このコミットは実験用リポジトリ内のもので、musubix6 本体のコミットではありません。
+アーカイブとこのコミットはローカルの実験記録で、公開リポジトリからは参照できません。
+
+### 入力プロンプト: 読者の成果物を残す
+
+```text
+実装、仕様、テスト、失敗を含む実行ログを、/tmp 以外の私が指定する保存先へ残してください。
+既存ファイルの上書きが必要なら先に確認してください。
+各検査で実際に実行したコマンド、結果、未確認をまとめ、ローカル Git コミットも作成してください。
+push、タグ、パッケージ公開は行わないでください。
+```
+
+## つまずきと対処・未確認の範囲
+
+| 症状 | 原因・確認点 | 対処 |
 |---|---|---|
-| Blocking | CLI の引数仕様(複数語タイトル、必須引数)が未定義 | REQ-006 と REQ-007 に明記 |
-| Blocking | 壊れた JSON を読んだときの挙動がない | **REQ-TODO-008 を追加** |
-| Non-Blocking | 不正な ID(`0`、`1.5`、`abc`)の扱いが曖昧 | REQ-005 に統合 |
-| Non-Blocking | ID の一意性・型の検証がない | REQ-008 に統合 |
-| Non-Blocking | 書き込み失敗時の挙動がない | 対象外として前提に記録 |
-
-実装前にこれらを見つけられたことが、レビュー工程の価値です。
-
-### エージェントが実行すること
-
-<details>
-<summary>実行内容と結果</summary>
-
-spec を直したあと、`review template` で最新の spec ハッシュ入りの雛形を取り、結果を `.sdd/review-todo-core.md` に書きます(最新の `review template` は、機能ごとに別のファイルへ保存するよう案内します。共有の `review.md` は、次の機能で上書きされて古くなります)。
-
-```md
-spec: sha256:ae91093a…
-verdict: pass
-open: 0
-
-## Findings
-| ID | Severity | Where | Status |
-|----|----------|-------|--------|
-| F-1 | Blocking | REQ-TODO-006/007 CLI引数仕様の欠落 | Closed |
-| F-2 | Blocking | 破損JSONの挙動欠落 -> REQ-TODO-008 追加 | Closed |
-…
-```
-
-検証して、承認を記録します。
-
-```text
-REVIEW OK: .sdd/review-todo-core.md
-recorded todo-core by ai:rubber-duck: .sdd/specs/todo-core.md — note: T1 specs without approval: human are NOT lock-enforced …
-```
-
-</details>
-
-> **ポイント**
-> - `review-todo-core.md` の先頭の `spec: sha256:…` は、spec の現在のハッシュと一致している必要があります。spec を直したら、エージェントが取り直します。
-> - `open:` が 0 でなければ承認できません。
-> - T1 の spec は、承認しても改変がロックされません(ロックされるのは T2 と `approval: human` のみ)。
-
-## 4. TDD で実装する(Red → Green → gate)
-
-### 入力プロンプト
-
-```text
-.sdd/specs/todo-core.md の全要件を実装して。
-先に全テストを書いて Red を確認し、実装して Green にして。最後に gate を通して、通ったらコミットして。
-```
-
-### エージェントが実行すること
-
-エージェントは、次の順に進めます。
-
-**① テストを書く。** 各テストには `@id` と `@verifies` のコメントを付け、テスト名に ID を含めます。
-
-```js
-/** @id TEST-TODO-001 @verifies REQ-TODO-001 */
-test('TEST-TODO-001 add assigns incrementing ids and trims title', () => {
-  const f = tmp();
-  assert.deepEqual(addTask(f, '  牛乳を買う  '), { id: 1, title: '牛乳を買う', done: false });
-  assert.deepEqual(addTask(f, '郵便'), { id: 2, title: '郵便', done: false });
-  assert.equal(JSON.parse(readFileSync(f, 'utf8')).length, 2);
-});
-```
-
-**② 失敗するスタブを置く。** テストが `import` で読み込みエラーになると、Red として認められません。そこで、例外を投げるだけのスタブ(`src/todo.mjs`)と、終了コード 99 だけの `bin/todo.mjs` を用意します。
-
-**③ Red を記録する。** 8 件とも、アサーション失敗または未実装エラーで失敗することを確認します。
-
-```text
-RED ok TEST-TODO-001 (REQ-TODO-001) 95ms — fails with: Error: not implemented
-RED ok TEST-TODO-006 (REQ-TODO-006) 123ms — fails with: AssertionError [ERR_ASSERTION]: …
-…
-```
-
-**④ 実装する。** 実装には `@id CODE-… @implements REQ-…` を付けます。テストは書き換えません。
-
-```js
-/** @id CODE-TODO-001 @implements REQ-TODO-001 REQ-TODO-002 */
-export function addTask(file, title) { /* … */ }
-```
-
-**⑤ Green を記録し、gate を実行する。** 初回の gate は、次のように**失敗**しました。
-
-```text
-SDD GATE FAIL
-✓ trace: 8 REQ, 0 errors
-✓ ledger: 16 entries, chain intact
-✓ tdd evidence: 8/8 tests Red→Green
-✗ cmd test (0.2s)
-    Error: Cannot find module '/tmp/musubix-tutorial/todo-cli/test'
-```
-
-原因は、§1 で触れた `node --test test/` です。エージェントが `package.json` を `node --test test/*.test.mjs` に直すと、次のように通りました。読者が原因を調べる必要はありません。
-
-```text
-SDD GATE PASS
-✓ trace: 8 REQ, 0 errors
-✓ ledger: 16 entries, chain intact
-✓ tdd evidence: 8/8 tests Red→Green
-✓ cmd test (0.6s)
-```
-
-gate は 4 点を検査します。REQ とテストの対応(trace)、証跡の改ざん防止(ledger)、Red → Green の証跡、プロジェクト自身のテストです。通ったあと、`feat: todo-core (add/list/done)` としてコミットされます。
-
-## 5. 要件を追加して追加開発する
-
-### 入力プロンプト
-
-```text
-todo-cli に期限機能を追加したい。タスクに期限を付けられて、期限切れの未完了タスクだけを一覧したい。
-```
-
-既存の機能に足す依頼です。そのため、新しい spec `todo-due` を作ります。`todo-core` の spec は書き換えません。ヒアリングでは、次の点が決まりました。
-
-| 質問(要点) | 回答 |
-|---|---|
-| 期限の形式は? | `YYYY-MM-DD` のみ。時刻は扱わない |
-| 当日が期限のタスクは期限切れか? | 期限切れにしない(`due < today`) |
-| 「今日」の取得方法は? | 環境変数 `TODO_TODAY` で差し替え可能。未指定ならローカル日付 |
-| 期限なしタスクの表示は? | 従来どおり |
-
-### 既存コードへの影響を調べる
-
-#### 入力プロンプト
-
-```text
-共有モジュール src/todo.mjs を変えると、どの要件とテストに影響するか調べて。
-```
-
-エージェントは `impact` を実行し、次の結果を報告します。
-
-```text
-IMPACT src/todo.mjs (REQ-TODO-001, REQ-TODO-002, REQ-TODO-003, REQ-TODO-008, REQ-TODO-004, REQ-TODO-005)
-  verified by: TEST-TODO-001, TEST-TODO-002, TEST-TODO-003, TEST-TODO-004, TEST-TODO-005, TEST-TODO-008
-  same feature: 2 other REQ(s) (REQ-TODO-006, REQ-TODO-007)
-```
-
-変更すると、既存の 8 件のテストを再検証する必要があります。今回は既存の REQ 行を書き換えずに済みました。
-
-### spec のレビュー
-
-#### 入力プロンプト
-
-```text
-.sdd/specs/todo-due.md を、別のエージェント(rubber-duck)に独立レビューさせて。既存の todo-core との衝突も確認させて。
-指摘は反映して、レビュー結果を記録し、承認まで済ませて。
-```
-
-初版の spec(REQ 6 件)に、Blocking が 2 件出ました。
-
-- `--due` の位置、`--` の扱い、重複指定が未定義です。→ 位置は任意とし、`--` 以降は全てタイトル、重複はエラーと定めました。
-- コマンドごとの許可オプションとエラー文言が曖昧です。→ REQ-DUE-007 として独立させました。
-
-あわせて、一覧の表示形式の変更(期限つきタスクに ` (due …)` が付く)は、**既存出力を拡張する変更**だと明記しました。最終版の要件は次のとおりです(要約)。
-
-| ID | 要件(要約) |
-|---|---|
-| REQ-DUE-001 | 有効な日付なら `due` を保存する。省略時は `due` キー自体を持たない |
-| REQ-DUE-002 | `2026-02-30` や `tomorrow` は `invalid due date: <値>` で拒否する |
-| REQ-DUE-003 | `overdue:true` では、未完了かつ `due < today` のタスクだけを返す |
-| REQ-DUE-004 | 保存済みの `due` が不正なら `invalid todo file` にする |
-| REQ-DUE-005 | `add` の `--due` は任意の位置に置け、`--` 以降はタイトルとする。一覧に ` (due …)` を付ける |
-| REQ-DUE-006 | `list --overdue` は `TODO_TODAY` かローカル日付を「今日」とする |
-| REQ-DUE-007 | 不正なオプションは `due date is required` / `duplicate option` / `unknown option` で終了コード 1 |
-
-### 実装
-
-#### 入力プロンプト
-
-```text
-.sdd/specs/todo-due.md の全要件を実装して。既存のテストは、spec が変更を定めている箇所以外は変えないで。
-先に全テストを書いて Red を確認し、実装して Green にして。最後に全体の gate を通して、コミットして。
-```
-
-`addTask` は、すでに受け取れる引数を増やすだけなので、スタブは不要でした。テストが**アサーションで失敗**する Red を、7 件とも確認できます。
-
-```text
-RED ok TEST-DUE-001 (REQ-DUE-001) 106ms — fails with: AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
-RED ok TEST-DUE-002 (REQ-DUE-002) 117ms — fails with: AssertionError [ERR_ASSERTION]: Missing expected exception.
-…
-```
-
-実装後に Green を記録し、全体で gate を実行します。
-
-```text
-GREEN ok TEST-DUE-001 (REQ-DUE-001) 96ms
-…
-SDD GATE PASS
-✓ trace: 15 REQ, 0 errors
-✓ ledger: 30 entries, chain intact
-✓ tdd evidence: 15/15 tests Red→Green
-✓ cmd test (0.8s)
-```
-
-REQ が 8 件から 15 件に増え、既存のテストも通ったままです。`feat: todo-due (due date and --overdue)` としてコミットされます。
-
-## 6. マニュアルを作る
-
-### 入力プロンプト
-
-```text
-todo-cli のユーザーマニュアルを日本語で作って。docs/user-manual.md に、前提条件、手順、完了の確認、トラブルシューティングを入れて。
-書いたら、手順どおりに実際に実行して、出力が一致することを確かめて。
-```
-
-文書作成のスキルが自動で働き、`user-manual` の型(前提条件 → 手順 → 完了の確認 → トラブルシューティング)で書きます。書いたあと、構造 lint を実行します。
-
-```text
-L1 [placeholder] Unresolved placeholder 'todo' remains without a reason/tracking reference; resolve before publishing.
-```
-
-アプリ名 `todo-cli` の `todo` を、未解決のプレースホルダーと誤検出した結果です。内容は問題ないため、エージェントは「保持」と判断します。
-
-> 手順書は、**実際に実行して確かめて**から確定します。今回は、マニュアルの手順どおりに実行し、出力が一致することを確認しました。
-
-## 7. マニュアルの日本語を直す
-
-### 入力プロンプト
-
-```text
-docs/user-manual.md の日本語を直して。事実、コマンド、ID は変えないで。
-修正前後の診断スコアも教えて。
-```
-
-### エージェントが実行すること
-
-**① 診断のベースラインを取る。** スコアは 98 で、指摘は 2 件(`indirect_ability`、「できる」または具体的な動作に簡潔にする)でした。
-
-**② 文脈を見て直す。** 診断の指摘は、確認すべき箇所を示すだけです。機械的な置換はしません。指摘された 2 文に加え、同じ型の冗長な表現も直しました。
-
-| 修正前 | 修正後 |
-|---|---|
-| 〜を使用することによって、〜を管理することができるようになります | 〜を読むと、〜ができます |
-| 基本操作を行うことが可能な方 | 基本操作を知っている方 |
-| 〜と表示されることになります | 〜と表示されます |
-| 〜で表示されるようになっています | 〜で表示されます |
-| 環境変数 `TODO_FILE` によって変更することが可能です | 環境変数 `TODO_FILE` で保存先を変更できます |
-
-**③ ベースラインとの差分で再診断する。**
-
-```text
-docs/user-manual.md: score 100/100, 0 finding(s)
-```
-
-最後に、手順を再実行して出力が変わっていないことと、gate が通ることを確認し、`docs: user manual (Japanese, prose-linted)` としてコミットします。修正は 3 回までです。それでも指摘が残る場合は、「収束しなかった」と報告されます。
-
-## 8. WSLC でコンテナーを作成してテストする
-
-Windows の WSL コンテナー CLI(`wslc.exe`、WSL 2.9.3 以降)を使い、アプリをコンテナーにしてテストします。Docker Desktop は不要です。`wslc-containers` スキルが、WSL 内から `wslc.exe` を呼び出します。
-
-### 入力プロンプト
-
-```text
-todo-cli を WSLC のコンテナーにして、コンテナー内でテストを実行して。
-最後に、ボリュームでデータを保持したまま CLI を動かして。後片付けもして。
-ビルドに使った Dockerfile はリポジトリに残して。
-```
-
-エージェントは、コンテナーを操作する前に実行内容を確認します。見知らぬイメージやコマンドを実行するときは、内容を確認してから許可してください。
-
-### エージェントが実行すること
-
-#### 8.1 Dockerfile を作ってビルドする
-
-通常は、公式の Node.js イメージを使う次の Dockerfile で足ります。`.dockerignore` には `.git`、`.sdd`、`.github`、`node_modules`、`todos.json` を書きます。
-
-```dockerfile
-FROM docker.io/library/node:24-alpine
-WORKDIR /app
-COPY package.json ./
-COPY bin ./bin
-COPY src ./src
-COPY test ./test
-ENV TODO_FILE=/data/todos.json
-RUN mkdir /data
-ENTRYPOINT ["node", "bin/todo.mjs"]
-```
-
-#### 8.2 レジストリに届かない場合
-
-`network is unreachable` は、コンテナー側の VM のネットワークが一時的に使えないときに起きます。Dockerfile の誤りではありません。次の順で切り分けてください。
-
-1. 接続を確認します。`wslc.exe run --rm docker.io/library/alpine:latest wget -q -T5 -O- https://registry-1.docker.io/v2/` が `401 Unauthorized` を返せば、レジストリに届いています(401 は到達の証拠です)。この場合は 8.1 をそのまま再実行します。
-2. 届かないときは、`wsl --shutdown` で WSL の VM を再起動し、もう一度試します。VPN やプロキシを使っている場合は、いったん切って試します。
-3. それでも届かない場合に限り、次のオフライン方式に切り替えます。
-
-今回の環境では、ビルドが次のエラーで失敗しました。コンテナー側の VM から Docker Hub に接続できないためです(イメージの取得も同じ理由で失敗します)。
-
-```text
-ERROR: failed to solve: docker.io/library/node:24-alpine: failed to do request: …
-dial tcp 44.212.194.123:443: connect: network is unreachable
-```
-
-エージェントは、この原因を切り分けて、ローカルにある `alpine` を土台にする方法に切り替えました。ホスト側で取得した Node.js(musl 版)と、その実行に必要な `libstdc++`、`libgcc` を `COPY` します。
-
-```dockerfile
-FROM alpine:latest
-COPY vendor/libstdc++.so.6.0.34 vendor/libgcc_s.so.1 /usr/lib/
-RUN ln -s libstdc++.so.6.0.34 /usr/lib/libstdc++.so.6
-COPY vendor/node /usr/local/bin/node
-WORKDIR /app
-COPY package.json ./
-COPY bin ./bin
-COPY src ./src
-COPY test ./test
-ENV TODO_FILE=/data/todos.json
-RUN mkdir /data
-ENTRYPOINT ["node", "bin/todo.mjs"]
-```
-
-ビルドしたイメージで Node.js が動くことを確認します。
-
-```text
-v24.21.0
-```
-
-> **途中でつまずいた点(エージェントが自分で解決しました)**
-> - ビルドコンテキストに、シンボリックリンクを含む Node.js の展開結果をそのまま置くと、`readlink …/corepack: function not implemented` で失敗します。`node` の実行ファイル 1 つだけを置くと解決します。
-> - `libstdc++` がないと、`Error relocating /usr/local/bin/node: … symbol not found` になります。
-
-接続できる環境の方は、「公式イメージでビルドして」と依頼すれば、8.1 の Dockerfile が使われます。
-
-> **再検証(2026-10-12、wslc 3.0.3.0)**: `docker.io/library/node:24-alpine` を取得でき、8.1 の Dockerfile のままビルドできました。次の 2 点も確認できました。
->
-> - コンテナー内で `node --test test/todo.test.mjs` を実行すると、テストが通る
-> - `-v` のボリュームに、`add` の結果が次の起動まで残る
-
-`network is unreachable` は再現しませんでした。追加の確認は次のとおりです。
-
-> - 4 イメージを削除して取得し直しても、成功した(`node`、`python`、`golang`、`busybox`)
-> - コンテナー内から、レジストリ `registry-1.docker.io` に IPv4 と HTTPS で到達できた(認証前なので 401 が返る)
-> - `--no-cache` でビルドし直しても成功した
->
-> 失敗の原因は、当時のネットワークの状態だったと考えられます。
->
-> まず 8.1 を試してください。`network is unreachable` が出たときだけ、8.2 に進みます。
-
-#### 8.3 コンテナー内でテストを実行する
-
-起動コマンドを `node --test` に切り替えて、テストファイルを実行します。
-
-```text
-✔ TEST-TODO-005 complete rejects unknown or invalid id (0.769539ms)
-✔ TEST-TODO-006 CLI add/list/done succeed with exit 0 (162.371487ms)
-✔ TEST-TODO-007 CLI errors go to stderr with exit 1 (256.298707ms)
-✔ TEST-TODO-008 invalid storage file is rejected and left unchanged (2.783069ms)
-ℹ tests 15
-ℹ pass 15
-ℹ fail 0
-```
-
-ホストと同じ 15 件がすべて通りました。
-
-#### 8.4 ボリュームでデータを保持して動かす
-
-保存先 `/data/todos.json` を名前付きボリュームに置くと、コンテナーを破棄してもタスクが残ります。
-
-```text
-added #1 牛乳を買う (due 2026-10-01)
-[ ] #1 牛乳を買う (due 2026-10-01)
-done #1
-[x] #1 牛乳を買う (due 2026-10-01)
-error: task not found: 9
-```
-
-毎回、使い捨てのコンテナーを起動していますが、状態は引き継がれています。最後に、ボリュームとイメージを削除して後片付けをします。
-
-## 9. 完成した成果物
-
-```text
-todo-cli/
-├── .sdd/
-│   ├── specs/todo-core.md, todo-due.md   要件(REQ)とテスト ID
-│   ├── review-todo-core.md              独立レビューの記録
-│   ├── tdd.jsonl                        Red/Green の証跡(ハッシュ連鎖)
-│   └── approvals.json, config.json
-├── Dockerfile, Dockerfile.offline       コンテナーのビルド定義
-├── bin/todo.mjs                         CLI のエントリーポイント
-├── src/todo.mjs, src/cli.mjs            実装(@implements 付き)
-├── test/todo.test.mjs, due.test.mjs     テスト(@verifies 付き)
-└── docs/user-manual.md                  日本語マニュアル
-```
-
-## 10. つまずいたときの依頼例
-
-症状をそのままエージェントに伝えれば、原因の調査と修正を任せられます。
-
-| 症状 | 原因 | 依頼の例 |
-|---|---|---|
-| Red が「読み込みエラー」で拒否される | テストが未作成のモジュールを `import` している | 「Red が読み込みエラーで拒否された。失敗するスタブを先に置いて、もう一度 Red を記録して」 |
-| gate の `cmd test` が `Cannot find module '.../test'` | Node.js 24 では `node --test <ディレクトリ>` が使えない | 「gate が失敗した。原因を調べて直して」 |
-| 承認の記録が review を拒否する | `spec: sha256:` が現在の spec と不一致 | 「spec を直したので、レビュー結果のハッシュを取り直して、承認し直して」 |
-| コミットが `Author identity unknown` で失敗する | Git のユーザー名とメールアドレスが未設定 | 「このリポジトリだけ、Git のユーザー名とメールアドレスを設定して」 |
-| `tech-writer` の lint が名前を `placeholder` と指摘する | アプリ名の `todo` の誤検出 | 「この指摘は誤検出か判断して、誤検出なら保持して」 |
-| ビルドが `network is unreachable` で失敗する | コンテナーからレジストリに届かない | 「ビルドが network is unreachable で失敗した。ローカルのイメージだけでビルドする方法に切り替えて」 |
-| gate が既存テストの失敗で落ちる | 追加要件が既存の出力形式を変えるため、既存テストと両立しない | 「gate が失敗した。原因を調べて直して。due の spec が定めている範囲でなら、既存テストの更新はしてよい。通ったらコミットして」 |
-| 全体の gate が `test changed since last Green` で失敗する | 既存テストを spec の指示で更新したため、証跡が古い | 「gate がまだ失敗している。原因を調べて、正しい手順で直して。通ったらコミットして」 |
-
-人間の承認が必要な場面は、次のとおりです。spec に `approval: human` と書かれ、エージェントが承認対象のファイルのパスとハッシュを示して質問します。承認者の実名で答えてください。
-
-- セキュリティの緩和
-- 削除などの不可逆操作
-- 秘密情報の扱い
-- リリース
-
-## 11. 次のステップ
-
-- セキュリティ、状態遷移、公開契約を含む機能は **T2** です。「この機能は T2 として扱って。`## Design` を書き、スパイクと並列レビューもして」と依頼します(詳細は `.github/skills/lean-sdd-tdd/references/t2.md`)。
-- 複数の機能にまたがる開発は、「機能を分割して、順序と依存を `.sdd/plan.md` に書いて。進捗も確認して」と依頼します。
-- マージ前は、「全体の gate を通して」と依頼します。変更分だけの確認は、「変更分だけ gate して」と頼みます。
-
-## 12. 再実験での確認結果
-
-このチュートリアルを、スキル名を含まないプロンプトだけで、別のディレクトリ(`/tmp/musubix-tutorial2`)に再現しました(`copilot -p` による非対話実行。ヒアリングは「おまかせ」と答えた扱い)。各段階は新しいセッションで実行しています。
-
-| 段階 | 結果 |
-|---|---|
-| 1. 準備 | 動作。スキルを全 6 件コピーし、`npm test` は `node --test` で設定された。Git のユーザー名は未設定のためコミットされなかった |
-| 2. 要件定義 | スキル名なしで要件ヒアリングが働き、REQ 11 件の spec ができた |
-| 3. レビューと承認 | 動作。指摘は反映され、承認が記録された |
-| 4. 実装 | 動作。Red → Green → gate PASS(12 REQ)、コミットまで完了 |
-| 5. 追加開発 | 動作。ただし下記の 2 点が起きた |
-| 6. マニュアル | 動作。手順の実行確認まで行われた |
-| 7. 日本語修正 | スキル名なしで診断が働いた。診断スコアは 99 で、直す箇所がなく、無修正で完了した |
-| 8. コンテナー | 動作。公式イメージが使えないため、ローカルの `alpine` に切り替えて、22 件のテストとボリューム確認が通った |
-
-再実験では、本文の記録と異なる点がありました。
-
-- **spec の内容は実行ごとに変わります。** 「おまかせ」の推奨値は毎回同じとは限りません。再実験では、`rm` コマンドや終了コード 2 を含む spec になり、追加機能の spec は T2 と判定されました。REQ の件数や ID は、本文の例と一致しなくてかまいません。
-- **追加要件が既存の出力を変えると、既存テストの更新が必要になります。** 「既存のテストは変更しないで」と頼むと、gate が失敗したままコミットされました。そのため、§5 のプロンプトは、spec が変更を定める箇所だけ更新を許す文面にしています。
-- **既存テストを更新すると、証跡の再記録が必要です。** gate が `test changed since last Green` で失敗します。§10 の依頼文で、エージェントが再記録して通せます。
-- **ヒアリングの回答は、対話で返すのが本来の使い方です。** 非対話の実行では、質問の代わりに「おまかせ」を依頼文に書いています。
-- **公式イメージで、コンテナー工程まで再実行できました。** 2026-10-12 の `copilot -p` による再実行では、`node:24-alpine` を取得でき、Dockerfile は 1 回で作れました。コンテナー工程の Dockerfile などは、コミット前の状態で止まりました。
+| `node --test test/` で読込みに失敗する | 裸のディレクトリを渡している | 今回は `test/*.test.mjs` を使う |
+| 診断が INCOMPLETE になる | 対応する ESLint の版や設定がない | 固定した開発用依存と flat config を確認する |
+| `--overdue` の結果が日によって変わる | 実際の今日を使っている | 例の検査では `TODO_TODAY` を固定する |
+| コンテナーを変えると保存が消える | コンテナー内だけに保存している | 同じ専用ボリュームと `TODO_FILE` を明示する |
+| テスト成功なのに集計に失敗する | reporter と集計形式が違う | 実行を保存し、reporter を明示して再実行する |
+
+この ToDo アプリは、同時書込みで更新を失わないことや、電源断後の耐久性を保証していません。
+別 OS、別の Node.js 24 の小バージョン、本番の権限設定も今回の確認範囲外です。
+gate の PASS は、この範囲を広げる根拠にはなりません。
+
+次は、状態遷移と在庫の引当を扱う [第2編: 注文 API](tutorial-app-development-2.md) へ進みます。
