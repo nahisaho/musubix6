@@ -5,6 +5,9 @@ description: Use when background agents (task with mode background) are running 
 
 # agent-watchdog
 
+**Copilot-only:** this workflow requires Copilot CLI agent and scheduling tools.
+It is not supported in Claude Code; `init --host claude` omits it.
+
 Background agents often end their turn (status `idle`) with work left. Repo code cannot message agents; only the Copilot CLI session can (`write_agent`). So: a read-only detector script plus this procedure.
 
 ## Detector

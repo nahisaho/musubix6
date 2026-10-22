@@ -22,3 +22,9 @@ A high score does not prove that facts are correct, the argument is complete,
 or the prose is natural. A low score does not require every finding to be
 changed. Always report the finding categories and contextual decisions beside
 the score.
+
+Proofreading findings and style/readability findings contribute to the same
+triage score, but they are not interchangeable measures of quality. Report
+the categories separately. Do not use this score as typo-detection recall,
+correction accuracy, semantic fidelity, or evidence that an LLM-assisted
+rewrite is better. A correctly repaired typo may leave the score unchanged.

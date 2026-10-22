@@ -7,9 +7,16 @@ description: "Use when an AI agent must implement features or fix bugs autonomou
 Follow the user's language. One zero-dependency script enforces the rules; the agent does the thinking.
 `S="node <skill-dir>/scripts/sdd.mjs"` (Node ≥ 20, no install). Output is ≤15 lines: never paste it back.
 
+Resolve `<skill-dir>` to this loaded skill's directory, not a fixed `.github`
+path; `.claude/skills` and personal installations use the same scripts.
+For questions/approvals, use Copilot CLI `ask_user` or Claude Code `AskUserQuestion`.
+If unavailable, ask in conversation and stop for an explicit user response;
+never record human approval without it. Use the host's available independent-agent
+tools for reviews rather than assuming Copilot-specific agent names exist.
+
 ## Autonomy model (human approval is the exception)
 - **Default = auto**: the agent writes the spec, gets an *independent AI review* (rubber-duck / code-review sub-agent, diff-only), fixes findings, then **locks** the spec hash itself. No human prompt.
-- **Human only when the spec says `approval: human`**, which you must set for: loosening a security/policy rule, destructive or irreversible operations (data deletion, force push, release/publish), secrets/credentials handling, or an unresolvable product decision. Then `approve prepare` → show exact paths + hash + residual risks → `ask_user` → `approve record --by <human>`.
+- **Human only when the spec says `approval: human`**, which you must set for: loosening a security/policy rule, destructive or irreversible operations (data deletion, force push, release/publish), secrets/credentials handling, or an unresolvable product decision. Then `approve prepare` → show exact paths + hash + residual risks → host question tool/fallback above → `approve record --by <human>` only after explicit approval.
 - The script refuses `ai:` approvers on `approval: human` specs. Never forge a human name.
 - Blocked or ambiguous → pick the safest reasonable default, record it in the spec "Assumptions", continue. Ask only if the default is irreversible.
 
@@ -56,6 +63,44 @@ Batch: write all tests for a feature, then red each, implement, green each, **on
 - Always run the full `gate` (no `--changed`) before merge.
 - Release qualification is separate from exploratory dogfooding: use the fixed support/candidate matrix and two-run evidence rules in `docs/design-sdd-hardening.md` §3.5 when present; otherwise use the release-readiness workflow in `references/enforced-rules.md`. Two arbitrary exploratory waves are not release proof, and technical readiness never replaces human release approval.
 - Without Git, `gate --changed` explicitly falls back to full evidence/checks; manifest discovery, impact and C# stubs use filesystem discovery.
+
+## 3b. Early project diagnostics
+
+For an in-scope TS/JS project (root `tsconfig.json`, local TypeScript 5.9.x and
+ESLint 9.x with one root flat config), run `$S diagnostics --root <app> --json`.
+For standalone JS, run `$S diagnostics --root <app> --profile javascript --json`
+(local ESLint 9.x and one root flat config, no TypeScript/tsconfig).
+For Python, run `$S diagnostics --root <app> --profile python --json`
+(root `.venv`: Python 3.14.x, Ruff 0.17.1 and mypy 2.4.0).
+For Rust, run `$S diagnostics --root <app> --profile rust --json`
+(installed cargo/rustc 1.99.x, root Cargo.toml/Cargo.lock, one package,
+existing external Cargo home and offline dependencies).
+Select a profile explicitly for those stacks; omission means TypeScript,
+never autodetection. Run after each coherent code-edit batch and before claiming completion.
+`PASS`/0 means all required providers completed without errors; `FAIL`/1 means static
+errors were found; `INCOMPLETE`/2 means diagnosis could not finish. Report its
+reasons, never call a missing tool or an ignored-only target set clean.
+Repair only issues within the user's requested change scope; bound repair to
+three attempts and disclose remaining issues instead of looping indefinitely.
+Diagnostics are a snapshot, not Red, Green, approval or gate evidence.
+Do not weaken or replace targeted tests, expected-assertion Red, approvals or
+the final full gate because diagnostics passed. Never add diagnostics to gate
+automatically. Never require TypeScript for standalone JS/Python/Rust, ESLint for
+Python/Rust, or diagnostic tools for unsupported stacks.
+Providers share a cumulative 8-MiB native stdout/stderr budget and have
+60 seconds each, except cargo-check (180 seconds); worker output is separately capped.
+Python uses isolated startup, root config/native exclusions, no bytecode/cache,
+and null columns plus an info notice for mypy diagnostics on non-ASCII lines.
+JS/Python enumeration fails closed if a symlink target outside excluded directories
+cannot be resolved, even for an unrelated extension.
+Rust checks all targets with default features, offline and locked. The parent owns
+and removes private external target/build output after stopping workers; cleanup
+failure is INCOMPLETE. Normal external Cargo cache bookkeeping/archive extraction
+may persist; automatic cache GC is disabled. Do not promise sandboxing, network
+isolation, or cleanup after parent SIGKILL/power loss/self-detached descendants.
+The command does not install tools, fix sources or save evidence. Configurations,
+plugins, build scripts and proc macros execute trusted local code with possible
+arbitrary side effects. See both READMEs for selection/count/config details.
 
 ## 4. Review without humans
 T2 only: parallel sub-agents by risk axis (security · correctness/state · contract · test adequacy), each diff-only, ≤200-word replies, findings to one file per feature, `.sdd/review-<feature>.md` (never share one `review.md` across features: it goes stale when the next feature overwrites it) (one line each: id|sev|path:line|state). Re-review Open items + fix diff only; stop after two clean rounds, then lock/merge.

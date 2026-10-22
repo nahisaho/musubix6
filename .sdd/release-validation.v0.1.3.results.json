@@ -1,0 +1,541 @@
+{
+  "schemaVersion": 1,
+  "targetVersion": "0.1.3",
+  "status": "published-revision10-assessed-with-residuals-no-release-authorization",
+  "manifestSha256": "1b60d4df3264c9b0bee28d85ff13698d7c902ac5656a2dffd2eb465a5e115c86",
+  "approvedOuterBudgetChange": {
+    "by": "nahisaho",
+    "response": "承認：600秒へ変更して再実行",
+    "cell": "ORACLE-SELFTEST",
+    "beforeSeconds": 120,
+    "afterSeconds": 600,
+    "scope": "Only outer qualification orchestration. All required cases, product provider60/180-second limits, expected verdicts and other budgets unchanged. Two fresh complete unchanged runs; no publication approval."
+  },
+  "supersededBeforeExecution": {
+    "revision": 6,
+    "manifestSha256": "93fcbb04ef7cd1761f1a5929f46bf8dd2622cc76c141fb7fb1aad0ab7c849cfe",
+    "reason": "Before starting any revision6 full run, restrict Git pointer exclusion to the explicitly bound gate cell. Default source hashing now rejects unexpected .git additions; add actual Red/Green and reverse mutation/restoration. No case or environment removed; oracle catalogue grows22 to23; zero prior credit."
+  },
+  "consecutiveCompleteCleanRuns": 2,
+  "subsequentWorktreeChange": {
+    "feature": "kotonoha-skill-sync",
+    "source": "../kotonoha/skills at inspected HEAD910dec1",
+    "scope": "Upgrade japanese-prose/tech-writer; add consulting-analyst/presentation-planner; exclude obsidian-prefixed skills and caches; preserve local tech-writer #233 fix.",
+    "frozenCandidateAndEvidenceUnchanged": true,
+    "currentWorktreeMatchesFrozenCandidate": false,
+    "priorQualificationAppliesToUpgradedWorktree": false,
+    "upgradedWorktreeCompleteQualificationRuns": 0,
+    "note": "The two successful runs and this residual assessment remain evidence only for the archived exact0.1.3 candidate. This source/skill update is not that candidate, has no release authorization, and requires its own frozen manifest and qualification before a release-readiness claim. Do not republish immutable0.1.3."
+  },
+  "runs": [
+    {
+      "runId": "run1",
+      "status": "FAIL",
+      "manifestSha256": "efa19b454192e3ae8b27e3a6dedb9b9c7162c3e4a84b4f4ef28541ea8dbc061c",
+      "report": "/home/nahisaho/.copilot/session-state/f19a6ec9-6db2-429b-a409-154bd92f91ad/files/qualification-v013/run1/result.json",
+      "reportSha256": "cd2ad1defdcfad587e00f6af8655a6ceb2a95d51c47460ba64eb2991bb0b25fd"
+    },
+    {
+      "runId": "run2",
+      "status": "FAIL",
+      "manifestSha256": "b637beb6dcd9093b0f1b2767f156f3109cbf9a8d02b2e12fee88992d0f3f7da0",
+      "report": "/home/nahisaho/.copilot/session-state/f19a6ec9-6db2-429b-a409-154bd92f91ad/files/qualification-v013/run2/result.json",
+      "reportSha256": "a22725fdad536348239e82ab5aba8a55f935055be7bb1c89e3d1b8c4f5b97854"
+    },
+    {
+      "runId": "run3",
+      "status": "FAIL",
+      "manifestSha256": "23d977fbf16c5c9822bf88d96abc3660042c0f4de9bddbda839230d8cf4d80c4",
+      "report": "/home/nahisaho/.copilot/session-state/f19a6ec9-6db2-429b-a409-154bd92f91ad/files/qualification-v013/run3/result.json",
+      "reportSha256": "abac5ed9be6d9a895a0e07d910340a22c38b05742e77331fea3a3a797fd6d5c9"
+    },
+    {
+      "runId": "run4",
+      "status": "FAIL",
+      "report": "/home/nahisaho/.copilot/session-state/f19a6ec9-6db2-429b-a409-154bd92f91ad/files/qualification-v013/run4/result.json",
+      "reportSha256": "199f232d29092ce08d7fde640c369bb871a08bf499d2c5f939b94b677ef9e683"
+    },
+    {
+      "runId": "run5",
+      "status": "INCOMPLETE",
+      "manifestSha256": "cbed034f11d4ef5d7e33fbe412e3b42b13312ff9486481ceaaeecfe36d72229c",
+      "report": "/home/nahisaho/.copilot/session-state/f19a6ec9-6db2-429b-a409-154bd92f91ad/files/qualification-v013/run5/result.json",
+      "reportSha256": "e962fbe44302dd14172e44c0777ffced1f98aca3ca00aca130c46d860266875b"
+    },
+    {
+      "runId": "run6",
+      "status": "FAIL",
+      "report": "/home/nahisaho/.copilot/session-state/f19a6ec9-6db2-429b-a409-154bd92f91ad/files/qualification-v013/run6/result.json",
+      "reportSha256": "ae6fdb7490344fe34492fa1c74f609ad3dacda65afdb98f8513c3f9e0a75d5ae"
+    },
+    {
+      "runId": "run7",
+      "status": "PASS",
+      "report": "/home/nahisaho/.copilot/session-state/f19a6ec9-6db2-429b-a409-154bd92f91ad/files/qualification-v013/run7/result.json",
+      "reportSha256": "7f4caa570be295804b8cb88ee66722c42f2804f146a20b70c438be3c069e26d8"
+    },
+    {
+      "runId": "run8",
+      "status": "PASS",
+      "report": "/home/nahisaho/.copilot/session-state/f19a6ec9-6db2-429b-a409-154bd92f91ad/files/qualification-v013/run8/result.json",
+      "reportSha256": "5f35146aae784aef82ea4d461e3ef424045646595371d76737a91f96c0112d1e"
+    }
+  ],
+  "humanReleaseApproved": false,
+  "publishingAuthorized": false,
+  "published": true,
+  "observedPublication": {
+    "checkedAt": "2026-10-19T22:07:40.403Z",
+    "publishedAt": "2026-10-19T20:33:35.448Z",
+    "registry": "https://registry.npmjs.org/",
+    "version": "0.1.3",
+    "latest": "0.1.3",
+    "tarball": "https://registry.npmjs.org/musubix6/-/musubix6-0.1.3.tgz",
+    "sha256": "71c7e0570e706648340d08b1078dd5054a65ecc3e051437c6558332b606ca063",
+    "integrity": "sha512-YBFX7qro0OAdPIGi8nlPUDqmuXTCgln8uSHqiiL77xPJ+4/laRVAFmNH/q0WmQkbLyErF4n7CntfChfydtIDPQ==",
+    "downloadedBytesIdenticalToFrozenCandidate": true,
+    "publishedCliVersion": "0.1.3",
+    "publicationPerformedByThisAgent": false,
+    "exactArtifactApprovalRecordedBeforePublication": false,
+    "qualificationCompleteAtVerification": false,
+    "evidence": "/home/nahisaho/.copilot/session-state/f19a6ec9-6db2-429b-a409-154bd92f91ad/files/v013-published-verification/musubix6-0.1.3.tgz.verification.json",
+    "evidenceSha256": "e1cb76b4888555c9f9e99bfb5b2828b770a629d2a8bdb392c3e2df76ebd89ed3",
+    "note": "User reported manual npm publication. Public registry now confirms the exact candidate, but this external publication is not two-run qualification or retrospective approval. Do not republish the immutable version or create an automatically publishing tag."
+  },
+  "activeQualificationSnapshot": {
+    "runId": "run8",
+    "manifestSha256": "1b60d4df3264c9b0bee28d85ff13698d7c902ac5656a2dffd2eb465a5e115c86",
+    "status": "PASS",
+    "completedCells": 22,
+    "requiredCells": 22,
+    "cleanRunCredit": 2,
+    "report": "/home/nahisaho/.copilot/session-state/f19a6ec9-6db2-429b-a409-154bd92f91ad/files/qualification-v013/run8/result.json",
+    "reportSha256": "5f35146aae784aef82ea4d461e3ef424045646595371d76737a91f96c0112d1e",
+    "nextRun": null
+  },
+  "qualificationBlocker": {
+    "state": "historical-failures-retained-requalification-and-assessment-complete",
+    "historicalOnly": true,
+    "currentTechnicalQualificationBlockers": [],
+    "runId": "run4",
+    "cells": [
+      "INTEGRATED-GATE"
+    ],
+    "counts": {
+      "requiredCells": 22,
+      "passedCells": 21,
+      "failedOrIncompleteCells": 1,
+      "notStartedCells": 0,
+      "mandatoryMutationsPassed": 49,
+      "diagnosticMutationsPassed": 57
+    },
+    "completedCells": 21,
+    "requiredCells": 22,
+    "run5Started": true,
+    "evidence": "/home/nahisaho/.copilot/session-state/f19a6ec9-6db2-429b-a409-154bd92f91ad/files/qualification-v013/run4/result.json",
+    "nextRequiredAction": "Human residual-risk acceptance and any future release authorization remain separate. Present exact artifact paths/hashes and this assessment before seeking authorization. Do not republish0.1.3, create publishing tags, or reinterpret earlier external publication as approved. Reopen qualification on a new in-scope S1/S2 or relevant frozen-input/support change."
+  },
+  "qualificationFindings": [
+    {
+      "id": "REL013-012",
+      "state": "Approved-environment-revision-requalified",
+      "severity": "qualification environment drift; no product defect established",
+      "releaseBlocking": false,
+      "firstViolatedStage": "trusted inputs",
+      "finding": "Revision9/run6 verifyFrozen rejected supported native environment changes before executing any required cell. Current PATH differs from the frozen ordering and omits the prior Linux-tools directory; the actual wslc version is3.0.4.0 rather than frozen3.0.3.0.",
+      "observedEvidence": {
+        "report": "/home/nahisaho/.copilot/session-state/f19a6ec9-6db2-429b-a409-154bd92f91ad/files/qualification-v013/run6/result.json",
+        "reportSha256": "ae6fdb7490344fe34492fa1c74f609ad3dacda65afdb98f8513c3f9e0a75d5ae",
+        "manifestSha256": "cbed034f11d4ef5d7e33fbe412e3b42b13312ff9486481ceaaeecfe36d72229c",
+        "completedCells": 0,
+        "requiredCells": 22,
+        "cleanRunCredit": 0,
+        "run7Started": false
+      },
+      "unknown": "Who changed the old environment and its exact update time remain unverified. Availability of an isolated3.0.3.0 runtime was not investigated and is not needed for the explicitly approved revision10 environment. Compatibility is established only for the required native controls, not arbitrary WSLC behavior. Any future relevant environment revision resets qualification.",
+      "assessment": "Revision10/run7 and run8 accepted the same frozen native identity and both executed/passed NATIVE-WSLC digest-pinned local-image, network-none, exit-forwarding and cleanup controls. Full22-cell runs passed without removing any required condition. The historical revision9 rejection remains FAIL.",
+      "followup": {
+        "approval": {
+          "by": "nahisaho",
+          "response": "現在の wslc 3.0.4.0 と PATH を新しい manifest revision に固定し、全必須条件を維持して2回の完全検証をやり直す",
+          "scope": "Prospective native environment update only. All candidate/helper/runtime/dependency bytes,22 cells,1119 regression names,49+57 mutations,23 oracle cases,4 exact TODO exclusions, command shapes, verdicts and budgets remain unchanged. Two fresh full runs from zero. No release, tagging or publication approval."
+        },
+        "previousHash": "cbed034f11d4ef5d7e33fbe412e3b42b13312ff9486481ceaaeecfe36d72229c",
+        "manifestHash": "1b60d4df3264c9b0bee28d85ff13698d7c902ac5656a2dffd2eb465a5e115c86",
+        "qualifyingRuns": [
+          "run7",
+          "run8"
+        ],
+        "completeCleanRuns": 2
+      }
+    },
+    {
+      "id": "REL013-011",
+      "state": "Input-drift-requalified-initial-failure-operator-attributed-to-reboot",
+      "severity": "unclassified gate-input drift; no diagnostics defect established",
+      "releaseBlocking": false,
+      "firstViolatedStage": "trusted inputs",
+      "finding": "Revision8/run4 integrated gate detected changed ../../../../../../../.npmrc after check test retry1 and rejected the evidence with exit1.",
+      "observedEvidence": "run4/INTEGRATED-GATE.stdout verdict FAIL explicitly reports changed input. All legacy approval locks including runner-selection passed;21 other matrix cells passed, including REGRESSION-20/22/24,49 historical mutations and57 diagnostic mutations. Run5 did not start.",
+      "followupDiagnostic": {
+        "status": "PASS",
+        "qualifyingRun": false,
+        "exactNamedCatalogue": true,
+        "tests": 1119,
+        "requiredPass": 1115,
+        "documentedTodo": 4,
+        "skip": 0,
+        "fail": 0,
+        "sourceUnchanged": true,
+        "evidence": "/home/nahisaho/.copilot/session-state/f19a6ec9-6db2-429b-a409-154bd92f91ad/files/qualification-v013/diagnose-r8-npm-test/verification.json",
+        "stdoutSha256": "09a96cc3b42454aa62491005cdc00f491a2bc482cd7617eb349337cea075cfa6",
+        "stderrSha256": "b01efb5c3903fbe1e669490f2de865de22f81f4712b719538c89e0f37b333279",
+        "resultSha256": "0f21f294ef3d3b24101b32cbbfb344b263ccd3bc116b063a24d74f05ef0cf45c",
+        "limits": "Standalone npm test, not full integrated gate or original four-way concurrent matrix. The original first-check failure did not reproduce and its cause remains unknown."
+      },
+      "followupFullGateDiagnostic": {
+        "status": "PASS",
+        "qualifyingRun": false,
+        "exactNamedCatalogue": true,
+        "tests": 1119,
+        "requiredPass": 1115,
+        "documentedTodo": 4,
+        "skip": 0,
+        "fail": 0,
+        "rootNpmInvocations": 1,
+        "sourceUnchanged": true,
+        "evidence": "/home/nahisaho/.copilot/session-state/f19a6ec9-6db2-429b-a409-154bd92f91ad/files/qualification-v013/diagnose-r8-gate/verification.json",
+        "stdoutSha256": "8762c99dfd177387dacf49362478aa3b2874deb589047c19fd359d41e01471d2",
+        "stderrSha256": "b01efb5c3903fbe1e669490f2de865de22f81f4712b719538c89e0f37b333279",
+        "resultSha256": "2be6cd316f2c0127c888dd297a6d2ba8e082a6d366a3279a99a454c80a193ea6",
+        "gateSha256": "5fe77d5b9eb096c5aeb2a0ca4d0e4a98c029d1e509ce877357a8c579202a6ff8",
+        "limits": "Standalone full gate used transparent npm recording; original concurrent22-cell qualification did not run. Existing scopePolicy warn messages retained; no root-cause fix or two-run readiness is established."
+      },
+      "unknown": "Historical metadata locates the confirmed home npmrc update inside the run4 gate interval; exact credential-bearing contents were not inspected. The original first failing test output and a restart timestamp are unavailable. The operator attributes past initial test failure to OS reboot, but that causal attribution is not independently established for a particular check. Do not replace the separately observed input-drift rejection with reboot, attribute every historical failure to reboot, inspect npm credentials, or rewrite any failed run as PASS.",
+      "operatorReport": {
+        "by": "nahisaho",
+        "reportedAt": "2026-10-21T04:51:19.356+09:00",
+        "statement": "過去の初期テスト失敗はOSを再起動したからです。",
+        "evidenceStrength": "Direct operator report; no precise restart time or original first-check output supplied. This is not a machine-verified causal reconstruction or release approval."
+      },
+      "assessment": "Distinguish operational interruption from the independently observed fail-closed input-change rejection. Historical failure is not product-defect proof or clean-run credit. Both fresh full concurrent matrices, including the integrated gate, now passed unchanged; the declared boundary does not guarantee continuation or cleanup across reboot/power loss. No observed unresolved product S1/S2 is established here. Retain historical causal uncertainty as RR013-007 for human residual-risk acceptance rather than claiming a reproduced root-cause fix."
+    },
+    {
+      "id": "REL013-010",
+      "state": "Approved-budget-correction-requalified",
+      "releaseBlocking": false,
+      "firstViolatedStage": "contract",
+      "finding": "ORACLE-SELFTEST retained120-second outer timeout after real Node20/24 mutation controls were added. Final helper preflight had already taken157715.730265ms, so the frozen budget contradicted observed valid execution.",
+      "observedEvidence": "run3/ORACLE-SELFTEST.command.json records exit124 after120s; stdout contains4 observed passing top-level results, no observed assertion failure. helper-r7-green.tap previously completed23/23 with0 fail/skip/TODO in157.7s. Partial buffered output does not establish outcomes of the other19 helpers.",
+      "proposal": "Human explicitly approved '承認：600秒へ変更して再実行'. Revision8 increases only ORACLE-SELFTEST outer120 to600s. Public/provider/native per-case limits, required tests, expected statuses and all other cell budgets unchanged. Revision7 failure retained; two complete revised runs start from zero.",
+      "unknown": "No unexecuted required oracle case remains in revision10/run7 or run8. Timing under other hardware/load is not guaranteed.",
+      "assessment": "Both complete runs executed all23 exact oracle cases with0 fail/skip/TODO under the approved600-second outer budget. Required native/provider budgets and verdicts remain unchanged; historical run3 timeout remains FAIL."
+    },
+    {
+      "id": "REL013-008",
+      "state": "Fixed-and-integrated-requalification-verified",
+      "severity": "unclassified qualification-input defect; no diagnostics defect established",
+      "releaseBlocking": false,
+      "firstViolatedStage": "trusted inputs",
+      "finding": "INTEGRATED-GATE refused the legacy runner-selection approval because archive-based materialization omitted its required real committed Git provenance.",
+      "observedEvidence": "run2/INTEGRATED-GATE.stdout reports invalid provenance and cmd test successful3058.2s. run2-provenance-diagnosis.json: no runner-selection approval event, clone git show exit128; real checkout committed approval matches. approvalProvenance at sdd.mjs:1077-1089 explicitly requires committed history for pre-event locks.",
+      "unknown": "The historical --no-run timeout remains non-passing evidence. No claim about arbitrary or fabricated Git history is added.",
+      "assessment": "Both revision10 full integrated gates passed with the original legacy approval checker and genuine hash-bound base2a99734 history. The unchanged runner verified each source tree, exact Git pointer and HEAD after execution. Existing archive-only/invalid-history rejection and isolated reversal controls remain bound inputs; neither approval bypass nor synthetic history was introduced."
+    },
+    {
+      "id": "REL013-009",
+      "state": "Required-native-execution-requalified-historical-restore-cause-unproven",
+      "severity": "unclassified required-execution failure; native restore cause unknown",
+      "releaseBlocking": false,
+      "firstViolatedStage": "execution",
+      "finding": "REGRESSION-22 and REGRESSION-24 each skipped required '#197 real NUnit constructed fixtures and SetName rows retain runtime method ownership' with reason 'NUnit packages cannot be restored'.",
+      "observedEvidence": "Both retained event streams contain1119 named tests,1114 pass,4 known TODO,1 required skip; exit0 is insufficient. Strict verifySuite independently rejected both. Node20 had no required skips and its cell passed. Both Node22/24 source trees independently matched the frozen candidate after completion.",
+      "unknown": "The original native restore error was not retained, so its exact cause remains unproven; the reboot report is not independently linked to it. Future native dependency/cache availability is not guaranteed.",
+      "assessment": "The exact required NUnit constructed-fixture/SetName regression executed and passed on actual Node20/22/24 in both complete runs:6 observed required target executions,0 selected skips. Full named catalogues have1115 required passes plus4 exact TODO exclusions per runtime. Restore/availability recurrence must still reject qualification; neither exit0 with a skip nor a successful probe alone is accepted. Track recurrence and the historical missing-error limitation as RR013-009, not as a newly inferred product defect."
+    }
+  ],
+  "candidate": {
+    "baseCommit": "2a9973483e23c63ae3303ca84f88b521bd0b4ef3",
+    "baseCommitPushed": true,
+    "identity": "Frozen source archive/tree include uncommitted0.1.3 metadata and documentation. The base commit alone is not the release candidate identity.",
+    "packagePath": "/home/nahisaho/.copilot/session-state/f19a6ec9-6db2-429b-a409-154bd92f91ad/files/v013-candidate/package/musubix6-0.1.3.tgz",
+    "packageSha256": "71c7e0570e706648340d08b1078dd5054a65ecc3e051437c6558332b606ca063",
+    "sourceArchiveSha256": "8d6ebeaa2d5fac30f53a3b1f7099348cce1a43a47e3ff1ca5a69ee0f5a871e6b",
+    "reproduciblePack": true,
+    "payloadFiles": 92,
+    "payloadBytesAndModesMatchFrozenTrackedSource": true,
+    "payloadSha256": "c34e70c9fdf382aeb24583e4a4dd5e9b719d0d879e87e33ebc2623cfd652d0a7",
+    "payloadEvidence": "/home/nahisaho/.copilot/session-state/f19a6ec9-6db2-429b-a409-154bd92f91ad/files/qualification-v013/package-source-verification.json"
+  },
+  "preparationFindings": [
+    {
+      "id": "REL013-006",
+      "class": "S1",
+      "state": "Fixed",
+      "firstViolatedStage": "verdict",
+      "finding": "Mandatory iterator-helper-names semantic mutant survived the selected TEST-NODE20-002 regression with exit0. Baseline and fresh restored controls passed, but the selected test did not distinguish this mutation.",
+      "observedEvidence": "run1/mutations/iterator-helper-names/{baseline,mutant,restored}.json and retained stdout; mutant oracle reports not an assertion-killed mutant. No production defect is established by survival alone.",
+      "resolution": "Restored the original REQ-NODE20-001 unsupported iterator.map counterexample from its owning spec, not the nondiscriminating helperExtra omission. The existing named regression owns the CLI-status assertion. Real Node20/24 baseline/mutant/fresh-restored controls passed; deliberately restoring the old definition makes the new outer regression assert-fail, then corrected controls pass. No production source/test or candidate bytes changed. Failed revision4 survival remains failed evidence; revised full qualification is pending."
+    },
+    {
+      "id": "REL013-007",
+      "class": "S1",
+      "state": "Fixed",
+      "firstViolatedStage": "trusted inputs",
+      "finding": "Mandatory ownership-child-selector mutant raised ERR_ASSERTION at sdd.test.mjs:13372 (exactly one executed pass), not the declared named-row oracle at line13371. On Node20 the skipped target row matched the existing named-row expression; the pass-count assertion correctly rejected zero execution.",
+      "observedEvidence": "run1/mutations/ownership-child-selector/mutant.stdout and mutant.json; baseline and fresh restored controls passed, mutant exited1, but assessRun rejected undeclared assertion ownership.",
+      "resolution": "Explicitly declare both existing contract-owned row and pass-count assertions. Real Node20 detects the count assertion; Node24 detects the named-row assertion; baseline/fresh-restored controls pass on both. Removing the count declaration again causes the new outer regression to assert-fail; restored declarations pass. Arbitrary assertion locations and setup failures remain rejected by the unchanged strict oracle. Revised full qualification is pending."
+    },
+    {
+      "id": "REL013-001",
+      "class": "S1",
+      "state": "Fixed",
+      "firstViolatedStage": "execution",
+      "finding": "Concurrent full gate and Node24 regression shared one runtime-keyed source clone, allowing cross-cell interference.",
+      "resolution": "Every cell now creates its own fresh source-ID clone and verifies its complete frozen tree. Actual integrated execution remains pending."
+    },
+    {
+      "id": "REL013-002",
+      "class": "S1",
+      "state": "Fixed",
+      "firstViolatedStage": "contract",
+      "finding": "Prospective freeze did not enforce every required mutation/cell count, uniqueness or discovery of named TODO exclusions.",
+      "resolution": "validateManifestMatrix runs at freeze and run. Actual assertion Red, Green and isolated reverse-mutation/restored controls are retained in qualification-v013."
+    },
+    {
+      "id": "REL013-003",
+      "class": "S1",
+      "state": "Fixed",
+      "firstViolatedStage": "trusted inputs",
+      "finding": "Executing the canonical rustup binary instead of the selected cargo/rustc symlink changed dispatch and reported the manager version.",
+      "resolution": "Invoke the selected entry, hash its canonical binary, record both and actual tool version. Genuine native-dispatch assertion Red, Green and reverse mutation/restored controls passed."
+    },
+    {
+      "id": "REL013-004",
+      "class": "S1",
+      "state": "Fixed",
+      "firstViolatedStage": "verdict",
+      "finding": "Helper/scope cells could accept some skipped or omitted subcases if another case executed.",
+      "resolution": "Revision4 froze16 names; revision5 retains them and adds both actual mutation-definition contract tests for18 oracle names. All6 scope differential names and the strict exact-catalogue verifier remain. Positive, missing/skip/duplicate/failure controls and matrix-admission reverse mutation/restoration passed; qualification execution remains pending."
+    },
+    {
+      "id": "REL013-005",
+      "class": "S3",
+      "state": "Fixed",
+      "firstViolatedStage": "integration/distribution",
+      "finding": "Release documentation needed explicit unpublished-version fallback, direct backup/force-refresh guidance and a non-publication date.",
+      "resolution": "Both READMEs gate0.1.3 availability and give0.1.2/source fallback. Changelog date is candidate preparation. Independent document delta review completed two stable clean passes, including bounded reread. Remaining navigation notes were resolved as covered by existing version checks and source/copy instructions."
+    }
+  ],
+  "auxiliaryEvidence": {
+    "hostedCI": {
+      "url": "https://github.com/nahisaho/musubix6/actions/runs/39311327459",
+      "sourceCommit": "2a9973483e23c63ae3303ca84f88b521bd0b4ef3",
+      "status": "success",
+      "jobs": [
+        "test (20)",
+        "test (22)",
+        "test (24)"
+      ],
+      "countsAsCandidateQualification": false
+    },
+    "helperPreflight": {
+      "tests": 23,
+      "pass": 23,
+      "fail": 0,
+      "skip": 0,
+      "evidence": "/home/nahisaho/.copilot/session-state/f19a6ec9-6db2-429b-a409-154bd92f91ad/files/qualification-v013/helper-r7-green.tap",
+      "runnerReverseMutations": "Matrix-admission bypass and symlink-dispatch reversal assertion-detected, originals/restored controls passed.",
+      "extraHelperMutations": "CLI/prose/context-body/Gradle/R/package-cache bypasses assertion-detected by existing selftest loop. New archive-only/missing-history/native-exit-swallow/unexpected-Git-pointer bypasses assert-detected and9 restored controls passed; all source helpers restored."
+    },
+    "blockerCorrections": {
+      "contractRed": "qualification-v013/blocker-contract-red.tap:2 actual owned assertion failures,0 pass/skip/TODO.",
+      "contractGreen": "qualification-v013/blocker-contract-green.tap:2 selected regressions passed with actual Node20/24 baseline/assertion-killed mutant/fresh-restored controls.",
+      "reverseMutations": "qualification-v013/blocker-mutation-results.json:both previous-definition reversals detected by owned outer assertions, restored controls passed.",
+      "matrix18Admission": "qualification-v013/oracle-count18-red.tap:prior16-case admission failed the valid required18-case matrix before correction; full18-case suite and matrix-admission bypass/restoration passed afterward.",
+      "scope": "Session-local qualification definitions/tests only; immutable source/package candidate unchanged; no release-run credit or publication authorization."
+    },
+    "japaneseProse": {
+      "mode": "full",
+      "scoreBefore": 98,
+      "scoreAfter": 98,
+      "newFindings": 0,
+      "keptFindings": "Two unchanged pre-existing informational wording flags outside the release delta.",
+      "readingLoadScore": 100,
+      "readingLoadFindings": 0,
+      "outlineAndTermsExecuted": true
+    }
+  },
+  "residualRisks": [
+    "Four exact pre-existing S3 TODO cases and tracker #315 remain; none count as passing required tests.",
+    "Linux/WSL2 and actual Node20.20.2/22.23.3/24.21.0 are the fixed sampled environments; macOS/Windows and other runtime versions are not verified by this qualification.",
+    "Local tools, executable configurations, plugins, build scripts and proc macros are trusted, not sandboxed. Rustup proxy hashes and actual tool version outputs do not establish arbitrary toolchain/OS authenticity.",
+    "Rust may persist normal external Cargo dependency-cache bookkeeping/materialization. Cleanup after parent SIGKILL, power loss or self-detached descendants is not guaranteed.",
+    "Successful genuine human authorization is not simulated; exact-artifact publication approval is still required.",
+    "No previous exploratory run, changed gate, hosted base-commit CI or published0.1.2 result counts toward this candidate's two-run streak."
+  ],
+  "residualAssessment": {
+    "assessedAt": "2026-10-20T19:54:25.253Z",
+    "policy": "docs/design-sdd-hardening.md section3.5",
+    "verdict": "FIXED-MATRIX-TECHNICAL-QUALIFICATION-SATISFIED-WITH-DISCLOSED-RESIDUALS",
+    "scope": "Assessment of the existing frozen support contract, retained findings and two full runs; not an exhaustive new exploratory wave, independent OS incident investigation, vulnerability audit or guarantee of defect absence.",
+    "manifestPath": ".sdd/release-validation.v0.1.3.json",
+    "manifestSha256": "1b60d4df3264c9b0bee28d85ff13698d7c902ac5656a2dffd2eb465a5e115c86",
+    "candidateAndMatrixChanged": false,
+    "twoConsecutiveCompleteCleanRuns": 2,
+    "qualificationRuns": [
+      {
+        "runId": "run7",
+        "report": "/home/nahisaho/.copilot/session-state/f19a6ec9-6db2-429b-a409-154bd92f91ad/files/qualification-v013/run7/result.json",
+        "reportSha256": "7f4caa570be295804b8cb88ee66722c42f2804f146a20b70c438be3c069e26d8"
+      },
+      {
+        "runId": "run8",
+        "report": "/home/nahisaho/.copilot/session-state/f19a6ec9-6db2-429b-a409-154bd92f91ad/files/qualification-v013/run8/result.json",
+        "reportSha256": "5f35146aae784aef82ea4d461e3ef424045646595371d76737a91f96c0112d1e"
+      }
+    ],
+    "verification": {
+      "command": "node /home/nahisaho/.copilot/session-state/eea8e3e8-04cb-4596-9a6a-8621ed66226a/files/verify-residual-assessment.mjs",
+      "status": "PASS",
+      "evidence": "/home/nahisaho/.copilot/session-state/eea8e3e8-04cb-4596-9a6a-8621ed66226a/files/residual-assessment-verification.json",
+      "evidenceSha256": "ace4085eb5ea1fc7d739c26af885415ca8e5624ffb749ee6fa30dfd0ab523ce7",
+      "observed": "All44 required cell results, raw stdout/stderr hashes and command records match retained reports. Exact regression/watchdog/oracle/scope catalogues,106 mutation IDs and verdicts, all6 required NUnit executions, candidate tree/archive/package and helper/runtime hashes verified. Both integrated gates PASS; each retains4 warning lines, not a warning-free verdict.",
+      "notRun": "No production change, new full suite, new mutation campaign, reboot experiment or additional OS/runtime matrix was performed for this evidence-only assessment."
+    },
+    "confirmedUnresolvedInScopeS1S2FoundInThisAssessment": [],
+    "severityOrScopeDowngrades": [],
+    "preparationFindingsIntegration": {
+      "findingIds": [
+        "REL013-001",
+        "REL013-002",
+        "REL013-003",
+        "REL013-004",
+        "REL013-006",
+        "REL013-007"
+      ],
+      "state": "Existing-Fixed-statuses-confirmed-by-run7-run8",
+      "evidence": "Both full unchanged matrices passed with fresh per-cell source materialization, original matrix admission/native dispatch, strict named-suite verification,49 mandatory mutations,57 diagnostic mutations,23 oracle controls and both integrated gates. Original preparation narrative about pending integration is historical; it does not override these complete run reports.",
+      "severityChanges": "None; all original S1 classifications and failed counterexamples are retained."
+    },
+    "historicalFailurePolicy": "All failed/interrupted runs remain unchanged and count as zero. User reboot attribution is operator evidence only; original missing output and exact event timing remain explicit limits. Passing reruns do not prove historical causality.",
+    "riskStages": {
+      "contract": "Original fixed support, required cases, four exact TODO exclusions, budgets and expected verdicts unchanged. No candidate behavior changed, so new implementation Red/Green or mutation obligations are not applicable.",
+      "trusted inputs": "Retained original fail-closed drift rejections; approved current environment passed two complete frozen runs. Local executable/configuration authenticity remains outside the declared guarantee.",
+      "execution": "Both22-cell runs completed with required native cases executed and no required skip. Reboot, power loss and external dependency availability remain operational risks, not successful execution evidence.",
+      "verdict": "Exact catalogues and mandatory mutations passed. Existing warn-policy output is disclosed rather than interpreted as strict enforcement; historical setup failure or skip never becomes an assertion-killed mutation or pass.",
+      "evidence history": "Original failures and user report coexist; no historical run is promoted to PASS. Both clean reports share the exact manifest; original first-failure output and reboot correlation remain unverified.",
+      "integration/distribution": "Package/install/native command surfaces passed and package hash is unchanged. Prior manual publication did not have recorded exact-artifact approval; assessment cannot retroactively grant it or authorize a tag/republish."
+    },
+    "risks": [
+      {
+        "id": "RR013-001",
+        "class": "Existing S3; unchanged frozen exclusions",
+        "firstViolatedStage": "contract",
+        "risk": "Four Rust-stub TODO cases still cover unsupported return-type inference, missing free-function report rows, float-return methods and loop-constant inferred types. Successful stub generation/compilation is not semantic correctness.",
+        "workaround": "Review generated signatures/types and report coverage manually; write explicit correct types/implementations and requirement-specific failing assertions before accepting Green. Do not rely on inferred confidence or --report completeness for these shapes.",
+        "evidence": ".github/skills/lean-sdd-tdd/scripts/sdd.test.mjs:8842-8860; frozen excludedTodoNames; issue315 OPEN.",
+        "disposition": "Retain exact four exclusions without counting them as passes; human residual-risk acceptance pending. A new in-scope S1/S2 consequence reopens qualification."
+      },
+      {
+        "id": "RR013-002",
+        "class": "Existing tracked limitations; no blanket new severity classification",
+        "firstViolatedStage": "verdict",
+        "risk": "Issue315 still tracks weak-Red/stub heuristics, redirected-artifact impact and CLI message limitations. This assessment does not reproduce or declare every unchecked tracker row fixed or harmless.",
+        "workaround": "Inspect the actual owned assertion and genuine failing Red; do not substitute passing --retest/characterization evidence. Declare stdout-redirect artifacts/producers explicitly and re-record stale evidence with the documented refactor workflow. Keep full validation.",
+        "evidence": "https://github.com/nahisaho/musubix6/issues/315; both gate tdd.weak and tdd.suspect arrays are empty for the current candidate.",
+        "disposition": "Keep tracker open; no issue closure or S1/S2 downgrade. Escalate any reproduced blocking/no-workaround or false-pass case."
+      },
+      {
+        "id": "RR013-003",
+        "class": "Declared trusted-code boundary",
+        "firstViolatedStage": "trusted inputs",
+        "risk": "Local configurations/plugins, build scripts, proc macros and executables can have arbitrary side effects/network access. Tool/version hashes do not establish arbitrary OS/toolchain authenticity.",
+        "workaround": "Use vetted local tools/configuration and an independently isolated environment for untrusted projects. Do not treat diagnostics as a sandbox or authorization.",
+        "evidence": "README.md:206-210; README-ja.md:208-210; manifest.support.externalAuthenticityBoundary.",
+        "disposition": "Within existing disclosed trust boundary; no new containment guarantee or support narrowing."
+      },
+      {
+        "id": "RR013-004",
+        "class": "Declared execution/cleanup boundary",
+        "firstViolatedStage": "execution",
+        "risk": "OS reboot, power loss, parent SIGKILL and self-detached descendants can interrupt validation or leave owned scratch/ordinary external Cargo cache bookkeeping. Complete cleanup is not guaranteed in those cases.",
+        "workaround": "Keep the host/configuration stable during runs; treat interrupted evidence as incomplete, inspect only known owned leftovers and rerun fresh from zero. Do not reuse partial success or broadly delete caches/shared files.",
+        "evidence": "README.md:198-209; run5 interruption retained with zero credit; operator reboot report.",
+        "disposition": "Operational residual; current required runs completed. No interruption was promoted to PASS."
+      },
+      {
+        "id": "RR013-005",
+        "class": "Sampling and portability evidence limit",
+        "firstViolatedStage": "execution",
+        "risk": "Qualification samples Linux x86_64/WSL2, actual Node20.20.2/22.23.3/24.21.0 and the frozen native tools. It does not establish equivalent behavior on macOS, native Windows, every Node>=20 version or future tool versions.",
+        "workaround": "Run equivalent required controls on the intended additional target before making a verification claim. Relevant supported-environment/candidate changes require a prospective manifest and fresh validation.",
+        "evidence": "manifest.support.sampledRuntimes/platform; README.md:211; README-ja.md:212.",
+        "disposition": "Disclosed verification limit, not a retroactive public-support reduction or a claim that untested environments passed."
+      },
+      {
+        "id": "RR013-006",
+        "class": "Existing advisory/impact limits",
+        "firstViolatedStage": "verdict",
+        "risk": "Both full gates retain two missing-@implements trace warnings, textual stub-marker warnings and relocated-check-resolution scope warnings under unchanged scopePolicy warn. Static impact is file-granular/language-limited; PASS does not mean warning-free or strict-policy enforcement.",
+        "workaround": "Inspect actual source and full candidate-bound catalogues, not warning absence. Keep the full gate; never claim changed-only semantic dependency completeness. A strict-default/policy change is separate approved work requiring requalification.",
+        "evidence": "Both INTEGRATED-GATE.stdout files; sdd.mjs:1718 is explanatory marker text and sdd.test.mjs:680 is an intentional stub fixture, not an unimplemented production body; all1119 frozen regression names executed on each runtime in both runs.",
+        "disposition": "Warnings remain visible. Literal-marker inspection and full-suite evidence do not assert that every generic scope warning is universally benign."
+      },
+      {
+        "id": "RR013-007",
+        "class": "Historical causal evidence limit",
+        "firstViolatedStage": "evidence history",
+        "risk": "Operator attributes past initial test failure to OS reboot; the original failing test output and precise restart-to-check mapping were not retained. Confirmed run4 npmrc drift remains a separate fact. Historical cause is not independently reconstructed.",
+        "workaround": "Keep the exact operator statement and all original failure records. Preserve native/raw command outputs for future failures; require fresh full unchanged runs, not an assumption that reboot explains every failure.",
+        "evidence": "REL013-011.operatorReport; run4 result and command records; run5 original interruption evidence; hash-verified run7/run8 reports.",
+        "disposition": "No observed unresolved product S1/S2 established by the retained incident. Human acceptance of this causal uncertainty remains pending; no machine-verified root-cause fix is claimed."
+      },
+      {
+        "id": "RR013-008",
+        "class": "Human authority and distribution history",
+        "firstViolatedStage": "integration/distribution",
+        "risk": "Version0.1.3 was externally published before recorded two-run qualification/exact-artifact release approval. Technical verification cannot retroactively authorize that publication or simulate a genuine human approval event.",
+        "workaround": "Retain the historical publication record; do not republish the immutable version or create an automatically publishing tag. Any future release authorization must present every exact artifact path/hash and residual risk to the human.",
+        "evidence": "observedPublication; humanReleaseApproved=false; publishingAuthorized=false.",
+        "disposition": "Assessment grants no release, publication or tag authority. Human acceptance/authorization remains separate."
+      },
+      {
+        "id": "RR013-009",
+        "class": "Native dependency availability and historical evidence limit",
+        "firstViolatedStage": "execution",
+        "risk": "Earlier NUnit restore failure discarded native error detail. Its exact cause is unproven; current six successful required target executions do not guarantee future cache/network/native dependency availability.",
+        "workaround": "Retain transparent native invocation/error/exit logs. On recurrence repair the actual environment and rerun fresh full validation; a skipped required case or swallowed exit must continue to reject qualification.",
+        "evidence": "REL013-009; six exact required NUnit target PASS outcomes in residual-assessment-verification.json; existing native-exit-swallow rejection controls.",
+        "disposition": "Current required execution blocker resolved by full requalification; historical cause and future availability remain disclosed, not silently inferred from reboot."
+      }
+    ],
+    "humanResidualRiskAcceptance": "NOT-REQUESTED-OR-RECORDED",
+    "humanReleaseApproved": false,
+    "publishingAuthorized": false
+  },
+  "qualificationInterruptions": [
+    {
+      "runId": "run5",
+      "observedAt": "2026-10-20T11:24:25.027Z",
+      "manifestSha256": "cbed034f11d4ef5d7e33fbe412e3b42b13312ff9486481ceaaeecfe36d72229c",
+      "status": "INCOMPLETE",
+      "firstViolatedStage": "execution",
+      "completedCells": 9,
+      "requiredCells": 22,
+      "observation": "Recorded owner PID no longer exists; no qualification process was found. Mutation output is empty and no mutation command completion record exists. Termination time and cause are unknown; no product defect or successful remaining outcome is inferred.",
+      "originalReport": "/home/nahisaho/.copilot/session-state/eea8e3e8-04cb-4596-9a6a-8621ed66226a/files/run5-interrupted-original.json",
+      "originalReportSha256": "a016402a7f3c0c2e1a695ab566c3415bd4226761291e600de579258fd2c683c6",
+      "originalLease": "/home/nahisaho/.copilot/session-state/eea8e3e8-04cb-4596-9a6a-8621ed66226a/files/run5-stale-lock.json",
+      "originalLeaseSha256": "101ccb6540d4d1fcff19dfe0104707147941dc7342b4328ebc512654aff5ad17",
+      "cleanRunCredit": 0
+    }
+  ],
+  "approvedNativeEnvironmentChange": {
+    "by": "nahisaho",
+    "response": "現在の wslc 3.0.4.0 と PATH を新しい manifest revision に固定し、全必須条件を維持して2回の完全検証をやり直す",
+    "scope": "Prospective native environment update only. All candidate/helper/runtime/dependency bytes,22 cells,1119 regression names,49+57 mutations,23 oracle cases,4 exact TODO exclusions, command shapes, verdicts and budgets remain unchanged. Two fresh full runs from zero. No release, tagging or publication approval.",
+    "previousHash": "cbed034f11d4ef5d7e33fbe412e3b42b13312ff9486481ceaaeecfe36d72229c",
+    "manifestHash": "1b60d4df3264c9b0bee28d85ff13698d7c902ac5656a2dffd2eb465a5e115c86"
+  }
+}

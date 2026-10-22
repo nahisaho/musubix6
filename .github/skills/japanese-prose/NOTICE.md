@@ -1,4 +1,4 @@
-# GiNZA dependency notice
+# Diagnostic dependency notices
 
 This skill is an original kotonoha implementation and does not include source
 code from `coji/natural-japanese`.
@@ -15,3 +15,9 @@ datasets.
 The implementation targets GiNZA 5.2.x and uses token surface forms, lemmas,
 universal part-of-speech tags, dependency relationships, sentence boundaries,
 and named-entity labels.
+
+The edit-invariant gate uses
+[markdown-it-py](https://github.com/executablebooks/markdown-it-py), distributed
+under the MIT License, to parse Markdown without treating short fences
+inside longer fenced code blocks as prose. Its dependencies are resolved by
+`uv` when `scripts/invariants.py` is run.

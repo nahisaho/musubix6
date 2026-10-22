@@ -12963,7 +12963,11 @@ test('r35b #364 TypeScript is exactly locked as a development-only dependency', 
   assert.equal((pkg.bundledDependencies ?? pkg.bundleDependencies ?? []).length, 0);
   const lock = JSON.parse(fs.readFileSync(path.join(root, 'package-lock.json')));
   assert.equal(lock.packages[''].devDependencies.typescript, '5.9.3');
-  assert.deepEqual(Object.keys(lock.packages).sort(), ['', 'node_modules/typescript']);
+  assert.deepEqual(lock.packages[''].devDependencies, pkg.devDependencies);
+  for (const [name, entry] of Object.entries(lock.packages)) {
+    if (name === '') continue;
+    assert.equal(entry.dev, true, `${name} must remain development-only`);
+  }
   const compiler = lock.packages['node_modules/typescript'];
   assert.equal(compiler.version, '5.9.3');
   assert.equal(compiler.dev, true);
@@ -12994,7 +12998,7 @@ test('r35b #364 CI qualifies Node 20/22/24 without publication and retains failu
   const ci = fs.readFileSync(workflowPath, 'utf8');
   assert.match(ci, /push:\s*\n\s+pull_request:\s*\n\s+workflow_dispatch:/);
   assert.match(ci, /permissions:\s*\n\s+contents: read/);
-  assert.doesNotMatch(ci, /secrets\.|id-token:|contents: write|npm publish|environment:|pull_request_target/);
+  assert.doesNotMatch(ci, /secrets\.|id-token:|contents: write|npm publish|(?<![\w-])environment:|pull_request_target/);
   assert.match(ci, /runs-on: ubuntu-latest/);
   assert.match(ci, /node: \[20, 22, 24\]/);
   assert.match(ci, /fail-fast: false/);
@@ -13360,10 +13364,11 @@ test('TEST-R36C-CLOSURE-002 r36c #367 repeated executable identifiers share fres
 test('#368 TEST-R36D-OWN-001 original native ownership fixture passes on the actual runtime', () => {
   const result = spawnSync(process.execPath, [
     '--test', '--test-reporter=tap',
-    '--test-name-pattern=^r33b #355 Node execution verification respects project', fileURLToPath(import.meta.url),
+    '--test-name-pattern=^TEST-R33-NODE-002 ', fileURLToPath(import.meta.url),
   ], { cwd: process.cwd(), encoding: 'utf8', env: ENV });
   const output = result.stdout + result.stderr;
   assert.equal(result.status, 0, `${process.execPath}\n${output}`);
+  assert.match(output, /^ok \d+ - TEST-R33-NODE-002 r33b /m);
   assert.match(output, /# pass 1\b/);
   assert.match(output, /# fail 0\b/);
 });

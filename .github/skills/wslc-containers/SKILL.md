@@ -1,12 +1,11 @@
 ---
 name: wslc-containers
-description: Manage Linux containers on Windows using the built-in WSL container CLI (wslc.exe), without Docker Desktop. Use this when asked to build, run, list, inspect, stop, or otherwise operate containers via WSL/wslc from a Copilot CLI session running inside WSL.
-allowed-tools: shell
+description: Manage Linux containers on Windows using the built-in WSL container CLI (wslc.exe), without Docker Desktop. Use this when asked to build, run, list, inspect, stop, or otherwise operate containers via WSL/wslc from a Copilot CLI or Claude Code session running inside WSL.
 ---
 
 # WSL Container (`wslc`) Operations
 
-This skill lets Copilot operate Linux containers through the native WSL container
+This skill lets the agent operate Linux containers through the native WSL container
 feature (`wslc.exe`), which ships with WSL version 2.9.3 or later and requires no
 Docker Desktop installation. It works from a bash shell running inside a WSL
 distribution by invoking the Windows-side `wslc.exe` binary through the `/mnt/c`
@@ -27,8 +26,14 @@ Always use the bundled wrapper script instead of guessing paths directly, since
 (`/mnt/c/Program Files/WSL/wslc.exe`):
 
 ```bash
-bash .github/skills/wslc-containers/scripts/wslc.sh <command> [args...]
+bash "<skill-dir>/scripts/wslc.sh" <command> [args...]
 ```
+
+Resolve `<skill-dir>` to this loaded skill's directory, such as
+`.github/skills/wslc-containers` or `.claude/skills/wslc-containers`;
+do not assume that either directory exists in every installation.
+Use the host's shell tool (Copilot CLI shell/bash or Claude Code Bash) and
+normal permission prompts; this skill does not grant command permissions.
 
 The wrapper searches, in order:
 1. The default install path (`/mnt/c/Program Files/WSL/wslc.exe`)
@@ -60,7 +65,7 @@ non-zero — surface that message to the user rather than retrying blindly.
 ## Common operations
 
 Run these through the wrapper script shown above (replace `wslc` with
-`bash .github/skills/wslc-containers/scripts/wslc.sh`):
+`bash "<skill-dir>/scripts/wslc.sh"`):
 
 ```bash
 # Show version / general info
@@ -200,7 +205,7 @@ wslc 3.0.3.0 では、コンテナー VM から外部へ接続できない環境
 - 取得できない場合に `wsl --update` を勧めるだけで終わらせず、ローカルイメージ方式に切り替えるか、
   ユーザーにネットワーク設定の確認 (`wslc settings` 等) を依頼する。
 
-## Guidelines for Copilot
+## Guidelines for the agent
 
 1. Always resolve the binary through the wrapper script; never hardcode
    `/mnt/c/Program Files/WSL/wslc.exe` directly in commands, since the install

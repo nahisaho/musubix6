@@ -1,0 +1,84 @@
+{
+  "feature": "claude-code-support",
+  "version": "0.2.0-dev.0",
+  "qualification": "development-only",
+  "requirements": ["REQ-HOST-001", "REQ-HOST-002", "REQ-HOST-003", "REQ-HOST-004", "REQ-HOST-005"],
+  "contractSha256": "02927b251f32f24d1efa348e474a357bd7227c09eba662d64ea89b5980c1c24d",
+  "evidenceDirectory": "/home/nahisaho/.copilot/session-state/a55408e9-74fb-4add-9bc2-4540d1509ca5/files",
+  "checks": {
+    "officialAssertionRedBeforeImplementation": 5,
+    "officialGreen": 5,
+    "focusedHostAndKotonoha": {"passed": 11, "failed": 0, "skipped": 0},
+    "legacyInstallerAndPackage": {"passed": 11, "failed": 0, "skipped": 0},
+    "isolatedMutations": {"assertionDetected": 16, "passingBaselines": 5, "passingRestorations": 16},
+    "realNpmPackAndExtractedInstall": "passed",
+    "relocatedNodeInitAndStatus": "passed",
+    "relocatedPythonStructuralLint": "passed",
+    "wslWrapperShellSyntax": "passed",
+    "japaneseProse": {"score": 98, "unchangedInfoFindings": 2, "invariants": "passed"},
+    "readmeStructuralLint": {"englishFindings": 15, "japaneseFindings": 15, "newFindings": 0},
+    "pythonTestEnvironmentRecovery": {
+      "cause": "MUSUBIX_DIAGNOSTICS_TEST_VENV was unset and the documented /tmp venv was absent.",
+      "environment": "Python 3.14.4, Ruff 0.17.1, mypy 2.4.0 in a dedicated external session venv",
+      "passed": 6,
+      "failed": 0,
+      "skipped": 0,
+      "log": "host-python-restored.log"
+    },
+    "fullGate": {
+      "status": "passed",
+      "log": "host-gate-restored.log",
+      "testCheckSeconds": 3266.8,
+      "scope": "changed requirement evidence plus the unchanged full configured npm suite",
+      "locks": "passed",
+      "trace": {"requirements": 80, "errors": 0, "warnings": 6},
+      "ledger": {"entries": 473, "chain": "intact"},
+      "changedEvidence": {"passed": 5, "required": 5},
+      "checkDefinitionWarning": "package.json adds the host regression file to the existing full test command; no prior runner/file removed.",
+      "limits": "Not a full-scope gate before merge, fixed-matrix two-run release qualification, or live Claude Code verification. Existing TODO cases are not counted as passes.",
+      "previous": {"status": "failed", "testCheckSeconds": 3499.6, "cause": "Six Python tests lacked the required pinned test venv.", "log": "host-gate-final.log"}
+    }
+  },
+  "commands": {
+    "redGreen": "node .github/skills/lean-sdd-tdd/scripts/sdd.mjs tdd red|green TEST-HOST-001..005",
+    "focused": "node --test --test-reporter=spec scripts/host-compatibility.test.mjs scripts/kotonoha-skills.test.mjs",
+    "legacy": "node --test --test-reporter=spec --test-name-pattern='r35a|r35b|#370' .github/skills/lean-sdd-tdd/scripts/sdd.test.mjs",
+    "mutation": "node <evidenceDirectory>/host-mutations.mjs",
+    "gate": "node .github/skills/lean-sdd-tdd/scripts/sdd.mjs gate --changed"
+  },
+  "findingLedger": [
+    {"id": "HOST-R1", "severity": "S3", "stage": "contract", "state": "Fixed", "path": ".github/skills/sdd-spec-interview/SKILL.md", "finding": "Operational question rule contradicted the unavailable-tool fallback.", "evidence": "Assertion Red before correction, Green and isolated contradiction mutant detected."},
+    {"id": "HOST-R2", "severity": "S3", "stage": "contract", "state": "Fixed", "path": ".github/skills/lean-sdd-tdd/SKILL.md", "finding": "Approval steps used bare Copilot tool names despite the host mapping.", "evidence": "Both approval workflows now refer to the native host tool/fallback and explicit approval."},
+    {"id": "HOST-R3", "severity": "S3", "stage": "integration/distribution", "state": "Deferred", "path": ".github/skills/agent-watchdog/SKILL.md", "finding": "Existing watchdog executable example assumes a project Copilot installation.", "reason": "Pre-existing Copilot-only watchdog behavior; its redesign is outside the user-approved shared-host scope."}
+  ],
+  "review": {
+    "model": "claude-sonnet-5.5",
+    "spec": "No blockers; parser, diagnostic and version clarifications incorporated before initial approval.",
+    "cli": "No high-confidence findings. Initial shallow test-adequacy read was completed by the narrow final reviewer.",
+    "instructionsAndDocs": "Two instruction findings fixed; pre-existing watchdog example deferred.",
+    "finalDelta": "Two clean closure passes: final reviewer read all host regressions and fixed instruction lines, then verified all four reviewed file hashes were unchanged. No open findings; no live-host or gate pass inferred.",
+    "finalReviewedHashes": {
+      "scripts/host-compatibility.test.mjs": "827ea226e3958848374cae555cc0b4be6628144ef6a9c9db302648ef75205404",
+      ".github/skills/sdd-spec-interview/SKILL.md": "46a56e6ed8d57399dab5607fd42d2b2ec16ef6fe4dee20889f4facdc2b779f43",
+      ".github/skills/lean-agentic-coding/SKILL.md": "0306b28a35e5e1a5c88f71f98ac05c74e9c68dab9cf388da3d3177961883ed58",
+      ".github/skills/lean-sdd-tdd/SKILL.md": "47dd5cea4c638682b777032e8fdbed756850e888a8365ac7faec11e8e8f967c2"
+    }
+  },
+  "nonPassingAttempts": [
+    "Initial relocated sdd --help probe exited 2, the existing usage-error contract; corrected real init/status probes passed.",
+    "A diagnostic run generated one Python cache file; removed it and reran all focused cases with bytecode disabled.",
+    "First no-run preflight raced evidence writes; not counted as a successful gate.",
+    "First full gate interrupted to fix the review finding. Its inspected scratch was removed; interrupted validation is not a pass.",
+    "Scratch input drift blocked one Green recording; a fresh isolated assertion Red and restored Green recovered TEST-HOST-004 without weakening checks.",
+    "The complete 3499.6-second test check failed six Python cases because the required test venv variable was unset. Restoring the documented pinned tools made all six targeted cases pass; this is not substituted for a full-gate pass."
+  ],
+  "unknown": [
+    "Live Claude Code skill discovery and model-mediated interactions",
+    "Actual WSL container execution",
+    "GiNZA setup in a newly installed target",
+    "macOS and Windows behavior",
+    "Fixed support/candidate matrix and two-run release qualification"
+  ],
+  "releaseAuthorized": false,
+  "publishingOrTaggingPerformed": false
+}

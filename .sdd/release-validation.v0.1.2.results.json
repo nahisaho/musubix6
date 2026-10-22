@@ -1,0 +1,71 @@
+{
+  "schemaVersion": 1,
+  "targetVersion": "0.1.2",
+  "status": "PUBLISHED_BY_USER_NOT_RELEASE_QUALIFIED",
+  "consecutiveCompleteCleanRuns": 0,
+  "frozenManifest": null,
+  "humanReleaseApproved": false,
+  "agentPublished": false,
+  "publication": {
+    "performedBy": "user",
+    "registry": "https://registry.npmjs.org/",
+    "distTag": "latest",
+    "observedVersion": "0.1.2",
+    "gitHead": "216adee7791d07aece6f8f9cc40cf260d1b687e8",
+    "tarball": "https://registry.npmjs.org/musubix6/-/musubix6-0.1.2.tgz",
+    "sha256": "8457675daa94ba3bc22bca81c0c80d667cef2b8cb29128c7a48dafe627d86c3a",
+    "registryIntegrityVerified": true,
+    "fileCount": 86,
+    "isolatedInstall": {
+      "version": "0.1.2",
+      "listedSkills": 8,
+      "sddContextSpecContext": "PASS"
+    }
+  },
+  "preparedCandidate": {
+    "sha256": "28f5715260689079d15d6c50760687992adf7ddd188bf2bc1aedd56a05f9f895",
+    "matchesPublishedArchive": false,
+    "missingPublishedFiles": [],
+    "changedCommonFiles": [],
+    "additionalPublishedFiles": [
+      ".github/skills/japanese-prose/scripts/__pycache__/core.cpython-312.pyc",
+      ".github/skills/japanese-prose/scripts/__pycache__/lint.cpython-312.pyc",
+      ".github/skills/japanese-prose/scripts/__pycache__/outline.cpython-312.pyc",
+      ".github/skills/japanese-prose/scripts/__pycache__/terms.cpython-312.pyc"
+    ],
+    "explanation": "The prose feasibility check generated Python caches in the worktree before the user's independent npm publish. These four files were included in that publication. Every common packaged file is byte-identical to the prepared candidate. The generated worktree caches were subsequently removed; the immutable published archive was not changed."
+  },
+  "developmentEvidence": {
+    "commit": "216adee7791d07aece6f8f9cc40cf260d1b687e8",
+    "pullRequest": 376,
+    "hostedCiRun": 39173526277,
+    "hostedNode20": "PASS",
+    "hostedNode22": "PASS",
+    "hostedNode24": "PASS",
+    "fullSddGate": {
+      "verdict": "PASS",
+      "requirements": 39,
+      "traceErrors": 0,
+      "traceWarnings": 2,
+      "evidenceHistories": 87,
+      "weakRedHistories": 1,
+      "actualProjectTestSeconds": 2708.0
+    },
+    "ownershipRegression": "Assertion Red before selector repair; obsolete-selector mutation detected; restored positive and missing-ID controls pass on all three runtimes. The final edited test-only region records weak characterization followed by Green, not identical-hash strong Red."
+  },
+  "qualification": {
+    "prospectiveFreezePerformed": false,
+    "qualifyingRunsExecuted": 0,
+    "reconstructedMandatoryMutationCases": 49,
+    "actualMandatoryMutationsExecuted": 0,
+    "priorExploratoryEvidenceCredited": false,
+    "publicationDoesNotEstablishReadiness": true
+  },
+  "residualRisks": [
+    "No fixed-matrix two-run qualification or exact-artifact release approval occurred before the user's publication. No retrospective qualification or approval is claimed.",
+    "The published archive differs from the prepared candidate by four generated Python cache files; candidate checks cannot establish exact published-artifact qualification.",
+    "The four pre-existing named S3 TODO cases remain excluded rather than passed; tracker #315 remains open.",
+    "The full gate retains two trace warnings, one disclosed weak retest history and stub-placeholder warnings.",
+    "The reconstructed 49-case mandatory mutation verifier has only syntax/synthetic-oracle checks; all actual semantic mutation outcomes remain unknown."
+  ]
+}

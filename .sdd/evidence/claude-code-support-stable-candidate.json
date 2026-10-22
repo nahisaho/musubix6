@@ -1,0 +1,128 @@
+{
+  "version": "0.2.0",
+  "status": "candidate-development-checks-only",
+  "recordedAt": "2026-10-21T20:21:35.521Z",
+  "approvedSpec": {
+    "path": ".sdd/specs/claude-code-support.md",
+    "sha256": "cfbc09639041ba085cbd27c1586a0143ec1e646859e5cfe6971af2577345c011",
+    "by": "nahisaho"
+  },
+  "sourceFiles": [
+    {
+      "path": "package.json",
+      "sha256": "60978c1c22e83b4432b9233af9f6644902da743b63a4fbc2de08cf315688af51"
+    },
+    {
+      "path": "package-lock.json",
+      "sha256": "cb178770e504f14d111db2c9fae09f369d67d25c141afe55e301fe71216a5d38"
+    },
+    {
+      "path": "bin/musubix6.mjs",
+      "sha256": "ade1dfe6866279c2b39a040228bd4226b43bdde9b18c04d0bb4ac15feee524ad"
+    },
+    {
+      "path": "scripts/host-compatibility.test.mjs",
+      "sha256": "a5c7f627c3b473044b4681f203042aec68cc90e5c9655adcd997c9d1fad7ab75"
+    },
+    {
+      "path": "README.md",
+      "sha256": "93d2d2aca3ea1c2351cb34bb9c76ca99af21f948d69432f62840928033c49e66"
+    },
+    {
+      "path": "README-ja.md",
+      "sha256": "fde7904bbe71fcc038099fc60a2285b18fe90d86ad88b442b492a0e767e467ef"
+    },
+    {
+      "path": "CLANGELOG.md",
+      "sha256": "b7d7c5d94ad6704473ab899e98729d4dfe47e6c2e98bed5aff3bf03f7a6513f9"
+    }
+  ],
+  "tdd": [
+    {
+      "seq": 475,
+      "type": "red",
+      "test": "TEST-HOST-005",
+      "exit": 1,
+      "at": "2026-10-21T19:16:11.491Z",
+      "hash": "57481c4fb67e4c96d1c263e88ae47bf0d309cf3611dc020aaf0eba5e6a035fcc"
+    },
+    {
+      "seq": 476,
+      "type": "green",
+      "test": "TEST-HOST-005",
+      "exit": 0,
+      "at": "2026-10-21T19:17:02.081Z",
+      "hash": "459dd47e22ee80010f939968ca05224a734ba3017f892341e927f7000ad18c69"
+    },
+    {
+      "seq": 477,
+      "type": "red",
+      "test": "TEST-HOST-005",
+      "exit": 1,
+      "at": "2026-10-21T19:23:12.442Z",
+      "hash": "03e2f66eefc55c84ced4162df96ea82534b7719f2a0336ad2cbb1bcd92bd31a6"
+    },
+    {
+      "seq": 478,
+      "type": "green",
+      "test": "TEST-HOST-005",
+      "exit": 0,
+      "at": "2026-10-21T19:23:49.484Z",
+      "hash": "8ed4c8775a5d8ac810517bdc3a57cd69a6839d54e1053786f3157c463a1ed5d1"
+    }
+  ],
+  "nativeEvidencePreflight": {
+    "path": "/home/nahisaho/.copilot/session-state/a55408e9-74fb-4add-9bc2-4540d1509ca5/files/stable-020-resumed-preflight.json",
+    "sha256": "dd2c9f358f08a6c851f358edeecdafac92ad1f1c3326084972a044055c983045",
+    "testFileSha256": "a5c7f627c3b473044b4681f203042aec68cc90e5c9655adcd997c9d1fad7ab75",
+    "verdict": "INCOMPLETE",
+    "explanation": "Native per-test evidence validation passed; project commands deliberately not run. No release qualification credit."
+  },
+  "focused": {
+    "tests": 11,
+    "pass": 11,
+    "skips": 0,
+    "path": "/home/nahisaho/.copilot/session-state/a55408e9-74fb-4add-9bc2-4540d1509ca5/files/stable-020-focused-final.log"
+  },
+  "mutations": {
+    "mechanisms": 28,
+    "positiveControls": "one executed baseline and restored case per mechanism",
+    "assertionFailures": 28,
+    "path": "/home/nahisaho/.copilot/session-state/a55408e9-74fb-4add-9bc2-4540d1509ca5/files/stable-020-mutations-r3/summary.json",
+    "sha256": "77772d45db2bfa08521453526be9cb878479302476066d4860f71ab74de29807"
+  },
+  "releaseOracleMutations": {
+    "mechanisms": 4,
+    "status": "PASS",
+    "path": "/home/nahisaho/.copilot/session-state/a55408e9-74fb-4add-9bc2-4540d1509ca5/files/release-v020-helper-mutation-proof.json",
+    "sha256": "324ebc4897aed0cff14198d63e1a301a837e7471f71f60bcbfa0c8d3706e5c21"
+  },
+  "review": {
+    "model": "claude-sonnet-5.5",
+    "result": "No actionable findings",
+    "scope": "stable metadata/docs/test delta; prospective qualification helper delta and freeze closure; not a new whole-repository review"
+  },
+  "prose": {
+    "status": "Japanese prose optimization completed",
+    "scope": "changed Japanese README notices; quick GiNZA and contextual review",
+    "initialScore": 98,
+    "finalScore": 97,
+    "retainedInfoFindings": "two pre-existing notices and deliberate repeated 0.2.0 leads distinguishing availability from latest-tag behavior",
+    "invariants": "passed; no optimizer edits",
+    "structural": "15 pre-existing findings per README, no new structural finding"
+  },
+  "qualification": {
+    "status": "PENDING",
+    "consecutiveCompleteCleanRuns": 0,
+    "previousDevelopmentAndReleaseCredit": 0
+  },
+  "residualRisks": [
+    "live Claude discovery/model interaction unverified",
+    "GiNZA setup in a new target unverified",
+    "macOS and Windows native behavior unverified",
+    "four pre-existing TODO exclusions are not passes",
+    "prior unexplained ESLint flakiness remains a disclosed risk"
+  ],
+  "published": false,
+  "publishingAuthorized": false
+}

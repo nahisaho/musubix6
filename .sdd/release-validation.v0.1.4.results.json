@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "targetVersion": "0.1.4",
+  "status": "closed-published-version-retained-with-candidate-only-qualification",
+  "manifestSha256": "eafe931c71e309183cd825ad25cfc87d804ffa380e286b6bf2993fd3a7500f96",
+  "consecutiveCompleteCleanRuns": 2,
+  "runs": [
+    {
+      "runId": "run1",
+      "status": "PASS",
+      "report": "/tmp/musubix6-release-v014-r3-pddzu0/run1/result.json",
+      "reportSha256": "678098af8142774811553a0b4c215ba3aa40f938dadc3db54465017e9892c822"
+    },
+    {
+      "runId": "run2",
+      "status": "PASS",
+      "report": "/tmp/musubix6-release-v014-r3-pddzu0/run2/result.json",
+      "reportSha256": "a48a238f9ccc7a59ac4076fe426bef8ecd71602d6fcb00a609a22a0749a1b54d"
+    }
+  ],
+  "retainedEvidence": {
+    "index": "/home/nahisaho/.copilot/session-state/eea8e3e8-04cb-4596-9a6a-8621ed66226a/files/release-v014-qualified-r3/evidence-index.json",
+    "indexSha256": "e37b4ab963f05d689a59f0668bbea85951e096e694519d94c34cb085c10b94de",
+    "verification": "/home/nahisaho/.copilot/session-state/eea8e3e8-04cb-4596-9a6a-8621ed66226a/files/release-v014-qualified-r3/verification.json",
+    "verificationSha256": "10269d43d377ee620d1aaf175cba2a17b135e72c6ab9fb618dac560f3208ab3d",
+    "scope": "Exact candidate source, tarball, manifest, reports, frozen inputs and complete raw run archives; both archives compared successfully against their original run directories.",
+    "storageBoundary": "Retained session files outside /tmp, not an off-host backup."
+  },
+  "publicationBlocker": {
+    "code": "VERSION_EXISTS_DIFFERENT_ARTIFACT",
+    "observedOn": "2026-10-21",
+    "registry": "https://registry.npmjs.org",
+    "version": "0.1.4",
+    "registryPublishedAt": "2026-10-21T06:20:49.074Z",
+    "registryTarball": "https://registry.npmjs.org/musubix6/-/musubix6-0.1.4.tgz",
+    "registryTarballSha256": "2c32a30f010840aadb2131a7e175c67e37f54fb8dd9b1e6bdcec5ef078ba12c6",
+    "qualifiedTarballSha256": "c6ca09db427cbbbd55d1655421bfd027e7bec45a703fe4e954439dd4b4a1f6da",
+    "registryIntegrityVerified": true,
+    "packageEntryCount": 115,
+    "onlyQualifiedEntries": [],
+    "onlyPublishedEntries": [],
+    "differentEntries": [
+      "package/README-ja.md",
+      "package/README.md",
+      "package/package.json"
+    ],
+    "differenceSummary": "Published READMEs still pin 0.1.3; qualified READMEs pin 0.1.4. package.json differs only in keywords-array formatting. The other 112 package entries match, including implementation files.",
+    "qualificationBoundary": "Both clean runs qualify only the frozen candidate tarball. They do not qualify the different published tarball or retroactively authorize its publication.",
+    "disposition": "Human selected keep-published-014: retain existing public version0.1.4 and stop without republishing, changing the version or requalifying the published tarball. Preserve candidate-only qualification evidence.",
+    "publicationPerformedDuringThisVerification": false,
+    "publishingAccountChecked": "nahisaho",
+    "NPM_TOKEN_available": false
+  },
+  "residualAssessmentStatus": "not-completed-task-closed-by-human-direction",
+  "humanDecision": {
+    "recordedOn": "2026-10-21",
+    "response": "keep-published-014",
+    "meaning": "Retain already-published version0.1.4 and finish; do not transfer the candidate qualification results to the different published tarball.",
+    "publishedTarballRequalified": false,
+    "additionalPublicationPerformed": false,
+    "versionChanged": false,
+    "scope": "Task closure only, not exact-artifact release approval or retroactive publication authorization."
+  },
+  "humanReleaseApproved": false,
+  "publishingAuthorized": false
+}
