@@ -1,0 +1,94 @@
+{
+  "version": "0.2.0",
+  "by": "nahisaho",
+  "recordedAt": "2026-10-22T01:36:33.691Z",
+  "mechanism": "Copilot CLI ask_user explicit exact-artifact approval",
+  "exactResponse": "上記の正確なtgzと残存リスクを承認し、latestでnpm publishを実行",
+  "packet": {
+    "path": "/home/nahisaho/GitHub/musubix6/.sdd/evidence/claude-code-support-release.json",
+    "sha256": "32504808cee54681a2aef911f9aebcdc7b7976c468373d1a50c8aa5c8eb3d51b"
+  },
+  "artifacts": [
+    {
+      "role": "npm-package",
+      "path": "/home/nahisaho/.copilot/session-state/a55408e9-74fb-4add-9bc2-4540d1509ca5/files/release-v020-artifacts/musubix6-0.2.0.tgz",
+      "sha256": "9bbb9c5842bc82d61882ef3aa4e3e08bca9801872ed86aff3fe93541deaf25cf",
+      "bytes": 647442,
+      "original": "/tmp/musubix6-release-v020-r5-N6NWrY/candidate/package/musubix6-0.2.0.tgz"
+    },
+    {
+      "role": "candidate-source",
+      "path": "/home/nahisaho/.copilot/session-state/a55408e9-74fb-4add-9bc2-4540d1509ca5/files/release-v020-artifacts/source.tar",
+      "sha256": "76ac1bc83c92c093c2a8c600a149e5d9bdda9c503772a5ea07d4f4defc5e200e",
+      "bytes": 8314880,
+      "original": "/tmp/musubix6-release-v020-r5-N6NWrY/candidate/source.tar"
+    },
+    {
+      "role": "frozen-manifest",
+      "path": "/home/nahisaho/.copilot/session-state/a55408e9-74fb-4add-9bc2-4540d1509ca5/files/release-v020-artifacts/manifest-r6.json",
+      "sha256": "e2f221e308e2fb4389f044e12c42cb2083e314b97305ae1701f65cd399c37de6",
+      "bytes": 689376,
+      "original": "/home/nahisaho/GitHub/musubix6/.sdd/release-validation.v0.2.0.json"
+    },
+    {
+      "role": "qualification-results",
+      "path": "/home/nahisaho/.copilot/session-state/a55408e9-74fb-4add-9bc2-4540d1509ca5/files/release-v020-artifacts/results.json",
+      "sha256": "2dc84444ae21c7c0bee10124186e76457aef9706e507a69fb6df7362de0ceba6",
+      "bytes": 1272,
+      "original": "/home/nahisaho/GitHub/musubix6/.sdd/release-validation.v0.2.0.results.json"
+    },
+    {
+      "role": "run1-original-failure-human-accepted",
+      "path": "/home/nahisaho/.copilot/session-state/a55408e9-74fb-4add-9bc2-4540d1509ca5/files/release-v020-artifacts/run1.json",
+      "sha256": "ad92cb5f851138332f01835fdd3c85171fbf2953ec99d1dd0923d8f41c201ee7",
+      "bytes": 1583412,
+      "original": "/tmp/musubix6-release-v020-r5-N6NWrY/run1/result.json"
+    },
+    {
+      "role": "run2-clean-pass",
+      "path": "/home/nahisaho/.copilot/session-state/a55408e9-74fb-4add-9bc2-4540d1509ca5/files/release-v020-artifacts/run2.json",
+      "sha256": "846cf164ca867d54c11182e1c01f656d08b14f21bdba68670e35ac8cc2cf739f",
+      "bytes": 1582087,
+      "original": "/tmp/musubix6-release-v020-r5-N6NWrY/run2/result.json"
+    },
+    {
+      "role": "human-php-drift-approval",
+      "path": "/home/nahisaho/.copilot/session-state/a55408e9-74fb-4add-9bc2-4540d1509ca5/files/release-v020-artifacts/php-drift-approval.json",
+      "sha256": "08503f0f9791cd505bf133f904121819c520b2c95c8c6ae5aa6336636d9fb068",
+      "bytes": 2420,
+      "original": "/home/nahisaho/.copilot/session-state/a55408e9-74fb-4add-9bc2-4540d1509ca5/files/release-v020-php-drift-approval.json"
+    },
+    {
+      "role": "manifest-revision-provenance",
+      "path": "/home/nahisaho/.copilot/session-state/a55408e9-74fb-4add-9bc2-4540d1509ca5/files/release-v020-artifacts/manifest-revision6.json",
+      "sha256": "711b49876d85dd1a7242a22df37c6f45f4896e392fe5e0704feb1aba3493814d",
+      "bytes": 953,
+      "original": "/home/nahisaho/.copilot/session-state/a55408e9-74fb-4add-9bc2-4540d1509ca5/files/release-v020-manifest-revision6.json"
+    },
+    {
+      "role": "top-level-raw-cell-logs-and-frozen-helpers",
+      "path": "/home/nahisaho/.copilot/session-state/a55408e9-74fb-4add-9bc2-4540d1509ca5/files/release-v020-artifacts/qualification-logs-and-helpers.tar.gz",
+      "sha256": "953e67bcdfad418c09f6797d83f055afe9e573fc723c8b949a36217b448b8f62",
+      "bytes": 6782063,
+      "scope": "Both runs: all top-level command/stdout/stderr/result files; frozen qualification helpers; original revision5 manifest/results/report. Nested fixture worktrees remain at the original recorded paths, not in this archive."
+    }
+  ],
+  "sourceCommit": "5ca5b4b47e5486219b91a0d3bdb174861b122e94",
+  "registry": "https://registry.npmjs.org/",
+  "npmIdentity": "nahisaho",
+  "tag": "latest",
+  "access": "public",
+  "residualRisks": [
+    "Run1 PHP executable SHA256/build time changed; nahisaho explicitly accepted it. The original FAIL is preserved. Run2 PASS uses the current PHP baseline; this pair is not two unchanged clean runs.",
+    "Live Claude Code skill discovery, model interaction and native question/approval UX were not exercised. Host routing, installed bytes and script portability were exercised.",
+    "Qualification sampled Linux x86_64/WSL2 with Node20.20.2,22.23.3,24.21.0; it does not prove every OS or every Node version >=20. R, Gradle, WSL and prose native cells passed.",
+    "Four pre-existing named S3 TODO cases remain excluded, not counted as passes; tracker #315 remains open.",
+    "Trusted local toolchains/configuration may execute code; no sandbox, executable-authenticity or parent-SIGKILL cleanup guarantee.",
+    "The application-development guide is intentionally excluded and remains in the user-owned separate worktree.",
+    "The package retains prepublication README/changelog wording from the qualified candidate. Publication status will be established by registry verification, without repacking or editing the approved artifact."
+  ],
+  "humanReleaseApproved": true,
+  "publishingAuthorized": true,
+  "taggingAuthorized": false,
+  "githubReleaseAuthorized": false
+}

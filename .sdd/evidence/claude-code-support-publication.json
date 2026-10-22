@@ -1,0 +1,63 @@
+{
+  "version": "0.2.0",
+  "status": "published-and-verified",
+  "verifiedAt": "2026-10-22T01:51:39.713Z",
+  "publishedAt": "2026-10-22T01:40:55.524Z",
+  "registry": "https://registry.npmjs.org/",
+  "packageUrl": "https://www.npmjs.com/package/musubix6/v/0.2.0",
+  "latest": "0.2.0",
+  "sourceCommit": "5ca5b4b47e5486219b91a0d3bdb174861b122e94",
+  "humanReleaseApproval": {
+    "path": "/home/nahisaho/GitHub/musubix6/.sdd/evidence/claude-code-support-release-approval.json",
+    "sha256": "b06eb8f80ea4dc3837821debafc747217be9b44c0c7b16800cbf178c14bc8cda",
+    "by": "nahisaho"
+  },
+  "publicationHistory": [
+    "Agent publish attempt required EOTP; no success claimed.",
+    "nahisaho reported completing authenticated publication in their own terminal.",
+    "Initial verification still returned404/latest0.1.4; a retry returnedE409 for staged0.2.0, not success.",
+    "Following nahisaho request to recheck, both npm view and anonymous direct registry fetch confirmed0.2.0 and approved integrity.",
+    "First install smoke passed version/list/host byte inventories, then wrongly expected sdd --help to exit0. Actual exit2 with usage is retained in release-v020-published-sdd-help.json. Corrected the smoke to supported sdd init/status commands; no product or qualification change."
+  ],
+  "package": {
+    "approvedPath": "/home/nahisaho/.copilot/session-state/a55408e9-74fb-4add-9bc2-4540d1509ca5/files/release-v020-artifacts/musubix6-0.2.0.tgz",
+    "downloadedPath": "/home/nahisaho/.copilot/session-state/a55408e9-74fb-4add-9bc2-4540d1509ca5/files/release-v020-registry-musubix6-0.2.0-r2.tgz",
+    "sha256": "9bbb9c5842bc82d61882ef3aa4e3e08bca9801872ed86aff3fe93541deaf25cf",
+    "integrity": "sha512-zDaF5TDRUiHYO4OPOCOXZhByK+JxFBYanWVopNkLn4qLrBkeURYoGDxgKmA/vyrl5W4JacFnxbLg1lfQlJYuzA=="
+  },
+  "registryEvidence": [
+    {
+      "path": "/home/nahisaho/.copilot/session-state/a55408e9-74fb-4add-9bc2-4540d1509ca5/files/release-v020-registry.json",
+      "sha256": "360ee42650dee56b723686eadcc8e22e7850c2c9778a956ceec222e5b64e1767"
+    },
+    {
+      "path": "/home/nahisaho/.copilot/session-state/a55408e9-74fb-4add-9bc2-4540d1509ca5/files/release-v020-registry-tags.json",
+      "sha256": "6b3f1e409cfe99123b6315b8beb83580da26dafadc57dd2544afa732ee92cc59"
+    },
+    {
+      "path": "/home/nahisaho/.copilot/session-state/a55408e9-74fb-4add-9bc2-4540d1509ca5/files/release-v020-registry-direct.json",
+      "sha256": "3192874d611760bb3c294dfd1e4d6a2605f2806025d6307d2129f9bb0aea08bf"
+    }
+  ],
+  "installedControls": {
+    "version": "0.2.0",
+    "listSkills": 10,
+    "initializedSkills": {
+      "copilot": 10,
+      "claude": 9
+    },
+    "copiedBytesAndModesMatchQualifiedSource": true,
+    "sddInit": "PASS",
+    "sddStatus": "PASS",
+    "scratch": "/tmp/musubix6-v020-published-iFvHID",
+    "scratchRemovedAfterChecks": true
+  },
+  "qualification": {
+    "humanAcceptedRuns": 2,
+    "unchangedCleanRuns": 1,
+    "run1PhpDriftHumanWaiver": true,
+    "defaultTwoUnchangedCleanRunsSatisfied": false
+  },
+  "tagged": false,
+  "githubReleaseCreated": false
+}

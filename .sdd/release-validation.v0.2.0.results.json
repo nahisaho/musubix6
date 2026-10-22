@@ -1,6 +1,6 @@
 {
   "targetVersion": "0.2.0",
-  "status": "human-waived-run1-and-clean-run2-residual-assessment-and-release-approval-pending",
+  "status": "published-with-human-approved-qualification-exception",
   "manifestSha256": "e2f221e308e2fb4389f044e12c42cb2083e314b97305ae1701f65cd399c37de6",
   "consecutiveCompleteCleanRuns": 1,
   "runs": [
@@ -17,8 +17,8 @@
       "reportSha256": "846cf164ca867d54c11182e1c01f656d08b14f21bdba68670e35ac8cc2cf739f"
     }
   ],
-  "humanReleaseApproved": false,
-  "publishingAuthorized": false,
+  "humanReleaseApproved": true,
+  "publishingAuthorized": true,
   "humanAcceptedRuns": 2,
   "humanApprovedQualificationException": {
     "path": "/home/nahisaho/.copilot/session-state/a55408e9-74fb-4add-9bc2-4540d1509ca5/files/release-v020-php-drift-approval.json",
@@ -29,5 +29,15 @@
     "message": "Expected values to be strictly equal:\n\n1 !== 0\n",
     "at": "2026-10-21T22:58:46.578Z"
   },
-  "defaultTwoUnchangedCleanRunsSatisfied": false
+  "defaultTwoUnchangedCleanRunsSatisfied": false,
+  "releaseApproval": {
+    "path": "/home/nahisaho/GitHub/musubix6/.sdd/evidence/claude-code-support-release-approval.json",
+    "sha256": "b06eb8f80ea4dc3837821debafc747217be9b44c0c7b16800cbf178c14bc8cda"
+  },
+  "publication": {
+    "path": "/home/nahisaho/GitHub/musubix6/.sdd/evidence/claude-code-support-publication.json",
+    "sha256": "90a6aecb56ae014fcf4ec4c2a383087fb5dddf2ad9e48790fdd5848c422163bb",
+    "version": "0.2.0",
+    "tag": "latest"
+  }
 }
