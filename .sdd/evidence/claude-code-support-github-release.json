@@ -1,0 +1,133 @@
+{
+  "status": "published-and-verified",
+  "approval": {
+    "by": "nahisaho",
+    "recordedAt": "2026-10-22T03:05:57.741Z",
+    "mechanism": "Copilot CLI ask_user",
+    "exactResponse": "上記の対象コミット・全artifact・本文・残存リスク・該当publish runのキャンセルを承認して作成",
+    "proposal": {
+      "path": "/home/nahisaho/.copilot/session-state/a55408e9-74fb-4add-9bc2-4540d1509ca5/files/release-v020-github-proposal.json",
+      "sha256": "5dbbfd065aecb410fdea977433538d7aa2ddb35b2530439023d9a0d7c19a8f69"
+    },
+    "targetCommit": "5ca5b4b47e5486219b91a0d3bdb174861b122e94",
+    "artifacts": [
+      {
+        "path": "/home/nahisaho/.copilot/session-state/a55408e9-74fb-4add-9bc2-4540d1509ca5/files/release-v020-github-assets/musubix6-0.2.0.tgz",
+        "name": "musubix6-0.2.0.tgz",
+        "sha256": "9bbb9c5842bc82d61882ef3aa4e3e08bca9801872ed86aff3fe93541deaf25cf",
+        "bytes": 647442
+      },
+      {
+        "path": "/home/nahisaho/.copilot/session-state/a55408e9-74fb-4add-9bc2-4540d1509ca5/files/release-v020-github-assets/musubix6-0.2.0-evidence.tar.gz",
+        "name": "musubix6-0.2.0-evidence.tar.gz",
+        "sha256": "ce4fed46779a06ae76799c9b3325c0ed6ebf839fc9d1c7b1664de3905887c4bc",
+        "bytes": 8882892
+      },
+      {
+        "path": "/home/nahisaho/.copilot/session-state/a55408e9-74fb-4add-9bc2-4540d1509ca5/files/release-v020-github-assets/SHA256SUMS",
+        "name": "SHA256SUMS",
+        "sha256": "ff6892581f4f879b369d73f35033f62464e35708d1f63d8cf9079b242ae97063",
+        "bytes": 182
+      }
+    ],
+    "notes": {
+      "path": "/home/nahisaho/.copilot/session-state/a55408e9-74fb-4add-9bc2-4540d1509ca5/files/release-v020-github-notes.md",
+      "sha256": "b3892d5e3fb543f66b43946a4a93dbcaac47f3e069af06b4b61033d774c074af"
+    },
+    "residualRisks": [
+      "Run1 PHP executable SHA256/build time changed; nahisaho explicitly accepted it. The original FAIL is preserved. Run2 PASS uses the current PHP baseline; this pair is not two unchanged clean runs.",
+      "Live Claude Code skill discovery, model interaction and native question/approval UX were not exercised. Host routing, installed bytes and script portability were exercised.",
+      "Qualification sampled Linux x86_64/WSL2 with Node20.20.2,22.23.3,24.21.0; it does not prove every OS or every Node version >=20. R, Gradle, WSL and prose native cells passed.",
+      "Four pre-existing named S3 TODO cases remain excluded, not counted as passes; tracker #315 remains open.",
+      "Trusted local toolchains/configuration may execute code; no sandbox, executable-authenticity or parent-SIGKILL cleanup guarantee.",
+      "The application-development guide is intentionally excluded and remains in the user-owned separate worktree.",
+      "The package retains prepublication README/changelog wording from the qualified candidate. Publication status will be established by registry verification, without repacking or editing the approved artifact.",
+      "Previously documented unexplained ESLint-flakiness risk remains disclosed in the release notes."
+    ],
+    "workflowHandling": "Tag push triggers publish.yml, which would attempt to republish the already published version. Cancel only the newly created publish run for v0.2.0; retain normal CI and do not modify/disable workflow definitions."
+  },
+  "tag": {
+    "name": "v0.2.0",
+    "objectSha": "65dc2b6d18645b9dc7341cdef9355f2915efd599",
+    "targetCommit": "5ca5b4b47e5486219b91a0d3bdb174861b122e94",
+    "pushedAt": "2026-10-22T03:05:58.883Z",
+    "remoteVerified": true
+  },
+  "publishWorkflow": {
+    "id": 39714991378,
+    "url": "https://github.com/nahisaho/musubix6/actions/runs/39714991378",
+    "status": "completed",
+    "conclusion": "cancelled",
+    "scope": "Only the new v0.2.0 tag-triggered publish run; workflow definition/enabled state and ordinary CI unchanged."
+  },
+  "history": [
+    "Initial tag lookup returned404 for the draft; resumed the existing draft by its exact release ID without recreating the tag, release or assets."
+  ],
+  "draftDownloadVerification": {
+    "directory": "/home/nahisaho/.copilot/session-state/a55408e9-74fb-4add-9bc2-4540d1509ca5/files/release-v020-github-download-draft",
+    "checksums": "musubix6-0.2.0.tgz: OK\nmusubix6-0.2.0-evidence.tar.gz: OK",
+    "files": [
+      {
+        "name": "musubix6-0.2.0.tgz",
+        "sha256": "9bbb9c5842bc82d61882ef3aa4e3e08bca9801872ed86aff3fe93541deaf25cf"
+      },
+      {
+        "name": "musubix6-0.2.0-evidence.tar.gz",
+        "sha256": "ce4fed46779a06ae76799c9b3325c0ed6ebf839fc9d1c7b1664de3905887c4bc"
+      },
+      {
+        "name": "SHA256SUMS",
+        "sha256": "ff6892581f4f879b369d73f35033f62464e35708d1f63d8cf9079b242ae97063"
+      }
+    ]
+  },
+  "release": {
+    "id": 420265889,
+    "url": "https://github.com/nahisaho/musubix6/releases/tag/v0.2.0",
+    "tagName": "v0.2.0",
+    "targetCommit": "5ca5b4b47e5486219b91a0d3bdb174861b122e94",
+    "draft": false,
+    "prerelease": false,
+    "latest": true,
+    "publishedAt": "2026-10-22T03:08:50Z",
+    "assets": [
+      {
+        "name": "musubix6-0.2.0-evidence.tar.gz",
+        "bytes": 8882892,
+        "digest": "sha256:ce4fed46779a06ae76799c9b3325c0ed6ebf839fc9d1c7b1664de3905887c4bc",
+        "url": "https://github.com/nahisaho/musubix6/releases/download/v0.2.0/musubix6-0.2.0-evidence.tar.gz"
+      },
+      {
+        "name": "musubix6-0.2.0.tgz",
+        "bytes": 647442,
+        "digest": "sha256:9bbb9c5842bc82d61882ef3aa4e3e08bca9801872ed86aff3fe93541deaf25cf",
+        "url": "https://github.com/nahisaho/musubix6/releases/download/v0.2.0/musubix6-0.2.0.tgz"
+      },
+      {
+        "name": "SHA256SUMS",
+        "bytes": 182,
+        "digest": "sha256:ff6892581f4f879b369d73f35033f62464e35708d1f63d8cf9079b242ae97063",
+        "url": "https://github.com/nahisaho/musubix6/releases/download/v0.2.0/SHA256SUMS"
+      }
+    ]
+  },
+  "publicDownloadVerification": {
+    "directory": "/home/nahisaho/.copilot/session-state/a55408e9-74fb-4add-9bc2-4540d1509ca5/files/release-v020-github-download-public",
+    "checksums": "musubix6-0.2.0.tgz: OK\nmusubix6-0.2.0-evidence.tar.gz: OK",
+    "files": [
+      {
+        "name": "musubix6-0.2.0.tgz",
+        "sha256": "9bbb9c5842bc82d61882ef3aa4e3e08bca9801872ed86aff3fe93541deaf25cf"
+      },
+      {
+        "name": "musubix6-0.2.0-evidence.tar.gz",
+        "sha256": "ce4fed46779a06ae76799c9b3325c0ed6ebf839fc9d1c7b1664de3905887c4bc"
+      },
+      {
+        "name": "SHA256SUMS",
+        "sha256": "ff6892581f4f879b369d73f35033f62464e35708d1f63d8cf9079b242ae97063"
+      }
+    ]
+  },
+  "verifiedAt": "2026-10-22T03:08:53.940Z"
+}
