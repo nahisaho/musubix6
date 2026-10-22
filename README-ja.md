@@ -475,6 +475,8 @@ CLI を以前の版に戻しても、ユーザー単位のコピーは元に戻�
 
 ## チュートリアル
 
+musubix6が初めての方は、[ミニECを作り、Worktreeで機能を追加するチュートリアル](docs/tutorial-mini-ec.md)から始められます。Copilotとmusubix6の役割、自然言語からEARS形式への要件定義、SDD/TDDによる開発を説明しています。Copilot CLI版とClaude Code版の違い、Worktreeでの並列開発も扱います。
+
 要件定義から追加開発、マニュアル作成までの手順は [`docs/tutorial-app-development-1.md`](docs/tutorial-app-development-1.md) を参照してください。
 
 ## テスト

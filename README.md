@@ -476,6 +476,8 @@ the CLI does not restore per-user copies either.
 
 ## Tutorial
 
+Start with the [Japanese mini-EC tutorial](docs/tutorial-mini-ec.md) for an introduction to musubix6, Copilot's role, EARS-style requirements and SDD/TDD. It also covers host differences, verification limits, natural-language development and parallel feature work with Git worktrees.
+
 A Japanese walkthrough (interview → spec → TDD → follow-up feature → manual) is in [`docs/tutorial-app-development-1.md`](docs/tutorial-app-development-1.md).
 
 ## Tests
