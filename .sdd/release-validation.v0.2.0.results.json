@@ -1,0 +1,33 @@
+{
+  "targetVersion": "0.2.0",
+  "status": "human-waived-run1-and-clean-run2-residual-assessment-and-release-approval-pending",
+  "manifestSha256": "e2f221e308e2fb4389f044e12c42cb2083e314b97305ae1701f65cd399c37de6",
+  "consecutiveCompleteCleanRuns": 1,
+  "runs": [
+    {
+      "runId": "run1",
+      "status": "FAIL",
+      "report": "/tmp/musubix6-release-v020-r5-N6NWrY/run1/result.json",
+      "reportSha256": "ad92cb5f851138332f01835fdd3c85171fbf2953ec99d1dd0923d8f41c201ee7"
+    },
+    {
+      "runId": "run2",
+      "status": "PASS",
+      "report": "/tmp/musubix6-release-v020-r5-N6NWrY/run2/result.json",
+      "reportSha256": "846cf164ca867d54c11182e1c01f656d08b14f21bdba68670e35ac8cc2cf739f"
+    }
+  ],
+  "humanReleaseApproved": false,
+  "publishingAuthorized": false,
+  "humanAcceptedRuns": 2,
+  "humanApprovedQualificationException": {
+    "path": "/home/nahisaho/.copilot/session-state/a55408e9-74fb-4add-9bc2-4540d1509ca5/files/release-v020-php-drift-approval.json",
+    "sha256": "08503f0f9791cd505bf133f904121819c520b2c95c8c6ae5aa6336636d9fb068"
+  },
+  "previousFailure": {
+    "runId": "run1",
+    "message": "Expected values to be strictly equal:\n\n1 !== 0\n",
+    "at": "2026-10-21T22:58:46.578Z"
+  },
+  "defaultTwoUnchangedCleanRunsSatisfied": false
+}
