@@ -105,7 +105,7 @@ export async function diagnosePython(root, source, budget) {
           const characters = Array.from(text);
           if (record.column > characters.length + 1) throw new Error('Ruff column is outside source');
           column = characters.slice(0, record.column - 1).join('').length + 1;
-        } else if (/[^\x00-\x7f]/.test(text)) {
+        } else if (/[^\p{ASCII}]/u.test(text)) {
           const key = `${fs.realpathSync(record.file)}:${record.line}`;
           if (!warned.has(key)) {
             warned.add(key);

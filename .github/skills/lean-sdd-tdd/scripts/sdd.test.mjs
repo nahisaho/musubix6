@@ -27,7 +27,8 @@ function project() {
   ].join('\n'));
   return d;
 }
-const { NODE_TEST_CONTEXT, ...ENV } = process.env;
+const ENV = { ...process.env };
+delete ENV.NODE_TEST_CONTEXT;
 const sddRaw = (d, ...a) => { const r = spawnSync('node', [SDD, '--root', d, ...a], { encoding: 'utf8', env: ENV }); return { code: r.status, out: r.stdout + r.stderr }; };
 // human `approve record` needs a matching prepare (#99); tests that are not about that run prepare first
 const sdd = (d, ...a) => { if (a[0] === 'approve' && a[1] === 'record' && !/^ai\s*:/i.test(String(a[a.indexOf('--by') + 1] ?? ''))) sddRaw(d, 'approve', 'prepare', a[2]); return sddRaw(d, ...a); };
@@ -1352,7 +1353,7 @@ test('#44 weak-Red: result assigned from the stub and asserted is the act (not s
   ].join('\n'));
   sdd(p, 'init');
   sdd(p, 'tdd', 'stub', 'TEST-S-001');
-  assert.match(fs.readFileSync(path.join(p, 'pkg/mod.py'), 'utf8'), /class Thing:\n    def __init__\(self, \*a, \*\*k\):\n        pass/);
+  assert.match(fs.readFileSync(path.join(p, 'pkg/mod.py'), 'utf8'), /class Thing:\n {4}def __init__\(self, \*a, \*\*k\):\n {8}pass/);
   const r = sdd(p, 'tdd', 'red', 'TEST-S-001');
   assert.doesNotMatch(r.out, /\[weak\]/, r.out);
   assert.match(r.out, /NotImplementedError: f/);
@@ -1805,7 +1806,7 @@ test('#69 tdd stub: Rust module paths and Go types/methods/fields', { skip: ['go
   assert.doesNotMatch(read(rs, 'src/lib.rs'), /pub fn lex/);
   assert.match(read(rs, 'src/lex.rs'), /pub fn tokenize<A0>[\s\S]*pub struct Tok;/);
   assert.match(read(rs, 'src/types.rs'), /pub mod check;/);
-  assert.match(read(rs, 'src/types/check.rs'), /pub fn check<A0>[\s\S]*pub enum Ty \{\n    Int,/);
+  assert.match(read(rs, 'src/types/check.rs'), /pub fn check<A0>[\s\S]*pub enum Ty \{\n {4}Int,/);
   const go = mk({ 'go.mod': 'module m\n\ngo 1.21\n', 'm_test.go': 'package m\nimport "testing"\n// @id TEST-M-001 @verifies REQ-M-001\nfunc TestTEST_M_001(t *testing.T) {\n\to := NewOrder("x")\n\to.Add(Item{Name: "a", Qty: 2})\n\tif o.Total() != 3 { t.Fatal("x") }\n\tvar c Config\n\t_ = c\n\tif o.Count != 1 { t.Fatal("y") }\n}\n' });
   sdd(go, 'tdd', 'stub', 'TEST-M-001');
   const g = read(go, 'm.go');
@@ -1918,7 +1919,7 @@ test('#76 tdd stub: Java ctor/enum, C header under include/, Rust workspace memb
   const j = mk({ 'FooTest.java': 'import org.junit.jupiter.api.Test;\nclass FooTest {\n  // @id TEST-J-001 @verifies REQ-J-001\n  @Test void t() { Account a = new Account("x", 5); Kind k = Kind.DEBIT; Kind m = Kind.CREDIT; }\n}\n' });
   sdd(j, 'tdd', 'stub', 'TEST-J-001');
   assert.match(read(j, 'Account.java'), /public Account\(String a0, int a1\)/);
-  assert.match(read(j, 'Kind.java'), /public enum Kind \{\n    DEBIT, CREDIT/);
+  assert.match(read(j, 'Kind.java'), /public enum Kind \{\n {4}DEBIT, CREDIT/);
   const c = mk({ 'include/.keep': '', 'tests/t.c': '#include "list.h"\n// @id TEST-C-001 @verifies REQ-C-001\nint main(void) { Node *n = list_new(3); return 0; }\n' });
   sdd(c, 'tdd', 'stub', 'TEST-C-001');
   assert.ok(fs.existsSync(path.join(c, 'include/list.h')), 'header goes to include/');
@@ -2947,7 +2948,7 @@ test('#130 Rust: inline paths + struct literals are stubbed, only for the reques
   const out = sdd(one, 'tdd', 'stub', 'TEST-A-001').out;
   assert.match(out, /compile-checked/, out);
   assert.doesNotMatch(out, /Red-safe/);
-  assert.match(rd130(one, 'src/geo.rs'), /pub struct Point \{\n    pub x: i64,\n    pub y: i64,/);
+  assert.match(rd130(one, 'src/geo.rs'), /pub struct Point \{\n {4}pub x: i64,\n {4}pub y: i64,/);
   assert.match(rd130(one, 'src/lib.rs'), /pub mod geo;/);
   const two = mk130({ 'Cargo.toml': toml, 'tests/t.rs': 'use s130::util::double;\n// @id TEST-A-001 @verifies REQ-A-001\n#[test]\nfn t9() { assert_eq!(double(2), 4); }\n// @id TEST-A-002 @verifies REQ-A-001\n#[test]\nfn t10() {\n    let p = s130::geo::Point { x: 1, y: 2 };\n    assert_eq!(p.x, 1);\n}\n' });
   const o2 = sdd(two, 'tdd', 'stub', 'TEST-A-002').out;
@@ -3005,7 +3006,7 @@ test('#130 C: pointer args from casts/&x/arrays, complete structs for -> access,
   const h = rd130(d, 'include/d.h');
   assert.match(h, /d_sum\(uint8_t \* a0, int a1\)/);
   assert.match(h, /ht_put\(ht_t \* a0, uint8_t \* a1, int a2, const uint8_t \* a3, int a4\)/);
-  assert.match(h, /typedef struct ht_entry \{\n    long vlen;/);
+  assert.match(h, /typedef struct ht_entry \{\n {4}long vlen;/);
   assert.equal(spawnSync('cc', ['-fsyntax-only', '-I', path.join(d, 'include'), path.join(d, 'tests/test_d.c')]).status, 0);
 });
 
@@ -5981,7 +5982,7 @@ test('#230 review template names a per-feature file; #231 stale-test message sho
   assert.match(ev, /--retest/);
 });
 function evidenceStatusProbe(d) {
-  const w = (a, c) => fs.writeFileSync(path.join(d, 'add.test.mjs'), [
+  const w = (a) => fs.writeFileSync(path.join(d, 'add.test.mjs'), [
     "import test from 'node:test'; import assert from 'node:assert'; import { add } from './add.mjs';",
     '/** @id TEST-CALC-001 @verifies REQ-CALC-001 */',
     `test('TEST-CALC-001 adds', () => assert.equal(${a}, 3));`, ''].join('\n'));
@@ -6057,7 +6058,7 @@ test('ExUnit tdd stub: a `use Mod` module gets a defmacro __using__/1 (also appe
   sdd(d, 'tdd', 'stub', 'TEST-A-001');
   const c = fs.readFileSync(path.join(d, 'lib/a/case.ex'), 'utf8');
   assert.match(c, /defmodule A\.Case do/);
-  assert.match(c, /defmacro __using__\(_opts\) do\n    quote do\n    end\n  end/);
+  assert.match(c, /defmacro __using__\(_opts\) do\n {4}quote do\n {4}end\n {2}end/);
   fs.writeFileSync(path.join(d, 'lib/a/case.ex'), 'defmodule A.Case do\n  def helper(_a1), do: raise("not implemented: helper")\nend\n');
   sdd(d, 'tdd', 'stub', 'TEST-A-001');
   assert.match(fs.readFileSync(path.join(d, 'lib/a/case.ex'), 'utf8'), /defmacro __using__\(_opts\)[\s\S]*end\n$/);
@@ -6443,7 +6444,7 @@ const ex256Spec = '---\nfeature: e\ntier: T1\n---\n| REQ-E-001 | parse shall hol
 const ex256 = (extra = {}) => ({
   'mix.exs': exFiles['mix.exs'],
   'test/test_helper.exs': 'ExUnit.start()\n',
-  'lib/d/calc.ex': '# @id CODE-E-001-STUB-001 @implements REQ-E-001\ndefmodule D.Calc do\n  def parse(_a1), do: raise("not implemented: parse")\n  def new(_a1), do: raise("not implemented: new")\n  def other(_a1), do: 1\n  def from_json(_a1), do: raise(\"not implemented: from_json\")\nend\n',
+  'lib/d/calc.ex': '# @id CODE-E-001-STUB-001 @implements REQ-E-001\ndefmodule D.Calc do\n  def parse(_a1), do: raise("not implemented: parse")\n  def new(_a1), do: raise("not implemented: new")\n  def other(_a1), do: 1\n  def from_json(_a1), do: raise("not implemented: from_json")\nend\n',
   'test/d_test.exs': 'defmodule DTest do\n  use ExUnit.Case\n  alias D.Calc\n\n  # @id TEST-E-001\n  # @verifies REQ-E-001\n  test "parse" do\n    assert {:ok, 1} = Calc.parse("1")\n  end\n\n  # @id TEST-E-002\n  # @verifies REQ-E-002\n  test "helper" do\n    room()\n    assert Calc.other(2) == 1\n  end\n\n  # @id TEST-E-003\n  # @verifies REQ-E-003\n  test "json" do\n    path = Path.join("test", "test_helper.exs")\n    assert {:ok, %{type: "D"}} = Calc.from_json(File.read!(path))\n  end\n\n  defp room, do: Calc.new(1)\nend\n',
   ...extra,
 });
@@ -7366,7 +7367,7 @@ test('#288 subprocess-subject test: stub prints a note; Red works without --weak
 test('#290 Rust stub: a missing variant is added to the existing enum', has268, () => {
   const d = rs288('use hist::SchedError;\n\n' + t288('    assert_eq!(SchedError::ZeroLimit, SchedError::ZeroLimit);'), { 'src/lib.rs': '#[derive(Debug, Clone, Copy, PartialEq, Eq)]\npub enum SchedError {\n    Empty,\n}\n' });
   const { out, lib } = stub288(d);
-  assert.match(lib, /enum SchedError \{\n    Empty,\n    ZeroLimit,\n\}/, lib);
+  assert.match(lib, /enum SchedError \{\n {4}Empty,\n {4}ZeroLimit,\n\}/, lib);
   assert.match(out, /added variant SchedError::ZeroLimit/, out);
 });
 
@@ -8176,7 +8177,7 @@ test('#309 stubThrowingConstructors (opt-in) makes JS/TS and Java class construc
   const off = stub10(tsFiles, 'TEST-S-001');
   assert.match(fs.readFileSync(path.join(off, 'sdk.ts'), 'utf8'), /constructor\(\.\.\._args: any\[\]\) \{\}/);
   const on = stub10({ ...tsFiles, '.sdd/config.json': JSON.stringify({ stubThrowingConstructors: true }) }, 'TEST-S-001');
-  assert.match(fs.readFileSync(path.join(on, 'sdk.ts'), 'utf8'), /constructor\(\.\.\._args: any\[\]\) \{\n    throw new Error\('not implemented: Widget'\)/);
+  assert.match(fs.readFileSync(path.join(on, 'sdk.ts'), 'utf8'), /constructor\(\.\.\._args: any\[\]\) \{\n {4}throw new Error\('not implemented: Widget'\)/);
   const j = mk130({ '.sdd/config.json': JSON.stringify({ stubThrowingConstructors: true }), 'src/test/java/CalcTest.java': 'public class CalcTest {\n  // @id TEST-A-001 @verifies REQ-A-001\n  static void t() { Calc c = new Calc(1); }\n}\n' });
   sdd(j, 'tdd', 'stub', 'TEST-A-001');
   assert.match(rd130(j, 'src/main/java/Calc.java'), /public Calc\(int a0\) \{\n\s+throw new UnsupportedOperationException\("not implemented: Calc"\)/);
@@ -8778,13 +8779,13 @@ for (const [eco, spec] of Object.entries(R24D_ECOSYSTEMS)) {
 // (2) stub round-trip: synthetic Rust tests modelled on the wave-15 stub captures (own code, not copied)
 const R24D_NO_CARGO = spawnSync('which', ['cargo']).status !== 0;
 const r24dCargoSkip = R24D_NO_CARGO ? 'SKIP: toolchain missing (cargo)' : false;
-const r24dRustStub = (body, uses) => {
+const r24dRustStub = (body, uses, report = true) => {
   const d = mini(R24B_SPEC, {
     'Cargo.toml': '[package]\nname = "repro"\nversion = "0.1.0"\nedition = "2021"\n',
     'src/lib.rs': '',
     'tests/h_test.rs': `use repro::{${uses}};\n\n// @id TEST-H-001\n// @verifies REQ-H-001\n#[test]\nfn test_h_001() {\n${body}\n}\n`,
   });
-  const r = sdd(d, 'tdd', 'stub', 'TEST-H-001', '--report');
+  const r = sdd(d, 'tdd', 'stub', 'TEST-H-001', ...(report ? ['--report'] : []));
   const lib = fs.readFileSync(path.join(d, 'src/lib.rs'), 'utf8');
   const rows = [...r.out.matchAll(/^ {2}(\w+) \| (shown|inferred|guessed) \| (\S+)$/gm)].map((m) => ({ element: m[1], confidence: m[2], evidence: m[3] }));
   return { d, out: r.out, lib, rows };
@@ -8839,25 +8840,126 @@ test('r24d stub round-trip: toolchain gaps are counted, never silently dropped',
   assert.ok(R24D_NO_CARGO || r24dCargoSkip === false, 'SKIP: toolchain missing (cargo) must be a counted skip, not a pass');
 });
 
-// shapes the wave-15 captures showed and the stub generator still gets wrong: recorded, not hidden (design 3.2 acceptance)
-const r24dTodo = { todo: 'known stub-heuristic gap (design 3.2); fix when it reproduces twice' };
-test('r24d TODO stub: a call with no return-type evidence is emitted as a concrete i64 without an SDD-TODO(stub) marker', { ...r24dTodo, skip: r24dCargoSkip }, () => {
+/** @id TEST-RUST-STUB-001 @verifies REQ-RUST-STUB-001 */
+test('TEST-RUST-STUB-001 unknown function return is a marked guessed placeholder', { skip: r24dCargoSkip }, () => {
   const s = r24dRustStub('    assert!(mystery(5).ok());', 'mystery');
-  assert.match(s.lib, /fn mystery[^\n]*\n[^\n]*\n[^\n]*\n/);
-  assert.doesNotMatch(s.lib, /fn mystery<A0>\(_a0: A0\) -> i64/, s.lib);
+  assert.match(s.lib, /pub fn mystery[^\n]*SDD-TODO\(stub\)/, s.lib);
+  assert.match(s.out, /mystery \| guessed \| tests\/h_test\.rs:\d+/, s.out);
+  assert.match(s.out, /! mystery:[^\n]*fill the type by hand/, s.out);
 });
-test('r24d TODO stub: free functions are generated but not listed by --report', { ...r24dTodo, skip: r24dCargoSkip }, () => {
+test('r24d stub: free functions are generated and listed by --report', { skip: r24dCargoSkip }, () => {
   const s = r24dRustStub('    assert_eq!(tally(&[1u8, 2]), 3);', 'tally');
   assert.match(s.lib, /pub fn tally/);
   assert.ok(s.rows.some((r) => r.element === 'tally'), s.out);
 });
-test('r24d TODO stub: a method compared with a float literal is stubbed -> i64', { ...r24dTodo, skip: r24dCargoSkip }, () => {
-  const s = r24dRustStub('    assert_eq!(Ratio::new(1, 2).value(), 0.5);', 'Ratio');
-  assert.doesNotMatch(s.lib, /fn value\(&self\) -> i64/, s.lib);
+/** @id TEST-RUST-STUB-002 @verifies REQ-RUST-STUB-001 */
+test('TEST-RUST-STUB-002 float method evidence survives receiver masking and unknown methods are marked', { skip: r24dCargoSkip }, () => {
+  for (const body of [
+    'assert_eq!(Ratio::new(1, 2).value(), 0.5);',
+    'let r = Ratio::new(1, 2); assert!(r.value() == 10.0);',
+    'assert_eq!(Ratio::new(1, 2).value(), 1.5);',
+  ]) {
+    const s = r24dRustStub(`    ${body}`, 'Ratio');
+    assert.match(s.lib, /pub fn value[^\n]*-> f64/, s.lib);
+    assert.doesNotMatch(s.lib, /SDD-TODO\(stub\)/, s.lib);
+    assert.match(s.out, /Ratio::value \| inferred \| tests\/h_test\.rs:\d+/, s.out);
+    const line = Number(/Ratio::value \| inferred \| tests\/h_test\.rs:(\d+)/.exec(s.out)[1]);
+    assert.match(fs.readFileSync(path.join(s.d, 'tests/h_test.rs'), 'utf8').split('\n')[line - 1], /value/);
+    const compile = spawnSync('cargo', ['test', '--offline', '--no-run'], { cwd: s.d, encoding: 'utf8', env: ENV });
+    assert.equal(compile.status, 0, compile.stdout + compile.stderr);
+  }
+  const unknown = r24dRustStub('    assert!(Ratio::new(1, 2).value().ok().is_some());', 'Ratio');
+  assert.match(unknown.lib, /pub fn value[^\n]*SDD-TODO\(stub\)/, unknown.lib);
+  assert.match(unknown.out, /Ratio::value \| guessed \| tests\/h_test\.rs:\d+/, unknown.out);
+  assert.match(unknown.out, /! Ratio::value:[^\n]*fill the type by hand/, unknown.out);
 });
-test('r24d TODO stub: a loop-bound const gets guessed i64 element types reported as inferred', { ...r24dTodo, skip: r24dCargoSkip }, () => {
+/** @id TEST-RUST-STUB-003 @verifies REQ-RUST-STUB-002 */
+test('TEST-RUST-STUB-003 loop-only element types are marked guessed not inferred', { skip: r24dCargoSkip }, () => {
   const s = r24dRustStub('    for (a, b) in TABLE { assert_eq!(a, b); }', 'TABLE');
-  assert.doesNotMatch(s.lib, /TABLE: &\[\(i64, i64\)\]/, s.lib);
+  assert.match(s.lib, /pub const TABLE:[^\n]*SDD-TODO\(stub\)/, s.lib);
+  assert.match(s.out, /TABLE \| guessed \| tests\/h_test\.rs:\d+/, s.out);
+  assert.doesNotMatch(s.out, /TABLE \| inferred \|/, s.out);
+  assert.match(s.out, /! TABLE:[^\n]*fill the type by hand/, s.out);
+});
+/** @id TEST-RUST-STUB-004 @verifies REQ-RUST-STUB-001 REQ-RUST-STUB-002 */
+test('TEST-RUST-STUB-004 supported return and constant confidence controls', { skip: r24dCargoSkip }, () => {
+  for (const [uses, body, expected, report] of [
+    ['size', 'let n: usize = size(2); assert_eq!(n, 3);', /fn size[^\n]*-> usize/, /size \| shown \|/],
+    ['tally', 'assert_eq!(tally(2), 3);', /fn tally[^\n]*-> i64/, /tally \| inferred \|/],
+    ['LIMIT', 'let x: f64 = LIMIT; assert!(x >= 0.0);', /LIMIT: f64/, /LIMIT \| shown \|/],
+    ['EPSILON', 'assert_eq!(EPSILON, 1e-5);', /EPSILON: f64/, /EPSILON \| inferred \|/],
+    ['Counter', 'let c = Counter::new(); assert_eq!(c.count(), 3);', /fn count[^\n]*-> i64/, /Counter::count \| inferred \|/],
+  ]) {
+    const s = r24dRustStub(`    ${body}`, uses);
+    assert.match(s.lib, expected, s.lib);
+    assert.doesNotMatch(s.lib, /SDD-TODO\(stub\)/, s.lib);
+    assert.match(s.out, report, s.out);
+    const compile = spawnSync('cargo', ['test', '--offline', '--no-run'], { cwd: s.d, encoding: 'utf8', env: ENV });
+    assert.equal(compile.status, 0, compile.stdout + compile.stderr);
+  }
+});
+/** @id TEST-RUST-STUB-005 @verifies REQ-RUST-STUB-003 */
+test('TEST-RUST-STUB-005 marked compiler errors never become Red while native runtime controls do', { skip: r24dCargoSkip }, () => {
+  for (const [uses, body, element] of [
+    ['parse_flag', 'assert!(parse_flag("yes").ok().is_some());', 'parse_flag'],
+    ['Gauge', 'assert!(Gauge::new(4, 8).fraction().ok().is_some());', 'fraction'],
+    ['SWITCHES', 'for (enabled, expected) in SWITCHES { assert_eq!(*enabled, true); assert_eq!(*expected, false); }', 'SWITCHES'],
+  ]) {
+    const s = r24dRustStub(`    ${body}`, uses, false);
+    assert.doesNotMatch(s.out, /stub report/);
+    assert.match(s.out, new RegExp(`! (?:Gauge::)?${element}:[^\\n]*fill the type by hand`), s.out);
+    const compile = spawnSync('cargo', ['test', '--offline', '--no-run'], { cwd: s.d, encoding: 'utf8', env: ENV });
+    assert.equal(compile.status, 101, compile.stdout + compile.stderr);
+    assert.match(compile.stderr, /error\[E(?:0308|0599)\]/);
+    setCmd(s.d, ['cargo', 'test', '--offline', '{idu}']);
+    const before = testEvidence(s.d);
+    for (const flags of [[], ['--weak'], ['--expect', 'mismatched types']]) {
+      const red = sdd(s.d, 'tdd', 'red', 'TEST-H-001', ...flags);
+      assert.equal(red.code, 1, red.out);
+      assert.match(red.out, new RegExp(`REJECTED[^\\n]*SDD-TODO\\(stub\\) element ${element}[^\\n]*by hand`), red.out);
+      assert.deepEqual(testEvidence(s.d), before, red.out);
+    }
+  }
+  for (const [uses, body, marked, target, value] of [
+    ['tally', 'assert_eq!(tally(2), 3);', false, 'tally', '3'],
+    ['run', 'run(1); assert!(true);', true, 'run', '0'],
+    ['Gauge', 'assert_eq!(Gauge::new(4, 8).fraction(), 0.25);', false, 'Gauge::fraction', '0.25'],
+  ]) {
+    const s = r24dRustStub(`    ${body}`, uses);
+    assert.equal(s.lib.includes('SDD-TODO(stub)'), marked, s.lib);
+    setCmd(s.d, ['cargo', 'test', '--offline', '{idu}']);
+    const red = sdd(s.d, 'tdd', 'red', 'TEST-H-001');
+    assert.equal(red.code, 0, `${uses}: native runtime Red should be accepted: ${red.out.split('\n')[0]}`);
+    assert.doesNotMatch(red.out, /REJECTED|not a Red/, red.out);
+    const file = path.join(s.d, 'src/lib.rs');
+    fs.writeFileSync(file, fs.readFileSync(file, 'utf8').replace(`unimplemented!("${target}")`, value));
+    const green = sdd(s.d, 'tdd', 'green', 'TEST-H-001');
+    assert.equal(green.code, 0, green.out);
+  }
+  const other = r24dRustStub('    assert_eq!(tally(2), 3);', 'tally');
+  fs.appendFileSync(path.join(other.d, 'src/lib.rs'), '\npub fn unused() -> i64 { // SDD-TODO(stub): type unknown\n    unimplemented!()\n}\n');
+  fs.appendFileSync(path.join(other.d, 'tests/h_test.rs'), '\nfn unrelated() { let broken: u8 = true; }\n');
+  setCmd(other.d, ['cargo', 'test', '--offline', '{idu}']);
+  const unrelated = sdd(other.d, 'tdd', 'red', 'TEST-H-001');
+  assert.equal(unrelated.code, 1, unrelated.out);
+  assert.match(unrelated.out, /load\/compile error/);
+  assert.doesNotMatch(unrelated.out, /SDD-TODO\(stub\) element unused/, unrelated.out);
+});
+/** @id TEST-RUST-STUB-006 @verifies REQ-RUST-STUB-003 */
+test('TEST-RUST-STUB-006 compiler errors on same-named variables do not blame marked methods', { skip: r24dCargoSkip }, () => {
+  for (const method of ['value', 'get', 'len', 'new']) {
+    const d = mini(R24B_SPEC, {
+      'Cargo.toml': '[package]\nname = "repro"\nversion = "0.1.0"\nedition = "2021"\n',
+      'src/lib.rs': `pub struct Counter;\nimpl Counter {\n    pub fn ${method}(&self) -> i64 { // SDD-TODO(stub): return type unknown\n        unimplemented!()\n    }\n}\n`,
+      'tests/h_test.rs': `// @id TEST-H-001\n// @verifies REQ-H-001\n#[test]\nfn test_h_001() {\n    let ${method}: u8 = true; let _message = "${method}()";\n    assert_eq!(${method}, 1);\n}\n`,
+    }, ['cargo', 'test', '--offline', '{idu}']);
+    const before = testEvidence(d);
+    const red = sdd(d, 'tdd', 'red', 'TEST-H-001');
+    assert.equal(red.code, 1, red.out);
+    assert.match(red.out, /load\/compile error/, red.out);
+    assert.doesNotMatch(red.out, /SDD-TODO\(stub\) element/, red.out);
+    assert.deepEqual(testEvidence(d), before);
+  }
 });
 
 import { createHash } from 'node:crypto';
@@ -8950,7 +9052,7 @@ test('#r25a Python const with no evidence gets an SDD-TODO(stub) marker; an evid
   const d = mini(R24B_SPEC, { 'test_h.py': 'from lib import LIMIT, ROWS\n\n# @id TEST-H-001 @verifies REQ-H-001\ndef test_h():\n    assert LIMIT\n    assert ROWS[0] == 1\n' });
   const r = sdd(d, 'tdd', 'stub', 'TEST-H-001', '--report');
   const lib = fs.readFileSync(path.join(d, 'lib.py'), 'utf8');
-  assert.match(lib, /^LIMIT = None  # SDD-TODO\(stub\): type unknown/m, lib);
+  assert.match(lib, /^LIMIT = None {2}# SDD-TODO\(stub\): type unknown/m, lib);
   assert.match(lib, /^ROWS = \[\]$/m, lib);
   assert.match(r.out, /LIMIT \| guessed \| test_h\.py:\d+/, r.out);
   assert.match(r.out, /ROWS \| inferred \|/, r.out);
@@ -8968,7 +9070,7 @@ test('#r25a tdd red rejects a load error located in a marked Python stub element
   assert.match(r.out, /REJECTED[^\n]*SDD-TODO\(stub\) element LIMIT[^\n]*fill LIMIT by hand/, r.out);
 });
 
-test('#r25a Rust: a const typed in the test is reported shown; a fn with no return evidence is guessed (report-only, code unchanged)', cargoOk, () => {
+test('#r25a Rust: a const typed in the test is shown; a fn with no return evidence is marked guessed', cargoOk, () => {
   const d = mini(R24B_SPEC, {
     'Cargo.toml': '[package]\nname = "repro"\nversion = "0.1.0"\nedition = "2021"\n',
     'src/lib.rs': '',
@@ -8979,9 +9081,9 @@ test('#r25a Rust: a const typed in the test is reported shown; a fn with no retu
   assert.match(r.out, /LIMIT \| shown \|/, r.out);
   assert.match(r.out, /size \| shown \|/, r.out);
   assert.match(r.out, /run \| guessed \|/, r.out);
-  assert.match(r.out, /! run: return type defaulted to i64 with no evidence/, r.out);
+  assert.match(r.out, /! run:[^\n]*fill the type by hand/, r.out);
   assert.match(lib, /pub fn run[^\n]*-> i64 \{/, lib);
-  assert.doesNotMatch(lib, /run[^\n]*SDD-TODO/, lib);
+  assert.match(lib, /run[^\n]*SDD-TODO/, lib);
 });
 
 // ---- r25b (gate fail-open audit) ----
@@ -12067,7 +12169,7 @@ const r34cPluginFiles = (plugin = 'from .helper import EXPECTED\n') => ({
 
 /** @id TEST-R34-PYREL-001 @verifies REQ-CHECK-CLOSURE-001 */
 test('TEST-R34-PYREL-001 r34c #359 Python plugin closure protects all declared relative forms', () => {
-for (const [label, files, protectedFile] of [
+for (const [, files, protectedFile] of [
   ['sibling helper', r34cPluginFiles(), 'src/qa/helper.py'],
   ['parenthesized submodule alias', r34cPluginFiles('from . import (\n    helper as oracle,\n)\n'), 'src/qa/helper.py'],
   ['parent package level', { ...r34cPluginFiles(), 'conftest.py': 'pytest_plugins = "qa.nested.plugin"\n', 'src/qa/nested/__init__.py': '', 'src/qa/nested/plugin.py': 'from ..helper import EXPECTED\n' }, 'src/qa/helper.py'],
@@ -12100,7 +12202,7 @@ for (const [label, files, protectedFile] of [
 
 /** @id TEST-R34-PYREL-002 @verifies REQ-CHECK-CLOSURE-001 */
 test('TEST-R34-PYREL-002 r34c #359 protected Python inputs fail closed for unresolved relative forms', () => {
-for (const [label, plugin, extra] of [
+for (const [, plugin, extra] of [
   ['missing relative helper', 'from .missing import EXPECTED\n', { 'src/other/missing.py': 'EXPECTED = 2\n', 'src/missing.py': 'EXPECTED = 2\n' }],
   ['missing imported submodule', 'from . import missing\n', {}],
   ['beyond top-level package', 'from ..helper import EXPECTED\n', { 'src/helper.py': 'EXPECTED = 2\n' }],
@@ -12203,7 +12305,7 @@ test('TEST-R34-PYREL-005 r34c #359 real relative-plugin oracle rejects wrong Gre
 
 /** @id TEST-R34-PYREL-006 @verifies REQ-CHECK-CLOSURE-001 */
 test('TEST-R34-PYREL-006 r34c #359 absolute local controls fail closed for unresolved forms', () => {
-for (const [label, plugin, extra] of [
+for (const [, plugin, extra] of [
   ['missing absolute local module', 'from qa.missing import EXPECTED\n', {}],
   ['missing absolute package child', 'from qa import missing\n', {}],
   ['ambiguous literal plugin roots', 'from .helper import EXPECTED\n', { 'qa/__init__.py': '', 'qa/plugin.py': 'EXPECTED = 2\n' }],
@@ -13625,13 +13727,13 @@ for name in ("pytest", "iniconfig", "packaging", "pluggy", "pygments"):
   assert.equal(wheelResult.status, 0, `Missing declared pytest prerequisite:\n${wheelResult.stdout}${wheelResult.stderr}`);
   for (const workflow of ['ci.yml', 'publish.yml']) {
     const source = fs.readFileSync(path.join(root, '.github/workflows', workflow), 'utf8');
-    const step = source.match(/      - name: Provision isolated pytest\n        run: \|\n((?:          .*\n)+)/);
+    const step = source.match(/ {6}- name: Provision isolated pytest\n {8}run: \|\n((?: {10}.*\n)+)/);
     assert.ok(step, `${workflow}: pytest must have an independently executable provisioning step`);
     const runnerTemp = path.join(area, workflow);
     fs.mkdirSync(runnerTemp);
     const githubPath = path.join(runnerTemp, 'github-path');
     fs.writeFileSync(githubPath, '');
-    const result = spawnSync('bash', ['-e', '-o', 'pipefail', '-c', step[1].replace(/^          /gm, '')], {
+    const result = spawnSync('bash', ['-e', '-o', 'pipefail', '-c', step[1].replace(/^ {10}/gm, '')], {
       encoding: 'utf8', cwd: root,
       env: { ...ENV, RUNNER_TEMP: runnerTemp, GITHUB_PATH: githubPath, PIP_NO_INDEX: '1', PIP_FIND_LINKS: wheels },
     });
@@ -13826,7 +13928,7 @@ test('#373 TEST-R36I-PARSE-COLOR-001 colored actual native missing-function name
       cwd: fixture.d, encoding: 'utf8', timeout: 20000, env: ENV,
     });
     assert.equal(colored.status, 1, colored.stderr);
-    assert.match(colored.stderr, /an\x1b\[31mswer\x1b\[0m/);
+    assert.ok(colored.stderr.includes('an\x1b[31mswer\x1b[0m'));
     assert.doesNotMatch(colored.stderr, /ReferenceError|SyntaxError/);
     fs.rmSync(path.join(fixture.d, 'tests/missing.h'));
     const result = r36iStub(fixture);
@@ -13926,26 +14028,33 @@ test('#372 TEST-R36G-002 Cargo process failures cannot become successful compile
 });
 
 /** @id TEST-R36I-LEGACY-001 @verifies REQ-R36I-003 */
-test('#373 TEST-R36I-LEGACY-001 legacy string probing remains raw with identical native spawn options', async () => {
+test('#373 TEST-R36I-LEGACY-001 shared compiler outcomes retain raw text and native spawn options', async () => {
   const { runInNewContext } = await import('node:vm');
   const source = fs.readFileSync(SDD, 'utf8');
-  const start = source.includes('const probeOutcome =') ? source.indexOf('const probeOutcome =') : source.indexOf('const probe =');
-  const block = source.slice(start, source.indexOf('\n\nfunction stubGo', start));
+  const start = source.indexOf('const probeOutcome =');
+  const end = source.indexOf('\nfunction stubGo', start);
+  assert.ok(start >= 0 && end > start, 'Shared outcome helper must have an explicit source boundary');
+  const block = source.slice(start, end);
   const calls = [];
   const error = Object.assign(new Error('controlled startup failure'), { code: 'ENOENT' });
   const result = { stdout: '\x1b[31mraw stdout\x1b[0m\n', stderr: 'raw stderr\n', status: null, signal: 'SIGTERM', error };
   const env = { PATH: ENV.PATH, LC_ALL: 'not-C', KEEP: 'sentinel' };
-  const api = runInNewContext(`${block}\n({ probe, outcome: typeof probeOutcome === 'function' ? probeOutcome : null });`, {
+  const outcome = runInNewContext(`${block}\nprobeOutcome;`, {
     process: { env }, spawnSync: (cmd, args, options) => { calls.push({ cmd, args, options }); return result; },
   });
-  assert.equal(api.probe('compiler', ['--flag'], '/owned/cwd'), result.stdout + result.stderr);
-  if (api.outcome) {
-    const outcome = api.outcome('compiler', ['--flag'], '/owned/cwd');
-    assert.equal(outcome.text, result.stdout + result.stderr);
-    assert.equal(outcome.status, result.status);
-    assert.equal(outcome.signal, result.signal);
-    assert.equal(outcome.error, error);
+  for (const fixture of [
+    result,
+    { stdout: 'valid\n', stderr: '', status: 0, signal: null, error: undefined },
+    { stdout: undefined, stderr: undefined, status: 101, signal: null, error: undefined },
+  ]) {
+    Object.assign(result, fixture);
+    const actual = outcome('compiler', ['--flag'], '/owned/cwd');
+    assert.equal(actual.text, (fixture.stdout ?? '') + (fixture.stderr ?? ''));
+    assert.equal(actual.status, fixture.status);
+    assert.equal(actual.signal, fixture.signal);
+    assert.equal(actual.error, fixture.error);
   }
+  assert.equal(calls.length, 3);
   for (const call of calls) {
     assert.equal(call.cmd, 'compiler');
     assert.deepEqual(call.args, ['--flag']);
@@ -14129,7 +14238,7 @@ test('#374 TEST-R36J-COLOR-001 colored actual native missing-symbol diagnostics 
   const control = r36jControlled(fixture, '', true);
   const witness = spawnSync(control.file, r36jArgs, { cwd: fixture.d, encoding: 'utf8', env: ENV });
   assert.equal(witness.status, 1, witness.stdout + witness.stderr);
-  assert.match(witness.stderr, /undefined: Mis\x1b\[31msing\x1b\[0m/);
+  assert.ok(witness.stderr.includes('undefined: Mis\x1b[31msing\x1b[0m'));
   fs.rmSync(control.count);
   const result = r36jStub(fixture, control);
   assert.equal(result.code, 0, result.out);

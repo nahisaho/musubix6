@@ -213,20 +213,20 @@ test('TEST-HOST-004 shared instructions are host-neutral and relocated helpers e
 /** @id TEST-HOST-005 @verifies REQ-HOST-005 */
 test('TEST-HOST-005 stable release metadata and real npm payload preserve wrapper contracts', t => {
   const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
-  assert.equal(pkg.version, '0.2.0');
+  assert.equal(pkg.version, '0.2.2');
   const lock = JSON.parse(fs.readFileSync(path.join(root, 'package-lock.json'), 'utf8'));
   assert.equal(lock.version, pkg.version);
   assert.equal(lock.packages[''].version, pkg.version);
-  assert.match(fs.readFileSync(path.join(root, 'CLANGELOG.md'), 'utf8'), /## \[0\.2\.0\] - Unreleased/);
+  assert.match(fs.readFileSync(path.join(root, 'CLANGELOG.md'), 'utf8'), /## \[0\.2\.2\] - Unreleased/);
   for (const file of ['README.md', 'README-ja.md']) {
     const body = fs.readFileSync(path.join(root, file), 'utf8');
     for (const host of ['claude', 'both']) assert.ok(body.includes(`--host ${host}`), `${file}: ${host}`);
     assert.match(body, /--host claude --force/);
     assert.match(body, /\.claude\/skills/);
     assert.match(body, /agent-watchdog/);
-    assert.ok(body.includes('**0.2.0**'), `${file}: stable source version`);
-    assert.doesNotMatch(body, /0\.2\.0-(?:dev|alpha|beta|rc)\b/, `${file}: stale prerelease instructions`);
-    assert.ok(body.includes('npm view musubix6@0.2.0 version'), `${file}: publication availability check`);
+    assert.ok(body.includes('**0.2.2**'), `${file}: stable source version`);
+    assert.doesNotMatch(body, /0\.2\.2-(?:dev|alpha|beta|rc)\b/, `${file}: stale prerelease instructions`);
+    assert.ok(body.includes('npm view musubix6@0.2.2 version'), `${file}: publication availability check`);
     const notice = file === 'README.md'
       ? /a version string does not establish publication or release\s+qualification/
       : /版番号だけでは、公開済みであることやリリース適格性を確認できません/;
@@ -237,7 +237,7 @@ test('TEST-HOST-005 stable release metadata and real npm payload preserve wrappe
     const updateStart = body.indexOf(updateHeading);
     assert.ok(updateStart >= 0, `${file}: npx update instructions`);
     const updateBody = body.slice(updateStart, body.indexOf('\n### ', updateStart + updateHeading.length));
-    assert.ok(updateBody.includes('npm view musubix6@0.2.0 version'), `${file}: npx update availability check`);
+    assert.ok(updateBody.includes('npm view musubix6@0.2.2 version'), `${file}: npx update availability check`);
     assert.match(updateBody, /@latest[\s\S]*0\.1\.4/, `${file}: latest may still select the old release`);
   }
   const work = temporary(t);
@@ -255,7 +255,7 @@ test('TEST-HOST-005 stable release metadata and real npm payload preserve wrappe
   const listed = wrapper('list');
   success(listed);
   assert.deepEqual(listed.stdout.trim().split('\n').sort(), all);
-  assert.equal(wrapper('--version').stdout.trim(), '0.2.0');
+  assert.equal(wrapper('--version').stdout.trim(), '0.2.2');
   const dest = path.join(work, 'packed project');
   success(wrapper('init', dest, '--host', 'both'));
   assert.deepEqual(fs.readdirSync(path.join(dest, '.github/skills')).sort(), all);

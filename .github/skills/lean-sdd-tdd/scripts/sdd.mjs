@@ -7,6 +7,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import { builtinModules } from 'node:module';
 import path from 'node:path';
+import { stripVTControlCharacters } from 'node:util';
 
 const BOOL = new Set(['allow-setup-red', 'allow-config-weaken', 'missing-module', 'baseline', 'weak', 'changed', 'json', 'no-run', 'verbose', 'help', 'stale', 'report', 'explain']);
 function parseArgs(argv) {
@@ -103,7 +104,7 @@ print(json.dumps(ranges))
 `;
   const r = spawnSync('python3', ['-c', parser], { input: txt, encoding: 'utf8', timeout: 10000, maxBuffer: 8 * 1024 * 1024 });
   let ranges = null;
-  try { if (r.status === 0) ranges = JSON.parse(r.stdout); } catch {}
+  try { if (r.status === 0) ranges = JSON.parse(r.stdout); } catch { /* Unparseable Python scopes retain the conservative null result. */ }
   pythonScopes.set(txt, ranges);
   return ranges;
 }
@@ -250,7 +251,7 @@ function braceFunctions(txt, p) {
   let offset = 0;
   for (const l of ls) { offsets.push(offset); offset += l.length + 1; }
   const ranges = [];
-  const decl = /^\s*(?:(?:pub(?:\([^)]*\))?|public|private|protected|static|final|async|virtual|override|inline|unsafe|extern|abstract|sealed|partial)\s+)*(?:fn\s+|function\s+|[A-Za-z_][\w:<>\[\],.?*& \t]*\s+)([A-Za-z_]\w*)\s*\([^;{}]*\)\s*(?::\s*[\w\\?]+|->\s*[^{};\n]+|throws\s+[^{};\n]+)?\s*(\{|=>)/gm;
+  const decl = /^\s*(?:(?:pub(?:\([^)]*\))?|public|private|protected|static|final|async|virtual|override|inline|unsafe|extern|abstract|sealed|partial)\s+)*(?:fn\s+|function\s+|[A-Za-z_][\w:<>[\],.?*& \t]*\s+)([A-Za-z_]\w*)\s*\([^;{}]*\)\s*(?::\s*[\w\\?]+|->\s*[^{};\n]+|throws\s+[^{};\n]+)?\s*(\{|=>)/gm;
   const heads = [...masked.matchAll(decl)];
   if (/\.(?:c|cc|cpp|cxx)$/.test(p)) {
     // top-level `TEST(suite, name) {` style macros declare a function: give each its own region (#220/#223)
@@ -514,7 +515,7 @@ function scriptOracleImports(file, text, all = false) {
       for (const target of aliasSources(aliases, files, spec, rel(file))) {
         const hit = path.join(ROOT, target);
         let code = false;
-        try { code = fs.readFileSync(hit, 'utf8').includes('@id CODE-'); } catch {}
+        try { code = fs.readFileSync(hit, 'utf8').includes('@id CODE-'); } catch { /* Keep unresolved oracle candidates in dependency tracking. */ }
         if (all || (!code && (testSupportPath(hit) || /\.(?:json|csv|txt|ya?ml)$/i.test(hit)))) found.push(hit);
       }
       continue;
@@ -523,14 +524,14 @@ function scriptOracleImports(file, text, all = false) {
     const hit = exts.map((e) => base + e).concat(spec.endsWith('.js') ? [base.replace(/\.js$/, '.ts'), base.replace(/\.js$/, '.tsx')] : []).find((f) => { try { return fs.statSync(f).isFile(); } catch { return false; } });
     if (!hit) continue;
     let code = true;
-    try { code = !/\.json$/i.test(hit) && fs.readFileSync(hit, 'utf8').includes('@id CODE-'); } catch {}
+    try { code = !/\.json$/i.test(hit) && fs.readFileSync(hit, 'utf8').includes('@id CODE-'); } catch { /* A missing source is not a confirmed oracle. */ }
     if (all || (!code && (testSupportPath(hit) || /\.(?:json|csv|txt|ya?ml)$/i.test(hit)))) found.push(hit);
   }
   return found;
 }
 function rOracleImports(file, text) {
   const found = [], dir = path.dirname(file);
-  const add = (f) => { try { if (fs.statSync(f).isFile()) found.push(f); } catch {} };
+  const add = (f) => { try { if (fs.statSync(f).isFile()) found.push(f); } catch { /* Optional R import candidates may not exist. */ } };
   for (const m of text.matchAll(/\b(source|sys\.source|test_path|read\.csv2?|read\.delim|read\.table|readRDS|readLines|scan|load|fread|read_csv|read_tsv|read_delim|read_rds|read_excel|read_json|fromJSON|file)\s*\(\s*(?:file\s*=\s*)?(['"])([^'"]+)\2/g)) {
     const target = path.resolve(dir, m[3]);
     const rootTarget = path.resolve(ROOT, m[3]);
@@ -787,7 +788,7 @@ const testShaVariant = (p, id, trim, norm = false, legacy = false, cut = true, i
     if (legacy) return i;
     let k = -1;
     if (i >= 1 && /^\s*(async\s+)?def\s/.test(ls[i - 1])) k = i - 1;
-    else if (i >= 2 && /^\s*[rbuRBU]{0,2}("""|\'\'\')\s*$/.test(ls[i - 1]) && /^\s*(async\s+)?def\s/.test(ls[i - 2])) k = i - 2;
+    else if (i >= 2 && /^\s*[rbuRBU]{0,2}("""|''')\s*$/.test(ls[i - 1]) && /^\s*(async\s+)?def\s/.test(ls[i - 2])) k = i - 2;
     if (k < 0) return i;
     while (k > 0 && /^\s*@\w/.test(ls[k - 1])) k--;
     return k;
@@ -849,7 +850,7 @@ const specificReason = (rl) => {
 };
 // rejected Red/Green: assertion lines first (Maven/ctest/dotnet boilerplate would push them out of a plain tail), then a short tail
 const rejectTail = (text) => {
-  const ls = text.replace(/\x1b\[[0-9;]*m/g, '').trimEnd().split('\n');
+  const ls = stripVTControlCharacters(text).trimEnd().split('\n');
   const keep = [];
   ls.forEach((l, i) => { if (/^Test Failed at\b/.test(l)) keep.push(i, i + 1, i + 2); else if (/panicked at /.test(l)) keep.push(i, i + 1, i + 2, i + 3); else if (REASON_KEY.test(l) && !/^\d+\s*\|/.test(l)) keep.push(i); });
   if (!keep.length) return tail(text, 12);
@@ -861,7 +862,7 @@ const tail = (s, n = 15) => { const ls = s.trimEnd().split('\n'); const real = l
 // ---------- scanning ----------
 const EXT = /\.(ts|tsx|js|jsx|mjs|cjs|py|go|rs|java|cs|kt|rb|sh|c|h|cc|cpp|cxx|hpp|hh|R|r|jl|php|ex|exs)$/;
 const SKIP = /(^|\/)(node_modules|\.git|\.sdd|dist|build|coverage|target|\.venv|venv|\.mastra|\.next|\.nuxt|\.turbo|\.output)\//;
-const globRe = (g) => new RegExp('^' + g.replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*\*$/, '\u0001').replace(/\*\*\/?/g, '\u0000').replace(/\*/g, '[^/]*').replace(/\?/g, '[^/]').replace(/\u0000/g, '(?:.*/)?').replace(/\u0001/g, '.*') + '$');
+const globRe = (g) => new RegExp('^' + g.replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*\*$/, '\u0001').replace(/\*\*\/?/g, '\u0000').replace(/\*/g, '[^/]*').replace(/\?/g, '[^/]').replaceAll('\u0000', '(?:.*/)?').replaceAll('\u0001', '.*') + '$');
 function scanFilter(files) {
   const sc = (readJson(CONFIG, null) ?? {}).scan ?? {};
   const inc = (sc.include ?? []).map(globRe);
@@ -1113,7 +1114,7 @@ function readLedger() {
     return e;
   });
 }
-const entryHash = (e) => { const { hash, ...rest } = e; return sha(JSON.stringify(rest)); };
+const entryHash = (e) => { const rest = { ...e }; delete rest.hash; return sha(JSON.stringify(rest)); };
 function ledgerEventProblem(e) {
   const text = (v) => typeof v === 'string' && v.trim().length > 0;
   const digest = (v) => typeof v === 'string' && /^[a-f0-9]{64}$/.test(v);
@@ -1169,7 +1170,7 @@ function withLedgerLock(fn) {
       Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 25);
     }
   }
-  try { return fn(); } finally { try { fs.rmdirSync(lock); } catch {} }
+  try { return fn(); } finally { try { fs.rmdirSync(lock); } catch { /* Preserve the operation result; stale locks are detected on acquisition. */ } }
 }
 function appendLedger(e) {
   withLedgerLock(() => appendLedgerLocked(e));
@@ -1209,7 +1210,7 @@ function ledgerRegression(bref = 'HEAD') {
     }
     return unreadable(tree);
   }
-  const key = (l) => { try { const { seq, prev, hash, ...r } = JSON.parse(l); return JSON.stringify(r); } catch { return l; } };
+  const key = (l) => { try { const r = JSON.parse(l); delete r.seq; delete r.prev; delete r.hash; return JSON.stringify(r); } catch { return l; } };
   let current;
   try { current = fs.readFileSync(LEDGER, 'utf8'); } catch (err) {
     if (err.code !== 'ENOENT') return `cannot read current ledger ${rel(LEDGER)}: ${err.code || err.message}`;
@@ -1415,7 +1416,7 @@ function detectProjects(skipEco = new Set()) {
   // Go modules that require/replace a sibling module depend on it: a change there must run the dependent's tests under gate --changed (#74)
   const gomod = (r) => { try { return fs.readFileSync(path.join(ROOT, r, 'go.mod'), 'utf8'); } catch { return ''; } };
   const modName = new Map(roots.map((r) => [/^module\s+(\S+)/m.exec(gomod(r))?.[1], r]).filter(([m]) => m));
-  const goDeps = (r) => [...new Set([...gomod(r).matchAll(/^\s*(?:require\s+)?([\w.\/-]+)\s+v[\w.+-]+/gm)].map((m) => modName.get(m[1])).concat([...gomod(r).matchAll(/=>\s*(\.[^\s]*)/g)].map((m) => path.posix.normalize(path.posix.join(r, m[1])))).filter((d) => d && d !== r && roots.includes(d)))];
+  const goDeps = (r) => [...new Set([...gomod(r).matchAll(/^\s*(?:require\s+)?([\w./-]+)\s+v[\w.+-]+/gm)].map((m) => modName.get(m[1])).concat([...gomod(r).matchAll(/=>\s*(\.[^\s]*)/g)].map((m) => path.posix.normalize(path.posix.join(r, m[1])))).filter((d) => d && d !== r && roots.includes(d)))];
   // a test project depends on the projects it references (transitively) and on shared build files above it (#135)
   const dn = roots.some((r) => dirs.has(r) && all.some((f) => f.startsWith(r + '/') && /\.csproj$/.test(f))) ? dotnetGraph(ROOT) : null;
   const dnDeps = (root) => {
@@ -1446,7 +1447,7 @@ const RUNNER_ENV_ALLOWLIST = [
 function resolveExecutable(exe, cwd = ROOT) {
   if (!exe) return null;
   for (const p of /[/\\]/.test(exe) ? [path.resolve(cwd, exe)] : (process.env.PATH ?? '').split(path.delimiter).map((d) => path.resolve(cwd, d || '.', exe))) {
-    try { const s = fs.statSync(p); if (s.isFile() && (process.platform === 'win32' || (s.mode & 0o111))) return p; } catch {}
+    try { const s = fs.statSync(p); if (s.isFile() && (process.platform === 'win32' || (s.mode & 0o111))) return p; } catch { /* Continue searching PATH after an unavailable candidate. */ }
   }
   return null;
 }
@@ -1704,7 +1705,7 @@ const SCOPE_TOKENS = {
     return stems.length ? [[...new Set(stems)].map((x) => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')] : [];
   },
 };
-const LOAD_ERR = /(cannot find (module|package)|modulenotfounderror|importerror|^\s*(?:e\s+|uncaught\s+)?(?:\w+\.)*syntaxerror\b(?:\s+\[ERR_[A-Z0-9_]+\])?\s*(?::|$)|^error: unexpected [^\n]* in "|error in parse\(|unable to load shared object|error in (?:dyn\.load|loadnamespace|library)\(|cannot resolve|no such file|undefined reference|could not compile|error\[e\d+\]|failed to resolve import|failed to load url|\[build failed\]|^[^\s:]+:\d+(?::\d+)?: (?:fatal )?error\b|cannot find symbol|ld returned \d+ exit status|\[setup failed\]|failed opening required|class \"[^\"]+\" not found|call to undefined (function|method)|php parse error|cannot redeclare|cannot declare class|could not find function|there is no package called|what went wrong:\s*\n(?!execution failed for task '[^']*test')|error (cs|msb|nu)\d+|error ts\d+|tserror|unable to compile typescript|transform failed with \d+ error|test suite failed to run|non-parseable pom|the build could not read|compilation failure|fatal error compiling|release version \d+ not supported|mojoexecutionexception|could not resolve dependencies|dependencies? .{0,80}could not be resolved|cannot open the connection|undefvarerror|loaderror: (systemerror|parseerror)|error collecting |interrupted: \d+ errors? during collection|^error: loaderror: (?!some tests did not pass)|^\*\* \((?:CompileError|SyntaxError|TokenMissingError|Mix)\)|is undefined \(module [\w.]+ is not available\)|^# [^\n]*\n[^\n]*:\d+:\d+: (undefined|cannot|missing))/im;
+const LOAD_ERR = /(cannot find (module|package)|modulenotfounderror|importerror|^\s*(?:e\s+|uncaught\s+)?(?:\w+\.)*syntaxerror\b(?:\s+\[ERR_[A-Z0-9_]+\])?\s*(?::|$)|^error: unexpected [^\n]* in "|error in parse\(|unable to load shared object|error in (?:dyn\.load|loadnamespace|library)\(|cannot resolve|no such file|undefined reference|could not compile|error\[e\d+\]|failed to resolve import|failed to load url|\[build failed\]|^[^\s:]+:\d+(?::\d+)?: (?:fatal )?error\b|cannot find symbol|ld returned \d+ exit status|\[setup failed\]|failed opening required|class "[^"]+" not found|call to undefined (function|method)|php parse error|cannot redeclare|cannot declare class|could not find function|there is no package called|what went wrong:\s*\n(?!execution failed for task '[^']*test')|error (cs|msb|nu)\d+|error ts\d+|tserror|unable to compile typescript|transform failed with \d+ error|test suite failed to run|non-parseable pom|the build could not read|compilation failure|fatal error compiling|release version \d+ not supported|mojoexecutionexception|could not resolve dependencies|dependencies? .{0,80}could not be resolved|cannot open the connection|undefvarerror|loaderror: (systemerror|parseerror)|error collecting |interrupted: \d+ errors? during collection|^error: loaderror: (?!some tests did not pass)|^\*\* \((?:CompileError|SyntaxError|TokenMissingError|Mix)\)|is undefined \(module [\w.]+ is not available\)|^# [^\n]*\n[^\n]*:\d+:\d+: (undefined|cannot|missing))/im;
 // a genuine runtime assertion/panic outranks an incidental LOAD_ERR substring such as "No such file" in the failure text (#252)
 const RUNTIME_FAIL = /^thread '[^']*'(?: \(\d+\))? panicked at |^\s*assertion [`'"]?(?:left|[^\n]*)[`'"]? failed\b/m;
 // classify by exception type: an AssertionError whose message embeds subprocess stderr is an assertion, not a load error (#282);
@@ -1716,6 +1717,7 @@ function missingDeliverable(text) {
   return [].concat((readJson(CONFIG, null) ?? {}).deliverables ?? []).map(norm).some((d) => d && text.replace(/\\/g, '/').includes(d) && !fs.existsSync(path.join(ROOT, d)));
 }
 // a compile error located in a generated `SDD-TODO(stub)` placeholder (design 3.2): never a Red, the type must be filled by hand
+/** @id CODE-RUST-STUB-002 @implements REQ-RUST-STUB-003 */
 const stubTodoHit = (text) => {
   for (const file of workspaceFiles().filter((f) => /\.(?:rs|py|[cm]?[jt]sx?)$/.test(f))) {
     let lines;
@@ -1728,8 +1730,12 @@ const stubTodoHit = (text) => {
         if (el && new RegExp(`${esc}:${i + 1}(?!\\d)|${esc}\\(${i + 1},|${esc}", line ${i + 1}\\b`).test(text.replace(/\\/g, '/'))) return `error in the SDD-TODO(stub) element ${el} (${file}:${i + 1}): the stub could not infer its type/value, so this is not a Red — fill ${el} by hand, then re-run tdd red`;
         continue;
       }
-      const el = /\b(?:const|static|fn|struct|enum)\s+(\w+)/.exec(lines[i])?.[1];
-      if (el && (text.includes(`${file}:${i + 1}:`) || new RegExp(`error[^\\n]*\\b${el}\\b|-->[^\\n]*\\n[^]*?\\b${el}\\b`).test(text))) return `compile error in the SDD-TODO(stub) element ${el} (${file}:${i + 1}): the stub could not infer its type, so this is not a Red — fill the type of ${el} by hand, then re-run tdd red`;
+      const item = /\b(const|static|fn|struct|enum)\s+(\w+)/.exec(lines[i]);
+      if (!item) continue;
+      const el = item[2], use = new RegExp(`\\b${el}\\b${item[1] === 'fn' ? '\\s*(?:::\\s*<[^;(){}]*?>)?\\s*\\(' : ''}`);
+      // Compiler source excerpts establish usage; help text or a same-named variable does not.
+      const mentioned = [...text.matchAll(/^\s*\d+\s*\|([^\n]*)/gm)].some((m) => use.test(maskBraces(m[1], true)));
+      if (text.includes(`${file}:${i + 1}:`) || mentioned) return `compile error in the SDD-TODO(stub) element ${el} (${file}:${i + 1}): the stub could not infer its type, so this is not a Red — fill the type of ${el} by hand, then re-run tdd red`;
     }
   }
   return null;
@@ -1790,7 +1796,7 @@ const ZERO_TESTS = /(no tests? (found|ran|collected)|(?:# |ℹ )tests 0\b|ran 0 
 
 function pytestNoExecution(text) {
   let skipped = 0, executed = 0;
-  const plain = text.replace(/\x1b\[[0-9;]*m/g, '');
+  const plain = stripVTControlCharacters(text);
   // -qq hides the summary; progress still distinguishes skipped/xfail from executed tests.
   for (const m of plain.matchAll(/^\s*([.sxFEX]+)\s+\[\s*\d+%\]\s*$/gm)) {
     skipped += (m[1].match(/[sx]/g) ?? []).length;
@@ -2159,13 +2165,11 @@ const probeOutcome = (cmd, args, cwd) => {
   const r = spawnSync(cmd, args, { cwd, encoding: 'utf8', timeout: 120000, env: { ...process.env, LC_ALL: 'C' } });
   return { text: (r.stdout ?? '') + (r.stderr ?? ''), status: r.status, signal: r.signal, error: r.error };
 };
-const probe = (cmd, args, cwd) => probeOutcome(cmd, args, cwd).text;
-
 function stubGo(testPath, src, dir, add, made) {
   /** @id CODE-R36J-001 @implements REQ-R36J-001 REQ-R36J-002 */
   const goTest = () => {
     const r = probeOutcome('go', ['test', '-count=1', '-gcflags=-e', '-run', '^$', '.'], dir);
-    return { ...r, text: r.text.replace(/\x1b\[[0-9;]*m/g, '') };
+    return { ...r, text: stripVTControlCharacters(r.text) };
   };
   const pkg = /^package\s+(\w+)/m.exec(src)?.[1]?.replace(/_test$/, '') ?? 'main';
   const T = { int: 'int', float: 'float64', str: 'string', bool: 'bool' };
@@ -2190,7 +2194,7 @@ function stubGo(testPath, src, dir, add, made) {
     let grew = false;
     for (const m of out.matchAll(/cannot use (?:[\w.]+\.)?(\w+)\(.*?\) \(value of (?:interface )?type any\) as (\S+) value/g)) {
       const t = strip(m[2]);
-      if (retTypes.get(m[1]) === t || !/^[\w*\[\]]+$/.test(t)) continue;
+      if (retTypes.get(m[1]) === t || !/^[\w*[\]]+$/.test(t)) continue;
       retTypes.set(m[1], t);
       for (const n of t.match(/\b[A-Z]\w*\b/g) ?? []) if (!typeSet.has(n)) typeSet.set(n, new Set());
       grew = true;
@@ -2324,7 +2328,7 @@ function stubGo(testPath, src, dir, add, made) {
       grew = true;
     }
     for (const m of out.matchAll(/(\w+)\.(\w+) undefined \(type any has no field or method \w+\)/g)) {
-      const [, v, member] = m;
+      const [, v] = m;
       const as = [...src.matchAll(/((?:\w+\s*,\s*)*\w+)\s*:?=\s*(?:[\w.]+\.)?(\w+)\(/g)].find((x) => x[1].split(',').map((y) => y.trim())[0] === v);
       // `for _, it := range items` with `items := F(..)`: F returns a slice of a struct (#296)
       const rg = !as && new RegExp(`\\bfor\\s+(?:\\w+\\s*,\\s*)?${v}\\s*:=\\s*range\\s+(\\w+)(?![\\w.(])`).exec(src)?.[1];
@@ -2382,6 +2386,7 @@ function stubGo(testPath, src, dir, add, made) {
   });
 }
 
+/** @id CODE-RUST-STUB-001 @implements REQ-RUST-STUB-001 REQ-RUST-STUB-002 REQ-RUST-STUB-003 */
 function stubRust(testPath, src, dir, made) {
   const root = (() => { let d = dir; while (d !== path.dirname(d)) { if (fs.existsSync(path.join(d, 'Cargo.toml'))) return d; d = path.dirname(d); } return null; })();
   if (root && !/(^|\/)tests\//.test(testPath) && /#\[cfg\(test\)\]/.test(src)) made.notes = ['this test is inline in the subject file (#[cfg(test)]): it can only use items of its own crate, so there is nothing to generate — write the code under test by hand'];
@@ -2390,7 +2395,7 @@ function stubRust(testPath, src, dir, made) {
   const cargoTest = () => {
     const r = probeOutcome('cargo', ['test', '--no-run', '--offline', '--test', path.basename(testPath, '.rs')], root);
     // Cargo can color piped diagnostics; every Rust consumer needs the same plain text.
-    return { ...r, text: r.text.replace(/\x1b\[[0-9;]*m/g, '') };
+    return { ...r, text: stripVTControlCharacters(r.text) };
   };
   const ownLib = path.join(root, 'src/lib.rs');
   const probeFile = !fs.existsSync(ownLib);
@@ -2585,14 +2590,19 @@ function stubRust(testPath, src, dir, made) {
     const gen = (c) => c.args.map((_, i) => `A${i}`);
     const mk = gn ? 'Self(std::marker::PhantomData)' : 'Self';
     const sig = (k, self) => {
-      const flat = chain.all.includes(k) ? src.replace(/\b\w+\.|(?<=[)\]])\s*\./g, '') : src.replace(/\b\w+\./g, '');
+      const flat = chain.all.includes(k) ? src.replace(/\b[A-Za-z_]\w*\.|(?<=[)\]])\s*\./g, '') : src.replace(/\b[A-Za-z_]\w*\./g, '');
       // `Type::new(..)` is read from its own call, not from an earlier `Vec::new()`
       const qual = self ? null : callInfo(flat, `${n}(?:::\\s*<[^;(){}]*?>)?\\s*::\\s*${k}`);
       const c = qual && qual.argc !== undefined ? qual : callInfo(flat, k);
       const pty = argTypes(self ? `(?<=[\\w)\\]]\\s*)\\.\\s*${k}` : `(?<![\\w.])${n}(?:::\\s*<[^;(){}]*?>)?\\s*::\\s*${k}`), g = gen(c).filter((_, i) => !pty[i]), mid = self && chain.mids.has(k);
       const assocRet = !self && !mid && !c.chained && c.ret !== 'result' ? rustRet(`(?<![\\w.])${n}(?:::\\s*<[^;(){}]*?>)?::${k}`, crate_) : null;
-      const ret = mid ? 'Self' : (assocRet && !new RegExp(`^${n}\\b`).test(assocRet) ? assocRet : null) ?? (!self && !mid && c.ret && c.ret !== 'result' && T[c.ret] ? T[c.ret] : null) ?? (self ? rustRet(`(?<=[\\w)\\]]\\s*)\\.\\s*${k}`, crate_) ?? (c.ret?.startsWith('opt:') ? `Option<${c.ret.slice(4)}>` : T[c.ret ?? viaVar(`(?<![\\w])\\w+\\s*\\.\\s*${k}`)] ?? 'i64') : c.ret === 'result' ? 'Result<Self, String>' : ((c.chained ? null : T[viaVar(`(?<![\\w.])${n}(?:::\\s*<[^;(){}]*?>)?::${k}`)]) ?? 'Self'));
-      return `    pub fn ${k}${g.length ? `<${g.join(', ')}>` : ''}(${[self ? (mid ? 'self' : needsMut(k) ? '&mut self' : '&self') : '', ...c.args.map((_, i) => `_a${i}: ${pty[i] ?? `A${i}`}`)].filter(Boolean).join(', ')}) -> ${ret} {\n        ${!self && /^(new|default|with_\w+|from_\w+|create|empty)$/.test(k) ? (c.ret === 'result' ? `Ok(${mk})` : mk) : `unimplemented!("${n}::${k}")`}\n    }\n`;
+      const methodRet = self && !mid ? rustRet(`(?<=[\\w)\\]]\\s*)\\.\\s*${k}`, crate_) : null;
+      const usage = c.ret ?? (self ? viaVar(`(?<![\\w])\\w+\\s*\\.\\s*${k}`) : null);
+      const usageRet = usage?.startsWith('opt:') ? `Option<${usage.slice(4)}>` : T[usage];
+      const guessed = !!only || (self && !mid && !methodRet && !usageRet);
+      const ret = mid ? 'Self' : (assocRet && !new RegExp(`^${n}\\b`).test(assocRet) ? assocRet : null) ?? (!self && !mid && c.ret && c.ret !== 'result' && T[c.ret] ? T[c.ret] : null) ?? (self ? methodRet ?? usageRet ?? 'i64' : c.ret === 'result' ? 'Result<Self, String>' : ((c.chained ? null : T[viaVar(`(?<![\\w.])${n}(?:::\\s*<[^;(){}]*?>)?::${k}`)]) ?? 'Self'));
+      note(`${n}::${k}`, guessed ? 'guessed' : 'inferred', { evidence: evidenceLine(k) });
+      return `    pub fn ${k}${g.length ? `<${g.join(', ')}>` : ''}(${[self ? (mid ? 'self' : needsMut(k) ? '&mut self' : '&self') : '', ...c.args.map((_, i) => `_a${i}: ${pty[i] ?? `A${i}`}`)].filter(Boolean).join(', ')}) -> ${ret} {${guessed ? ' // SDD-TODO(stub): return type unknown - fill the type by hand' : ''}\n        ${!self && /^(new|default|with_\w+|from_\w+|create|empty)$/.test(k) ? (c.ret === 'result' ? `Ok(${mk})` : mk) : `unimplemented!("${n}::${k}")`}\n    }\n`;
     };
     return `\nimpl${gn ? `<${gn.join(', ')}>` : ''} ${n}${gn ? `<${gn.join(', ')}>` : ''} {\n${[...assoc.map((k) => sig(k, false)), ...inst.map((k) => sig(k, true))].join('\n')}}\n`;
   };
@@ -2610,7 +2620,7 @@ function stubRust(testPath, src, dir, made) {
     return [...fields];
   };
   // the `pub fn` blocks of a generated impl
-  const fnBlocks = (impl) => [...impl.matchAll(/^    pub fn (\w+)[^\n]*\{\n(?:        [^\n]*\n)+    \}\n/gm)];
+  const fnBlocks = (impl) => [...impl.matchAll(/^ {4}pub fn (\w+)[^\n]*\{(?: \/\/[^\n]*)?\n(?: {8}[^\n]*\n)+ {4}\}\n/gm)];
   // appends fn blocks to the inherent impl of `x` in `t` (generic impls included); `create` adds `impl<..> x<..> {}` when the type has none
   const addToImpl = (t, x, blocks, create) => {
     if (!blocks.length) return t;
@@ -2663,7 +2673,7 @@ function stubRust(testPath, src, dir, made) {
     const loop = new RegExp(`\\bfor\\s+(\\(([^)]*)\\)|\\w+)\\s+in\\s+&?${n}\\b`).exec(srcNoUse);
     if (str) return `pub const ${n}: &str = "";\n`;
     if (idx) return fit(idx, true);
-    if (loop) return fit(loop[2] ? `(${loop[2].split(',').map(() => 'i64').join(', ')}${loop[2].split(',').length === 1 ? ',' : ''})` : 'i64', true);
+    if (loop) return fit(loop[2] ? `(${loop[2].split(',').map(() => 'i64').join(', ')}${loop[2].split(',').length === 1 ? ',' : ''})` : 'i64', true).replace(/;\n$/, '; // SDD-TODO(stub): element types unknown - fill the types by hand\n');
     if (direct) return fit(direct);
     // a float literal beside the const (`EPSILON / 2.0`, `assert_eq!(EPSILON, 1e-5)`) makes it f64 (#310)
     const FL = '-?(?:\\d+\\.\\d+(?:[eE][+-]?\\d+)?|\\d+[eE][+-]?\\d+)(?:_?f(?:32|64))?\\b|-?\\d+_?f(?:32|64)\\b';
@@ -2678,10 +2688,10 @@ function stubRust(testPath, src, dir, made) {
   const evidenceLine = (n) => { let full = src; try { full = fs.readFileSync(path.join(ROOT, testPath), 'utf8'); } catch { /* scoped source only */ } const at = full.split('\n').findIndex((l) => !/^\s*use\s/.test(l) && new RegExp(`\\b${n}\\b`).test(l)); return at < 0 ? testPath : `${testPath}:${at + 1}`; };
   const note = (element, confidence, extra = {}) => { if (!report.some((r) => r.element === element)) report.push({ element, confidence, evidence: evidenceLine(element), ...extra }); };
   const reEsc = (x) => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  // report-only: a free fn whose return type is literally annotated in the test is `shown`; one defaulted to i64 with no evidence is `guessed` (the emitted code is unchanged)
-  const noteFn = (n, rr, cret, ret) => {
+  // Annotated returns are shown; unsupported concrete fallback signatures are marked guessed.
+  const noteFn = (n, rr, cret) => {
     if (rr && new RegExp(`\\blet\\s+(?:mut\\s+)?\\w+\\s*:\\s*${reEsc(rr)}\\s*=\\s*&?[\\w.:]*(?<![\\w.])${n}\\s*(?:::\\s*<[^;(){}]*?>)?\\s*\\(`).test(srcNoUse)) return note(n, 'shown');
-    if (!rr && !cret) return note(n, 'guessed', { unmarked: `return type defaulted to ${ret}` });
+    if (!rr && !cret) return note(n, 'guessed');
     note(n, 'inferred');
   };
   // a const typed in the test itself: `let x: f64 = LIMIT;` or `LIMIT as f64`, and the emitted type is that type
@@ -2692,13 +2702,13 @@ function stubRust(testPath, src, dir, made) {
   const itemStub = (n, crate_ = ownPkg) => {
     if (/^[A-Z][A-Z0-9_]+$/.test(n)) {
       const cs = constStub(n, crate_);
-      note(n, cs ? (shownConst(n, cs) ? 'shown' : 'inferred') : 'guessed');
+      note(n, cs && !cs.includes('SDD-TODO(stub)') ? (shownConst(n, cs) ? 'shown' : 'inferred') : 'guessed');
       // no evidence for the type: a wrong concrete type would give a misleading Red, so the placeholder fails to compile at this element
       return cs ?? `pub const ${n}: () = (); // SDD-TODO(stub): type unknown — write the real type and value by hand\n`;
     }
     return itemStub0(n, crate_);
   };
-  const itemStub0 = (n, crate_ = ownPkg) => { if (/^[A-Z]/.test(n)) { const ts = traitStub(n) ?? typeStub(n, crate_); if (ts) note(n, 'inferred'); return ts; } const c = callInfo(src, n); c.ret ??= viaVar(`(?<![\\w.])(?:\\w+::)*${n}`); const ga = genericArgs(n, true)?.filter((a) => !a.startsWith("'")), pty = ga ? [] : argTypes(`(?<![\\w.])(?:\\w+::)*${n}`), g = ga ? genNames(ga) : c.args.map((_, i) => `A${i}`).filter((_, i) => !pty[i]); const rr = rustRet(`(?<![\\w.])(?:\\w+::)*${n}`, crate_); const ret = rr ?? (c.ret?.startsWith('opt:') ? `Option<${c.ret.slice(4)}>` : T[c.ret] ?? 'i64'); noteFn(n, rr, c.ret, ret); return `pub fn ${n}${g.length ? `<${g.join(', ')}>` : ''}(${c.args.map((_, i) => `_a${i}: ${ga ? 'impl Sized' : pty[i] ?? `A${i}`}`).join(', ')}) -> ${ret} {\n    unimplemented!("${n}")\n}\n`; };
+  const itemStub0 = (n, crate_ = ownPkg) => { if (/^[A-Z]/.test(n)) { const ts = traitStub(n) ?? typeStub(n, crate_); if (ts) note(n, 'inferred'); return ts; } const c = callInfo(src, n); c.ret ??= viaVar(`(?<![\\w.])(?:\\w+::)*${n}`); const ga = genericArgs(n, true)?.filter((a) => !a.startsWith("'")), pty = ga ? [] : argTypes(`(?<![\\w.])(?:\\w+::)*${n}`), g = ga ? genNames(ga) : c.args.map((_, i) => `A${i}`).filter((_, i) => !pty[i]); const rr = rustRet(`(?<![\\w.])(?:\\w+::)*${n}`, crate_); const ret = rr ?? (c.ret?.startsWith('opt:') ? `Option<${c.ret.slice(4)}>` : T[c.ret] ?? 'i64'); noteFn(n, rr, c.ret, ret); return `pub fn ${n}${g.length ? `<${g.join(', ')}>` : ''}(${c.args.map((_, i) => `_a${i}: ${ga ? 'impl Sized' : pty[i] ?? `A${i}`}`).join(', ')}) -> ${ret} {${!rr && !c.ret ? ' // SDD-TODO(stub): return type unknown - fill the type by hand' : ''}\n    unimplemented!("${n}")\n}\n`; };
   // `use <crate>::a::b::{X, f};` => missing modules `a`, `a/b` (declared in the parent) holding the imported items (#69). Existing modules are never touched.
   const pkgName = (toml) => /\[package\][^[]*?^\s*name\s*=\s*"([^"]+)"/ms.exec(fs.readFileSync(toml, 'utf8'))?.[1]?.replace(/-/g, '_');
   // every workspace member crate by name, so `use other_crate::a::X` is stubbed in that crate (#76)
@@ -2810,7 +2820,7 @@ function stubRust(testPath, src, dir, made) {
       if (!at) { variantNotes.push(`variant ${e}::${v} not added: enum ${e} is not defined in the project sources — add it by hand`); continue; }
       // associated consts / fns of an existing enum are impl items, never variants
       if (/^[A-Z][A-Z0-9_]+$/.test(v) || /^[a-z_]/.test(v)) {
-        const item = /^[a-z_]/.test(v) ? new RegExp(`^    pub fn ${v}[^\\n]*\\{\\n(?:        [^\\n]*\\n)+    \\}\\n`, 'm').exec(rustImpl(e))?.[0] : `    pub const ${v}: i64 = 0;\n`;
+        const item = /^[a-z_]/.test(v) ? fnBlocks(rustImpl(e)).find((f) => f[1] === v)?.[0] : `    pub const ${v}: i64 = 0;\n`;
         if (!item || new RegExp(`\\b(?:fn|const)\\s+${v}\\b`).test(at.text)) { variantNotes.push(`${e}::${v} is an associated item, not a variant: add it by hand`); continue; }
         fs.writeFileSync(at.f, at.text.replace(/\n*$/, '\n') + `\nimpl ${e} {\n${item}}\n`);
         made.push(rel(at.f));
@@ -2845,7 +2855,7 @@ function stubRust(testPath, src, dir, made) {
         const at = files.map((f) => ({ f, text: fs.readFileSync(f, 'utf8') })).find((x) => new RegExp(`\\b(?:struct|enum)\\s+${t}\\b`).test(x.text));
         if (!at) continue;
         const owner = [...crates].find(([, r]) => at.f.startsWith(r + path.sep))?.[0] ?? ownPkg;
-        const blocks = fnBlocks(rustImpl(t, null, owner, { assoc: [...assoc], inst: [...inst] })).filter((f) => !new RegExp(`\\bfn\\s+${f[1]}\\b`).test(at.text)).map((f) => { note(`${t}::${f[1]}`, 'guessed'); return f[0].replace(/\{\n/, '{ // SDD-TODO(stub): signature guessed from the test — check types\n'); });
+        const blocks = fnBlocks(rustImpl(t, null, owner, { assoc: [...assoc], inst: [...inst] })).filter((f) => !new RegExp(`\\bfn\\s+${f[1]}\\b`).test(at.text)).map((f) => f[0].includes('SDD-TODO(stub)') ? f[0] : f[0].replace(/\{\n/, '{ // SDD-TODO(stub): signature guessed from the test — check types\n'));
         const next = addToImpl(at.text, t, blocks, true);
         if (next === at.text) continue;
         fs.writeFileSync(at.f, next);
@@ -2897,7 +2907,7 @@ function stubJava(testPath, src, dir, add, made) {
     if (!fs.existsSync(abs)) return plainAdd(abs, JMARK + body);
     const cur = fs.readFileSync(abs, 'utf8');
     if (!cur.startsWith('// sdd-stub')) return;
-    const fresh = [...body.matchAll(/^    public [^\n]*\{\n(?:        [^\n]*\n)+    \}\n/gm)].map((m) => m[0]).filter((m) => !cur.includes(m.split('\n')[0]));
+    const fresh = [...body.matchAll(/^ {4}public [^\n]*\{\n(?: {8}[^\n]*\n)+ {4}\}\n/gm)].map((m) => m[0]).filter((m) => !cur.includes(m.split('\n')[0]));
     if (!fresh.length) return;
     fs.writeFileSync(abs, cur.slice(0, cur.lastIndexOf('}')).replace(/\n*$/, '\n\n') + fresh.join('\n') + '}\n');
     made.push(rel(abs));
@@ -2908,7 +2918,7 @@ function stubJava(testPath, src, dir, add, made) {
   const pkgOf = new Map(imports.filter((i) => !i.st && /^[A-Z]/.test(i.n) && projPkg(i.p)).map((i) => [i.n, i.p]));
   const imported = new Set(imports.filter((i) => !pkgOf.has(i.n)).map((i) => i.n));
   // upper-case fields declared in the test (`static final Path CONTRACT = ..`) are not classes
-  const local = new Set([...[...src.matchAll(/\b(?:class|interface|enum|record)\s+(\w+)/g)].map((m) => m[1]), ...[...src.matchAll(/\b[\w<>\[\],.]+\s+([A-Z][A-Z0-9_]*)\s*=/g)].map((m) => m[1])]);
+  const local = new Set([...[...src.matchAll(/\b(?:class|interface|enum|record)\s+(\w+)/g)].map((m) => m[1]), ...[...src.matchAll(/\b[\w<>[\],.]+\s+([A-Z][A-Z0-9_]*)\s*=/g)].map((m) => m[1])]);
   const javaFiles = new Map(listFiles().filter((f) => /\.java$/.test(f)).map((f) => {
     const text = fs.readFileSync(path.join(ROOT, f), 'utf8');
     const p = /^package\s+([\w.]+);/m.exec(text)?.[1];
@@ -2995,7 +3005,7 @@ function stubJava(testPath, src, dir, add, made) {
     return [...byAr.values()].filter((v) => new Set(v.map((x) => x.decl)).size > 1).map((v) => [v[0].c.args.length, [...new Map(v.map((x) => [x.key, x])).values()]]);
   };
   const chainClasses = new Map();
-  const retOf = (cls, n, c, isStatic, text) => {
+  const retOf = (cls, n, c, isStatic) => {
     const d = allDecl(n, isStatic, cls);
     if (d && !/^var$/.test(d)) return d;
     const e = enumCmp(n);
@@ -3080,7 +3090,7 @@ function stubC(testPath, src, dir, add, made) {
       const cmake = fs.readFileSync(path.join(d, 'CMakeLists.txt'), 'utf8');
       const levels = [...cmake.matchAll(cpp ? /CMAKE_CXX_STANDARD\s+(\d+)|cxx_std_(\d+)/g : /CMAKE_C_STANDARD\s+(\d+)|c_std_(\d+)/g)].map((m) => +(m[1] ?? m[2]));
       if (levels.length) { standard = [`-std=${cpp ? 'c++' : 'c'}${Math.max(...levels)}`]; break; }
-    } catch {}
+    } catch { /* Continue to ancestor CMake files when no readable standard is available. */ }
     if (d === ROOT) break;
   }
   let compile = { cc, args: [...standard, ...incs], cwd: dir };
@@ -3104,7 +3114,7 @@ function stubC(testPath, src, dir, add, made) {
   /** @id CODE-R36I-002 @implements REQ-R36I-001 REQ-R36I-002 */
   const syntax = () => {
     const r = probeOutcome(compile.cc, ['-fsyntax-only', ...compile.args, path.join(ROOT, testPath)], compile.cwd);
-    return { ...r, text: r.text.replace(/\x1b\[[0-9;]*m/g, '') };
+    return { ...r, text: stripVTControlCharacters(r.text) };
   };
   const verified = () => {
     const r = syntax();
@@ -3231,7 +3241,6 @@ function stubScript(lang, src, dir, add, made) {
   // PHP classes used as Class::method( / new Class( get a class with throwing static methods (#87)
   const phpClasses = new Map();
   const exc = new Set();
-  let psrDone = false;
   // instance methods called on `$v = new C(..)`, `$this->v = new C(..)` and `(new C(..))->m()` receivers (#131)
   const phpInst = (c) => {
     const ms = new Set();
@@ -3283,12 +3292,12 @@ function stubScript(lang, src, dir, add, made) {
             const dest = [].concat(v)[0];
             if (typeof dest === 'string') psr4.push([k, path.posix.join(dir, dest)]);
           }
-        } catch {}
+        } catch { /* Ignore unreadable optional Composer manifests while collecting other mappings. */ }
       }
-    } catch {}
+    } catch { /* No readable Composer manifest: retain heuristic namespace inference. */ }
     if (fs.existsSync(path.join(ROOT, 'vendor/autoload.php'))) {
       const r = spawnSync('php', ['-r', '$loader = require "vendor/autoload.php"; echo json_encode($loader->getPrefixesPsr4());'], { cwd: ROOT, encoding: 'utf8', timeout: 10000 });
-      try { if (r.status === 0) for (const [k, v] of Object.entries(JSON.parse(r.stdout))) if (v[0]) psr4.unshift([k, v[0]]); } catch {}
+      try { if (r.status === 0) for (const [k, v] of Object.entries(JSON.parse(r.stdout))) if (v[0]) psr4.unshift([k, v[0]]); } catch { /* Retain manifest mappings when the optional Composer probe is not JSON. */ }
     }
     psr4.sort((a, b) => b[0].length - a[0].length);
     for (const [local, fq] of imported) {
@@ -3308,7 +3317,6 @@ function stubScript(lang, src, dir, add, made) {
       const body = classBody(local, phpClasses.get(local) ?? new Set()).replace(new RegExp(`^(class|enum) ${local}\\b`, 'm'), `$1 ${cls}`);
       add(fileAbs, `<?php\n\nnamespace ${ns};\n\n${body}`);
       phpClasses.delete(local);
-      psrDone = true;
     }
     // `use function Ns\f` / `use const Ns\C`: throwing namespaced functions and placeholder consts live in <PSR-4 root>/functions.php, registered under composer.json autoload.files (#222)
     const nsSyms = new Map();
@@ -3444,7 +3452,7 @@ function methodsOf(src, cls, strict = false) {
       const ret = hl.map((l) => /^\s*return\s+(.+?)\s*;?\s*$/.exec(l)?.[1]).filter(Boolean).pop();
       if (ret && !ret.startsWith('{')) {
         const els = []; let depth = 0, cur = '';
-        for (const ch of ret.replace(/^[\[(]/, '').replace(/[\])]$/, '')) { if ('([{'.includes(ch)) depth++; else if (')]}'.includes(ch)) depth--; if (ch === ',' && !depth) { els.push(cur.trim()); cur = ''; } else cur += ch; }
+        for (const ch of ret.replace(/^[[(]/, '').replace(/[\])]$/, '')) { if ('([{'.includes(ch)) depth++; else if (')]}'.includes(ch)) depth--; if (ch === ',' && !depth) { els.push(cur.trim()); cur = ''; } else cur += ch; }
         els.push(cur.trim());
         const ctorVars = new Set([...hl.join('\n').matchAll(new RegExp(`\\b([\\w$]+)\\s*(?::[^=\\n]+)?=\\s*(?:await\\s+)?(?:new\\s+)?${cls}\\s*\\(`, 'g'))].map((x) => x[1]));
         sutIdx = els.length > 1 ? els.findIndex((e) => new RegExp(`\\b${cls}\\s*\\(`).test(e) || ctorVars.has(e)) : -1;
@@ -3473,7 +3481,6 @@ function methodsOf(src, cls, strict = false) {
 // C#: `dotnet build` diagnostics (CS0246/CS0103/CS0234/CS0117/CS1061) in the requested test are the source of truth; throwing stubs are added until nothing in scope fails to compile (#136)
 const CS_MARK = '// sdd-stub: throwing stub generated by `tdd stub` — replace with the real implementation';
 function stubCs(testPath, src, id, made) {
-  const abs = path.resolve(ROOT, testPath);
   const g = dotnetGraph(ROOT);
   const testProj = g?.ownersOf(testPath)?.[0];
   if (!g || !testProj) return made;
@@ -3507,7 +3514,7 @@ function stubCs(testPath, src, id, made) {
     if (f === testPath || !g.ownersOf(f)?.some((o) => o.file === testProj.file)) continue;
     const ls = fs.readFileSync(path.join(ROOT, f), 'utf8').split('\n');
     if (ls.some((l) => /^\s*global\s+using\s+(?:static\s+)?[\w.]+\s*;/.test(l))) { globalLines.set(f, ls); for (const l of ls) { const m = /^\s*global\s+using\s+(?:static\s+)?([\w.]+)\s*;/.exec(l); if (m) usings.push(m[1]); } }
-  } catch {} }
+  } catch { /* Other source files may still supply global using directives. */ } }
   const refProjs = [...g.deps(testProj.file)].filter((f) => f !== testProj.file).map((f) => g.projs.get(f)).filter((p) => !p.test);
   const pname = (p) => path.posix.basename(p.file).replace(/\.\w+proj$/, '');
   const ours = new Set();
@@ -3521,7 +3528,7 @@ function stubCs(testPath, src, id, made) {
       const c = fs.readFileSync(path.join(ROOT, f), 'utf8'), ns = /^\s*namespace\s+([\w.]+)/m.exec(c)?.[1];
       if (ns && !namespaces.has(ns)) continue;
       if (new RegExp(`\\b(?:class|record|struct|interface|enum)\\s+${n}\\b`).test(c)) { const r = { file: f, marked: c.includes(CS_MARK) }; typeFile.set(n, r); return r; }
-    } catch {}
+    } catch { /* Continue searching other files for the type declaration. */ }
     }
     return null;
   };
@@ -3614,7 +3621,6 @@ function stubCs(testPath, src, id, made) {
   };
   let res = build();
   const pre = res.diags.length;
-  const handled = new Set();
   for (let round = 0; round < 8 && !res.ok; round++) {
     if (res.infra && !res.diags.some((d) => /^CS/.test(d.code))) { (made.notes ??= []).push(`dotnet build could not run (restore/infra): ${(res.raw.split('\n').find((l) => /error/.test(l)) ?? '').trim().slice(0, 160)} — nothing was compile-checked`); return made; }
     const mine = res.diags.filter((d) => ((d.file === testPath && inScope(d.line - 1)) || (globalLines.has(d.file) && usingNs(globalLines.get(d.file)[d.line - 1] ?? ''))) && /^CS/.test(d.code));
@@ -3657,7 +3663,7 @@ function stubCs(testPath, src, id, made) {
       if (d.code === 'CS0619') { const lm = /=>\s*(?:[\w.]+\.)?(\w+)\s*\(/.exec(l); if (lm) members.push({ fix: lm[1] }); continue; }
       if (d.code === 'CS0019') {
         const [op, T1] = q(d.msg);
-        if (op && T1 && /^[-+*\/%]$/.test(op)) members.push({ T: T1, mname: `operator ${op}`, op: true, stat: true });
+        if (op && T1 && /^[-+*/%]$/.test(op)) members.push({ T: T1, mname: `operator ${op}`, op: true, stat: true });
         continue;
       }
       (made.notes ??= []).push(`${d.code} at ${testPath}:${d.line}: ${d.msg.slice(0, 100)} — not stubbed`);
@@ -3672,7 +3678,7 @@ function stubCs(testPath, src, id, made) {
       const file = path.join(ROOT, p.dir, `Namespace.${un}.cs`);
       if (!fs.existsSync(file)) { fs.writeFileSync(file, `${CS_MARK}\nnamespace ${un};\n\ninternal static class SddNamespaceMarker { }\n`); made.push(rel(file)); ours.add(rel(file)); progress = true; }
     }
-    for (const m of members.filter((x) => x.fix)) for (const f of gitFiles('*.cs')) { try { const c = fs.readFileSync(path.join(ROOT, f), 'utf8'); const c2 = c.includes(CS_MARK) ? c.replace(new RegExp(`\\bdynamic(\\s+${esc(m.fix)}\\s*\\()`, 'g'), 'object$1') : c; if (c2 !== c) { fs.writeFileSync(path.join(ROOT, f), c2); progress = true; } } catch {} }
+    for (const m of members.filter((x) => x.fix)) for (const f of gitFiles('*.cs')) { try { const c = fs.readFileSync(path.join(ROOT, f), 'utf8'); const c2 = c.includes(CS_MARK) ? c.replace(new RegExp(`\\bdynamic(\\s+${esc(m.fix)}\\s*\\()`, 'g'), 'object$1') : c; if (c2 !== c) { fs.writeFileSync(path.join(ROOT, f), c2); progress = true; } } catch { /* Unreadable candidates cannot be repaired; leave native build diagnostics authoritative. */ } }
     for (const m of members.filter((x) => !x.fix)) if (addMember(m.T, m.mname, { op: m.op, method: m.method, set: m.set, stat: m.stat, ret: FACTORY.test(m.mname) && m.stat ? m.T : undefined })) progress = true;
     if (!progress) break;
     res = build();
@@ -3768,7 +3774,7 @@ function stubEx(testPath, scoped, add, made) {
     // paren-less DSL calls the test makes after `use Mod` (`rule :a do .. end`) are macros of that module, which defines them and `import`s itself (#309)
     if (used.has(mod) && !defined.has(mod)) {
       const dsl = new Map();
-      for (const m of code.matchAll(/^[ \t]*([a-z_]\w*[!?]?)[ \t]+(?=[:"'\w@%{\[])(.*?)(?:[ \t]+(do))?[ \t]*$/gm)) {
+      for (const m of code.matchAll(/^[ \t]*([a-z_]\w*[!?]?)[ \t]+(?=[:"'\w@%{[])(.*?)(?:[ \t]+(do))?[ \t]*$/gm)) {
         const [, f, rest, blk] = m;
         if (RESERVED.test(f) || local.has(f) || /^(?:end|else|do|after|rescue|catch|flunk|when|in|and|or|not|nil|true|false|pipe|then)$/.test(f) || /^\s*(?:=|\|>|<-)/.test(rest) || dsl.has(f)) continue;
         let depth = 0, q = '', n = rest.trim() ? 1 : 0;
@@ -3908,7 +3914,7 @@ function stubFor(testPath, id) {
       // src layout: put new modules under src/ when the package already lives there (or src/ is the only package root) (#68)
       const srcLayout = !has(proot) && (has(path.join(proot, 'src')) || (fs.existsSync(path.join(proot, 'src')) && fs.readdirSync(path.join(proot, 'src')).some((x) => fs.existsSync(path.join(proot, 'src', x, '__init__.py')))));
       // pytest `pythonpath = src` (pytest.ini / pyproject / setup.cfg / tox.ini) names the package root even when that directory does not exist yet (#131)
-      const ppDirs = (() => { for (const f of ['pytest.ini', 'pyproject.toml', 'setup.cfg', 'tox.ini']) { try { const m = /^\s*pythonpath\s*=\s*(\[[^\]]*\]|[^\n]*(?:\n[ \t]+[^\n]+)*)/m.exec(fs.readFileSync(path.join(proot, f), 'utf8')); const d = m && [...m[1].matchAll(/[\w./-]+/g)].map((x) => x[0]).filter((x) => x !== '.'); if (d?.length) return d; } catch {} } return []; })();
+      const ppDirs = (() => { for (const f of ['pytest.ini', 'pyproject.toml', 'setup.cfg', 'tox.ini']) { try { const m = /^\s*pythonpath\s*=\s*(\[[^\]]*\]|[^\n]*(?:\n[ \t]+[^\n]+)*)/m.exec(fs.readFileSync(path.join(proot, f), 'utf8')); const d = m && [...m[1].matchAll(/[\w./-]+/g)].map((x) => x[0]).filter((x) => x !== '.'); if (d?.length) return d; } catch { /* Optional Python configuration files may be absent; try the next format. */ } } return []; })();
       const ppDir = ppDirs[0] ?? null;
       // a package that already lives on any configured pythonpath entry (`../core/src`) is real code: never shadowed by a stub (#279)
       const ppHit = mod.startsWith('.') ? null : ppDirs.map((d) => path.resolve(proot, d)).find((d) => has(d));
@@ -3951,7 +3957,7 @@ function stubFor(testPath, id) {
       if (existing) {
         // a module that still holds only stubs gets the newly imported names; real code is never touched
         const cur = fs.readFileSync(existing, 'utf8');
-        const rest = cur.replace(/^# @id CODE-\S+-STUB-\d+ @implements [^\n]*\n/, '').replace(/^class \w+(\(Exception\))?:\n(?:    def __init__\(self, \*a, \*\*k\):\n        pass\n|    pass\n)(?:\n    def \w+\(self, \*a, \*\*k\):\n        (?:raise NotImplementedError\("\w+"\)|return (?:self|False))\n)*/gm, '').replace(/^def \w+\(\*a, \*\*k\):\n    raise NotImplementedError\("\w+"\)\n/gm, '');
+        const rest = cur.replace(/^# @id CODE-\S+-STUB-\d+ @implements [^\n]*\n/, '').replace(/^class \w+(\(Exception\))?:\n(?: {4}def __init__\(self, \*a, \*\*k\):\n {8}pass\n| {4}pass\n)(?:\n {4}def \w+\(self, \*a, \*\*k\):\n {8}(?:raise NotImplementedError\("\w+"\)|return (?:self|False))\n)*/gm, '').replace(/^def \w+\(\*a, \*\*k\):\n {4}raise NotImplementedError\("\w+"\)\n/gm, '');
         // names a module re-exports (`from .core import Clock`, `import x as Clock`) are importable, never stubbed over (#214)
         const reExported = new Set();
         for (const im of cur.matchAll(/^(?:from\s+\S+\s+import\s+(\([^)]*\)|[^\n]+)|import\s+([^\n]+))/gm)) for (const b of (im[1] ?? im[2]).replace(/#[^\n]*/g, '').replace(/[()]/g, '').split(',')) { const parts = b.trim().split(/\s+as\s+/); const nm = parts[1] ?? parts[0]; if (nm && nm !== '*') reExported.add(nm.split('.')[0]); }
@@ -4176,7 +4182,7 @@ function setupOrigin(line, testPath, id, text = '') {
   // Go: a `panic: <msg>` stub; the first non-runtime frame is the stubbed function (#142)
   if (!x && /^panic: /m.test(text) && /^goroutine \d+/m.test(text)) {
     const gi = text.search(/^goroutine \d+/m);
-    x = text.slice(gi).split('\n').slice(1).map((l) => /^(?:[\w.\/-]+)\.(?:\([^)]*\)\.)?([A-Za-z_]\w*)\(/.exec(l)).find((f) => f && !/^(panic|Fatal|Fatalf|Errorf|Skip)$/.test(f[1]) && !/^(?:runtime|testing)\./.test(f.input))?.[1];
+    x = text.slice(gi).split('\n').slice(1).map((l) => /^(?:[\w./-]+)\.(?:\([^)]*\)\.)?([A-Za-z_]\w*)\(/.exec(l)).find((f) => f && !/^(panic|Fatal|Fatalf|Errorf|Skip)$/.test(f[1]) && !/^(?:runtime|testing)\./.test(f.input))?.[1];
   }
   // Rust: `unimplemented!()` / `todo!()` without a message: the panic location points into the stub fn (#142)
   if (!x && /not implemented|not yet implemented/i.test(`${line ?? ''}\n${text}`)) {
@@ -4244,7 +4250,7 @@ function setupOrigin(line, testPath, id, text = '') {
     const KW = /^(?:None|True|False|self|this|null|nil|true|false|undefined|mut|ref)$/;
     const stateVars = hitLines.filter(bareStmt).flatMap((l) => [...(/\(([^()]*)\)/.exec(l)?.[1] ?? '').matchAll(/(?<![\w$.])[A-Za-z_$][\w$]*(?![\w$(])/g)].map((m) => m[0]).concat(/^\s*(?:await\s+)?([A-Za-z_$][\w$]*)(?:\.|->)/.exec(l)?.[1] ?? []).filter((v) => !KW.test(v)));
     const recvVars = hitLines.filter(bareStmt).flatMap((l) => /^\s*(?:await\s+)?([A-Za-z_$][\w$]*)(?:\.|->)/.exec(l)?.[1] ?? []).filter((v) => !KW.test(v));
-    let vars = hitLines.flatMap((l) => { const m = /^\s*(?:(?:const|let|var)\s+(?:mut\s+)?|(?:final\s+)?(?:[A-Z][\w.<>\[\],?]*|int|long|double|float|boolean|char|byte|short)\s+)?[\[{(]?\s*([A-Za-z_$][\w$]*(?:\s*,\s*(?:mut\s+)?[A-Za-z_$][\w$]*)*)\s*[\])}]?\s*(?::(?!=)[^=]+)?:?=(?!=)/.exec(l) ; return m ? m[1].split(/\s*,\s*(?:mut\s+)?/).filter((v) => v !== '_') : []; });
+    let vars = hitLines.flatMap((l) => { const m = /^\s*(?:(?:const|let|var)\s+(?:mut\s+)?|(?:final\s+)?(?:[A-Z][\w.<>[\],?]*|int|long|double|float|boolean|char|byte|short)\s+)?[[{(]?\s*([A-Za-z_$][\w$]*(?:\s*,\s*(?:mut\s+)?[A-Za-z_$][\w$]*)*)\s*[\])}]?\s*(?::(?!=)[^=]+)?:?=(?!=)/.exec(l) ; return m ? m[1].split(/\s*,\s*(?:mut\s+)?/).filter((v) => v !== '_') : []; });
     // `with X(..) as c:` binds the context manager; only its plain use (not `c.m(..)`) asserts it
     const withVars = hitLines.flatMap((l) => { const m = /\bwith\s+.*\bas\s+([A-Za-z_]\w*)\s*:/.exec(l); return m ? [m[1]] : []; });
     const bl = testBody(testPath, id), bf = mark(bl);
@@ -4262,7 +4268,7 @@ function setupOrigin(line, testPath, id, text = '') {
     for (let k = 0; k < 2; k++) {
       const derived = bl.filter((_, i) => !bf[i]).flatMap((l) => { const m = /^\s*(?:(?:const|let|var)\s+)?([A-Za-z_$][\w$]*)\s*(?::[^=]+)?=(?!=)(.*)$/.exec(l); return m && vars.some((v) => plainRe(v).test(m[2])) ? [m[1]] : []; })
         // `const [a, b] = r` / `const { a, b: c } = r` destructure the stored result; `r.forEach((x) => ...)` binds its elements
-        .concat(bl.flatMap((l) => { const m = /^\s*(?:const|let|var)\s+[\[{]([^\]}=]*)[\]}]\s*=(?!=)(.*)$/.exec(l); return m && vars.some((v) => plainRe(v).test(m[2])) ? m[1].split(',').map((n) => /([A-Za-z_$][\w$]*)\s*$/.exec(n.replace(/=.*$/, ''))?.[1]).filter(Boolean) : []; }))
+        .concat(bl.flatMap((l) => { const m = /^\s*(?:const|let|var)\s+[[{]([^\]}=]*)[\]}]\s*=(?!=)(.*)$/.exec(l); return m && vars.some((v) => plainRe(v).test(m[2])) ? m[1].split(',').map((n) => /([A-Za-z_$][\w$]*)\s*$/.exec(n.replace(/=.*$/, ''))?.[1]).filter(Boolean) : []; }))
         .concat(bl.flatMap((l) => vars.flatMap((v) => { const m = new RegExp(`(?<![\\w$])${esc(v)}\\.\\w+\\(\\s*(?:async\\s*)?\\(?\\s*([A-Za-z_$][\\w$]*(?:\\s*,\\s*[A-Za-z_$][\\w$]*)*)\\s*\\)?\\s*=>`).exec(l); return m ? m[1].split(/\s*,\s*/) : []; })))
         // `for p in &s.polygons` / `for (const p of s.items)` / `for x in r:` bind the elements of the stored result (r25d)
         .concat(bl.flatMap((l) => { const m = /^\s*for\s+(?:await\s+)?\(?\s*(?:(?:const|let|var)\s+)?(?:mut\s+)?([A-Za-z_$][\w$]*)\s+(?:of|in)\s+(.*?)\)?\s*(?:\{|:)?\s*$/.exec(l); return m && vars.some((v) => plainRe(v).test(m[2])) ? [m[1]] : []; }));
@@ -4300,7 +4306,7 @@ function setupOrigin(line, testPath, id, text = '') {
     const bl = testBody(testPath, id), bf = mark(bl);
     for (const h of helpers) {
       const hre = new RegExp(`(?<![\\w$])${h}\\s*\\(`);
-      const calls = bl.filter((l, i) => hre.test(l) && !DEF.test(l));
+      const calls = bl.filter((l) => hre.test(l) && !DEF.test(l));
       if (!calls.length) continue;
       // `assert_eq!(cost(&p(), 1), 2)`: the helper only feeds another call, its own value is not asserted
       // an outer call that is itself an assertion helper of the test file (`near(got(1))`) asserts the value (r26d)
@@ -4371,7 +4377,7 @@ function goTestTarget(testPath, id) {
   if (!fn) return null;
   const runs = [...src.matchAll(/\b\w+\.Run\s*\(\s*("(?:\\.|[^"\\])*"|`[^`]*`|[^,{}]+)\s*,\s*func\s*\([^)]*\)\s*\{/g)].filter((m) => clean.slice(m.index, m.index + 1).trim()).map((m) => {
     let name = null;
-    try { name = m[1].startsWith('`') ? m[1].slice(1, -1) : JSON.parse(m[1]); } catch {}
+    try { name = m[1].startsWith('`') ? m[1].slice(1, -1) : JSON.parse(m[1]); } catch { /* Dynamic subtest names remain unknown. */ }
     const open = m.index + m[0].length - 1;
     return { name: typeof name === 'string' ? name.replace(/\s/g, '_') : null, start: m.index, open, end: close(open) };
   }).filter((r) => r.start > fn.open && r.end < close(fn.open));
@@ -4403,7 +4409,7 @@ function goResult(text, target) {
     const b = /^(Benchmark\w*?)(?:-\d+)?\s+\d+\s+[\d.]+\s+ns\/op/.exec(line);
     if (b?.[1] === target && result !== 'fail') result = 'pass';
     if (line.startsWith('{')) {
-      try { const e = JSON.parse(line); if (e.Test === target && /^(pass|fail|skip)$/.test(e.Action)) result = e.Action; if (e.Test && /^(run|cont)$/.test(e.Action)) lastRun = e.Test; } catch {}
+      try { const e = JSON.parse(line); if (e.Test === target && /^(pass|fail|skip)$/.test(e.Action)) result = e.Action; if (e.Test && /^(run|cont)$/.test(e.Action)) lastRun = e.Test; } catch { /* Non-JSON output is handled by the native text parser. */ }
     }
   }
   // an unrecovered panic (e.g. in a goroutine) kills the test binary before any `--- FAIL`: the test that was running failed
@@ -4457,7 +4463,7 @@ function testName(testPath, id) {
     const first = body.split('\n').find((l) => l.trim() && !/^\s*(?:\/\/|\/\*|\*|#\[|@|\[)/.test(l)) ?? '';
     const call = /^\s*([A-Za-z_]\w*)\s*(!?)\s*\(\s*([A-Za-z_]\w*)\s*(?:,\s*([A-Za-z_]\w*))?/.exec(first);
     if (call && (call[2] || (/\.(?:c|cc|cpp|cxx)$/.test(testPath) && /^[A-Z][A-Z0-9_]*$/.test(call[1]))) && !/^(?:if|for|while|switch|return|assert\w*)$/i.test(call[1])) return /^(?:TEST|TEST_F|TEST_P|TYPED_TEST|TYPED_TEST_P|SCENARIO)$/.test(call[1]) && call[4] ? call[4] : call[3];
-    const name = /\b(?:fn|function)\s+(\w+)\s*\(|^\s*(?:[\w:<>\[\].?*&]+\s+)+(\w+)\s*\(/m.exec(body);
+    const name = /\b(?:fn|function)\s+(\w+)\s*\(|^\s*(?:[\w:<>[\].?*&]+\s+)+(\w+)\s*\(/m.exec(body);
     if (name) return name[1] ?? name[2];
   }
   // keep the case used in the file: NUnit/xUnit FullyQualifiedName~ is case-sensitive (#141)
@@ -4467,7 +4473,7 @@ function testName(testPath, id) {
   const at = ls.findIndex((l) => new RegExp(`@id\\s+${id}\\b`).test(l));
   for (const l of ls.slice(at + 1, at + 8)) {
     // C# attributes ([Test], [TestCase(1, 2)], [TestMethod], [DataRow(..)], [Fact]) are not the test name (#137)
-    const d = l.replace(/^\s*(@\w+(\([^)]*\))?\s*)+/, '').replace(/^\s*(\[(?:[^\[\]"]|"(?:[^"\\]|\\.)*")*\]\s*)+/, '');
+    const d = l.replace(/^\s*(@\w+(\([^)]*\))?\s*)+/, '').replace(/^\s*(\[(?:[^[\]"]|"(?:[^"\\]|\\.)*")*\]\s*)+/, '');
     if (!d.trim() || /^\s*(\/\/|\*|\/\*)/.test(d)) continue;
     const m = /(\w+)\s*\(/.exec(d);
     if (m && !/^(if|for|while|switch|return)$/.test(m[1])) return m[1];
@@ -4503,7 +4509,8 @@ function mergeLedger() {
   const earliest = es.reduce((min, e) => Math.min(min, Date.parse(e.at)), Infinity);
   const moved = [];
   while (kept.length && Date.parse(JSON.parse(kept.at(-1)).at) > earliest) {
-    const { seq, prev: pv, hash, ...rest } = JSON.parse(kept.pop());
+    const rest = JSON.parse(kept.pop());
+    delete rest.seq; delete rest.prev; delete rest.hash;
     moved.push(rest);
   }
   prev = kept.length ? JSON.parse(kept.at(-1)).hash : '';
@@ -4531,7 +4538,6 @@ function juliaSummaryRows(plain) {
   }
   return cols ? rows : null;
 }
-const juliaFailedSets = (plain) => (juliaSummaryRows(plain) ?? []).filter((r) => r.bad).map((r) => r.name);
 function juliaSiblingFail(plain, id) {
   const rows = juliaSummaryRows(plain);
   if (!rows) return null;
@@ -5092,7 +5098,7 @@ function cmdTdd() {
       if (shell >= 0) run(['sh', '-c', cmd[shell].slice(0, cmd[shell].indexOf('ctest')).replace(/;\s*$/, '')], cfg.timeoutMs ?? 120000, proj?.root);
       const testDir = shell >= 0 ? /ctest\s+--test-dir\s+(\S+)/.exec(cmd[shell])?.[1] : cmd.includes('--test-dir') ? cmd[cmd.indexOf('--test-dir') + 1] : null;
       let tests;
-      try { tests = JSON.parse(cmdOut(['ctest', ...(testDir ? ['--test-dir', testDir] : []), '--show-only=json-v1'], cwd)).tests; } catch {}
+      try { tests = JSON.parse(cmdOut(['ctest', ...(testDir ? ['--test-dir', testDir] : []), '--show-only=json-v1'], cwd)).tests; } catch { /* Use the native text path when CTest cannot supply JSON. */ }
       if (tests) {
         const exact = tests.filter((t) => t.name === name);
         const token = id.toLowerCase().replaceAll('-', '_');
@@ -5203,7 +5209,7 @@ function cmdTdd() {
 
   const goVerdict = goRunner ? goResult(res.text, goTarget?.name ?? testName(t.path, id)) : null;
   if (goRunner) res.text = goOutput(res.text);
-  const plain = res.text.replace(/\x1b\[[0-9;]*m/g, '');
+  const plain = stripVTControlCharacters(res.text);
   const nodeFailure = nodeTestCommand(cmd, proj?.root) && nodeTestReport(plain) ? nodeFailureContext(plain, id, t.path, proj?.root) : null;
   const loadError = nodeFailure ? nodeFailure.loadError : isLoadErr(res.text);
   // Go t.Skip and JUnit @Disabled: every test that ran was skipped (#84)
@@ -5366,7 +5372,7 @@ function traceCheck(ents, dups, specs) {
     // reverse-spec `[src: path:line]` must point at an existing line (#276)
     for (const [f, n, end, anchor] of r.srcs ?? []) {
       let lines = null;
-      try { lines = fs.readFileSync(path.join(ROOT, f), 'utf8').split('\n'); } catch {}
+      try { lines = fs.readFileSync(path.join(ROOT, f), 'utf8').split('\n'); } catch { /* The null result produces a missing-source warning below. */ }
       const len = lines ? lines.length : -1, label = `[src: ${f}:${n}${end ? '-' + end : ''}]`;
       if (len < 0) warnings.push(`${r.id}: ${label} file does not exist`);
       else if (n > len) warnings.push(`${r.id}: ${label} line is beyond the end of the file (${len} lines)`);
@@ -5656,7 +5662,8 @@ function cargoWrapperTokens(text) {
           value += String.fromCodePoint(cp); i += digits; continue;
         }
         if (text.slice(i, i + 2) === '\r\n' && multi) { value += '\n'; i += 2; continue; }
-        if (/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f\r]/.test(text[i]) || !multi && text[i] === '\n')
+        const code = text.charCodeAt(i);
+        if (code <= 31 && code !== 9 && code !== 10 || code === 127 || !multi && code === 10)
           refuse('invalid string control character');
         value += text[i++];
       }
@@ -5768,7 +5775,7 @@ function checkDefClosure(cfg, read = null, knownFiles = null) {
     }
     if (depth > 16) refuse('source tokens', '16 nested quoted fragments');
     const result = [];
-    for (const m of String(text).matchAll(/"([^"]*)"|'([^']*)'|`([^`]*)`|([^\s"'`()\[\]{},;|&<>]+)/g)) {
+    for (const m of String(text).matchAll(/"([^"]*)"|'([^']*)'|`([^`]*)`|([^\s"'`()[\]{},;|&<>]+)/g)) {
       const t = m[1] ?? m[2] ?? m[3] ?? m[4];
       if (++tokenCount > 2000000) refuse('source tokens', '2000000 tokens');
       result.push(t);
@@ -6276,7 +6283,7 @@ function rustGateExecution(ents, cfg, runs) {
   const owners = new Map();
   rustRunnerSelection = null;
   for (const { c, cmd, scoped, r } of runs) {
-    const plain = r.text.replace(/\x1b\[[0-9;]*m/g, '');
+    const plain = stripVTControlCharacters(r.text);
     const artifacts = new Map();
     for (const line of plain.split('\n')) if (line.startsWith('{')) {
       try { const a = JSON.parse(line); if (a.reason === 'compiler-artifact' && a.executable && a.target?.src_path) artifacts.set(path.resolve(a.executable), path.resolve(a.target.src_path)); } catch { /* harness output, not a Cargo message */ }
@@ -6355,7 +6362,7 @@ function missingPytestIds(result, cmd, cwd, ents) {
     && !executed.some((r) => { const parts = (r.nodeid ?? '').split('::'); return path.resolve(base, parts[0]) === path.resolve(ROOT, e.path) && parts.at(-1).replace(/\[.*$/, '') === testName(e.path, e.id); })).map((e) => e.id);
 }
 function missingNodeIds(result, cmd, cwd, ents) {
-  const text = result.text.replace(/\x1b\[[0-9;]*m/g, '');
+  const text = stripVTControlCharacters(result.text);
   if (!nodeTestReport(text)) return nodeTestCommand(cmd, cwd) ? ['unobservable Node output: use --test-reporter=spec or --test-reporter=tap;'] : [];
   // Explicit name filters retain the existing command/config provenance policy.
   if (cmd.some((a) => /^--test-(?:name|skip)-pattern(?:=|$)/.test(a))) return [];
@@ -6573,7 +6580,7 @@ function jsRev(files) {
     // type-only imports are erased at runtime and do not propagate a change (#111)
     const src = fs.readFileSync(path.join(ROOT, f), 'utf8')
       .replace(/\bimport\s+type\b[^;'"]*?from\s*['"][^'"\n]+['"]/g, '')
-      .replace(/\bimport\s*\{([^}]*)\}\s*from\s*(['"][^'"\n]+['"])/g, (all, specs, q) => (specs.trim() && specs.split(',').filter((x) => x.trim()).every((x) => /^\s*type\s/.test(x)) ? '' : all));
+      .replace(/\bimport\s*\{([^}]*)\}\s*from\s*(['"][^'"\n]+['"])/g, (all, specs) => (specs.trim() && specs.split(',').filter((x) => x.trim()).every((x) => /^\s*type\s/.test(x)) ? '' : all));
     for (const m of src.matchAll(/(?:from\s+|import\s*\(?\s*|require\(\s*)['"]([^'"\n]+)['"]/g)) {
       const targets = m[1].startsWith('.') ? [resolve(f, m[1])] : aliasSources(aliases, set, m[1], f);
       for (const t of targets) if (t) { if (!rev.has(t)) rev.set(t, []); rev.get(t).push(f); }
@@ -6811,7 +6818,6 @@ function cmdGate() {
   const explain = [];
   const allChecks = [...(cfg.checks ?? []), ...(cfg.projects ?? []).flatMap((p) => (p.checks ?? []).map((c) => ({ ...c, name: `${p.root}:${c.name}`, cwd: p.root, dependsOn: depClosure(p) })))];
   const rustRuns = [];
-  let sharedHinted = false;
   // a changed spec puts the projects holding that feature's tests/code in scope; the project check then runs in full
   const specProjects = new Set();
   if (flags.changed && inputsStable) { const chs = changedFiles(); for (const sp of loadSpecs()) if (chs.has(sp.path)) { const ids = new Set(sp.reqs.map((r) => r.id)); for (const e of ents.values()) if ([...e.refs.implements, ...e.refs.verifies].some((r) => ids.has(r))) for (const p of cfg.projects ?? []) if (e.path.startsWith(normDep(p.root) + '/')) specProjects.add(p.root.replace(/\/$/, '')); } }
@@ -6824,7 +6830,7 @@ function cmdGate() {
     const pr = cfg.projects.map((p) => p.root.replace(/\/$/, '') + '/');
     const coveredBy = (f) => artConsumers(f).some((u) => pr.some((r) => (u + '/').startsWith(r))) || cfg.projects.some((p) => depClosure(p).some((d) => { const x = normDep(d); return f === x || f.startsWith(x + '/'); }));
     const dataOnly = [...changedFiles()].filter((f) => !f.startsWith('.sdd/') && !pr.some((r) => f.startsWith(r)) && !EXT.test(f) && !coveredBy(f));
-    if (dataOnly.length) { sharedHinted = true; lines.push(`! root-owned data/config changes: ${dataOnly.slice(0, 3).join(', ')}${dataOnly.length > 3 ? ', …' : ''} — if a project reads these, add the path to its \`dependsOn\` in .sdd/config.json so that project's checks run too`); }
+    if (dataOnly.length) { lines.push(`! root-owned data/config changes: ${dataOnly.slice(0, 3).join(', ')}${dataOnly.length > 3 ? ', …' : ''} — if a project reads these, add the path to its \`dependsOn\` in .sdd/config.json so that project's checks run too`); }
   }
   // a project reached only through dependsOn of a widened package with no check of its own is never re-verified (#322)
   if (flags.changed) {
@@ -7148,7 +7154,7 @@ function loadPlan() {
   return Object.assign(rows.sort((a, b) => a.order - b.order), { bad });
 }
 
-function cmdPlan(args) {
+function cmdPlan() {
   const rows = loadPlan();
   if (!rows) { out('no .sdd/plan.md (table: | order | feature | depends | note |)'); return 1; }
   const specs = loadSpecs();
@@ -7532,7 +7538,7 @@ function impactOne(target, collect = false) {
   // parity is one hop (#294): the counterpart and its feature are reached, not the counterpart's importers
   for (const pr of loadConfig().parity ?? []) for (const [x, y] of [[pr[0], pr[1]], [pr[1], pr[0]]]) { const a = x && normDep(x), b = y && normDep(y); if (a && b && seeds.includes(a) && !via.has(b) && fs.existsSync(path.join(ROOT, b))) via.set(b, a); }
   // producers of a generated artifact: build.rs / codegen / writer files that name it (#294)
-  const producers = nonCode ? listFiles().filter((f) => { if (f === seeds0) return false; try { const txt = fs.readFileSync(path.join(ROOT, f), 'utf8'); if (!txt.includes(path.posix.basename(seeds0))) return false; return /(^|\/)build\.rs$|codegen|generat/i.test(f) || /\b(writeFile(Sync)?|write_text|write_bytes|fs::write|File::create|json\.dump|WriteFile|to_json|to_csv|savetxt)\b|\bopen\([^)]*['\"][wax]b?\+?['\"]|\.open\(\s*['\"][wax]|\bcodegen\b/.test(txt); } catch { return false; } }) : [];
+  const producers = nonCode ? listFiles().filter((f) => { if (f === seeds0) return false; try { const txt = fs.readFileSync(path.join(ROOT, f), 'utf8'); if (!txt.includes(path.posix.basename(seeds0))) return false; return /(^|\/)build\.rs$|codegen|generat/i.test(f) || /\b(writeFile(Sync)?|write_text|write_bytes|fs::write|File::create|json\.dump|WriteFile|to_json|to_csv|savetxt)\b|\bopen\([^)]*['"][wax]b?\+?['"]|\.open\(\s*['"][wax]|\bcodegen\b/.test(txt); } catch { return false; } }) : [];
   // a producer declared in config `artifactProducers` (a file path, or a command naming a file) is a producer even when no file mentions the artifact (r26d)
   const declared = nonCode ? Object.entries(loadConfig().artifactProducers ?? {}).filter(([a]) => normDep(a) === seeds0).map(([, p]) => String(p)) : [];
   for (const dp of declared) if (!producers.includes(dp)) producers.push(dp);

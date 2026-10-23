@@ -19,7 +19,8 @@ const ts = require('typescript');
 const parser = require.resolve('@typescript-eslint/parser');
 const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'musubix6-diagnostics-test-'));
 after(() => fs.rmSync(scratch, { recursive: true, force: true }));
-const { NODE_TEST_CONTEXT, ...env } = process.env;
+const env = { ...process.env };
+delete env.NODE_TEST_CONTEXT;
 function write(root, name, contents) {
   fs.mkdirSync(path.dirname(path.join(root, name)), { recursive: true });
   fs.writeFileSync(path.join(root, name), contents);
@@ -136,7 +137,7 @@ test('TEST-DIAGCLI-002 JSON schema, ordering, snapshots and incomplete reasons',
       assert.deepEqual(Object.keys(d).sort(), ['code', 'column', 'file', 'line', 'message', 'severity', 'source']);
       assert.equal(d.source, p.source);
       assert.equal(typeof d.code, 'string');
-      assert.doesNotMatch(d.message, /\x1b/);
+      assert.equal(d.message.includes('\x1b'), false);
       assert.ok(d.line === null || d.line > 0);
       assert.ok(d.column === null || d.column > 0);
     }
@@ -180,7 +181,7 @@ test('TEST-DIAGCLI-003 all 64 verdict rows, missing and empty providers', () => 
 });
 
 /** @id TEST-DIAGCLI-004 @verifies REQ-DIAGCLI-004 */
-test('TEST-DIAGCLI-004 worker success, cwd, timeout, signals, output boundaries and protocol', async () => {
+test('TEST-DIAGCLI-004 worker success, cwd, timeout, signals, output boundaries and protocol', async t => {
   const root = fixture();
   const value = result();
   const good = worker(`process.stdout.write(JSON.stringify(${JSON.stringify(value)}));`);
@@ -192,7 +193,13 @@ test('TEST-DIAGCLI-004 worker success, cwd, timeout, signals, output boundaries 
   const pidFile = path.join(root, 'descendant.pid');
   const descendantWorker = worker(`import {spawn} from 'node:child_process';import fs from 'node:fs';const child=spawn(process.execPath,['-e','setInterval(()=>{},10000)'],{stdio:'ignore'});fs.writeFileSync(${JSON.stringify(pidFile)},String(child.pid));setInterval(()=>{},10000);`);
   let descendant;
-  try {
+  t.after(() => {
+    if (descendant) {
+      try { process.kill(descendant, 'SIGKILL'); }
+      catch (error) { if (error.code !== 'ESRCH') throw error; }
+    }
+  });
+  {
     incomplete(await runProvider('typescript', root, { worker: descendantWorker, timeoutMs: 500 }), /time/i);
     descendant = Number(fs.readFileSync(pidFile, 'utf8'));
     const running = () => {
@@ -215,11 +222,6 @@ test('TEST-DIAGCLI-004 worker success, cwd, timeout, signals, output boundaries 
     const orphanDeadline = Date.now() + 3000;
     while (running() && Date.now() < orphanDeadline) await new Promise(resolve => setImmediate(resolve));
     assert.equal(running(), false, 'owned descendant must not survive a successful worker exit');
-  } finally {
-    if (descendant) {
-      try { process.kill(descendant, 'SIGKILL'); }
-      catch (error) { if (error.code !== 'ESRCH') throw error; }
-    }
   }
   incomplete(await runProvider('typescript', root, { worker: worker("process.kill(process.pid,'SIGTERM');") }), /signal|SIGTERM|exit/i);
   incomplete(await runProvider('typescript', root, { worker: worker("process.stdout.write('{');") }), /output|JSON|protocol/i);

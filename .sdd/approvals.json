@@ -24,10 +24,11 @@
   "r36i-c-compiler": {
     "by": "ai:claude-sonnet-5.5",
     "kind": "ai",
-    "review": "Coordinator relayed independent Sonnet production review CLEAN and requested final-byte parser retake after fixture repair; genuine G baseline assertion Red and current Green share unchanged final test/helper SHA, with machine-recorded proof logs; requirements unchanged.",
-    "at": "2026-10-14T07:21:51.520Z",
+    "review": ".sdd/review-r36i-c-compiler.md",
+    "reviewSha": "ca25134611c06544d12b23a2a89554d6832e6d1701f862fc61873ba55663a1ef",
+    "at": "2026-10-23T13:19:19.073Z",
     "artifacts": {
-      ".sdd/specs/r36i-c-compiler.md": "d94ea3d59dc48f5202d747e97e78344d85c3a457099d09add9054fd80cafd822"
+      ".sdd/specs/r36i-c-compiler.md": "fe4afdecb4a6658c129e0c59c89cd7bbf02ae5292db49041d3cfeda23db862d2"
     },
     "tier": "T2",
     "requireHuman": false
@@ -191,10 +192,10 @@
     "by": "ai:claude-sonnet-5.5",
     "kind": "ai",
     "review": ".sdd/review-diagnostics-javascript.md",
-    "reviewSha": "ca2886056a8dd9d85c79b08dfde526907d2c0c4fbf8e99dc4c534f451203e9b8",
-    "at": "2026-10-19T12:43:39.641Z",
+    "reviewSha": "c40444504f2c112b2923447783239b4d48c2fd2df539bf79dcf5368b9874317d",
+    "at": "2026-10-23T13:19:18.711Z",
     "artifacts": {
-      ".sdd/specs/diagnostics-javascript.md": "5c52b5aee421ded8b8bd0beddc87f7322d322f082385359f51dd758e04a36be4"
+      ".sdd/specs/diagnostics-javascript.md": "43c146b0a84b6ed6d3a6be3633e2b68d9aded4440b13bc22d570a5f9f1ff1b33"
     },
     "tier": "T2",
     "requireHuman": false
@@ -227,15 +228,26 @@
   "claude-code-support": {
     "by": "nahisaho",
     "kind": "human",
-    "review": "Human approved stable 0.2.0 cutover spec cfbc09639041ba085cbd27c1586a0143ec1e646859e5cfe6971af2577345c011; publication requires separate exact-artifact approval",
-    "at": "2026-10-21T19:15:59.684Z",
+    "at": "2026-10-22T22:53:40.461Z",
     "artifacts": {
-      ".sdd/specs/claude-code-support.md": "cfbc09639041ba085cbd27c1586a0143ec1e646859e5cfe6971af2577345c011"
+      ".sdd/specs/claude-code-support.md": "9d389ac86947bbf4d30602771e4f7ca7f63023a3fca5fa719949871aa62a9c1a"
     },
     "tier": "T2",
     "requireHuman": true,
     "code": {
       "bin/musubix6.mjs": "ade1dfe6866279c2b39a040228bd4226b43bdde9b18c04d0bb4ac15feee524ad"
     }
+  },
+  "rust-stub-confidence": {
+    "by": "ai:claude-sonnet-5.5",
+    "kind": "ai",
+    "review": ".sdd/review-rust-stub-confidence.md",
+    "reviewSha": "0afb2c5b148e92307d07be1110177d4cbdd0d4035393bcf040597120fe59312e",
+    "at": "2026-10-23T13:19:19.477Z",
+    "artifacts": {
+      ".sdd/specs/rust-stub-confidence.md": "a02bba13a02be5fe3eb52a9455fdf481df2fb3082e8018b0c2e30aa0a1856756"
+    },
+    "tier": "T2",
+    "requireHuman": false
   }
 }

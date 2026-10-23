@@ -11,7 +11,8 @@ const script = process.env.SDD_SCRIPT_UNDER_TEST ?? fileURLToPath(new URL('./sdd
 const wrapper = fileURLToPath(new URL('../../../../bin/musubix6.mjs', import.meta.url));
 const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spec-context-'));
 after(() => fs.rmSync(scratch, { recursive: true, force: true }));
-const { NODE_TEST_CONTEXT, ...env } = process.env;
+const env = { ...process.env };
+delete env.NODE_TEST_CONTEXT;
 env.GIT_CEILING_DIRECTORIES = scratch;
 function write(root, file, text) {
   fs.mkdirSync(path.dirname(path.join(root, file)), { recursive: true });

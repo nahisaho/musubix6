@@ -3,6 +3,29 @@
 User-facing changes to musubix6, with upgrade guidance and known release limitations.
 Release dates use Japan Standard Time (UTC+09:00).
 
+## [0.2.2] - Unreleased development candidate 2026-10-23
+
+### Fixed
+
+- Mark unsupported Rust function/method return types and loop-only constant
+  element types with `SDD-TODO(stub)`, report their confidence as `guessed`,
+  and name the affected element in manual-repair instructions (#381).
+- Preserve decimal literals while masking method receivers, so a method
+  compared with `0.5` generates `f64`, not a guessed `i64`. Include inherent
+  methods as `Type::method` in `tdd stub --report`.
+- Keep marked compiler failures ineligible for assertion Red, including
+  explicit weak/expect overrides; supported native runtime Red/Green remains
+  accepted. Promote the four historical Rust stub checks out of `todo`.
+
+### Compatibility and release status
+
+Known signatures, constructor/builder behavior, and Copilot/Claude installation
+routes remain supported. Unknown concrete `i64` placeholders are retained for
+compatibility but now carry an explicit marker; repair their types before
+claiming an implemented result. This development version is not a tag,
+publication, or release-qualification claim. Frozen-candidate validation and
+separate human release approval remain required.
+
 ## [0.2.0] - Unreleased draft prepared 2026-10-22
 
 Add Claude Code installation alongside GitHub Copilot CLI without changing

@@ -14,7 +14,8 @@ import { diagnosePython } from './diagnostics-python.mjs';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repo = path.resolve(here, '../../../..');
 const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'musubix6-profiles-test-'));
-const { NODE_TEST_CONTEXT, ...baseEnv } = process.env;
+const baseEnv = { ...process.env };
+delete baseEnv.NODE_TEST_CONTEXT;
 after(() => fs.rmSync(scratch, { recursive: true, force: true }));
 function write(root, name, value) {
   const file = path.join(root, name);
@@ -199,6 +200,81 @@ test('TEST-DIAGJS-003 severities, UTF16, parser errors and no fix/cache', async 
   assert.ok(complete(await diagnoseESLint(root, { profile: 'javascript' })).diagnostics.some(d => d.severity === 'error'));
   write(root, 'eslint.config.cjs', 'throw new Error("controlled config failure");\n');
   incomplete(await diagnoseESLint(root, { profile: 'javascript' }), /controlled config failure/);
+});
+
+/** @id TEST-DIAGJS-004 @verifies REQ-DIAGJS-004 */
+test('TEST-DIAGJS-004 repository config enforces recommended errors on every JavaScript surface', async () => {
+  const config = path.join(process.env.MUSUBIX6_LINT_ROOT || repo, 'eslint.config.mjs');
+  assert.ok(fs.existsSync(config), 'Repository must provide its root ESLint flat config');
+  const root = project();
+  fs.copyFileSync(config, path.join(root, 'eslint.config.mjs'));
+  fs.symlinkSync(path.join(repo, 'node_modules'), path.join(root, 'node_modules'), 'dir');
+  const valid = {
+    'a.js': 'export const value = process.platform;\n',
+    'view.jsx': 'export const view = <div />;\n',
+    'nested/a.mjs': 'export const value = Buffer.from("ok");\n',
+    'a.cjs': 'module.exports = require("node:path");\n',
+    '.github/skills/probe.mjs': 'export const value = 1;\n',
+    'mixed.MjS': 'export const mixed = 1;\n',
+  };
+  for (const [file, body] of Object.entries(valid)) write(root, file, body);
+  const before = snapshot(root);
+  const clean = cli(root, 'javascript');
+  assert.equal(clean.exitCode, 0);
+  assert.deepEqual(clean.providers[0].files, { included: Object.keys(valid).length + 1, checked: Object.keys(valid).length + 1, ignored: 0 });
+  assert.deepEqual(snapshot(root), before, 'Diagnosis must not fix or cache');
+  const { ESLint } = await import('eslint');
+  const { default: reference } = await import('@eslint/js');
+  const eslint = new ESLint({ cwd: root });
+  for (const file of Object.keys(valid)) {
+    const effective = await eslint.calculateConfigForFile(path.join(root, file));
+    assert.ok(effective, `${file} must be configured`);
+    for (const rule of Object.keys(reference.configs.recommended.rules)) {
+      assert.equal(effective.rules?.[rule]?.[0], 2, `${file}: ${rule} must remain error`);
+    }
+    assert.equal(effective.linterOptions?.noInlineConfig, true);
+    write(root, file, 'debugger;\n');
+    const failed = cli(root, 'javascript');
+    assert.equal(failed.exitCode, 1, file);
+    assert.ok(failed.providers[0].diagnostics.some(d => d.file === file && d.code === 'no-debugger' && d.severity === 'error'));
+    write(root, file, valid[file]);
+  }
+  write(root, 'a.js', 'const unused = 1;\n');
+  assert.ok(cli(root, 'javascript').providers[0].diagnostics.some(d => d.code === 'no-unused-vars' && d.severity === 'error'));
+  write(root, 'a.js', 'export const = ;\n');
+  const syntax = cli(root, 'javascript');
+  assert.equal(syntax.exitCode, 1);
+  assert.ok(syntax.providers[0].diagnostics.some(d => d.code === 'ESLINT_PARSE'));
+  write(root, 'a.js', valid['a.js']);
+  fs.unlinkSync(path.join(root, 'eslint.config.mjs'));
+  assert.equal(cli(root, 'javascript').exitCode, 2);
+
+  const checkout = project();
+  const tracked = spawnSync('git', ['ls-files', '-z'], { cwd: repo, encoding: 'utf8' });
+  assert.equal(tracked.status, 0, tracked.stderr);
+  const sources = tracked.stdout.split('\0').filter(file => /\.(?:js|jsx|mjs|cjs)$/i.test(file));
+  assert.ok(sources.length > 0);
+  for (const file of sources) write(checkout, file, fs.readFileSync(path.join(repo, file)));
+  fs.copyFileSync(config, path.join(checkout, 'eslint.config.mjs'));
+  fs.symlinkSync(path.join(repo, 'node_modules'), path.join(checkout, 'node_modules'), 'dir');
+  const repository = cli(checkout, 'javascript');
+  assert.equal(repository.exitCode, 0, JSON.stringify(repository));
+  assert.equal(repository.providers[0].files.ignored, 0);
+  assert.equal(repository.providers[0].files.checked, repository.providers[0].files.included);
+  assert.ok(repository.providers[0].files.checked >= sources.length);
+
+  const dest = project();
+  const installed = spawnSync(process.execPath, [path.join(repo, 'bin/musubix6.mjs'), 'init', dest, '--only', 'lean-sdd-tdd'], { env: baseEnv, encoding: 'utf8' });
+  assert.equal(installed.status, 0, installed.stderr);
+  assert.equal(fs.existsSync(path.join(dest, 'eslint.config.mjs')), false);
+  const packed = spawnSync('npm', ['pack', '--dry-run', '--json', '--ignore-scripts'], { cwd: repo, env: baseEnv, encoding: 'utf8', timeout: 30000, maxBuffer: 8 * 1024 * 1024 });
+  assert.ifError(packed.error);
+  assert.equal(packed.status, 0, packed.stderr);
+  const packResult = JSON.parse(packed.stdout);
+  const manifests = Array.isArray(packResult) ? packResult : Object.values(packResult);
+  assert.equal(manifests.length, 1, packed.stdout);
+  assert.ok(Array.isArray(manifests[0].files), packed.stdout);
+  assert.equal(manifests[0].files.some(file => file.path === 'eslint.config.mjs'), false);
 });
 
 /** @id TEST-DIAGPY-001 @verifies REQ-DIAGPY-001 */

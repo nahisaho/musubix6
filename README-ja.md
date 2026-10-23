@@ -4,7 +4,7 @@ GitHub Copilot CLI と Claude Code 向けのエージェントスキル集です
 **軽量な仕様駆動(SDD)・テスト駆動(TDD)開発** と **日本語・英語の技術文書作成、課題分析、プレゼン資料の構成設計** を支援します。
 Copilot は `.github/skills/`、Claude Code は `.claude/skills/` からスキルを読み込みます。
 
-ソースが対象とする版は **0.2.0** です。導入前に、後述のコマンドで npm の公開状況を確認してください。
+ソースが対象とする版は **0.2.2** です。導入前に、後述のコマンドで npm の公開状況を確認してください。
 版番号だけでは、公開済みであることやリリース適格性を確認できません。
 Claude の実セッションでのスキル検出と対話は、まだ確認していません。
 
@@ -222,9 +222,9 @@ Rust の target と build の出力は、プロジェクト外に作る専用の
 ローカルで確認した環境は Linux／Node 24 です。macOS／Windows は未確認です。
 時間や AI コストがどれだけ減るかは未測定です。
 
-### Claude Code または両ホストに導入する(v0.2.0)
+### Claude Code または両ホストに導入する(v0.2.2)
 
-新しいオプションは、npm の公開状況を確認してから導入した 0.2.0 の CLI、
+新しいオプションは、npm の公開状況を確認してから導入した 0.2.2 の CLI、
 または後述のソースからのインストールで利用できます。
 0.1.x の npm 版では `--host` を使えません。
 
@@ -266,21 +266,21 @@ WSL コンテナーの実行、GiNZA のセットアップ、macOS / Windows は
 
 ### 公開済みの npm パッケージをインストールする
 
-次のコマンドでは **0.2.0** を指定します。
-インストール前に `npm view musubix6@0.2.0 version` で公開状況を確認してください。
+次のコマンドでは **0.2.2** を指定します。
+インストール前に `npm view musubix6@0.2.2 version` で公開状況を確認してください。
 Node.js 20 以上を用意し、スキルを導入するプロジェクトで実行します。
 
-公開状況を確認できない場合は、0.2.0 のインストールコマンドを実行しないでください。
+公開状況を確認できない場合は、0.2.2 のインストールコマンドを実行しないでください。
 公開されるまでは 0.1.4 を使うか、ソースから導入します。
 
 ```sh
-npm install -g musubix6@0.2.0
+npm install -g musubix6@0.2.2
 musubix6 --version
 musubix6 init .
 musubix6 list
 ```
 
-グローバルにインストールしない場合は、`npx --yes musubix6@0.2.0 init .` を使います。
+グローバルにインストールしない場合は、`npx --yes musubix6@0.2.2 init .` を使います。
 `init` は対象プロジェクトの `.github/skills/` にスキルをコピーします。
 
 コピー先には相対パスと絶対パスを指定できます。省略すると作業ディレクトリを使います。
@@ -310,7 +310,7 @@ musubix6 --version
 
 更新は **CLI** と **プロジェクトごとのスキル** の 2 段階で行います。
 `npm install -g` だけでは、コピー済みの `.github/skills/` や `.claude/skills/` は更新されません。
-以降は既定の Copilot 用手順です。v0.2.0 で Claude 側を更新する場合は、
+以降は既定の Copilot 用手順です。v0.2.2 で Claude 側を更新する場合は、
 `.claude/skills/` をバックアップしてから `--host claude` を加え、更新後に差分を確認してください。
 `--host both` では、両方のディレクトリをバックアップし、差分を確認します。
 
@@ -343,7 +343,7 @@ musubix6 --version
    musubix6 --version
    ```
 
-   特定の版にそろえる場合は、`npm install -g musubix6@0.2.0` のように指定します。
+   特定の版にそろえる場合は、`npm install -g musubix6@0.2.2` のように指定します。
    この段階では、各プロジェクトのファイルは上書きされません。
 
 4. 対象プロジェクトのルートで、同梱スキルをコピーし直します。
@@ -377,8 +377,8 @@ musubix6 --version
 
 ### グローバル導入せずに更新する(npx)
 
-0.2.0 の機能を使う前に、`npm view musubix6@0.2.0 version` で公開状況を確認してください。
-0.2.0 が公開されるまでは、`@latest` で 0.1.4 が選ばれる場合があります。
+0.2.2 の機能を使う前に、`npm view musubix6@0.2.2 version` で公開状況を確認してください。
+0.2.2 が公開されるまでは、`@latest` で 0.1.4 が選ばれる場合があります。
 公開状況を確認できない場合は、ソースから導入してください。
 
 上記と同じ方法でスキルをバックアップし、対象プロジェクトのルートで実行します。
@@ -392,7 +392,7 @@ npx --yes musubix6@latest init . --force
 この方法では、別途インストールしてあるグローバルの `musubix6` は更新しません。
 SDD のゲート検証にも、`npx --yes musubix6@latest sdd gate` を使ってください。
 古いグローバル CLI ではなく、指定した版で検証できます。
-特定の版を使う場合は、ゲート検証も含め、各コマンドの `@latest` を `@0.2.0` に置き換えます。
+特定の版を使う場合は、ゲート検証も含め、各コマンドの `@latest` を `@0.2.2` に置き換えます。
 
 ### ソースから導入した場合に更新する
 
@@ -486,6 +486,7 @@ Node ≥ 20、Python 3.14.x、導入済みの cargo/rustc 1.99.x を用意して
 
 ```sh
 npm ci
+node .github/skills/lean-sdd-tdd/scripts/sdd.mjs diagnostics --profile javascript --json
 python3.14 -m venv /tmp/musubix6-diagnostic-tools
 /tmp/musubix6-diagnostic-tools/bin/python -m pip install -r scripts/diagnostics-tools.txt
 export MUSUBIX_DIAGNOSTICS_TEST_VENV=/tmp/musubix6-diagnostic-tools
