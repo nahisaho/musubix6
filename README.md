@@ -260,18 +260,21 @@ stop for an explicit conversational response rather than inventing approval.
 No `CLAUDE.md`, hooks, plugin configuration or permission grants are installed.
 The same scripts/assets are copied unchanged from the canonical `.github/skills`
 payload. Local relocated-script checks are not live Claude qualification;
-WSL container execution, GiNZA setup and macOS/Windows are not verified by this change.
+WSL container execution and macOS/Windows remain unverified.
 
 ### Install the published npm package
 
-The commands below pin **0.2.0**. Check availability with
-`npm view musubix6@0.2.0 version` before installing. With Node.js ≥ 20,
-run them in the project where you want to install the skills:
+The commands below pin **0.2.0**, matching this source checkout. On
+2026-10-27, npm served 0.2.0 and its `latest` tag was 0.2.2; the pinned
+commands do not install `latest`. With Node.js ≥ 20 and npm, run them in
+the project where you want to install the skills:
 
-If the version check fails, do not run the 0.2.0 install commands: stay on
-0.1.4 or use the source checkout until 0.2.0 is published.
+Check availability first. If that check fails, resolve the reported registry
+or network error, or use the source checkout; do not assume the version is
+unpublished.
 
 ```sh
+npm view musubix6@0.2.0 version
 npm install -g musubix6@0.2.0
 musubix6 --version
 musubix6 init .
@@ -301,11 +304,24 @@ git clone https://github.com/nahisaho/musubix6.git
 cd musubix6
 npm install -g .               # or: npm link
 musubix6 --version
+musubix6 init ../my-project
+musubix6 list
 ```
 
 The global install links to this checkout, so keep the directory. To update,
 follow the source-update instructions below. A checkout can contain changes not
-yet published to npm.
+yet published to npm. Installing the CLI alone does not copy skills into other
+projects: `init` above creates `../my-project` and installs the default Copilot
+skills there. Replace that destination with your project path; add
+`--host claude` or `--host both` for the other hosts.
+
+Installation was checked on 2026-10-27 with Linux, Node 24.22.1 and npm
+11.19.1 in `/tmp/musubix6`, using an isolated npm global prefix to avoid
+changing the shared global CLI. The pinned npm install, npx and source install
+succeeded; Copilot received 10 skills and Claude received 9. The installed
+SDD wrapper and `tech-writer` lint ran successfully, as did the GiNZA lint
+with dependencies resolved by `uv run`. These checks do not establish live
+Copilot/Claude skill discovery or release qualification.
 
 ## Update the CLI and installed skills
 
@@ -381,8 +397,8 @@ or use `--host both` and back up/review both directories.
 ### Update without a global install (npx)
 
 Before using 0.2.0 features, check `npm view musubix6@0.2.0 version`.
-Until 0.2.0 is published, `@latest` can still resolve to 0.1.4.
-Use the source checkout if the version check fails.
+`@latest` follows npm's current tag and may differ from this checkout's
+0.2.0. Use the source checkout if registry access is unavailable.
 
 Back up the target project's skills as above, then run these commands in its
 root:
