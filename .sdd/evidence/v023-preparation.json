@@ -1,0 +1,99 @@
+{
+  "targetVersion": "0.2.3",
+  "status": "development-validated-qualification-blocked",
+  "baseCommit": "324ebc2ec65fddc0927f3703a9e5d9cfded29faf",
+  "versionContractApproval": {
+    "by": "nahisaho",
+    "path": ".sdd/specs/claude-code-support.md",
+    "sha256": "33e66f1fc3db9f55e53225bd34133a4b747d24b501423fc5163d86785f41898e",
+    "scope": "Version-bound source contract only; not publication or qualification exceptions"
+  },
+  "inputs": {
+    "package.json": "7b06a7f745143dd4bf977f65b1a2e5d9d11fee933a8c75bfe4a19af863e227ea",
+    "package-lock.json": "783285d2bcfcdd717f31b3d47f7a95d3f9e2da724e9487101a3baa4ff4261ddb",
+    "scripts/host-compatibility.test.mjs": "ee7cbdb8c8ecdad793086c939cd2015599f0f9cd4a4789d2601c19dc4760d374"
+  },
+  "spike": {
+    "command": "npm version 0.2.3 --no-git-tag-version --ignore-scripts; node bin/musubix6.mjs --version; npm pack --dry-run --ignore-scripts --json",
+    "execution": "Isolated copies of package.json, package-lock.json and the real CLI",
+    "observed": "All commands exited zero; copied package and lock identified 0.2.3 and copied CLI printed 0.2.3",
+    "retainedLocalEvidence": "session 1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v023-pack-feasibility.json",
+    "evidenceSha256": "c9a3f1dc46436c65d154a64f978a0ec4b4daf6c72874737bb0e94a1d31daf32d",
+    "qualificationCredit": 0
+  },
+  "regression": {
+    "test": "TEST-HOST-005",
+    "redCommand": "sdd.mjs tdd red TEST-HOST-005 --retest <user-approved 0.2.3 candidate>",
+    "redObserved": "Expected assertion failure: actual 0.2.0 versus required 0.2.3 before changing package metadata",
+    "greenCommand": "umask 0077; node .github/skills/lean-sdd-tdd/scripts/sdd.mjs tdd green TEST-HOST-005",
+    "greenObserved": "GREEN ok; real npm archive, both-host installation, wrappers and permission checks passed",
+    "ledger": ".sdd/tdd.jsonl",
+    "mutations": {
+      "isolatedCopiedPayload": true,
+      "assertionDetected": 13,
+      "restoredControlsPassed": 13,
+      "mechanisms": [
+        "package-version", "lock-version", "lock-root-version", "changelog",
+        "packed-cli", "packed-regression", "README.md-version",
+        "README.md-availability", "README.md-tag-warning", "README-ja.md-version",
+        "README-ja.md-availability", "README-ja.md-tag-warning", "permissions"
+      ],
+      "retainedLocalEvidence": "session 1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v023-mutation-results.json"
+    }
+  },
+  "artifact": {
+    "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/release-v023/musubix6-0.2.3.tgz",
+    "sha256": "5598d6757607beb69663c539073d41c764629f0d06ccf97c63029d7437330da6",
+    "shasum": "97f47432a999e06831b001ec0cd5096680524d92",
+    "integrity": "sha512-hJ8KBwfPg5YdAyPnlz8oLLbbu9f8O1aB3YCUJ10OZkk+J1ZxK18Nrzd4DzzEVPD3Zz8bTWabesRhQ0X6CMSvJw==",
+    "size": 651060,
+    "unpackedSize": 2324708,
+    "entryCount": 117,
+    "developmentChecks": [
+      "npm pack --ignore-scripts: exit 0",
+      "Offline install of this exact tgz into an isolated prefix: exit 0",
+      "Installed CLI --version: exit 0, stdout 0.2.3",
+      "Installed CLI init --host both: exit 0, 10 Copilot and 9 Claude skill directories"
+    ],
+    "environment": "Linux x86_64, Node 24.22.1",
+    "scope": "Development checks on Node 24 only; not the inherited Node 20/22/24 qualification matrix"
+  },
+  "documentation": {
+    "changelog": "CLANGELOG.md",
+    "structuralLint": "New atomic entry: zero findings; independent review completed",
+    "japaneseProse": "Full lint, reading-load, outline and terminology diagnostics completed; score 98 unchanged, reading-load 100; frozen post-cutover invariants passed",
+    "proseDecisions": [
+      "Keep repeated_sentence_lead at unchanged line 158: intentional command explanation",
+      "Keep through_translation at unchanged line 188: existing diagnostic wording, outside version cutover"
+    ],
+    "optionalProseRewrites": 0
+  },
+  "javascriptDiagnostics": "PASS",
+  "fullGate": {
+    "status": "PASS",
+    "command": "node .github/skills/lean-sdd-tdd/scripts/sdd.mjs gate",
+    "exit": 0,
+    "projectTestDurationSeconds": 1719.5,
+    "traceRequirements": 84,
+    "traceErrors": 0,
+    "existingTraceWarnings": 6,
+    "ledgerEntries": 499,
+    "redGreenEvidenceTests": 135,
+    "existingStubWarningLocations": 2,
+    "durableLog": ".sdd/evidence/v023-full-gate.log",
+    "logSha256": "bbe416d3c3fcfe5d2f50cc8fdefd66b28d909a00f0b14ae3c1a360b9ebf9d906",
+    "retainedLocalLog": "session 1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v023-full-gate.log",
+    "qualificationCredit": 0
+  },
+  "qualification": {
+    "manifest": ".sdd/release-validation.v0.2.3.json",
+    "manifestSha256": "64d2decc040eb007e6f5de2fd500ba8c10a76699febb32aad37a10e6f22705b3",
+    "status": "blocked-not-frozen",
+    "consecutiveCompleteCleanRuns": 0,
+    "reason": "Two historical qualification launchers are missing; current named catalogue and verified replacement inputs are not frozen",
+    "all25InheritedCellsAndBudgetsPreserved": true,
+    "mechanicallyEnforcedReadinessClaim": false
+  },
+  "humanReleaseApproved": false,
+  "publishingAuthorized": false
+}

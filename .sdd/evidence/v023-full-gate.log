@@ -1,0 +1,31 @@
+SDD GATE PASS
+✓ lock claude-code-support: ok [human] (human required)
+✓ lock cost-history: ok [ai, review summary]
+✓ lock diagnostics-contract: ok [human] (human required)
+✓ lock diagnostics-eslint: ok [ai, review file]
+✓ lock diagnostics-javascript: ok [ai, review file]
+✓ lock diagnostics-python: ok [ai, review file]
+✓ lock diagnostics-rust: ok [human] (human required)
+✓ lock diagnostics-typescript: ok [ai, review file]
+✓ lock diagnostics-workflow: ok [ai, review file]
+✓ lock legacy-approval-provenance: ok [ai, review file]
+✓ lock legacy-command-closure: ok [ai, review file]
+✓ lock legacy-native-verdicts: ok [ai, review file]
+✓ lock node-summary-verdict: ok [ai, review file]
+✓ lock r36b-node-red: ok [ai, review summary]
+✓ lock r36e-native-loader: ok [ai, review summary]
+✓ lock r36g-rust-ci: ok [ai, review summary]
+✓ lock r36i-c-compiler: ok [ai, review summary]
+✓ lock r36j-go-compiler: ok [ai, review summary]
+✓ lock runner-selection: ok [ai, review summary]
+✓ lock source-discovery: ok [ai, review file]
+✓ lock spec-context: ok [ai, review summary]
+✓ trace: 84 REQ, 0 errors, 6 warnings
+    warning: REQ-HOST-004 has no @implements code
+    warning: REQ-KOTO-SYNC-001 has no @implements code
+    warning: REQ-KOTO-SYNC-002 has no @implements code
+    … +3 more warnings (all: trace --verbose)
+✓ ledger: 499 entries, chain intact
+✓ tdd evidence: 135/135 tests Red→Green, 1 weak Red 78 characterization (passed without a failing Red; not a weak Red) (1 retest: Red re-recorded with --retest, passed without a failing Red; 1 superseded an earlier strong Red — re-record a failing Red by temporarily breaking the implementation if that evidence matters: TEST-R36D-OWN-001)
+! stub: 2 source file(s) of Green REQs still hold SDD-TODO(stub) / 'not implemented:' placeholders: .github/skills/lean-sdd-tdd/scripts/sdd.mjs:1718, .github/skills/lean-sdd-tdd/scripts/sdd.test.mjs:680 — implement or remove them (scopePolicy warn: set "scopePolicy": "strict" to fail)
+✓ cmd test (1719.5s)

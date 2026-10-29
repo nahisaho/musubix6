@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "targetVersion": "0.2.3",
+  "status": "preparation-blocked-not-frozen",
+  "revision": 1,
+  "policy": "docs/design-sdd-hardening.md section 3.5",
+  "inheritedManifest": {
+    "path": ".sdd/release-validation.v0.2.0.json",
+    "sha256": "e2f221e308e2fb4389f044e12c42cb2083e314b97305ae1701f65cd399c37de6"
+  },
+  "revisionReason": "Prepare the user-selected unused patch version after npm refused overwriting 0.2.0. Preserve every inherited required cell and budget. Prior runs and the 0.2.0 human-approved qualification exception do not transfer. Candidate digests, the current named catalogue and verified qualification helpers must be frozen before counting any run.",
+  "requiredCleanRuns": 2,
+  "consecutiveCompleteCleanRuns": 0,
+  "priorQualificationCredit": 0,
+  "requiredMissingOrSkippedIsNotPass": true,
+  "requiredCells": [
+    {"id": "PACKAGE-20", "runtime": "20", "kind": "extra", "mode": "package", "timeoutSeconds": 300},
+    {"id": "WATCHDOG-20", "runtime": "20", "kind": "watchdog", "timeoutSeconds": 300},
+    {"id": "NO-CHANGE-20", "runtime": "20", "kind": "extra", "mode": "no-change", "timeoutSeconds": 300},
+    {"id": "PACKAGE-22", "runtime": "22", "kind": "extra", "mode": "package", "timeoutSeconds": 300},
+    {"id": "WATCHDOG-22", "runtime": "22", "kind": "watchdog", "timeoutSeconds": 300},
+    {"id": "NO-CHANGE-22", "runtime": "22", "kind": "extra", "mode": "no-change", "timeoutSeconds": 300},
+    {"id": "PACKAGE-24", "runtime": "24", "kind": "extra", "mode": "package", "timeoutSeconds": 300},
+    {"id": "WATCHDOG-24", "runtime": "24", "kind": "watchdog", "timeoutSeconds": 300},
+    {"id": "NO-CHANGE-24", "runtime": "24", "kind": "extra", "mode": "no-change", "timeoutSeconds": 300},
+    {"id": "MUTATION", "runtime": "20", "kind": "mutation", "timeoutSeconds": 3600},
+    {"id": "SCOPE-DIFFERENTIAL", "runtime": "24", "kind": "scope", "timeoutSeconds": 600},
+    {"id": "NATIVE-R", "runtime": "24", "kind": "extra", "mode": "r", "timeoutSeconds": 600},
+    {"id": "NATIVE-GRADLE", "runtime": "24", "kind": "extra", "mode": "gradle", "timeoutSeconds": 600},
+    {"id": "NATIVE-WSLC", "runtime": "24", "kind": "extra", "mode": "wslc", "timeoutSeconds": 600},
+    {"id": "NATIVE-PROSE", "runtime": "24", "kind": "extra", "mode": "prose", "timeoutSeconds": 600},
+    {"id": "ORACLE-SELFTEST", "runtime": "24", "kind": "oracle", "timeoutSeconds": 600},
+    {"id": "PROCESS-SELFTEST", "runtime": "24", "kind": "process", "timeoutSeconds": 120},
+    {"id": "SKILL-MUTATION", "runtime": "24", "kind": "skill-mutation", "timeoutSeconds": 3600},
+    {"id": "PLACEHOLDER-MUTATION", "runtime": "24", "kind": "placeholder-mutation", "timeoutSeconds": 3600},
+    {"id": "INTEGRATED-GATE", "runtime": "24", "kind": "gate", "timeoutSeconds": 12000},
+    {"id": "DIAGNOSTIC-MUTATION", "runtime": "24", "kind": "diagnostic-mutation", "timeoutSeconds": 3600},
+    {"id": "REGRESSION-20", "runtime": "20", "kind": "suite", "timeoutSeconds": 12000},
+    {"id": "REGRESSION-22", "runtime": "22", "kind": "suite", "timeoutSeconds": 12000},
+    {"id": "REGRESSION-24", "runtime": "24", "kind": "suite", "timeoutSeconds": 12000},
+    {"id": "HOST-MUTATION", "runtime": "24", "kind": "host-mutation", "timeoutSeconds": 3600}
+  ],
+  "supportContract": {
+    "status": "inherited-without-narrowing",
+    "additionalCandidateChanges": ["GiNZA 5.3 installed runtime regression", "Cumulative repository cost-history regression"],
+    "currentNamedCatalogue": "pending reconstruction and freeze; no historical count assumed"
+  },
+  "blockingPrerequisites": [
+    {
+      "stage": "trusted inputs",
+      "path": "/home/nahisaho/.copilot/session-state/a55408e9-74fb-4add-9bc2-4540d1509ca5/files/qualification-v020/two-runs-v020.mjs",
+      "status": "missing"
+    },
+    {
+      "stage": "trusted inputs",
+      "path": "/home/nahisaho/.copilot/session-state/a55408e9-74fb-4add-9bc2-4540d1509ca5/files/qualification-v020/freeze-v020.mjs",
+      "status": "missing"
+    }
+  ],
+  "recovery": "Restore and verify the referenced qualification helpers or reconstruct reviewed equivalents, freeze the full support/candidate/test matrix with exact digests and actual named cases, then run it twice unchanged. Do not remove required cases to bypass missing helpers.",
+  "humanReleaseApproved": false,
+  "publishingAuthorized": false
+}

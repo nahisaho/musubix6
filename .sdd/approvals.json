@@ -227,10 +227,9 @@
   "claude-code-support": {
     "by": "nahisaho",
     "kind": "human",
-    "review": "Human approved stable 0.2.0 cutover spec cfbc09639041ba085cbd27c1586a0143ec1e646859e5cfe6971af2577345c011; publication requires separate exact-artifact approval",
-    "at": "2026-10-21T19:15:59.684Z",
+    "at": "2026-10-29T05:42:46.362Z",
     "artifacts": {
-      ".sdd/specs/claude-code-support.md": "cfbc09639041ba085cbd27c1586a0143ec1e646859e5cfe6971af2577345c011"
+      ".sdd/specs/claude-code-support.md": "33e66f1fc3db9f55e53225bd34133a4b747d24b501423fc5163d86785f41898e"
     },
     "tier": "T2",
     "requireHuman": true,

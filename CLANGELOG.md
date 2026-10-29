@@ -3,6 +3,82 @@
 User-facing changes to musubix6, with upgrade guidance and known release limitations.
 Release dates use Japan Standard Time (UTC+09:00).
 
+## [0.2.3] - Unreleased draft prepared 2026-10-29
+
+Prepare a patch candidate for GiNZA 5.3. This entry does not establish npm
+publication, release qualification or permission to publish.
+
+### Changed
+
+- Update the Japanese prose scripts to `ginza>=5.3.0,<5.4`,
+  `ja-ginza>=5.3.0,<5.4` and `spacy>=3.8.16,<4`.
+- Document Python 3.10 or later for GiNZA 5.3 and upstream's Python 3.12
+  recommendation; retain the CLI's Node.js 20 minimum.
+- Provision `uv` in CI and test the installed GiNZA model, diagnostics,
+  terminology extraction and command errors.
+
+### Fixed
+
+- Check npm's mutable `latest` tag warning without requiring a particular
+  historical published version in the installation regression.
+- Preserve archived executable permissions during package regression
+  extraction, including under restrictive shell umasks.
+- Preserve cumulative AI cost history when older sessions disappear from
+  the local store, without counting active-session snapshots twice.
+  This fix affects repository accounting tooling, not the installed CLI.
+
+### Upgrade
+
+Keep Python 3.10 or later and Node.js 20 or later available; these minimum
+versions are unchanged.
+
+Check availability before installing the candidate:
+
+```sh
+npm view musubix6@0.2.3 version
+```
+
+As of 2026-10-29, npm lists 0.2.0 and 0.2.2, but not 0.2.3. Published
+versions cannot be overwritten. Until 0.2.3 is available, use the source
+checkout or remain on a published version. After a successful availability
+check that prints exactly `0.2.3`, run the installation below. If the check
+fails or does not print that version, stop and resolve the registry error
+or use the source checkout instead.
+
+```sh
+npm install -g musubix6@0.2.3
+musubix6 --version
+```
+
+Updating the CLI alone does not refresh previously copied skills. Back up
+`.github/skills/japanese-prose/` and/or `.claude/skills/japanese-prose/`,
+including local edits, before refreshing the skill for the existing host:
+
+```sh
+musubix6 init . --host copilot --only japanese-prose --force
+```
+
+Use `--host claude` or `--host both` instead for the corresponding existing
+installation. `--force` overwrites bundled files; review the resulting diff.
+The next `uv run` resolves the updated inline dependencies automatically.
+To undo the skill refresh, restore the backed-up skill directories.
+
+### Release status and known limitations
+
+- Do not transfer earlier versions' validation runs or publication approvals
+  to this candidate. Two consecutive clean runs of the unchanged frozen
+  support/candidate/test matrix and separate exact-artifact human approval
+  remain required; all 25 inherited required matrix cells are retained.
+- Treat the earlier full SDD gate PASS as development evidence only, not
+  qualification for 0.2.3.
+- Identify the source package, lockfile and CLI as 0.2.3 after reapproval
+  of the version-bound contract; this does not establish publication.
+- Treat required missing, skipped or unparseable evidence as incomplete,
+  not passing. The inherited qualification launchers are currently missing
+  from this environment; no 0.2.3 qualifying run has completed.
+- Keep live Claude interactions, actual WSL container execution and
+  macOS/Windows behavior unqualified. The accounting writer uses POSIX locking.
+
 ## [0.2.0] - Unreleased draft prepared 2026-10-22
 
 Add Claude Code installation alongside GitHub Copilot CLI without changing
