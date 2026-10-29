@@ -15,6 +15,7 @@ Claude の実セッションでのスキル検出と対話は、まだ確認し�
 | [`lean-sdd-tdd`](.github/skills/lean-sdd-tdd/SKILL.md) | REQ/TEST ID、Red→Green の証跡、ハッシュ固定した仕様、トレース検査、コンパクトな `gate` による、自走型の SDD/TDD 開発。依存なしのスクリプト `scripts/sdd.mjs` が規則を強制します。 |
 | [`lean-agentic-coding`](.github/skills/lean-agentic-coding/SKILL.md) | リスク階層(T0〜T2)、コンテキスト予算、差分レビュー、コンパクトな gate により、厳密さを保ちながらトークンを節約します。 |
 | [`sdd-spec-interview`](.github/skills/sdd-spec-interview/SKILL.md) | 1 問 1 答でヒアリングし、SDD の仕様(`.sdd/specs/<feature>.md`)を作成します。 |
+| [`sdd-reverse-spec`](.github/skills/sdd-reverse-spec/SKILL.md) | 既存コードから現状の挙動を要件として再定義し、根拠・確信度と特性化テストを記録してから改修につなぎます。 |
 | [`tech-writer`](.github/skills/tech-writer/SKILL.md) | README、設計書、テスト計画書、運用設計書、提案書、RFI/RFP、Qiita/Zenn 記事などの構成を整えます([kotonoha](https://github.com/nahisaho/kotonoha) 由来、MIT)。 |
 | [`japanese-prose`](.github/skills/japanese-prose/SKILL.md) | GiNZA による日本語の診断・校正です。保護対象の内容が変わっていないかを検査し、修正内容に対応するハッシュ付きの意味レビューを求めます(kotonoha 由来、MIT)。 |
 | [`consulting-analyst`](.github/skills/consulting-analyst/SKILL.md) | 文書やプレゼン資料を作る前に、判断すべき問い、論点、仮説、根拠、選択肢の比較を整理します(kotonoha 由来、MIT)。 |
@@ -31,6 +32,66 @@ Claude の実セッションでのスキル検出と対話は、まだ確認し�
 | **[GiNZA](https://github.com/megagonlabs/ginza)**(`ginza`、`ja-ginza`、`spacy`) | `japanese-prose` の形態素・係り受け解析 |
 | **[markdown-it-py](https://github.com/executablebooks/markdown-it-py)** | `japanese-prose` の編集前後の保護内容検査(`uv` がスクリプトの依存を解決) |
 | 対象スタックのツールチェーン(任意) | `gate` / `tdd` はプロジェクト自身のテストランナーを実行します。Go、Cargo、JDK + Maven/Gradle、CMake、.NET、PHP、Julia など |
+
+## インストール
+
+### 公開済みの npm パッケージをインストールする
+
+通常の導入では `@latest` を指定し、npm の `latest` タグが指す版をインストールします。
+このソース候補とは異なる版になる場合があります。
+Node.js 20 以上と npm を用意し、スキルを導入するプロジェクトで実行します。
+
+まず取得可能かを確認してください。確認に失敗した場合は、表示されたレジストリーや
+ネットワークの問題を解消するか、ソースから導入します。未公開とは限りません。
+
+```sh
+npm view musubix6@latest version &&
+npm install -g musubix6@latest &&
+musubix6 --version &&
+musubix6 init . &&
+musubix6 list
+```
+
+グローバルにインストールしない場合は、`npx --yes musubix6@latest init .` を使います。
+`init` は対象プロジェクトの `.github/skills/` にスキルをコピーします。
+
+検証結果を再現する場合は、`@latest` ではなく、使用する版を記録して固定してください。
+このソース候補の **0.2.3** を使う場合は、まず `npm view musubix6@0.2.3 version` で取得可能かを確認し、
+取得できる場合に限り `npm install -g musubix6@0.2.3` で導入します。取得できない場合はソースから導入してください。
+
+コピー先には相対パスと絶対パスを指定できます。省略すると作業ディレクトリを使います。
+`--force` と `--only a,b` はコピー先の前後どちらにも指定できます。
+不明なオプションや、値がない・空の `--only` は終了コード 2 で拒否し、
+ファイルの作成や上書きは行いません。
+
+変更点と既知の制限は [変更履歴](CLANGELOG.md) に記載しています。
+npm への公開は、固定したマトリックスで行うリリース検証の完了を意味しません。
+
+### ソースからのインストール(git clone)
+
+公開済みの npm 版ではなく、開発用のチェックアウトを使う場合の手順です。
+
+```sh
+git clone https://github.com/nahisaho/musubix6.git
+cd musubix6
+npm install -g .               # または: npm link
+musubix6 --version
+musubix6 init ../my-project
+musubix6 list
+```
+
+グローバルインストールは clone したディレクトリへのリンクになるため、
+ディレクトリは削除しないでください。
+更新方法は「[ソースから導入した場合に更新する](#ソースから導入した場合に更新する)」を参照してください。
+チェックアウトには、npm に未公開の変更が含まれる場合があります。
+CLI の導入だけでは、別のプロジェクトへスキルはコピーされません。
+上記の `init` は `../my-project` を作成し、既定の Copilot 用スキルを導入します。
+コピー先は対象プロジェクトのパスに置き換えてください。
+Claude 用には `--host claude`、両方には `--host both` を加えます。
+
+ソースから導入できても、npm に公開されているとは限りません。
+ローカルでのスクリプトやパッケージの動作確認は、Copilot / Claude の実セッションでのスキル検出や、
+固定したマトリックスによるリリース適格性の検証を意味しません。
 
 ### uv のインストール
 
@@ -50,6 +111,9 @@ uv --version
 
 GiNZA 5.3にはPython 3.10以降が必要です。開発元はPython 3.12を推奨しています。
 
+以下の例は、ソースのチェックアウト、または Copilot 用に `init` したプロジェクトのルートで実行します。
+Claude 専用のプロジェクトでは、`.github/skills/` を `.claude/skills/` に置き換えてください。
+
 ```sh
 uv run .github/skills/japanese-prose/scripts/lint.py path/to/document.md
 ```
@@ -58,7 +122,7 @@ uv run .github/skills/japanese-prose/scripts/lint.py path/to/document.md
 
 ```sh
 uv venv && source .venv/bin/activate
-uv pip install "ginza>=5.3.0,<5.4" "ja-ginza>=5.3.0,<5.4" "spacy>=3.8.16,<4"
+uv pip install "ginza>=5.3.0,<5.4" "ja-ginza>=5.3.0,<5.4" "spacy>=3.8.16,<4" "markdown-it-py>=3,<5"
 python .github/skills/japanese-prose/scripts/lint.py path/to/document.md
 ```
 
@@ -226,9 +290,10 @@ Rust の target と build の出力は、プロジェクト外に作る専用の
 
 ### Claude Code または両ホストに導入する(v0.2.3)
 
-新しいオプションは、npm の公開状況を確認してから導入した 0.2.3 の CLI、
-または後述のソースからのインストールで利用できます。
-0.1.x の npm 版では `--host` を使えません。
+以下の例は 0.2.3 の CLI を対象としています。
+[インストール](#インストール)の手順で npm の公開状況を確認して導入するか、
+[ソースから導入](#ソースからのインストールgit-clone)してください。
+公開済みの 0.2.2 も `--host` に対応しています。0.1.x の npm 版では使えません。
 
 ```sh
 musubix6 init /path/to/project --host claude
@@ -263,64 +328,9 @@ Claude Code では `/lean-sdd-tdd`、または自然な言葉でスキルを呼�
 承認を推測して記録しません。
 `CLAUDE.md`、hooks、プラグイン設定、権限の自動付与は導入しません。
 元の `.github/skills` から、同じスクリプトと補助ファイルをコピーします。
+リリース適格性の検証対象は Linux x86_64 のみです。
 移設後のスクリプト確認は、Claude の実セッションでの検証を意味しません。
-WSL コンテナーの実行、macOS / Windows は未検証です。
-
-### 公開済みの npm パッケージをインストールする
-
-次のコマンドでは、このソース候補と同じ **0.2.3** を指定します。
-2026-10-29 時点の npm では、`latest` は 0.2.2 で、0.2.3 は公開されていませんでした。
-取得可能であることを確認してから導入してください。この手順は `latest` ではなく、指定した版をインストールします。
-Node.js 20 以上と npm を用意し、スキルを導入するプロジェクトで実行します。
-
-まず取得可能かを確認してください。確認に失敗した場合は、表示されたレジストリーや
-ネットワークの問題を解消するか、ソースから導入します。未公開とは限りません。
-
-```sh
-npm view musubix6@0.2.3 version
-npm install -g musubix6@0.2.3
-musubix6 --version
-musubix6 init .
-musubix6 list
-```
-
-グローバルにインストールしない場合は、`npx --yes musubix6@0.2.3 init .` を使います。
-`init` は対象プロジェクトの `.github/skills/` にスキルをコピーします。
-
-コピー先には相対パスと絶対パスを指定できます。省略すると作業ディレクトリを使います。
-`--force` と `--only a,b` はコピー先の前後どちらにも指定できます。
-不明なオプションや、値がない・空の `--only` は終了コード 2 で拒否し、
-ファイルの作成や上書きは行いません。
-
-変更点と既知の制限は [変更履歴](CLANGELOG.md) に記載しています。
-npm への公開は、固定したマトリックスで行うリリース検証の完了を意味しません。
-
-### ソースからのインストール(git clone)
-
-公開済みの npm 版ではなく、開発用のチェックアウトを使う場合の手順です。
-
-```sh
-git clone https://github.com/nahisaho/musubix6.git
-cd musubix6
-npm install -g .               # または: npm link
-musubix6 --version
-musubix6 init ../my-project
-musubix6 list
-```
-
-グローバルインストールは clone したディレクトリへのリンクになるため、
-ディレクトリは削除しないでください。更新方法は次の節で説明します。
-チェックアウトには、npm に未公開の変更が含まれる場合があります。
-CLI の導入だけでは、別のプロジェクトへスキルはコピーされません。
-上記の `init` は `../my-project` を作成し、既定の Copilot 用スキルを導入します。
-コピー先は対象プロジェクトのパスに置き換えてください。
-Claude 用には `--host claude`、両方には `--host both` を加えます。
-
-2026-10-27 に Linux、Node 24.22.1、npm 11.19.1 で、`/tmp/musubix6` への導入を確認しました。
-共用のグローバル CLI を変更しないよう、npm のグローバル導入先を隔離しました。
-指定版の npm 導入、npx、ソースからの導入は成功し、Copilot 側に 10 件、Claude 側に 9 件のスキルを配置できました。
-導入済みの SDD ラッパーと `tech-writer` の lint、`uv run` で依存を解決した GiNZA の lint も実行できました。
-この確認は、Copilot / Claude の実セッションでのスキル検出や、リリース適格性を保証しません。
+WSL コンテナーの実機実行、macOS / Windows、Claude の実セッションは対象外で、未検証です。
 
 ## CLI と導入済みスキルの更新方法
 
@@ -359,7 +369,9 @@ Claude 用には `--host claude`、両方には `--host both` を加えます。
    musubix6 --version
    ```
 
-   特定の版にそろえる場合は、`npm install -g musubix6@0.2.3` のように指定します。
+   特定の版にそろえる場合は、`npm view musubix6@0.2.3 version` で取得可能かを確認してから、
+   `npm install -g musubix6@0.2.3` のように指定します。
+   `@latest` は npm の現在のタグを参照するため、このソース候補の 0.2.3 とは異なる版になる場合があります。
    この段階では、各プロジェクトのファイルは上書きされません。
 
 4. 対象プロジェクトのルートで、同梱スキルをコピーし直します。
@@ -546,8 +558,11 @@ AI コストは USD(1 AIU = 0.01 USD)で記録します。
   lean-sdd-tdd/         SKILL.md、references/、scripts/sdd.mjs(とテスト)
   lean-agentic-coding/  SKILL.md、references/、scripts/gate.sh
   sdd-spec-interview/   SKILL.md
+  sdd-reverse-spec/     SKILL.md
   tech-writer/          SKILL.md、references/doctypes/、assets/templates/、scripts/lint.py
   japanese-prose/       SKILL.md、references/、scripts/(GiNZA)、NOTICE.md
+  consulting-analyst/   SKILL.md、references/
+  presentation-planner/ SKILL.md、references/
   wslc-containers/      SKILL.md、scripts/wslc.sh
 ```
 

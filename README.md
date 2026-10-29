@@ -15,6 +15,7 @@ qualification. Claude live-session discovery and interaction remain unverified.
 | [`lean-sdd-tdd`](.github/skills/lean-sdd-tdd/SKILL.md) | Autonomous spec-driven (SDD) and test-driven (TDD) development with REQ/TEST IDs, Red→Green proof, hash-locked specs, trace check and a compact `gate`. Backed by the zero-dependency script `scripts/sdd.mjs`. |
 | [`lean-agentic-coding`](.github/skills/lean-agentic-coding/SKILL.md) | Risk tiers (T0–T2), context budget, delta review and a compact gate to cut token usage while keeping rigor. |
 | [`sdd-spec-interview`](.github/skills/sdd-spec-interview/SKILL.md) | Interviews the user one question at a time and writes the SDD spec (`.sdd/specs/<feature>.md`). |
+| [`sdd-reverse-spec`](.github/skills/sdd-reverse-spec/SKILL.md) | Reconstructs requirements from existing code, records source evidence and confidence, and pins current behaviour with characterization tests before changes. |
 | [`tech-writer`](.github/skills/tech-writer/SKILL.md) | Structures README, design docs, test plans, runbooks, proposals, RFI/RFP, Qiita/Zenn articles and more (from [kotonoha](https://github.com/nahisaho/kotonoha), MIT). |
 | [`japanese-prose`](.github/skills/japanese-prose/SKILL.md) | GiNZA-based Japanese prose diagnostics and proofreading, with protected-content checks and hash-bound semantic review for edits (from kotonoha, MIT). |
 | [`consulting-analyst`](.github/skills/consulting-analyst/SKILL.md) | Structures decision questions, issue trees, hypotheses, evidence and option comparisons before document or presentation planning (from kotonoha, MIT). |
@@ -31,6 +32,69 @@ qualification. Claude live-session discovery and interaction remain unverified.
 | **[GiNZA](https://github.com/megagonlabs/ginza)** (`ginza`, `ja-ginza`, `spacy`) | `japanese-prose` morphological/dependency analysis |
 | **[markdown-it-py](https://github.com/executablebooks/markdown-it-py)** | `japanese-prose` edit-invariant checks (`uv` resolves the script dependency) |
 | Target stack toolchains (optional) | `gate`/`tdd` run the project's own test runner: Go, Cargo, JDK + Maven/Gradle, CMake, .NET, PHP, Julia, … |
+
+## Installation
+
+### Install the published npm package
+
+For normal installation, use `@latest` to select the version tagged `latest`
+on npm. It may differ from this source candidate. With Node.js ≥ 20 and npm,
+run the following in the project where you want to install the skills:
+
+Check availability first. If that check fails, resolve the reported registry
+or network error, or use the source checkout; do not assume the version is
+unpublished.
+
+```sh
+npm view musubix6@latest version &&
+npm install -g musubix6@latest &&
+musubix6 --version &&
+musubix6 init . &&
+musubix6 list
+```
+
+Without a global install, run `npx --yes musubix6@latest init .` instead.
+`init` copies the bundled skills into the target's `.github/skills/`.
+
+For reproducible validation, record and use an exact version rather than
+`@latest`. To use this source candidate, **0.2.3**, first check
+`npm view musubix6@0.2.3 version`, then install with
+`npm install -g musubix6@0.2.3` only if available. Otherwise, use the source checkout.
+
+`init` accepts a relative or absolute destination; omitting it uses the current
+directory. `--force` and `--only a,b` can appear before or after the destination.
+Unknown options or a missing/empty `--only` skill list exit with status 2 without
+creating or overwriting files.
+
+See the [changelog](CLANGELOG.md) for changes and known release limitations;
+npm publication does not establish fixed-matrix release qualification.
+
+To install per-user instead of per repository, copy the skill directories to
+`~/.copilot/skills/`.
+
+### Install from source (git clone)
+
+For a development checkout rather than a published npm version:
+
+```sh
+git clone https://github.com/nahisaho/musubix6.git
+cd musubix6
+npm install -g .               # or: npm link
+musubix6 --version
+musubix6 init ../my-project
+musubix6 list
+```
+
+The global install links to this checkout, so keep the directory. To update,
+follow the source-update instructions below. A checkout can contain changes not
+yet published to npm. Installing the CLI alone does not copy skills into other
+projects: `init` above creates `../my-project` and installs the default Copilot
+skills there. Replace that destination with your project path; add
+`--host claude` or `--host both` for the other hosts.
+
+Installing from source does not establish npm publication. Local script or
+package smoke checks do not establish live Copilot/Claude skill discovery
+or fixed-matrix release qualification.
 
 ### Install uv
 
@@ -51,6 +115,9 @@ declare their dependencies inline (PEP 723), so `uv run` resolves
 isolated environment on first use (the first run downloads the model and
 takes a while):
 
+Run the examples from a source checkout or a project initialized for Copilot.
+For a Claude-only project, replace `.github/skills/` with `.claude/skills/`.
+
 ```sh
 uv run .github/skills/japanese-prose/scripts/lint.py path/to/document.md
 ```
@@ -59,7 +126,7 @@ To install it manually into a virtual environment instead:
 
 ```sh
 uv venv && source .venv/bin/activate
-uv pip install "ginza>=5.3.0,<5.4" "ja-ginza>=5.3.0,<5.4" "spacy>=3.8.16,<4"
+uv pip install "ginza>=5.3.0,<5.4" "ja-ginza>=5.3.0,<5.4" "spacy>=3.8.16,<4" "markdown-it-py>=3,<5"
 python .github/skills/japanese-prose/scripts/lint.py path/to/document.md
 ```
 
@@ -225,9 +292,10 @@ No measured time or AI-cost reduction is claimed.
 
 ### Claude Code and dual-host installation (v0.2.3)
 
-Use the 0.2.3 CLI after checking npm availability below, or the
-[source checkout](#install-from-source-git-clone), for these options.
-The 0.1.x npm versions do not support `--host`.
+These examples target the 0.2.3 CLI. Check npm availability in
+[Installation](#installation) before installing, or use the
+[source checkout](#install-from-source-git-clone).
+The published 0.2.2 CLI also supports `--host`; the 0.1.x npm versions do not.
 
 ```sh
 musubix6 init /path/to/project --host claude
@@ -261,70 +329,9 @@ Question/approval workflows use the host's native tool; if unavailable, they
 stop for an explicit conversational response rather than inventing approval.
 No `CLAUDE.md`, hooks, plugin configuration or permission grants are installed.
 The same scripts/assets are copied unchanged from the canonical `.github/skills`
-payload. Local relocated-script checks are not live Claude qualification;
-WSL container execution and macOS/Windows remain unverified.
-
-### Install the published npm package
-
-The commands below pin **0.2.3**, matching this source candidate. On
-2026-10-29, npm listed 0.2.2 as `latest`, but did not list 0.2.3. Install
-only after the availability check succeeds; the pinned commands do not
-install `latest`. With Node.js ≥ 20 and npm, run them in the project where
-you want to install the skills:
-
-Check availability first. If that check fails, resolve the reported registry
-or network error, or use the source checkout; do not assume the version is
-unpublished.
-
-```sh
-npm view musubix6@0.2.3 version
-npm install -g musubix6@0.2.3
-musubix6 --version
-musubix6 init .
-musubix6 list
-```
-
-Without a global install, run `npx --yes musubix6@0.2.3 init .` instead.
-`init` copies the bundled skills into the target's `.github/skills/`.
-
-`init` accepts a relative or absolute destination; omitting it uses the current
-directory. `--force` and `--only a,b` can appear before or after the destination.
-Unknown options or a missing/empty `--only` skill list exit with status 2 without
-creating or overwriting files.
-
-See the [changelog](CLANGELOG.md) for changes and known release limitations;
-npm publication does not establish fixed-matrix release qualification.
-
-To install per-user instead of per repository, copy the skill directories to
-`~/.copilot/skills/`.
-
-### Install from source (git clone)
-
-For a development checkout rather than a published npm version:
-
-```sh
-git clone https://github.com/nahisaho/musubix6.git
-cd musubix6
-npm install -g .               # or: npm link
-musubix6 --version
-musubix6 init ../my-project
-musubix6 list
-```
-
-The global install links to this checkout, so keep the directory. To update,
-follow the source-update instructions below. A checkout can contain changes not
-yet published to npm. Installing the CLI alone does not copy skills into other
-projects: `init` above creates `../my-project` and installs the default Copilot
-skills there. Replace that destination with your project path; add
-`--host claude` or `--host both` for the other hosts.
-
-Installation was checked on 2026-10-27 with Linux, Node 24.22.1 and npm
-11.19.1 in `/tmp/musubix6`, using an isolated npm global prefix to avoid
-changing the shared global CLI. The pinned npm install, npx and source install
-succeeded; Copilot received 10 skills and Claude received 9. The installed
-SDD wrapper and `tech-writer` lint ran successfully, as did the GiNZA lint
-with dependencies resolved by `uv run`. These checks do not establish live
-Copilot/Claude skill discovery or release qualification.
+payload. Release qualification targets Linux x86_64 only. Local relocated-script
+checks are not live Claude qualification; actual WSL container execution,
+macOS/Windows and live Claude interactions are excluded and remain unverified.
 
 ## Update the CLI and installed skills
 
@@ -365,7 +372,10 @@ or use `--host both` and back up/review both directories.
    ```
 
    To install a specific version instead, use a version such as
-   `npm install -g musubix6@0.2.3`. Updating the CLI does not overwrite project
+   `npm install -g musubix6@0.2.3`, after checking
+   `npm view musubix6@0.2.3 version`. `@latest` follows the current npm tag
+   and may differ from this 0.2.3 source candidate.
+   Updating the CLI does not overwrite project
    files at this stage.
 
 4. From the target project's root, refresh the bundled skills:
@@ -541,8 +551,11 @@ claim that every cell has already passed; it never publishes a package.
   lean-sdd-tdd/         SKILL.md, references/, scripts/sdd.mjs (+ tests)
   lean-agentic-coding/  SKILL.md, references/, scripts/gate.sh
   sdd-spec-interview/   SKILL.md
+  sdd-reverse-spec/     SKILL.md
   tech-writer/          SKILL.md, references/doctypes/, assets/templates/, scripts/lint.py
   japanese-prose/       SKILL.md, references/, scripts/ (GiNZA), NOTICE.md
+  consulting-analyst/   SKILL.md, references/
+  presentation-planner/ SKILL.md, references/
   wslc-containers/      SKILL.md, scripts/wslc.sh
 ```
 
