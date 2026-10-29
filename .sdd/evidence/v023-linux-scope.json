@@ -396,11 +396,46 @@
           "sha256": "9733a9933a72176e370d3ba90e2008294870243bbc1fbf00fa4df9e9860f5125"
         }
       ]
+    },
+    {
+      "feature": "release-qualification",
+      "by": "nahisaho",
+      "at": "2026-10-29T11:52:20.988Z",
+      "artifacts": [
+        {
+          "path": ".sdd/specs/release-qualification.md",
+          "sha256": "8a696227ff32e0a29f9afabd22af2f1600769871bb06ef74d5a9e9a484561b3c"
+        },
+        {
+          "path": ".sdd/release-validation.v0.2.3.json",
+          "sha256": "0b61a5b8678f6db62e068bf0ef291be9705df80be9ad2dbf7ffad8c07ed408bb"
+        },
+        {
+          "path": ".sdd/release-content-mutations.v0.2.3.json",
+          "sha256": "60f658309522e1ffae19be653f60bef7021cd207ca4b7f2a983c603d6cb35a45"
+        },
+        {
+          "path": ".sdd/specs/claude-code-support.md",
+          "sha256": "4617ab97c905cf9ee8f1cd6387818448c7a4b8f6960164c6fddd1b024da53cb5"
+        },
+        {
+          "path": "README.md",
+          "sha256": "b51231418d95a5de812bd8d33308bed01922f077536264c1eef8a5d2c6d793f5"
+        },
+        {
+          "path": "README-ja.md",
+          "sha256": "d7b0ef264cbf14c32afd6ca2ef7544f038d4101662d156d18925c0368b87d58d"
+        },
+        {
+          "path": "CLANGELOG.md",
+          "sha256": "9733a9933a72176e370d3ba90e2008294870243bbc1fbf00fa4df9e9860f5125"
+        }
+      ]
     }
   ],
   "currentDevelopmentEvidence": {
     "path": "/home/nahisaho/GitHub/musubix6/.sdd/evidence/v023-qualification-development.json",
-    "sha256": "ceae920df3fc10c748f918d39e1d087494dec5dd5d4181c34b51ac41a43b6151"
+    "sha256": "5fe6b6b0afd906045c2821ab0ab232e41a418d2e76d6a87d1f0a231d71e3b3bb"
   },
   "qualifyingCredit": 0
 }

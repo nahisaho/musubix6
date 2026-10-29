@@ -163,6 +163,7 @@ export async function admitPlan(request) {
 export async function freezeCandidate(request, effects = {}) {
   return verdict(async () => {
     const scope = await must(admitPlan(request));
+    externalOutput(scope.root, request.outputPath);
     if (!effects.probeTool) {
       const { unresolvedMechanisms, discoverCurrentCatalogue, commandForCell } = await import('./release-qualification-cells.mjs');
       ensure(Object.keys(unresolvedMechanisms).length === 0,
@@ -173,12 +174,12 @@ export async function freezeCandidate(request, effects = {}) {
         node20: request.tools.find(tool => tool.id === 'node20').executable,
         output: path.join(path.dirname(request.outputPath), `freeze-discovery-${Date.now()}`),
         environment: cleanEnvironment(request.environment.variables || {}, request.environment.canonicalPath),
+        nodeModules: request.execution.nodeModules,
       });
       equal([...discovery.names].sort(), [...request.catalogues.regressions].sort());
       for (const cell of scope.requiredCells) equal(request.commands.find(row => row.cellId === cell.id).argv,
         commandForCell(cell, discovery.files));
     }
-    externalOutput(scope.root, request.outputPath);
     ensure(!inside(scope.root, request.outputPath), 'frozen manifest must be outside source');
     ensure(!fs.existsSync(request.outputPath), 'frozen revision already exists');
     const inherited = json(scope.inheritedPath);

@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
-import { ensure, equal, fileSha, json, mkdir, save, execute, retainProcess, readRef, waitForProcessExit } from './release-qualification-io.mjs';
+import { ensure, equal, fileSha, json, mkdir, save, execute, retainProcess, readRef, waitForProcessExit, externalOutput } from './release-qualification-io.mjs';
 import { parseEvents, namedControl, processControl, ownedAssertion } from './release-qualification-evidence.mjs';
 import { contentCaseCatalogue, runContentCell, validateContentRun } from './release-qualification-content-mutations.mjs';
 
@@ -32,12 +32,19 @@ function testFiles(source) {
   return files;
 }
 
-export async function discoverCurrentCatalogue({ source, node20, output, environment }) {
+export async function discoverCurrentCatalogue({ source, node20, output, environment, nodeModules }, effects = {}) {
+  externalOutput(source, output);
   mkdir(output);
+  if (nodeModules) {
+    const { materializeSource } = await import('./release-qualification.mjs');
+    const destination = path.join(output, 'source');
+    await materializeSource({ sourceRoot: source, destination, nodeModules, cell: { kind: 'suite' } });
+    source = destination;
+  }
   const reporter = path.join(source, 'scripts/release-host-events.mjs');
   const command = [node20, '--test', `--test-reporter=${reporter}`, '--test-name-pattern', '(?!)',
     ...testFiles(source).map(file => path.join(source, file))];
-  const result = await execute({ command, cwd: source, env: environment, timeoutMs: 120000 });
+  const result = await (effects.execute || execute)({ command, cwd: source, env: environment, timeoutMs: 120000 });
   const evidence = retainProcess(output, result);
   ensure(result.exit === 0 && !result.error && !result.signal && !result.timedOut, 'current registration discovery failed');
   const parsed = parseEvents(result.stdout);

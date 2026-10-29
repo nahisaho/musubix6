@@ -185,6 +185,29 @@ test('TEST-RELQ-CLOSURE-001 rejects unbound execution inputs and manifest policy
   fs.rmSync(path.join(isolated, 'node_modules'), { recursive: true });
   assert.deepEqual(assertionCatalogue(isolated, 'owned.test.mjs', 'owned', 'owned expectation',
     path.join(root, 'node_modules')).assertionLines, [1], 'an isolated source archive needs no installed dependency symlink');
+  write(path.join(isolated, 'package.json'), { type: 'module', scripts: { test: 'node --test owned.test.mjs' } });
+  const { discoverCurrentCatalogue } = await import('./release-qualification-cells.mjs');
+  const registered = await discoverCurrentCatalogue({
+    source: isolated, node20: process.execPath, output: path.join(directory, 'archive-registration'),
+    environment: {}, nodeModules: path.join(root, 'node_modules'),
+  }, {
+    execute: async invocation => {
+      const modules = path.join(invocation.cwd, 'node_modules');
+      const available = fs.existsSync(modules) && fs.realpathSync(modules) === fs.realpathSync(path.join(root, 'node_modules'));
+      const counts = { tests: 1, pass: 0, fail: 0, cancelled: 0, skipped: 1, todo: 0 };
+      return { ...invocation, exit: 0, signal: null, timedOut: false, error: null, stderr: '',
+        stdout: [
+          { type: 'test:pass', data: { name: available ? 'bound dependency available' : 'dependency missing',
+            nesting: 0, skip: 'test name does not match pattern' } },
+          { type: 'test:plan', data: { nesting: 0, count: 1 } },
+          ...Object.entries(counts).map(([key, value]) => ({
+            type: 'test:diagnostic', data: { nesting: 0, message: `${key} ${value}` },
+          })),
+        ].map(row => JSON.stringify(row)).join('\n') + '\n' };
+    },
+  });
+  assert.deepEqual(registered.names, ['bound dependency available'], 'archive registration must receive the explicit installed dependencies');
+  assert.equal(fs.existsSync(path.join(isolated, 'node_modules')), false, 'registration must not modify the immutable source archive');
 });
 
 /** @id TEST-RELQ-READINESS-001 @verifies REQ-RELQ-004 */
