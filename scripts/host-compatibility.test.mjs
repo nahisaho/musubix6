@@ -210,7 +210,7 @@ test('TEST-HOST-004 shared instructions are host-neutral and relocated helpers e
   success(run('bash', ['-n', path.join(work, '.claude/skills/wslc-containers/scripts/wslc.sh')]));
 });
 
-/** @id TEST-HOST-005 @verifies REQ-HOST-005 */
+/** @id TEST-HOST-005 @verifies REQ-HOST-005 REQ-HOST-NPX-001 */
 test('TEST-HOST-005 stable release metadata and real npm payload preserve wrapper contracts', t => {
   const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
   assert.equal(pkg.version, '0.2.0');
@@ -238,13 +238,18 @@ test('TEST-HOST-005 stable release metadata and real npm payload preserve wrappe
     assert.ok(updateStart >= 0, `${file}: npx update instructions`);
     const updateBody = body.slice(updateStart, body.indexOf('\n### ', updateStart + updateHeading.length));
     assert.ok(updateBody.includes('npm view musubix6@0.2.0 version'), `${file}: npx update availability check`);
-    assert.match(updateBody, /@latest[\s\S]*0\.1\.4/, `${file}: latest may still select the old release`);
+    const latestNotice = updateBody.split('\n\n').find(paragraph => paragraph.includes('`@latest`'));
+    assert.ok(latestNotice, `${file}: npx update tag notice`);
+    const latestPattern = file === 'README.md'
+      ? /@latest[\s\S]*current tag[\s\S]*may differ[\s\S]*0\.2\.0/
+      : /@latest[\s\S]*現在のタグ[\s\S]*0\.2\.0[\s\S]*異なる版/;
+    assert.match(latestNotice, latestPattern, `${file}: latest can differ from the source version`);
   }
   const work = temporary(t);
   success(run('npm', ['pack', '--ignore-scripts', '--pack-destination', work, '--json']));
   const archives = fs.readdirSync(work).filter(name => name.endsWith('.tgz'));
   assert.equal(archives.length, 1);
-  success(run('tar', ['-xzf', path.join(work, archives[0]), '-C', work]));
+  success(run('tar', ['-xpzf', path.join(work, archives[0]), '-C', work]));
   const packed = path.join(work, 'package');
   for (const name of all) {
     assert.deepEqual(inventory(path.join(packed, '.github/skills', name)),

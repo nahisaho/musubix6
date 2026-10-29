@@ -1,0 +1,290 @@
+{
+  "legacy": {
+    "models": {
+      "claude-sonnet-5.5": {
+        "calls": 21321,
+        "inputTokens": 1811834466,
+        "outputTokens": 19202304,
+        "usd": "564.50"
+      },
+      "gpt-5.6-luna": {
+        "calls": 8,
+        "inputTokens": 47460,
+        "outputTokens": 2438,
+        "usd": "0.01"
+      },
+      "gpt-5.6-terra": {
+        "calls": 26,
+        "inputTokens": 412537,
+        "outputTokens": 9674,
+        "usd": "0.33"
+      },
+      "gpt-6.1-sol": {
+        "calls": 13350,
+        "inputTokens": 902567794,
+        "outputTokens": 8778739,
+        "usd": "258.93"
+      }
+    },
+    "rows": [
+      {
+        "calls": 2,
+        "created": "2026-10-09T21:13",
+        "id": "2419307e",
+        "model": "claude-sonnet-5.5",
+        "summary": "Review Previous Work",
+        "usd": "0.09"
+      },
+      {
+        "calls": 63,
+        "created": "2026-10-09T21:17",
+        "id": "7949881c",
+        "model": "claude-sonnet-5.5",
+        "summary": "Develop AI Coding Agent Skill",
+        "usd": "1.78"
+      },
+      {
+        "calls": 325,
+        "created": "2026-10-09T22:04",
+        "id": "3248d553",
+        "model": "claude-sonnet-5.5",
+        "summary": "Create Fix Plan for GitHub Issue",
+        "usd": "8.29"
+      },
+      {
+        "calls": 3321,
+        "created": "2026-10-10T00:29",
+        "id": "1bace3a6",
+        "model": "claude-sonnet-5.5",
+        "summary": "#28 #29を閉じる",
+        "usd": "68.98"
+      },
+      {
+        "calls": 19,
+        "created": "2026-10-10T00:29",
+        "id": "1bace3a6",
+        "model": "gpt-5.6-terra",
+        "summary": "#28 #29を閉じる",
+        "usd": "0.23"
+      },
+      {
+        "calls": 2895,
+        "created": "2026-10-10T09:21",
+        "id": "9919902f",
+        "model": "claude-sonnet-5.5",
+        "summary": "Create dockfood-6 Directory",
+        "usd": "75.19"
+      },
+      {
+        "calls": 8,
+        "created": "2026-10-10T09:21",
+        "id": "9919902f",
+        "model": "gpt-5.6-luna",
+        "summary": "Create dockfood-6 Directory",
+        "usd": "0.01"
+      },
+      {
+        "calls": 246,
+        "created": "2026-10-10T12:46",
+        "id": "84cb428d",
+        "model": "claude-sonnet-5.5",
+        "summary": "Check SKILL.md Size",
+        "usd": "18.04"
+      },
+      {
+        "calls": 6637,
+        "created": "2026-10-10T12:46",
+        "id": "84cb428d",
+        "model": "gpt-6.1-sol",
+        "summary": "Check SKILL.md Size",
+        "usd": "87.98"
+      },
+      {
+        "calls": 2671,
+        "created": "2026-10-11T15:53",
+        "id": "069072a9",
+        "model": "claude-sonnet-5.5",
+        "summary": "Advanced Application Development",
+        "usd": "77.23"
+      },
+      {
+        "calls": 361,
+        "created": "2026-10-11T17:33",
+        "id": "88999767",
+        "model": "claude-sonnet-5.5",
+        "summary": "Create Musubix6 Application Tutorial",
+        "usd": "17.65"
+      },
+      {
+        "calls": 7,
+        "created": "2026-10-11T17:33",
+        "id": "88999767",
+        "model": "gpt-5.6-terra",
+        "summary": "Create Musubix6 Application Tutorial",
+        "usd": "0.10"
+      },
+      {
+        "calls": 51,
+        "created": "2026-10-11T20:52",
+        "id": "b1cb9b0b",
+        "model": "claude-sonnet-5.5",
+        "summary": "修正 WSL Container 設定",
+        "usd": "1.00"
+      },
+      {
+        "calls": 10411,
+        "created": "2026-10-11T23:45",
+        "id": "1e960199",
+        "model": "claude-sonnet-5.5",
+        "summary": "Wave 7 Development Tasks",
+        "usd": "266.90"
+      },
+      {
+        "calls": 7,
+        "created": "2026-10-12T05:14",
+        "id": "08aa73e2",
+        "model": "claude-sonnet-5.5",
+        "summary": "Analyze Github Actions Errors",
+        "usd": "0.10"
+      },
+      {
+        "calls": 149,
+        "created": "2026-10-12T05:21",
+        "id": "49301c16",
+        "model": "claude-sonnet-5.5",
+        "summary": "Re-Test docs/*.md in musubix6",
+        "usd": "5.97"
+      },
+      {
+        "calls": 450,
+        "created": "2026-10-13T13:39",
+        "id": "ba9f04e0",
+        "model": "claude-sonnet-5.5",
+        "summary": "Summarize Wave 17-19 Findings",
+        "usd": "13.17"
+      },
+      {
+        "calls": 4521,
+        "created": "2026-10-13T13:39",
+        "id": "ba9f04e0",
+        "model": "gpt-6.1-sol",
+        "summary": "Summarize Wave 17-19 Findings",
+        "usd": "91.24"
+      },
+      {
+        "calls": 7,
+        "created": "2026-10-14T19:41",
+        "id": "c63580d5",
+        "model": "claude-sonnet-5.5",
+        "summary": "Add npm Install Steps to README",
+        "usd": "0.12"
+      },
+      {
+        "calls": 1,
+        "created": "2026-10-18T10:16",
+        "id": "43ccc1d9",
+        "model": "gpt-6.1-sol",
+        "summary": "Explore GitHub Copilot",
+        "usd": "0.06"
+      },
+      {
+        "calls": 56,
+        "created": "2026-10-18T10:17",
+        "id": "7bd7a29e",
+        "model": "claude-sonnet-5.5",
+        "summary": "Debug Skill Loading Error",
+        "usd": "1.03"
+      },
+      {
+        "calls": 178,
+        "created": "2026-10-18T10:17",
+        "id": "7bd7a29e",
+        "model": "gpt-6.1-sol",
+        "summary": "Debug Skill Loading Error",
+        "usd": "4.78"
+      },
+      {
+        "calls": 172,
+        "created": "2026-10-18T22:19",
+        "id": "f19a6ec9",
+        "model": "claude-sonnet-5.5",
+        "summary": "Remove Worktree Directory",
+        "usd": "4.73"
+      },
+      {
+        "calls": 852,
+        "created": "2026-10-18T22:19",
+        "id": "f19a6ec9",
+        "model": "gpt-6.1-sol",
+        "summary": "Remove Worktree Directory",
+        "usd": "30.19"
+      },
+      {
+        "calls": 23,
+        "created": "2026-10-20T11:21",
+        "id": "eea8e3e8",
+        "model": "claude-sonnet-5.5",
+        "summary": "Continue Ongoing Work",
+        "usd": "1.07"
+      },
+      {
+        "calls": 352,
+        "created": "2026-10-20T11:21",
+        "id": "eea8e3e8",
+        "model": "gpt-6.1-sol",
+        "summary": "Continue Ongoing Work",
+        "usd": "15.15"
+      },
+      {
+        "calls": 111,
+        "created": "2026-10-21T10:50",
+        "id": "a55408e9",
+        "model": "claude-sonnet-5.5",
+        "summary": "Develop Claude Code v0.2.0",
+        "usd": "3.16"
+      },
+      {
+        "calls": 809,
+        "created": "2026-10-21T10:50",
+        "id": "a55408e9",
+        "model": "gpt-6.1-sol",
+        "summary": "Develop Claude Code v0.2.0",
+        "usd": "29.54"
+      }
+    ],
+    "totalUsd": "823.76"
+  },
+  "schemaVersion": 1,
+  "sessions": {
+    "1f3fca45-165b-46a5-a9cb-f50f07eb054e": {
+      "created": "2026-10-29T00:05",
+      "models": {
+        "claude-sonnet-5.5": {
+          "calls": 32,
+          "inputTokens": 1261272,
+          "nanoAiu": 79994120000,
+          "outputTokens": 19116
+        },
+        "gpt-6.1-sol": {
+          "calls": 140,
+          "inputTokens": 14409587,
+          "nanoAiu": 376197070000,
+          "outputTokens": 108653
+        }
+      },
+      "summary": "Update musubix for GiNZA 5.3"
+    },
+    "28b37d8f-56f4-4e28-b9c8-71cc59366d60": {
+      "created": "2026-10-27T10:37",
+      "models": {
+        "gpt-6.1-sol": {
+          "calls": 26,
+          "inputTokens": 1619382,
+          "nanoAiu": 60469040000,
+          "outputTokens": 9506
+        }
+      },
+      "summary": "Install musubix6 and Verify README"
+    }
+  }
+}

@@ -68,6 +68,64 @@ test('TEST-KOTO-SYNC-003 initialized tech-writer preserves the local todo-app co
   assert.doesNotMatch(result.stdout, /The todo app/);
 });
 
+/** @id TEST-GINZA-001 @verifies REQ-GINZA-001 */
+test('TEST-GINZA-001 installed GiNZA 5.3 scripts preserve diagnostics and terminology', { timeout: 600000 }, t => {
+  const work = fs.mkdtempSync(path.join(os.tmpdir(), 'ginza-53-'));
+  t.after(() => fs.rmSync(work, { recursive: true, force: true }));
+  const installed = cli('init', work, '--only', 'japanese-prose');
+  assert.equal(installed.status, 0, installed.stdout + installed.stderr);
+  const scripts = path.join(work, '.github/skills/japanese-prose/scripts');
+  const expectedDependencies = ['ginza>=5.3.0,<5.4', 'ja-ginza>=5.3.0,<5.4', 'spacy>=3.8.16,<4'];
+  for (const script of ['test_engine.py', 'lint.py', 'terms.py']) {
+    const source = fs.readFileSync(path.join(scripts, script), 'utf8');
+    assert.match(source, /^# requires-python = ">=3\.10"$/m);
+    const dependencies = [...source.matchAll(/^# {3}"((?:ginza|ja-ginza|spacy)[^"]+)",$/gm)]
+      .map(match => match[1]);
+    assert.deepEqual(dependencies, expectedDependencies, `${script} must declare the supported environment`);
+  }
+  for (const readme of ['README.md', 'README-ja.md']) {
+    const text = fs.readFileSync(path.join(root, readme), 'utf8');
+    assert.ok(text.includes(`uv pip install ${expectedDependencies.map(item => `"${item}"`).join(' ')}`),
+      `${readme} must document the validated installation command`);
+  }
+  assert.match(fs.readFileSync(path.join(work, '.github/skills/japanese-prose/NOTICE.md'), 'utf8'),
+    /targets GiNZA 5\.3\.x/);
+  const run = (script, ...args) => {
+    const result = spawnSync('uv', ['run', '--python', '3.12', '--script', path.join(scripts, script), ...args], {
+      encoding: 'utf8', timeout: 180000,
+      env: { ...process.env, PYTHONPATH: scripts, PYTHONDONTWRITEBYTECODE: '1' },
+    });
+    assert.ifError(result.error);
+    return result;
+  };
+  const suite = run('test_engine.py');
+  assert.equal(suite.status, 0, suite.stdout + suite.stderr);
+  assert.match(suite.stderr, /Ran \d+ tests/);
+  assert.match(suite.stderr, /\bOK\b/);
+  const document = path.join(work, 'sample.md');
+  fs.writeFileSync(document, '# Test\n\n東京都でGitHubを利用します。\n\n```\n設定をを確認します。\n```\n');
+  for (const script of ['lint.py', 'terms.py']) {
+    const result = run(script, document, '--json');
+    assert.equal(result.status, 0, result.stdout + result.stderr);
+    const output = JSON.parse(result.stdout);
+    assert.equal(output.engine, 'GiNZA');
+    if (script === 'lint.py') {
+      assert.equal(output.finding_count, 0);
+    } else {
+      assert.ok(output.terms.some(term => term.term === 'GitHub'));
+      assert.ok(output.terms.some(term => term.entity), 'NER must remain enabled for terminology');
+    }
+    const missing = run(script, path.join(work, 'missing.md'), '--json');
+    assert.equal(missing.status, 1, missing.stdout + missing.stderr);
+    assert.equal(missing.stdout, '');
+    assert.match(missing.stderr, /error:/);
+  }
+  fs.writeFileSync(document, '設定をを確認します。\n');
+  const duplicate = run('lint.py', document, '--json');
+  assert.equal(duplicate.status, 0, duplicate.stdout + duplicate.stderr);
+  assert.ok(JSON.parse(duplicate.stdout).findings.some(finding => finding.category === 'duplicate_particle'));
+});
+
 const lintScript = path.join(root, '.github/skills/tech-writer/scripts/lint.py');
 function lintPlaceholders(t, rows, script = lintScript) {
   const work = fs.mkdtempSync(path.join(os.tmpdir(), 'placeholder-policy-'));

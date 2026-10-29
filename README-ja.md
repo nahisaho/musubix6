@@ -45,8 +45,10 @@ uv --version
 
 通常、GiNZA を手動でインストールする必要はありません。
 `japanese-prose` は、スクリプト内に依存関係を宣言しています(PEP 723)。
-初回の `uv run` で、`ginza>=5.2.0,<5.3`、`ja-ginza>=5.2.0,<5.3`、`spacy>=3.8.0,<4` が
+初回の `uv run` で、`ginza>=5.3.0,<5.4`、`ja-ginza>=5.3.0,<5.4`、`spacy>=3.8.16,<4` が
 隔離環境に自動でインストールされます(初回はモデルのダウンロードで時間がかかります)。
+
+GiNZA 5.3にはPython 3.10以降が必要です。開発元はPython 3.12を推奨しています。
 
 ```sh
 uv run .github/skills/japanese-prose/scripts/lint.py path/to/document.md
@@ -56,7 +58,7 @@ uv run .github/skills/japanese-prose/scripts/lint.py path/to/document.md
 
 ```sh
 uv venv && source .venv/bin/activate
-uv pip install "ginza>=5.2.0,<5.3" "ja-ginza>=5.2.0,<5.3" "spacy>=3.8.0,<4"
+uv pip install "ginza>=5.3.0,<5.4" "ja-ginza>=5.3.0,<5.4" "spacy>=3.8.16,<4"
 python .github/skills/japanese-prose/scripts/lint.py path/to/document.md
 ```
 

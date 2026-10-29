@@ -12,7 +12,7 @@ SudachiPy and SudachiDict are distributed under the Apache License 2.0.
 GiNZA documents the licenses of its remaining dependencies and training
 datasets.
 
-The implementation targets GiNZA 5.2.x and uses token surface forms, lemmas,
+The implementation targets GiNZA 5.3.x and uses token surface forms, lemmas,
 universal part-of-speech tags, dependency relationships, sentence boundaries,
 and named-entity labels.
 

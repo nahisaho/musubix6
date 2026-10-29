@@ -1,0 +1,39 @@
+---
+feature: cost-history
+tier: T2
+---
+# Preserve cumulative AI costs across local session retention
+| ID | EARS requirement | Test |
+| --- | --- | --- |
+| REQ-COST-HISTORY-001 | When regenerating costs from a partial local session store, the generator shall preserve the existing report's historical totals and rows, retain previously observed exact usage snapshots, replace updated snapshots without double counting, serialize concurrent writers and recover the derived report from its canonical checkpoint. | TEST-COST-HISTORY-001 |
+| REQ-COST-HISTORY-002 | If legacy input, history schema or usage is malformed, a live ID overlaps an archived short ID, or observed live counters decrease, the generator shall fail explicitly before replacing the history or report. | TEST-COST-HISTORY-002 |
+## PASS conditions and counterexamples
+| REQ | PASS condition | Counterexample | TEST/command | Observed evidence |
+| `REQ-COST-HISTORY-001` | Archived $10.00 + 12e9 nano-AIU = $10.12; rerun remains $10.12; increasing usage to 20e9 yields $10.20; empty local DB retains that amount; concurrent independent 3e9/4e9 snapshots yield $10.27 and all four sessions. Model calls/tokens retain the archived aggregate plus exact live metrics. | Replacing history with only the local store yields $0.12; adding the same active snapshot twice yields $10.24; losing one concurrent writer yields $10.23 or $10.24. | TEST-COST-HISTORY-001; isolated retention/idempotency/locking mutations | Official assertion Red: baseline overwritten with $0.00; Green and restored retention/idempotency/locking controls passed. |
+| `REQ-COST-HISTORY-002` | Malformed initial report, invalid/unknown history, archived-ID overlap and decreases in calls/nano-AIU/input/output counters exit nonzero and leave both files unchanged; valid controls pass. | Overlap of 11111111 with a live UUID must refuse rather than guess historical per-session tokens/cost precision; damaged JSON must not silently bootstrap a new zero baseline. | TEST-COST-HISTORY-002; isolated validation mutation | Official assertion Red: malformed legacy exited zero; Green passed all 22 invalid cases and valid controls without overwriting outputs. |
+Oracle: exact Decimal arithmetic, 1 USD = 100e9 nano-AIU, and immutable legacy report values at their original precision. Display rounds the final cumulative value half-even to cents, not each live session before summing. The old $823.76 total is not reconstructed by summing individually rounded model/session rows.
+Risk stages: contract — cumulative report, not a billing-authoritative statement; trusted inputs — validate report/history/SQLite metrics and ambiguous short IDs; execution — POSIX advisory writer lock and atomic individual replacements; verdict — independent exact fixture totals and explicit invalid controls; history — preserve rounded legacy aggregates separately from exact live snapshots; integration/distribution — npm test includes developer-only regression; CLI package/version/release policy unchanged.
+## Design
+`.sdd/cost-history.json` is the canonical checkpoint: schemaVersion 1, immutable legacy total/model aggregates/session rows, and exact per-full-session/model nano-AIU/call/token snapshots. Missing local rows retain prior snapshots; present counters must not decrease.
+Bootstrap only from a complete existing report or an absent report (zero baseline). Reject any live ID matching a legacy prefix because exact historical per-session tokens are unavailable. Explicit reconciliation of recovered legacy records is outside scope.
+Generated reports contain a checkpoint marker; if that checkpoint is subsequently missing, refuse bootstrap to prevent merged live usage becoming a second legacy baseline. A stale/missing derived report is repaired from a valid checkpoint.
+| Checkpoint | Report | Action |
+| --- | --- | --- |
+| Absent | Absent | Start with zero legacy baseline |
+| Absent | Complete unmarked legacy | Bootstrap immutable legacy baseline |
+| Absent | Marked or malformed | Refuse without replacing files |
+| Valid | Any / absent | Merge monotone live snapshots, regenerate report |
+| Invalid | Any / absent | Refuse without replacing files |
+Read/update/write under `.sdd/.cost-log.lock`; write validated history atomically before the derived Markdown so interruption between files is recoverable by rerunning. The lock is ignored by Git. Each output is atomic, not a transactional pair.
+Import-safe internal seams `load_history(...)`, `atomic_write(Path, text)` and `main()` allow deterministic lock probing and injected output failures without shipping test hooks. Lock probes must execute, and checkpoint-write failure leaves both outputs unchanged.
+Existing `python3 scripts/cost-log.py [project-dir]` remains valid; `--store PATH` selects a test/export SQLite store. Locking targets this POSIX development environment; Windows is unqualified. No credentials, DB mutation, publication or raw historical usage reconstruction.
+## Assumptions / evidence
+Preflight: the real local store has only two new sessions; the committed report retains 19 historical sessions and $823.76. No session-store backup or first archived session event file exists locally. A complete raw historical reconstruction is therefore unknown, never fabricated.
+Isolated Linux/Python spike passed: Decimal 12e9/100e9=$0.12; SQLite read-only integer SUM retains precision; same-directory os.replace preserves content; a second process cannot obtain an exclusive nonblocking flock while the first holds it. All temporary spike paths were removed.
+Executed `sdd.mjs tdd red TEST-COST-HISTORY-001/002` separately before production changes; both recorded expected assertions, not setup failures. Both corresponding `tdd green` commands and `node --test scripts/cost-log.test.mjs` passed (2/2; no skips).
+Isolated copied-payload mutations detected legacy model-total reconstruction, lost retention, double counting, accepted decreases, unknown schema, prefix overlap, omitted lock, reversed checkpoint/report order, accepted raw NULL metrics, lost absent model and accepted negative history counters (11/11); every mutation was restored and its selected regression passed. Evidence: session `files/cost-mutation-results.json` and `cost-*-{mutant,restored}.log`; source was not mutated during other validation.
+Two additional rounding mutations (half-up instead of half-even, and per-row cent rounding before accumulation) were also assertion-detected and restored controls passed: final total 13/13 detected and 13/13 restored passes.
+Two parallel Claude Sonnet 5.5 implementation risk reviews found no blockers. The real committed legacy report independently parsed as $823.76, 19 distinct sessions, 28 rows and four models; both live session prefixes are disjoint.
+Both reviewers' second integration round also found no blockers: real exact live costs $4.8945912 plus the independent archived total yielded $828.6545912, displayed $828.65 for 21 sessions at that snapshot. All 28 original session rows are byte-identical in the derived report. Usage continues to accrue; regenerate immediately before committing, always committing the canonical JSON together with the report.
+Scoped static snapshots: JavaScript PASS; Python FAIL on both candidate and HEAD with no new normalized `(file,code,message)` finding counts. Existing Python findings remain, including the original nonexecutable cost-script shebang; this is not Python static cleanliness. Final full unchanged gate command: source session `files/validation-env.sh`, `umask 022`, then `node .github/skills/lean-sdd-tdd/scripts/sdd.mjs gate`; retain output at session `files/ginza-cost-final-full-gate.log`.
+Limits: only project-attributable events joined to session metadata are measured; orphan usage with no project metadata is outside this estimate. Historical per-session raw tokens/nano-AIU remain unavailable. This is not a release qualification or permission to publish.

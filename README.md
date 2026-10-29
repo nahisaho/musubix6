@@ -43,9 +43,11 @@ uv --version
 
 ### Install GiNZA
 
+GiNZA 5.3 requires Python 3.10 or later; upstream recommends Python 3.12.
+
 You normally do **not** install GiNZA by hand. The `japanese-prose` scripts
 declare their dependencies inline (PEP 723), so `uv run` resolves
-`ginza>=5.2.0,<5.3`, `ja-ginza>=5.2.0,<5.3` and `spacy>=3.8.0,<4` into an
+`ginza>=5.3.0,<5.4`, `ja-ginza>=5.3.0,<5.4` and `spacy>=3.8.16,<4` into an
 isolated environment on first use (the first run downloads the model and
 takes a while):
 
@@ -57,7 +59,7 @@ To install it manually into a virtual environment instead:
 
 ```sh
 uv venv && source .venv/bin/activate
-uv pip install "ginza>=5.2.0,<5.3" "ja-ginza>=5.2.0,<5.3" "spacy>=3.8.0,<4"
+uv pip install "ginza>=5.3.0,<5.4" "ja-ginza>=5.3.0,<5.4" "spacy>=3.8.16,<4"
 python .github/skills/japanese-prose/scripts/lint.py path/to/document.md
 ```
 

@@ -2,9 +2,9 @@
 # /// script
 # requires-python = ">=3.10"
 # dependencies = [
-#   "ginza>=5.2.0,<5.3",
-#   "ja-ginza>=5.2.0,<5.3",
-#   "spacy>=3.8.0,<4",
+#   "ginza>=5.3.0,<5.4",
+#   "ja-ginza>=5.3.0,<5.4",
+#   "spacy>=3.8.16,<4",
 #   "markdown-it-py>=3,<5",
 # ]
 # ///
@@ -14,13 +14,16 @@ from __future__ import annotations
 
 import json
 import hashlib
+import importlib.metadata
 import subprocess
 import sys
 import tempfile
 import unittest
 from pathlib import Path
 
-from core import strip_markdown_inline
+from packaging.version import Version
+
+from core import load_ginza, strip_markdown_inline
 from lint import analyze, compare_baseline
 from outline import extract as extract_outline
 from terms import extract as extract_terms
@@ -32,6 +35,20 @@ FIXTURES = SCRIPT_DIR / "fixtures"
 
 
 class DiagnosticTests(unittest.TestCase):
+    def test_ginza_53_environment_and_model(self) -> None:
+        for package in ("ginza", "ja-ginza"):
+            self.assertEqual(
+                importlib.metadata.version(package).split(".")[:2],
+                ["5", "3"],
+                f"{package} must resolve to the supported 5.3 series",
+            )
+        spacy_version = Version(importlib.metadata.version("spacy"))
+        self.assertGreaterEqual(spacy_version, Version("3.8.16"))
+        self.assertLess(spacy_version, Version("4"))
+        self.assertEqual(load_ginza().meta["lang"], "ja")
+        self.assertNotIn("ner", load_ginza().pipe_names)
+        self.assertIn("ner", load_ginza(enable_ner=True).pipe_names)
+
     def analyze_text(self, text: str, reading_load: bool = False) -> dict:
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "sample.md"

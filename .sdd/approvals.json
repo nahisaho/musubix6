@@ -237,5 +237,16 @@
     "code": {
       "bin/musubix6.mjs": "ade1dfe6866279c2b39a040228bd4226b43bdde9b18c04d0bb4ac15feee524ad"
     }
+  },
+  "cost-history": {
+    "by": "ai:claude-sonnet-5.5",
+    "kind": "ai",
+    "review": "Two clean parallel risk/integration rounds; exact archived/live arithmetic independently verified; 13 mutants and restored controls passed",
+    "at": "2026-10-29T02:56:08.059Z",
+    "artifacts": {
+      ".sdd/specs/cost-history.md": "614b11955afcc86e4ffca2bcc612bae28be167d4e7ed2e09bf4e41ff1014cc63"
+    },
+    "tier": "T2",
+    "requireHuman": false
   }
 }
