@@ -115,7 +115,7 @@ export function assertionCatalogue(source, suite, title, expectedNeedle, nodeMod
 
 export function cellCatalogue(manifest, cell, source) {
   if (['skill-mutation', 'placeholder-mutation'].includes(cell.kind)) {
-    return contentCaseCatalogue(json(path.join(source, '.sdd/release-content-mutations.v0.2.3.json')), cell.id);
+    return contentCaseCatalogue(json(path.join(source, '.sdd/release-content-mutations.v0.2.4.json')), cell.id);
   }
   if (cell.mode === 'package') return [{ name: cell.id, runtimeMajor: Number(cell.runtime),
     packagePath: manifest.execution.packagePath, packageSha256: manifest.execution.packageSha256 }];
@@ -125,7 +125,7 @@ export function cellCatalogue(manifest, cell, source) {
   if (cell.kind === 'oracle') return manifest.catalogues.oracles.map(name => ({ name }));
   if (cell.kind === 'process') return ['exit0', 'exit17', 'timeout', 'output-budget', 'descendant-cleanup'].map(name => ({ name }));
   if (cell.kind === 'mutation') {
-    const policy = json(path.join(source, '.sdd/release-validation.v0.2.3.json')).legacyMutationDiagnosticPolicy;
+    const policy = json(path.join(source, '.sdd/release-validation.v0.2.4.json')).legacyMutationDiagnosticPolicy;
     ensure(policy?.version === 1 && Array.isArray(policy.customMessageOverrides), 'approved diagnostic policy required');
     const overrides = policy.customMessageOverrides, rows = manifest.catalogues.mutations.mutations;
     equal(overrides.map(row => row.id).sort(), ['scanner-complete-sources', 'scanner-limit-validation']);
@@ -153,9 +153,11 @@ export function cellCatalogue(manifest, cell, source) {
           .filter(match => match[1].startsWith(id + ' ')).map(match => ({ suite, title: match[1] })));
       ensure(targets.length === 1, `diagnostic target unavailable: ${id}`);
       const { suite, title } = targets[0];
+      const assertions = assertionCatalogue(source, suite, title, undefined, manifest.execution?.nodeModules);
+      assertions.assertionDiagnostics = assertions.assertionLines.map(line => ({ line, kind: 'legacy' }));
       return { id: name, name, targetName: title, suite, files: [`${skillScripts}/${file}`],
         edits: [{ file: `${skillScripts}/${file}`, before, after, count: 1 }],
-        ...assertionCatalogue(source, suite, title, undefined, manifest.execution?.nodeModules) };
+        ...assertions };
     });
   }
   if (cell.kind === 'host-mutation') {
@@ -372,7 +374,7 @@ export async function runAdapter(context) {
     const { verifyOnePackage } = await import('./release-qualification.mjs');
     return { status: 'PASS', packageReceipt: await verifyOnePackage({
       packagePath: context.configuration.packagePath, packageSha256: context.configuration.packageSha256,
-      targetVersion: '0.2.3', runtime: context.configuration.runtimes.find(row => String(row.major) === context.cell.runtime),
+      targetVersion: '0.2.4', runtime: context.configuration.runtimes.find(row => String(row.major) === context.cell.runtime),
       workRoot: path.join(context.output, 'install'), environment: context.environment,
     }) };
   }
@@ -422,7 +424,7 @@ export function validateAdapter({ cell, catalogue, evidence }) {
     ensure(catalogue?.length === 1 && receipt.tgzPath === catalogue[0].packagePath &&
       receipt.tgzSha256 === catalogue[0].packageSha256 &&
       fileSha(catalogue[0].packagePath) === catalogue[0].packageSha256, 'package receipt not bound to the frozen artifact');
-    ensure(receipt.runtimeMajor === Number(cell.runtime) && receipt.installedVersion === '0.2.3' &&
+    ensure(receipt.runtimeMajor === Number(cell.runtime) && receipt.installedVersion === '0.2.4' &&
       receipt.offline && receipt.entrypoint === 'node_modules/.bin/musubix6', 'package runtime/entrypoint mismatch');
     const log = JSON.parse(readRef(receipt.log));
     ensure(log.commands?.length >= 3, 'real package command receipts missing');

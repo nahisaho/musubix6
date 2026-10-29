@@ -6,7 +6,7 @@ import { test } from 'node:test';
 import { sha, fileSha, json, equal, ensure, mkdir, save, execute, retainProcess, cleanEnvironment, externalOutput } from './release-qualification-io.mjs';
 import { validateContentNative } from './release-qualification-evidence.mjs';
 
-export const contentRelative = '.sdd/release-content-mutations.v0.2.3.json';
+export const contentRelative = '.sdd/release-content-mutations.v0.2.4.json';
 const nativeTest = '.github/skills/japanese-prose/scripts/test_engine.py';
 const nodeTest = 'scripts/kotonoha-skills.test.mjs';
 const self = fileURLToPath(import.meta.url);
@@ -132,7 +132,7 @@ export function buildContentCasePlan(context, target) {
       tgz = context.configuration.packagePath;
       plan.packageInput = { path: tgz, sha256: context.configuration.packageSha256 };
     } else {
-      tgz = path.join(pack, 'musubix6-0.2.3.tgz');
+      tgz = path.join(pack, 'musubix6-0.2.4.tgz');
       plan.developmentRepack = true;
       setupCommands.push([context.node, npm, 'pack', '--ignore-scripts', '--json', '--pack-destination', pack]);
     }

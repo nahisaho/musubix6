@@ -1,0 +1,119 @@
+{
+  "schemaVersion": 1,
+  "targetVersion": "0.2.4",
+  "status": "scope-contract-not-run-evidence",
+  "revision": 7,
+  "policy": "docs/design-sdd-hardening.md section 3.5",
+  "inheritedManifest": {
+    "path": ".sdd/release-validation.v0.2.0.json",
+    "sha256": "e2f221e308e2fb4389f044e12c42cb2083e314b97305ae1701f65cd399c37de6"
+  },
+  "revisionReason": "User selected stable 0.2.4 instead of the unreleased 0.2.3 candidate. Retain all 24 Linux cells/budgets, all 49 legacy mutations, all 57 diagnostic mutations and the content case catalogue. The 0.2.3 run failed after 19 passing cells: legacy-only generated-message restrictions were incorrectly applied to a diagnostic-cell native argument-type assertion. Restore the diagnostic cell's inherited exact-owned-assertion policy without weakening any legacy case. Preserve all prior manifests/history and reset credit to zero. Publication requires two new clean runs and separate exact-artifact human approval.",
+  "legacyMutationDiagnosticPolicy": {
+    "version": 1,
+    "assertMatch": "exact-native-message-prefix-from-the-frozen-regular-expression-literal-at-the-owned-assertion-frame",
+    "customMessageAssertions": "inherited-expected-reason",
+    "customMessageOverrides": [
+      {
+        "id": "scanner-complete-sources",
+        "suite": ".github/skills/lean-sdd-tdd/scripts/source-discovery.test.mjs",
+        "expectedAssertion": "assert.equal(valid.code, 0,",
+        "messagePrefix": "TRACE FAIL: 1 REQ, 0 annotated entities, 1 errors, 2 warnings\n",
+        "independentReference": "TEST-SCAN-001 fixture has one requirement; cutting both padded source files before their annotations leaves zero entities, one missing-test error and two missing-test/implementation warnings"
+      },
+      {
+        "id": "scanner-limit-validation",
+        "suite": ".github/skills/lean-sdd-tdd/scripts/source-discovery.test.mjs",
+        "expectedAssertion": "assert.equal(r.code, 1, r.out)",
+        "messagePrefix": "TRACE OK: 1 REQ, 2 annotated entities, 0 errors, 0 warnings\n",
+        "independentReference": "TEST-SCAN-003 uses the complete one-requirement/two-entity fixture; ignoring its invalid scan configuration incorrectly runs a clean trace instead of returning the required refusal"
+      }
+    ],
+    "otherAssertions": "inherited-expected-reason",
+    "quotedSetupText": "accept-only-an-exact-owned-native-assertion-with-complete-valid-controls",
+    "requiredControls": ["baseline", "mutant", "restored"],
+    "historicalCatalogue": "unchanged-provenance-not-the-current-assert-match-message-oracle"
+  },
+  "contentMutationContract": {
+    "path": ".sdd/release-content-mutations.v0.2.4.json",
+    "sha256": "02be40460a3cfc80a0f6e0d640516a8b0b76fe8fc95e46235174e0e02cbe90f5",
+    "approvalRequired": true,
+    "status": "proposed-not-approved-or-executed"
+  },
+  "scopeApproval": {
+    "feature": "release-qualification",
+    "required": true,
+    "verification": "Current human artifact lock in .sdd/approvals.json; a proposal or this field alone is not approval"
+  },
+  "frozenManifest": "Generated separately after preflight; binds this approved plan's SHA256, exact candidate inputs, commands and named catalogues before any qualifying run",
+  "previousRevision": {
+    "number": 6,
+    "sha256": "ff5df4228d74c800c83d72968f173c900027c941d91f9789bc574f809337191c",
+    "qualificationCreditBefore": 0,
+    "qualificationCreditAfter": 0
+  },
+  "requiredCleanRuns": 2,
+  "consecutiveCompleteCleanRuns": 0,
+  "priorQualificationCredit": 0,
+  "requiredMissingOrSkippedIsNotPass": true,
+  "requiredCells": [
+    {"id": "PACKAGE-20", "runtime": "20", "kind": "extra", "mode": "package", "timeoutSeconds": 300},
+    {"id": "WATCHDOG-20", "runtime": "20", "kind": "watchdog", "timeoutSeconds": 300},
+    {"id": "NO-CHANGE-20", "runtime": "20", "kind": "extra", "mode": "no-change", "timeoutSeconds": 300},
+    {"id": "PACKAGE-22", "runtime": "22", "kind": "extra", "mode": "package", "timeoutSeconds": 300},
+    {"id": "WATCHDOG-22", "runtime": "22", "kind": "watchdog", "timeoutSeconds": 300},
+    {"id": "NO-CHANGE-22", "runtime": "22", "kind": "extra", "mode": "no-change", "timeoutSeconds": 300},
+    {"id": "PACKAGE-24", "runtime": "24", "kind": "extra", "mode": "package", "timeoutSeconds": 300},
+    {"id": "WATCHDOG-24", "runtime": "24", "kind": "watchdog", "timeoutSeconds": 300},
+    {"id": "NO-CHANGE-24", "runtime": "24", "kind": "extra", "mode": "no-change", "timeoutSeconds": 300},
+    {"id": "MUTATION", "runtime": "20", "kind": "mutation", "timeoutSeconds": 3600},
+    {"id": "SCOPE-DIFFERENTIAL", "runtime": "24", "kind": "scope", "timeoutSeconds": 600},
+    {"id": "NATIVE-R", "runtime": "24", "kind": "extra", "mode": "r", "timeoutSeconds": 600},
+    {"id": "NATIVE-GRADLE", "runtime": "24", "kind": "extra", "mode": "gradle", "timeoutSeconds": 600},
+    {"id": "NATIVE-PROSE", "runtime": "24", "kind": "extra", "mode": "prose", "timeoutSeconds": 600},
+    {"id": "ORACLE-SELFTEST", "runtime": "24", "kind": "oracle", "timeoutSeconds": 600},
+    {"id": "PROCESS-SELFTEST", "runtime": "24", "kind": "process", "timeoutSeconds": 120},
+    {"id": "SKILL-MUTATION", "runtime": "24", "kind": "skill-mutation", "timeoutSeconds": 3600},
+    {"id": "PLACEHOLDER-MUTATION", "runtime": "24", "kind": "placeholder-mutation", "timeoutSeconds": 3600},
+    {"id": "INTEGRATED-GATE", "runtime": "24", "kind": "gate", "timeoutSeconds": 12000},
+    {"id": "DIAGNOSTIC-MUTATION", "runtime": "24", "kind": "diagnostic-mutation", "timeoutSeconds": 3600},
+    {"id": "REGRESSION-20", "runtime": "20", "kind": "suite", "timeoutSeconds": 12000},
+    {"id": "REGRESSION-22", "runtime": "22", "kind": "suite", "timeoutSeconds": 12000},
+    {"id": "REGRESSION-24", "runtime": "24", "kind": "suite", "timeoutSeconds": 12000},
+    {"id": "HOST-MUTATION", "runtime": "24", "kind": "host-mutation", "timeoutSeconds": 3600}
+  ],
+  "excludedCells": [
+    {
+      "id": "NATIVE-WSLC",
+      "runtime": "24",
+      "kind": "extra",
+      "mode": "wslc",
+      "timeoutSeconds": 600,
+      "status": "excluded-unvalidated",
+      "reason": "User selected Linux-only verification; actual Windows/WSL container execution is outside this qualification scope",
+      "approvalRequired": true
+    }
+  ],
+  "supportContract": {
+    "status": "Linux-only-scope-contract",
+    "qualificationPlatform": "Linux x86_64",
+    "unverifiedPlatforms": ["Windows", "WSL container execution", "macOS"],
+    "additionalCandidateChanges": ["GiNZA 5.3 installed runtime regression", "Cumulative repository cost-history regression"],
+    "currentNamedCatalogue": "pending reconstruction and freeze; no historical count assumed"
+  },
+  "historicalMissingLaunchers": [
+    {
+      "stage": "trusted inputs",
+      "path": "/home/nahisaho/.copilot/session-state/a55408e9-74fb-4add-9bc2-4540d1509ca5/files/qualification-v020/two-runs-v020.mjs",
+      "status": "missing"
+    },
+    {
+      "stage": "trusted inputs",
+      "path": "/home/nahisaho/.copilot/session-state/a55408e9-74fb-4add-9bc2-4540d1509ca5/files/qualification-v020/freeze-v020.mjs",
+      "status": "missing"
+    }
+  ],
+  "recovery": "Restore and verify qualification helpers or reconstruct reviewed equivalents, with a retained mapping for all 34 unavailable historical helper inputs. After human approval of the Linux-only scope, freeze the 24-required-cell matrix with exact current digests and named cases, then run it twice unchanged. No further removal or weakened oracle is authorized.",
+  "humanReleaseApproved": false,
+  "publishingAuthorized": false
+}

@@ -10,9 +10,9 @@ import {
 } from './release-qualification-evidence.mjs';
 
 const inheritedSha256 = 'e2f221e308e2fb4389f044e12c42cb2083e314b97305ae1701f65cd399c37de6';
-const locked = ['.sdd/specs/release-qualification.md', '.sdd/release-validation.v0.2.3.json',
+const locked = ['.sdd/specs/release-qualification.md', '.sdd/release-validation.v0.2.4.json',
   '.sdd/specs/claude-code-support.md', 'README.md', 'README-ja.md', 'CLANGELOG.md',
-  '.sdd/release-content-mutations.v0.2.3.json'];
+  '.sdd/release-content-mutations.v0.2.4.json'];
 const tuple = cell => ({ id: cell.id, runtime: cell.runtime, kind: cell.kind,
   mode: cell.mode ?? null, timeoutSeconds: cell.timeoutSeconds });
 const sortedCells = cells => cells.map(tuple).sort((a, b) => a.id.localeCompare(b.id));
@@ -132,7 +132,7 @@ export async function admitPlan(request) {
     const paths = scopePaths(request);
     equal(fileSha(paths.inheritedPath), inheritedSha256);
     const inherited = json(paths.inheritedPath), plan = json(paths.planPath);
-    ensure(plan.schemaVersion === 1 && plan.targetVersion === '0.2.3', 'unknown qualification plan');
+    ensure(plan.schemaVersion === 1 && plan.targetVersion === '0.2.4', 'unknown qualification plan');
     const required = inherited.requiredCells.filter(cell => cell.id !== 'NATIVE-WSLC');
     equal(sortedCells(plan.requiredCells), sortedCells(required));
     assertUnique(plan.requiredCells, 'id', 'required cell');

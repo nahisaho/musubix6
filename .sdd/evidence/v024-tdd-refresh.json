@@ -1,0 +1,611 @@
+{
+  "status": "PASS",
+  "records": [
+    {
+      "id": "TEST-RELQ-HOST-001",
+      "relative": "scripts/release-host-mutations.mjs",
+      "red": {
+        "command": [
+          "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+          ".github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+          "tdd",
+          "red",
+          "TEST-RELQ-HOST-001"
+        ],
+        "cwd": "/home/nahisaho/GitHub/musubix6",
+        "startedAt": "2026-10-29T23:10:14.097Z",
+        "completedAt": "2026-10-29T23:10:15.315Z",
+        "exit": 0,
+        "signal": null,
+        "timedOut": false,
+        "outputLimit": false,
+        "error": null,
+        "stdout": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v024-tdd-refresh-9FeEiO/TEST-RELQ-HOST-001/red/stdout.log",
+          "sha256": "1c7319e52e29e817e86d7864c15f479660669cbeb02f2ca90f7c179b09d250de"
+        },
+        "stderr": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v024-tdd-refresh-9FeEiO/TEST-RELQ-HOST-001/red/stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "receipt": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v024-tdd-refresh-9FeEiO/TEST-RELQ-HOST-001/red/command.json",
+          "sha256": "d46b2ad0bd66c9399e0701512d3516d8825ca2aa5db9ab13ca00319de791e290"
+        }
+      },
+      "green": {
+        "command": [
+          "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+          ".github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+          "tdd",
+          "green",
+          "TEST-RELQ-HOST-001"
+        ],
+        "cwd": "/home/nahisaho/GitHub/musubix6",
+        "startedAt": "2026-10-29T23:10:15.317Z",
+        "completedAt": "2026-10-29T23:10:24.065Z",
+        "exit": 0,
+        "signal": null,
+        "timedOut": false,
+        "outputLimit": false,
+        "error": null,
+        "stdout": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v024-tdd-refresh-9FeEiO/TEST-RELQ-HOST-001/green/stdout.log",
+          "sha256": "f40b2dac8dd6dc299aeea666cebdc31c9ff3bc56eaef70dce68621a9265c76b1"
+        },
+        "stderr": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v024-tdd-refresh-9FeEiO/TEST-RELQ-HOST-001/green/stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "receipt": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v024-tdd-refresh-9FeEiO/TEST-RELQ-HOST-001/green/command.json",
+          "sha256": "b8d3130d8a6f919a3edca2a7ff34ca6647ac00db8182a67a6c1146ee132e1d66"
+        }
+      },
+      "restoredSha256": "6ed5d021018184f225d2492fe1458792b43323942fa06e96a4fdadc174214efb"
+    },
+    {
+      "id": "TEST-RELQ-SKILL-001",
+      "relative": "scripts/release-qualification-content-mutations.mjs",
+      "red": {
+        "command": [
+          "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+          ".github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+          "tdd",
+          "red",
+          "TEST-RELQ-SKILL-001"
+        ],
+        "cwd": "/home/nahisaho/GitHub/musubix6",
+        "startedAt": "2026-10-29T23:10:24.066Z",
+        "completedAt": "2026-10-29T23:10:25.308Z",
+        "exit": 0,
+        "signal": null,
+        "timedOut": false,
+        "outputLimit": false,
+        "error": null,
+        "stdout": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v024-tdd-refresh-9FeEiO/TEST-RELQ-SKILL-001/red/stdout.log",
+          "sha256": "d71aedb85c112f9ab4dde1e19a3f07b87a21adb8733a70521cb6da09276fc056"
+        },
+        "stderr": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v024-tdd-refresh-9FeEiO/TEST-RELQ-SKILL-001/red/stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "receipt": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v024-tdd-refresh-9FeEiO/TEST-RELQ-SKILL-001/red/command.json",
+          "sha256": "3306763f43ac2faab07e47e1b92ebdd9ae0760f10b0ba8e157ec22ac6f15a1c8"
+        }
+      },
+      "green": {
+        "command": [
+          "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+          ".github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+          "tdd",
+          "green",
+          "TEST-RELQ-SKILL-001"
+        ],
+        "cwd": "/home/nahisaho/GitHub/musubix6",
+        "startedAt": "2026-10-29T23:10:25.308Z",
+        "completedAt": "2026-10-29T23:10:28.605Z",
+        "exit": 0,
+        "signal": null,
+        "timedOut": false,
+        "outputLimit": false,
+        "error": null,
+        "stdout": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v024-tdd-refresh-9FeEiO/TEST-RELQ-SKILL-001/green/stdout.log",
+          "sha256": "501240f44f8bf4b9520b38f5ccb4b5798309784d631475b24fccd7ed185e64fb"
+        },
+        "stderr": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v024-tdd-refresh-9FeEiO/TEST-RELQ-SKILL-001/green/stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "receipt": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v024-tdd-refresh-9FeEiO/TEST-RELQ-SKILL-001/green/command.json",
+          "sha256": "44521c71d75b7b54fb4bdffade510cbea94c3deeb9089d99ef58718d89fac389"
+        }
+      },
+      "restoredSha256": "bbe96ad8a07238f8f5a91497c3e59c11c81899357eaa3113dfd4ea77e5eb9999"
+    },
+    {
+      "id": "TEST-RELQ-CONTENT-ADMISSION-001",
+      "relative": "scripts/release-qualification.mjs",
+      "red": {
+        "command": [
+          "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+          ".github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+          "tdd",
+          "red",
+          "TEST-RELQ-CONTENT-ADMISSION-001"
+        ],
+        "cwd": "/home/nahisaho/GitHub/musubix6",
+        "startedAt": "2026-10-29T23:10:28.606Z",
+        "completedAt": "2026-10-29T23:10:29.876Z",
+        "exit": 0,
+        "signal": null,
+        "timedOut": false,
+        "outputLimit": false,
+        "error": null,
+        "stdout": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v024-tdd-refresh-9FeEiO/TEST-RELQ-CONTENT-ADMISSION-001/red/stdout.log",
+          "sha256": "e88b197e50b1d1764eb71bde736aee7e7ac6d8fa72cc063a3c73f1e1e7b72df0"
+        },
+        "stderr": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v024-tdd-refresh-9FeEiO/TEST-RELQ-CONTENT-ADMISSION-001/red/stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "receipt": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v024-tdd-refresh-9FeEiO/TEST-RELQ-CONTENT-ADMISSION-001/red/command.json",
+          "sha256": "2047b5c3dc1a0b5567e22fe16f12115fcbfbfabee673545ee05e33e2a396b6c1"
+        }
+      },
+      "green": {
+        "command": [
+          "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+          ".github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+          "tdd",
+          "green",
+          "TEST-RELQ-CONTENT-ADMISSION-001"
+        ],
+        "cwd": "/home/nahisaho/GitHub/musubix6",
+        "startedAt": "2026-10-29T23:10:29.877Z",
+        "completedAt": "2026-10-29T23:10:31.349Z",
+        "exit": 0,
+        "signal": null,
+        "timedOut": false,
+        "outputLimit": false,
+        "error": null,
+        "stdout": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v024-tdd-refresh-9FeEiO/TEST-RELQ-CONTENT-ADMISSION-001/green/stdout.log",
+          "sha256": "fa3cfd9bdc50ca94a8c5f8ae7a573a8d1537e935730aba8867ecd5146aa0a269"
+        },
+        "stderr": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v024-tdd-refresh-9FeEiO/TEST-RELQ-CONTENT-ADMISSION-001/green/stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "receipt": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v024-tdd-refresh-9FeEiO/TEST-RELQ-CONTENT-ADMISSION-001/green/command.json",
+          "sha256": "7c57bc9d2ac4c4cc04f7f5ef300dba792372e181836bf966f00d4bfbd938ffbe"
+        }
+      },
+      "restoredSha256": "7f54b39d7d7c942d317ec75081eb311908c275694c285cd8db84b920cb5cae13"
+    },
+    {
+      "id": "TEST-RELQ-005",
+      "relative": "scripts/release-qualification.mjs",
+      "red": {
+        "command": [
+          "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+          ".github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+          "tdd",
+          "red",
+          "TEST-RELQ-005"
+        ],
+        "cwd": "/home/nahisaho/GitHub/musubix6",
+        "startedAt": "2026-10-29T23:10:31.350Z",
+        "completedAt": "2026-10-29T23:10:32.596Z",
+        "exit": 0,
+        "signal": null,
+        "timedOut": false,
+        "outputLimit": false,
+        "error": null,
+        "stdout": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v024-tdd-refresh-9FeEiO/TEST-RELQ-005/red/stdout.log",
+          "sha256": "0794d57763bc77351ba7063d3e9109b5a868177b3080b536b85a0579aef96a97"
+        },
+        "stderr": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v024-tdd-refresh-9FeEiO/TEST-RELQ-005/red/stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "receipt": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v024-tdd-refresh-9FeEiO/TEST-RELQ-005/red/command.json",
+          "sha256": "70d2d2c695d218a7994e6534c5b92c7377f52c198fe444953265f250bfc28ca9"
+        }
+      },
+      "green": {
+        "command": [
+          "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+          ".github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+          "tdd",
+          "green",
+          "TEST-RELQ-005"
+        ],
+        "cwd": "/home/nahisaho/GitHub/musubix6",
+        "startedAt": "2026-10-29T23:10:32.597Z",
+        "completedAt": "2026-10-29T23:10:34.140Z",
+        "exit": 0,
+        "signal": null,
+        "timedOut": false,
+        "outputLimit": false,
+        "error": null,
+        "stdout": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v024-tdd-refresh-9FeEiO/TEST-RELQ-005/green/stdout.log",
+          "sha256": "fc1e144653d9642fabba0da0a880d8ed92a51e2ef2b780574f485c5d30ddaa7d"
+        },
+        "stderr": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v024-tdd-refresh-9FeEiO/TEST-RELQ-005/green/stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "receipt": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v024-tdd-refresh-9FeEiO/TEST-RELQ-005/green/command.json",
+          "sha256": "65af0acbc4b5df050fac0c9a7a436db1c42b43f08a56325c3df39ba16ac3740c"
+        }
+      },
+      "restoredSha256": "7f54b39d7d7c942d317ec75081eb311908c275694c285cd8db84b920cb5cae13"
+    },
+    {
+      "id": "TEST-RELQ-PROCESS-001",
+      "refactor": {
+        "command": [
+          "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+          ".github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+          "tdd",
+          "refactor",
+          "TEST-RELQ-PROCESS-001"
+        ],
+        "cwd": "/home/nahisaho/GitHub/musubix6",
+        "startedAt": "2026-10-29T23:10:34.142Z",
+        "completedAt": "2026-10-29T23:10:35.460Z",
+        "exit": 0,
+        "signal": null,
+        "timedOut": false,
+        "outputLimit": false,
+        "error": null,
+        "stdout": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v024-tdd-refresh-9FeEiO/TEST-RELQ-PROCESS-001/refactor/stdout.log",
+          "sha256": "5a4657dde48d586f323e0d0fa3ef7dec747d1bcb54ca0789fc7e27a31b03e52f"
+        },
+        "stderr": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v024-tdd-refresh-9FeEiO/TEST-RELQ-PROCESS-001/refactor/stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "receipt": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v024-tdd-refresh-9FeEiO/TEST-RELQ-PROCESS-001/refactor/command.json",
+          "sha256": "a6b0fa67812069d7c0646914b6d49894dbfd2af1b0318dea3e48825120f6b342"
+        }
+      }
+    },
+    {
+      "id": "TEST-RELQ-CLOSURE-001",
+      "refactor": {
+        "command": [
+          "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+          ".github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+          "tdd",
+          "refactor",
+          "TEST-RELQ-CLOSURE-001"
+        ],
+        "cwd": "/home/nahisaho/GitHub/musubix6",
+        "startedAt": "2026-10-29T23:10:35.460Z",
+        "completedAt": "2026-10-29T23:10:37.647Z",
+        "exit": 0,
+        "signal": null,
+        "timedOut": false,
+        "outputLimit": false,
+        "error": null,
+        "stdout": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v024-tdd-refresh-9FeEiO/TEST-RELQ-CLOSURE-001/refactor/stdout.log",
+          "sha256": "0ecb72aa35081eba4f69d47bb331a8ff52e490abd2e3434f87178fe009aaff97"
+        },
+        "stderr": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v024-tdd-refresh-9FeEiO/TEST-RELQ-CLOSURE-001/refactor/stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "receipt": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v024-tdd-refresh-9FeEiO/TEST-RELQ-CLOSURE-001/refactor/command.json",
+          "sha256": "7738966a533f1819f3d7bb4bf83e9a93f6ea49f82301eb6dbba31699cac9581d"
+        }
+      }
+    },
+    {
+      "id": "TEST-RELQ-READINESS-001",
+      "refactor": {
+        "command": [
+          "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+          ".github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+          "tdd",
+          "refactor",
+          "TEST-RELQ-READINESS-001"
+        ],
+        "cwd": "/home/nahisaho/GitHub/musubix6",
+        "startedAt": "2026-10-29T23:10:37.648Z",
+        "completedAt": "2026-10-29T23:10:39.048Z",
+        "exit": 0,
+        "signal": null,
+        "timedOut": false,
+        "outputLimit": false,
+        "error": null,
+        "stdout": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v024-tdd-refresh-9FeEiO/TEST-RELQ-READINESS-001/refactor/stdout.log",
+          "sha256": "d74ec6955edec1d9234e9d8d2fca5b513160c18ef7f2813892ee9834fdb79012"
+        },
+        "stderr": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v024-tdd-refresh-9FeEiO/TEST-RELQ-READINESS-001/refactor/stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "receipt": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v024-tdd-refresh-9FeEiO/TEST-RELQ-READINESS-001/refactor/command.json",
+          "sha256": "8a441b646f92fc87d9e32866755ab3a1c786634f0cb63ac236b96ed39f68e585"
+        }
+      }
+    },
+    {
+      "id": "TEST-RELQ-PACKAGE-BINDING-001",
+      "refactor": {
+        "command": [
+          "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+          ".github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+          "tdd",
+          "refactor",
+          "TEST-RELQ-PACKAGE-BINDING-001"
+        ],
+        "cwd": "/home/nahisaho/GitHub/musubix6",
+        "startedAt": "2026-10-29T23:10:39.048Z",
+        "completedAt": "2026-10-29T23:10:41.375Z",
+        "exit": 0,
+        "signal": null,
+        "timedOut": false,
+        "outputLimit": false,
+        "error": null,
+        "stdout": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v024-tdd-refresh-9FeEiO/TEST-RELQ-PACKAGE-BINDING-001/refactor/stdout.log",
+          "sha256": "badb84a04d85cefec54a1138760f8bd6fde4679f7647ee7e1bf3352df8c057ba"
+        },
+        "stderr": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v024-tdd-refresh-9FeEiO/TEST-RELQ-PACKAGE-BINDING-001/refactor/stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "receipt": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v024-tdd-refresh-9FeEiO/TEST-RELQ-PACKAGE-BINDING-001/refactor/command.json",
+          "sha256": "ef07105c004420524b3307f11bfa809cbbed2a74d26a10517e9ba915e828fe7e"
+        }
+      }
+    },
+    {
+      "id": "TEST-RELQ-PH-001",
+      "refactor": {
+        "command": [
+          "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+          ".github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+          "tdd",
+          "refactor",
+          "TEST-RELQ-PH-001"
+        ],
+        "cwd": "/home/nahisaho/GitHub/musubix6",
+        "startedAt": "2026-10-29T23:10:41.376Z",
+        "completedAt": "2026-10-29T23:10:44.008Z",
+        "exit": 0,
+        "signal": null,
+        "timedOut": false,
+        "outputLimit": false,
+        "error": null,
+        "stdout": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v024-tdd-refresh-9FeEiO/TEST-RELQ-PH-001/refactor/stdout.log",
+          "sha256": "d4469a6bb2dc1eecffb424bd3364117ade6be3be23b12ecaf32dd73590bae358"
+        },
+        "stderr": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v024-tdd-refresh-9FeEiO/TEST-RELQ-PH-001/refactor/stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "receipt": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v024-tdd-refresh-9FeEiO/TEST-RELQ-PH-001/refactor/command.json",
+          "sha256": "42cb20ddf516f6a4892ac28c7b772067b87e6cdce6a7750c65b7e124e6d02afa"
+        }
+      }
+    },
+    {
+      "id": "TEST-RELQ-002",
+      "refactor": {
+        "command": [
+          "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+          ".github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+          "tdd",
+          "refactor",
+          "TEST-RELQ-002"
+        ],
+        "cwd": "/home/nahisaho/GitHub/musubix6",
+        "startedAt": "2026-10-29T23:10:44.009Z",
+        "completedAt": "2026-10-29T23:10:46.596Z",
+        "exit": 0,
+        "signal": null,
+        "timedOut": false,
+        "outputLimit": false,
+        "error": null,
+        "stdout": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v024-tdd-refresh-9FeEiO/TEST-RELQ-002/refactor/stdout.log",
+          "sha256": "2e4ca557837f8d4c451c9c1983b8e16fa833b652c009c74dcc716f7acd018750"
+        },
+        "stderr": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v024-tdd-refresh-9FeEiO/TEST-RELQ-002/refactor/stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "receipt": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v024-tdd-refresh-9FeEiO/TEST-RELQ-002/refactor/command.json",
+          "sha256": "26463d6e0e0856f55074a88c8d0a81c73f8e6cf7c00f65e74c83950db3e1949e"
+        }
+      }
+    },
+    {
+      "id": "TEST-RELQ-DIAGNOSTIC-001",
+      "refactor": {
+        "command": [
+          "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+          ".github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+          "tdd",
+          "refactor",
+          "TEST-RELQ-DIAGNOSTIC-001"
+        ],
+        "cwd": "/home/nahisaho/GitHub/musubix6",
+        "startedAt": "2026-10-29T23:10:46.597Z",
+        "completedAt": "2026-10-29T23:10:48.518Z",
+        "exit": 0,
+        "signal": null,
+        "timedOut": false,
+        "outputLimit": false,
+        "error": null,
+        "stdout": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v024-tdd-refresh-9FeEiO/TEST-RELQ-DIAGNOSTIC-001/refactor/stdout.log",
+          "sha256": "11872d759edef16d32fb68a4baf4b03b3f2feaffc0af5b872a251a4ca34fa1b0"
+        },
+        "stderr": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v024-tdd-refresh-9FeEiO/TEST-RELQ-DIAGNOSTIC-001/refactor/stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "receipt": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v024-tdd-refresh-9FeEiO/TEST-RELQ-DIAGNOSTIC-001/refactor/command.json",
+          "sha256": "c8118272724f8c97938f5b54dba1e85b95b1d60b6e2c908628fc9e28547f60d9"
+        }
+      }
+    },
+    {
+      "id": "TEST-RELQ-SCANNER-001",
+      "refactor": {
+        "command": [
+          "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+          ".github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+          "tdd",
+          "refactor",
+          "TEST-RELQ-SCANNER-001"
+        ],
+        "cwd": "/home/nahisaho/GitHub/musubix6",
+        "startedAt": "2026-10-29T23:10:48.519Z",
+        "completedAt": "2026-10-29T23:10:56.628Z",
+        "exit": 0,
+        "signal": null,
+        "timedOut": false,
+        "outputLimit": false,
+        "error": null,
+        "stdout": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v024-tdd-refresh-9FeEiO/TEST-RELQ-SCANNER-001/refactor/stdout.log",
+          "sha256": "954e7a1ecf47f6e3024fdd67c86bc3cd98252019a564d3e4e87ffdadff0b6100"
+        },
+        "stderr": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v024-tdd-refresh-9FeEiO/TEST-RELQ-SCANNER-001/refactor/stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "receipt": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v024-tdd-refresh-9FeEiO/TEST-RELQ-SCANNER-001/refactor/command.json",
+          "sha256": "72df13b617eb7cbd66c0297b78c6bae372abee18b9e33a0c375733a5b3ad4683"
+        }
+      }
+    },
+    {
+      "id": "TEST-RELQ-QUOTED-001",
+      "refactor": {
+        "command": [
+          "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+          ".github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+          "tdd",
+          "refactor",
+          "TEST-RELQ-QUOTED-001"
+        ],
+        "cwd": "/home/nahisaho/GitHub/musubix6",
+        "startedAt": "2026-10-29T23:10:56.629Z",
+        "completedAt": "2026-10-29T23:10:58.648Z",
+        "exit": 0,
+        "signal": null,
+        "timedOut": false,
+        "outputLimit": false,
+        "error": null,
+        "stdout": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v024-tdd-refresh-9FeEiO/TEST-RELQ-QUOTED-001/refactor/stdout.log",
+          "sha256": "22f80450bea3cd3422a122731e9bd27cc0372e8982a701d3a9aeb46cbb5d7f99"
+        },
+        "stderr": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v024-tdd-refresh-9FeEiO/TEST-RELQ-QUOTED-001/refactor/stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "receipt": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v024-tdd-refresh-9FeEiO/TEST-RELQ-QUOTED-001/refactor/command.json",
+          "sha256": "09f2ab4003605ed252831594e0b3fe54ff4558492985eb974120140b47cad636"
+        }
+      }
+    },
+    {
+      "id": "TEST-RELQ-003",
+      "refactor": {
+        "command": [
+          "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+          ".github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+          "tdd",
+          "refactor",
+          "TEST-RELQ-003"
+        ],
+        "cwd": "/home/nahisaho/GitHub/musubix6",
+        "startedAt": "2026-10-29T23:10:58.648Z",
+        "completedAt": "2026-10-29T23:11:01.367Z",
+        "exit": 0,
+        "signal": null,
+        "timedOut": false,
+        "outputLimit": false,
+        "error": null,
+        "stdout": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v024-tdd-refresh-9FeEiO/TEST-RELQ-003/refactor/stdout.log",
+          "sha256": "d9b5f9f390faea39612ba3988626aea9d725adc74168cbe5d57c735de122bf35"
+        },
+        "stderr": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v024-tdd-refresh-9FeEiO/TEST-RELQ-003/refactor/stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "receipt": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v024-tdd-refresh-9FeEiO/TEST-RELQ-003/refactor/command.json",
+          "sha256": "c3e1dec54188d715f8c687236cdbf878f174e013ffbe2460ea88947ca6f11e93"
+        }
+      }
+    },
+    {
+      "id": "TEST-RELQ-004",
+      "refactor": {
+        "command": [
+          "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+          ".github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+          "tdd",
+          "refactor",
+          "TEST-RELQ-004"
+        ],
+        "cwd": "/home/nahisaho/GitHub/musubix6",
+        "startedAt": "2026-10-29T23:11:01.367Z",
+        "completedAt": "2026-10-29T23:11:05.138Z",
+        "exit": 0,
+        "signal": null,
+        "timedOut": false,
+        "outputLimit": false,
+        "error": null,
+        "stdout": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v024-tdd-refresh-9FeEiO/TEST-RELQ-004/refactor/stdout.log",
+          "sha256": "4b4dbb16f40aa5d93a337a2d9c1da678e8bd4c99269ee3f45cd34ec57589c35a"
+        },
+        "stderr": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v024-tdd-refresh-9FeEiO/TEST-RELQ-004/refactor/stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "receipt": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v024-tdd-refresh-9FeEiO/TEST-RELQ-004/refactor/command.json",
+          "sha256": "c4a17ab973a0e5909c61c232bb3a0ddd1f95663b4dd0bd3c3374c19ab7d1c3bf"
+        }
+      }
+    }
+  ],
+  "qualificationCredit": 0,
+  "limits": "Fresh evidence for version-only fixture changes and unchanged test bodies affected by shared preamble movement. All four expected-assertion calibration mutants restored before Green."
+}

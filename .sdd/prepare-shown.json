@@ -1,4 +1,5 @@
 {
-  "claude-code-support": "4617ab97c905cf9ee8f1cd6387818448c7a4b8f6960164c6fddd1b024da53cb5",
-  "release-qualification": "89fd252e17e29c8bd88adfb055977473d7788af442ab0160fed0af2d46be61f3"
+  "claude-code-support": "e86bc855f341bedc706832ce5a42e3e5e2eaeaf229b7d5ef3924f49ddc99bd78",
+  "release-qualification": "97bbfca361995adb820b54f024f2ac055db83dcfd53bf4c246eb2336c24019de",
+  "npx-update-notice": "f4ceea311a4fac6e6cfc64feac1e2898276c3fb93573f20f71742a4a6a47f631"
 }

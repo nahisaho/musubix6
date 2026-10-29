@@ -3,6 +3,50 @@
 User-facing changes to musubix6, with upgrade guidance and known release limitations.
 Release dates use Japan Standard Time (UTC+09:00).
 
+## [0.2.4] - Unreleased draft prepared 2026-10-30
+
+Prepare a stable patch candidate in place of the unreleased 0.2.3 candidate.
+This entry does not establish npm publication, release qualification or
+permission to publish.
+
+### Changed
+
+- Target stable version 0.2.4 in package metadata and version-pinned examples;
+  keep normal installation and updates on npm's mutable `@latest` tag.
+- Carry forward GiNZA 5.3 support: `ginza>=5.3.0,<5.4`,
+  `ja-ginza>=5.3.0,<5.4` and `spacy>=3.8.16,<4`.
+- Keep Node.js 20 and Python 3.10 as the minimum versions, with Python 3.12
+  recommended upstream for GiNZA 5.3.
+
+### Fixed
+
+- Preserve archived executable permissions under restrictive umasks and
+  cumulative AI cost history when older local sessions disappear.
+- Retain reproducible Linux qualification helpers with exact candidate,
+  dependency, command and evidence bindings; isolate writable native caches.
+- Bind legacy mutation diagnostics to their independently owned assertions
+  without mistaking quoted loader-error examples for actual setup failures.
+
+### Upgrade
+
+Use the [English](README.md#installation) or
+[Japanese](README-ja.md#インストール) installation instructions. Before
+pinning this candidate, check `npm view musubix6@0.2.4 version`; do not install
+that exact version unless the check succeeds and reports `0.2.4`.
+Updating the CLI does not refresh previously copied skills. Back up local
+skill edits before using the documented host-specific `init --force` steps.
+
+### Release status and known limitations
+
+- Require two consecutive complete clean runs of the unchanged frozen
+  0.2.4 candidate and 24-cell Linux matrix. The incomplete 0.2.3
+  qualification transfers no credit.
+- Keep Windows, macOS, actual WSL container execution and live Claude
+  interactions explicitly unqualified.
+- Require separate human publication approval of the exact artifact
+  paths/hashes and residual risks. Commit/push alone does not grant
+  qualification or publication approval.
+
 ## [0.2.3] - Unreleased draft prepared 2026-10-29
 
 Prepare a patch candidate for GiNZA 5.3. This entry does not establish npm

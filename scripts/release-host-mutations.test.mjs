@@ -14,7 +14,7 @@ const digest = file => crypto.createHash('sha256').update(fs.readFileSync(file))
 
 /** @id TEST-RELQ-HOST-001 @verifies REQ-RELQ-003 REQ-RELQ-005 */
 test('TEST-RELQ-HOST-001 retains every inherited host mechanism and detects current version mutants with owned restored controls', t => {
-  const cases = hostMutations('0.2.3');
+  const cases = hostMutations('0.2.4');
   assert.deepEqual(cases.map(item => item.name), inherited.hostMutationCatalogue,
     'all28 inherited host mechanisms must remain executable on the current candidate');
   assert.equal(replace('alpha', 'beta')('alpha'), 'beta');
@@ -22,7 +22,7 @@ test('TEST-RELQ-HOST-001 retains every inherited host mechanism and detects curr
   assert.throws(() => replace('alpha', 'beta')('absent'), /anchor/);
   assert.throws(() => replace('alpha', 'beta')('alpha alpha'), /anchor/);
   assert.throws(() => replace('alpha', 'alpha')('alpha'), /no.op/);
-  assert.throws(() => hostMutations('0.2.3-dev.0'), /stable/);
+  assert.throws(() => hostMutations('0.2.4-dev.0'), /stable/);
   for (const item of cases) {
     const original = fs.readFileSync(path.join(root, item.file), 'utf8');
     assert.notEqual(item.mutate(original), original, `${item.name}: current mutation must apply`);
@@ -145,7 +145,7 @@ test('TEST-RELQ-HOST-001 retains every inherited host mechanism and detects curr
   }), /not the expected owned assertion/);
   const sourceControl = path.join(output, 'source-control');
   fs.mkdirSync(path.join(sourceControl, '.sdd'), { recursive: true });
-  fs.writeFileSync(path.join(sourceControl, 'package.json'), '{"version":"0.2.3"}\n');
+  fs.writeFileSync(path.join(sourceControl, 'package.json'), '{"version":"0.2.4"}\n');
   fs.writeFileSync(path.join(sourceControl, '.sdd/release-validation.v0.2.0.json'),
     JSON.stringify({ hostMutationCatalogue: inherited.hostMutationCatalogue }));
   const alias = path.join(output, 'source-alias');

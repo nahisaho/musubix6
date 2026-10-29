@@ -1,0 +1,151 @@
+{
+  "schemaVersion": 1,
+  "targetVersion": "0.2.4",
+  "generatedAt": "2026-10-29T23:08:03.962Z",
+  "status": "INCOMPLETE",
+  "technicalReady": false,
+  "publishingAuthorized": false,
+  "qualifyingCredit": 0,
+  "qualificationWorkRoot": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r1-XLyc5v",
+  "specification": {
+    "path": "/home/nahisaho/GitHub/musubix6/.sdd/specs/release-qualification.md",
+    "sha256": "97bbfca361995adb820b54f024f2ac055db83dcfd53bf4c246eb2336c24019de"
+  },
+  "plan": {
+    "path": "/home/nahisaho/GitHub/musubix6/.sdd/release-validation.v0.2.4.json",
+    "sha256": "40421341a9fcfcf11d2cdba6215296c34210bc3a3ba480c52d00120312b60a79"
+  },
+  "contentCatalogue": {
+    "path": "/home/nahisaho/GitHub/musubix6/.sdd/release-content-mutations.v0.2.4.json",
+    "sha256": "02be40460a3cfc80a0f6e0d640516a8b0b76fe8fc95e46235174e0e02cbe90f5"
+  },
+  "approval": {
+    "by": "nahisaho",
+    "at": "2026-10-29T23:00:41.162Z",
+    "artifacts": {
+      ".sdd/specs/release-qualification.md": "97bbfca361995adb820b54f024f2ac055db83dcfd53bf4c246eb2336c24019de",
+      ".sdd/release-validation.v0.2.4.json": "40421341a9fcfcf11d2cdba6215296c34210bc3a3ba480c52d00120312b60a79",
+      ".sdd/release-content-mutations.v0.2.4.json": "02be40460a3cfc80a0f6e0d640516a8b0b76fe8fc95e46235174e0e02cbe90f5",
+      ".sdd/specs/claude-code-support.md": "e86bc855f341bedc706832ce5a42e3e5e2eaeaf229b7d5ef3924f49ddc99bd78",
+      "README.md": "052203a3698b1a08273e624e8d2bee7f8097d363a074ae432a70edd2a45b335f",
+      "README-ja.md": "a953baeabfcbd0346a930d138a77dba86f6b0985409a8e31283dbff1f92a7003",
+      "CLANGELOG.md": "93d2e277b615f2877d8c2007e2c12ea822d538c409556454c67e69fce7a025e9"
+    }
+  },
+  "developmentProof": {
+    "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v024-development-proof-AgcTfC/proof.json",
+    "sha256": "28fa901f59c9395b1c4a9d8ee42c0e43babaf6961f234ffa8de8721dd1756c04"
+  },
+  "sourceInputs": [
+    {
+      "path": "/home/nahisaho/GitHub/musubix6/scripts/host-compatibility.test.mjs",
+      "sha256": "e80edbd918712802de093aeed9c176218bc2f3c7926479556866770c534e64d9"
+    },
+    {
+      "path": "/home/nahisaho/GitHub/musubix6/scripts/release-host-events.mjs",
+      "sha256": "159d48e31b21c412b04079985585d1630607d12fc3606b83cd78292119de9da2"
+    },
+    {
+      "path": "/home/nahisaho/GitHub/musubix6/scripts/release-host-mutations-proof.mjs",
+      "sha256": "13ed5e2515f9d2c35d9cf62934be039ae998d1067206eba76e9647a26d80bb69"
+    },
+    {
+      "path": "/home/nahisaho/GitHub/musubix6/scripts/release-host-mutations.mjs",
+      "sha256": "6ed5d021018184f225d2492fe1458792b43323942fa06e96a4fdadc174214efb"
+    },
+    {
+      "path": "/home/nahisaho/GitHub/musubix6/scripts/release-host-mutations.test.mjs",
+      "sha256": "2091f89ca23a290cd7976edf8d0009f676f37f6155ea3a45eff996d643727f6d"
+    },
+    {
+      "path": "/home/nahisaho/GitHub/musubix6/scripts/release-qualification-cells.mjs",
+      "sha256": "d2d5949712dadcae115f6bb36541318f02d56230132d3c5375a20c4ef514bdf3"
+    },
+    {
+      "path": "/home/nahisaho/GitHub/musubix6/scripts/release-qualification-cli.mjs",
+      "sha256": "300b28a125f1faeed46fbab148cded1d5b959a3683190f210aa36940c61bda9a"
+    },
+    {
+      "path": "/home/nahisaho/GitHub/musubix6/scripts/release-qualification-content-mutations.mjs",
+      "sha256": "bbe96ad8a07238f8f5a91497c3e59c11c81899357eaa3113dfd4ea77e5eb9999"
+    },
+    {
+      "path": "/home/nahisaho/GitHub/musubix6/scripts/release-qualification-evidence.mjs",
+      "sha256": "88d48acfd61964b5c73e99e90249c6d5cd7427c4a7cc9e2e7b87b90501aa85e0"
+    },
+    {
+      "path": "/home/nahisaho/GitHub/musubix6/scripts/release-qualification-io.mjs",
+      "sha256": "c3a5b80da7a4c1ced23f92d73553745ea3bf50d1d8856434c33a427f30ec7feb"
+    },
+    {
+      "path": "/home/nahisaho/GitHub/musubix6/scripts/release-qualification-oracles.test.mjs",
+      "sha256": "58af8713f9ec11d9f855f00a1bccb514de18e3a1e8313154c3211cbc251e608a"
+    },
+    {
+      "path": "/home/nahisaho/GitHub/musubix6/scripts/release-qualification-process.test.mjs",
+      "sha256": "656ef26582d56ec02dd2cc5799dede55beac7454fdaeb50deb4aa004a3e1fb8f"
+    },
+    {
+      "path": "/home/nahisaho/GitHub/musubix6/scripts/release-qualification-proof.mjs",
+      "sha256": "7d1cb4aae4f1564173c0553b643685b8b74481fb8b0c4f74e7eef1175d8181d4"
+    },
+    {
+      "path": "/home/nahisaho/GitHub/musubix6/scripts/release-qualification.mjs",
+      "sha256": "7f54b39d7d7c942d317ec75081eb311908c275694c285cd8db84b920cb5cae13"
+    },
+    {
+      "path": "/home/nahisaho/GitHub/musubix6/scripts/release-qualification.test.mjs",
+      "sha256": "49a1b859e46fba020bcf27ea4aac8cc094915c0cadbbd7992c8c86aa87904262"
+    }
+  ],
+  "previousFrozenRevision": {
+    "manifest": {
+      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v023-linux-r3-qvwOlK/frozen-manifest.json",
+      "sha256": "49a31d1e6649a6530000096b5dff5c32b545b927db37171ec1b27cfcd48a28dc"
+    },
+    "run": {
+      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v023-linux-r3-qvwOlK/runs/run-jNc1aX/run.json",
+      "sha256": "139ed221cf30106c7812881bd735044e180d7ef1a07e8e8fd5570953f71d41ae"
+    },
+    "history": {
+      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v023-linux-r3-qvwOlK/qualification-history.jsonl",
+      "sha256": "68a4b9dda086e4b2fdd2ce0ba15527d39443c5f153bcf4ef14c77ce633ddc6f7"
+    },
+    "status": "FAIL",
+    "passedCells": 19,
+    "cause": "Legacy49-only generated-message policy leaked into the separate diagnostic57 catalogue.",
+    "technicalReady": false,
+    "transferredCredit": 0
+  },
+  "directDeltaReview": {
+    "scope": "Version-bound references, diagnostic catalogue boundary, actual native positive/negative controls and retained policy invariants.",
+    "openS1S2InInspectedDelta": 0,
+    "independentAgentReviewClaimed": false,
+    "limitations": "Direct bounded review only; mandatory complete frozen execution still pending."
+  },
+  "documentationLint": {
+    "receipt": {
+      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v024-changelog-lint.json",
+      "sha256": "80173560cbcbbf8582ef79c4dff047cef647a5e8ce57d730d9f27b9836ba637c"
+    },
+    "newEntryFindings": 0,
+    "historicalFindings": 4,
+    "limit": "Four findings in unchanged historical entries; no root-wide prose-clean claim."
+  },
+  "required": {
+    "cells": 24,
+    "consecutiveCleanRuns": 2,
+    "requiredSkipsAreNotPass": true
+  },
+  "exclusions": [
+    "NATIVE-WSLC",
+    "Windows",
+    "macOS",
+    "live Claude interactions"
+  ],
+  "remaining": [
+    "Commit the clean exact candidate and freeze it with predecessor bindings.",
+    "Complete two consecutive clean runs of the unchanged required matrix.",
+    "Obtain separate exact-artifact publication approval before npm publish."
+  ]
+}

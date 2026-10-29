@@ -1,6 +1,6 @@
 {
   "name": "musubix6",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "Spec-driven (SDD) and test-driven (TDD) agent skills for GitHub Copilot CLI and Claude Code: lean-sdd-tdd, sdd-spec-interview, sdd-reverse-spec, tech-writer, japanese-prose and more.",
   "type": "module",
   "bin": {

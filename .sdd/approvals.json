@@ -227,9 +227,9 @@
   "claude-code-support": {
     "by": "nahisaho",
     "kind": "human",
-    "at": "2026-10-29T06:58:27.233Z",
+    "at": "2026-10-29T23:00:41.721Z",
     "artifacts": {
-      ".sdd/specs/claude-code-support.md": "4617ab97c905cf9ee8f1cd6387818448c7a4b8f6960164c6fddd1b024da53cb5"
+      ".sdd/specs/claude-code-support.md": "e86bc855f341bedc706832ce5a42e3e5e2eaeaf229b7d5ef3924f49ddc99bd78"
     },
     "tier": "T2",
     "requireHuman": true,
@@ -251,23 +251,22 @@
   "release-qualification": {
     "by": "nahisaho",
     "kind": "human",
-    "review": "Human approved all seven exact revision-6 artifact paths/hashes, including the two independently specified complete scanner TRACE prefixes; all 49 mutations/24 cells/budgets retained, zero credit, no publishing approval",
-    "at": "2026-10-29T21:26:54.453Z",
+    "at": "2026-10-29T23:00:41.162Z",
     "artifacts": {
-      ".sdd/specs/release-qualification.md": "89fd252e17e29c8bd88adfb055977473d7788af442ab0160fed0af2d46be61f3",
-      ".sdd/release-validation.v0.2.3.json": "ff5df4228d74c800c83d72968f173c900027c941d91f9789bc574f809337191c",
-      ".sdd/release-content-mutations.v0.2.3.json": "60f658309522e1ffae19be653f60bef7021cd207ca4b7f2a983c603d6cb35a45",
-      ".sdd/specs/claude-code-support.md": "4617ab97c905cf9ee8f1cd6387818448c7a4b8f6960164c6fddd1b024da53cb5",
-      "README.md": "b51231418d95a5de812bd8d33308bed01922f077536264c1eef8a5d2c6d793f5",
-      "README-ja.md": "d7b0ef264cbf14c32afd6ca2ef7544f038d4101662d156d18925c0368b87d58d",
-      "CLANGELOG.md": "9733a9933a72176e370d3ba90e2008294870243bbc1fbf00fa4df9e9860f5125"
+      ".sdd/specs/release-qualification.md": "97bbfca361995adb820b54f024f2ac055db83dcfd53bf4c246eb2336c24019de",
+      ".sdd/release-validation.v0.2.4.json": "40421341a9fcfcf11d2cdba6215296c34210bc3a3ba480c52d00120312b60a79",
+      ".sdd/release-content-mutations.v0.2.4.json": "02be40460a3cfc80a0f6e0d640516a8b0b76fe8fc95e46235174e0e02cbe90f5",
+      ".sdd/specs/claude-code-support.md": "e86bc855f341bedc706832ce5a42e3e5e2eaeaf229b7d5ef3924f49ddc99bd78",
+      "README.md": "052203a3698b1a08273e624e8d2bee7f8097d363a074ae432a70edd2a45b335f",
+      "README-ja.md": "a953baeabfcbd0346a930d138a77dba86f6b0985409a8e31283dbff1f92a7003",
+      "CLANGELOG.md": "93d2e277b615f2877d8c2007e2c12ea822d538c409556454c67e69fce7a025e9"
     },
     "tier": "T2",
     "requireHuman": true,
     "code": {
       "scripts/release-host-mutations.mjs": "6ed5d021018184f225d2492fe1458792b43323942fa06e96a4fdadc174214efb",
       "scripts/release-qualification-content-mutations.mjs": "b5ca5fa198d537e973c79bb72d6bc66fe51c7918ffafd9808eebe581c7a2affe",
-      "scripts/release-qualification-evidence.mjs": "79713fab70dcea20d062c4239495b095d87009f17243866d567dbecdac090c0b",
+      "scripts/release-qualification-evidence.mjs": "88d48acfd61964b5c73e99e90249c6d5cd7427c4a7cc9e2e7b87b90501aa85e0",
       "scripts/release-qualification-io.mjs": "c3a5b80da7a4c1ced23f92d73553745ea3bf50d1d8856434c33a427f30ec7feb",
       "scripts/release-qualification.mjs": "165fec1e6819afb05f1040612ab3578c8226e7dd008971dd3cc376e2bf948cb3"
     }
