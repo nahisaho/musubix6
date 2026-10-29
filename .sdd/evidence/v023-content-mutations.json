@@ -1,0 +1,499 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-10-29T11:18:42.869Z",
+  "status": "SCOPED_CONTENT_IMPLEMENTATION_AND_VALIDATION_PASS",
+  "requirements": [
+    "REQ-RELQ-001",
+    "REQ-RELQ-003",
+    "REQ-RELQ-005"
+  ],
+  "approvedContract": {
+    "by": "nahisaho",
+    "at": "2026-10-29T10:06:41.545Z",
+    "artifacts": {
+      ".sdd/specs/release-qualification.md": "da1ba3f7164d8c76e1167d69aa77fbe935fb5c89d9c91fa607092914609609b1",
+      ".sdd/release-validation.v0.2.3.json": "0b61a5b8678f6db62e068bf0ef291be9705df80be9ad2dbf7ffad8c07ed408bb",
+      ".sdd/release-content-mutations.v0.2.3.json": "60f658309522e1ffae19be653f60bef7021cd207ca4b7f2a983c603d6cb35a45",
+      ".sdd/specs/claude-code-support.md": "4617ab97c905cf9ee8f1cd6387818448c7a4b8f6960164c6fddd1b024da53cb5",
+      "README.md": "b51231418d95a5de812bd8d33308bed01922f077536264c1eef8a5d2c6d793f5",
+      "README-ja.md": "d7b0ef264cbf14c32afd6ca2ef7544f038d4101662d156d18925c0368b87d58d",
+      "CLANGELOG.md": "9733a9933a72176e370d3ba90e2008294870243bbc1fbf00fa4df9e9860f5125"
+    }
+  },
+  "originalLegacyEquivalenceProven": false,
+  "currentSourceInputs": [
+    {
+      "path": "/home/nahisaho/GitHub/musubix6/scripts/release-qualification.mjs",
+      "sha256": "5c8e8f7c362f9ffa34690eeaf867091bb504c4c1c27a52f73f208754590069c1"
+    },
+    {
+      "path": "/home/nahisaho/GitHub/musubix6/scripts/release-qualification.test.mjs",
+      "sha256": "f7926ca492305aa527c65813b62165ff2d81464795529fa4db0ac56dab0ecb00"
+    },
+    {
+      "path": "/home/nahisaho/GitHub/musubix6/scripts/release-qualification-cells.mjs",
+      "sha256": "ecc7f0b045f245323f65cd4976b48f4f7e16388454773209233197a4ede2db12"
+    },
+    {
+      "path": "/home/nahisaho/GitHub/musubix6/scripts/release-qualification-evidence.mjs",
+      "sha256": "7b2a48751ee4aeb9aea4764c3e993aa4853912c7c82378d18cbf192e2f9cb15e"
+    },
+    {
+      "path": "/home/nahisaho/GitHub/musubix6/scripts/release-qualification-content-mutations.mjs",
+      "sha256": "f5d632f162ebfb8e8c1074656048ab7d46ad77893cd3e40a91917f6dd70648e6"
+    }
+  ],
+  "handoff": {
+    "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/linux-qualification-development/content-implementation-handoff.json",
+    "sha256": "ff285f4f8d32f4a47070ea3de43649f17026ca5f035854d1318aca9e721b0bdf"
+  },
+  "nativeExecution": {
+    "driver": {
+      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/linux-qualification-development/content-cell-execution.mjs",
+      "sha256": "3684fb5c2501e1a738f940b20b79c98aeabfe76ecb672a43426595b8a16badc7"
+    },
+    "result": {
+      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/linux-qualification-development/content-real-cells-3/result.json",
+      "sha256": "b1d814b20891b9005d542c29b5b9f085153be9a27ac70d24af5511025abefdf5"
+    },
+    "cells": [
+      {
+        "id": "SKILL-MUTATION",
+        "status": "PASS",
+        "counts": {
+          "cases": 1163,
+          "semantic": 13,
+          "vendor": 1150,
+          "inventoryControls": 13,
+          "lexicalControls": 2,
+          "nativeControlCommands": 3509,
+          "pythonSubtestFailures": [
+            {
+              "id": "SKILL-REPLACEMENT-01",
+              "native": {
+                "tests": 1,
+                "failures": 4
+              }
+            },
+            {
+              "id": "SKILL-REPLACEMENT-02",
+              "native": {
+                "tests": 1,
+                "failures": 1
+              }
+            },
+            {
+              "id": "SKILL-REPLACEMENT-03",
+              "native": {
+                "tests": 1,
+                "failures": 1
+              }
+            },
+            {
+              "id": "SKILL-REPLACEMENT-04",
+              "native": {
+                "tests": 1,
+                "failures": 2
+              }
+            },
+            {
+              "id": "SKILL-REPLACEMENT-05",
+              "native": {
+                "tests": 1,
+                "failures": 2
+              }
+            },
+            {
+              "id": "SKILL-REPLACEMENT-06",
+              "native": {
+                "tests": 1,
+                "failures": 2
+              }
+            },
+            {
+              "id": "SKILL-REPLACEMENT-07",
+              "native": {
+                "tests": 1,
+                "failures": 11
+              }
+            },
+            {
+              "id": "SKILL-REPLACEMENT-08",
+              "native": {
+                "tests": 1,
+                "failures": 1
+              }
+            },
+            {
+              "id": "SKILL-REPLACEMENT-09",
+              "native": {
+                "tests": 1,
+                "failures": 1
+              }
+            },
+            {
+              "id": "SKILL-REPLACEMENT-10",
+              "native": {
+                "tests": 1,
+                "failures": 1
+              }
+            }
+          ]
+        },
+        "evidence": {
+          "command": [
+            "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+            "/home/nahisaho/GitHub/musubix6/scripts/release-qualification-cells.mjs",
+            "--cell",
+            "SKILL-MUTATION",
+            "--context",
+            "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/linux-qualification-development/content-real-cells-3/SKILL-MUTATION/context.json"
+          ],
+          "cwd": "/home/nahisaho/GitHub/musubix6",
+          "startedAt": "2026-10-29T10:51:44.729Z",
+          "completedAt": "2026-10-29T10:59:02.933Z",
+          "exit": 0,
+          "signal": null,
+          "timedOut": false,
+          "outputLimit": false,
+          "error": null,
+          "stdout": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/linux-qualification-development/content-real-cells-3/SKILL-MUTATION/process/stdout.log",
+            "sha256": "74b4b42203397dcdcc51b1ba2ed09bbd1767fd2d5a06d281c4b8c518f30684f7"
+          },
+          "stderr": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/linux-qualification-development/content-real-cells-3/SKILL-MUTATION/process/stderr.log",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "receipt": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/linux-qualification-development/content-real-cells-3/SKILL-MUTATION/process/command.json",
+            "sha256": "2c6087a9390361f3fbb4358f2e21190dcb7ed6170296ea2346cde6d49f33b9b3"
+          }
+        },
+        "elapsedSeconds": 438.204
+      },
+      {
+        "id": "PLACEHOLDER-MUTATION",
+        "status": "PASS",
+        "counts": {
+          "cases": 14,
+          "semantic": 14,
+          "vendor": 0,
+          "inventoryControls": 13,
+          "lexicalControls": 2,
+          "nativeControlCommands": 42,
+          "pythonSubtestFailures": []
+        },
+        "evidence": {
+          "command": [
+            "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+            "/home/nahisaho/GitHub/musubix6/scripts/release-qualification-cells.mjs",
+            "--cell",
+            "PLACEHOLDER-MUTATION",
+            "--context",
+            "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/linux-qualification-development/content-real-cells-3/PLACEHOLDER-MUTATION/context.json"
+          ],
+          "cwd": "/home/nahisaho/GitHub/musubix6",
+          "startedAt": "2026-10-29T10:51:44.735Z",
+          "completedAt": "2026-10-29T10:52:03.221Z",
+          "exit": 0,
+          "signal": null,
+          "timedOut": false,
+          "outputLimit": false,
+          "error": null,
+          "stdout": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/linux-qualification-development/content-real-cells-3/PLACEHOLDER-MUTATION/process/stdout.log",
+            "sha256": "915d4e9d393fea49f70893cbae336fde4526c7f8ec3a54cce8df0e9222fbe66c"
+          },
+          "stderr": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/linux-qualification-development/content-real-cells-3/PLACEHOLDER-MUTATION/process/stderr.log",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "receipt": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/linux-qualification-development/content-real-cells-3/PLACEHOLDER-MUTATION/process/command.json",
+            "sha256": "cd04dfbc1c4f23ad432c551cbb320d2487e123be9658b2a4216b066d0a3d4b77"
+          }
+        },
+        "elapsedSeconds": 18.486
+      }
+    ],
+    "nativeEvidenceIndex": {
+      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/linux-qualification-development/content-correction-native-evidence-index.json",
+      "sha256": "269784aa387af3d9def223217eb6f8a7ffb16f12bf3b8e699fcf3953e1f3f071"
+    },
+    "retainedReceiptsIndependentlyRehashed": 3809,
+    "nativeExecutionSourceHashes": [
+      {
+        "path": "/home/nahisaho/GitHub/musubix6/scripts/release-qualification.mjs",
+        "sha256": "5c8e8f7c362f9ffa34690eeaf867091bb504c4c1c27a52f73f208754590069c1"
+      },
+      {
+        "path": "/home/nahisaho/GitHub/musubix6/scripts/release-qualification.test.mjs",
+        "sha256": "1c2f081860e03467cbed2a28b0d4a2f5889a7e69f0f1b7f7ed6c6a6a30b09e6b"
+      },
+      {
+        "path": "/home/nahisaho/GitHub/musubix6/scripts/release-qualification-cells.mjs",
+        "sha256": "ecc7f0b045f245323f65cd4976b48f4f7e16388454773209233197a4ede2db12"
+      },
+      {
+        "path": "/home/nahisaho/GitHub/musubix6/scripts/release-qualification-evidence.mjs",
+        "sha256": "994b0cce4b468301ac88e8e258dcacd4d9c0b2ecf40feb81a99545f809347fcc"
+      },
+      {
+        "path": "/home/nahisaho/GitHub/musubix6/scripts/release-qualification-content-mutations.mjs",
+        "sha256": "f5d632f162ebfb8e8c1074656048ab7d46ad77893cd3e40a91917f6dd70648e6"
+      }
+    ],
+    "executedProducerSha256": "f5d632f162ebfb8e8c1074656048ab7d46ad77893cd3e40a91917f6dd70648e6",
+    "executedConsumerSha256": "994b0cce4b468301ac88e8e258dcacd4d9c0b2ecf40feb81a99545f809347fcc",
+    "newWholeCellExecutionsThisPass": 0,
+    "bindingNote": "Original real cells3 executed with producer f5d632... and consumer994b0c...; no receipts or hashes rebound to current consumer."
+  },
+  "strictConsumerReplay": {
+    "report": {
+      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/linux-qualification-development/content-frame-edge-consumer-replay-final.json",
+      "sha256": "de24fdf5d0fe43914d21cbe196a17e22bdf5cc884e3294c2221fd2afa9852b8d"
+    },
+    "driver": {
+      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/linux-qualification-development/content-frame-edge-replay.mjs",
+      "sha256": "6e6b7c1c0cae86a9c64b7ca3c6d6b8663436f0eb980e79e3779ab0b777e282dd"
+    },
+    "consumerSha256": "7b2a48751ee4aeb9aea4764c3e993aa4853912c7c82378d18cbf192e2f9cb15e",
+    "cases": 1177,
+    "receipts": 3809,
+    "status": "PASS"
+  },
+  "parentIntegrationAudit": {
+    "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/linux-qualification-development/content-parent-audit-ff285f4f8d32f4a4.json",
+    "sha256": "553cac540b9f320e5faa776b28e9af111eae1b45c1e7420d92e6424d8347cfaf"
+  },
+  "exactRequiredCases": {
+    "SKILL-MUTATION": 1163,
+    "PLACEHOLDER-MUTATION": 14
+  },
+  "regressions": {
+    "Node20": {
+      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/linux-qualification-development/content-frame-edge-final-node20.tap",
+      "sha256": "24e7f25a31f3b3c7d888e62fa88c2ebf72d4cd7615898d864d18be199ec53058"
+    },
+    "Node22": {
+      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/linux-qualification-development/content-frame-edge-final-node22.tap",
+      "sha256": "e178a7b6522c733c5ae71767fa6367168baad03bd0b415cedf9b866d0c0bc9f9"
+    },
+    "Node24": {
+      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/linux-qualification-development/content-frame-edge-final-node24.tap",
+      "sha256": "cde1b773907c43372ce85c3df9d5ba455936ddc5d53601cefbb525cd4002b1a3"
+    },
+    "eachRuntime": {
+      "tests": 8,
+      "pass": 8,
+      "fail": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "registeredCatalogue": {
+      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/linux-qualification-development/content-correction-registration/result.json",
+      "sha256": "3b71af2de0d0a102235dc2c7f3100935f64ecfe3db49fabc0e6e312c741fb3ae"
+    },
+    "registeredCount": 1142,
+    "oldRequired": 1130,
+    "oldMissing": 0,
+    "discoveryDoesNotExecuteFilteredBodies": true,
+    "relatedControlsNote": "Prior35 checks retained in history; not rerun in this narrow pass. Final eight regressions rerun on20/22/24."
+  },
+  "officialTdd": {
+    "officialAssertionReds": [
+      {
+        "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/linux-qualification-development/content-frame-edge-relative-red.log",
+        "sha256": "b0124808367d41cadef87965107b9f129725ff8217d28683d8619b85c3cb85f4"
+      },
+      {
+        "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/linux-qualification-development/content-frame-edge-pseudo-red.log",
+        "sha256": "8871bfb2af9d0458e3533f3d5508a96bb80be1742a9a762f2ba4281fbd4b1651"
+      },
+      {
+        "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/linux-qualification-development/content-frame-edge-absolute-red.log",
+        "sha256": "a39d502591b6846760126303a62ad1addaa388aff6f9ca6032305839a8e2c68b"
+      }
+    ],
+    "officialFinalGreens": [
+      {
+        "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/linux-qualification-development/content-frame-edge-absolute-green.log",
+        "sha256": "5aaa929bb42e5fea4ffacb26b2a4078e01be8bc233d8f51a64f35f71eca77e0e"
+      }
+    ],
+    "manualLedgerEdits": false,
+    "manualApprovalEdits": false,
+    "automaticCodeSnapshotsFromOfficialTdd": true,
+    "ledgerIndex": {
+      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/linux-qualification-development/content-frame-edge-formal-tdd-index.json",
+      "sha256": "5483d7925453b9ef2c9613f2da3a018cf241f596d476ff87f713347d8cdec043"
+    },
+    "greenInvocationTemplate": "node .github/skills/lean-sdd-tdd/scripts/sdd.mjs tdd green <TEST-ID>",
+    "redInvocationNote": "Official tdd red <TEST-ID> commands and genuine assertion logs are indexed. Later cycles used --retest; reason text is not retained in the ledger, and is not reconstructed here.",
+    "correctionAssertionReds": [
+      {
+        "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/linux-qualification-development/content-correction-empty-red.log",
+        "sha256": "47809c3a7c2e9db6e1ef6d545014c6646a835367fad2411cb0a9e9fa946613cc"
+      },
+      {
+        "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/linux-qualification-development/content-correction-throwing-frame-red.log",
+        "sha256": "267d8ff05f4d7e6d48c99096c8d76d4c0a514e87c4978f661b686578b6c1b961"
+      },
+      {
+        "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/linux-qualification-development/content-correction-status-records-red.log",
+        "sha256": "5ddb8272e24ee81f98db5a148f2624ffeb544aef37c76b33500cc12dbb79aa1c"
+      }
+    ],
+    "historicalOfficialAssertionReds": [
+      {
+        "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/linux-qualification-development/TEST-RELQ-CONTENT-ADMISSION-001-content-red.log",
+        "sha256": "93f1ca3f374aa8bf66b740a6641c020972e2d941588edcc25e427d9f4c475f24"
+      },
+      {
+        "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/linux-qualification-development/TEST-RELQ-CONTENT-ADMISSION-001-digest-red.log",
+        "sha256": "274d91a7138edb7bccf62d06035532ba7d96a191d2073b18aa2e7ddc5da7c3be"
+      },
+      {
+        "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/linux-qualification-development/TEST-RELQ-PH-001-content-red.log",
+        "sha256": "84f24d97a3431ef20170d81e360e71107226487e2985426251478f912bd54351"
+      },
+      {
+        "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/linux-qualification-development/TEST-RELQ-PH-001-witness-red.log",
+        "sha256": "82722e86a4a9b85c3702ad60f7f2e1b4569a2263a3bc5b52e0a1327535992d07"
+      },
+      {
+        "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/linux-qualification-development/TEST-RELQ-SKILL-001-byte-red.log",
+        "sha256": "372437ea283fbb9359dfea64ae54e6c4f07f1a15cd62089335d90be8e51dad5d"
+      },
+      {
+        "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/linux-qualification-development/TEST-RELQ-SKILL-001-content-red.log",
+        "sha256": "8b581f53b0ded7aa93cd86301711f9b4fce16311abc6987587d9605a5e9c5c40"
+      },
+      {
+        "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/linux-qualification-development/TEST-RELQ-SKILL-001-hostless-red.log",
+        "sha256": "eae9dc64fd25d28af5ca327e522729628d604f2513e28c835908f2c5a19678c0"
+      },
+      {
+        "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/linux-qualification-development/TEST-RELQ-SKILL-001-output-real-red.log",
+        "sha256": "fd75e07c8be191e94981f2c1c85f6457f8c037deef840c5033def03649c37b46"
+      },
+      {
+        "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/linux-qualification-development/TEST-RELQ-SKILL-001-python-frame-red.log",
+        "sha256": "215e6a347a27495c8ff2d48186d7cb18651e78604c0ee97cd9a66730546b3e86"
+      }
+    ],
+    "parentHostFormalEvidence": "Not altered during correction; parent owns any required shared/source-bound evidence refresh.",
+    "authorizedUnchangedOwnLinesRefactors": [
+      {
+        "test": "TEST-RELQ-001",
+        "log": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/linux-qualification-development/content-frame-edge-TEST-RELQ-001-refactor-final.log",
+          "sha256": "35ebf81cc6a00b06916c7389ad42a4846d3f8c6564291d78c854248d3ca3d8bf"
+        }
+      },
+      {
+        "test": "TEST-RELQ-002",
+        "log": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/linux-qualification-development/content-frame-edge-TEST-RELQ-002-refactor-final.log",
+          "sha256": "e467cad1d397f8e065a8fa1028c4561b6bcf7526e2d6b7e80f35f82a67e4c375"
+        }
+      },
+      {
+        "test": "TEST-RELQ-003",
+        "log": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/linux-qualification-development/content-frame-edge-TEST-RELQ-003-refactor-final.log",
+          "sha256": "4f0efb5921170356f6fdfdfed4925d48d08f9d58eb47ae3ec5120e680f4e52de"
+        }
+      },
+      {
+        "test": "TEST-RELQ-005",
+        "log": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/linux-qualification-development/content-frame-edge-TEST-RELQ-005-refactor-final.log",
+          "sha256": "7f9535ac8d034eb6395c8ba236570b92c9ae90fff60e50b37a1f0d8b755c38a4"
+        }
+      }
+    ],
+    "explicitlyOpenParentHistoricalCycles": [
+      "TEST-RELQ-HOST-001",
+      "TEST-RELQ-004"
+    ],
+    "refactorWarning": "Official refactor warns about historical preamble changes (#118); own assertions/expectations were not edited, as independently confirmed by parent.",
+    "fileShaMeaning": "Official SDD fileSha is test/oracle composite (testSha), not raw shared-file bytes; four refactors accepted current inputs. Raw current source hashes are separately retained."
+  },
+  "currentConsumerSensitivity": {
+    "proof": {
+      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/linux-qualification-development/content-frame-edge-sensitivity-2/proof.json",
+      "sha256": "85b590e7d30908610ef52707c2a2c88d15949d922a8f98fd6a32e302506ad479"
+    },
+    "driver": {
+      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/linux-qualification-development/content-frame-edge-sensitivity.mjs",
+      "sha256": "120b93ad5a89c46153aeef7a9580e95394aabe990c6d25a61c4e6290c8891778"
+    },
+    "mechanisms": 4,
+    "allDetectedAndRestored": true,
+    "limits": "Consumer-only absolute filtering, malformed-frame dropping, quoted filename and absolute-owner mutations; not exhaustive parsing coverage."
+  },
+  "historicalSensitivity": {
+    "proof": {
+      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/linux-qualification-development/content-sensitivity-1/proof.json",
+      "sha256": "94794d50a15ea37e0cdc06b3f2151c6d5340a19bc2cb9c9f80c14021812f0051"
+    },
+    "driver": {
+      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/linux-qualification-development/content-sensitivity.mjs",
+      "sha256": "8324857d2c2516ad18c89d69a4df3c79ba090c78117e5c436918b1c1c3252aaf"
+    },
+    "mechanisms": 25,
+    "allDetectedAndRestored": true,
+    "limits": "25 isolated implementation mechanisms; not exhaustive branch or adversarial coverage."
+  },
+  "independentReviews": [
+    {
+      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/state-review-proof/content-producer-delta-review-20261029.json",
+      "sha256": "9828b3a2e3b50efb95b9bf1655f32a22473a40bb459418d4999210f060c9157f"
+    },
+    {
+      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/state-review-proof/content-producer-p4-fix-review-20261029.json",
+      "sha256": "1960448c9c1badc8fed9a8f4cf18fd86376f7693014b527526744704414cd2f4"
+    },
+    {
+      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/state-review-proof/content-verdict-final-review-20261029.json",
+      "sha256": "becbe2842e15cfc7d37f6363d6e3ef504049393709c3a1e2af5942c8fa2a3a2d"
+    }
+  ],
+  "confirmedReviewFindings": "Throwing-frame ownership, result-line skip classification, relative/pseudo frame handling and unapproved empty-directory checks fixed with retained assertion Reds/Greens and bounded mutation/restoration evidence.",
+  "limitations": {
+    "duplicateProbe": "Explicit observed-array duplicate enumeration-fault simulation; a duplicate filesystem pathname is impossible.",
+    "P1": "Fresh package-origin repack is not yet a future frozen TGZ binding; broader integration concern retained.",
+    "P3": "Positive inventories are baseline/restored controls per approved contract, not invented mutants.",
+    "inventoryAssertionPrecision": "Producer has two owned inventory-path assertion lines. Empty-directory auxiliary case can only fail its directory line; accepting both owned path-policy locations is a precision limit, not a proven wrong current verdict. Producer f5d632... unchanged."
+  },
+  "diagnostics": {
+    "report": {
+      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/linux-qualification-development/content-frame-edge-diagnostics-final.json",
+      "sha256": "3f40fbda2afcc345dc8ff882eb60837d94a0eb91eed109649a60bf4c5b6bf079"
+    },
+    "status": "FAIL",
+    "remainingFindings": 8,
+    "introducedFindings": 0,
+    "preexistingLocations": [
+      "cells.mjs:314 no-empty",
+      "evidence.mjs:31,33,34 no-regex-spaces",
+      "io.mjs:139,140,156 no-empty",
+      "process.test.mjs:38 no-empty"
+    ]
+  },
+  "fullGate": "NOT_RUN; retained earlier no-run preflight failed. Four unchanged-body refactors subsequently completed; HOST-001/RELQ-004 formal replay remains pending.",
+  "openReleaseBlockers": [
+    "Previously confirmed dependency-closure and optional-hash/API readiness findings remain unresolved.",
+    "Broader process cleanup/probe/verdict findings require their own corrections and review.",
+    "Eight diagnostic errors remain in the broader uncommitted harness.",
+    "Historical TEST-RELQ-HOST-001 and TEST-RELQ-004 official evidence cycles remain pending.",
+    "Future frozen tgz binding and exact complete command/dependency/helper inventory need final integration.",
+    "Full gate, final committed candidate and two consecutive unchanged complete 24-cell frozen runs have not completed."
+  ],
+  "technicalReady": false,
+  "qualifyingCredit": 0,
+  "qualifyingMatrixRuns": 0,
+  "publishingAuthorized": false
+}

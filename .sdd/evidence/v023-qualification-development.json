@@ -1,0 +1,161 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-10-29T13:23:34.534Z",
+  "status": "INCOMPLETE",
+  "specification": {
+    "path": "/home/nahisaho/GitHub/musubix6/.sdd/specs/release-qualification.md",
+    "sha256": "8a696227ff32e0a29f9afabd22af2f1600769871bb06ef74d5a9e9a484561b3c"
+  },
+  "implementedAdapters": 24,
+  "requiredAdapters": 24,
+  "sourceInputs": [
+    {
+      "path": "/home/nahisaho/GitHub/musubix6/scripts/release-host-events.mjs",
+      "sha256": "159d48e31b21c412b04079985585d1630607d12fc3606b83cd78292119de9da2"
+    },
+    {
+      "path": "/home/nahisaho/GitHub/musubix6/scripts/release-host-mutations-proof.mjs",
+      "sha256": "13ed5e2515f9d2c35d9cf62934be039ae998d1067206eba76e9647a26d80bb69"
+    },
+    {
+      "path": "/home/nahisaho/GitHub/musubix6/scripts/release-host-mutations.mjs",
+      "sha256": "6ed5d021018184f225d2492fe1458792b43323942fa06e96a4fdadc174214efb"
+    },
+    {
+      "path": "/home/nahisaho/GitHub/musubix6/scripts/release-host-mutations.test.mjs",
+      "sha256": "d5d99c5267df4cb08b67637db146e9e24b97a1bc63113e000e2d3dd7efb04545"
+    },
+    {
+      "path": "/home/nahisaho/GitHub/musubix6/scripts/release-qualification-cells.mjs",
+      "sha256": "905e81cf97185cb643f4e54d1a9f31aaae4ff374821793b82d7855aed12c7c66"
+    },
+    {
+      "path": "/home/nahisaho/GitHub/musubix6/scripts/release-qualification-cli.mjs",
+      "sha256": "a64aa70640f02e62811e93acb12f7fda14a0b29bcb5772460a4fc5e2a9f49310"
+    },
+    {
+      "path": "/home/nahisaho/GitHub/musubix6/scripts/release-qualification-content-mutations.mjs",
+      "sha256": "b5ca5fa198d537e973c79bb72d6bc66fe51c7918ffafd9808eebe581c7a2affe"
+    },
+    {
+      "path": "/home/nahisaho/GitHub/musubix6/scripts/release-qualification-evidence.mjs",
+      "sha256": "09c9426d6c5f75384adfbc980944297ecc2bedef6f92139b418b2d9027c58ae0"
+    },
+    {
+      "path": "/home/nahisaho/GitHub/musubix6/scripts/release-qualification-io.mjs",
+      "sha256": "c3a5b80da7a4c1ced23f92d73553745ea3bf50d1d8856434c33a427f30ec7feb"
+    },
+    {
+      "path": "/home/nahisaho/GitHub/musubix6/scripts/release-qualification-oracles.test.mjs",
+      "sha256": "8237cfc0bcd78b31af7bdd4a0a8fa3cce837677e77e4202acf47b13e14d0601c"
+    },
+    {
+      "path": "/home/nahisaho/GitHub/musubix6/scripts/release-qualification-process.test.mjs",
+      "sha256": "656ef26582d56ec02dd2cc5799dede55beac7454fdaeb50deb4aa004a3e1fb8f"
+    },
+    {
+      "path": "/home/nahisaho/GitHub/musubix6/scripts/release-qualification-proof.mjs",
+      "sha256": "7d1cb4aae4f1564173c0553b643685b8b74481fb8b0c4f74e7eef1175d8181d4"
+    },
+    {
+      "path": "/home/nahisaho/GitHub/musubix6/scripts/release-qualification.mjs",
+      "sha256": "75462c4dbc3cfd3e4bf4029200c272b91610d323038640fc39503e71fdb9d86b"
+    },
+    {
+      "path": "/home/nahisaho/GitHub/musubix6/scripts/release-qualification.test.mjs",
+      "sha256": "4a9bcd9799b8e085e71716ede0100a66efc4748230e0d47a508ec84841b54f3b"
+    }
+  ],
+  "developmentVerification": {
+    "focused": [
+      {
+        "version": "20.20.2",
+        "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-completion-final-20.20.2.tap",
+        "sha256": "0781f816a3246bd9e39d71dd82e1cbce99bbac218abee03296d5407621e00877",
+        "tests": 18,
+        "passed": 18,
+        "failed": 0,
+        "skipped": 0
+      },
+      {
+        "version": "22.23.3",
+        "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-completion-final-22.23.3.tap",
+        "sha256": "01b7cf8660f647348b98fbc6cb360d522c0878d97fff8f7c97e600be12e2bef7",
+        "tests": 18,
+        "passed": 18,
+        "failed": 0,
+        "skipped": 0
+      },
+      {
+        "version": "24.22.1",
+        "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-completion-final-24.22.1.tap",
+        "sha256": "b5a14b9af30ecca2e9039cfa8d58cb22663c86a4984d5b66cb0f734708770e0d",
+        "tests": 18,
+        "passed": 18,
+        "failed": 0,
+        "skipped": 0
+      }
+    ],
+    "isolatedSensitivity": {
+      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-completion-tdd-hrs8j3/proof.json",
+      "sha256": "f75d2ca7008922372b936c97135ff59807d2ed23ed54b1978db74163a87d12aa",
+      "mechanisms": 22
+    },
+    "actualNativeProtocolsAndCaches": {
+      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-native-frame-spike-WpHJPB/report.json",
+      "sha256": "648e7b93de2cb4ae013bc7ce4c54fc38864f6d72d8c2a352ff4ebd65e2eb00ac",
+      "finiteProtocolRows": 36
+    },
+    "diagnostics": {
+      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-completion-diagnostics-final.json",
+      "sha256": "567ecc7760530846457b1386aea832e9aefaf9291e2e31ece51aa4e68c589b8d",
+      "status": "PASS",
+      "scope": "Exact isolated JavaScript snapshot, not root diagnostics."
+    },
+    "independentNarrowReview": {
+      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-blocker-report-history-6Hd1Sl/narrow-review.json",
+      "sha256": "01c1409be16de99017e210309ffa1177c15c85d8cd70ea935f39102189341f88"
+    },
+    "historicalFullGate": {
+      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-completion-full-gate-2.json",
+      "sha256": "90ef043ca5ec4aea4f8cc0681474c75af2e84e9d112b90b2ac5efd8276648cbd",
+      "verdict": "PASS",
+      "scope": "Pre-message-boundary/cache corrections; not final candidate gate proof. Fresh full INTEGRATED-GATE is required in each frozen matrix run."
+    }
+  },
+  "closedBlockers": [
+    "Explicit installed dependency/environment/tool closure, mandatory manifest hash and matrix/command binding.",
+    "Readiness rechecks retained manifest and immutable run history; synthetic inline empty-run credit rejected.",
+    "EPERM/stat/termination/cleanup error handling and frozen package-origin binding.",
+    "Exact first throwing frame, complete native message boundary, and explicit refusal of ambiguous native TAP.",
+    "Isolated candidate TypeScript dependency selection; frozen Cargo/Julia seeds copied into private writable state.",
+    "Prior eight JavaScript lint findings and historical formal TEST-RELQ-002/004/HOST-001 evidence gaps."
+  ],
+  "openBlockers": [
+    "Final committed candidate, complete explicit frozen inputs and fresh retained 24-cell manifest.",
+    "Two consecutive complete clean executions of that unchanged manifest, including current full integrated gates.",
+    "Any newly observed in-scope S1/S2 or unknown/skipped required result blocks readiness."
+  ],
+  "historicalReports": [
+    {
+      "original": ".sdd/evidence/v023-qualification-development.json",
+      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-blocker-report-history-6Hd1Sl/v023-qualification-development.json",
+      "sha256": "b0914cadaae721bb402be96a1a9314670da9f74c54597cce943ecd1c981cd492"
+    },
+    {
+      "original": ".sdd/evidence/v023-linux-scope.json",
+      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-blocker-report-history-6Hd1Sl/v023-linux-scope.json",
+      "sha256": "c47b7c1673413dab71da6a8892fba514571fc6ffd4a8f5da413db80c976229e0"
+    },
+    {
+      "original": ".sdd/evidence/v023-host-qualification.json",
+      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-blocker-report-history-6Hd1Sl/v023-host-qualification.json",
+      "sha256": "27527c0391015f22b431efad72ab23e5802ba6d9a87949b355d46770c901744c"
+    }
+  ],
+  "technicalReady": false,
+  "qualifyingCredit": 0,
+  "qualifyingRuns": 0,
+  "humanReleaseApproved": false,
+  "publishingAuthorized": false
+}

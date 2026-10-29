@@ -1,0 +1,182 @@
+{
+  "schemaVersion": 1,
+  "status": "partial-exact-source-recovery",
+  "purpose": "Historical reusable source bytes only; not qualification evidence or release approval.",
+  "outputDirectory": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/recovered-v020",
+  "authoritativeManifest": {
+    "path": "/home/nahisaho/GitHub/musubix6/.sdd/release-validation.v0.2.0.json",
+    "sha256": "e2f221e308e2fb4389f044e12c42cb2083e314b97305ae1701f65cd399c37de6",
+    "revision": 6,
+    "targetSelector": "inputs whose path contains /qualification-v020/",
+    "targetCount": 34,
+    "originalPrefix": "/home/nahisaho/.copilot/session-state/a55408e9-74fb-4add-9bc2-4540d1509ca5/files/qualification-v020/"
+  },
+  "bounds": {
+    "startedAt": "2026-10-29T06:49:20Z",
+    "maximumMinutes": 20,
+    "maximumFocusedStoreQueries": 80,
+    "stoppedBeforeLimits": true,
+    "queryTimeWindow": "last 14 days",
+    "queriedSessions": [
+      "a55408e9-74fb-4add-9bc2-4540d1509ca5",
+      "eea8e3e8-04cb-4596-9a6a-8621ed66226a",
+      "f19a6ec9-6db2-429b-a409-154bd92f91ad"
+    ]
+  },
+  "constraints": {
+    "repositoryModified": false,
+    "historicalCommandsExecuted": false,
+    "recoveredHelpersExecuted": false,
+    "agentsSpawned": false,
+    "dependenciesInstalled": false,
+    "publishedTaggedOrPushed": false,
+    "manualWrites": "apply_patch only",
+    "costLogRegenerated": false,
+    "costLogReason": "Read-only repository constraint; no commit performed."
+  },
+  "summary": {
+    "verified": 6,
+    "unmatchedHistoricalVersions": 2,
+    "missingExactSources": 23,
+    "optionalNotRecovered": 1,
+    "explicitlySkipped": 2
+  },
+  "verified": [
+    {
+      "relativePath": "events.mjs",
+      "sha256": "159d48e31b21c412b04079985585d1630607d12fc3606b83cd78292119de9da2",
+      "sourceSession": "f19a6ec9-6db2-429b-a409-154bd92f91ad",
+      "sourceToolCallIds": ["custom_call_uZzbPIIss1L3pacWSN2psWPc"],
+      "method": "Decode apply_patch JSON scalar; recover the complete events.mjs Add File block."
+    },
+    {
+      "relativePath": "helper-mutation-proof.mjs",
+      "sha256": "f7e93f59a542edd0cfda575475286bbd793eef5a543e9e79a56216e7ed8754f4",
+      "sourceSession": "a55408e9-74fb-4add-9bc2-4540d1509ca5",
+      "sourceToolCallIds": ["custom_call_aJhxO3BVSxKcdNDb5SK4Ykxj"],
+      "method": "Decode apply_patch JSON scalar; recover the complete Add File block."
+    },
+    {
+      "relativePath": "host-mutations.mjs",
+      "sha256": "0b2fe7bafd127fb89a616035755f66a5b4f409d5f90fd3c92a0a7dc52f285930",
+      "sourceSession": "a55408e9-74fb-4add-9bc2-4540d1509ca5",
+      "sourceToolCallIds": [
+        "custom_call_y2p9wkIFEOUiwsppW8bMEpsV",
+        "custom_call_6ME8E1m9IbhApI6Ws3l1RNqu",
+        "custom_call_ZWvSoqd2eyQkrPPRgfhXLdNC",
+        "call_eceaxdOWXIhEZ3XbOmDkbaFV",
+        "custom_call_MPnQFaOveBUw2G2QefSqSTOW",
+        "custom_call_we5iG9XpK5OtdxQ6KqBWGB3b",
+        "call_pCM5dMlfCMwMU7HSvLVCElda",
+        "custom_call_f3NxROcrGNY3GCoqbWrZodL1"
+      ],
+      "method": "Reconstruct original Add File and subsequent exact patch deltas through stable-version and qualification copies. Copy commands were inspected as data, never executed. Final complete bytes match the authoritative manifest."
+    },
+    {
+      "relativePath": "kotonoha-sync.mjs",
+      "sha256": "1f766d401ea4454d4fe704ad5ff385bd65b33798677c52ef93d30c1b84165952",
+      "sourceSession": "eea8e3e8-04cb-4596-9a6a-8621ed66226a",
+      "sourceToolCallIds": ["custom_call_0egu7LZgsk6EldLXh4tItD8B", "call_ICw5xnrDfZSYFaJ7GboHCYLJ"],
+      "method": "Recover complete original Add File source. Historical copy mapping confirms inheritance; exact bytes match v020."
+    },
+    {
+      "relativePath": "prepare-v020.mjs",
+      "sha256": "d03ea69898a0fffa9fa935e246f7b99bb6d454c0d4a357f42e2aaa2394d621cf",
+      "sourceSession": "a55408e9-74fb-4add-9bc2-4540d1509ca5",
+      "sourceToolCallIds": ["custom_call_diiDGZBMKSpU2TXYthHJq46N"],
+      "method": "Decode apply_patch JSON scalar; recover only the complete prepare-v020.mjs Add File block."
+    },
+    {
+      "relativePath": "two-runs-v020.mjs",
+      "sha256": "3641a7320e768827ae924d49737557e9a70476177f619b22a753cf93cab0d87b",
+      "sourceSession": "a55408e9-74fb-4add-9bc2-4540d1509ca5",
+      "sourceToolCallIds": ["call_iexZGJZFXz0lyf9lDwZegEY1"],
+      "method": "Recover complete printed view output from tool.execution_complete. Both cloud output SHA256 and local reconstructed source SHA256 match."
+    }
+  ],
+  "unmatched": [
+    {
+      "relativePath": "freeze-v020.mjs",
+      "expectedSha256": "4ef2f5f1a9111867c251b0bf589409640d21c45bfed686f45ae13e9546c828bf",
+      "observedHistoricalSha256": "1b0a0e2b3ef825fdaef50cf9457f859343eb2c905d7f4e1a7a99ee349d0ff931",
+      "sourceSession": "a55408e9-74fb-4add-9bc2-4540d1509ca5",
+      "sourceToolCallIds": [
+        "custom_call_BbvmiSbTN36C0deBJPRhzsDZ",
+        "custom_call_f3NxROcrGNY3GCoqbWrZodL1",
+        "custom_call_Y2iCQKsut3czi5hgskrxDyHX",
+        "custom_call_ndXNHPBS1HCK7R4dSVhfs75O",
+        "call_9NwTmRp2NBZERCYVHtR358PJ"
+      ],
+      "reason": "Complete printed historical source was found but does not match the final revision-6 input digest. Later source changes are unresolved.",
+      "sourceWritten": false
+    },
+    {
+      "relativePath": "record-candidate-v020.mjs",
+      "expectedSha256": "f810890ef722c2d1f14e836281584213458c74def0041f0ac59a4b6c9788f0ad",
+      "observedHistoricalSha256": "b1c48c27d603e84e1289f65ed6459477620a57810cc9c7548d2a58d5beba3c62",
+      "sourceSession": "a55408e9-74fb-4add-9bc2-4540d1509ca5",
+      "sourceToolCallIds": ["custom_call_ndXNHPBS1HCK7R4dSVhfs75O", "call_9NnpWqRu3xueux4FuTtPXJvo"],
+      "reason": "Original Add File and subsequent full printed view agree with each other, not with the authoritative manifest. The unmatched reconstruction was removed.",
+      "sourceWritten": false
+    }
+  ],
+  "missing": [
+    {"relativePath": "blocker-mutation-check.mjs", "expectedSha256": "ed77b295fcac922d9219ae4775b950765210159675729e0def6f8bce7cfb95dd"},
+    {"relativePath": "diagnostic-mutations.mjs", "expectedSha256": "c7f7e2c648bcbb217bca24a7f51946f39e5f8f093b7355551ba84d3867dc3a1a"},
+    {"relativePath": "dotnet-recorder.mjs", "expectedSha256": "8caf018f941cd79e6d1d9b75e951b156927294102b574eec68f9930b7ca15e24"},
+    {"relativePath": "dotnet-recorder.test.mjs", "expectedSha256": "bce59a0598dc923959f5fec5d11359555c8870423facf7c0099dad5a38428b75"},
+    {"relativePath": "helper-inputs.mjs", "expectedSha256": "0dc2c958db591d702cba8aeb825757b7179c004bd266e772cb87fec515a8f783"},
+    {"relativePath": "helper-inputs.test.mjs", "expectedSha256": "49bc919925f2f3c0ba761036758dcd33b758ae168b2e5d9304b1295f2fb94ddf"},
+    {
+      "relativePath": "kotonoha-mutations.py",
+      "expectedSha256": "e2ece9c4f686e162f017579821323a789aa5d90b0392304688ac02e73b1b02e0",
+      "sourceHint": "Original Add File custom_call_YoCch0yupL2mTjuMNK5P7pmB in eea8e3e8-04cb-4596-9a6a-8621ed66226a has SHA256 be4a57e86abd5da9bf7d197d2bdf12c651506912388ab848597361dfc43fdfc7, not the target. One bounded upstream-path replacement was also rejected by digest. No source written."
+    },
+    {"relativePath": "kotonoha-old-core.py", "expectedSha256": "62ae6ecaec379b08c0bf117ed6c232cfce794c69895fa86fd93059dbe5ae5341"},
+    {"relativePath": "kotonoha-sync-snapshot.json", "expectedSha256": "a8a9f6a96f8ae81bec0c08662d5c0485406479380ac31aa008a7e348a15b8114"},
+    {"relativePath": "kotonoha-upstream-lint.py", "expectedSha256": "b0c14d073f79bce5b74e523eb02ecb80e979c2e5bdca047bb538fdbde2164303"},
+    {"relativePath": "materialization-mutations.mjs", "expectedSha256": "f526bdf3424beeb89ba772244ecd5ec5143fee736af9f8f50f1bea7fe2f1ee43"},
+    {"relativePath": "materialization.mjs", "expectedSha256": "369c3f4b801986a24c6c384d681050fea70d2b31dd178694aadef7b797d2f980"},
+    {"relativePath": "materialization.test.mjs", "expectedSha256": "d841c53ab4273fe7b897e86acf65dc9073114087b67ebac0c951ebc0d67d2434"},
+    {"relativePath": "oracle-mutation-check.mjs", "expectedSha256": "2204fc4e8fc63c702c4800088e1f62ae8081d781255b9154fdafb1dd6bb4807f"},
+    {"relativePath": "package-result.mjs", "expectedSha256": "7197f14d579889f8c81d6347c699d59535079096ed743ca044c1e5013db45012"},
+    {"relativePath": "package-result.test.mjs", "expectedSha256": "cbcc4b1bbba1b04b752fe4fee237d824e0b87f3504049635f7c85a7bf61cc90a"},
+    {"relativePath": "placeholders-verify.mjs", "expectedSha256": "9288481bc88c7a6bd9bec699de5efa9356ea6ee94a5aae74ed43a8f08289a94e"},
+    {"relativePath": "qualification-mutations.mjs", "expectedSha256": "92a8d2ad8026fb9d329080e44162567f37c78022cf923867fa7cd7f39bc91ed2"},
+    {"relativePath": "qualification-mutations.test.mjs", "expectedSha256": "8ef64cd0555f7d524ab07845d4314c9537d5f77ecb32041c741d05bb67f7d81e"},
+    {
+      "relativePath": "qualification-run.mjs",
+      "expectedSha256": "8a94883bab2d701488afc278e21a5c2a48e85a51068d3ea2d4a8b84451d83363",
+      "sourceHints": [
+        "v013 original Add File custom_call_uZzbPIIss1L3pacWSN2psWPc",
+        "v014 printed ranges in a554 session: call_8EkqJnWF49wVaNqN34Um8rJ6 lines1-175; call_IRybCvGdoQJBDInbL2qS7NcV lines176-220; call_BG0oAOJ12134RZ9Pt6ZgazLa lines342-492",
+        "v020 patches custom_call_diiDGZBMKSpU2TXYthHJq46N, custom_call_nW4S5StJJgPM15HnUxuhLm6A, custom_call_f3NxROcrGNY3GCoqbWrZodL1",
+        "No complete final revision-6 source reconstructed; printed portions are insufficient."
+      ]
+    },
+    {"relativePath": "qualification-run.test.mjs", "expectedSha256": "916f5c5ef9b1f4a5688a30dae21e8651eb0967f9f3eaa5f9ccd584bdb74c760c"},
+    {"relativePath": "qualify-extras.mjs", "expectedSha256": "21158c0316a276713e10553323755957f3ffb422e1b49e86af47eb6cc7e3cd8b"},
+    {"relativePath": "qualify-extras.test.mjs", "expectedSha256": "4bb00cc4398da632a7442f7860e6b8f9e048bf6ff76349696aa6650c0fa282ee"}
+  ],
+  "optional": [
+    {"relativePath": "r-bin/Rscript", "expectedSha256": "32a7c8faf4a63426b61c400d4fb4a3c72f9f71ef0ed60f63209a843650b18c7a", "status": "not-recovered"}
+  ],
+  "skipped": [
+    {"relativePath": "candidate-history-v020.bundle", "expectedSha256": "d2176bf4b27625e6223b8b2b10702e8df6da26a271d5010c8de5a41929664bda", "reason": "Binary explicitly excluded by recovery request."},
+    {"relativePath": "accept-php-drift-run2.mjs", "expectedSha256": "ee9e6db9c20a438b634e35025cec48a4241641ed3876dbaf557498593825d863", "reason": "Old human exception explicitly excluded; must not transfer."}
+  ],
+  "actionableBlockers": [
+    "Only six complete helper source files are recovered. This directory is not a runnable qualification harness: the core runner, extras, their self-tests, materialization, package-result, helper-inputs, and mutation helpers remain missing.",
+    "Do not fill missing files with printed partial snippets or older-version sources and call them hash-verified. Final revision-6 digests are authoritative.",
+    "A usable exact core set was not recoverable within this bounded pass. Continuing historical recovery requires new exact-source evidence, not repetition of the same unsuccessful queries.",
+    "Historical prepare and host mutation helpers retain original paths and os.tmpdir references. They were never executed; adapt only under the newly approved durable Linux-only contract, with new source hashes and fresh validation.",
+    "Keep the newly approved 24 non-WSL cells and budgets distinct from these historical helpers. No actual NATIVE-WSLC validation, old human exception, historical run credit, release authorization, or publication claim is transferred."
+  ],
+  "validation": {
+    "method": "Read each recovered file as bytes; compute SHA256 with Python hashlib and sha256sum; compare against the authoritative manifest inputs.",
+    "allSixRecoveredFilesMatch": true,
+    "partialSourceFilesRetained": false,
+    "behavioralTestsRun": false,
+    "behavioralTestsReason": "Recovery-only scope; helpers depend on unrecovered files and historical paths. Executing historical code was prohibited."
+  }
+}

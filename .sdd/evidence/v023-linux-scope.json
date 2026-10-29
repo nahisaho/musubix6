@@ -1,0 +1,406 @@
+{
+  "schemaVersion": 1,
+  "stage": "current-human-contract-approved-blockers-corrected-frozen-runs-pending",
+  "scopeApproval": {
+    "feature": "release-qualification",
+    "by": "nahisaho",
+    "at": "2026-10-29T11:52:20.988Z",
+    "artifacts": [
+      {
+        "path": ".sdd/specs/release-qualification.md",
+        "sha256": "8a696227ff32e0a29f9afabd22af2f1600769871bb06ef74d5a9e9a484561b3c"
+      },
+      {
+        "path": ".sdd/release-validation.v0.2.3.json",
+        "sha256": "0b61a5b8678f6db62e068bf0ef291be9705df80be9ad2dbf7ffad8c07ed408bb"
+      },
+      {
+        "path": ".sdd/release-content-mutations.v0.2.3.json",
+        "sha256": "60f658309522e1ffae19be653f60bef7021cd207ca4b7f2a983c603d6cb35a45"
+      },
+      {
+        "path": ".sdd/specs/claude-code-support.md",
+        "sha256": "4617ab97c905cf9ee8f1cd6387818448c7a4b8f6960164c6fddd1b024da53cb5"
+      },
+      {
+        "path": "README.md",
+        "sha256": "b51231418d95a5de812bd8d33308bed01922f077536264c1eef8a5d2c6d793f5"
+      },
+      {
+        "path": "README-ja.md",
+        "sha256": "d7b0ef264cbf14c32afd6ca2ef7544f038d4101662d156d18925c0368b87d58d"
+      },
+      {
+        "path": "CLANGELOG.md",
+        "sha256": "9733a9933a72176e370d3ba90e2008294870243bbc1fbf00fa4df9e9860f5125"
+      }
+    ]
+  },
+  "requiredCells": [
+    {
+      "id": "PACKAGE-20",
+      "runtime": "20",
+      "kind": "extra",
+      "mode": "package",
+      "timeoutSeconds": 300
+    },
+    {
+      "id": "WATCHDOG-20",
+      "runtime": "20",
+      "kind": "watchdog",
+      "timeoutSeconds": 300
+    },
+    {
+      "id": "NO-CHANGE-20",
+      "runtime": "20",
+      "kind": "extra",
+      "mode": "no-change",
+      "timeoutSeconds": 300
+    },
+    {
+      "id": "PACKAGE-22",
+      "runtime": "22",
+      "kind": "extra",
+      "mode": "package",
+      "timeoutSeconds": 300
+    },
+    {
+      "id": "WATCHDOG-22",
+      "runtime": "22",
+      "kind": "watchdog",
+      "timeoutSeconds": 300
+    },
+    {
+      "id": "NO-CHANGE-22",
+      "runtime": "22",
+      "kind": "extra",
+      "mode": "no-change",
+      "timeoutSeconds": 300
+    },
+    {
+      "id": "PACKAGE-24",
+      "runtime": "24",
+      "kind": "extra",
+      "mode": "package",
+      "timeoutSeconds": 300
+    },
+    {
+      "id": "WATCHDOG-24",
+      "runtime": "24",
+      "kind": "watchdog",
+      "timeoutSeconds": 300
+    },
+    {
+      "id": "NO-CHANGE-24",
+      "runtime": "24",
+      "kind": "extra",
+      "mode": "no-change",
+      "timeoutSeconds": 300
+    },
+    {
+      "id": "MUTATION",
+      "runtime": "20",
+      "kind": "mutation",
+      "timeoutSeconds": 3600
+    },
+    {
+      "id": "SCOPE-DIFFERENTIAL",
+      "runtime": "24",
+      "kind": "scope",
+      "timeoutSeconds": 600
+    },
+    {
+      "id": "NATIVE-R",
+      "runtime": "24",
+      "kind": "extra",
+      "mode": "r",
+      "timeoutSeconds": 600
+    },
+    {
+      "id": "NATIVE-GRADLE",
+      "runtime": "24",
+      "kind": "extra",
+      "mode": "gradle",
+      "timeoutSeconds": 600
+    },
+    {
+      "id": "NATIVE-PROSE",
+      "runtime": "24",
+      "kind": "extra",
+      "mode": "prose",
+      "timeoutSeconds": 600
+    },
+    {
+      "id": "ORACLE-SELFTEST",
+      "runtime": "24",
+      "kind": "oracle",
+      "timeoutSeconds": 600
+    },
+    {
+      "id": "PROCESS-SELFTEST",
+      "runtime": "24",
+      "kind": "process",
+      "timeoutSeconds": 120
+    },
+    {
+      "id": "SKILL-MUTATION",
+      "runtime": "24",
+      "kind": "skill-mutation",
+      "timeoutSeconds": 3600
+    },
+    {
+      "id": "PLACEHOLDER-MUTATION",
+      "runtime": "24",
+      "kind": "placeholder-mutation",
+      "timeoutSeconds": 3600
+    },
+    {
+      "id": "INTEGRATED-GATE",
+      "runtime": "24",
+      "kind": "gate",
+      "timeoutSeconds": 12000
+    },
+    {
+      "id": "DIAGNOSTIC-MUTATION",
+      "runtime": "24",
+      "kind": "diagnostic-mutation",
+      "timeoutSeconds": 3600
+    },
+    {
+      "id": "REGRESSION-20",
+      "runtime": "20",
+      "kind": "suite",
+      "timeoutSeconds": 12000
+    },
+    {
+      "id": "REGRESSION-22",
+      "runtime": "22",
+      "kind": "suite",
+      "timeoutSeconds": 12000
+    },
+    {
+      "id": "REGRESSION-24",
+      "runtime": "24",
+      "kind": "suite",
+      "timeoutSeconds": 12000
+    },
+    {
+      "id": "HOST-MUTATION",
+      "runtime": "24",
+      "kind": "host-mutation",
+      "timeoutSeconds": 3600
+    }
+  ],
+  "excludedCells": [
+    {
+      "id": "NATIVE-WSLC",
+      "runtime": "24",
+      "kind": "extra",
+      "mode": "wslc",
+      "timeoutSeconds": 600,
+      "status": "excluded-unvalidated",
+      "reason": "User selected Linux-only verification; actual Windows/WSL container execution is outside this qualification scope",
+      "approvalRequired": true
+    }
+  ],
+  "runtimes": [
+    {
+      "major": "20",
+      "binary": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/runtimes/node20/bin/node",
+      "binarySha256": "6295488653f0d93b0a157841746fef7e72cc4328cfb60c4bbe0ca2668a836ffd",
+      "version": "v20.20.2",
+      "packageFeasibility": {
+        "test": "TEST-HOST-005",
+        "selectedPasses": 1,
+        "nonSelectedSkips": 4,
+        "log": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/linux-scope-host-node20.log",
+        "logSha256": "f5c9e85774f40266b6144fc701a448bd1eb11525ef49f1f608bd02f5884a2bd2",
+        "qualificationCredit": 0
+      }
+    },
+    {
+      "major": "22",
+      "binary": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/runtimes/node22/bin/node",
+      "binarySha256": "fde6a4bf8d0562f7751d1a2d6cb9b417c4cfe107bbcb0aa3e9a24e125e348f48",
+      "version": "v22.23.3",
+      "packageFeasibility": {
+        "test": "TEST-HOST-005",
+        "selectedPasses": 1,
+        "nonSelectedSkips": 0,
+        "log": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/linux-scope-host-node22.log",
+        "logSha256": "a8fb9eb87b73a97616ae5cb01e424e2a4cc8ca5e109a268b023a4697991c5584",
+        "qualificationCredit": 0
+      }
+    },
+    {
+      "major": "24",
+      "binary": "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+      "binarySha256": "e32e2d16081cf644f88392934288086e7662529d0d43277c34f7aad2207cfafb",
+      "version": "v24.22.1",
+      "packageFeasibility": {
+        "test": "TEST-HOST-005",
+        "selectedPasses": 1,
+        "nonSelectedSkips": 0,
+        "log": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/linux-scope-host-node24.log",
+        "logSha256": "01a284c28acd96620a55e3018598b783372d3a6d601410efa737dabc7d12e11a",
+        "qualificationCredit": 0
+      }
+    }
+  ],
+  "officialDownloads": [
+    {
+      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/runtimes/node-v20.20.2-linux-x64.tar.xz",
+      "sha256": "df770b2a6f130ed8627c9782c988fda9669fa23898329a61a871e32f965e007d",
+      "officialChecksumFile": "node20-SHASUMS256.txt"
+    },
+    {
+      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/runtimes/node-v22.23.3-linux-x64.tar.xz",
+      "sha256": "df450af89261115ef9f9e3830c3eeb2cc9213b63c720b1af623cb5dcbe2e02de",
+      "officialChecksumFile": "node22-SHASUMS256.txt"
+    },
+    {
+      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/runtimes/gradle-8.14.3-bin.zip",
+      "sha256": "bd71102213493060956ec229d946beee57158dbd89d0e62b91bca0fa2c5f3531",
+      "officialChecksumFile": "gradle-8.14.3-bin.zip.sha256"
+    }
+  ],
+  "helperRecovery": {
+    "status": "partial-exact-source-recovery",
+    "summary": {
+      "verified": 6,
+      "unmatchedHistoricalVersions": 2,
+      "missingExactSources": 23,
+      "optionalNotRecovered": 1,
+      "explicitlySkipped": 2
+    },
+    "provenance": ".sdd/evidence/v023-helper-recovery.json",
+    "provenanceSha256": "c1c75d7713089a0ae07463d258052c133d80a062bdab842c0253c4b7b7636321",
+    "executableHarnessRecovered": false,
+    "disposition": "Reconstruct reviewed replacements under the approved contract; preserve all24 required cells and their controls"
+  },
+  "prose": {
+    "mode": "full",
+    "scoreBefore": 98,
+    "scoreAfter": 98,
+    "readingLoadScore": 100,
+    "fixes": 0,
+    "kept": [
+      {
+        "line": 158,
+        "category": "repeated_sentence_lead",
+        "severity": "info",
+        "message": "連続する文が同じ語順で始まっています。意図した反復か確認します。",
+        "excerpt": "コード を省くと作業ディレクトリを使います。",
+        "evidence": {
+          "lemmas": [
+            "コード",
+            "を"
+          ]
+        }
+      },
+      {
+        "line": 188,
+        "category": "through_translation",
+        "severity": "info",
+        "message": "手段・期間・経験のどれを表すか具体化します。",
+        "excerpt": "取得できた error があっても、INCOMPLETE を優先します。 未導入、未対応版、設定やプラグインの不備、ESLint の検査対象なし、 全件 ignore、signal、不正な出力、実行…"
+      }
+    ],
+    "rationale": "Two unchanged informational findings outside the scope notice",
+    "outlineAndTerms": "executed",
+    "invariant": "passed; no sentence-level polishing edits"
+  },
+  "technicalReady": false,
+  "frozen": false,
+  "qualifyingRunCount": 0,
+  "publishingAuthorized": false,
+  "remaining": [
+    "Previously confirmed dependency-closure and optional-hash/API readiness findings remain unresolved.",
+    "Broader process cleanup/probe/verdict findings require their own corrections and review.",
+    "Eight diagnostic errors remain in the broader uncommitted harness.",
+    "Historical TEST-RELQ-HOST-001 and TEST-RELQ-004 official evidence cycles remain pending.",
+    "Future frozen tgz binding and exact complete command/dependency/helper inventory need final integration.",
+    "Full gate, final committed candidate and two consecutive unchanged complete 24-cell frozen runs have not completed."
+  ],
+  "scopeApprovalHistory": [
+    {
+      "feature": "release-qualification",
+      "by": "nahisaho",
+      "at": "2026-10-29T06:58:26.906Z",
+      "artifacts": [
+        {
+          "path": ".sdd/specs/release-qualification.md",
+          "sha256": "b4b8788be29f1b86f7172cfd414847342e8dfa88e8ff4966362fa5ccfec9893e"
+        },
+        {
+          "path": ".sdd/release-validation.v0.2.3.json",
+          "sha256": "35e71bcaf97fdb81f7643c235c17b887b8926be7a6c4ec2132108a28988f5a8c"
+        },
+        {
+          "path": ".sdd/specs/claude-code-support.md",
+          "sha256": "4617ab97c905cf9ee8f1cd6387818448c7a4b8f6960164c6fddd1b024da53cb5"
+        },
+        {
+          "path": "README.md",
+          "sha256": "9a344ae7b57c6e1cb07e47283ece9359c32c36d7b23e040d804117bd2428d485"
+        },
+        {
+          "path": "README-ja.md",
+          "sha256": "f06f23c719f68563bba045985c1c6868b2409165f595de8827c60092e8722dbf"
+        },
+        {
+          "path": "CLANGELOG.md",
+          "sha256": "9733a9933a72176e370d3ba90e2008294870243bbc1fbf00fa4df9e9860f5125"
+        }
+      ]
+    }
+  ],
+  "planRevision": 3,
+  "preflightEvidenceContext": "Existing runtime/package/prose fields retain historical preflight provenance; they were not re-executed by this finalization and confer no current qualification credit.",
+  "currentContentEvidence": {
+    "path": "/home/nahisaho/GitHub/musubix6/.sdd/evidence/v023-content-mutations.json",
+    "sha256": "8c873e2a79e92cde0255f4d3bd155841a1c88e01f23c2279e5837c10ffcff46f"
+  },
+  "previousScopeApprovals": [
+    {
+      "feature": "release-qualification",
+      "by": "nahisaho",
+      "at": "2026-10-29T10:06:41.545Z",
+      "artifacts": [
+        {
+          "path": ".sdd/specs/release-qualification.md",
+          "sha256": "da1ba3f7164d8c76e1167d69aa77fbe935fb5c89d9c91fa607092914609609b1"
+        },
+        {
+          "path": ".sdd/release-validation.v0.2.3.json",
+          "sha256": "0b61a5b8678f6db62e068bf0ef291be9705df80be9ad2dbf7ffad8c07ed408bb"
+        },
+        {
+          "path": ".sdd/release-content-mutations.v0.2.3.json",
+          "sha256": "60f658309522e1ffae19be653f60bef7021cd207ca4b7f2a983c603d6cb35a45"
+        },
+        {
+          "path": ".sdd/specs/claude-code-support.md",
+          "sha256": "4617ab97c905cf9ee8f1cd6387818448c7a4b8f6960164c6fddd1b024da53cb5"
+        },
+        {
+          "path": "README.md",
+          "sha256": "b51231418d95a5de812bd8d33308bed01922f077536264c1eef8a5d2c6d793f5"
+        },
+        {
+          "path": "README-ja.md",
+          "sha256": "d7b0ef264cbf14c32afd6ca2ef7544f038d4101662d156d18925c0368b87d58d"
+        },
+        {
+          "path": "CLANGELOG.md",
+          "sha256": "9733a9933a72176e370d3ba90e2008294870243bbc1fbf00fa4df9e9860f5125"
+        }
+      ]
+    }
+  ],
+  "currentDevelopmentEvidence": {
+    "path": "/home/nahisaho/GitHub/musubix6/.sdd/evidence/v023-qualification-development.json",
+    "sha256": "ceae920df3fc10c748f918d39e1d087494dec5dd5d4181c34b51ac41a43b6151"
+  },
+  "qualifyingCredit": 0
+}

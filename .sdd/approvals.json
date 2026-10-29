@@ -227,9 +227,9 @@
   "claude-code-support": {
     "by": "nahisaho",
     "kind": "human",
-    "at": "2026-10-29T05:42:46.362Z",
+    "at": "2026-10-29T06:58:27.233Z",
     "artifacts": {
-      ".sdd/specs/claude-code-support.md": "33e66f1fc3db9f55e53225bd34133a4b747d24b501423fc5163d86785f41898e"
+      ".sdd/specs/claude-code-support.md": "4617ab97c905cf9ee8f1cd6387818448c7a4b8f6960164c6fddd1b024da53cb5"
     },
     "tier": "T2",
     "requireHuman": true,
@@ -247,5 +247,28 @@
     },
     "tier": "T2",
     "requireHuman": false
+  },
+  "release-qualification": {
+    "by": "nahisaho",
+    "kind": "human",
+    "review": "Explicit approval of7exact artifacts by user after independent Sonnet5.5 contract review; preserve24cells/budgets, zero prior credit and separate publication approval.",
+    "at": "2026-10-29T11:52:20.988Z",
+    "artifacts": {
+      ".sdd/specs/release-qualification.md": "8a696227ff32e0a29f9afabd22af2f1600769871bb06ef74d5a9e9a484561b3c",
+      ".sdd/release-validation.v0.2.3.json": "0b61a5b8678f6db62e068bf0ef291be9705df80be9ad2dbf7ffad8c07ed408bb",
+      ".sdd/release-content-mutations.v0.2.3.json": "60f658309522e1ffae19be653f60bef7021cd207ca4b7f2a983c603d6cb35a45",
+      ".sdd/specs/claude-code-support.md": "4617ab97c905cf9ee8f1cd6387818448c7a4b8f6960164c6fddd1b024da53cb5",
+      "README.md": "b51231418d95a5de812bd8d33308bed01922f077536264c1eef8a5d2c6d793f5",
+      "README-ja.md": "d7b0ef264cbf14c32afd6ca2ef7544f038d4101662d156d18925c0368b87d58d",
+      "CLANGELOG.md": "9733a9933a72176e370d3ba90e2008294870243bbc1fbf00fa4df9e9860f5125"
+    },
+    "tier": "T2",
+    "requireHuman": true,
+    "code": {
+      "scripts/release-host-mutations.mjs": "63326b6067616c390bc1b294e61d0c6fbb18a426b75db6019c17a17566dc80e6",
+      "scripts/release-qualification-content-mutations.mjs": "f5d632f162ebfb8e8c1074656048ab7d46ad77893cd3e40a91917f6dd70648e6",
+      "scripts/release-qualification-evidence.mjs": "7b2a48751ee4aeb9aea4764c3e993aa4853912c7c82378d18cbf192e2f9cb15e",
+      "scripts/release-qualification.mjs": "5c8e8f7c362f9ffa34690eeaf867091bb504c4c1c27a52f73f208754590069c1"
+    }
   }
 }

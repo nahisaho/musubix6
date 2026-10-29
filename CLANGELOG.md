@@ -68,16 +68,20 @@ To undo the skill refresh, restore the backed-up skill directories.
 - Do not transfer earlier versions' validation runs or publication approvals
   to this candidate. Two consecutive clean runs of the unchanged frozen
   support/candidate/test matrix and separate exact-artifact human approval
-  remain required; all 25 inherited required matrix cells are retained.
+  remain required. The proposed Linux-only scope retains all 24 inherited
+  non-WSL required cells and explicitly excludes NATIVE-WSLC as unvalidated;
+  that scope reduction requires human approval.
 - Treat the earlier full SDD gate PASS as development evidence only, not
   qualification for 0.2.3.
 - Identify the source package, lockfile and CLI as 0.2.3 after reapproval
   of the version-bound contract; this does not establish publication.
 - Treat required missing, skipped or unparseable evidence as incomplete,
   not passing. The inherited qualification launchers are currently missing
-  from this environment; no 0.2.3 qualifying run has completed.
-- Keep live Claude interactions, actual WSL container execution and
-  macOS/Windows behavior unqualified. The accounting writer uses POSIX locking.
+  from this environment and are being recovered; no 0.2.3 qualifying run
+  has completed.
+- Limit release qualification to Linux x86_64. Keep live Claude interactions,
+  actual WSL container execution and macOS/Windows behavior explicitly excluded
+  and unqualified. The accounting writer uses POSIX locking.
 
 ## [0.2.0] - Unreleased draft prepared 2026-10-22
 

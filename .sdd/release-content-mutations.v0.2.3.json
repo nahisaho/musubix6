@@ -1,0 +1,3010 @@
+{
+  "schemaVersion": 1,
+  "revision": 1,
+  "targetVersion": "0.2.3",
+  "status": "proposed-normative-contract-not-approval-or-run-evidence",
+  "originalExactSemanticsRecovered": false,
+  "originalSevenVendorPathsRecovered": false,
+  "qualifyingCredit": 0,
+  "scope": {
+    "skillCell": "SKILL-MUTATION",
+    "vendorCell": "SKILL-MUTATION",
+    "placeholderCell": "PLACEHOLDER-MUTATION",
+    "runtime": "24",
+    "timeoutSecondsPerCell": 3600,
+    "requiredCellsUnchanged": 24
+  },
+  "exactRequiredCaseCounts": {
+    "skillMechanisms": 13,
+    "sourceVendorChallenges": 1090,
+    "originSensitivityChallenges": 60,
+    "vendorChallenges": 1150,
+    "skillCellTotal": 1163,
+    "placeholderMechanisms": 14
+  },
+  "mutationSelectionRule": "Require exactly one occurrence of before within scope. A non-null scope identifies the exact named top-level function, ending before the next top-level function/class definition; null means the whole file. Match exact pre-edit bytes and refuse a missing/ambiguous anchor.",
+  "independentEvidence": [
+    {
+      "path": ".sdd/specs/kotonoha-skill-sync.md",
+      "sha256": "6d590df7a69fca0955c0be93101329cc168b434316c655ab06b74f2ab893380a",
+      "lines": [
+        5,
+        23
+      ]
+    },
+    {
+      "path": ".sdd/specs/tech-writer-placeholders.md",
+      "sha256": "1e16d3035b14b8102f19c750d5e036c9cfa182458c2b1af309e20be03b7a176e",
+      "lines": [
+        7,
+        24
+      ]
+    },
+    {
+      "path": "scripts/kotonoha-skills.test.mjs",
+      "sha256": "2617df1c0699ef7d07178330143f91db481ba4ff1ae5e3d8736040926f10f822",
+      "lines": [
+        14,
+        228
+      ]
+    },
+    {
+      "path": ".github/skills/japanese-prose/scripts/test_engine.py",
+      "sha256": "7d1a9935453038787ff520c360637037b275fe6769210a17961930f7966d649a",
+      "lines": [
+        58,
+        298
+      ]
+    },
+    {
+      "path": ".sdd/release-validation.v0.2.0.json",
+      "sha256": "e2f221e308e2fb4389f044e12c42cb2083e314b97305ae1701f65cd399c37de6",
+      "lines": [
+        270,
+        294
+      ]
+    },
+    {
+      "path": ".sdd/release-validation.v0.2.0.json",
+      "sha256": "e2f221e308e2fb4389f044e12c42cb2083e314b97305ae1701f65cd399c37de6",
+      "lines": [
+        1439,
+        1501
+      ]
+    },
+    {
+      "path": ".sdd/release-validation.v0.2.0.results.json",
+      "sha256": "866621bc5bffcb7bb879fe983d34f6d65c6ffd9538b66563aef56491d9bd86f0"
+    }
+  ],
+  "uniformVerdict": "Baseline and restoration must both pass real target assertions. Mutant must fail the exact independently selected owned assertion, not setup/load/type/import/provider failure, timeout, empty discovery or unselected tests. Required skip/TODO/unknown/unparseable count is INCOMPLETE/FAIL. Freeze exact case IDs, edits/counts, assertion lines, native commands and reference SHA before either qualifying run. Nothing here is authorization or a test PASS.",
+  "placeholderWitnessRequirement": "For mechanisms01-12, require exact owned assertion line151 AND a retained native assertion diagnostic identifying at least one frozen failureWitness input/expected pair from the selected independent policy table. An unrelated policy-row failure at that shared assertion is not sufficient.",
+  "skillCatalogue": [
+    {
+      "proposedId": "SKILL-REPLACEMENT-01",
+      "recoverableLegacySemanticLabel": "duplicates",
+      "originalExactMutationRecoverable": false,
+      "mutation": {
+        "file": ".github/skills/japanese-prose/scripts/lint.py",
+        "before": "if particle or word:",
+        "after": "if False:",
+        "scope": null,
+        "currentMatchCount": 1,
+        "line": 133,
+        "status": "EXACT_CURRENT_CANDIDATE_ANCHOR_ONLY_NOT_EXECUTED"
+      },
+      "oracle": {
+        "test": ".github/skills/japanese-prose/scripts/test_engine.py::DiagnosticTests.test_proofreading_detects_adjacent_duplicates",
+        "evidence": {
+          "path": ".github/skills/japanese-prose/scripts/test_engine.py",
+          "sha256": "7d1a9935453038787ff520c360637037b275fe6769210a17961930f7966d649a",
+          "lines": [
+            58,
+            71
+          ]
+        },
+        "assertion": "assertIn(expected_category, findings); reading-load counterpart must not contain it",
+        "positiveControl": "test_proofreading_preserves_names_code_and_deliberate_styles at83-94",
+        "expectedAssertionLines": [
+          67
+        ],
+        "errorFamily": "Python AssertionError"
+      },
+      "goldenInput": [
+        "管理者が設定をを確認します。",
+        "管理者がが設定を確認します。",
+        "管理者にに通知します。",
+        "設定設定を保存します。"
+      ],
+      "goldenExpected": [
+        "duplicate_particle",
+        "duplicate_particle",
+        "duplicate_particle",
+        "duplicate_word"
+      ],
+      "execution": "NOT_RUN",
+      "approval": "REQUIRES_EXPLICIT_HUMAN_REPLACEMENT_APPROVAL"
+    },
+    {
+      "proposedId": "SKILL-REPLACEMENT-02",
+      "recoverableLegacySemanticLabel": "brackets",
+      "originalExactMutationRecoverable": false,
+      "mutation": {
+        "file": ".github/skills/japanese-prose/scripts/lint.py",
+        "before": "if stack or unbalanced:",
+        "after": "if False:",
+        "scope": null,
+        "currentMatchCount": 1,
+        "line": 117,
+        "status": "EXACT_CURRENT_CANDIDATE_ANCHOR_ONLY_NOT_EXECUTED"
+      },
+      "oracle": {
+        "test": ".github/skills/japanese-prose/scripts/test_engine.py::DiagnosticTests.test_proofreading_checks_brackets_and_paragraph_style",
+        "evidence": {
+          "path": ".github/skills/japanese-prose/scripts/test_engine.py",
+          "sha256": "7d1a9935453038787ff520c360637037b275fe6769210a17961930f7966d649a",
+          "lines": [
+            73,
+            81
+          ]
+        },
+        "assertion": "assertIn(unbalanced_brackets, finding categories)",
+        "positiveControl": "balanced names/code/deliberate-style control83-94",
+        "expectedAssertionLines": [
+          79
+        ],
+        "errorFamily": "Python AssertionError"
+      },
+      "goldenInput": "設定（管理者向け））を保存します。",
+      "goldenExpected": "contains unbalanced_brackets",
+      "execution": "NOT_RUN",
+      "approval": "REQUIRES_EXPLICIT_HUMAN_REPLACEMENT_APPROVAL"
+    },
+    {
+      "proposedId": "SKILL-REPLACEMENT-03",
+      "recoverableLegacySemanticLabel": "paragraph style",
+      "originalExactMutationRecoverable": false,
+      "mutation": {
+        "file": ".github/skills/japanese-prose/scripts/lint.py",
+        "before": "if style and first_style and style != first_style:",
+        "after": "if False:",
+        "scope": null,
+        "currentMatchCount": 1,
+        "line": 152,
+        "status": "EXACT_CURRENT_CANDIDATE_ANCHOR_ONLY_NOT_EXECUTED"
+      },
+      "oracle": {
+        "test": ".github/skills/japanese-prose/scripts/test_engine.py::DiagnosticTests.test_proofreading_checks_brackets_and_paragraph_style",
+        "evidence": {
+          "path": ".github/skills/japanese-prose/scripts/test_engine.py",
+          "sha256": "7d1a9935453038787ff520c360637037b275fe6769210a17961930f7966d649a",
+          "lines": [
+            73,
+            81
+          ]
+        },
+        "assertion": "assertIn(mixed_sentence_style, categories)",
+        "positiveControl": "separate paragraphs and quotations control83-94",
+        "expectedAssertionLines": [
+          79
+        ],
+        "errorFamily": "Python AssertionError"
+      },
+      "goldenInput": "設定を保存します。変更はすぐに反映される。",
+      "goldenExpected": "contains mixed_sentence_style",
+      "execution": "NOT_RUN",
+      "approval": "REQUIRES_EXPLICIT_HUMAN_REPLACEMENT_APPROVAL"
+    },
+    {
+      "proposedId": "SKILL-REPLACEMENT-04",
+      "recoverableLegacySemanticLabel": "questions",
+      "originalExactMutationRecoverable": false,
+      "mutation": {
+        "file": ".github/skills/japanese-prose/scripts/lint.py",
+        "before": "pattern += r\"(?!か|[?？])\"",
+        "after": "pattern += \"\"",
+        "scope": null,
+        "currentMatchCount": 1,
+        "line": 183,
+        "status": "EXACT_CURRENT_CANDIDATE_ANCHOR_ONLY_NOT_EXECUTED"
+      },
+      "oracle": {
+        "test": ".github/skills/japanese-prose/scripts/test_engine.py::DiagnosticTests.test_questions_and_obligations_are_not_style_errors",
+        "evidence": {
+          "path": ".github/skills/japanese-prose/scripts/test_engine.py",
+          "sha256": "7d1a9935453038787ff520c360637037b275fe6769210a17961930f7966d649a",
+          "lines": [
+            104,
+            114
+          ]
+        },
+        "assertion": "assertNotIn(formulaic_conclusion, categories)",
+        "positiveControl": "existing unnatural fixture must still contain formulaic_conclusion; native test116-125",
+        "expectedAssertionLines": [
+          113
+        ],
+        "errorFamily": "Python AssertionError"
+      },
+      "goldenInput": [
+        "この結果だけでは、安全だと言えるでしょうか。",
+        "この結果だけでは、安全だと言えるだろうか。"
+      ],
+      "goldenExpected": "no formulaic_conclusion or double_negative",
+      "execution": "NOT_RUN",
+      "approval": "REQUIRES_EXPLICIT_HUMAN_REPLACEMENT_APPROVAL"
+    },
+    {
+      "proposedId": "SKILL-REPLACEMENT-05",
+      "recoverableLegacySemanticLabel": "obligations",
+      "originalExactMutationRecoverable": false,
+      "mutation": {
+        "file": ".github/skills/japanese-prose/scripts/lint.py",
+        "before": "if any(pattern.search(sent_text) for pattern in DOUBLE_NEGATIVE_RULES):",
+        "after": "if any(pattern.search(sent_text) for pattern in DOUBLE_NEGATIVE_RULES) or \"なくてはならない\" in sent_text or \"ざるを得ない\" in sent_text:",
+        "scope": null,
+        "currentMatchCount": 1,
+        "line": 293,
+        "status": "EXACT_CURRENT_CANDIDATE_ANCHOR_ONLY_NOT_EXECUTED"
+      },
+      "oracle": {
+        "test": ".github/skills/japanese-prose/scripts/test_engine.py::DiagnosticTests.test_questions_and_obligations_are_not_style_errors",
+        "evidence": {
+          "path": ".github/skills/japanese-prose/scripts/test_engine.py",
+          "sha256": "7d1a9935453038787ff520c360637037b275fe6769210a17961930f7966d649a",
+          "lines": [
+            104,
+            114
+          ]
+        },
+        "assertion": "assertNotIn(double_negative, categories)",
+        "positiveControl": "existing unnatural fixture retains double_negative; native test116-125",
+        "expectedAssertionLines": [
+          114
+        ],
+        "errorFamily": "Python AssertionError"
+      },
+      "goldenInput": [
+        "管理者は確認しなくてはならない。",
+        "この場合は停止せざるを得ない。"
+      ],
+      "goldenExpected": "no double_negative or formulaic_conclusion",
+      "execution": "NOT_RUN",
+      "approval": "REQUIRES_EXPLICIT_HUMAN_REPLACEMENT_APPROVAL"
+    },
+    {
+      "proposedId": "SKILL-REPLACEMENT-06",
+      "recoverableLegacySemanticLabel": "fences",
+      "originalExactMutationRecoverable": false,
+      "mutation": {
+        "file": ".github/skills/japanese-prose/scripts/core.py",
+        "before": "elif (\n                marker[0] == fence_marker[0]\n                and len(marker) >= len(fence_marker)\n                and not raw[fence.end():].strip()\n            ):",
+        "after": "elif marker[0] == fence_marker[0]:",
+        "scope": null,
+        "currentMatchCount": 1,
+        "line": 82,
+        "status": "EXACT_CURRENT_CANDIDATE_ANCHOR_ONLY_NOT_EXECUTED"
+      },
+      "oracle": {
+        "test": ".github/skills/japanese-prose/scripts/test_engine.py::DiagnosticTests.test_short_fences_and_fence_info_do_not_expose_code_as_prose",
+        "evidence": {
+          "path": ".github/skills/japanese-prose/scripts/test_engine.py",
+          "sha256": "7d1a9935453038787ff520c360637037b275fe6769210a17961930f7966d649a",
+          "lines": [
+            96,
+            102
+          ]
+        },
+        "assertion": "self.assertEqual(self.analyze_text(text)[\"findings\"], [])",
+        "positiveControl": "visible duplicate prose must still be detected by58-71",
+        "expectedAssertionLines": [
+          102
+        ],
+        "errorFamily": "Python AssertionError"
+      },
+      "goldenInput": [
+        "````text\n```python\n設定設定（をを確認する。\n```\n````\n",
+        "```text\n```python\n設定設定（をを確認する。\n```\n"
+      ],
+      "goldenExpected": "findings=[]",
+      "execution": "NOT_RUN",
+      "approval": "REQUIRES_EXPLICIT_HUMAN_REPLACEMENT_APPROVAL"
+    },
+    {
+      "proposedId": "SKILL-REPLACEMENT-07",
+      "recoverableLegacySemanticLabel": "protected content",
+      "originalExactMutationRecoverable": false,
+      "mutation": {
+        "file": ".github/skills/japanese-prose/scripts/invariants.py",
+        "before": "for name in initial if initial[name] != final[name]",
+        "after": "for name in initial if False and initial[name] != final[name]",
+        "scope": null,
+        "currentMatchCount": 1,
+        "line": 132,
+        "status": "EXACT_CURRENT_CANDIDATE_ANCHOR_ONLY_NOT_EXECUTED"
+      },
+      "oracle": {
+        "test": ".github/skills/japanese-prose/scripts/test_engine.py::InvariantTests.test_protected_changes_cannot_be_approved_by_semantic_review",
+        "evidence": {
+          "path": ".github/skills/japanese-prose/scripts/test_engine.py",
+          "sha256": "7d1a9935453038787ff520c360637037b275fe6769210a17961930f7966d649a",
+          "lines": [
+            203,
+            235
+          ]
+        },
+        "assertion": "status==blocked AND exact mechanical_violations category",
+        "positiveControl": "unchanged before==before passed; valid hash-bound paraphrase passed at245-253",
+        "expectedAssertionLines": [
+          232
+        ],
+        "errorFamily": "Python AssertionError"
+      },
+      "goldenInput": "ALL11 existing exact before/after/category tuples at211-222, even with valid semantic review",
+      "goldenExpected": "blocked for numbers, quantities, identifiers, links, inline code, tables, frontmatter, headings, names and fenced code",
+      "execution": "NOT_RUN",
+      "approval": "REQUIRES_EXPLICIT_HUMAN_REPLACEMENT_APPROVAL"
+    },
+    {
+      "proposedId": "SKILL-REPLACEMENT-08",
+      "recoverableLegacySemanticLabel": "missing review",
+      "originalExactMutationRecoverable": false,
+      "mutation": {
+        "file": ".github/skills/japanese-prose/scripts/invariants.py",
+        "before": "elif review_required:",
+        "after": "elif False:",
+        "scope": null,
+        "currentMatchCount": 1,
+        "line": 153,
+        "status": "EXACT_CURRENT_CANDIDATE_ANCHOR_ONLY_NOT_EXECUTED"
+      },
+      "oracle": {
+        "test": ".github/skills/japanese-prose/scripts/test_engine.py::InvariantTests.test_review_must_cover_exact_edits_and_all_semantic_checks",
+        "evidence": {
+          "path": ".github/skills/japanese-prose/scripts/test_engine.py",
+          "sha256": "7d1a9935453038787ff520c360637037b275fe6769210a17961930f7966d649a",
+          "lines": [
+            245,
+            260
+          ]
+        },
+        "assertion": "changed text without review: review_required at251",
+        "positiveControl": "unchanged passes250; exact valid review passes253",
+        "expectedAssertionLines": [
+          251
+        ],
+        "errorFamily": "Python AssertionError"
+      },
+      "goldenInput": {
+        "before": "管理者だけが設定を確認します。",
+        "after": "設定を確認できるのは管理者だけです。",
+        "review": null
+      },
+      "goldenExpected": "review_required",
+      "execution": "NOT_RUN",
+      "approval": "REQUIRES_EXPLICIT_HUMAN_REPLACEMENT_APPROVAL"
+    },
+    {
+      "proposedId": "SKILL-REPLACEMENT-09",
+      "recoverableLegacySemanticLabel": "stale review",
+      "originalExactMutationRecoverable": false,
+      "mutation": {
+        "file": ".github/skills/japanese-prose/scripts/invariants.py",
+        "before": "if review.get(\"before_sha256\") != before_hash or review.get(\"after_sha256\") != after_hash:",
+        "after": "if False:",
+        "scope": null,
+        "currentMatchCount": 1,
+        "line": 143,
+        "status": "EXACT_CURRENT_CANDIDATE_ANCHOR_ONLY_NOT_EXECUTED"
+      },
+      "oracle": {
+        "test": ".github/skills/japanese-prose/scripts/test_engine.py::InvariantTests.test_review_must_cover_exact_edits_and_all_semantic_checks",
+        "evidence": {
+          "path": ".github/skills/japanese-prose/scripts/test_engine.py",
+          "sha256": "7d1a9935453038787ff520c360637037b275fe6769210a17961930f7966d649a",
+          "lines": [
+            245,
+            260
+          ]
+        },
+        "assertion": "review_required after changing after bytes at254-255",
+        "positiveControl": "same exact pair with all bool True and matching hashes passes253",
+        "expectedAssertionLines": [
+          255
+        ],
+        "errorFamily": "Python AssertionError"
+      },
+      "goldenInput": {
+        "originalAfter": "設定を確認できるのは管理者だけです。",
+        "changedAfter": "誰でも設定を確認できます。",
+        "review": "hashes for original pair"
+      },
+      "goldenExpected": "review_required",
+      "execution": "NOT_RUN",
+      "approval": "REQUIRES_EXPLICIT_HUMAN_REPLACEMENT_APPROVAL"
+    },
+    {
+      "proposedId": "SKILL-REPLACEMENT-10",
+      "recoverableLegacySemanticLabel": "review boolean types",
+      "originalExactMutationRecoverable": false,
+      "mutation": {
+        "file": ".github/skills/japanese-prose/scripts/invariants.py",
+        "before": "if checks.get(name) is not True",
+        "after": "if not checks.get(name)",
+        "scope": null,
+        "currentMatchCount": 1,
+        "line": 151,
+        "status": "EXACT_CURRENT_CANDIDATE_ANCHOR_ONLY_NOT_EXECUTED"
+      },
+      "oracle": {
+        "test": ".github/skills/japanese-prose/scripts/test_engine.py::InvariantTests.test_units_across_line_breaks_and_boolean_review_types",
+        "evidence": {
+          "path": ".github/skills/japanese-prose/scripts/test_engine.py",
+          "sha256": "7d1a9935453038787ff520c360637037b275fe6769210a17961930f7966d649a",
+          "lines": [
+            286,
+            298
+          ]
+        },
+        "assertion": "string \"true\" is not boolean True; review_required at298",
+        "positiveControl": "all real True passes253; false scope review_required260",
+        "expectedAssertionLines": [
+          298
+        ],
+        "errorFamily": "Python AssertionError"
+      },
+      "goldenInput": {
+        "before": "設定をを保存します。",
+        "after": "設定を保存します。",
+        "review": "correct hashes, checks.negation=\"true\""
+      },
+      "goldenExpected": "review_required",
+      "execution": "NOT_RUN",
+      "approval": "REQUIRES_EXPLICIT_HUMAN_REPLACEMENT_APPROVAL"
+    },
+    {
+      "proposedId": "SKILL-REPLACEMENT-11",
+      "recoverableLegacySemanticLabel": "excluded skill",
+      "originalExactMutationRecoverable": false,
+      "mutation": {
+        "operation": "add isolated .github/skills/obsidian-vault/SKILL.md with fixture bytes; do not modify CLI/tests",
+        "existingAnchor": {
+          "path": "scripts/kotonoha-skills.test.mjs",
+          "sha256": "2617df1c0699ef7d07178330143f91db481ba4ff1ae5e3d8736040926f10f822",
+          "lines": [
+            38,
+            51
+          ]
+        },
+        "file": ".github/skills/obsidian-vault/SKILL.md",
+        "precondition": "Exact file and obsidian-vault directory absent.",
+        "content": "---\nname: obsidian-vault\ndescription: excluded fixture\n---\n# Excluded skill\n",
+        "restore": "Remove the created file and directory; complete inventory must match baseline."
+      },
+      "oracle": {
+        "test": "TEST-KOTO-SYNC-002",
+        "evidence": {
+          "path": "scripts/kotonoha-skills.test.mjs",
+          "sha256": "2617df1c0699ef7d07178330143f91db481ba4ff1ae5e3d8736040926f10f822",
+          "lines": [
+            38,
+            51
+          ]
+        },
+        "assertion": "list has no obsidian prefix; unknown --only names exit2, stderr /unknown skill:/, destination absent",
+        "positiveControl": "selected four init exit0 and inventory equality at25-35",
+        "expectedAssertionLines": [
+          44
+        ],
+        "errorFamily": "Node ERR_ASSERTION"
+      },
+      "goldenInput": "isolated source contains obsidian-vault",
+      "goldenExpected": "source/frozen payload inventory rejects forbidden extra directory; durable owned list assertion expected to detect if exposed",
+      "execution": "NOT_RUN",
+      "approval": "REQUIRES_EXPLICIT_HUMAN_REPLACEMENT_APPROVAL"
+    },
+    {
+      "proposedId": "SKILL-REPLACEMENT-12",
+      "recoverableLegacySemanticLabel": "excluded cache",
+      "originalExactMutationRecoverable": false,
+      "mutation": {
+        "operation": "add isolated .github/skills/tech-writer/scripts/__pycache__/unapproved.pyc; fixture bytes only",
+        "existingAnchor": {
+          "path": "scripts/kotonoha-skills.test.mjs",
+          "sha256": "2617df1c0699ef7d07178330143f91db481ba4ff1ae5e3d8736040926f10f822",
+          "lines": [
+            14,
+            21
+          ]
+        },
+        "file": ".github/skills/tech-writer/scripts/__pycache__/unapproved.pyc",
+        "precondition": "Exact file and __pycache__ directory absent.",
+        "content": "counterexample-cache\n",
+        "restore": "Remove the created file and directory; complete inventory must match baseline."
+      },
+      "oracle": {
+        "test": "TEST-KOTO-SYNC-001",
+        "evidence": {
+          "path": "scripts/kotonoha-skills.test.mjs",
+          "sha256": "2617df1c0699ef7d07178330143f91db481ba4ff1ae5e3d8736040926f10f822",
+          "lines": [
+            14,
+            35
+          ]
+        },
+        "assertion": "inventory asserts no __pycache__ or .pyc/.pyo; frozen payload inventory rejects extra",
+        "positiveControl": "unmutated four selected inventories match source and installed",
+        "expectedAssertionLines": [
+          19
+        ],
+        "errorFamily": "Node ERR_ASSERTION"
+      },
+      "goldenInput": "isolated source contains forbidden cache artifact",
+      "goldenExpected": "owned cache-inventory assertion failure, not a setup exception",
+      "execution": "NOT_RUN",
+      "approval": "REQUIRES_EXPLICIT_HUMAN_REPLACEMENT_APPROVAL"
+    },
+    {
+      "proposedId": "SKILL-REPLACEMENT-13",
+      "recoverableLegacySemanticLabel": "local placeholder exception",
+      "originalExactMutationRecoverable": false,
+      "mutation": {
+        "file": ".github/skills/tech-writer/scripts/lint.py",
+        "before": "m.group(1).lower() == \"todo\"",
+        "after": "False",
+        "scope": "def check_placeholders(",
+        "currentMatchCount": 1,
+        "line": 219,
+        "status": "EXACT_CURRENT_CANDIDATE_ANCHOR_ONLY_NOT_EXECUTED"
+      },
+      "oracle": {
+        "test": "TEST-KOTO-SYNC-003 and historical #233",
+        "evidence": [
+          {
+            "path": "scripts/kotonoha-skills.test.mjs",
+            "sha256": "2617df1c0699ef7d07178330143f91db481ba4ff1ae5e3d8736040926f10f822",
+            "lines": [
+              55,
+              71
+            ]
+          },
+          {
+            "path": ".github/skills/lean-sdd-tdd/scripts/sdd.test.mjs",
+            "sha256": "0e5b128521fb39bcfc08cee8c11258a5b30af7df90627958b7793898c4ff14b1",
+            "lines": [
+              5997,
+              6005
+            ]
+          }
+        ],
+        "assertion": "placeholder reported for TODO finish this; output must not mention The todo app",
+        "positiveControl": "TODO finish this remains a placeholder",
+        "expectedAssertionLines": [
+          68
+        ],
+        "errorFamily": "Node ERR_ASSERTION"
+      },
+      "goldenInput": "# todo-cli\n\nThe todo app lists tasks. Use todo add.\n\nTODO finish this.\n",
+      "goldenExpected": "only uppercase unfinished marker reported; lower-case ordinary name accepted",
+      "execution": "NOT_RUN",
+      "approval": "REQUIRES_EXPLICIT_HUMAN_REPLACEMENT_APPROVAL"
+    }
+  ],
+  "placeholderCatalogue": [
+    {
+      "proposedId": "PLACEHOLDER-REPLACEMENT-01",
+      "recoverableLegacySemanticLabel": "gap normalization",
+      "originalExactMutationRecoverable": false,
+      "mutation": {
+        "file": ".github/skills/tech-writer/scripts/lint.py",
+        "before": "suffix = line[m.end():].lstrip(\" \\t\")",
+        "after": "suffix = line[m.end():]",
+        "scope": null,
+        "currentMatchCount": 1,
+        "line": 215,
+        "status": "EXACT_CURRENT_CANDIDATE_ANCHOR_ONLY_NOT_EXECUTED"
+      },
+      "oracle": {
+        "test": "TEST-TW-PH-001",
+        "evidence": {
+          "path": "scripts/kotonoha-skills.test.mjs",
+          "sha256": "2617df1c0699ef7d07178330143f91db481ba4ff1ae5e3d8736040926f10f822",
+          "lines": [
+            133,
+            228
+          ]
+        },
+        "assertion": "fixed golden placeholder line/count arrays at150-158; exact JSON keys and snippets at145-153; installed missing-input interface at213-226",
+        "positiveControl": "todo: pending=1; The todo app lists tasks.=0",
+        "expectedAssertionLines": [
+          151
+        ],
+        "errorFamily": "Node ERR_ASSERTION",
+        "failureWitnesses": [
+          {
+            "table": "marker",
+            "row": 525,
+            "input": "todo : pending",
+            "expected": 1
+          },
+          {
+            "table": "marker",
+            "row": 536,
+            "input": "todo\t: pending",
+            "expected": 1
+          }
+        ]
+      },
+      "goldenInput": [
+        "todo : pending",
+        "todo\t: pending"
+      ],
+      "goldenExpected": [
+        1,
+        1
+      ],
+      "execution": "NOT_RUN",
+      "approval": "REQUIRES_EXPLICIT_HUMAN_REPLACEMENT_APPROVAL"
+    },
+    {
+      "proposedId": "PLACEHOLDER-REPLACEMENT-02",
+      "recoverableLegacySemanticLabel": "full-width colon",
+      "originalExactMutationRecoverable": false,
+      "mutation": {
+        "file": ".github/skills/tech-writer/scripts/lint.py",
+        "before": "and not suffix.startswith((\":\", \"\\uff1a\", \"(\"))",
+        "after": "and not suffix.startswith((\":\", \"(\"))",
+        "scope": null,
+        "currentMatchCount": 1,
+        "line": 221,
+        "status": "EXACT_CURRENT_CANDIDATE_ANCHOR_ONLY_NOT_EXECUTED"
+      },
+      "oracle": {
+        "test": "TEST-TW-PH-001",
+        "evidence": {
+          "path": "scripts/kotonoha-skills.test.mjs",
+          "sha256": "2617df1c0699ef7d07178330143f91db481ba4ff1ae5e3d8736040926f10f822",
+          "lines": [
+            133,
+            228
+          ]
+        },
+        "assertion": "fixed golden placeholder line/count arrays at150-158; exact JSON keys and snippets at145-153; installed missing-input interface at213-226",
+        "positiveControl": "ToDo: pending=1; unpunctuated Todo app=0",
+        "expectedAssertionLines": [
+          151
+        ],
+        "errorFamily": "Node ERR_ASSERTION",
+        "failureWitnesses": [
+          {
+            "table": "marker",
+            "row": 345,
+            "input": "ToDo： pending",
+            "expected": 1
+          }
+        ]
+      },
+      "goldenInput": "ToDo：pending",
+      "goldenExpected": 1,
+      "execution": "NOT_RUN",
+      "approval": "REQUIRES_EXPLICIT_HUMAN_REPLACEMENT_APPROVAL"
+    },
+    {
+      "proposedId": "PLACEHOLDER-REPLACEMENT-03",
+      "recoverableLegacySemanticLabel": "ordinary names",
+      "originalExactMutationRecoverable": false,
+      "mutation": {
+        "file": ".github/skills/tech-writer/scripts/lint.py",
+        "before": "m.group(1).lower() == \"todo\"",
+        "after": "False",
+        "scope": "def check_placeholders(",
+        "currentMatchCount": 1,
+        "line": 219,
+        "status": "EXACT_CURRENT_CANDIDATE_ANCHOR_ONLY_NOT_EXECUTED"
+      },
+      "oracle": {
+        "test": "TEST-TW-PH-001",
+        "evidence": {
+          "path": "scripts/kotonoha-skills.test.mjs",
+          "sha256": "2617df1c0699ef7d07178330143f91db481ba4ff1ae5e3d8736040926f10f822",
+          "lines": [
+            133,
+            228
+          ]
+        },
+        "assertion": "fixed golden placeholder line/count arrays at150-158; exact JSON keys and snippets at145-153; installed missing-input interface at213-226",
+        "positiveControl": "TODO pending=1; todo : pending=1",
+        "expectedAssertionLines": [
+          151
+        ],
+        "errorFamily": "Node ERR_ASSERTION",
+        "failureWitnesses": [
+          {
+            "table": "marker",
+            "row": 1,
+            "input": "The todo app lists tasks. Use todo add.",
+            "expected": 0
+          },
+          {
+            "table": "marker",
+            "row": 2,
+            "input": "Todo is an app.",
+            "expected": 0
+          },
+          {
+            "table": "marker",
+            "row": 3,
+            "input": "todo finish this.",
+            "expected": 0
+          }
+        ]
+      },
+      "goldenInput": [
+        "The todo app lists tasks. Use todo add.",
+        "Todo is an app.",
+        "todo finish this."
+      ],
+      "goldenExpected": [
+        0,
+        0,
+        0
+      ],
+      "execution": "NOT_RUN",
+      "approval": "REQUIRES_EXPLICIT_HUMAN_REPLACEMENT_APPROVAL"
+    },
+    {
+      "proposedId": "PLACEHOLDER-REPLACEMENT-04",
+      "recoverableLegacySemanticLabel": "empty annotations",
+      "originalExactMutationRecoverable": false,
+      "mutation": {
+        "file": ".github/skills/tech-writer/scripts/lint.py",
+        "before": "if content.strip():",
+        "after": "if close_idx != -1:",
+        "scope": null,
+        "currentMatchCount": 1,
+        "line": 231,
+        "status": "EXACT_CURRENT_CANDIDATE_ANCHOR_ONLY_NOT_EXECUTED"
+      },
+      "oracle": {
+        "test": "TEST-TW-PH-001",
+        "evidence": {
+          "path": "scripts/kotonoha-skills.test.mjs",
+          "sha256": "2617df1c0699ef7d07178330143f91db481ba4ff1ae5e3d8736040926f10f822",
+          "lines": [
+            133,
+            228
+          ]
+        },
+        "assertion": "fixed golden placeholder line/count arrays at150-158; exact JSON keys and snippets at145-153; installed missing-input interface at213-226",
+        "positiveControl": "TODO(#123)=0; TODO(reason)=0",
+        "expectedAssertionLines": [
+          151
+        ],
+        "errorFamily": "Node ERR_ASSERTION",
+        "failureWitnesses": [
+          {
+            "table": "marker",
+            "row": 11,
+            "input": "TODO()",
+            "expected": 1
+          },
+          {
+            "table": "marker",
+            "row": 12,
+            "input": "TODO( \t)",
+            "expected": 1
+          }
+        ]
+      },
+      "goldenInput": [
+        "TODO()",
+        "TODO( \t)"
+      ],
+      "goldenExpected": [
+        1,
+        1
+      ],
+      "execution": "NOT_RUN",
+      "approval": "REQUIRES_EXPLICIT_HUMAN_REPLACEMENT_APPROVAL"
+    },
+    {
+      "proposedId": "PLACEHOLDER-REPLACEMENT-05",
+      "recoverableLegacySemanticLabel": "unclosed annotations",
+      "originalExactMutationRecoverable": false,
+      "mutation": {
+        "file": ".github/skills/tech-writer/scripts/lint.py",
+        "before": "content = suffix[1:close_idx] if close_idx != -1 else \"\"",
+        "after": "content = suffix[1:close_idx] if close_idx != -1 else suffix[1:]",
+        "scope": null,
+        "currentMatchCount": 1,
+        "line": 230,
+        "status": "EXACT_CURRENT_CANDIDATE_ANCHOR_ONLY_NOT_EXECUTED"
+      },
+      "oracle": {
+        "test": "TEST-TW-PH-001",
+        "evidence": {
+          "path": "scripts/kotonoha-skills.test.mjs",
+          "sha256": "2617df1c0699ef7d07178330143f91db481ba4ff1ae5e3d8736040926f10f822",
+          "lines": [
+            133,
+            228
+          ]
+        },
+        "assertion": "fixed golden placeholder line/count arrays at150-158; exact JSON keys and snippets at145-153; installed missing-input interface at213-226",
+        "positiveControl": "TODO(#123)=0; TODO()=1",
+        "expectedAssertionLines": [
+          151
+        ],
+        "errorFamily": "Node ERR_ASSERTION",
+        "failureWitnesses": [
+          {
+            "table": "marker",
+            "row": 13,
+            "input": "TODO(",
+            "expected": 1
+          },
+          {
+            "table": "marker",
+            "row": 14,
+            "input": "TODO(#123",
+            "expected": 1
+          }
+        ]
+      },
+      "goldenInput": [
+        "TODO(",
+        "TODO(#123"
+      ],
+      "goldenExpected": [
+        1,
+        1
+      ],
+      "execution": "NOT_RUN",
+      "approval": "REQUIRES_EXPLICIT_HUMAN_REPLACEMENT_APPROVAL"
+    },
+    {
+      "proposedId": "PLACEHOLDER-REPLACEMENT-06",
+      "recoverableLegacySemanticLabel": "original annotation content",
+      "originalExactMutationRecoverable": false,
+      "mutation": {
+        "file": ".github/skills/tech-writer/scripts/lint.py",
+        "before": "suffix = line[m.end():].lstrip(\" \\t\")",
+        "after": "suffix = checked[m.end():].lstrip(\" \\t\")",
+        "scope": null,
+        "currentMatchCount": 1,
+        "line": 215,
+        "status": "EXACT_CURRENT_CANDIDATE_ANCHOR_ONLY_NOT_EXECUTED"
+      },
+      "oracle": {
+        "test": "TEST-TW-PH-001",
+        "evidence": {
+          "path": "scripts/kotonoha-skills.test.mjs",
+          "sha256": "2617df1c0699ef7d07178330143f91db481ba4ff1ae5e3d8736040926f10f822",
+          "lines": [
+            133,
+            228
+          ]
+        },
+        "assertion": "fixed golden placeholder line/count arrays at150-158; exact JSON keys and snippets at145-153; installed missing-input interface at213-226",
+        "positiveControl": "TODO()=1; TODO(reason)=0",
+        "expectedAssertionLines": [
+          151
+        ],
+        "errorFamily": "Node ERR_ASSERTION",
+        "failureWitnesses": [
+          {
+            "table": "marker",
+            "row": 8,
+            "input": "TODO(https://host/TODO)",
+            "expected": 0
+          },
+          {
+            "table": "marker",
+            "row": 9,
+            "input": "TODO(docs/tracking.md)",
+            "expected": 0
+          },
+          {
+            "table": "marker",
+            "row": 10,
+            "input": "TODO(`#123`)",
+            "expected": 0
+          }
+        ]
+      },
+      "goldenInput": [
+        "TODO(https://host/TODO)",
+        "TODO(docs/tracking.md)",
+        "TODO(`#123`)"
+      ],
+      "goldenExpected": [
+        0,
+        0,
+        0
+      ],
+      "execution": "NOT_RUN",
+      "approval": "REQUIRES_EXPLICIT_HUMAN_REPLACEMENT_APPROVAL"
+    },
+    {
+      "proposedId": "PLACEHOLDER-REPLACEMENT-07",
+      "recoverableLegacySemanticLabel": "URL mask",
+      "originalExactMutationRecoverable": false,
+      "mutation": {
+        "file": ".github/skills/tech-writer/scripts/lint.py",
+        "before": "for pattern in (URL_TOKEN_RE, COMPOUND_IDENTIFIER_RE):",
+        "after": "for pattern in (COMPOUND_IDENTIFIER_RE,):",
+        "scope": null,
+        "currentMatchCount": 1,
+        "line": 201,
+        "status": "EXACT_CURRENT_CANDIDATE_ANCHOR_ONLY_NOT_EXECUTED"
+      },
+      "oracle": {
+        "test": "TEST-TW-PH-002",
+        "evidence": {
+          "path": "scripts/kotonoha-skills.test.mjs",
+          "sha256": "2617df1c0699ef7d07178330143f91db481ba4ff1ae5e3d8736040926f10f822",
+          "lines": [
+            133,
+            228
+          ]
+        },
+        "assertion": "fixed golden placeholder line/count arrays at150-158; exact JSON keys and snippets at145-153; installed missing-input interface at213-226",
+        "positiveControl": "https://host/TODO TODO: pending=1; bare TODO=1",
+        "expectedAssertionLines": [
+          151
+        ],
+        "errorFamily": "Node ERR_ASSERTION",
+        "failureWitnesses": [
+          {
+            "table": "context",
+            "row": 10,
+            "input": "mailto:TODO@host",
+            "expected": 0
+          }
+        ]
+      },
+      "goldenInput": "mailto:TODO@host",
+      "goldenExpected": 0,
+      "execution": "NOT_RUN",
+      "approval": "REQUIRES_EXPLICIT_HUMAN_REPLACEMENT_APPROVAL"
+    },
+    {
+      "proposedId": "PLACEHOLDER-REPLACEMENT-08",
+      "recoverableLegacySemanticLabel": "link destination mask",
+      "originalExactMutationRecoverable": false,
+      "mutation": {
+        "file": ".github/skills/tech-writer/scripts/lint.py",
+        "before": "checked = checked[:start] + \" \" * (end - start) + checked[end:]",
+        "after": "checked = checked",
+        "scope": null,
+        "currentMatchCount": 1,
+        "line": 200,
+        "status": "EXACT_CURRENT_CANDIDATE_ANCHOR_ONLY_NOT_EXECUTED"
+      },
+      "oracle": {
+        "test": "TEST-TW-PH-002",
+        "evidence": {
+          "path": "scripts/kotonoha-skills.test.mjs",
+          "sha256": "2617df1c0699ef7d07178330143f91db481ba4ff1ae5e3d8736040926f10f822",
+          "lines": [
+            133,
+            228
+          ]
+        },
+        "assertion": "fixed golden placeholder line/count arrays at150-158; exact JSON keys and snippets at145-153; installed missing-input interface at213-226",
+        "positiveControl": "[TODO](https://host/TODO)=1; [guide](../TODO.md) TODO: pending=1",
+        "expectedAssertionLines": [
+          151
+        ],
+        "errorFamily": "Node ERR_ASSERTION",
+        "failureWitnesses": [
+          {
+            "table": "context",
+            "row": 12,
+            "input": "[guide](TODO)",
+            "expected": 0
+          }
+        ]
+      },
+      "goldenInput": "[guide](TODO)",
+      "goldenExpected": 0,
+      "execution": "NOT_RUN",
+      "approval": "REQUIRES_EXPLICIT_HUMAN_REPLACEMENT_APPROVAL"
+    },
+    {
+      "proposedId": "PLACEHOLDER-REPLACEMENT-09",
+      "recoverableLegacySemanticLabel": "identifier mask",
+      "originalExactMutationRecoverable": false,
+      "mutation": {
+        "file": ".github/skills/tech-writer/scripts/lint.py",
+        "before": "for pattern in (URL_TOKEN_RE, COMPOUND_IDENTIFIER_RE):",
+        "after": "for pattern in (URL_TOKEN_RE,):",
+        "scope": null,
+        "currentMatchCount": 1,
+        "line": 201,
+        "status": "EXACT_CURRENT_CANDIDATE_ANCHOR_ONLY_NOT_EXECUTED"
+      },
+      "oracle": {
+        "test": "TEST-TW-PH-002",
+        "evidence": {
+          "path": "scripts/kotonoha-skills.test.mjs",
+          "sha256": "2617df1c0699ef7d07178330143f91db481ba4ff1ae5e3d8736040926f10f822",
+          "lines": [
+            133,
+            228
+          ]
+        },
+        "assertion": "fixed golden placeholder line/count arrays at150-158; exact JSON keys and snippets at145-153; installed missing-input interface at213-226",
+        "positiveControl": "my-TODO-app TODO: pending=1",
+        "expectedAssertionLines": [
+          151
+        ],
+        "errorFamily": "Node ERR_ASSERTION",
+        "failureWitnesses": [
+          {
+            "table": "context",
+            "row": 1,
+            "input": "TODO-cli",
+            "expected": 0
+          },
+          {
+            "table": "context",
+            "row": 2,
+            "input": "my-TODO-app",
+            "expected": 0
+          },
+          {
+            "table": "context",
+            "row": 3,
+            "input": "TODO.md",
+            "expected": 0
+          },
+          {
+            "table": "context",
+            "row": 4,
+            "input": "src/TODO",
+            "expected": 0
+          },
+          {
+            "table": "context",
+            "row": 5,
+            "input": "src\\TODO",
+            "expected": 0
+          }
+        ]
+      },
+      "goldenInput": [
+        "TODO-cli",
+        "my-TODO-app",
+        "TODO.md",
+        "src/TODO",
+        "src\\TODO"
+      ],
+      "goldenExpected": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "execution": "NOT_RUN",
+      "approval": "REQUIRES_EXPLICIT_HUMAN_REPLACEMENT_APPROVAL"
+    },
+    {
+      "proposedId": "PLACEHOLDER-REPLACEMENT-10",
+      "recoverableLegacySemanticLabel": "exact backtick runs",
+      "originalExactMutationRecoverable": false,
+      "mutation": {
+        "file": ".github/skills/tech-writer/scripts/lint.py",
+        "before": "INLINE_CODE_RE = re.compile(r\"(?<!`)(`+)(?!`)(.+?)(?<!`)\\1(?!`)\")",
+        "after": "INLINE_CODE_RE = re.compile(r\"`[^`]+`\")",
+        "scope": null,
+        "currentMatchCount": 1,
+        "line": 76,
+        "status": "EXACT_CURRENT_CANDIDATE_ANCHOR_ONLY_NOT_EXECUTED"
+      },
+      "oracle": {
+        "test": "TEST-TW-PH-002",
+        "evidence": {
+          "path": "scripts/kotonoha-skills.test.mjs",
+          "sha256": "2617df1c0699ef7d07178330143f91db481ba4ff1ae5e3d8736040926f10f822",
+          "lines": [
+            133,
+            228
+          ]
+        },
+        "assertion": "fixed golden placeholder line/count arrays at150-158; exact JSON keys and snippets at145-153; installed missing-input interface at213-226",
+        "positiveControl": "`TODO`=0; exposed TODO=1",
+        "expectedAssertionLines": [
+          151
+        ],
+        "errorFamily": "Node ERR_ASSERTION",
+        "failureWitnesses": [
+          {
+            "table": "context",
+            "row": 14,
+            "input": "``before ` TODO``",
+            "expected": 0
+          },
+          {
+            "table": "context",
+            "row": 246,
+            "input": "`TODO``",
+            "expected": 1
+          }
+        ]
+      },
+      "goldenInput": [
+        "``before ` TODO``",
+        "`TODO``"
+      ],
+      "goldenExpected": [
+        0,
+        1
+      ],
+      "execution": "NOT_RUN",
+      "approval": "REQUIRES_EXPLICIT_HUMAN_REPLACEMENT_APPROVAL"
+    },
+    {
+      "proposedId": "PLACEHOLDER-REPLACEMENT-11",
+      "recoverableLegacySemanticLabel": "fences",
+      "originalExactMutationRecoverable": false,
+      "mutation": {
+        "file": ".github/skills/tech-writer/scripts/lint.py",
+        "before": "if fence_mask[i]:",
+        "after": "if False:",
+        "scope": "def check_placeholders(",
+        "currentMatchCount": 1,
+        "line": 211,
+        "status": "EXACT_CURRENT_CANDIDATE_ANCHOR_ONLY_NOT_EXECUTED"
+      },
+      "oracle": {
+        "test": "TEST-TW-PH-002",
+        "evidence": {
+          "path": "scripts/kotonoha-skills.test.mjs",
+          "sha256": "2617df1c0699ef7d07178330143f91db481ba4ff1ae5e3d8736040926f10f822",
+          "lines": [
+            133,
+            228
+          ]
+        },
+        "assertion": "fixed golden placeholder line/count arrays at150-158; exact JSON keys and snippets at145-153; installed missing-input interface at213-226",
+        "positiveControl": "TODO outside a fence=1; fenced markers=0",
+        "expectedAssertionLines": [
+          151
+        ],
+        "errorFamily": "Node ERR_ASSERTION",
+        "failureWitnesses": [
+          {
+            "table": "context",
+            "row": 986,
+            "input": "TODO: example",
+            "expected": 0
+          },
+          {
+            "table": "context",
+            "row": 990,
+            "input": "FIXME: example",
+            "expected": 0
+          }
+        ]
+      },
+      "goldenInput": "```python\nTODO: example\n````\nTODO: outside fence\n~~~text\nFIXME: example\n~~~\nXXX: outside fence",
+      "goldenExpected": "placeholder findings on exposed lines4 and8 only",
+      "execution": "NOT_RUN",
+      "approval": "REQUIRES_EXPLICIT_HUMAN_REPLACEMENT_APPROVAL"
+    },
+    {
+      "proposedId": "PLACEHOLDER-REPLACEMENT-12",
+      "recoverableLegacySemanticLabel": "token-local exclusion",
+      "originalExactMutationRecoverable": false,
+      "mutation": {
+        "file": ".github/skills/tech-writer/scripts/lint.py",
+        "before": "return checked",
+        "after": "return \" \" * len(line) if checked != line else checked",
+        "scope": "def strip_placeholder_context(",
+        "currentMatchCount": 1,
+        "line": 203,
+        "status": "EXACT_CURRENT_CANDIDATE_ANCHOR_ONLY_NOT_EXECUTED"
+      },
+      "oracle": {
+        "test": "TEST-TW-PH-002",
+        "evidence": {
+          "path": "scripts/kotonoha-skills.test.mjs",
+          "sha256": "2617df1c0699ef7d07178330143f91db481ba4ff1ae5e3d8736040926f10f822",
+          "lines": [
+            133,
+            228
+          ]
+        },
+        "assertion": "fixed golden placeholder line/count arrays at150-158; exact JSON keys and snippets at145-153; installed missing-input interface at213-226",
+        "positiveControl": "recognized context alone=0; unrelated visible markers remain exposed",
+        "expectedAssertionLines": [
+          151
+        ],
+        "errorFamily": "Node ERR_ASSERTION",
+        "failureWitnesses": [
+          {
+            "table": "context",
+            "row": 243,
+            "input": "https://host/TODO TODO: pending",
+            "expected": 1
+          },
+          {
+            "table": "context",
+            "row": 244,
+            "input": "[guide](../TODO.md) TODO: pending",
+            "expected": 1
+          },
+          {
+            "table": "context",
+            "row": 245,
+            "input": "my-TODO-app TODO: pending",
+            "expected": 1
+          }
+        ]
+      },
+      "goldenInput": [
+        "https://host/TODO TODO: pending",
+        "[guide](../TODO.md) TODO: pending",
+        "my-TODO-app TODO: pending"
+      ],
+      "goldenExpected": [
+        1,
+        1,
+        1
+      ],
+      "execution": "NOT_RUN",
+      "approval": "REQUIRES_EXPLICIT_HUMAN_REPLACEMENT_APPROVAL"
+    },
+    {
+      "proposedId": "PLACEHOLDER-REPLACEMENT-13",
+      "recoverableLegacySemanticLabel": "advisory status",
+      "originalExactMutationRecoverable": false,
+      "mutation": {
+        "file": ".github/skills/tech-writer/scripts/lint.py",
+        "before": "    return 0\n\n\nif __name__ == \"__main__\":",
+        "after": "    return 2 if result.findings else 0\n\n\nif __name__ == \"__main__\":",
+        "scope": null,
+        "currentMatchCount": 1,
+        "line": 435,
+        "status": "EXACT_CURRENT_CANDIDATE_ANCHOR_ONLY_NOT_EXECUTED"
+      },
+      "oracle": {
+        "test": "TEST-TW-PH-003",
+        "evidence": {
+          "path": "scripts/kotonoha-skills.test.mjs",
+          "sha256": "2617df1c0699ef7d07178330143f91db481ba4ff1ae5e3d8736040926f10f822",
+          "lines": [
+            133,
+            228
+          ]
+        },
+        "assertion": "fixed golden placeholder line/count arrays at150-158; exact JSON keys and snippets at145-153; installed missing-input interface at213-226",
+        "positiveControl": "clean valid file exits0; missing file still exits1",
+        "expectedAssertionLines": [
+          139
+        ],
+        "errorFamily": "Node ERR_ASSERTION"
+      },
+      "goldenInput": "existing file with TODO: pending; --json --atomic",
+      "goldenExpected": "exit0; valid JSON with file/finding_count/findings and one placeholder",
+      "execution": "NOT_RUN",
+      "approval": "REQUIRES_EXPLICIT_HUMAN_REPLACEMENT_APPROVAL"
+    },
+    {
+      "proposedId": "PLACEHOLDER-REPLACEMENT-14",
+      "recoverableLegacySemanticLabel": "missing-input status",
+      "originalExactMutationRecoverable": false,
+      "mutation": {
+        "file": ".github/skills/tech-writer/scripts/lint.py",
+        "before": "print(f\"error: file not found: {path}\", file=sys.stderr)\n        return 1",
+        "after": "print(f\"error: file not found: {path}\", file=sys.stderr)\n        return 0",
+        "scope": null,
+        "currentMatchCount": 1,
+        "line": 415,
+        "status": "EXACT_CURRENT_CANDIDATE_ANCHOR_ONLY_NOT_EXECUTED"
+      },
+      "oracle": {
+        "test": "TEST-TW-PH-003",
+        "evidence": {
+          "path": "scripts/kotonoha-skills.test.mjs",
+          "sha256": "2617df1c0699ef7d07178330143f91db481ba4ff1ae5e3d8736040926f10f822",
+          "lines": [
+            133,
+            228
+          ]
+        },
+        "assertion": "fixed golden placeholder line/count arrays at150-158; exact JSON keys and snippets at145-153; installed missing-input interface at213-226",
+        "positiveControl": "valid file still exits0 with valid JSON",
+        "expectedAssertionLines": [
+          224
+        ],
+        "errorFamily": "Node ERR_ASSERTION"
+      },
+      "goldenInput": "nonexistent input path with --json",
+      "goldenExpected": "exit1, stdout empty, stderr matches error: file not found:",
+      "execution": "NOT_RUN",
+      "approval": "REQUIRES_EXPLICIT_HUMAN_REPLACEMENT_APPROVAL"
+    }
+  ],
+  "placeholderFinitePolicy": {
+    "source": {
+      "path": "scripts/kotonoha-skills.test.mjs",
+      "sha256": "2617df1c0699ef7d07178330143f91db481ba4ff1ae5e3d8736040926f10f822",
+      "lines": [
+        161,
+        228
+      ]
+    },
+    "markerForms": {
+      "TODO": 16,
+      "FIXME": 32,
+      "TBD": 8,
+      "XXX": 8,
+      "total": 64
+    },
+    "gaps": [
+      "",
+      " ",
+      "\t"
+    ],
+    "colons": [
+      ":",
+      "："
+    ],
+    "annotations": [
+      {
+        "text": "(#123)",
+        "expected": 0
+      },
+      {
+        "text": "(reason)",
+        "expected": 0
+      },
+      {
+        "text": "(https://host/TODO)",
+        "expected": 0
+      },
+      {
+        "text": "(docs/tracking.md)",
+        "expected": 0
+      },
+      {
+        "text": "(`#123`)",
+        "expected": 0
+      },
+      {
+        "text": "()",
+        "expected": 1
+      },
+      {
+        "text": "( \t)",
+        "expected": 1
+      },
+      {
+        "text": "(",
+        "expected": 1
+      },
+      {
+        "text": "(#123",
+        "expected": 1
+      }
+    ],
+    "markerPolicyRows": 2184,
+    "contextPolicyRows": 994,
+    "installedCombinedRows": 3178,
+    "definition": "existing markerPolicyRows/contextPolicyRows expected-count pairs, not the linter output; same line numbers/snippets/JSON keys checked in source and installed outputs; no replacement by full-suite-only coverage"
+  },
+  "vendorReference": {
+    "sourceCommit": "b94dbe1f66f72355fd0f1bd3cce6f5e3dd55588d",
+    "sourceSkillTree": "938e47c1e40567d6f2233b08ced7ba23a2c7e514",
+    "origin": "Exact committed musubix6 candidate, not an upstream-equivalence claim. All 109 content digests independently checked against committed Git blobs; exact nine-bit source modes require this human approval.",
+    "intendedLocalDeltas": [
+      {
+        "path": ".sdd/specs/kotonoha-skill-sync.md",
+        "description": "Four imported kotonoha skills plus six retained unrelated skills.",
+        "sha256": "6d590df7a69fca0955c0be93101329cc168b434316c655ab06b74f2ab893380a"
+      },
+      {
+        "path": ".sdd/specs/tech-writer-placeholders.md",
+        "description": "Declared context-aware placeholder enhancement and preserved local #233 exception.",
+        "sha256": "1e16d3035b14b8102f19c750d5e036c9cfa182458c2b1af309e20be03b7a176e"
+      },
+      {
+        "path": ".sdd/specs/ginza-53.md",
+        "description": "Declared GiNZA 5.3 runtime/dependency changes.",
+        "sha256": "5e3aaace051b4c882764d3880db10c8d9e40775dc17d891ad17fe14be8695215"
+      }
+    ],
+    "skillNames": [
+      "agent-watchdog",
+      "consulting-analyst",
+      "japanese-prose",
+      "lean-agentic-coding",
+      "lean-sdd-tdd",
+      "presentation-planner",
+      "sdd-reverse-spec",
+      "sdd-spec-interview",
+      "tech-writer",
+      "wslc-containers"
+    ],
+    "fileCount": 109,
+    "hostInventories": {
+      "copilot": {
+        "skillNames": [
+          "agent-watchdog",
+          "consulting-analyst",
+          "japanese-prose",
+          "lean-agentic-coding",
+          "lean-sdd-tdd",
+          "presentation-planner",
+          "sdd-reverse-spec",
+          "sdd-spec-interview",
+          "tech-writer",
+          "wslc-containers"
+        ],
+        "fileCount": 109
+      },
+      "claude": {
+        "skillNames": [
+          "consulting-analyst",
+          "japanese-prose",
+          "lean-agentic-coding",
+          "lean-sdd-tdd",
+          "presentation-planner",
+          "sdd-reverse-spec",
+          "sdd-spec-interview",
+          "tech-writer",
+          "wslc-containers"
+        ],
+        "fileCount": 106,
+        "excludedSkill": "agent-watchdog",
+        "reason": "Existing Copilot-only watchdog host contract, not a skipped required test."
+      }
+    },
+    "originModePolicy": {
+      "source": "Exact reference mode & 0777.",
+      "sourceInit": "Exact source reference mode & 0777.",
+      "package": "Exact frozen packageMode: 0755 for approved executable reference files, otherwise 0644. Derived before mutations, never from mutated files.",
+      "packageInit": "Exact frozen packageMode & 0777.",
+      "justification": "Real npm pack normalizes all 109 source modes; archive extraction must preserve stored modes before comparison. Do not equate source 0664/0775 with portable package 0644/0755."
+    },
+    "referenceFiles": [
+      {
+        "path": ".github/skills/agent-watchdog/scripts/watchdog.mjs",
+        "mode": 436,
+        "sha256": "62c2aee3a85f3e140f7c06969cefbd54ee1e644b66e177939cd80ff128571cd6",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/agent-watchdog/scripts/watchdog.test.mjs",
+        "mode": 436,
+        "sha256": "b4470fba9397716db46e068e7a2145132b095bb8f00fa7f65d21965afa2fd9fb",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/agent-watchdog/SKILL.md",
+        "mode": 436,
+        "sha256": "2f5031ca5d395eda3784c10088a33e5edba125e8240d4c457173aeed97932b5a",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/consulting-analyst/assets/templates/analysis-brief.md",
+        "mode": 436,
+        "sha256": "0c459eb486b465a253283b07ab42cc3463e75a400da06267dbfd3f35f425cdf3",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/consulting-analyst/assets/templates/decision-analysis.md",
+        "mode": 436,
+        "sha256": "59a1308a78a6d99d5c09dcd2e68f2986a09cc07b7c22a501e0402707bd6fd2ab",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/consulting-analyst/assets/templates/hypothesis-evidence-ledger.md",
+        "mode": 436,
+        "sha256": "6a385eec7b9127d6ecf7b0ce7f1df28f87694f597389ee92b23f6ff3c8ee8a19",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/consulting-analyst/assets/templates/issue-tree.md",
+        "mode": 436,
+        "sha256": "7b06d91dfd2ed779c59fb06cf279c00c3f019422c56a7026a103ee72335f4db9",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/consulting-analyst/assets/templates/synthesis-handoff.md",
+        "mode": 436,
+        "sha256": "08d2c7861ac3dd96fc9cc4a6348aef8bbf2309d2d1b54db3b25ecd878a84bcdc",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/consulting-analyst/references/evidence-and-hypotheses.md",
+        "mode": 436,
+        "sha256": "41e6bbb16acc6c3f79698f69efc8246fc13fa3a0789bb113c09c0bf4ff01eb37",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/consulting-analyst/references/framework-selection.md",
+        "mode": 436,
+        "sha256": "688788f8eee11b42e4bbc0f3d5fd369c1104c2ed00a4a5263b51c4efcee3de16",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/consulting-analyst/references/handoff-contract.md",
+        "mode": 436,
+        "sha256": "7d16320471340021e6b5ec87722316e269999b84d75dc8fdba5a2701a1dc29d1",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/consulting-analyst/SKILL.md",
+        "mode": 436,
+        "sha256": "bad712b46d6aada01d2a0b6045495c12c7728b3586b9ca80558ea3d85540517b",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/japanese-prose/NOTICE.md",
+        "mode": 436,
+        "sha256": "cf0e90c239b2d2757298220918e901815c1dda8cbe30127b4b9aa1a9c553c449",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/japanese-prose/references/review-workflow.md",
+        "mode": 436,
+        "sha256": "e5ebfc731f37c69c806d3055f4a9fca26dad1971f45df6c60fd31ae955e51f09",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/japanese-prose/references/scoring.md",
+        "mode": 436,
+        "sha256": "400aac89cc1badbeb938c173477c60fc97bca90841613f06139e903fa5dfd433",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/japanese-prose/references/writing-guidelines.md",
+        "mode": 436,
+        "sha256": "30ae24e05b2270f0876f2c32969a35c1a0e7ee1b65a0b7e4960075c632aece85",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/japanese-prose/scripts/core.py",
+        "mode": 436,
+        "sha256": "919fa499dc5a004b7134b727892e43a51f937c207304fd28248495f73778b342",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/japanese-prose/scripts/fixtures/natural.md",
+        "mode": 436,
+        "sha256": "010d80b215b0aab888d57722ef32e61e84e06c5ca304dc340f1e16d802ce6105",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/japanese-prose/scripts/fixtures/unnatural.md",
+        "mode": 436,
+        "sha256": "701cb5420db38f39b3635df15139437b0bfca92b543e71c6cb40c5af3e38bc1d",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/japanese-prose/scripts/invariants.py",
+        "mode": 436,
+        "sha256": "d47414a48d8cc8b8542e2cc94a49bcc77400e3bb09ef95b54d8bbb02764fbf1e",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/japanese-prose/scripts/lint.py",
+        "mode": 436,
+        "sha256": "7fc3b6884ed8ba8e4e6462082aa26dc3d86873530d74cc94f944b26155e58987",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/japanese-prose/scripts/outline.py",
+        "mode": 436,
+        "sha256": "9b8763fa5dcc28c1d9f9d71e25f410e7c5af40625a1801579d132a5918525633",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/japanese-prose/scripts/terms.py",
+        "mode": 436,
+        "sha256": "4ea464f1af255d9167268c85183538ddecc73cbacb01bd7fc6b8e86899b16b20",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/japanese-prose/scripts/test_engine.py",
+        "mode": 436,
+        "sha256": "7d1a9935453038787ff520c360637037b275fe6769210a17961930f7966d649a",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/japanese-prose/SKILL.md",
+        "mode": 436,
+        "sha256": "bda0b1f87bfc07ea0dfcfd757621c10e2515a3a0adf68cf3533538522d741cf1",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/lean-agentic-coding/references/contract-template.md",
+        "mode": 436,
+        "sha256": "6243cf85014750c77ef0ba89bb76a78bf8d55a0d9489789e5d99fefdbe48a720",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/lean-agentic-coding/references/ledger-format.md",
+        "mode": 436,
+        "sha256": "d3f79a2e5957d74064ec1551f11c3ca326e9d4df15958cea002d907030bf5a5a",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/lean-agentic-coding/references/t2-protocol.md",
+        "mode": 436,
+        "sha256": "34f7e06db47056496ab1440da6803b3947c1ee1c8c539cebcb4244b2d1671b36",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/lean-agentic-coding/scripts/gate.sh",
+        "mode": 509,
+        "sha256": "5c353789a7ced297a0d26f438823506e53e58670389da38112595df6bab85716",
+        "packageMode": 493,
+        "sourceModeOctal": "0775",
+        "packageModeOctal": "0755"
+      },
+      {
+        "path": ".github/skills/lean-agentic-coding/SKILL.md",
+        "mode": 436,
+        "sha256": "0306b28a35e5e1a5c88f71f98ac05c74e9c68dab9cf388da3d3177961883ed58",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/lean-sdd-tdd/references/config.md",
+        "mode": 436,
+        "sha256": "60078f569e9b1f3288e9826df3c81dcadc7bf6be033af6a79adfdeba9f5372ac",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/lean-sdd-tdd/references/enforced-rules.md",
+        "mode": 436,
+        "sha256": "744e320bffa8c5f0fc81991c3dec1a04f7618e0177cb29dcc36229a7293deb88",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/lean-sdd-tdd/references/spec-template.md",
+        "mode": 436,
+        "sha256": "99d05206e40ed8c86061214bf92938223bca00dc6911ca74533708e495045591",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/lean-sdd-tdd/references/stubs.md",
+        "mode": 436,
+        "sha256": "e550a4010527bb5cbeceae466ae8fb32cb1e3a7bc4c168b3937df84cc4105d04",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/lean-sdd-tdd/references/t2.md",
+        "mode": 436,
+        "sha256": "7fafa71afe817ce186106f90c9f279d728506a41df3a6e55a1b52bb474a45afa",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/lean-sdd-tdd/scripts/diagnostics-eslint.mjs",
+        "mode": 436,
+        "sha256": "d18d0391379325d6daadd243c9e2e09cf22ddf79ab0bf9a27c64356b688e8b39",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/lean-sdd-tdd/scripts/diagnostics-native.mjs",
+        "mode": 436,
+        "sha256": "286a5d308345e7154e98efad1bedb174c426d455cc95162563897231d1c3d6d4",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/lean-sdd-tdd/scripts/diagnostics-profiles.test.mjs",
+        "mode": 436,
+        "sha256": "a4039073408c6d6cabd5fdac87f62d934a6c7611e95308f4ffda0c7672b67a3a",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/lean-sdd-tdd/scripts/diagnostics-python.mjs",
+        "mode": 436,
+        "sha256": "6f394eefaf9cbec3212fbfd429498b51b1c785647d06daaa60dcf6f822c32ea7",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/lean-sdd-tdd/scripts/diagnostics-python.py",
+        "mode": 436,
+        "sha256": "f0972167eab2f8a976e705a61278d4a9535392c188fa9199884b5a637eb1ac6a",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/lean-sdd-tdd/scripts/diagnostics-rust.mjs",
+        "mode": 436,
+        "sha256": "0e33a254c9dc32ec045588e5e629ba06f83a5c4d2f7351221aae29ad1f00210a",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/lean-sdd-tdd/scripts/diagnostics-typescript.mjs",
+        "mode": 436,
+        "sha256": "39526ed4ea28553dc19959a37b57332d73a8189e53a79c78eafee67ad8b5c1ad",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/lean-sdd-tdd/scripts/diagnostics-worker.mjs",
+        "mode": 436,
+        "sha256": "8b734433687a6370d49ef77080a2a93bbf66bec47d2039a5297c3e4118c7c108",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/lean-sdd-tdd/scripts/diagnostics.mjs",
+        "mode": 436,
+        "sha256": "c32e1a75ed8a33cec4e630b12d89ce27756b33dcdc2affeb36c0a873facfb2d7",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/lean-sdd-tdd/scripts/diagnostics.test.mjs",
+        "mode": 436,
+        "sha256": "e4c18312ff488dcbc0f6ef1606f3d9868aed6b0e7c160fe0ffee7a79e5cc7829",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "mode": 436,
+        "sha256": "c64dd432384bec863664e19714729213c0bebce5e124dc91ec647465be20ca22",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/lean-sdd-tdd/scripts/sdd.test.mjs",
+        "mode": 436,
+        "sha256": "0e5b128521fb39bcfc08cee8c11258a5b30af7df90627958b7793898c4ff14b1",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/lean-sdd-tdd/scripts/source-discovery.test.mjs",
+        "mode": 436,
+        "sha256": "613b5f8d27549cf559ca883e817f3ee488e6fefbb07a3090b6685ca39036353f",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/lean-sdd-tdd/scripts/spec-context.mjs",
+        "mode": 436,
+        "sha256": "982cb72046bbdb2da17fd19e9119340fca55b74cde4cdcb90eaf43e05adfbe22",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/lean-sdd-tdd/scripts/spec-context.test.mjs",
+        "mode": 436,
+        "sha256": "5a770522119d1e488e5459994606371142b7970482676edb30113dc27239e985",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/lean-sdd-tdd/SKILL.md",
+        "mode": 436,
+        "sha256": "47dd5cea4c638682b777032e8fdbed756850e888a8365ac7faec11e8e8f967c2",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/presentation-planner/assets/design-templates/data-report.yaml",
+        "mode": 436,
+        "sha256": "53ff99969f30d240df2b43efab326aa3a80d0c259e54fe9f03cbe7a47dd11957",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/presentation-planner/assets/design-templates/executive-proposal.yaml",
+        "mode": 436,
+        "sha256": "2eca482090eebe70157761e352c51a9f31a71f8e61d7067838757c17a5677c8f",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/presentation-planner/assets/design-templates/technical-briefing.yaml",
+        "mode": 436,
+        "sha256": "a88ab79aaeb067284e5a6e91a5835b141fe41181359bcb0274d2e9cf77a009cf",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/presentation-planner/assets/scenario-templates/data-report.md",
+        "mode": 436,
+        "sha256": "cd2bcd43e4b92b635cd9ca8c4b2ecb7fae36ee5f071719f7d1cc87b38209d193",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/presentation-planner/assets/scenario-templates/executive-decision.md",
+        "mode": 436,
+        "sha256": "bb915df67ce577849e94639bc973be35b8735175a165aa420449aa8fc013236a",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/presentation-planner/assets/scenario-templates/technical-briefing.md",
+        "mode": 436,
+        "sha256": "2817598c780e3d30c551e3767ad05e9ac8999fd20a1367974241e7e6b4885af1",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/presentation-planner/references/customizing-design-templates.md",
+        "mode": 436,
+        "sha256": "38d2e833b35c3bb2cb29854128c448c6375fe699dab9c7795ca278f417372b63",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/presentation-planner/references/design-spec-schema.md",
+        "mode": 436,
+        "sha256": "42589a71061083d067814dc23fce651bedf1ac2d23d6dc0507d245374f5cc9a2",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/presentation-planner/references/handoff-contract.md",
+        "mode": 436,
+        "sha256": "09ea8700ed81c5202f789ccf39b6e6d3ef5778e259ed9b3bb416150cfa4f1f87",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/presentation-planner/references/responsibility-boundary.md",
+        "mode": 436,
+        "sha256": "56a09e5005567fa8c672fdc590b86c75b379ff81fe9e2d9e9cb44e65013ae1fa",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/presentation-planner/references/scenario-templates.md",
+        "mode": 436,
+        "sha256": "85d53ef9017713990f5b80def5171bc225148009530e24864a37d9b44deee9fb",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/presentation-planner/SKILL.md",
+        "mode": 436,
+        "sha256": "b9d75bdb209f0300d1bd0cb7e9f87f4ed6f20d67d261eaf2465458cf8fe6e07a",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/sdd-reverse-spec/SKILL.md",
+        "mode": 436,
+        "sha256": "89ff37eba37d5c867334297c3c87f6d6a956b876d763c2d8a677e9d615b0f850",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/sdd-spec-interview/SKILL.md",
+        "mode": 436,
+        "sha256": "46a56e6ed8d57399dab5607fd42d2b2ec16ef6fe4dee20889f4facdc2b779f43",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/tech-writer/assets/templates/blueprint.md",
+        "mode": 436,
+        "sha256": "518430610a340b80c3d39b21a713bbb5ff4ea7e1febe688feb9ed3a3e1eb4c0a",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/tech-writer/assets/templates/design-doc.md",
+        "mode": 436,
+        "sha256": "e270528289c3eb61a01f69b4c6ca5b056a84e665158fc4b8e671fba1827d138e",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/tech-writer/assets/templates/migration-plan.md",
+        "mode": 436,
+        "sha256": "5aefe7997f2205efd0c1e9d447c44f2e6325e71be9ce3f6b93a1e661d56b5080",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/tech-writer/assets/templates/obsidian.md",
+        "mode": 436,
+        "sha256": "b9914a9de2f85d424042b0ab4e85c46d4f24fc4130627f8dade08b7c3fe47d2c",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/tech-writer/assets/templates/operations-runbook.md",
+        "mode": 436,
+        "sha256": "9e007a3b16542432c1f205ec7bf7d45adab2185f40bae2fc72b2e7a9fe5b5ffc",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/tech-writer/assets/templates/pr-description.md",
+        "mode": 436,
+        "sha256": "95a2f52bb70d159991103d07da5cd86b3a8ffeb20c43e522d1b139cf3b2dd14c",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/tech-writer/assets/templates/qiita.md",
+        "mode": 436,
+        "sha256": "c8ab33e65d03a054fccb75c170ea91f95a4afb479c6c2498bfe8c71ff13a5951",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/tech-writer/assets/templates/readme.md",
+        "mode": 436,
+        "sha256": "567a74e59314b08d18fb87514610d39d112fca3929ff2b7892ba19db97300c29",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/tech-writer/assets/templates/requirements-definition.md",
+        "mode": 436,
+        "sha256": "00321dc1109978feb97e4b07a24eac3374920891e9f9e53b4ebc3698249a4cd7",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/tech-writer/assets/templates/rfi.md",
+        "mode": 436,
+        "sha256": "58198fecdeb45f1dafb36db04ef9947a2892ea32feb7c88ac906631ce8ee57e2",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/tech-writer/assets/templates/rfp.md",
+        "mode": 436,
+        "sha256": "aa49cb6a1254ec3c96e725735f2b443f3fc9f66248d1f84e86e10b149d641122",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/tech-writer/assets/templates/security-design.md",
+        "mode": 436,
+        "sha256": "3c25cdb4b8b78ec70593bf5dd4d35342071bba4142edc28078b8ebfd775a6313",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/tech-writer/assets/templates/system-design.md",
+        "mode": 436,
+        "sha256": "5294199c70dd53381ab622aafe9efe586a3998c8c097f3c403cc25a5f3c35787",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/tech-writer/assets/templates/technical-proposal.md",
+        "mode": 436,
+        "sha256": "8108e1557f84c1efa831ff15a428ce262919f2d7ddbd7cd6ac984f4bd03091e1",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/tech-writer/assets/templates/test-plan.md",
+        "mode": 436,
+        "sha256": "9f2fe0136a26ea6e5b2a701e34124a1e6a5b3d93ce83c7ca0848dc49d0fb0fda",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/tech-writer/assets/templates/user-manual.md",
+        "mode": 436,
+        "sha256": "a57eae29cab1ddcb3dec8a9f029ac840dc0f97397af64b510b3e5b9be2b5af75",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/tech-writer/assets/templates/white-paper.md",
+        "mode": 436,
+        "sha256": "e6350747f636598aca0b1e5b1c3ab19aaffaf7a4aaffe9d5736eff90134d9d7d",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/tech-writer/references/doctypes/api-docs.md",
+        "mode": 436,
+        "sha256": "d7614c4d1ce7b8811cbe47dbfa5d9f51e3f9ef21d058675b89b0c74ffb364650",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/tech-writer/references/doctypes/blueprint.md",
+        "mode": 436,
+        "sha256": "6e391cadb01545a05a3e25e78b732d819d4bfe2dd64959593272c7cf3633eac8",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/tech-writer/references/doctypes/code-comments.md",
+        "mode": 436,
+        "sha256": "54afbb07d9a5a7228cf5b6933a757a78a4a6ce004d1976faa1d2251115c44c09",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/tech-writer/references/doctypes/design-doc.md",
+        "mode": 436,
+        "sha256": "a0333642a929cd270dd20a11cd43c351421cda0553aa60919df30ad4da9b1ccc",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/tech-writer/references/doctypes/migration-plan.md",
+        "mode": 436,
+        "sha256": "78b602a34aa3972a15f1685ad1d960ce498585dafc7d9c5f8cfcfa993a4f07f1",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/tech-writer/references/doctypes/obsidian.md",
+        "mode": 436,
+        "sha256": "d37b5f5940e8e3296b0f65d8e4bbfbf84a4c3877f846b7cfdb2cd0ed4d4f324c",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/tech-writer/references/doctypes/operations-runbook.md",
+        "mode": 436,
+        "sha256": "27f57d51025f9c4b56885a69f34f2f6cfc99e7e78864db5bf43c5b15880dc8f5",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/tech-writer/references/doctypes/pr-commit.md",
+        "mode": 436,
+        "sha256": "9a3049852bd21eed66ee733912954b4140a086eb27539c0aeeea8e3f954f40b7",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/tech-writer/references/doctypes/qiita.md",
+        "mode": 436,
+        "sha256": "4249d4e0513a57120758cf915bf5ccff637d9ac5dd803b966755447978b6df94",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/tech-writer/references/doctypes/readme.md",
+        "mode": 436,
+        "sha256": "2b653818ce6c532182b0db1a024efa01a50156dfd6fb424d9690bdbc757a5e45",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/tech-writer/references/doctypes/release-notes.md",
+        "mode": 436,
+        "sha256": "3cdffb7a0ec483f8bbd998ee5318f287102b57a254189d5254017603119591b7",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/tech-writer/references/doctypes/requirements-definition.md",
+        "mode": 436,
+        "sha256": "d22e29542a76412c8b35bcb4bf36c7b0813eb3eb366c902cb0d10339a651958f",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/tech-writer/references/doctypes/rfi.md",
+        "mode": 436,
+        "sha256": "3c8d6f1b6dfd8c0b2783c8eae2472807398da442189e133124dc502aa40f77a9",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/tech-writer/references/doctypes/rfp.md",
+        "mode": 436,
+        "sha256": "f8511f5c00b5d43ad2ce5d97e5c81d313cbde89942c6363ea8a5805abf0c411e",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/tech-writer/references/doctypes/security-design.md",
+        "mode": 436,
+        "sha256": "f368c15ae1f64f97ddbd20efe40d8a0c44eaab26a18636024852b6ff74daca65",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/tech-writer/references/doctypes/system-design.md",
+        "mode": 436,
+        "sha256": "cf006b7a99af19e96751611098e4c44ac28d2fba0ed0ba4fb64c8a927681e387",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/tech-writer/references/doctypes/technical-proposal.md",
+        "mode": 436,
+        "sha256": "9046154330775bffde86c490b0a8daab6f2128da2bba08f509d9d324e50a7a3f",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/tech-writer/references/doctypes/test-plan.md",
+        "mode": 436,
+        "sha256": "dd01d66a7568bf72cfc493c8b48f5be4113e56425625f5ec91a16b0346da9a22",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/tech-writer/references/doctypes/user-manual.md",
+        "mode": 436,
+        "sha256": "9f53b1543eb000363a4624d77f41bb54a9747a5ccbdcce522d06f208850b45cd",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/tech-writer/references/doctypes/white-paper.md",
+        "mode": 436,
+        "sha256": "1b01c9881bf4ac307b59ab87ead0de78efc5874b21ce39e755805a0b1a46ce28",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/tech-writer/references/doctypes/zenn.md",
+        "mode": 436,
+        "sha256": "6a400fe91c7ba797f014407f0c3046ad4bea7d593725b5d2866f0f95e1f3e888",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/tech-writer/references/japanese-prose-optimization.md",
+        "mode": 436,
+        "sha256": "a34356305e80c389a510b6b0cb9f653ccfd543362ff3337dfae22b70ad7f82e3",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/tech-writer/references/style-constitution.md",
+        "mode": 436,
+        "sha256": "1d6b61c1c5e72f70ea1d8354e27f04f3ca296fb70cc3c4b0d0c7db8a69d742c6",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/tech-writer/scripts/lint.py",
+        "mode": 509,
+        "sha256": "874c375395060768b0b0a349d94b09c12c66b2cd35f2cd05010c74f5dcec3b9b",
+        "packageMode": 493,
+        "sourceModeOctal": "0775",
+        "packageModeOctal": "0755"
+      },
+      {
+        "path": ".github/skills/tech-writer/SKILL.md",
+        "mode": 436,
+        "sha256": "5233769eaa56f447fefa826dfa2d22d192546c69f585aef7739d7573ffd9b962",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      },
+      {
+        "path": ".github/skills/wslc-containers/scripts/wslc.sh",
+        "mode": 509,
+        "sha256": "0bc20279abbfaab99aa4dd1831cd1b0e3ad38daf7c693324346ec3b274198406",
+        "packageMode": 493,
+        "sourceModeOctal": "0775",
+        "packageModeOctal": "0755"
+      },
+      {
+        "path": ".github/skills/wslc-containers/SKILL.md",
+        "mode": 436,
+        "sha256": "c1d110182db35875e2b3d74c9a8a7ad2bfcb7e51129ea098242088ad70deb606",
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644"
+      }
+    ],
+    "bytePolicy": [
+      {
+        "name": "unauthorized-byte",
+        "edit": "append one ASCII newline in an isolated file",
+        "expected": "exact inventory content digest assertion rejects"
+      }
+    ],
+    "modePolicy": [
+      {
+        "name": "unauthorized-mode-001",
+        "edit": "XOR exactly this permission bit; preserve all bytes and other bits",
+        "expected": "exact mode&0777 inventory assertion rejects"
+      },
+      {
+        "name": "unauthorized-mode-002",
+        "edit": "XOR exactly this permission bit; preserve all bytes and other bits",
+        "expected": "exact mode&0777 inventory assertion rejects"
+      },
+      {
+        "name": "unauthorized-mode-004",
+        "edit": "XOR exactly this permission bit; preserve all bytes and other bits",
+        "expected": "exact mode&0777 inventory assertion rejects"
+      },
+      {
+        "name": "unauthorized-mode-010",
+        "edit": "XOR exactly this permission bit; preserve all bytes and other bits",
+        "expected": "exact mode&0777 inventory assertion rejects"
+      },
+      {
+        "name": "unauthorized-mode-020",
+        "edit": "XOR exactly this permission bit; preserve all bytes and other bits",
+        "expected": "exact mode&0777 inventory assertion rejects"
+      },
+      {
+        "name": "unauthorized-mode-040",
+        "edit": "XOR exactly this permission bit; preserve all bytes and other bits",
+        "expected": "exact mode&0777 inventory assertion rejects"
+      },
+      {
+        "name": "unauthorized-mode-100",
+        "edit": "XOR exactly this permission bit; preserve all bytes and other bits",
+        "expected": "exact mode&0777 inventory assertion rejects"
+      },
+      {
+        "name": "unauthorized-mode-200",
+        "edit": "XOR exactly this permission bit; preserve all bytes and other bits",
+        "expected": "exact mode&0777 inventory assertion rejects"
+      },
+      {
+        "name": "unauthorized-mode-400",
+        "edit": "XOR exactly this permission bit; preserve all bytes and other bits",
+        "expected": "exact mode&0777 inventory assertion rejects"
+      }
+    ],
+    "finiteDefinition": "Cartesian product of every explicit referenceFiles row and these10 explicit byte/mode policy rows; unique IDs vendor:<policy-name>:<reference-file-path>. Baseline and restored full frozen inventories pass for EVERY row. This explicitly defined finite product contains no unknown policy rows.",
+    "mutationCount": 1090,
+    "originSensitivityCases": [
+      {
+        "id": "origin:sourceInit:unauthorized-byte:.github/skills/agent-watchdog/scripts/watchdog.mjs",
+        "origin": "sourceInit",
+        "file": ".github/skills/agent-watchdog/scripts/watchdog.mjs",
+        "host": "copilot",
+        "expectedMode": 436,
+        "expectedSha256": "62c2aee3a85f3e140f7c06969cefbd54ee1e644b66e177939cd80ff128571cd6",
+        "policy": "unauthorized-byte",
+        "expected": "Exact owned byte/mode assertion; real unmodified and fully restored origin inventories pass."
+      },
+      {
+        "id": "origin:sourceInit:unauthorized-mode-001:.github/skills/agent-watchdog/scripts/watchdog.mjs",
+        "origin": "sourceInit",
+        "file": ".github/skills/agent-watchdog/scripts/watchdog.mjs",
+        "host": "copilot",
+        "expectedMode": 436,
+        "expectedSha256": "62c2aee3a85f3e140f7c06969cefbd54ee1e644b66e177939cd80ff128571cd6",
+        "policy": "unauthorized-mode-001",
+        "expected": "Exact owned byte/mode assertion; real unmodified and fully restored origin inventories pass."
+      },
+      {
+        "id": "origin:sourceInit:unauthorized-mode-002:.github/skills/agent-watchdog/scripts/watchdog.mjs",
+        "origin": "sourceInit",
+        "file": ".github/skills/agent-watchdog/scripts/watchdog.mjs",
+        "host": "copilot",
+        "expectedMode": 436,
+        "expectedSha256": "62c2aee3a85f3e140f7c06969cefbd54ee1e644b66e177939cd80ff128571cd6",
+        "policy": "unauthorized-mode-002",
+        "expected": "Exact owned byte/mode assertion; real unmodified and fully restored origin inventories pass."
+      },
+      {
+        "id": "origin:sourceInit:unauthorized-mode-004:.github/skills/agent-watchdog/scripts/watchdog.mjs",
+        "origin": "sourceInit",
+        "file": ".github/skills/agent-watchdog/scripts/watchdog.mjs",
+        "host": "copilot",
+        "expectedMode": 436,
+        "expectedSha256": "62c2aee3a85f3e140f7c06969cefbd54ee1e644b66e177939cd80ff128571cd6",
+        "policy": "unauthorized-mode-004",
+        "expected": "Exact owned byte/mode assertion; real unmodified and fully restored origin inventories pass."
+      },
+      {
+        "id": "origin:sourceInit:unauthorized-mode-010:.github/skills/agent-watchdog/scripts/watchdog.mjs",
+        "origin": "sourceInit",
+        "file": ".github/skills/agent-watchdog/scripts/watchdog.mjs",
+        "host": "copilot",
+        "expectedMode": 436,
+        "expectedSha256": "62c2aee3a85f3e140f7c06969cefbd54ee1e644b66e177939cd80ff128571cd6",
+        "policy": "unauthorized-mode-010",
+        "expected": "Exact owned byte/mode assertion; real unmodified and fully restored origin inventories pass."
+      },
+      {
+        "id": "origin:sourceInit:unauthorized-mode-020:.github/skills/agent-watchdog/scripts/watchdog.mjs",
+        "origin": "sourceInit",
+        "file": ".github/skills/agent-watchdog/scripts/watchdog.mjs",
+        "host": "copilot",
+        "expectedMode": 436,
+        "expectedSha256": "62c2aee3a85f3e140f7c06969cefbd54ee1e644b66e177939cd80ff128571cd6",
+        "policy": "unauthorized-mode-020",
+        "expected": "Exact owned byte/mode assertion; real unmodified and fully restored origin inventories pass."
+      },
+      {
+        "id": "origin:sourceInit:unauthorized-mode-040:.github/skills/agent-watchdog/scripts/watchdog.mjs",
+        "origin": "sourceInit",
+        "file": ".github/skills/agent-watchdog/scripts/watchdog.mjs",
+        "host": "copilot",
+        "expectedMode": 436,
+        "expectedSha256": "62c2aee3a85f3e140f7c06969cefbd54ee1e644b66e177939cd80ff128571cd6",
+        "policy": "unauthorized-mode-040",
+        "expected": "Exact owned byte/mode assertion; real unmodified and fully restored origin inventories pass."
+      },
+      {
+        "id": "origin:sourceInit:unauthorized-mode-100:.github/skills/agent-watchdog/scripts/watchdog.mjs",
+        "origin": "sourceInit",
+        "file": ".github/skills/agent-watchdog/scripts/watchdog.mjs",
+        "host": "copilot",
+        "expectedMode": 436,
+        "expectedSha256": "62c2aee3a85f3e140f7c06969cefbd54ee1e644b66e177939cd80ff128571cd6",
+        "policy": "unauthorized-mode-100",
+        "expected": "Exact owned byte/mode assertion; real unmodified and fully restored origin inventories pass."
+      },
+      {
+        "id": "origin:sourceInit:unauthorized-mode-200:.github/skills/agent-watchdog/scripts/watchdog.mjs",
+        "origin": "sourceInit",
+        "file": ".github/skills/agent-watchdog/scripts/watchdog.mjs",
+        "host": "copilot",
+        "expectedMode": 436,
+        "expectedSha256": "62c2aee3a85f3e140f7c06969cefbd54ee1e644b66e177939cd80ff128571cd6",
+        "policy": "unauthorized-mode-200",
+        "expected": "Exact owned byte/mode assertion; real unmodified and fully restored origin inventories pass."
+      },
+      {
+        "id": "origin:sourceInit:unauthorized-mode-400:.github/skills/agent-watchdog/scripts/watchdog.mjs",
+        "origin": "sourceInit",
+        "file": ".github/skills/agent-watchdog/scripts/watchdog.mjs",
+        "host": "copilot",
+        "expectedMode": 436,
+        "expectedSha256": "62c2aee3a85f3e140f7c06969cefbd54ee1e644b66e177939cd80ff128571cd6",
+        "policy": "unauthorized-mode-400",
+        "expected": "Exact owned byte/mode assertion; real unmodified and fully restored origin inventories pass."
+      },
+      {
+        "id": "origin:sourceInit:unauthorized-byte:.github/skills/lean-agentic-coding/scripts/gate.sh",
+        "origin": "sourceInit",
+        "file": ".github/skills/lean-agentic-coding/scripts/gate.sh",
+        "host": "copilot",
+        "expectedMode": 509,
+        "expectedSha256": "5c353789a7ced297a0d26f438823506e53e58670389da38112595df6bab85716",
+        "policy": "unauthorized-byte",
+        "expected": "Exact owned byte/mode assertion; real unmodified and fully restored origin inventories pass."
+      },
+      {
+        "id": "origin:sourceInit:unauthorized-mode-001:.github/skills/lean-agentic-coding/scripts/gate.sh",
+        "origin": "sourceInit",
+        "file": ".github/skills/lean-agentic-coding/scripts/gate.sh",
+        "host": "copilot",
+        "expectedMode": 509,
+        "expectedSha256": "5c353789a7ced297a0d26f438823506e53e58670389da38112595df6bab85716",
+        "policy": "unauthorized-mode-001",
+        "expected": "Exact owned byte/mode assertion; real unmodified and fully restored origin inventories pass."
+      },
+      {
+        "id": "origin:sourceInit:unauthorized-mode-002:.github/skills/lean-agentic-coding/scripts/gate.sh",
+        "origin": "sourceInit",
+        "file": ".github/skills/lean-agentic-coding/scripts/gate.sh",
+        "host": "copilot",
+        "expectedMode": 509,
+        "expectedSha256": "5c353789a7ced297a0d26f438823506e53e58670389da38112595df6bab85716",
+        "policy": "unauthorized-mode-002",
+        "expected": "Exact owned byte/mode assertion; real unmodified and fully restored origin inventories pass."
+      },
+      {
+        "id": "origin:sourceInit:unauthorized-mode-004:.github/skills/lean-agentic-coding/scripts/gate.sh",
+        "origin": "sourceInit",
+        "file": ".github/skills/lean-agentic-coding/scripts/gate.sh",
+        "host": "copilot",
+        "expectedMode": 509,
+        "expectedSha256": "5c353789a7ced297a0d26f438823506e53e58670389da38112595df6bab85716",
+        "policy": "unauthorized-mode-004",
+        "expected": "Exact owned byte/mode assertion; real unmodified and fully restored origin inventories pass."
+      },
+      {
+        "id": "origin:sourceInit:unauthorized-mode-010:.github/skills/lean-agentic-coding/scripts/gate.sh",
+        "origin": "sourceInit",
+        "file": ".github/skills/lean-agentic-coding/scripts/gate.sh",
+        "host": "copilot",
+        "expectedMode": 509,
+        "expectedSha256": "5c353789a7ced297a0d26f438823506e53e58670389da38112595df6bab85716",
+        "policy": "unauthorized-mode-010",
+        "expected": "Exact owned byte/mode assertion; real unmodified and fully restored origin inventories pass."
+      },
+      {
+        "id": "origin:sourceInit:unauthorized-mode-020:.github/skills/lean-agentic-coding/scripts/gate.sh",
+        "origin": "sourceInit",
+        "file": ".github/skills/lean-agentic-coding/scripts/gate.sh",
+        "host": "copilot",
+        "expectedMode": 509,
+        "expectedSha256": "5c353789a7ced297a0d26f438823506e53e58670389da38112595df6bab85716",
+        "policy": "unauthorized-mode-020",
+        "expected": "Exact owned byte/mode assertion; real unmodified and fully restored origin inventories pass."
+      },
+      {
+        "id": "origin:sourceInit:unauthorized-mode-040:.github/skills/lean-agentic-coding/scripts/gate.sh",
+        "origin": "sourceInit",
+        "file": ".github/skills/lean-agentic-coding/scripts/gate.sh",
+        "host": "copilot",
+        "expectedMode": 509,
+        "expectedSha256": "5c353789a7ced297a0d26f438823506e53e58670389da38112595df6bab85716",
+        "policy": "unauthorized-mode-040",
+        "expected": "Exact owned byte/mode assertion; real unmodified and fully restored origin inventories pass."
+      },
+      {
+        "id": "origin:sourceInit:unauthorized-mode-100:.github/skills/lean-agentic-coding/scripts/gate.sh",
+        "origin": "sourceInit",
+        "file": ".github/skills/lean-agentic-coding/scripts/gate.sh",
+        "host": "copilot",
+        "expectedMode": 509,
+        "expectedSha256": "5c353789a7ced297a0d26f438823506e53e58670389da38112595df6bab85716",
+        "policy": "unauthorized-mode-100",
+        "expected": "Exact owned byte/mode assertion; real unmodified and fully restored origin inventories pass."
+      },
+      {
+        "id": "origin:sourceInit:unauthorized-mode-200:.github/skills/lean-agentic-coding/scripts/gate.sh",
+        "origin": "sourceInit",
+        "file": ".github/skills/lean-agentic-coding/scripts/gate.sh",
+        "host": "copilot",
+        "expectedMode": 509,
+        "expectedSha256": "5c353789a7ced297a0d26f438823506e53e58670389da38112595df6bab85716",
+        "policy": "unauthorized-mode-200",
+        "expected": "Exact owned byte/mode assertion; real unmodified and fully restored origin inventories pass."
+      },
+      {
+        "id": "origin:sourceInit:unauthorized-mode-400:.github/skills/lean-agentic-coding/scripts/gate.sh",
+        "origin": "sourceInit",
+        "file": ".github/skills/lean-agentic-coding/scripts/gate.sh",
+        "host": "copilot",
+        "expectedMode": 509,
+        "expectedSha256": "5c353789a7ced297a0d26f438823506e53e58670389da38112595df6bab85716",
+        "policy": "unauthorized-mode-400",
+        "expected": "Exact owned byte/mode assertion; real unmodified and fully restored origin inventories pass."
+      },
+      {
+        "id": "origin:package:unauthorized-byte:.github/skills/agent-watchdog/scripts/watchdog.mjs",
+        "origin": "package",
+        "file": ".github/skills/agent-watchdog/scripts/watchdog.mjs",
+        "host": null,
+        "expectedMode": 420,
+        "expectedSha256": "62c2aee3a85f3e140f7c06969cefbd54ee1e644b66e177939cd80ff128571cd6",
+        "policy": "unauthorized-byte",
+        "expected": "Exact owned byte/mode assertion; real unmodified and fully restored origin inventories pass."
+      },
+      {
+        "id": "origin:package:unauthorized-mode-001:.github/skills/agent-watchdog/scripts/watchdog.mjs",
+        "origin": "package",
+        "file": ".github/skills/agent-watchdog/scripts/watchdog.mjs",
+        "host": null,
+        "expectedMode": 420,
+        "expectedSha256": "62c2aee3a85f3e140f7c06969cefbd54ee1e644b66e177939cd80ff128571cd6",
+        "policy": "unauthorized-mode-001",
+        "expected": "Exact owned byte/mode assertion; real unmodified and fully restored origin inventories pass."
+      },
+      {
+        "id": "origin:package:unauthorized-mode-002:.github/skills/agent-watchdog/scripts/watchdog.mjs",
+        "origin": "package",
+        "file": ".github/skills/agent-watchdog/scripts/watchdog.mjs",
+        "host": null,
+        "expectedMode": 420,
+        "expectedSha256": "62c2aee3a85f3e140f7c06969cefbd54ee1e644b66e177939cd80ff128571cd6",
+        "policy": "unauthorized-mode-002",
+        "expected": "Exact owned byte/mode assertion; real unmodified and fully restored origin inventories pass."
+      },
+      {
+        "id": "origin:package:unauthorized-mode-004:.github/skills/agent-watchdog/scripts/watchdog.mjs",
+        "origin": "package",
+        "file": ".github/skills/agent-watchdog/scripts/watchdog.mjs",
+        "host": null,
+        "expectedMode": 420,
+        "expectedSha256": "62c2aee3a85f3e140f7c06969cefbd54ee1e644b66e177939cd80ff128571cd6",
+        "policy": "unauthorized-mode-004",
+        "expected": "Exact owned byte/mode assertion; real unmodified and fully restored origin inventories pass."
+      },
+      {
+        "id": "origin:package:unauthorized-mode-010:.github/skills/agent-watchdog/scripts/watchdog.mjs",
+        "origin": "package",
+        "file": ".github/skills/agent-watchdog/scripts/watchdog.mjs",
+        "host": null,
+        "expectedMode": 420,
+        "expectedSha256": "62c2aee3a85f3e140f7c06969cefbd54ee1e644b66e177939cd80ff128571cd6",
+        "policy": "unauthorized-mode-010",
+        "expected": "Exact owned byte/mode assertion; real unmodified and fully restored origin inventories pass."
+      },
+      {
+        "id": "origin:package:unauthorized-mode-020:.github/skills/agent-watchdog/scripts/watchdog.mjs",
+        "origin": "package",
+        "file": ".github/skills/agent-watchdog/scripts/watchdog.mjs",
+        "host": null,
+        "expectedMode": 420,
+        "expectedSha256": "62c2aee3a85f3e140f7c06969cefbd54ee1e644b66e177939cd80ff128571cd6",
+        "policy": "unauthorized-mode-020",
+        "expected": "Exact owned byte/mode assertion; real unmodified and fully restored origin inventories pass."
+      },
+      {
+        "id": "origin:package:unauthorized-mode-040:.github/skills/agent-watchdog/scripts/watchdog.mjs",
+        "origin": "package",
+        "file": ".github/skills/agent-watchdog/scripts/watchdog.mjs",
+        "host": null,
+        "expectedMode": 420,
+        "expectedSha256": "62c2aee3a85f3e140f7c06969cefbd54ee1e644b66e177939cd80ff128571cd6",
+        "policy": "unauthorized-mode-040",
+        "expected": "Exact owned byte/mode assertion; real unmodified and fully restored origin inventories pass."
+      },
+      {
+        "id": "origin:package:unauthorized-mode-100:.github/skills/agent-watchdog/scripts/watchdog.mjs",
+        "origin": "package",
+        "file": ".github/skills/agent-watchdog/scripts/watchdog.mjs",
+        "host": null,
+        "expectedMode": 420,
+        "expectedSha256": "62c2aee3a85f3e140f7c06969cefbd54ee1e644b66e177939cd80ff128571cd6",
+        "policy": "unauthorized-mode-100",
+        "expected": "Exact owned byte/mode assertion; real unmodified and fully restored origin inventories pass."
+      },
+      {
+        "id": "origin:package:unauthorized-mode-200:.github/skills/agent-watchdog/scripts/watchdog.mjs",
+        "origin": "package",
+        "file": ".github/skills/agent-watchdog/scripts/watchdog.mjs",
+        "host": null,
+        "expectedMode": 420,
+        "expectedSha256": "62c2aee3a85f3e140f7c06969cefbd54ee1e644b66e177939cd80ff128571cd6",
+        "policy": "unauthorized-mode-200",
+        "expected": "Exact owned byte/mode assertion; real unmodified and fully restored origin inventories pass."
+      },
+      {
+        "id": "origin:package:unauthorized-mode-400:.github/skills/agent-watchdog/scripts/watchdog.mjs",
+        "origin": "package",
+        "file": ".github/skills/agent-watchdog/scripts/watchdog.mjs",
+        "host": null,
+        "expectedMode": 420,
+        "expectedSha256": "62c2aee3a85f3e140f7c06969cefbd54ee1e644b66e177939cd80ff128571cd6",
+        "policy": "unauthorized-mode-400",
+        "expected": "Exact owned byte/mode assertion; real unmodified and fully restored origin inventories pass."
+      },
+      {
+        "id": "origin:package:unauthorized-byte:.github/skills/lean-agentic-coding/scripts/gate.sh",
+        "origin": "package",
+        "file": ".github/skills/lean-agentic-coding/scripts/gate.sh",
+        "host": null,
+        "expectedMode": 493,
+        "expectedSha256": "5c353789a7ced297a0d26f438823506e53e58670389da38112595df6bab85716",
+        "policy": "unauthorized-byte",
+        "expected": "Exact owned byte/mode assertion; real unmodified and fully restored origin inventories pass."
+      },
+      {
+        "id": "origin:package:unauthorized-mode-001:.github/skills/lean-agentic-coding/scripts/gate.sh",
+        "origin": "package",
+        "file": ".github/skills/lean-agentic-coding/scripts/gate.sh",
+        "host": null,
+        "expectedMode": 493,
+        "expectedSha256": "5c353789a7ced297a0d26f438823506e53e58670389da38112595df6bab85716",
+        "policy": "unauthorized-mode-001",
+        "expected": "Exact owned byte/mode assertion; real unmodified and fully restored origin inventories pass."
+      },
+      {
+        "id": "origin:package:unauthorized-mode-002:.github/skills/lean-agentic-coding/scripts/gate.sh",
+        "origin": "package",
+        "file": ".github/skills/lean-agentic-coding/scripts/gate.sh",
+        "host": null,
+        "expectedMode": 493,
+        "expectedSha256": "5c353789a7ced297a0d26f438823506e53e58670389da38112595df6bab85716",
+        "policy": "unauthorized-mode-002",
+        "expected": "Exact owned byte/mode assertion; real unmodified and fully restored origin inventories pass."
+      },
+      {
+        "id": "origin:package:unauthorized-mode-004:.github/skills/lean-agentic-coding/scripts/gate.sh",
+        "origin": "package",
+        "file": ".github/skills/lean-agentic-coding/scripts/gate.sh",
+        "host": null,
+        "expectedMode": 493,
+        "expectedSha256": "5c353789a7ced297a0d26f438823506e53e58670389da38112595df6bab85716",
+        "policy": "unauthorized-mode-004",
+        "expected": "Exact owned byte/mode assertion; real unmodified and fully restored origin inventories pass."
+      },
+      {
+        "id": "origin:package:unauthorized-mode-010:.github/skills/lean-agentic-coding/scripts/gate.sh",
+        "origin": "package",
+        "file": ".github/skills/lean-agentic-coding/scripts/gate.sh",
+        "host": null,
+        "expectedMode": 493,
+        "expectedSha256": "5c353789a7ced297a0d26f438823506e53e58670389da38112595df6bab85716",
+        "policy": "unauthorized-mode-010",
+        "expected": "Exact owned byte/mode assertion; real unmodified and fully restored origin inventories pass."
+      },
+      {
+        "id": "origin:package:unauthorized-mode-020:.github/skills/lean-agentic-coding/scripts/gate.sh",
+        "origin": "package",
+        "file": ".github/skills/lean-agentic-coding/scripts/gate.sh",
+        "host": null,
+        "expectedMode": 493,
+        "expectedSha256": "5c353789a7ced297a0d26f438823506e53e58670389da38112595df6bab85716",
+        "policy": "unauthorized-mode-020",
+        "expected": "Exact owned byte/mode assertion; real unmodified and fully restored origin inventories pass."
+      },
+      {
+        "id": "origin:package:unauthorized-mode-040:.github/skills/lean-agentic-coding/scripts/gate.sh",
+        "origin": "package",
+        "file": ".github/skills/lean-agentic-coding/scripts/gate.sh",
+        "host": null,
+        "expectedMode": 493,
+        "expectedSha256": "5c353789a7ced297a0d26f438823506e53e58670389da38112595df6bab85716",
+        "policy": "unauthorized-mode-040",
+        "expected": "Exact owned byte/mode assertion; real unmodified and fully restored origin inventories pass."
+      },
+      {
+        "id": "origin:package:unauthorized-mode-100:.github/skills/lean-agentic-coding/scripts/gate.sh",
+        "origin": "package",
+        "file": ".github/skills/lean-agentic-coding/scripts/gate.sh",
+        "host": null,
+        "expectedMode": 493,
+        "expectedSha256": "5c353789a7ced297a0d26f438823506e53e58670389da38112595df6bab85716",
+        "policy": "unauthorized-mode-100",
+        "expected": "Exact owned byte/mode assertion; real unmodified and fully restored origin inventories pass."
+      },
+      {
+        "id": "origin:package:unauthorized-mode-200:.github/skills/lean-agentic-coding/scripts/gate.sh",
+        "origin": "package",
+        "file": ".github/skills/lean-agentic-coding/scripts/gate.sh",
+        "host": null,
+        "expectedMode": 493,
+        "expectedSha256": "5c353789a7ced297a0d26f438823506e53e58670389da38112595df6bab85716",
+        "policy": "unauthorized-mode-200",
+        "expected": "Exact owned byte/mode assertion; real unmodified and fully restored origin inventories pass."
+      },
+      {
+        "id": "origin:package:unauthorized-mode-400:.github/skills/lean-agentic-coding/scripts/gate.sh",
+        "origin": "package",
+        "file": ".github/skills/lean-agentic-coding/scripts/gate.sh",
+        "host": null,
+        "expectedMode": 493,
+        "expectedSha256": "5c353789a7ced297a0d26f438823506e53e58670389da38112595df6bab85716",
+        "policy": "unauthorized-mode-400",
+        "expected": "Exact owned byte/mode assertion; real unmodified and fully restored origin inventories pass."
+      },
+      {
+        "id": "origin:packageInit:unauthorized-byte:.github/skills/agent-watchdog/scripts/watchdog.mjs",
+        "origin": "packageInit",
+        "file": ".github/skills/agent-watchdog/scripts/watchdog.mjs",
+        "host": "copilot",
+        "expectedMode": 420,
+        "expectedSha256": "62c2aee3a85f3e140f7c06969cefbd54ee1e644b66e177939cd80ff128571cd6",
+        "policy": "unauthorized-byte",
+        "expected": "Exact owned byte/mode assertion; real unmodified and fully restored origin inventories pass."
+      },
+      {
+        "id": "origin:packageInit:unauthorized-mode-001:.github/skills/agent-watchdog/scripts/watchdog.mjs",
+        "origin": "packageInit",
+        "file": ".github/skills/agent-watchdog/scripts/watchdog.mjs",
+        "host": "copilot",
+        "expectedMode": 420,
+        "expectedSha256": "62c2aee3a85f3e140f7c06969cefbd54ee1e644b66e177939cd80ff128571cd6",
+        "policy": "unauthorized-mode-001",
+        "expected": "Exact owned byte/mode assertion; real unmodified and fully restored origin inventories pass."
+      },
+      {
+        "id": "origin:packageInit:unauthorized-mode-002:.github/skills/agent-watchdog/scripts/watchdog.mjs",
+        "origin": "packageInit",
+        "file": ".github/skills/agent-watchdog/scripts/watchdog.mjs",
+        "host": "copilot",
+        "expectedMode": 420,
+        "expectedSha256": "62c2aee3a85f3e140f7c06969cefbd54ee1e644b66e177939cd80ff128571cd6",
+        "policy": "unauthorized-mode-002",
+        "expected": "Exact owned byte/mode assertion; real unmodified and fully restored origin inventories pass."
+      },
+      {
+        "id": "origin:packageInit:unauthorized-mode-004:.github/skills/agent-watchdog/scripts/watchdog.mjs",
+        "origin": "packageInit",
+        "file": ".github/skills/agent-watchdog/scripts/watchdog.mjs",
+        "host": "copilot",
+        "expectedMode": 420,
+        "expectedSha256": "62c2aee3a85f3e140f7c06969cefbd54ee1e644b66e177939cd80ff128571cd6",
+        "policy": "unauthorized-mode-004",
+        "expected": "Exact owned byte/mode assertion; real unmodified and fully restored origin inventories pass."
+      },
+      {
+        "id": "origin:packageInit:unauthorized-mode-010:.github/skills/agent-watchdog/scripts/watchdog.mjs",
+        "origin": "packageInit",
+        "file": ".github/skills/agent-watchdog/scripts/watchdog.mjs",
+        "host": "copilot",
+        "expectedMode": 420,
+        "expectedSha256": "62c2aee3a85f3e140f7c06969cefbd54ee1e644b66e177939cd80ff128571cd6",
+        "policy": "unauthorized-mode-010",
+        "expected": "Exact owned byte/mode assertion; real unmodified and fully restored origin inventories pass."
+      },
+      {
+        "id": "origin:packageInit:unauthorized-mode-020:.github/skills/agent-watchdog/scripts/watchdog.mjs",
+        "origin": "packageInit",
+        "file": ".github/skills/agent-watchdog/scripts/watchdog.mjs",
+        "host": "copilot",
+        "expectedMode": 420,
+        "expectedSha256": "62c2aee3a85f3e140f7c06969cefbd54ee1e644b66e177939cd80ff128571cd6",
+        "policy": "unauthorized-mode-020",
+        "expected": "Exact owned byte/mode assertion; real unmodified and fully restored origin inventories pass."
+      },
+      {
+        "id": "origin:packageInit:unauthorized-mode-040:.github/skills/agent-watchdog/scripts/watchdog.mjs",
+        "origin": "packageInit",
+        "file": ".github/skills/agent-watchdog/scripts/watchdog.mjs",
+        "host": "copilot",
+        "expectedMode": 420,
+        "expectedSha256": "62c2aee3a85f3e140f7c06969cefbd54ee1e644b66e177939cd80ff128571cd6",
+        "policy": "unauthorized-mode-040",
+        "expected": "Exact owned byte/mode assertion; real unmodified and fully restored origin inventories pass."
+      },
+      {
+        "id": "origin:packageInit:unauthorized-mode-100:.github/skills/agent-watchdog/scripts/watchdog.mjs",
+        "origin": "packageInit",
+        "file": ".github/skills/agent-watchdog/scripts/watchdog.mjs",
+        "host": "copilot",
+        "expectedMode": 420,
+        "expectedSha256": "62c2aee3a85f3e140f7c06969cefbd54ee1e644b66e177939cd80ff128571cd6",
+        "policy": "unauthorized-mode-100",
+        "expected": "Exact owned byte/mode assertion; real unmodified and fully restored origin inventories pass."
+      },
+      {
+        "id": "origin:packageInit:unauthorized-mode-200:.github/skills/agent-watchdog/scripts/watchdog.mjs",
+        "origin": "packageInit",
+        "file": ".github/skills/agent-watchdog/scripts/watchdog.mjs",
+        "host": "copilot",
+        "expectedMode": 420,
+        "expectedSha256": "62c2aee3a85f3e140f7c06969cefbd54ee1e644b66e177939cd80ff128571cd6",
+        "policy": "unauthorized-mode-200",
+        "expected": "Exact owned byte/mode assertion; real unmodified and fully restored origin inventories pass."
+      },
+      {
+        "id": "origin:packageInit:unauthorized-mode-400:.github/skills/agent-watchdog/scripts/watchdog.mjs",
+        "origin": "packageInit",
+        "file": ".github/skills/agent-watchdog/scripts/watchdog.mjs",
+        "host": "copilot",
+        "expectedMode": 420,
+        "expectedSha256": "62c2aee3a85f3e140f7c06969cefbd54ee1e644b66e177939cd80ff128571cd6",
+        "policy": "unauthorized-mode-400",
+        "expected": "Exact owned byte/mode assertion; real unmodified and fully restored origin inventories pass."
+      },
+      {
+        "id": "origin:packageInit:unauthorized-byte:.github/skills/lean-agentic-coding/scripts/gate.sh",
+        "origin": "packageInit",
+        "file": ".github/skills/lean-agentic-coding/scripts/gate.sh",
+        "host": "copilot",
+        "expectedMode": 493,
+        "expectedSha256": "5c353789a7ced297a0d26f438823506e53e58670389da38112595df6bab85716",
+        "policy": "unauthorized-byte",
+        "expected": "Exact owned byte/mode assertion; real unmodified and fully restored origin inventories pass."
+      },
+      {
+        "id": "origin:packageInit:unauthorized-mode-001:.github/skills/lean-agentic-coding/scripts/gate.sh",
+        "origin": "packageInit",
+        "file": ".github/skills/lean-agentic-coding/scripts/gate.sh",
+        "host": "copilot",
+        "expectedMode": 493,
+        "expectedSha256": "5c353789a7ced297a0d26f438823506e53e58670389da38112595df6bab85716",
+        "policy": "unauthorized-mode-001",
+        "expected": "Exact owned byte/mode assertion; real unmodified and fully restored origin inventories pass."
+      },
+      {
+        "id": "origin:packageInit:unauthorized-mode-002:.github/skills/lean-agentic-coding/scripts/gate.sh",
+        "origin": "packageInit",
+        "file": ".github/skills/lean-agentic-coding/scripts/gate.sh",
+        "host": "copilot",
+        "expectedMode": 493,
+        "expectedSha256": "5c353789a7ced297a0d26f438823506e53e58670389da38112595df6bab85716",
+        "policy": "unauthorized-mode-002",
+        "expected": "Exact owned byte/mode assertion; real unmodified and fully restored origin inventories pass."
+      },
+      {
+        "id": "origin:packageInit:unauthorized-mode-004:.github/skills/lean-agentic-coding/scripts/gate.sh",
+        "origin": "packageInit",
+        "file": ".github/skills/lean-agentic-coding/scripts/gate.sh",
+        "host": "copilot",
+        "expectedMode": 493,
+        "expectedSha256": "5c353789a7ced297a0d26f438823506e53e58670389da38112595df6bab85716",
+        "policy": "unauthorized-mode-004",
+        "expected": "Exact owned byte/mode assertion; real unmodified and fully restored origin inventories pass."
+      },
+      {
+        "id": "origin:packageInit:unauthorized-mode-010:.github/skills/lean-agentic-coding/scripts/gate.sh",
+        "origin": "packageInit",
+        "file": ".github/skills/lean-agentic-coding/scripts/gate.sh",
+        "host": "copilot",
+        "expectedMode": 493,
+        "expectedSha256": "5c353789a7ced297a0d26f438823506e53e58670389da38112595df6bab85716",
+        "policy": "unauthorized-mode-010",
+        "expected": "Exact owned byte/mode assertion; real unmodified and fully restored origin inventories pass."
+      },
+      {
+        "id": "origin:packageInit:unauthorized-mode-020:.github/skills/lean-agentic-coding/scripts/gate.sh",
+        "origin": "packageInit",
+        "file": ".github/skills/lean-agentic-coding/scripts/gate.sh",
+        "host": "copilot",
+        "expectedMode": 493,
+        "expectedSha256": "5c353789a7ced297a0d26f438823506e53e58670389da38112595df6bab85716",
+        "policy": "unauthorized-mode-020",
+        "expected": "Exact owned byte/mode assertion; real unmodified and fully restored origin inventories pass."
+      },
+      {
+        "id": "origin:packageInit:unauthorized-mode-040:.github/skills/lean-agentic-coding/scripts/gate.sh",
+        "origin": "packageInit",
+        "file": ".github/skills/lean-agentic-coding/scripts/gate.sh",
+        "host": "copilot",
+        "expectedMode": 493,
+        "expectedSha256": "5c353789a7ced297a0d26f438823506e53e58670389da38112595df6bab85716",
+        "policy": "unauthorized-mode-040",
+        "expected": "Exact owned byte/mode assertion; real unmodified and fully restored origin inventories pass."
+      },
+      {
+        "id": "origin:packageInit:unauthorized-mode-100:.github/skills/lean-agentic-coding/scripts/gate.sh",
+        "origin": "packageInit",
+        "file": ".github/skills/lean-agentic-coding/scripts/gate.sh",
+        "host": "copilot",
+        "expectedMode": 493,
+        "expectedSha256": "5c353789a7ced297a0d26f438823506e53e58670389da38112595df6bab85716",
+        "policy": "unauthorized-mode-100",
+        "expected": "Exact owned byte/mode assertion; real unmodified and fully restored origin inventories pass."
+      },
+      {
+        "id": "origin:packageInit:unauthorized-mode-200:.github/skills/lean-agentic-coding/scripts/gate.sh",
+        "origin": "packageInit",
+        "file": ".github/skills/lean-agentic-coding/scripts/gate.sh",
+        "host": "copilot",
+        "expectedMode": 493,
+        "expectedSha256": "5c353789a7ced297a0d26f438823506e53e58670389da38112595df6bab85716",
+        "policy": "unauthorized-mode-200",
+        "expected": "Exact owned byte/mode assertion; real unmodified and fully restored origin inventories pass."
+      },
+      {
+        "id": "origin:packageInit:unauthorized-mode-400:.github/skills/lean-agentic-coding/scripts/gate.sh",
+        "origin": "packageInit",
+        "file": ".github/skills/lean-agentic-coding/scripts/gate.sh",
+        "host": "copilot",
+        "expectedMode": 493,
+        "expectedSha256": "5c353789a7ced297a0d26f438823506e53e58670389da38112595df6bab85716",
+        "policy": "unauthorized-mode-400",
+        "expected": "Exact owned byte/mode assertion; real unmodified and fully restored origin inventories pass."
+      }
+    ],
+    "originSensitivityDefinition": "Exactly 60 additional cases: three non-source origins times two explicit frozen file representatives (nonexecutable and executable) times ten byte/mode policies. Source-init and package-init baseline controls invoke the real candidate CLI; both supported hosts have positive inventory controls. Freeze selected native assertion/argv/host before execution. These are bounded origin-check sensitivities, not a claim to enumerate all host/file products.",
+    "challengeOrigin": "Fresh private source inventory for each of the 1090 byte/mode challenges; baseline and restoration cover the entire approved inventory. Additional source/init/package/package-init controls use their own approved origin modes.",
+    "modeEvaluationOrder": "Proposed validator must lstat and assert exact mode before reading content, so removing owner read permission is detected by the owned mode assertion rather than credited as an EACCES setup error. This behavior is proposed, not implemented.",
+    "forbiddenInventory": "Reject obsidian-prefixed skills, __pycache__, .pyc/.pyo, missing/extra/duplicate paths and external symlinks. References may not be rebuilt from mutated inputs or comparator output.",
+    "limits": "One append-newline challenge and nine single-bit XOR mode challenges per file, not every possible byte edit or proof of the seven unavailable legacy identities. Native end-to-end cell duration and verdict quality remain unverified."
+  }
+}
