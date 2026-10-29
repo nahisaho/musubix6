@@ -3,7 +3,7 @@ import path from 'node:path';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import { ensure, equal, fileSha, json, mkdir, save, execute, retainProcess, readRef, waitForProcessExit, externalOutput } from './release-qualification-io.mjs';
-import { parseEvents, namedControl, processControl, ownedAssertion } from './release-qualification-evidence.mjs';
+import { parseEvents, namedControl, processControl, ownedAssertion, assertionReason } from './release-qualification-evidence.mjs';
 import { contentCaseCatalogue, runContentCell, validateContentRun } from './release-qualification-content-mutations.mjs';
 
 const skillScripts = '.github/skills/lean-sdd-tdd/scripts';
@@ -69,7 +69,7 @@ export function assertionCatalogue(source, suite, title, expectedNeedle, nodeMod
   }
   collect(tree);
   ensure(tests.length === 1, `independent test ownership unresolved: ${title}`);
-  const assertions = new Map(), visited = new Set();
+  const assertions = new Map(), diagnostics = new Map(), visited = new Set();
   function visit(node) {
     if (ts.isIdentifier(node) && functions.has(node.text) && ts.isCallExpression(node.parent) &&
       node.parent.arguments.includes(node) && !visited.has(node.text)) {
@@ -78,8 +78,20 @@ export function assertionCatalogue(source, suite, title, expectedNeedle, nodeMod
     }
     if (ts.isCallExpression(node)) {
       const callee = node.expression.getText(tree);
-      if (callee.startsWith('assert.')) assertions.set(
-        tree.getLineAndCharacterOfPosition(node.getStart(tree)).line + 1, node.getText(tree));
+      if (callee.startsWith('assert.')) {
+        const line = tree.getLineAndCharacterOfPosition(node.getStart(tree)).line + 1;
+        let diagnostic = { line, kind: 'legacy' };
+        if (callee === 'assert.match' && node.arguments.length === 2 &&
+          ts.isRegularExpressionLiteral(node.arguments[1])) {
+          const literal = node.arguments[1].getText(tree), end = literal.lastIndexOf('/');
+          const regexp = new RegExp(literal.slice(1, end), literal.slice(end + 1));
+          diagnostic = { line, kind: 'match',
+            messagePrefix: `The input did not match the regular expression ${regexp}. Input:\n` };
+        }
+        if (diagnostics.has(line)) equal(diagnostics.get(line), diagnostic);
+        assertions.set(line, node.getText(tree));
+        diagnostics.set(line, diagnostic);
+      }
       if (functions.has(callee) && !visited.has(callee)) {
         visited.add(callee);
         visit(functions.get(callee));
@@ -98,7 +110,7 @@ export function assertionCatalogue(source, suite, title, expectedNeedle, nodeMod
     lines = [...new Set(matched.flat())].sort((a, b) => a - b);
   }
   ensure(lines.length > 0, `no independently owned assertion: ${title}`);
-  return { sourceTest: filename, assertionLines: lines };
+  return { sourceTest: filename, assertionLines: lines, assertionDiagnostics: lines.map(line => diagnostics.get(line)) };
 }
 
 export function cellCatalogue(manifest, cell, source) {
@@ -112,10 +124,27 @@ export function cellCatalogue(manifest, cell, source) {
   if (cell.kind === 'scope') return manifest.catalogues.scope.map(name => ({ name }));
   if (cell.kind === 'oracle') return manifest.catalogues.oracles.map(name => ({ name }));
   if (cell.kind === 'process') return ['exit0', 'exit17', 'timeout', 'output-budget', 'descendant-cleanup'].map(name => ({ name }));
-  if (cell.kind === 'mutation') return manifest.catalogues.mutations.mutations.map(row => ({
-    ...row, name: row.id, targetName: row.name,
-    ...assertionCatalogue(source, row.suite, row.name, row.expectedAssertion, manifest.execution?.nodeModules),
-  }));
+  if (cell.kind === 'mutation') {
+    const policy = json(path.join(source, '.sdd/release-validation.v0.2.3.json')).legacyMutationDiagnosticPolicy;
+    ensure(policy?.version === 1 && Array.isArray(policy.customMessageOverrides), 'approved diagnostic policy required');
+    const overrides = policy.customMessageOverrides, rows = manifest.catalogues.mutations.mutations;
+    equal(overrides.map(row => row.id).sort(), ['scanner-complete-sources', 'scanner-limit-validation']);
+    for (const override of overrides) {
+      const row = rows.find(row => row.id === override.id);
+      ensure(row && row.suite === override.suite && row.expectedAssertion === override.expectedAssertion &&
+        /^TRACE (?:OK|FAIL): \d+ REQ, \d+ annotated entities, \d+ errors, \d+ warnings\n$/.test(override.messagePrefix),
+      'unresolved or invalid approved diagnostic override');
+    }
+    return rows.map(row => {
+      const assertions = assertionCatalogue(source, row.suite, row.name, row.expectedAssertion, manifest.execution?.nodeModules);
+      const override = overrides.find(override => override.id === row.id);
+      if (override) assertions.assertionDiagnostics = assertions.assertionDiagnostics.map(diagnostic => {
+        ensure(diagnostic.kind === 'legacy', 'custom diagnostic override requires the original assertion kind');
+        return { line: diagnostic.line, kind: 'prefix', messagePrefix: override.messagePrefix };
+      });
+      return { ...row, name: row.id, targetName: row.name, ...assertions };
+    });
+  }
   if (cell.kind === 'diagnostic-mutation') {
     const suites = ['diagnostics.test.mjs', 'diagnostics-profiles.test.mjs'].map(file => `${skillScripts}/${file}`);
     return manifest.catalogues.diagnosticMutations.map(([name, file, before, after, id]) => {
@@ -153,10 +182,10 @@ export function commandForCell(cell, files) {
   return ['{node}', '{source}/scripts/release-qualification-cells.mjs', '--cell', cell.id, '--context', '{context}'];
 }
 
-async function runRecorded(context, name, command, expectedExit = 0, cwd = context.source) {
+async function runRecorded(context, name, command, expectedExit = 0, cwd = context.source, assertionTarget) {
   const result = await execute({ command, cwd, env: context.environment, timeoutMs: context.cell.timeoutSeconds * 1000 });
   const evidence = retainProcess(path.join(context.output, name), result);
-  processControl(evidence, expectedExit);
+  processControl(evidence, expectedExit, assertionTarget);
   return evidence;
 }
 
@@ -177,12 +206,12 @@ async function mutations(context) {
       '^' + target.targetName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$', path.join(source, target.suite)];
     const owned = { ...target, sourceTest: path.join(source, target.suite) };
     const one = async (phase, exit) => {
-      const evidence = await runRecorded(context, `${target.name}-${phase}`, command, exit, source);
+      const evidence = await runRecorded(context, `${target.name}-${phase}`, command, exit, source, owned);
       const parsed = parseEvents(readRef(evidence.stdout));
       const selected = namedControl(parsed, [target.targetName], { failedTarget: exit === 1 ? target.targetName : null })[0];
       if (exit === 1) {
         ensure(ownedAssertion(selected.error, owned.sourceTest, target.assertionLines), `mutant missed its owned assertion: ${target.name}`);
-        if (target.expectedReason) ensure(new RegExp(target.expectedReason).test(selected.error.message), 'mutant failed wrong expected reason');
+        assertionReason(selected.error, owned);
       }
       return { ...evidence, sourceTest: owned.sourceTest };
     };

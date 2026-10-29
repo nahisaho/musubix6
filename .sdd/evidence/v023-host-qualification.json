@@ -1,7 +1,11 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-10-29T13:37:57.698Z",
-  "status": "current-regression-and-bounded-sensitivity-pass",
+  "generatedAt": "2026-10-29T21:39:16.417Z",
+  "status": "current-focused-regressions-pass-full-frozen-host-cells-pending",
+  "historicalReport": {
+    "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-diagnostic-report-history-DGImko/v023-host-qualification.json",
+    "sha256": "90108ddb0a5625f1a6fd27189a76e6e8f9ba60435674212115d2b34a9990519b"
+  },
   "sourceInputs": [
     {
       "path": "/home/nahisaho/GitHub/musubix6/scripts/release-host-events.mjs",
@@ -20,62 +24,162 @@
       "sha256": "d5d99c5267df4cb08b67637db146e9e24b97a1bc63113e000e2d3dd7efb04545"
     },
     {
+      "path": "/home/nahisaho/GitHub/musubix6/scripts/release-qualification-cells.mjs",
+      "sha256": "c3055bf72952e2c38f96705399efd844d78bb88110b6dde69ab2cb6d5b8e0ce5"
+    },
+    {
+      "path": "/home/nahisaho/GitHub/musubix6/scripts/release-qualification-cli.mjs",
+      "sha256": "a64aa70640f02e62811e93acb12f7fda14a0b29bcb5772460a4fc5e2a9f49310"
+    },
+    {
+      "path": "/home/nahisaho/GitHub/musubix6/scripts/release-qualification-content-mutations.mjs",
+      "sha256": "b5ca5fa198d537e973c79bb72d6bc66fe51c7918ffafd9808eebe581c7a2affe"
+    },
+    {
       "path": "/home/nahisaho/GitHub/musubix6/scripts/release-qualification-evidence.mjs",
-      "sha256": "09c9426d6c5f75384adfbc980944297ecc2bedef6f92139b418b2d9027c58ae0"
+      "sha256": "88d48acfd61964b5c73e99e90249c6d5cd7427c4a7cc9e2e7b87b90501aa85e0"
     },
     {
       "path": "/home/nahisaho/GitHub/musubix6/scripts/release-qualification-io.mjs",
       "sha256": "c3a5b80da7a4c1ced23f92d73553745ea3bf50d1d8856434c33a427f30ec7feb"
+    },
+    {
+      "path": "/home/nahisaho/GitHub/musubix6/scripts/release-qualification-oracles.test.mjs",
+      "sha256": "58af8713f9ec11d9f855f00a1bccb514de18e3a1e8313154c3211cbc251e608a"
+    },
+    {
+      "path": "/home/nahisaho/GitHub/musubix6/scripts/release-qualification-process.test.mjs",
+      "sha256": "656ef26582d56ec02dd2cc5799dede55beac7454fdaeb50deb4aa004a3e1fb8f"
+    },
+    {
+      "path": "/home/nahisaho/GitHub/musubix6/scripts/release-qualification-proof.mjs",
+      "sha256": "7d1cb4aae4f1564173c0553b643685b8b74481fb8b0c4f74e7eef1175d8181d4"
+    },
+    {
+      "path": "/home/nahisaho/GitHub/musubix6/scripts/release-qualification.mjs",
+      "sha256": "165fec1e6819afb05f1040612ab3578c8226e7dd008971dd3cc376e2bf948cb3"
+    },
+    {
+      "path": "/home/nahisaho/GitHub/musubix6/scripts/release-qualification.test.mjs",
+      "sha256": "95ed9c14e0852db1b7f8b181c00c87c5e25d6b4daa09daddafa870ab52dbe9d7"
     }
   ],
-  "historicalReport": {
-    "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-blocker-report-history-lHSTEE/v023-host-qualification.json",
-    "sha256": "d0140eb9bc20db65386ccece2cdf638b22b5e78fb68309d90a047b02d9ced744"
-  },
   "currentFocusedRegressions": [
     {
       "version": "20.20.2",
-      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-bootstrap-final-checks/node-20.20.2.tap",
-      "sha256": "e11791c5fca0a12119e2c55b5fa74495a38ee083446534ac3a695bd6409e0bfd",
-      "tests": 18,
-      "passed": 18,
-      "failed": 0,
-      "skipped": 0
+      "tests": 21,
+      "passed": 21,
+      "skipped": 0,
+      "receipt": {
+        "command": [
+          "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/runtimes/node20/bin/node",
+          "--test",
+          "--test-reporter=tap",
+          "scripts/release-qualification.test.mjs",
+          "scripts/release-host-mutations.test.mjs",
+          "scripts/release-qualification-process.test.mjs"
+        ],
+        "cwd": "/home/nahisaho/GitHub/musubix6",
+        "startedAt": "2026-10-29T21:33:47.124Z",
+        "completedAt": "2026-10-29T21:34:03.368Z",
+        "exit": 0,
+        "signal": null,
+        "timedOut": false,
+        "outputLimit": false,
+        "error": null,
+        "stdout": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-legacy-diagnostic-proof-YHIK4o/focused/20.20.2/stdout.log",
+          "sha256": "131230b0ba5d5b0ff8879f6b7e9193c3a9d4367a0b75c91e576d87f39d9418b2"
+        },
+        "stderr": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-legacy-diagnostic-proof-YHIK4o/focused/20.20.2/stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "receipt": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-legacy-diagnostic-proof-YHIK4o/focused/20.20.2/command.json",
+          "sha256": "18a2d47a4032e6c159b26a5937b82f1d43d2f1dfcdd0ed30104af5354d5b82b2"
+        }
+      }
     },
     {
       "version": "22.23.3",
-      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-bootstrap-final-checks/node-22.23.3.tap",
-      "sha256": "ffdba81385fcea0ed1ad70f2480d470efa01a87ba132b2f99047bcfad0537bde",
-      "tests": 18,
-      "passed": 18,
-      "failed": 0,
-      "skipped": 0
+      "tests": 21,
+      "passed": 21,
+      "skipped": 0,
+      "receipt": {
+        "command": [
+          "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/runtimes/node22/bin/node",
+          "--test",
+          "--test-reporter=tap",
+          "scripts/release-qualification.test.mjs",
+          "scripts/release-host-mutations.test.mjs",
+          "scripts/release-qualification-process.test.mjs"
+        ],
+        "cwd": "/home/nahisaho/GitHub/musubix6",
+        "startedAt": "2026-10-29T21:34:03.369Z",
+        "completedAt": "2026-10-29T21:34:20.088Z",
+        "exit": 0,
+        "signal": null,
+        "timedOut": false,
+        "outputLimit": false,
+        "error": null,
+        "stdout": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-legacy-diagnostic-proof-YHIK4o/focused/22.23.3/stdout.log",
+          "sha256": "4f4f143ea7d857cf570fb12c4aa0f106e6037e8d81b08442c7d5b3cb5f30701f"
+        },
+        "stderr": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-legacy-diagnostic-proof-YHIK4o/focused/22.23.3/stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "receipt": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-legacy-diagnostic-proof-YHIK4o/focused/22.23.3/command.json",
+          "sha256": "5743f670a3a4bc45a46e373ffbc5860a2682c51cb78f1e0da8a9552851de1ca8"
+        }
+      }
     },
     {
       "version": "24.22.1",
-      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-bootstrap-final-checks/node-24.22.1.tap",
-      "sha256": "41ed416f25ba1fc6a2aa8e0909d6b0f7c83a5640e9eb2107cd3353d456d589c4",
-      "tests": 18,
-      "passed": 18,
-      "failed": 0,
-      "skipped": 0
+      "tests": 21,
+      "passed": 21,
+      "skipped": 0,
+      "receipt": {
+        "command": [
+          "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+          "--test",
+          "--test-reporter=tap",
+          "scripts/release-qualification.test.mjs",
+          "scripts/release-host-mutations.test.mjs",
+          "scripts/release-qualification-process.test.mjs"
+        ],
+        "cwd": "/home/nahisaho/GitHub/musubix6",
+        "startedAt": "2026-10-29T21:34:20.089Z",
+        "completedAt": "2026-10-29T21:34:35.086Z",
+        "exit": 0,
+        "signal": null,
+        "timedOut": false,
+        "outputLimit": false,
+        "error": null,
+        "stdout": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-legacy-diagnostic-proof-YHIK4o/focused/24.22.1/stdout.log",
+          "sha256": "cc9dadde1a6db8928301a34f563ddd84bd17d3c73f6b0cf9f3a5b62f59118c93"
+        },
+        "stderr": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-legacy-diagnostic-proof-YHIK4o/focused/24.22.1/stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "receipt": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-legacy-diagnostic-proof-YHIK4o/focused/24.22.1/command.json",
+          "sha256": "dc566214b96333bc75938c1f9e30e4aa20d4dc71e9245cffd5d8ac4737a54f68"
+        }
+      }
     }
   ],
-  "currentSensitivity": {
-    "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-completion-tdd-tVOMx4/proof.json",
-    "sha256": "433a3e7f6a4d086814877a136bd1cc74c5589b236d3ebb42a8e85eabdf2475bd"
-  },
-  "currentNativeProtocols": {
-    "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-native-frame-spike-WpHJPB/report.json",
-    "sha256": "648e7b93de2cb4ae013bc7ce4c54fc38864f6d72d8c2a352ff4ebd65e2eb00ac"
-  },
-  "approvedScope": {
-    "path": "/home/nahisaho/GitHub/musubix6/.sdd/release-validation.v0.2.3.json",
-    "sha256": "0b61a5b8678f6db62e068bf0ef291be9705df80be9ad2dbf7ffad8c07ed408bb"
+  "diagnosticCorrection": {
+    "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-legacy-diagnostic-proof-YHIK4o/proof.json",
+    "sha256": "37284b3a70ba77df82b04c2b740217436f0d42dc3dea66f5e6826ed9cb2c8272"
   },
   "remaining": [
-    "All 28 host mechanisms must execute in each complete frozen qualifying run.",
-    "Historical whole-host execution is not reattributed to current helper bytes."
+    "All 28 host mechanisms must execute in each complete unchanged frozen qualification run."
   ],
   "qualificationCredit": 0,
   "technicalReady": false,

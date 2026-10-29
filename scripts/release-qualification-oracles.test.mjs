@@ -253,7 +253,8 @@ const checks = [
   },
   t => {
     const directory = work(t);
-    const target = { name: 'skill-route', targetName: 'owned', sourceTest: '/fixture.test.mjs', assertionLines: [12] };
+    const target = { name: 'skill-route', targetName: 'owned', sourceTest: '/fixture.test.mjs', assertionLines: [12],
+      assertionDiagnostics: [{ line: 12, kind: 'legacy' }] };
     const controls = Object.fromEntries(['baseline', 'mutant', 'restored'].map(phase =>
       [phase, evidence(directory, eventLog('owned', { fail: phase === 'mutant' }), phase === 'mutant' ? 1 : 0)]));
     const data = { status: 'PASS', cases: [{ name: target.name, ...controls,
@@ -264,6 +265,8 @@ const checks = [
       value => { delete value.cases[0].restored; }, value => { value.cases[0].restoredSha256 = sha('changed'); }]) {
       const corrupt = structuredClone(data); change(corrupt); assert.throws(() => validate(corrupt));
     }
+    delete target.assertionDiagnostics;
+    assert.throws(() => validate(data), /frozen assertion diagnostics required/);
   },
   t => {
     const directory = work(t), fixture = host(directory);

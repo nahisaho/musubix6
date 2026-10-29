@@ -34,6 +34,24 @@ export function ownedAssertion(error, source, lines) {
   return file === source && Number.isSafeInteger(line) && Number.isSafeInteger(column) && lines.includes(line);
 }
 
+export function assertionReason(error, target) {
+  ensure(ownedAssertion(error, target.sourceTest, target.assertionLines), 'wrong owned mutant assertion');
+  ensure(Array.isArray(target.assertionDiagnostics), 'frozen assertion diagnostics required');
+  equal(target.assertionDiagnostics.map(row => row.line).sort((a, b) => a - b),
+    [...target.assertionLines].sort((a, b) => a - b));
+  const line = Number(/:([1-9]\d*):[1-9]\d*\)?\s*$/.exec(assertionFrame(error))[1]);
+  const diagnostics = target.assertionDiagnostics.filter(row => row.line === line);
+  ensure(diagnostics.length === 1, 'one exact frozen assertion diagnostic required');
+  const diagnostic = diagnostics[0];
+  if (['match', 'prefix'].includes(diagnostic.kind)) {
+    ensure(typeof diagnostic.messagePrefix === 'string' && diagnostic.messagePrefix.length > 0 &&
+      error.message.startsWith(diagnostic.messagePrefix), 'wrong mutant reason');
+  } else {
+    ensure(diagnostic.kind === 'legacy', 'unknown assertion diagnostic kind');
+    if (target.expectedReason) ensure(new RegExp(target.expectedReason).test(error.message), 'wrong mutant reason');
+  }
+}
+
 export function parseTap(text) {
   ensure(text.startsWith('TAP version 13\n'), 'native TAP header required');
   const matches = [...text.matchAll(/^(not ok|ok) (\d+) - (.+)$/gm)];
@@ -74,7 +92,8 @@ export function parseEvents(text) {
   const results = events.filter(event => ['test:pass', 'test:fail'].includes(event.type) && event.data.nesting === 0);
   const rows = results.map(event => {
     let error = event.data.details?.error;
-    for (let depth = 0; error && depth < 8 && error.code !== 'ERR_ASSERTION'; depth++) error = error.cause;
+    for (let depth = 0; error && depth < 8 && error.code === 'ERR_TEST_FAILURE' &&
+      error.name === 'Error'; depth++) error = error.cause;
     return { name: event.data.name, failed: event.type === 'test:fail',
       skip: ![undefined, false].includes(event.data.skip),
       todo: ![undefined, false].includes(event.data.todo),
@@ -112,7 +131,7 @@ export function parseNative(text, format = 'events') {
   return format === 'tap' || text.startsWith('TAP version 13\n') ? parseTap(text) : parseEvents(text);
 }
 
-export function processControl(evidence, expectedExit = 0) {
+export function processControl(evidence, expectedExit = 0, assertionTarget) {
   if (evidence.receipt) {
     const recorded = JSON.parse(readRef(evidence.receipt));
     for (const [key, value] of Object.entries(recorded)) equal(evidence[key], value);
@@ -122,8 +141,15 @@ export function processControl(evidence, expectedExit = 0) {
   equal(evidence.exit, expectedExit);
   const text = readRef(evidence.stdout);
   const stderr = readRef(evidence.stderr);
-  ensure(!/ERR_MODULE_NOT_FOUND|SyntaxError:|Cannot find module|MODULE_NOT_FOUND|Traceback \(most recent call last\)/.test(text + stderr),
-    'setup failure cannot count as a verdict');
+  const setup = /ERR_MODULE_NOT_FOUND|SyntaxError:|Cannot find module|MODULE_NOT_FOUND|Traceback \(most recent call last\)/;
+  ensure(!setup.test(stderr), 'setup failure cannot count as a verdict');
+  if (setup.test(text)) {
+    ensure(expectedExit === 1 && assertionTarget, 'setup failure cannot count as a verdict');
+    const name = assertionTarget.targetName || assertionTarget.name;
+    const selected = namedControl(parseNative(text), [name], { failedTarget: name })[0];
+    ensure(ownedAssertion(selected.error, assertionTarget.sourceTest, assertionTarget.assertionLines),
+      'setup failure cannot count as a verdict');
+  }
   return { text, stderr };
 }
 
@@ -195,14 +221,15 @@ export function validateMutationRows({ evidence, catalogue, adapterOutput }) {
     const target = catalogue.find(item => (item.name || item.id) === row.name);
     for (const phase of ['baseline', 'mutant', 'restored']) {
       const receipt = row[phase];
-      const { text: native } = processControl(receipt, phase === 'mutant' ? 1 : 0);
+      const owner = adapterOutput ? path.join(adapterOutput, 'mutations', row.name, 'source', target.suite) : target.sourceTest;
+      const { text: native } = processControl(receipt, phase === 'mutant' ? 1 : 0,
+        { ...target, sourceTest: owner });
       const parsed = parseNative(native);
       const name = target.targetName || target.name;
       const selected = namedControl(parsed, [name], { failedTarget: phase === 'mutant' ? name : null })[0];
       if (phase === 'mutant') {
-        const owner = adapterOutput ? path.join(adapterOutput, 'mutations', row.name, 'source', target.suite) : target.sourceTest;
         ensure(ownedAssertion(selected.error, owner, target.assertionLines), 'wrong owned mutant assertion');
-        if (target.expectedReason) ensure(new RegExp(target.expectedReason).test(selected.error.message), 'wrong mutant reason');
+        assertionReason(selected.error, { ...target, sourceTest: owner });
       }
 
     }

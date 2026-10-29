@@ -888,6 +888,183 @@ test('TEST-RELQ-002 freezes external current inputs and detects bounded byte, pr
     'preflight must reject aliased source output before creating it');
 });
 
+async function legacyDiagnosticFixture(directory, quoted = false,
+  message = 'Cannot find module child; SyntaxError: quoted; ERR_MODULE_NOT_FOUND; MODULE_NOT_FOUND; Traceback (most recent call last)') {
+  const { assertionCatalogue } = await import('./release-qualification-cells.mjs');
+  const source = path.join(directory, 'source'), title = 'native legacy diagnostic control';
+  write(path.join(source, 'scripts/release-host-events.mjs'),
+    fs.readFileSync(path.join(root, 'scripts/release-host-events.mjs'), 'utf8'));
+  write(path.join(source, 'job.txt'), 'run: npm ci\n');
+  const assertion = quoted
+    ? `assert.equal(value, "run: npm ci\\n", ${JSON.stringify(message)})`
+    : 'assert.match(value, /npm ci/)';
+  write(path.join(source, 'owned.test.mjs'),
+    "import assert from 'node:assert/strict';import fs from 'node:fs';import {test} from 'node:test';\n" +
+    `test('${title}',()=>{const value=fs.readFileSync(new URL('./job.txt',import.meta.url),'utf8');${assertion};});\n`);
+  const target = {
+    name: 'legacy-diagnostic', targetName: title, suite: 'owned.test.mjs',
+    files: ['job.txt'], edits: [{ file: 'job.txt', before: 'run: npm ci', after: 'run: npm --version', count: 1 }],
+    expectedReason: quoted ? 'Cannot find module child' : inherited.mutationCatalogue.mutations
+      .find(row => row.id === 'publish-restore').expectedReason,
+    ...assertionCatalogue(source, 'owned.test.mjs', title, assertion, path.join(root, 'node_modules')),
+  };
+  return { source, output: path.join(directory, 'adapter'), node: process.execPath,
+    cell: { id: 'MUTATION', kind: 'mutation', timeoutSeconds: 30 }, catalogue: [target],
+    environment: { PATH: process.env.PATH, TMPDIR: directory, NO_COLOR: '1' } };
+}
+
+function mutationResultEvidence(directory, result) {
+  const evidence = cellFixture(directory).evidence;
+  evidence.stdout = retained(directory, `adapter-${randomUUID()}.json`, JSON.stringify(result));
+  return evidence;
+}
+
+/** @id TEST-RELQ-DIAGNOSTIC-001 @verifies REQ-RELQ-003 */
+test('TEST-RELQ-DIAGNOSTIC-001 binds generated match diagnostics to the frozen literal and owned frame', async t => {
+  const directory = workspace(t);
+  const context = await legacyDiagnosticFixture(directory);
+  const target = context.catalogue[0];
+  const prefix = 'The input did not match the regular expression /npm ci/. Input:\n';
+  assert.deepEqual(target.assertionDiagnostics, [{ line: 2, kind: 'match', messagePrefix: prefix }],
+    'freeze the native diagnostic from the independent regex literal, not the historical word heuristic');
+  const { runAdapter, assertionCatalogue } = await import('./release-qualification-cells.mjs');
+  const { validateMutationRows } = await import('./release-qualification-evidence.mjs');
+  const result = await runAdapter(context);
+  assert.equal(result.cases.length, 1);
+  const input = { evidence: mutationResultEvidence(directory, result), catalogue: context.catalogue,
+    adapterOutput: context.output };
+  assert.doesNotThrow(() => validateMutationRows(input), 'valid native baseline/mutant/restored controls must pass');
+  for (const change of [
+    row => { row.assertionDiagnostics[0].messagePrefix = prefix.replace('/npm ci/', '/npm test/'); },
+    row => { row.assertionDiagnostics[0].line++; },
+    row => { delete row.assertionDiagnostics; },
+  ]) {
+    const catalogue = clone(context.catalogue);
+    catalogue[0].expectedReason = 'The input';
+    change(catalogue[0]);
+    assert.throws(() => validateMutationRows({ ...input, catalogue }),
+      'a broad legacy match cannot rescue incorrect or missing frozen diagnostic metadata');
+  }
+  const file = path.join(context.source, target.suite);
+  const original = fs.readFileSync(file, 'utf8');
+  for (const assertion of ['assert.match(value, /npm ci/, value)', 'assert.match(value, expected)']) {
+    fs.writeFileSync(file, original.replace('assert.match(value, /npm ci/)', assertion));
+    const catalogue = assertionCatalogue(context.source, target.suite, target.targetName, assertion,
+      path.join(root, 'node_modules'));
+    assert.deepEqual(catalogue.assertionDiagnostics, [{ line: 2, kind: 'legacy' }],
+      'custom-message and nonliteral-regex assertions retain their existing diagnostic rule');
+  }
+  fs.writeFileSync(file, original.replace('/npm ci/', '/npm ci/mi'));
+  const canonical = assertionCatalogue(context.source, target.suite, target.targetName, undefined,
+    path.join(root, 'node_modules'));
+  assert.deepEqual(canonical.assertionDiagnostics,
+    [{ line: 2, kind: 'match', messagePrefix: prefix.replace('/npm ci/', '/npm ci/im') }],
+    'native RegExp inspection uses canonical flag order rather than source spelling');
+  fs.writeFileSync(file, original.replace('assert.match(value, /npm ci/)',
+    'assert.equal(value, "a");assert.equal(value, "b")'));
+  let shared;
+  assert.doesNotThrow(() => { shared = assertionCatalogue(context.source, target.suite, target.targetName,
+    'assert.equal(value, "a")', path.join(root, 'node_modules')); },
+  'same-line assertions with the identical legacy diagnostic rule preserve the existing ownership boundary');
+  assert.deepEqual(shared.assertionDiagnostics, [{ line: 2, kind: 'legacy' }]);
+  fs.writeFileSync(file, original.replace('assert.match(value, /npm ci/)',
+    'assert.match(value, /npm ci/);assert.match(value, /npm test/)'));
+  assert.throws(() => assertionCatalogue(context.source, target.suite, target.targetName, undefined,
+    path.join(root, 'node_modules')), 'different diagnostic rules at one throwing line are ambiguous');
+});
+
+/** @id TEST-RELQ-SCANNER-001 @verifies REQ-RELQ-003 */
+test('TEST-RELQ-SCANNER-001 binds only the two approved scanner prefixes and rejects invalid overrides', async t => {
+  const { cellCatalogue, runAdapter } = await import('./release-qualification-cells.mjs');
+  const { validateMutationRows } = await import('./release-qualification-evidence.mjs');
+  const directory = workspace(t);
+  const manifest = { catalogues: { mutations: inherited.mutationCatalogue },
+    execution: { nodeModules: path.join(root, 'node_modules') } };
+  const catalogue = cellCatalogue(manifest, { kind: 'mutation' }, root);
+  const overrides = approvedPlan.legacyMutationDiagnosticPolicy.customMessageOverrides;
+  for (const override of overrides) {
+    const row = catalogue.find(row => row.name === override.id);
+    assert.deepEqual(row.assertionDiagnostics, row.assertionLines.map(line =>
+      ({ line, kind: 'prefix', messagePrefix: override.messagePrefix })));
+    const context = await legacyDiagnosticFixture(path.join(directory, override.id), true, override.messagePrefix);
+    context.catalogue[0].expectedReason = row.expectedReason;
+    context.catalogue[0].assertionDiagnostics = [{ ...row.assertionDiagnostics[0], line: 2 }];
+    const result = await runAdapter(context);
+    const input = { evidence: mutationResultEvidence(directory, result), catalogue: context.catalogue,
+      adapterOutput: context.output };
+    assert.doesNotThrow(() => validateMutationRows(input), 'the exact scanner prefix and all native controls pass');
+    const invalid = clone(context.catalogue);
+    invalid[0].expectedReason = 'TRACE';
+    invalid[0].assertionDiagnostics[0].messagePrefix = override.messagePrefix.replace('1 REQ', '2 REQ');
+    assert.throws(() => validateMutationRows({ ...input, catalogue: invalid }),
+      'wrong independent counts cannot be rescued by the historical regex');
+  }
+  const source = path.join(directory, 'scope');
+  const suite = overrides[0].suite;
+  write(path.join(source, suite), fs.readFileSync(path.join(root, suite), 'utf8'));
+  const scopedManifest = clone(manifest);
+  scopedManifest.catalogues.mutations.mutations = inherited.mutationCatalogue.mutations
+    .filter(row => overrides.some(override => override.id === row.id));
+  const scopePlan = clone(approvedPlan);
+  write(path.join(source, planRelative), scopePlan);
+  assert.equal(cellCatalogue(scopedManifest, { kind: 'mutation' }, source).length, 2);
+  for (const change of [
+    rows => rows.pop(),
+    rows => rows.push(clone(rows[0])),
+    rows => { rows[0].id = 'foreign-case'; },
+    rows => { rows[0].suite = 'foreign.test.mjs'; },
+    rows => { rows[0].expectedAssertion = 'assert.equal(valid.code, 9,'; },
+  ]) {
+    const plan = clone(scopePlan);
+    change(plan.legacyMutationDiagnosticPolicy.customMessageOverrides);
+    write(path.join(source, planRelative), plan);
+    assert.throws(() => cellCatalogue(scopedManifest, { kind: 'mutation' }, source),
+      'missing, duplicate, foreign or mismatched override must fail rather than fall back');
+  }
+});
+
+/** @id TEST-RELQ-QUOTED-001 @verifies REQ-RELQ-003 */
+test('TEST-RELQ-QUOTED-001 accepts owned quoted setup text but rejects actual setup and foreign failures', async t => {
+  const directory = workspace(t);
+  const context = await legacyDiagnosticFixture(directory, true);
+  const { runAdapter } = await import('./release-qualification-cells.mjs');
+  const { validateMutationRows, processControl, parseEvents } = await import('./release-qualification-evidence.mjs');
+  let result;
+  await assert.doesNotReject(async () => { result = await runAdapter(context); },
+    'quoted loader/provider examples inside the expected owned native assertion are diagnostic data');
+  const input = { evidence: mutationResultEvidence(directory, result), catalogue: context.catalogue,
+    adapterOutput: context.output };
+  assert.doesNotThrow(() => validateMutationRows(input));
+  const receipt = result.cases[0].mutant;
+  const target = { ...context.catalogue[0], sourceTest: result.cases[0].sourceTest };
+  assert.doesNotThrow(() => processControl(receipt, 1, target));
+  assert.throws(() => processControl(receipt, 1), 'no caller-controlled flag bypasses native ownership verification');
+  const events = JSON.parse('[' + processIo.readRef(receipt.stdout).trim().split('\n').join(',') + ']');
+  for (const change of [
+    error => { error.cause.code = 'ERR_MODULE_NOT_FOUND'; error.cause.name = 'Error'; },
+    error => { error.cause.stack = error.cause.stack.replace(target.sourceTest, '/foreign/owned.test.mjs'); },
+    error => { error.cause = { name: 'TypeError', code: 'ERR_OTHER', message: 'Cannot find module child',
+      stack: 'TypeError: Cannot find module child\n    at /foreign/loader.mjs:1:1', cause: error.cause }; },
+  ]) {
+    const altered = clone(events);
+    const failure = altered.find(row => row.type === 'test:fail').data.details.error;
+    change(failure);
+    const copy = { ...receipt, stdout: retained(directory, `negative-${randomUUID()}.jsonl`,
+      altered.map(row => JSON.stringify(row)).join('\n') + '\n') };
+    delete copy.receipt;
+    assert.throws(() => processControl(copy, 1, target), 'setup/foreign errors cannot borrow an owned assertion cause');
+    const parsed = parseEvents(processIo.readRef(copy.stdout));
+    assert.ok(parsed.rows[0].failed);
+  }
+  const stderr = { ...receipt, stderr: retained(directory, 'real-setup-stderr.log', 'SyntaxError: actual loader failure\n') };
+  delete stderr.receipt;
+  assert.throws(() => processControl(stderr, 1, target), 'real setup stderr is never exempted by quoted stdout');
+  const incomplete = clone(result);
+  delete incomplete.cases[0].restored;
+  assert.throws(() => validateMutationRows({ ...input, evidence: mutationResultEvidence(directory, incomplete) }),
+    'a killed mutant without restored controls is not a pass');
+});
+
 /** @id TEST-RELQ-003 @verifies REQ-RELQ-003 */
 test('TEST-RELQ-003 requires named retained outcomes and all owned host mutation controls', async t => {
   const directory = workspace(t);

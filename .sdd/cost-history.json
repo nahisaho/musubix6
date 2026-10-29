@@ -266,10 +266,10 @@
           "outputTokens": 107706
         },
         "gpt-6.1-sol": {
-          "calls": 955,
-          "inputTokens": 120699408,
-          "nanoAiu": 3090462230000,
-          "outputTokens": 1096445
+          "calls": 1036,
+          "inputTokens": 130157846,
+          "nanoAiu": 3352518940000,
+          "outputTokens": 1185401
         }
       },
       "summary": "Update musubix for GiNZA 5.3"

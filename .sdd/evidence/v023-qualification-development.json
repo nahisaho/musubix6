@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-10-29T13:37:57.698Z",
+  "generatedAt": "2026-10-29T21:39:16.417Z",
   "status": "INCOMPLETE",
   "specification": {
     "path": "/home/nahisaho/GitHub/musubix6/.sdd/specs/release-qualification.md",
-    "sha256": "8a696227ff32e0a29f9afabd22af2f1600769871bb06ef74d5a9e9a484561b3c"
+    "sha256": "89fd252e17e29c8bd88adfb055977473d7788af442ab0160fed0af2d46be61f3"
   },
   "implementedAdapters": 24,
   "requiredAdapters": 24,
@@ -27,7 +27,7 @@
     },
     {
       "path": "/home/nahisaho/GitHub/musubix6/scripts/release-qualification-cells.mjs",
-      "sha256": "9454d36bb7d31f32b63654d3111a22992970dda3b5ac01e64a90b34d3c4db995"
+      "sha256": "c3055bf72952e2c38f96705399efd844d78bb88110b6dde69ab2cb6d5b8e0ce5"
     },
     {
       "path": "/home/nahisaho/GitHub/musubix6/scripts/release-qualification-cli.mjs",
@@ -39,7 +39,7 @@
     },
     {
       "path": "/home/nahisaho/GitHub/musubix6/scripts/release-qualification-evidence.mjs",
-      "sha256": "09c9426d6c5f75384adfbc980944297ecc2bedef6f92139b418b2d9027c58ae0"
+      "sha256": "88d48acfd61964b5c73e99e90249c6d5cd7427c4a7cc9e2e7b87b90501aa85e0"
     },
     {
       "path": "/home/nahisaho/GitHub/musubix6/scripts/release-qualification-io.mjs",
@@ -47,7 +47,7 @@
     },
     {
       "path": "/home/nahisaho/GitHub/musubix6/scripts/release-qualification-oracles.test.mjs",
-      "sha256": "8237cfc0bcd78b31af7bdd4a0a8fa3cce837677e77e4202acf47b13e14d0601c"
+      "sha256": "58af8713f9ec11d9f855f00a1bccb514de18e3a1e8313154c3211cbc251e608a"
     },
     {
       "path": "/home/nahisaho/GitHub/musubix6/scripts/release-qualification-process.test.mjs",
@@ -63,100 +63,109 @@
     },
     {
       "path": "/home/nahisaho/GitHub/musubix6/scripts/release-qualification.test.mjs",
-      "sha256": "0607a4716d6beb2e10127ff5bf3d2f7abbdc55288c5f2a25d01370619113cb6a"
+      "sha256": "95ed9c14e0852db1b7f8b181c00c87c5e25d6b4daa09daddafa870ab52dbe9d7"
     }
   ],
   "developmentVerification": {
-    "focused": [
-      {
-        "version": "20.20.2",
-        "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-bootstrap-final-checks/node-20.20.2.tap",
-        "sha256": "e11791c5fca0a12119e2c55b5fa74495a38ee083446534ac3a695bd6409e0bfd",
-        "tests": 18,
-        "passed": 18,
-        "failed": 0,
-        "skipped": 0
-      },
-      {
-        "version": "22.23.3",
-        "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-bootstrap-final-checks/node-22.23.3.tap",
-        "sha256": "ffdba81385fcea0ed1ad70f2480d470efa01a87ba132b2f99047bcfad0537bde",
-        "tests": 18,
-        "passed": 18,
-        "failed": 0,
-        "skipped": 0
-      },
-      {
-        "version": "24.22.1",
-        "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-bootstrap-final-checks/node-24.22.1.tap",
-        "sha256": "41ed416f25ba1fc6a2aa8e0909d6b0f7c83a5640e9eb2107cd3353d456d589c4",
-        "tests": 18,
-        "passed": 18,
-        "failed": 0,
-        "skipped": 0
-      }
-    ],
-    "isolatedSensitivity": {
-      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-completion-tdd-tVOMx4/proof.json",
-      "sha256": "433a3e7f6a4d086814877a136bd1cc74c5589b236d3ebb42a8e85eabdf2475bd",
-      "mechanisms": 23
+    "currentDiagnosticCorrection": {
+      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-legacy-diagnostic-proof-YHIK4o/proof.json",
+      "sha256": "37284b3a70ba77df82b04c2b740217436f0d42dc3dea66f5e6826ed9cb2c8272"
     },
-    "actualArchiveDiscovery": {
-      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-archive-discovery-native-2t5CUE/report.json",
-      "sha256": "4178ed3c701ff48180d58cf0cd95835d0ee7a0d9204c4259ed8246008aefa809"
-    },
-    "actualNativeProtocolsAndCaches": {
-      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-native-frame-spike-WpHJPB/report.json",
-      "sha256": "648e7b93de2cb4ae013bc7ce4c54fc38864f6d72d8c2a352ff4ebd65e2eb00ac",
-      "finiteProtocolRows": 36
+    "focusedCasesPerRuntime": 21,
+    "actualNativeDiagnosticReplay": {
+      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-diagnostic-report-history-DGImko/native-diagnostic-replay.json",
+      "sha256": "eb6986085ad23cb4f7ec4a5f037b0cd9110353a2fb8adf8b67c2d32266333048",
+      "cases": 49,
+      "qualificationCredit": 0
     },
     "diagnostics": {
-      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-bootstrap-final-checks/diagnostics.json",
-      "sha256": "48b4d9b4670f59670061a7005cb8565c5873f68a0addbab3cb6356a05ff67752",
       "status": "PASS",
-      "scope": "Exact isolated JavaScript snapshot, not root diagnostics."
+      "scope": "Exact isolated JavaScript snapshot; not a root-wide diagnostic pass.",
+      "receipt": {
+        "command": [
+          "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+          ".github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+          "diagnostics",
+          "--root",
+          "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-legacy-diagnostic-proof-YHIK4o/javascript",
+          "--profile",
+          "javascript",
+          "--json"
+        ],
+        "cwd": "/home/nahisaho/GitHub/musubix6",
+        "startedAt": "2026-10-29T21:34:35.089Z",
+        "completedAt": "2026-10-29T21:34:35.908Z",
+        "exit": 0,
+        "signal": null,
+        "timedOut": false,
+        "outputLimit": false,
+        "error": null,
+        "stdout": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-legacy-diagnostic-proof-YHIK4o/diagnostics/stdout.log",
+          "sha256": "ed6ddb47ee8f5c9422f835fb55ad499b926a84e9d49fee84084236e5072e4f3f"
+        },
+        "stderr": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-legacy-diagnostic-proof-YHIK4o/diagnostics/stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "receipt": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-legacy-diagnostic-proof-YHIK4o/diagnostics/command.json",
+          "sha256": "2fc7dae28832e3d37da322e309686809a5df20b348bce80a2334ae358647c54e"
+        }
+      }
     },
-    "independentNarrowReview": {
-      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-blocker-report-history-lHSTEE/narrow-review.json",
-      "sha256": "01c1409be16de99017e210309ffa1177c15c85d8cd70ea935f39102189341f88"
-    },
-    "historicalFullGate": {
-      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-completion-full-gate-2.json",
-      "sha256": "90ef043ca5ec4aea4f8cc0681474c75af2e84e9d112b90b2ac5efd8276648cbd",
-      "verdict": "PASS",
-      "scope": "Pre-message-boundary/cache corrections; not final candidate gate proof. Fresh full INTEGRATED-GATE is required in each frozen matrix run."
+    "review": {
+      "mode": "Direct bounded delta review; no new independent-agent review claimed.",
+      "inspected": [
+        "native diagnostic AST/metadata, case-specific override bindings",
+        "owned quoted-setup handling and native wrapper boundaries",
+        "adapter/consumer wiring and dependent oracle fixture"
+      ],
+      "openS1S2InInspectedDelta": 0,
+      "limits": "Full current adapter/matrix execution remains pending."
     }
   },
   "closedBlockers": [
-    "Explicit installed dependency/environment/tool closure, mandatory manifest hash and matrix/command binding.",
-    "Readiness rechecks retained manifest and immutable run history; synthetic inline empty-run credit rejected.",
-    "EPERM/stat/termination/cleanup error handling and frozen package-origin binding.",
-    "Exact first throwing frame, complete native message boundary, and explicit refusal of ambiguous native TAP.",
-    "Isolated candidate TypeScript dependency selection; frozen Cargo/Julia seeds copied into private writable state.",
-    "Archive registration now materializes an external dependency-linked copy; genuine 1146-name Node20 discovery passes without modifying the archive.",
-    "Prior eight JavaScript lint findings and historical formal TEST-RELQ-002/004/HOST-001 evidence gaps."
+    "Native assert.match messages are bound to independently parsed literal regexes and exact assertion lines; custom/nonliteral diagnostics retain the inherited rule.",
+    "Two explicitly human-approved scanner cases use complete independent TRACE prefixes, without broadening the generic regex.",
+    "Quoted setup examples require a complete exact owned native assertion; real setup stderr, foreign frames and nonnative error causes remain rejected.",
+    "Dependent oracle fixture now supplies mandatory frozen diagnostic metadata and rejects its absence."
   ],
-  "openBlockers": [
-    "Final committed candidate, complete explicit frozen inputs and fresh retained 24-cell manifest.",
-    "Two consecutive complete clean executions of that unchanged manifest, including current full integrated gates.",
-    "Any newly observed in-scope S1/S2 or unknown/skipped required result blocks readiness."
-  ],
+  "failedFrozenRevision": {
+    "manifest": {
+      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v023-linux-r2-K3keBH/frozen-manifest.json",
+      "sha256": "f61699d6d710611bccc4d9375c9515b54c4265543b3589f680cb4dba24ee879f"
+    },
+    "run": {
+      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v023-linux-r2-K3keBH/runs/run-PCpOpH/run.json",
+      "sha256": "4780b0a983e6a902d0ef428d9051420a20bb3a2c291572b71cd04fef7f5eaede"
+    },
+    "history": {
+      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v023-linux-r2-K3keBH/qualification-history.jsonl",
+      "sha256": "e17fde90d995d501c831cbe7a3016216d2a1c2eea1e3012009170260757d770b"
+    },
+    "cause": "MUTATION adapter rejected a genuine owned publish-restore assertion using its obsolete generic diagnostic-word regex.",
+    "technicalReady": false,
+    "transferredCredit": 0
+  },
   "historicalReports": [
     {
-      "original": ".sdd/evidence/v023-qualification-development.json",
-      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-blocker-report-history-lHSTEE/v023-qualification-development.json",
-      "sha256": "ceae920df3fc10c748f918d39e1d087494dec5dd5d4181c34b51ac41a43b6151"
+      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-diagnostic-report-history-DGImko/v023-qualification-development.json",
+      "sha256": "5fe6b6b0afd906045c2821ab0ab232e41a418d2e76d6a87d1f0a231d71e3b3bb"
     },
     {
-      "original": ".sdd/evidence/v023-linux-scope.json",
-      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-blocker-report-history-lHSTEE/v023-linux-scope.json",
-      "sha256": "96b9041c1905f0e0eedaa5a167ff3f32096f7bcac850e96d799c43e640a9ab25"
+      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-diagnostic-report-history-DGImko/v023-linux-scope.json",
+      "sha256": "6ae76d4b0a47bf661390a086c503a0c3f2a8bf8a6cf60958b938f3f06eb11fc5"
     },
     {
-      "original": ".sdd/evidence/v023-host-qualification.json",
-      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-blocker-report-history-lHSTEE/v023-host-qualification.json",
-      "sha256": "d0140eb9bc20db65386ccece2cdf638b22b5e78fb68309d90a047b02d9ced744"
+      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-diagnostic-report-history-DGImko/v023-host-qualification.json",
+      "sha256": "90108ddb0a5625f1a6fd27189a76e6e8f9ba60435674212115d2b34a9990519b"
     }
+  ],
+  "openBlockers": [
+    "Prepare and freeze a new clean committed candidate with explicit previous-manifest path/hash/reason.",
+    "Execute the same unchanged 24 required Linux cells twice consecutively, including full current integrated gates and all regressions.",
+    "Any new S1/S2, missing/skipped/unknown required outcome blocks readiness. No publication approval."
   ],
   "technicalReady": false,
   "qualifyingCredit": 0,

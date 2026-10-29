@@ -2,13 +2,38 @@
   "schemaVersion": 1,
   "targetVersion": "0.2.3",
   "status": "scope-contract-not-run-evidence",
-  "revision": 3,
+  "revision": 6,
   "policy": "docs/design-sdd-hardening.md section 3.5",
   "inheritedManifest": {
     "path": ".sdd/release-validation.v0.2.0.json",
     "sha256": "e2f221e308e2fb4389f044e12c42cb2083e314b97305ae1701f65cd399c37de6"
   },
-  "revisionReason": "Explicit human approval is required for a normative replacement of unavailable SKILL-MUTATION and PLACEHOLDER-MUTATION definitions: 13 skill mechanisms, 14 placeholder mechanisms, 1090 named source file/permission challenges and 60 installed/package origin sensitivities. Original exact edits and seven vendor-path identities remain unknown; equivalence is not asserted. All 24 Linux cells and budgets, and the explicit unvalidated NATIVE-WSLC exclusion, remain unchanged. Current README artifacts also require a refreshed exact-artifact approval. Prior credit remains zero.",
+  "revisionReason": "Complete the legacy diagnostic amendment after zero-credit isolated feasibility execution reached all 49 inherited cases. Two scanner assertions use custom CLI output messages absent from the historical generic-word regex: bind exact independently specified TRACE header prefixes for those two named cases, instead of widening the generic regex. Preserve revision-5 generated-regex and quoted-setup rules, all inherited edits/targets, all 24 Linux cells and budgets, and the WSL exclusion. Failed history is retained; credit resets to zero; no release or publication is authorized.",
+  "legacyMutationDiagnosticPolicy": {
+    "version": 1,
+    "assertMatch": "exact-native-message-prefix-from-the-frozen-regular-expression-literal-at-the-owned-assertion-frame",
+    "customMessageAssertions": "inherited-expected-reason",
+    "customMessageOverrides": [
+      {
+        "id": "scanner-complete-sources",
+        "suite": ".github/skills/lean-sdd-tdd/scripts/source-discovery.test.mjs",
+        "expectedAssertion": "assert.equal(valid.code, 0,",
+        "messagePrefix": "TRACE FAIL: 1 REQ, 0 annotated entities, 1 errors, 2 warnings\n",
+        "independentReference": "TEST-SCAN-001 fixture has one requirement; cutting both padded source files before their annotations leaves zero entities, one missing-test error and two missing-test/implementation warnings"
+      },
+      {
+        "id": "scanner-limit-validation",
+        "suite": ".github/skills/lean-sdd-tdd/scripts/source-discovery.test.mjs",
+        "expectedAssertion": "assert.equal(r.code, 1, r.out)",
+        "messagePrefix": "TRACE OK: 1 REQ, 2 annotated entities, 0 errors, 0 warnings\n",
+        "independentReference": "TEST-SCAN-003 uses the complete one-requirement/two-entity fixture; ignoring its invalid scan configuration incorrectly runs a clean trace instead of returning the required refusal"
+      }
+    ],
+    "otherAssertions": "inherited-expected-reason",
+    "quotedSetupText": "accept-only-an-exact-owned-native-assertion-with-complete-valid-controls",
+    "requiredControls": ["baseline", "mutant", "restored"],
+    "historicalCatalogue": "unchanged-provenance-not-the-current-assert-match-message-oracle"
+  },
   "contentMutationContract": {
     "path": ".sdd/release-content-mutations.v0.2.3.json",
     "sha256": "60f658309522e1ffae19be653f60bef7021cd207ca4b7f2a983c603d6cb35a45",
@@ -22,8 +47,8 @@
   },
   "frozenManifest": "Generated separately after preflight; binds this approved plan's SHA256, exact candidate inputs, commands and named catalogues before any qualifying run",
   "previousRevision": {
-    "number": 2,
-    "sha256": "35e71bcaf97fdb81f7643c235c17b887b8926be7a6c4ec2132108a28988f5a8c",
+    "number": 5,
+    "sha256": "b4e43ddc944eb401055231164256a4ec067c086ce6a5cdef3be0659ef01811cf",
     "qualificationCreditBefore": 0,
     "qualificationCreditAfter": 0
   },
