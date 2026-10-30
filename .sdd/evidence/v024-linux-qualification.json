@@ -1,0 +1,957 @@
+{
+  "schemaVersion": 1,
+  "targetVersion": "0.2.4",
+  "generatedAt": "2026-10-30T13:10:49.933Z",
+  "status": "PASS",
+  "technicalReady": true,
+  "consecutiveCompleteCleanRuns": 2,
+  "sourceCommit": "91cc74a53de22e5b79fc87fadf5c641a3457c4bc",
+  "manifest": {
+    "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/frozen-manifest.json",
+    "sha256": "e3e970e8029255856804a61da25442ba3baef6eeb1a99473d66e59353cb1f361"
+  },
+  "qualifiedPackage": {
+    "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/candidate/package/musubix6-0.2.4.tgz",
+    "sha256": "ff3b7feb4a094f2b2e284acbf0b3a0534e125dae3d1d333da10429225e6d5d33"
+  },
+  "registeredNames": 1152,
+  "requiredCellsPerRun": 24,
+  "artifacts": [
+    {
+      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/candidate/package/musubix6-0.2.4.tgz",
+      "sha256": "ff3b7feb4a094f2b2e284acbf0b3a0534e125dae3d1d333da10429225e6d5d33"
+    },
+    {
+      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/candidate/source.tar",
+      "sha256": "ec40ccd53b51c79c610ddd7dd7c4218117f2d383ba5faff2030dcd8ba211d1cb"
+    },
+    {
+      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/candidate/history.bundle",
+      "sha256": "bd29fa7425a4574b390097ae1994765ff21f532175aed8b731a8b65564b3a285"
+    },
+    {
+      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/frozen-manifest.json",
+      "sha256": "e3e970e8029255856804a61da25442ba3baef6eeb1a99473d66e59353cb1f361"
+    },
+    {
+      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/qualification-history.jsonl",
+      "sha256": "bdb4723adac693f3b6366ed95dfb2169558b352bcd34e3f9b79eb108739b83b4"
+    },
+    {
+      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-sejFvu/run.json",
+      "sha256": "42c029e8c20fe7d2d618540964f721a1abe104c4e25ca9eaa7141ee33ad09d5e"
+    },
+    {
+      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-lvgdOD/run.json",
+      "sha256": "4586a212e8342dc5e27e3d76f7366ab42176c34c770683cbc56c3950098a042d"
+    }
+  ],
+  "runs": [
+    {
+      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-sejFvu/run.json",
+      "sha256": "42c029e8c20fe7d2d618540964f721a1abe104c4e25ca9eaa7141ee33ad09d5e",
+      "status": "PASS",
+      "cells": 24,
+      "regressions": [
+        {
+          "cell": "REGRESSION-20",
+          "counts": {
+            "tests": 1152,
+            "pass": 1148,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 4
+          }
+        },
+        {
+          "cell": "REGRESSION-22",
+          "counts": {
+            "tests": 1152,
+            "pass": 1148,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 4
+          }
+        },
+        {
+          "cell": "REGRESSION-24",
+          "counts": {
+            "tests": 1152,
+            "pass": 1148,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 4
+          }
+        }
+      ],
+      "cellEvidence": [
+        {
+          "id": "PACKAGE-20",
+          "status": "PASS",
+          "process": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-sejFvu/PACKAGE-20/process/command.json",
+            "sha256": "0442afd8fc35411419ad37fa4b6c875b16d9bba65839597a03ffb3d43b5912b0"
+          },
+          "stdout": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-sejFvu/PACKAGE-20/process/stdout.log",
+            "sha256": "a6d6009dbc23721c11e68993169097c3afc9b4820c4e2c2dc14a3bb5b15d2778"
+          },
+          "stderr": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-sejFvu/PACKAGE-20/process/stderr.log",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "id": "WATCHDOG-20",
+          "status": "PASS",
+          "process": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-sejFvu/WATCHDOG-20/process/command.json",
+            "sha256": "f2f6e134341dcab5e0f3b63bf6997a72c6df822ca3536d2b2e3261526b31a18f"
+          },
+          "stdout": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-sejFvu/WATCHDOG-20/process/stdout.log",
+            "sha256": "1cf1256cb0f238a324684825261da6543a6ed377a8bbfc808c9594b553bcf54c"
+          },
+          "stderr": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-sejFvu/WATCHDOG-20/process/stderr.log",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "id": "NO-CHANGE-20",
+          "status": "PASS",
+          "process": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-sejFvu/NO-CHANGE-20/process/command.json",
+            "sha256": "88cde81821d4b1d6064180aec8da5f04b82a1bced08a6a3dfd88694bfe56e6a9"
+          },
+          "stdout": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-sejFvu/NO-CHANGE-20/process/stdout.log",
+            "sha256": "732b6758adb921fcbc553ddf9acfac2e9ed4a8b0d563aa604737240b2b3cc212"
+          },
+          "stderr": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-sejFvu/NO-CHANGE-20/process/stderr.log",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "id": "PACKAGE-22",
+          "status": "PASS",
+          "process": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-sejFvu/PACKAGE-22/process/command.json",
+            "sha256": "6e433b859b63ac55124e293caeaabbe3bba3107478fbbe0ebda7111cfce03548"
+          },
+          "stdout": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-sejFvu/PACKAGE-22/process/stdout.log",
+            "sha256": "5702fc412fce91d81de4fd40387042fb0c7c63b06185a4faa2a2ded880c4dffd"
+          },
+          "stderr": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-sejFvu/PACKAGE-22/process/stderr.log",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "id": "WATCHDOG-22",
+          "status": "PASS",
+          "process": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-sejFvu/WATCHDOG-22/process/command.json",
+            "sha256": "3ed6f5def4928921680e34faf985acf164310bb35fdbc8747c75e3bea40c0a23"
+          },
+          "stdout": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-sejFvu/WATCHDOG-22/process/stdout.log",
+            "sha256": "056c6f5e5b1342843b33c754c2a0d174baf06daedda397fb1aad9a2eb6266cc3"
+          },
+          "stderr": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-sejFvu/WATCHDOG-22/process/stderr.log",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "id": "NO-CHANGE-22",
+          "status": "PASS",
+          "process": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-sejFvu/NO-CHANGE-22/process/command.json",
+            "sha256": "e1cb6856e12debbaedfd2e222ed8207204c6cd9415b19a03324b9de629a5f983"
+          },
+          "stdout": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-sejFvu/NO-CHANGE-22/process/stdout.log",
+            "sha256": "a89664c37fd580c11746e2b058670cfecdf09e4f0d08d586cfb137e5a16e4f03"
+          },
+          "stderr": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-sejFvu/NO-CHANGE-22/process/stderr.log",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "id": "PACKAGE-24",
+          "status": "PASS",
+          "process": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-sejFvu/PACKAGE-24/process/command.json",
+            "sha256": "d3bc671d0d700e497d17e9d8c92af4ca372f173f8bf52befe7d3a4513821e374"
+          },
+          "stdout": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-sejFvu/PACKAGE-24/process/stdout.log",
+            "sha256": "79714c03c839d7cf1e40626884f6d5e0b35f7755684348b88c88ea0b6c9ed090"
+          },
+          "stderr": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-sejFvu/PACKAGE-24/process/stderr.log",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "id": "WATCHDOG-24",
+          "status": "PASS",
+          "process": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-sejFvu/WATCHDOG-24/process/command.json",
+            "sha256": "edab0ed90fb9375eb252714b405b1a72c5630563675509fb3acc336504f56b9a"
+          },
+          "stdout": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-sejFvu/WATCHDOG-24/process/stdout.log",
+            "sha256": "33e1401cccc11ddf7c135fbe9c6c7481a7ba7ad0611e234d3689f2d39645e325"
+          },
+          "stderr": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-sejFvu/WATCHDOG-24/process/stderr.log",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "id": "NO-CHANGE-24",
+          "status": "PASS",
+          "process": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-sejFvu/NO-CHANGE-24/process/command.json",
+            "sha256": "323c6c3b02f35b8b68367c1be4cdd14e73c86a2f22bc8ab0ea1a264581559e0c"
+          },
+          "stdout": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-sejFvu/NO-CHANGE-24/process/stdout.log",
+            "sha256": "b2a76473fa06ab07e45f14df1e9e09e6298d7de58f3bb15f8a81a0085fe15bdb"
+          },
+          "stderr": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-sejFvu/NO-CHANGE-24/process/stderr.log",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "id": "MUTATION",
+          "status": "PASS",
+          "process": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-sejFvu/MUTATION/process/command.json",
+            "sha256": "a9eefb49e7786ef73bbf5c906817b84623c6308db46edf53284fa48f89ee6721"
+          },
+          "stdout": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-sejFvu/MUTATION/process/stdout.log",
+            "sha256": "1773d17689cef33e20cc906387cb91da93b689b26ae556c71c416af0fdc3bfab"
+          },
+          "stderr": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-sejFvu/MUTATION/process/stderr.log",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "id": "SCOPE-DIFFERENTIAL",
+          "status": "PASS",
+          "process": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-sejFvu/SCOPE-DIFFERENTIAL/process/command.json",
+            "sha256": "7f96077ab2ab5b00b7b8bd195a23a2ee53ba22f8666c4be07b265ea5cf7afd44"
+          },
+          "stdout": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-sejFvu/SCOPE-DIFFERENTIAL/process/stdout.log",
+            "sha256": "3c125399efdab47a8f99028b1fcb9f65cc10cc370b91627c15590645c19cc404"
+          },
+          "stderr": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-sejFvu/SCOPE-DIFFERENTIAL/process/stderr.log",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "id": "NATIVE-R",
+          "status": "PASS",
+          "process": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-sejFvu/NATIVE-R/process/command.json",
+            "sha256": "5ebd0e68550d58fafd4ffe83aabf15b7d53d50174b86c3e3d0ce4e88aaad6653"
+          },
+          "stdout": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-sejFvu/NATIVE-R/process/stdout.log",
+            "sha256": "aab5eccbb4f90f0367a09e9766c9aa4e5135c857645733bbbc1beeb74fccf094"
+          },
+          "stderr": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-sejFvu/NATIVE-R/process/stderr.log",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "id": "NATIVE-GRADLE",
+          "status": "PASS",
+          "process": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-sejFvu/NATIVE-GRADLE/process/command.json",
+            "sha256": "04dab027648078fa12ed9929d926540cc674e059bb874ed680f104a1325086ba"
+          },
+          "stdout": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-sejFvu/NATIVE-GRADLE/process/stdout.log",
+            "sha256": "0c381ac6124a5ae3d114c8ba086d1a0a0ceec63a0c800fdd51e37efeb983a381"
+          },
+          "stderr": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-sejFvu/NATIVE-GRADLE/process/stderr.log",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "id": "NATIVE-PROSE",
+          "status": "PASS",
+          "process": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-sejFvu/NATIVE-PROSE/process/command.json",
+            "sha256": "52257ae9471c2f1cfb20fe3614d8ab937e6b5f7d27d38142ba6c68966e115f9a"
+          },
+          "stdout": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-sejFvu/NATIVE-PROSE/process/stdout.log",
+            "sha256": "e7526247f88fcc16b94c5ec322fb2410f99044ddf4bd12bdb0d494a702c44383"
+          },
+          "stderr": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-sejFvu/NATIVE-PROSE/process/stderr.log",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "id": "ORACLE-SELFTEST",
+          "status": "PASS",
+          "process": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-sejFvu/ORACLE-SELFTEST/process/command.json",
+            "sha256": "30daf7095f5502e238a13374aca64944075817d892e332168b9d42c540c15422"
+          },
+          "stdout": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-sejFvu/ORACLE-SELFTEST/process/stdout.log",
+            "sha256": "fa6405c4d8f22138bfee293d87d4cae5cb57e464d4e744aaa7b946d21da07caa"
+          },
+          "stderr": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-sejFvu/ORACLE-SELFTEST/process/stderr.log",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "id": "PROCESS-SELFTEST",
+          "status": "PASS",
+          "process": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-sejFvu/PROCESS-SELFTEST/process/command.json",
+            "sha256": "18d600c2c7590fc1214cef477b4fdf695a9f863da044ec64a816f1611161fdba"
+          },
+          "stdout": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-sejFvu/PROCESS-SELFTEST/process/stdout.log",
+            "sha256": "bff428dcf3ecf94a872e40e66fcbde8be7fc11b067a7071f3758683f2937f131"
+          },
+          "stderr": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-sejFvu/PROCESS-SELFTEST/process/stderr.log",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "id": "SKILL-MUTATION",
+          "status": "PASS",
+          "process": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-sejFvu/SKILL-MUTATION/process/command.json",
+            "sha256": "667ef306715432fc00645ab07588c5869e9f84d6f6342f25ef99aab035237254"
+          },
+          "stdout": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-sejFvu/SKILL-MUTATION/process/stdout.log",
+            "sha256": "6b1a97658324aab2a6b950c66b618080dc4e1da0a704ddf7627e760d7335c326"
+          },
+          "stderr": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-sejFvu/SKILL-MUTATION/process/stderr.log",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "id": "PLACEHOLDER-MUTATION",
+          "status": "PASS",
+          "process": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-sejFvu/PLACEHOLDER-MUTATION/process/command.json",
+            "sha256": "a5925e5dc35dcc4b61b69851d5b113b364b15e083a926a6f62dac319cbce8d69"
+          },
+          "stdout": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-sejFvu/PLACEHOLDER-MUTATION/process/stdout.log",
+            "sha256": "37f29ac548d9613e75193c6144b4e650219a6ae5370ac43e15ddac5ce36d87c1"
+          },
+          "stderr": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-sejFvu/PLACEHOLDER-MUTATION/process/stderr.log",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "id": "INTEGRATED-GATE",
+          "status": "PASS",
+          "process": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-sejFvu/INTEGRATED-GATE/process/command.json",
+            "sha256": "7621fff82f2d367cf10a535ad7c7f927e27c3c3a4c7c40225f2436b0b88c3775"
+          },
+          "stdout": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-sejFvu/INTEGRATED-GATE/process/stdout.log",
+            "sha256": "dff4b0fb4f7a785b9ea0b8e06fcd900a5d9834fafb15b17c7555343639550e96"
+          },
+          "stderr": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-sejFvu/INTEGRATED-GATE/process/stderr.log",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "id": "DIAGNOSTIC-MUTATION",
+          "status": "PASS",
+          "process": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-sejFvu/DIAGNOSTIC-MUTATION/process/command.json",
+            "sha256": "fc48a01e183d50451cf1c702c8687e7f89254f992ad30ce711bab1765ad3acf0"
+          },
+          "stdout": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-sejFvu/DIAGNOSTIC-MUTATION/process/stdout.log",
+            "sha256": "f0e5c172f8e3ce2d5d45c14bc27cc893c1d8d93210f9319b1cfc0829cb913f65"
+          },
+          "stderr": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-sejFvu/DIAGNOSTIC-MUTATION/process/stderr.log",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "id": "REGRESSION-20",
+          "status": "PASS",
+          "process": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-sejFvu/REGRESSION-20/process/command.json",
+            "sha256": "96fb254fd2cf77d0805126470873714063a508c7aec6c72f93555fc9461478bc"
+          },
+          "stdout": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-sejFvu/REGRESSION-20/process/stdout.log",
+            "sha256": "7295b8b49adcb12a9f2597179d1bd8f9709971ec22b9aef0c301e5c0ddc49e40"
+          },
+          "stderr": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-sejFvu/REGRESSION-20/process/stderr.log",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "id": "REGRESSION-22",
+          "status": "PASS",
+          "process": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-sejFvu/REGRESSION-22/process/command.json",
+            "sha256": "55fe5f6fee123da36d90eb26624dee9844f5ec31479984b7c8192d84f58e2e9b"
+          },
+          "stdout": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-sejFvu/REGRESSION-22/process/stdout.log",
+            "sha256": "a14cbaf7330b5c4fd5916e2d116752723fd04dc39421a6217541e51d3ca374f8"
+          },
+          "stderr": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-sejFvu/REGRESSION-22/process/stderr.log",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "id": "REGRESSION-24",
+          "status": "PASS",
+          "process": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-sejFvu/REGRESSION-24/process/command.json",
+            "sha256": "0eb4d4a150f3806edee6b5f4cb4f69e259f566b14c9fec0e6726fa79313879c8"
+          },
+          "stdout": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-sejFvu/REGRESSION-24/process/stdout.log",
+            "sha256": "180496a47ad56e77aa37a6d21090cc4d6b30d6636e662bc727d6758dc9cc8af8"
+          },
+          "stderr": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-sejFvu/REGRESSION-24/process/stderr.log",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "id": "HOST-MUTATION",
+          "status": "PASS",
+          "process": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-sejFvu/HOST-MUTATION/process/command.json",
+            "sha256": "4da4d908076f2e3dcdf5a74153ce052fbd6f6a2164b83acb067683bdb0f2b6a2"
+          },
+          "stdout": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-sejFvu/HOST-MUTATION/process/stdout.log",
+            "sha256": "86ea6aefa09f1ad71ff887fd9a43351cbbb72be2b4c579f6d8f9131fe49e2f86"
+          },
+          "stderr": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-sejFvu/HOST-MUTATION/process/stderr.log",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        }
+      ]
+    },
+    {
+      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-lvgdOD/run.json",
+      "sha256": "4586a212e8342dc5e27e3d76f7366ab42176c34c770683cbc56c3950098a042d",
+      "status": "PASS",
+      "cells": 24,
+      "regressions": [
+        {
+          "cell": "REGRESSION-20",
+          "counts": {
+            "tests": 1152,
+            "pass": 1148,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 4
+          }
+        },
+        {
+          "cell": "REGRESSION-22",
+          "counts": {
+            "tests": 1152,
+            "pass": 1148,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 4
+          }
+        },
+        {
+          "cell": "REGRESSION-24",
+          "counts": {
+            "tests": 1152,
+            "pass": 1148,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 4
+          }
+        }
+      ],
+      "cellEvidence": [
+        {
+          "id": "PACKAGE-20",
+          "status": "PASS",
+          "process": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-lvgdOD/PACKAGE-20/process/command.json",
+            "sha256": "c78b77fcf6b526edb53baca6acc91087511682d77950876ec030787eef3485f2"
+          },
+          "stdout": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-lvgdOD/PACKAGE-20/process/stdout.log",
+            "sha256": "df8621c37ae19afee99b7eeda810e76e36581ef9897cf0653995448d376b73a4"
+          },
+          "stderr": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-lvgdOD/PACKAGE-20/process/stderr.log",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "id": "WATCHDOG-20",
+          "status": "PASS",
+          "process": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-lvgdOD/WATCHDOG-20/process/command.json",
+            "sha256": "5681fc9aefb7b61b76bbe735f34b2475a983644474643eca61c4aa35208053eb"
+          },
+          "stdout": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-lvgdOD/WATCHDOG-20/process/stdout.log",
+            "sha256": "c1047078e46da2da0f62b6771859e537d6c2afcbf6004bc2b226d6c462d11c5a"
+          },
+          "stderr": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-lvgdOD/WATCHDOG-20/process/stderr.log",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "id": "NO-CHANGE-20",
+          "status": "PASS",
+          "process": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-lvgdOD/NO-CHANGE-20/process/command.json",
+            "sha256": "70d8e9f6c35327232bc3e64650f40c2bfcf2dabf1036d38855ea16676d1e7c15"
+          },
+          "stdout": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-lvgdOD/NO-CHANGE-20/process/stdout.log",
+            "sha256": "b313dda96da993bd6ba67ac127e856d06733f177a2331f8b058964be98d4a4c8"
+          },
+          "stderr": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-lvgdOD/NO-CHANGE-20/process/stderr.log",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "id": "PACKAGE-22",
+          "status": "PASS",
+          "process": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-lvgdOD/PACKAGE-22/process/command.json",
+            "sha256": "482e0c342b7ffd6f305c3b17d2e147dd0561ea509762f172d68807c3a0aadddf"
+          },
+          "stdout": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-lvgdOD/PACKAGE-22/process/stdout.log",
+            "sha256": "65bf8dbbba34b8c46255fbc52a5a016261d9726f204bcd7a256787a97806d530"
+          },
+          "stderr": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-lvgdOD/PACKAGE-22/process/stderr.log",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "id": "WATCHDOG-22",
+          "status": "PASS",
+          "process": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-lvgdOD/WATCHDOG-22/process/command.json",
+            "sha256": "4133deb36f92bee84e0fb72e01a813f2f6045565644a15cc36acc29c80f2edef"
+          },
+          "stdout": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-lvgdOD/WATCHDOG-22/process/stdout.log",
+            "sha256": "14d9013f42ba2d76fe91055fe1a034ac79f541bee3cc2ca888fe69018625d5d6"
+          },
+          "stderr": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-lvgdOD/WATCHDOG-22/process/stderr.log",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "id": "NO-CHANGE-22",
+          "status": "PASS",
+          "process": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-lvgdOD/NO-CHANGE-22/process/command.json",
+            "sha256": "6d4cb7c9908f33ad4f89c94f9264de63e773084024732e7144a00e1161b601a0"
+          },
+          "stdout": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-lvgdOD/NO-CHANGE-22/process/stdout.log",
+            "sha256": "7368759dba21aa8bd7f141e30039b38228be22981729614e6436357bf005ef49"
+          },
+          "stderr": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-lvgdOD/NO-CHANGE-22/process/stderr.log",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "id": "PACKAGE-24",
+          "status": "PASS",
+          "process": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-lvgdOD/PACKAGE-24/process/command.json",
+            "sha256": "3daf90bd83205a844d5c91e6a200ab3e686ed35c1a32bb1bf4034de32141577e"
+          },
+          "stdout": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-lvgdOD/PACKAGE-24/process/stdout.log",
+            "sha256": "941b94da1400efe4880d188a5e4e40c4a3246023753e7da7f566d2c259b7eedc"
+          },
+          "stderr": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-lvgdOD/PACKAGE-24/process/stderr.log",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "id": "WATCHDOG-24",
+          "status": "PASS",
+          "process": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-lvgdOD/WATCHDOG-24/process/command.json",
+            "sha256": "8ec6b2aa39578d3b59661170d301b5229c61c95773f39160368eaed8f9dac66c"
+          },
+          "stdout": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-lvgdOD/WATCHDOG-24/process/stdout.log",
+            "sha256": "b54163447febc4acc76f1527c7fe2725df252d8894321b1f06ba8deb95ef2162"
+          },
+          "stderr": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-lvgdOD/WATCHDOG-24/process/stderr.log",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "id": "NO-CHANGE-24",
+          "status": "PASS",
+          "process": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-lvgdOD/NO-CHANGE-24/process/command.json",
+            "sha256": "6cc1cb7ccc9944f2751411a1440bda414c2ce0527e5add20e49435b711c497c5"
+          },
+          "stdout": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-lvgdOD/NO-CHANGE-24/process/stdout.log",
+            "sha256": "e794d066016a3ae966c1c3edf6b41cb0eaac35cf369953d67827d2d15b7f4146"
+          },
+          "stderr": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-lvgdOD/NO-CHANGE-24/process/stderr.log",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "id": "MUTATION",
+          "status": "PASS",
+          "process": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-lvgdOD/MUTATION/process/command.json",
+            "sha256": "8ca8518e0a83641826640e3463b9006ec6550d1b6ec55bc5de6c7e857e2fb548"
+          },
+          "stdout": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-lvgdOD/MUTATION/process/stdout.log",
+            "sha256": "e50f74605fefb24a1777f64fdce848c8bab871d917922c3ea5053a01e1190168"
+          },
+          "stderr": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-lvgdOD/MUTATION/process/stderr.log",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "id": "SCOPE-DIFFERENTIAL",
+          "status": "PASS",
+          "process": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-lvgdOD/SCOPE-DIFFERENTIAL/process/command.json",
+            "sha256": "52185c22729307e75baaa24a2c76489cdea99f0205b8333637944ed6dcb50b47"
+          },
+          "stdout": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-lvgdOD/SCOPE-DIFFERENTIAL/process/stdout.log",
+            "sha256": "dc1dabcb57a69bd07f75e42b11b995e710be302c37124281ca8b272810fd0e13"
+          },
+          "stderr": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-lvgdOD/SCOPE-DIFFERENTIAL/process/stderr.log",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "id": "NATIVE-R",
+          "status": "PASS",
+          "process": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-lvgdOD/NATIVE-R/process/command.json",
+            "sha256": "89674775dcc3c4aec34085c2f088d91258a3e22eb10317885d92726e807b53c1"
+          },
+          "stdout": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-lvgdOD/NATIVE-R/process/stdout.log",
+            "sha256": "94864ac6f79d7d77d35cdaec1b65b8880701a13c022c2e45fafb44454daf8a8e"
+          },
+          "stderr": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-lvgdOD/NATIVE-R/process/stderr.log",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "id": "NATIVE-GRADLE",
+          "status": "PASS",
+          "process": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-lvgdOD/NATIVE-GRADLE/process/command.json",
+            "sha256": "084addea2fb9fe9a5608c4d683ddd197171ea8f26f92d82e13d2a53933905875"
+          },
+          "stdout": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-lvgdOD/NATIVE-GRADLE/process/stdout.log",
+            "sha256": "6b19589ac53b4669489fc4ed733568be291b5c7f504ee08b7efd1d5b684a2e62"
+          },
+          "stderr": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-lvgdOD/NATIVE-GRADLE/process/stderr.log",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "id": "NATIVE-PROSE",
+          "status": "PASS",
+          "process": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-lvgdOD/NATIVE-PROSE/process/command.json",
+            "sha256": "e347f2a8698b773706d84adea00f388ddf32f770e7f6128ede9a866167e7ac91"
+          },
+          "stdout": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-lvgdOD/NATIVE-PROSE/process/stdout.log",
+            "sha256": "e8c52605f0db426080d44c998349b3ee91052e9d1ec545d790f254847e5dce03"
+          },
+          "stderr": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-lvgdOD/NATIVE-PROSE/process/stderr.log",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "id": "ORACLE-SELFTEST",
+          "status": "PASS",
+          "process": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-lvgdOD/ORACLE-SELFTEST/process/command.json",
+            "sha256": "c1b71dcf74cb661737562e77562050574726d7ee65d7f9112abd9c42d5c7944a"
+          },
+          "stdout": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-lvgdOD/ORACLE-SELFTEST/process/stdout.log",
+            "sha256": "7d59cd84875b02930194ad5cb9963953e0a0a2a31d5dff140c5fed130c0d7f51"
+          },
+          "stderr": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-lvgdOD/ORACLE-SELFTEST/process/stderr.log",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "id": "PROCESS-SELFTEST",
+          "status": "PASS",
+          "process": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-lvgdOD/PROCESS-SELFTEST/process/command.json",
+            "sha256": "da0456ab92034b6455a0d8837b5a56e88ce24da5ab1c67ac779c5952872e08d4"
+          },
+          "stdout": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-lvgdOD/PROCESS-SELFTEST/process/stdout.log",
+            "sha256": "f6eda11d2bd0229a841f2300131c81070cd7de44f36104dce56d1d074319e8d5"
+          },
+          "stderr": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-lvgdOD/PROCESS-SELFTEST/process/stderr.log",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "id": "SKILL-MUTATION",
+          "status": "PASS",
+          "process": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-lvgdOD/SKILL-MUTATION/process/command.json",
+            "sha256": "b2dcca30afa654e3a179e7cd91fd39dd033b26a5bd7336f92d61de78f7c67888"
+          },
+          "stdout": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-lvgdOD/SKILL-MUTATION/process/stdout.log",
+            "sha256": "5403844cd01f109acbf71992d848bcc1a5416b8290334599d54530a86f65701c"
+          },
+          "stderr": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-lvgdOD/SKILL-MUTATION/process/stderr.log",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "id": "PLACEHOLDER-MUTATION",
+          "status": "PASS",
+          "process": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-lvgdOD/PLACEHOLDER-MUTATION/process/command.json",
+            "sha256": "45b0e0488169f0b963f0b6b13a794b53494be4e129ec9f6ac970fb5a64e035c9"
+          },
+          "stdout": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-lvgdOD/PLACEHOLDER-MUTATION/process/stdout.log",
+            "sha256": "912776287621ab2f65f075430c665555668d3888c011c1899ddffc478d2e0e62"
+          },
+          "stderr": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-lvgdOD/PLACEHOLDER-MUTATION/process/stderr.log",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "id": "INTEGRATED-GATE",
+          "status": "PASS",
+          "process": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-lvgdOD/INTEGRATED-GATE/process/command.json",
+            "sha256": "b8a8ce3073ebffd50d34f526e3b85f7c94f00a6b961bdae6c32c3db190cf7112"
+          },
+          "stdout": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-lvgdOD/INTEGRATED-GATE/process/stdout.log",
+            "sha256": "913097f95b88550d363a411f3bdfd0c7292aed6fb25439b4abab364da13c568c"
+          },
+          "stderr": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-lvgdOD/INTEGRATED-GATE/process/stderr.log",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "id": "DIAGNOSTIC-MUTATION",
+          "status": "PASS",
+          "process": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-lvgdOD/DIAGNOSTIC-MUTATION/process/command.json",
+            "sha256": "885cabe1b61ce1d1bc16b63f99a5a750c5ca0189c337860fa55e8f6c04c41c80"
+          },
+          "stdout": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-lvgdOD/DIAGNOSTIC-MUTATION/process/stdout.log",
+            "sha256": "13671d3489e95d2dc2a4c8710b5dbbbcfe0287188bca2da8696cb9c868fd43a5"
+          },
+          "stderr": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-lvgdOD/DIAGNOSTIC-MUTATION/process/stderr.log",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "id": "REGRESSION-20",
+          "status": "PASS",
+          "process": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-lvgdOD/REGRESSION-20/process/command.json",
+            "sha256": "6378314718df0aac144efe232959276a18b0f50d0ea26d4b69f5e55d1affaedf"
+          },
+          "stdout": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-lvgdOD/REGRESSION-20/process/stdout.log",
+            "sha256": "181e8c02a4f3f4e19e7c35a8e17d84f5ba45406378e7253a1b554b1aff6de517"
+          },
+          "stderr": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-lvgdOD/REGRESSION-20/process/stderr.log",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "id": "REGRESSION-22",
+          "status": "PASS",
+          "process": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-lvgdOD/REGRESSION-22/process/command.json",
+            "sha256": "bfc1a7f45018a877a07b1282e75a2d26c056dd9a135e4d9bb0fbf4e640ed2475"
+          },
+          "stdout": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-lvgdOD/REGRESSION-22/process/stdout.log",
+            "sha256": "ddaac84272b2ff89c5a1d04769d4073ebbc151f2dd301faf3727ab306e4ec783"
+          },
+          "stderr": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-lvgdOD/REGRESSION-22/process/stderr.log",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "id": "REGRESSION-24",
+          "status": "PASS",
+          "process": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-lvgdOD/REGRESSION-24/process/command.json",
+            "sha256": "87cb8343e7a1339350052c6d6b34e0bc77b28ee7609ea774197e0b2beca892af"
+          },
+          "stdout": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-lvgdOD/REGRESSION-24/process/stdout.log",
+            "sha256": "8121235d2f1d6dffca4cb28025e22252da1c984fb184b8ac9729059969ef5722"
+          },
+          "stderr": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-lvgdOD/REGRESSION-24/process/stderr.log",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "id": "HOST-MUTATION",
+          "status": "PASS",
+          "process": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-lvgdOD/HOST-MUTATION/process/command.json",
+            "sha256": "493b1116f4eb26053189c244aff0adfe1c7f9e53e47a6e12d509d01a570ac936"
+          },
+          "stdout": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-lvgdOD/HOST-MUTATION/process/stdout.log",
+            "sha256": "b49aa8965ec6b5ff0f4c21f0062e6aba9e399a94497fca6f2008bcbdbec0cb38"
+          },
+          "stderr": {
+            "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/runs/run-lvgdOD/HOST-MUTATION/process/stderr.log",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        }
+      ]
+    }
+  ],
+  "exclusions": [
+    {
+      "id": "NATIVE-WSLC",
+      "runtime": "24",
+      "kind": "extra",
+      "mode": "wslc",
+      "timeoutSeconds": 600,
+      "status": "excluded-unvalidated",
+      "reason": "User selected Linux-only verification; actual Windows/WSL container execution is outside this qualification scope",
+      "approvalRequired": true
+    }
+  ],
+  "residualRisks": [
+    "Qualification covers this Linux x86_64 host and Node 20/22/24 only; Windows, macOS, actual WSL containers and live Claude interactions remain unqualified.",
+    "Four inherited S3 TODO cases remain excluded and are not counted as passes.",
+    "Five unchanged pre-existing recommended-ESLint findings remain in the isolated diagnostic-module snapshot; delta comparison found no added findings. This is not a clean root-wide lint claim.",
+    "The exact qualified payload retains candidate/unreleased wording in README/CLANGELOG. No post-qualification repack or claim that those documents establish publication.",
+    "Trusted local configuration, SDKs and execution are not hostile-host attestation or sandboxing."
+  ],
+  "technicalReport": {
+    "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/release-technical-report.json",
+    "sha256": "f64de8a791a79f2db78004f12407ad0d0c39cf16ff0de1cfc01c3b00a0de4c93"
+  },
+  "publicationObservation": {
+    "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/publication-observation.json",
+    "sha256": "a97915319a76049e12a97f17c79adef9a1e89966f1721ffcdfe648c7ee121ace"
+  },
+  "publication": {
+    "observedAt": "2026-10-30T13:10:49.932Z",
+    "status": "existing-publication-verified",
+    "metadata": {
+      "version": "0.2.4",
+      "dist.integrity": "sha512-tQ2Cw71rsWN8tjhWo3MdAZuFxNjCwDCpFMjmOU5npbiBFEw92sU+9nGoXiEUaS0AdeB0MRSElmOFjYXSe8AY3g==",
+      "dist.shasum": "c0cf9afb3ec207bdf919698499284682e9fff0b4",
+      "dist.tarball": "https://registry.npmjs.org/musubix6/-/musubix6-0.2.4.tgz",
+      "gitHead": "91cc74a53de22e5b79fc87fadf5c641a3457c4bc"
+    },
+    "distTags": {
+      "latest": "0.2.4"
+    },
+    "downloadedArtifact": {
+      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk/registry-observed-musubix6-0.2.4.tgz",
+      "sha256": "ff3b7feb4a094f2b2e284acbf0b3a0534e125dae3d1d333da10429225e6d5d33"
+    },
+    "matchesQualifiedArtifact": true,
+    "agentExecutedPublish": false,
+    "finalPublicationApprovalRecordedByAgent": false,
+    "limitation": "The existing registry publication was observed after qualification completed. Its publisher and publication timing are not inferred, and no retrospective approval is claimed."
+  },
+  "humanReleaseApproved": false,
+  "publishingAuthorized": false,
+  "distinction": "Technical qualification and observation of an already-existing identical registry version do not record an agent publication or grant prospective publishing authority."
+}
