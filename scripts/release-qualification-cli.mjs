@@ -7,6 +7,7 @@ import {
   recordRun, materializeSource, probeTool, executionInputPaths,
 } from './release-qualification.mjs';
 import { hostMutations } from './release-host-mutations.mjs';
+import { assertContentInventory } from './release-qualification-content-mutations.mjs';
 import {
   discoverCurrentCatalogue, commandForCell, cellCatalogue, unresolvedMechanisms,
 } from './release-qualification-cells.mjs';
@@ -98,7 +99,12 @@ export async function preflight(configuration) {
     ensure(Object.keys(configuration.environment || {}).every(key => EXECUTION_ENV_KEYS.includes(key)),
       'environment contains a non-allowlisted setting; credentials are never qualification inputs');
     const source = path.resolve(configuration.source || root);
-    await must(admitPlan({ root: source }));
+    const admitted = await must(admitPlan({ root: source }));
+    assertContentInventory({
+      referencePath: path.join(source, admitted.plan.contentMutationContract.path),
+      referenceSha256: admitted.plan.contentMutationContract.sha256,
+      originRoot: source, origin: 'source', host: 'copilot',
+    });
     ensure(configuration.workRoot && !inside(source, configuration.workRoot), 'external persistent work root required');
     externalOutput(source, configuration.workRoot);
     mkdir(configuration.workRoot);

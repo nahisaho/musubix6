@@ -1,111 +1,142 @@
 {
   "schemaVersion": 1,
   "targetVersion": "0.2.4",
-  "generatedAt": "2026-10-30T07:06:57.554Z",
+  "generatedAt": "2026-10-30T07:48:36.537Z",
   "status": "INCOMPLETE",
   "technicalReady": false,
   "publishingAuthorized": false,
   "qualifyingCredit": 0,
-  "qualificationWorkRoot": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r2-iZPWQl",
+  "qualificationWorkRoot": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r3-MqiRnk",
   "previousDevelopmentReport": {
-    "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r1-XLyc5v/candidate/source/.sdd/evidence/v024-qualification-development.json",
-    "sha256": "dcf9162ee17c5d4bddf2696b9d698d42821f0e6a3e6223af2911f127cde35825"
+    "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r2-iZPWQl/candidate/source/.sdd/evidence/v024-qualification-development.json",
+    "sha256": "64d7609c4196dc3452b2085095feaecdaac2885cf5fb7de5178857a9d6f67ec4"
   },
-  "earlierDevelopmentProof": {
-    "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v024-development-proof-AgcTfC/proof.json",
-    "sha256": "28fa901f59c9395b1c4a9d8ee42c0e43babaf6961f234ffa8de8721dd1756c04"
-  },
-  "developmentProof": {
+  "earlierTimeoutDevelopmentProof": {
     "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v024-close-lint-rzWYGA/proof.json",
     "sha256": "a1f3b13e5d8171e3ca55e7f30ef20985bed2c04ef15b0df8abf3bc7b80e6f3f0"
   },
+  "developmentProof": {
+    "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v024-reference-proof-qH1eGo/proof.json",
+    "sha256": "68884ce2d7aa394bbd3db58d0c1043677e1a09fb0ed0e417759c64fe53a0016a"
+  },
   "sourceInputs": [
     {
-      "path": "/home/nahisaho/GitHub/musubix6/.github/skills/lean-sdd-tdd/scripts/diagnostics-eslint.mjs",
-      "sha256": "d18d0391379325d6daadd243c9e2e09cf22ddf79ab0bf9a27c64356b688e8b39"
+      "path": "/home/nahisaho/GitHub/musubix6/scripts/release-host-events.mjs",
+      "sha256": "159d48e31b21c412b04079985585d1630607d12fc3606b83cd78292119de9da2"
     },
     {
-      "path": "/home/nahisaho/GitHub/musubix6/.github/skills/lean-sdd-tdd/scripts/diagnostics-native.mjs",
-      "sha256": "286a5d308345e7154e98efad1bedb174c426d455cc95162563897231d1c3d6d4"
+      "path": "/home/nahisaho/GitHub/musubix6/scripts/release-host-mutations-proof.mjs",
+      "sha256": "13ed5e2515f9d2c35d9cf62934be039ae998d1067206eba76e9647a26d80bb69"
     },
     {
-      "path": "/home/nahisaho/GitHub/musubix6/.github/skills/lean-sdd-tdd/scripts/diagnostics-profiles.test.mjs",
-      "sha256": "a4039073408c6d6cabd5fdac87f62d934a6c7611e95308f4ffda0c7672b67a3a"
+      "path": "/home/nahisaho/GitHub/musubix6/scripts/release-host-mutations.mjs",
+      "sha256": "6ed5d021018184f225d2492fe1458792b43323942fa06e96a4fdadc174214efb"
     },
     {
-      "path": "/home/nahisaho/GitHub/musubix6/.github/skills/lean-sdd-tdd/scripts/diagnostics-python.mjs",
-      "sha256": "6f394eefaf9cbec3212fbfd429498b51b1c785647d06daaa60dcf6f822c32ea7"
+      "path": "/home/nahisaho/GitHub/musubix6/scripts/release-host-mutations.test.mjs",
+      "sha256": "2091f89ca23a290cd7976edf8d0009f676f37f6155ea3a45eff996d643727f6d"
     },
     {
-      "path": "/home/nahisaho/GitHub/musubix6/.github/skills/lean-sdd-tdd/scripts/diagnostics-rust.mjs",
-      "sha256": "0e33a254c9dc32ec045588e5e629ba06f83a5c4d2f7351221aae29ad1f00210a"
+      "path": "/home/nahisaho/GitHub/musubix6/scripts/release-qualification-cells.mjs",
+      "sha256": "d2d5949712dadcae115f6bb36541318f02d56230132d3c5375a20c4ef514bdf3"
     },
     {
-      "path": "/home/nahisaho/GitHub/musubix6/.github/skills/lean-sdd-tdd/scripts/diagnostics-typescript.mjs",
-      "sha256": "39526ed4ea28553dc19959a37b57332d73a8189e53a79c78eafee67ad8b5c1ad"
+      "path": "/home/nahisaho/GitHub/musubix6/scripts/release-qualification-cli.mjs",
+      "sha256": "1199e33242555660a7d1de7c8bdc3180e27c9611b2b268c2cb21823de9ec8b85"
     },
     {
-      "path": "/home/nahisaho/GitHub/musubix6/.github/skills/lean-sdd-tdd/scripts/diagnostics-worker.mjs",
-      "sha256": "8b734433687a6370d49ef77080a2a93bbf66bec47d2039a5297c3e4118c7c108"
+      "path": "/home/nahisaho/GitHub/musubix6/scripts/release-qualification-content-mutations.mjs",
+      "sha256": "bbe96ad8a07238f8f5a91497c3e59c11c81899357eaa3113dfd4ea77e5eb9999"
     },
     {
-      "path": "/home/nahisaho/GitHub/musubix6/.github/skills/lean-sdd-tdd/scripts/diagnostics.mjs",
-      "sha256": "333180a600d1555c2e8c377cfd256c1c9993c43d474d6f509af8d4385489fc42"
+      "path": "/home/nahisaho/GitHub/musubix6/scripts/release-qualification-evidence.mjs",
+      "sha256": "88d48acfd61964b5c73e99e90249c6d5cd7427c4a7cc9e2e7b87b90501aa85e0"
     },
     {
-      "path": "/home/nahisaho/GitHub/musubix6/.github/skills/lean-sdd-tdd/scripts/diagnostics.test.mjs",
-      "sha256": "74cb5ef0f0ae18c792e9c9cdaddaf5d4c936145d51b24e825b142f40d15e5955"
+      "path": "/home/nahisaho/GitHub/musubix6/scripts/release-qualification-io.mjs",
+      "sha256": "c3a5b80da7a4c1ced23f92d73553745ea3bf50d1d8856434c33a427f30ec7feb"
     },
     {
-      "path": "/home/nahisaho/GitHub/musubix6/.sdd/specs/diagnostics-contract.md",
-      "sha256": "95d303e10ce1bf4b954af0e978e6a8a0a9034ed8fafc136f99d650dfc00a972f"
+      "path": "/home/nahisaho/GitHub/musubix6/scripts/release-qualification-oracles.test.mjs",
+      "sha256": "58af8713f9ec11d9f855f00a1bccb514de18e3a1e8313154c3211cbc251e608a"
+    },
+    {
+      "path": "/home/nahisaho/GitHub/musubix6/scripts/release-qualification-process.test.mjs",
+      "sha256": "656ef26582d56ec02dd2cc5799dede55beac7454fdaeb50deb4aa004a3e1fb8f"
+    },
+    {
+      "path": "/home/nahisaho/GitHub/musubix6/scripts/release-qualification-proof.mjs",
+      "sha256": "7d1cb4aae4f1564173c0553b643685b8b74481fb8b0c4f74e7eef1175d8181d4"
+    },
+    {
+      "path": "/home/nahisaho/GitHub/musubix6/scripts/release-qualification.mjs",
+      "sha256": "7f54b39d7d7c942d317ec75081eb311908c275694c285cd8db84b920cb5cae13"
+    },
+    {
+      "path": "/home/nahisaho/GitHub/musubix6/scripts/release-qualification.test.mjs",
+      "sha256": "33e411ebef74f4c560c409da15a5cd916e1142d193990584d3032be28e0a7429"
+    },
+    {
+      "path": "/home/nahisaho/GitHub/musubix6/.sdd/release-content-mutations.v0.2.4.json",
+      "sha256": "f30f0128f8ed40ea6a887d6c391f20a9036c9f3d2f0ce6bdea88c625714b45d8"
+    },
+    {
+      "path": "/home/nahisaho/GitHub/musubix6/.sdd/release-validation.v0.2.4.json",
+      "sha256": "bab5f05b7def7db832eca6b39e95dba62dabbb75024f9f7122e4c5d816f2220a"
+    },
+    {
+      "path": "/home/nahisaho/GitHub/musubix6/.sdd/specs/release-qualification.md",
+      "sha256": "787321ae68e0ea15993c35ea02fd22b3cc75a2b9eca04f1dcfcc18476e5be2ee"
     }
   ],
   "previousFrozenRevision": {
     "manifest": {
-      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r1-XLyc5v/frozen-manifest.json",
-      "sha256": "644e3654ec394442867a2c65577d90062be4aeecae71ee7636d42fcd989be396"
+      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r2-iZPWQl/frozen-manifest.json",
+      "sha256": "3299560a413ae1a252fe82958a47316941d333648a83ec53b0a305ea811e31ab"
     },
-    "firstRun": {
-      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r1-XLyc5v/runs/run-fHrtV0/run.json",
-      "sha256": "b1610a57c6abfed82fa69305309a891cb39730fa049ef0ecb99329591d37c099"
-    },
-    "secondRun": {
-      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r1-XLyc5v/runs/run-HFrQa6/run.json",
-      "sha256": "4fd454009f455cf26243a72306049fd55cccf213d339ac4ed3d83ec6bfda26d0"
+    "run": {
+      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r2-iZPWQl/runs/run-DRvxWS/run.json",
+      "sha256": "e8e0c17e5ae9d0abd2f9222b2aaa41a3b64c2c86c0bac5e0af21997a130b8dff"
     },
     "history": {
-      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r1-XLyc5v/qualification-history.jsonl",
-      "sha256": "d1329c711ec6869e6969fda7a348098bac4045f69fd054b2d21149beccca0010"
+      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/qualification-v024-linux-r2-iZPWQl/qualification-history.jsonl",
+      "sha256": "b8fec6e8b11f085b186573d79265fe8219df25e51d609d86b02f6c9cbb06f9b7"
     },
-    "firstStatus": "PASS",
-    "secondStatus": "FAIL",
-    "secondPassingCells": 21,
-    "failedCell": "REGRESSION-22",
-    "failedTest": "TEST-DIAGCLI-008",
+    "status": "FAIL",
+    "passedCells": 16,
+    "failedCell": "SKILL-MUTATION",
+    "reason": "Correct positive inventory rejection: two byte references still described the pre-repair diagnostic files.",
     "technicalReady": false,
     "transferredCredit": 0
   },
-  "diagnosticContractApproval": {
+  "independentReferenceCheck": {
+    "sourceCommit": "15cae0455fb8c9598db1b7901373fc688ca6a0cb",
+    "sourceSkillTree": "d3006e9bf703103f5750efe10489f5ee8b033501",
+    "files": 109,
+    "allCommittedBlobDigestsMatch": true,
+    "changedHashes": [
+      ".github/skills/lean-sdd-tdd/scripts/diagnostics.mjs",
+      ".github/skills/lean-sdd-tdd/scripts/diagnostics.test.mjs"
+    ],
+    "pathsModesCasesPoliciesBudgetsUnchanged": true
+  },
+  "approval": {
     "by": "nahisaho",
-    "kind": "human",
-    "at": "2026-10-30T06:57:16.216Z",
+    "at": "2026-10-30T07:41:45.704Z",
     "artifacts": {
-      ".sdd/specs/diagnostics-contract.md": "95d303e10ce1bf4b954af0e978e6a8a0a9034ed8fafc136f99d650dfc00a972f"
-    },
-    "tier": "T2",
-    "requireHuman": true,
-    "code": {
-      ".github/skills/lean-sdd-tdd/scripts/diagnostics-native.mjs": "286a5d308345e7154e98efad1bedb174c426d455cc95162563897231d1c3d6d4",
-      ".github/skills/lean-sdd-tdd/scripts/diagnostics-worker.mjs": "8b734433687a6370d49ef77080a2a93bbf66bec47d2039a5297c3e4118c7c108",
-      ".github/skills/lean-sdd-tdd/scripts/diagnostics.mjs": "c32e1a75ed8a33cec4e630b12d89ce27756b33dcdc2affeb36c0a873facfb2d7"
+      ".sdd/specs/release-qualification.md": "787321ae68e0ea15993c35ea02fd22b3cc75a2b9eca04f1dcfcc18476e5be2ee",
+      ".sdd/release-validation.v0.2.4.json": "bab5f05b7def7db832eca6b39e95dba62dabbb75024f9f7122e4c5d816f2220a",
+      ".sdd/release-content-mutations.v0.2.4.json": "f30f0128f8ed40ea6a887d6c391f20a9036c9f3d2f0ce6bdea88c625714b45d8",
+      ".sdd/specs/claude-code-support.md": "e86bc855f341bedc706832ce5a42e3e5e2eaeaf229b7d5ef3924f49ddc99bd78",
+      "README.md": "052203a3698b1a08273e624e8d2bee7f8097d363a074ae432a70edd2a45b335f",
+      "README-ja.md": "a953baeabfcbd0346a930d138a77dba86f6b0985409a8e31283dbff1f92a7003",
+      "CLANGELOG.md": "93d2e277b615f2877d8c2007e2c12ea822d538c409556454c67e69fce7a025e9"
     }
   },
   "directDeltaReview": {
-    "scope": "Close-handler deadline backstop, preservation of earlier parent failures and validated native incomplete reasons, 12-row state table, malformed payload controls and stopped descendants.",
-    "openS1S2InInspectedDelta": 0,
     "independentAgentReviewClaimed": false,
-    "limitation": "Functional and delta-only static evidence, not either complete frozen run."
+    "openS1S2InInspectedDelta": 0,
+    "scope": "Exact committed source provenance, unchanged case policies, early trusted-inventory admission, valid stage control and byte/mode rejection before output or native probes."
   },
   "staticDiagnostics": {
     "status": "FAIL",
@@ -209,7 +240,7 @@
     "live Claude interactions"
   ],
   "remaining": [
-    "Commit and freeze the exact new candidate linked to the retained failed predecessor.",
+    "Commit the clean exact candidate and freeze it with failed-predecessor bindings.",
     "Complete two consecutive clean full 24-cell Linux runs from zero.",
     "Obtain exact-artifact publication approval before npm publish."
   ]

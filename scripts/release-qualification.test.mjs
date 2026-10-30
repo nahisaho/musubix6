@@ -304,6 +304,43 @@ test('TEST-RELQ-CONTENT-ADMISSION-001 accepts seven genuine bindings and rejects
   await reject(admitPlan(scope), 'missing content catalogue must reject');
 });
 
+/** @id TEST-RELQ-BASELINE-001 @verifies REQ-RELQ-001 REQ-RELQ-002 */
+test('TEST-RELQ-BASELINE-001 validates the approved source inventory before tool preparation', async t => {
+  const { preflight } = await import('./release-qualification-cli.mjs');
+  const referencePath = path.join(root, '.sdd/release-content-mutations.v0.2.4.json');
+  assert.doesNotThrow(() => assertContentInventory({ referencePath, referenceSha256: fileDigest(referencePath),
+    originRoot: root, origin: 'source', host: 'copilot' }),
+  'the explicitly approved current source must be a valid positive inventory');
+  const directory = workspace(t), scope = scopeFixture(directory);
+  fs.cpSync(path.join(root, '.github/skills'), path.join(scope.root, '.github/skills'), { recursive: true });
+  const workRoot = path.join(directory, 'preparation');
+  let reachedRuntime = false;
+  const configuration = () => ({
+    source: scope.root, workRoot, environment: {},
+    get runtimes() { reachedRuntime = true; throw new Error('test-only next-stage boundary reached'); },
+  });
+  const baseline = await preflight(configuration());
+  assert.equal(reachedRuntime, true, 'valid inventory must reach the next preparation stage');
+  assert.match(baseline.errors.join('\n'), /test-only next-stage boundary reached/);
+  fs.rmSync(workRoot, { recursive: true, force: true });
+  const file = path.join(scope.root, '.github/skills/lean-sdd-tdd/scripts/diagnostics.mjs');
+  const bytes = fs.readFileSync(file), mode = fs.statSync(file).mode & 0o777;
+  for (const [label, change, reason] of [
+    ['byte', () => fs.writeFileSync(file, Buffer.concat([bytes, Buffer.from('\n')])), /owned inventory bytes/],
+    ['mode', () => fs.chmodSync(file, mode ^ 0o001), /owned inventory mode/],
+  ]) {
+    reachedRuntime = false;
+    try {
+      change();
+      const rejected = await preflight(configuration());
+      assert.equal(rejected.status, 'FAIL', label);
+      assert.equal(reachedRuntime, false, `${label}: reject before native tool preparation`);
+      assert.match(rejected.errors.join('\n'), reason, label);
+      assert.equal(fs.existsSync(workRoot), false, `${label}: no preparation output before rejection`);
+    } finally { fs.writeFileSync(file, bytes); fs.chmodSync(file, mode); }
+  }
+});
+
 /** @id TEST-RELQ-SKILL-001 @verifies REQ-RELQ-003, REQ-RELQ-005 */
 test('TEST-RELQ-SKILL-001 preserves 1163 exact cases and owned native inventory controls', async t => {
   const directory = workspace(t);

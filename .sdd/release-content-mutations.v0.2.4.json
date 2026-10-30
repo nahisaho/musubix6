@@ -1,8 +1,12 @@
 {
   "schemaVersion": 1,
-  "revision": 2,
+  "revision": 3,
   "targetVersion": "0.2.4",
-  "revisionReason": "Version-only cutover from the unreleased 0.2.3 candidate; all skill/placeholder cases, vendor references, origin policies and budgets remain unchanged. No prior qualification credit transfers.",
+  "revisionReason": "Refresh exactly the diagnostics.mjs and diagnostics.test.mjs content hashes to the human-approved timeout recovery committed in 15cae0455fb8c9598db1b7901373fc688ca6a0cb. Independently verify all 109 entries against that committed skill tree. Preserve every path, source/package mode, skill/placeholder case, origin policy and budget; retain revision 2 and its failed frozen run with zero transferred credit.",
+  "previousRevision": {
+    "number": 2,
+    "sha256": "02be40460a3cfc80a0f6e0d640516a8b0b76fe8fc95e46235174e0e02cbe90f5"
+  },
   "status": "proposed-normative-contract-not-approval-or-run-evidence",
   "originalExactSemanticsRecovered": false,
   "originalSevenVendorPathsRecovered": false,
@@ -1397,8 +1401,8 @@
     "definition": "existing markerPolicyRows/contextPolicyRows expected-count pairs, not the linter output; same line numbers/snippets/JSON keys checked in source and installed outputs; no replacement by full-suite-only coverage"
   },
   "vendorReference": {
-    "sourceCommit": "b94dbe1f66f72355fd0f1bd3cce6f5e3dd55588d",
-    "sourceSkillTree": "938e47c1e40567d6f2233b08ced7ba23a2c7e514",
+    "sourceCommit": "15cae0455fb8c9598db1b7901373fc688ca6a0cb",
+    "sourceSkillTree": "d3006e9bf703103f5750efe10489f5ee8b033501",
     "origin": "Exact committed musubix6 candidate, not an upstream-equivalence claim. All 109 content digests independently checked against committed Git blobs; exact nine-bit source modes require this human approval.",
     "intendedLocalDeltas": [
       {
@@ -1818,7 +1822,7 @@
       {
         "path": ".github/skills/lean-sdd-tdd/scripts/diagnostics.mjs",
         "mode": 436,
-        "sha256": "c32e1a75ed8a33cec4e630b12d89ce27756b33dcdc2affeb36c0a873facfb2d7",
+        "sha256": "333180a600d1555c2e8c377cfd256c1c9993c43d474d6f509af8d4385489fc42",
         "packageMode": 420,
         "sourceModeOctal": "0664",
         "packageModeOctal": "0644"
@@ -1826,7 +1830,7 @@
       {
         "path": ".github/skills/lean-sdd-tdd/scripts/diagnostics.test.mjs",
         "mode": 436,
-        "sha256": "e4c18312ff488dcbc0f6ef1606f3d9868aed6b0e7c160fe0ffee7a79e5cc7829",
+        "sha256": "74cb5ef0f0ae18c792e9c9cdaddaf5d4c936145d51b24e825b142f40d15e5955",
         "packageMode": 420,
         "sourceModeOctal": "0664",
         "packageModeOctal": "0644"

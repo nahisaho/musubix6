@@ -57,7 +57,7 @@ Plan revision 7 carries `.sdd/release-content-mutations.v0.2.4.json` revision 2 
 
 The catalogue retains the 13 independently documented skill intents and 14 placeholder intents, with concrete edits, independent golden inputs/expected results and native target assertions. Scoped edits match exactly once within the named top-level function, ending before the next top-level function/class definition; missing or ambiguous anchors are setup failures, not kills. Skill cases include excluded skill/cache inputs, the local placeholder exception and protected-review behavior. Placeholder policy enumerates all 64 ASCII marker case variants, declared whitespace/colon/annotation rows and token-local code/link/URL/identifier contexts. Its exact row-generating test source and hashes are independent oracle inputs, not classifications obtained from the mutated linter. A whole-suite success cannot replace exact named case coverage.
 
-The new vendor reference explicitly approves all 109 files across ten committed skill trees. Content digests were independently checked against Git commit `b94dbe1f66f72355fd0f1bd3cce6f5e3dd55588d`, tree `sourceSkillTree` in the catalogue; the declared synchronization, placeholder and GiNZA specs identify intended local deltas. This reference establishes the accepted musubix candidate, not byte equivalence to historical upstream. Exact source modes require approval because Git records only executability. Never regenerate expected bytes/modes from a mutated input or comparator output.
+The initial vendor reference explicitly approved all 109 files across ten committed skill trees against Git commit `b94dbe1f66f72355fd0f1bd3cce6f5e3dd55588d`. The current committed-byte successor is specified below. The declared synchronization, placeholder and GiNZA specs identify intended local deltas. This reference establishes the accepted musubix candidate, not byte equivalence to historical upstream. Exact source modes require approval because Git records only executability. Never regenerate expected bytes/modes from a mutated input or comparator output.
 
 The 1090 source vendor cases are exactly the Cartesian product of 109 named files and ten policies: append one ASCII newline, or XOR exactly one of the nine permission bits 001 through 400. Another 60 explicitly named origin-sensitivity cases apply those ten policies to two frozen representative files (one executable and one nonexecutable) in each of source-init, package and package-init. These require real candidate CLI baseline controls for initialized origins; both supported hosts have positive inventory controls. Freeze the selected challenge host/argv/assertion before execution. The 60 cases test origin-specific mode/content checks, not all host/file products. SKILL-MUTATION therefore requires 1163 named cases (13 semantic + 1090 source + 60 origin); PLACEHOLDER-MUTATION requires 14.
 
@@ -78,6 +78,37 @@ External `content-mode-spike-EsFx0N/report.json` checked all 109 current source 
 External `content-vendor-spike-e77UOI/report.json` executed all 1090 isolated filesystem byte/mode challenges with passing complete baseline/restored inventories in 20.524 seconds. It measured only copy/hash/mode comparison, not production native process launch, evidence validation, lexical/installed controls or either complete 3600-second cell. Both reports are under the current session's external files directory; they provide zero qualification credit. All new production helper, native regression, sensitivity, review and full-cell results remain pending.
 
 External `content-init-spike-z0QCld/report.json` verifies the actual source and extracted-package CLI initializes both hosts with zero byte/mode differences: Copilot 109 applicable files, Claude 106. An initial probe incorrectly expected the Copilot-only watchdog on Claude and stopped with ENOENT; that setup failure is not Red or mutation credit. The 60 new origin sensitivities remain unexecuted; passing initialization controls alone do not validate their rejection behavior.
+### Committed source-reference refresh and early inventory admission
+
+Plan revision 8 binds content revision 3. It replaces exactly two content hashes,
+for `diagnostics.mjs` and `diagnostics.test.mjs`, with the independently verified
+blobs in commit `15cae0455fb8c9598db1b7901373fc688ca6a0cb`, skill tree
+`d3006e9bf703103f5750efe10489f5ee8b033501`. That commit implements the separately
+human-approved close-time deadline/native-reason repair. All 109 paths, all source
+and package modes, 1163 skill cases, 14 placeholder cases, origin policies,
+24 required cells and budgets remain unchanged. Preserve both older catalogue
+revisions and the failed frozen manifest `3299560a413ae1a252fe82958a47316941d333648a83ec53b0a305ea811e31ab`.
+
+| REQ | PASS condition | counterexample | TEST/command | observed evidence |
+| --- | --- | --- | --- | --- |
+| `REQ-RELQ-001`, `REQ-RELQ-002` | The approved 109-entry source inventory passes before tool preparation; one appended newline or one changed permission bit rejects before native probes or output creation | A valid approved plan/candidate has stale content references, or preparation proceeds with modified inventory bytes/modes | TEST-RELQ-BASELINE-001; independent Git-blob/hash equality; actual preflight | Genuine byte-mismatch assertion Red against revision 2; revision-2 first run retained 16 passing cells then failed the first SKILL-MUTATION positive inventory control |
+
+Reuse the exact existing inventory comparator immediately after successful plan
+admission and before allocating preparation work or probing tools. Do not repair
+references automatically, infer them from comparator output, ignore mismatches or
+relax the cell's later independent baseline/restoration checks. The regression's
+valid-input control reaches an explicit test-only next-stage boundary; it is not
+a claim of complete native preflight. Actual frozen preparation must still pass.
+
+All six first-failure stages apply: contract = explicit human approval of exactly
+two committed reference replacements; trusted inputs = compare all 109 blobs to
+the pinned commit, not mutable current files; execution = reject an invalid
+source inventory before native preparation; verdict = valid input proceeds and
+byte/mode counterexamples reject; evidence history = retain the failed revision
+and reset credit to zero; integration/distribution = recheck source/package/init
+positive controls and execute the unchanged full matrix twice. This is a
+reference refresh and earlier detection, not a policy weakening or release approval.
+
 ## Risks / assumptions
 Six first-failure stages: contract — approved Linux scope and exact inherited 24-cell equality; trusted inputs — pin actual files/tools/configuration and reject absent dependencies; execution — fresh isolated work, bounded commands, real native controls; verdict — independent named catalogues, positive controls and assertion mutants; evidence history — immutable failed records, no old credit, deterministic streak reset; integration/distribution — exact tgz and both-host inventories on Node20/22/24, separate human approval.
 Replacement first-failure classification: contract — missing original edits/seven path identities require this explicit approved replacement; trusted inputs — approved committed-byte references, origin-specific exact modes and real interpreter/dependency identities; execution — permission/import/timeout failures are not kills; verdict — exact native assertion/argv/receipt and valid controls, not arbitrary failure; evidence history — no historical or spike credit and reset on any relevant revision; integration/distribution — real source/init/extracted-package fixed lexical and inventory controls. All six stages apply; none is waived.

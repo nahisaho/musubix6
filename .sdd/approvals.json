@@ -251,11 +251,11 @@
   "release-qualification": {
     "by": "nahisaho",
     "kind": "human",
-    "at": "2026-10-29T23:00:41.162Z",
+    "at": "2026-10-30T07:41:45.704Z",
     "artifacts": {
-      ".sdd/specs/release-qualification.md": "97bbfca361995adb820b54f024f2ac055db83dcfd53bf4c246eb2336c24019de",
-      ".sdd/release-validation.v0.2.4.json": "40421341a9fcfcf11d2cdba6215296c34210bc3a3ba480c52d00120312b60a79",
-      ".sdd/release-content-mutations.v0.2.4.json": "02be40460a3cfc80a0f6e0d640516a8b0b76fe8fc95e46235174e0e02cbe90f5",
+      ".sdd/specs/release-qualification.md": "787321ae68e0ea15993c35ea02fd22b3cc75a2b9eca04f1dcfcc18476e5be2ee",
+      ".sdd/release-validation.v0.2.4.json": "bab5f05b7def7db832eca6b39e95dba62dabbb75024f9f7122e4c5d816f2220a",
+      ".sdd/release-content-mutations.v0.2.4.json": "f30f0128f8ed40ea6a887d6c391f20a9036c9f3d2f0ce6bdea88c625714b45d8",
       ".sdd/specs/claude-code-support.md": "e86bc855f341bedc706832ce5a42e3e5e2eaeaf229b7d5ef3924f49ddc99bd78",
       "README.md": "052203a3698b1a08273e624e8d2bee7f8097d363a074ae432a70edd2a45b335f",
       "README-ja.md": "a953baeabfcbd0346a930d138a77dba86f6b0985409a8e31283dbff1f92a7003",
@@ -265,10 +265,10 @@
     "requireHuman": true,
     "code": {
       "scripts/release-host-mutations.mjs": "6ed5d021018184f225d2492fe1458792b43323942fa06e96a4fdadc174214efb",
-      "scripts/release-qualification-content-mutations.mjs": "b5ca5fa198d537e973c79bb72d6bc66fe51c7918ffafd9808eebe581c7a2affe",
+      "scripts/release-qualification-content-mutations.mjs": "bbe96ad8a07238f8f5a91497c3e59c11c81899357eaa3113dfd4ea77e5eb9999",
       "scripts/release-qualification-evidence.mjs": "88d48acfd61964b5c73e99e90249c6d5cd7427c4a7cc9e2e7b87b90501aa85e0",
       "scripts/release-qualification-io.mjs": "c3a5b80da7a4c1ced23f92d73553745ea3bf50d1d8856434c33a427f30ec7feb",
-      "scripts/release-qualification.mjs": "165fec1e6819afb05f1040612ab3578c8226e7dd008971dd3cc376e2bf948cb3"
+      "scripts/release-qualification.mjs": "7f54b39d7d7c942d317ec75081eb311908c275694c285cd8db84b920cb5cae13"
     }
   }
 }
