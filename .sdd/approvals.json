@@ -139,9 +139,9 @@
   "diagnostics-contract": {
     "by": "nahisaho",
     "kind": "human",
-    "at": "2026-10-19T12:26:33.751Z",
+    "at": "2026-10-30T06:57:16.216Z",
     "artifacts": {
-      ".sdd/specs/diagnostics-contract.md": "29585c92885d3cc83d6b7f24553d621e4385388fb2b0887a6048db4c7dc033bb"
+      ".sdd/specs/diagnostics-contract.md": "95d303e10ce1bf4b954af0e978e6a8a0a9034ed8fafc136f99d650dfc00a972f"
     },
     "tier": "T2",
     "requireHuman": true,

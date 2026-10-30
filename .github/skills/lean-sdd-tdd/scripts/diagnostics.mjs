@@ -80,6 +80,7 @@ export async function runProvider(source, root, {
   worker = WORKER,
   timeoutMs = Object.values(PROFILES).flat().find(p => p.source === source)?.timeoutMs ?? TIMEOUT_MS,
   outputBytes = OUTPUT_BYTES, profile = 'typescript', env = process.env,
+  clock = Date.now,
   removeScratch = directory => fs.promises.rm(directory, { recursive: true, force: true }),
 } = {}) {
   let scratch = null;
@@ -93,7 +94,7 @@ export async function runProvider(source, root, {
       return providerFailure(source, `Cannot allocate private Rust scratch: ${error.message}`);
     }
   }
-  const deadline = Date.now() + timeoutMs;
+  const deadline = clock() + timeoutMs;
   const result = await new Promise(resolve => {
     const chunks = [];
     let bytes = 0, failure = null, timer;
@@ -131,6 +132,7 @@ export async function runProvider(source, root, {
     timer = setTimeout(() => { failure = `Provider timed out after ${timeoutMs} ms`; terminate(); }, timeoutMs);
     child.on('close', (code, signal) => {
       clearTimeout(timer);
+      if (clock() >= deadline) failure ??= `Provider timed out after ${timeoutMs} ms`;
       if (process.platform !== 'win32' && child.pid) {
         try {
           process.kill(-child.pid, 0);
@@ -150,7 +152,8 @@ export async function runProvider(source, root, {
         return;
       }
       const sorted = { ...value, diagnostics: sortDiagnostics(value.diagnostics) };
-      if (failure) resolve(providerFailure(source, failure, sorted));
+      if (failure) resolve(providerFailure(source,
+        sorted.status === 'incomplete' ? `${sorted.reason}; ${failure}` : failure, sorted));
       else resolve(sorted);
     });
   });

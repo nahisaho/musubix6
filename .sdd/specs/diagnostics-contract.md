@@ -30,3 +30,38 @@ Oracle: v2の10回答と独立状態表。Rust一時出力・180秒・永続Carg
 Evidence (2026-10-19): Linux/Node24.21.0でspike・17件assertion Red→Green、`node --test --test-reporter=spec .github/skills/lean-sdd-tdd/scripts/diagnostics.test.mjs` は17 pass/skip0。隔離harness `diagnostics-mutations.mjs` は31/31検出・復元後17 pass（詳細と経緯はplan）。`diagnostics-real-timeout.mjs` は本番60000msで60004.8ms後に未完了、成功controlも確認。厳密等値の競合・macOS/Windows・Node20/22は未確認。group外へ自らdetachするplugin子孫は保証外。
 v2 evidence: sessionの `diagnostics-v2-mutations.mjs` は51/51検出・毎回復元、`sdd.mjs tdd green TEST-DIAGCLI-006 … TEST-DIAGFLOW-005` は追加17件成功、`tdd refactor --stale` も成功。実時間のcommand/resultsは `diagnostics-v2-{python,rust}-real-timeout.mjs` と各 `-results.json`。全故障の証明やリリース資格ではない。
 上記は初回実装レビュー時点の観測記録である。以後のRed/Green・変異・gate・未確認範囲の更新は `.sdd/plan.md` 末尾へ追記し、承認済みの要件・許可範囲と区別する。
+
+## Close-time timeout recovery (2026-10-30)
+
+The second frozen 0.2.4 run failed `TEST-DIAGCLI-008` on Node 22:
+the test required a timeout reason but received only
+`Worker left running descendants; terminating owned process group`.
+The result remained incomplete; no false PASS is claimed. An isolated real
+worker reproduced loss of its valid native timeout reason during parent-owned
+descendant cleanup. The failed Cargo run does not establish exact timer ordering.
+
+| REQ | PASS condition | counterexample | TEST/command | observed evidence |
+| --- | --- | --- | --- | --- |
+| `REQ-DIAGCLI-004` | At worker close, injected elapsed times 59999/60000/60001 ms against a 60000-ms budget permit complete only before the deadline, with a valid complete payload and no remaining descendants; at/after deadline must be incomplete with a timeout reason, even before the timer callback runs | A valid worker completes at the deadline while its scheduled timer callback has not run, and the parent accepts complete | TEST-DIAGCLI-CLOSE-001; enumerate 3 elapsed states x 2 payload states x 2 descendant states | Frozen run `run-HFrQa6` retained; deterministic regression Red/Green pending |
+| `REQ-DIAGCLI-004`, `REQ-DIAGCLI-005` | A schema-valid incomplete worker's native reason and valid diagnostics survive parent descendant termination; every owned ordinary descendant is stopped before scratch cleanup and return | Native reason `Native provider timed out before worker close` is replaced by a cleanup-only reason; invalid JSON is treated as trustworthy evidence; a descendant survives | TEST-DIAGCLI-CLOSE-001, TEST-DIAGCLI-004, TEST-DIAGCLI-008, TEST-DIAGRUST-005 | Isolated spike `v024-close-spike-MnP4TT/proof.json` reproduced reason loss and confirmed descendant termination; regression and restored mutations pending |
+
+### Design and bounded risks
+
+Keep all provider budgets, output caps, cleanup ownership and 0/1/2 aggregation
+unchanged. Recheck the existing absolute deadline in the parent's close handler;
+an internal injectable clock, defaulting to `Date.now`, makes deadline boundaries
+independent of scheduler load. Preserve an earlier parent failure when adding
+this backstop. Parse and validate the worker payload before retaining its native
+incomplete reason alongside parent failures; never recover reasons from invalid
+or truncated output. Retain the existing real Cargo timeout assertions unchanged.
+
+Six failure stages: contract = explicit close-time deadline and reason-retention
+conditions; trusted inputs = only validated worker results may supply retained
+reasons; execution = a delayed timer callback must not bypass the deadline or
+descendant termination; verdict = cleanup must not erase a valid native failure
+reason or allow completion; evidence history = retain the failed frozen manifest
+and both runs, reset the streak to zero, and record a new predecessor-bound
+manifest after relevant changes; integration/distribution = revalidate source,
+packed/copied helpers and the unchanged complete 24-cell Linux matrix twice.
+No stage is inapplicable. These are execution/verdict repairs, not a weaker
+timeout assertion, matrix reduction, budget extension or publication approval.

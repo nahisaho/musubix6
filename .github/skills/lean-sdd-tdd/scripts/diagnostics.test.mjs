@@ -247,6 +247,78 @@ test('TEST-DIAGCLI-004 worker success, cwd, timeout, signals, output boundaries 
   assert.equal(both.providers[1].status, 'incomplete');
 });
 
+/** @id TEST-DIAGCLI-CLOSE-001 @verifies REQ-DIAGCLI-004 REQ-DIAGCLI-005 */
+test('TEST-DIAGCLI-CLOSE-001 checks close-time deadlines and retains native failures during descendant cleanup', async () => {
+  const root = fixture();
+  const timeoutMs = 60000;
+  for (const elapsed of [timeoutMs - 1, timeoutMs, timeoutMs + 1]) {
+    for (const status of ['complete', 'incomplete']) {
+      for (const descendants of [false, true]) {
+        const label = `${elapsed}/${status}/${descendants}`;
+        const marker = path.join(root, `close-${elapsed}-${status}-${descendants}`);
+        const pidFile = marker + '.pid';
+        const value = { ...result(), status,
+          reason: status === 'incomplete' ? 'Native provider timed out before worker close' : null,
+          files: status === 'incomplete' ? { included: null, checked: null, ignored: null } : result().files,
+          diagnostics: [{ source: 'typescript', file: 'a.js', line: 1, column: 1,
+            code: 'retained', severity: 'warning', message: 'valid native diagnostic' }] };
+        const code = worker(`import fs from 'node:fs';import {spawn} from 'node:child_process';
+          ${descendants ? `const child=spawn(process.execPath,['-e','setInterval(()=>{},10000)'],{stdio:'ignore'});
+          fs.writeFileSync(${JSON.stringify(pidFile)},String(child.pid));` : ''}
+          fs.writeFileSync(${JSON.stringify(marker)},'closed');
+          process.stdout.write(${JSON.stringify(JSON.stringify(value))},()=>process.exit(0));`);
+        const started = Date.now();
+        const clock = () => fs.existsSync(marker) ? started + elapsed : started;
+        const running = pid => {
+          try {
+            process.kill(pid, 0);
+            if (process.platform === 'linux' && /^\d+ \(.+\) Z /.test(fs.readFileSync(`/proc/${pid}/stat`, 'utf8'))) return false;
+            return true;
+          } catch (error) {
+            if (['ESRCH', 'ENOENT'].includes(error.code)) return false;
+            throw error;
+          }
+        };
+        let descendant;
+        try {
+          const actual = await runProvider('typescript', root, { worker: code, timeoutMs, clock });
+          if (elapsed < timeoutMs && status === 'complete' && !descendants) complete(actual);
+          else incomplete(actual);
+          if (elapsed >= timeoutMs) assert.match(actual.reason, /Provider timed out after 60000 ms/, label);
+          if (status === 'incomplete') assert.ok(actual.reason.includes(value.reason), label);
+          if (descendants) {
+            assert.match(actual.reason, /descendant|process group/i, label);
+            descendant = Number(fs.readFileSync(pidFile, 'utf8'));
+            assert.ok(Number.isSafeInteger(descendant) && descendant > 0, label);
+            const deadline = Date.now() + 5000;
+            while (running(descendant) && Date.now() < deadline) await new Promise(resolve => setImmediate(resolve));
+            assert.equal(running(descendant), false, `${label}: owned descendant must stop`);
+          }
+          assert.deepEqual(actual.diagnostics, value.diagnostics, `${label}: preserve valid diagnostics`);
+        } finally {
+          if (descendants && fs.existsSync(pidFile)) {
+            descendant = Number(fs.readFileSync(pidFile, 'utf8'));
+            if (Number.isSafeInteger(descendant) && descendant > 0 && running(descendant)) process.kill(descendant, 'SIGKILL');
+          }
+        }
+      }
+    }
+  }
+  for (const invalid of ['{"reason":"untrusted native timeout"',
+    JSON.stringify({ ...result(), reason: 'untrusted native timeout', diagnostics: ['invalid'] })]) {
+    const actual = incomplete(await runProvider('typescript', root,
+      { worker: worker(`process.stdout.write(${JSON.stringify(invalid)});`) }), /JSON|schema|output/i);
+    assert.doesNotMatch(actual.reason, /untrusted native timeout/);
+    assert.deepEqual(actual.diagnostics, []);
+  }
+  const marker = path.join(root, 'output-before-close');
+  const started = Date.now();
+  const overflow = worker(`import fs from 'node:fs';fs.writeFileSync(${JSON.stringify(marker)},'closed');
+    process.stderr.write('x'.repeat(2049));`);
+  incomplete(await runProvider('typescript', root, { worker: overflow, outputBytes: 2048, timeoutMs,
+    clock: () => fs.existsSync(marker) ? started + timeoutMs : started }), /output exceeds 2048 bytes/);
+});
+
 /** @id TEST-DIAGCLI-005 @verifies REQ-DIAGCLI-005 */
 test('TEST-DIAGCLI-005 no writes, installs, emit, caches or evidence and no snapshot promotion', () => {
   const root = fixture({ config: { incremental: true, declaration: true, sourceMap: true } });
