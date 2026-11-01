@@ -15,6 +15,16 @@ and approvals. If unavailable, ask in conversation and stop until the user
 explicitly responds; never infer approval or record it before that response.
 Use the host's available independent-agent tools for reviews, not tools from another host.
 
+## Host defaults
+| Concern | Copilot CLI | Claude Code |
+| --- | --- | --- |
+| Development model | GPT-6.1 Sol | The configured, available Claude model |
+| Commit attribution | Configured defaults; normally `Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>` | Configured Claude Code attribution; never inherit the Copilot trailer |
+| Context reset | `/new` | `/clear` |
+
+Respect explicit user/project model and attribution overrides. If a requested model is unavailable, disclose this and ask before substituting it.
+These defaults do not replace required counterexample-first development or independent reviews. Suggest a context reset only at a safe task boundary with the handoff retained.
+
 ## 0. Tier first (1 line, before reading code)
 | Tier | When | Required |
 | --- | --- | --- |
@@ -30,13 +40,13 @@ Unsure → pick the higher tier. Escalate mid-task if a T2 trigger appears; neve
 - Run commands with quiet flags and `| tail`/`head`; report only failures + counts. Use `scripts/gate.sh` for compact results.
 - Independent reads/searches in one parallel batch. Delegate to sub-agents only work needing separate context, and give them a bounded goal + stop condition + "return ≤200 words".
 - Do not restate plans, re-read unchanged files, or paste diffs back. Cite `path:line`.
-- Suggest `/new` at a task boundary when the session grows large; carry over only the handoff block (§6).
+- Suggest the host's context reset (see Host defaults) at a task boundary when the session grows large; carry over only the handoff block (§6).
 
 ## 2. Contract = single source of truth (T1+)
 Keep one file per feature (`docs/contract/<feature>.md` or the repo's existing equivalent) with: goal, `REQ-<F>-nnn` EARS lines, non-goals, verification command per REQ. No second requirements/design copy. Missing → write ≤30 lines, not a long spec. See `references/contract-template.md`.
 
 ## 3. T1 loop
-0. **PASS conditions and counterexamples first**: use GPT-6.1 Sol to define observable success conditions and concrete violations in the existing contract (`REQ | PASS condition | counterexample | TEST/command | evidence`). Check contract, inputs, execution, verdict, history and integration risks; explain non-applicable stages. Derive expectations from the contract or an independent reference, never the implementation's output.
+0. **PASS conditions and counterexamples first**: use the host's development model (see Host defaults) to define observable success conditions and concrete violations in the existing contract (`REQ | PASS condition | counterexample | TEST/command | evidence`). Check contract, inputs, execution, verdict, history and integration risks; explain non-applicable stages. Derive expectations from the contract or an independent reference, never the implementation's output.
 1. Failing test first, named/annotated with its REQ ID (`@verifies REQ-F-001`). Run it, confirm Red for the right assertion, not a setup/compile failure or skip. Add valid-input controls and relevant boundary/error cases.
 2. Minimal code to Green; `@implements REQ-F-001` on the code. Refactor only after Green.
 3. For each distinct changed failure mechanism, apply an isolated, bounded mutation and confirm the regression catches it; restore it and rerun affected checks. A gate fix must reject invalid evidence AND accept valid evidence. Record the command and observed result in the contract; mark unrun checks explicitly.
@@ -60,4 +70,4 @@ Keep a finding ledger (`references/ledger-format.md`, one line per finding: id, 
 Tier · REQ IDs · changed paths · gate result · open findings · next step. Optionally append to `docs/devlog/` (date, goal, evidence, risk).
 
 ## Guardrails
-No secrets in commits; no direct push to `main`; add the `Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>` trailer to commits; do not fabricate evidence — state what was not run.
+No secrets in commits; no direct push to `main`; use the host's commit attribution (see Host defaults); do not fabricate evidence — state what was not run.

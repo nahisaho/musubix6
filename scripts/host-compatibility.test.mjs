@@ -167,6 +167,38 @@ test('TEST-HOST-003 enumerates per-host skip/force states and retains extra file
     inventory(path.join(root, '.github/skills/lean-sdd-tdd')));
 });
 
+function assertHostDefaults(skill, name) {
+  const defaults = /(?:^|\n)## Host defaults\n([^]*?)(?=\n## |$)/.exec(skill);
+  const operational = defaults ? skill.replace(defaults[0], defaults[0].replace(/^\|[^\n]*$/gm, '')) : skill;
+  assert.doesNotMatch(operational, /\bGPT-6\.1 Sol\b/,
+    `${name}: unconditional Copilot-only model`);
+  assert.doesNotMatch(operational, /Co-authored-by:\s*Copilot\b/i,
+    `${name}: unconditional Copilot attribution`);
+  assert.doesNotMatch(operational, /\/new\b/,
+    `${name}: unconditional Copilot context reset`);
+  if (!['lean-sdd-tdd', 'lean-agentic-coding'].includes(name)) return;
+  assert.ok(defaults, `${name}: missing host defaults`);
+  const rows = defaults[1].split('\n').filter(line => line.startsWith('|'))
+    .map(line => line.split('|').slice(1, -1).map(cell => cell.trim()));
+  assert.equal(rows.length, 5, `${name}: exactly three host policy rows`);
+  for (const row of rows) assert.equal(row.length, 3, `${name}: malformed host table`);
+  assert.deepEqual(rows[0], ['Concern', 'Copilot CLI', 'Claude Code'], `${name}: host column labels`);
+  const table = new Map(rows.map(row => [row[0], row.slice(1)]));
+  const model = table.get('Development model');
+  assert.ok(model, `${name}: missing development model policy`);
+  assert.match(model[0], /GPT-6\.1 Sol/, `${name}: preserve Copilot model`);
+  assert.match(model[1], /configured.*available.*Claude model/i, `${name}: available Claude model`);
+  assert.doesNotMatch(model[1], /GPT-6\.1 Sol/, `${name}: unavailable Claude model mandate`);
+  const attribution = table.get('Commit attribution');
+  assert.ok(attribution, `${name}: missing attribution policy`);
+  assert.match(attribution[0], /configured defaults.*Co-authored-by: Copilot/i, `${name}: Copilot attribution`);
+  assert.match(attribution[1], /configured Claude Code attribution.*never inherit the Copilot trailer/i,
+    `${name}: Claude attribution must not inherit Copilot`);
+  assert.deepEqual(table.get('Context reset'), ['`/new`', '`/clear`'], `${name}: host-native resets`);
+  assert.match(defaults[1], /explicit.*overrides/i, `${name}: explicit choices take precedence`);
+  assert.match(defaults[1], /unavailable.*disclose.*ask.*substitut/i, `${name}: unavailable model handling`);
+}
+
 /** @id TEST-HOST-004 @verifies REQ-HOST-004 */
 test('TEST-HOST-004 shared instructions are host-neutral and relocated helpers execute', t => {
   for (const name of shared) {
@@ -197,6 +229,21 @@ test('TEST-HOST-004 shared instructions are host-neutral and relocated helpers e
     const canonical = inventory(path.join(root, '.github/skills', name));
     for (const relative of Object.values(hosts)) {
       assert.deepEqual(inventory(path.join(work, relative, name)), canonical);
+      const installed = fs.readFileSync(path.join(work, relative, name, 'SKILL.md'), 'utf8');
+      assertHostDefaults(installed, name);
+      if (name.startsWith('lean-')) {
+        const nextSection = installed.indexOf('\n## ', installed.indexOf('## Host defaults') + 1);
+        assertHostDefaults(installed.slice(0, nextSection), name);
+        for (const directive of ['use GPT-6.1 Sol', 'add Co-authored-by: Copilot', 'Suggest `/new`']) {
+          const invalid = installed.replace('## Host defaults\n', `## Host defaults\n${directive}\n`);
+          assert.throws(() => assertHostDefaults(invalid, name), { name: 'AssertionError' },
+            `${name}: a host section cannot hide unconditional directives`);
+        }
+        const swapped = installed.replace('| Concern | Copilot CLI | Claude Code |',
+          '| Concern | Claude Code | Copilot CLI |');
+        assert.throws(() => assertHostDefaults(swapped, name), { name: 'AssertionError' },
+          `${name}: column labels must match their host policies`);
+      }
     }
   }
   const sdd = path.join(work, '.claude/skills/lean-sdd-tdd/scripts/sdd.mjs');
@@ -210,7 +257,7 @@ test('TEST-HOST-004 shared instructions are host-neutral and relocated helpers e
   success(run('bash', ['-n', path.join(work, '.claude/skills/wslc-containers/scripts/wslc.sh')]));
 });
 
-/** @id TEST-HOST-005 @verifies REQ-HOST-005 REQ-HOST-NPX-001 */
+/** @id TEST-HOST-005 @verifies REQ-HOST-005 REQ-HOST-NPX-001 REQ-HOST-004 */
 test('TEST-HOST-005 stable release metadata and real npm payload preserve wrapper contracts', t => {
   const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
   assert.equal(pkg.version, '0.2.4');
@@ -265,6 +312,14 @@ test('TEST-HOST-005 stable release metadata and real npm payload preserve wrappe
   success(wrapper('init', dest, '--host', 'both'));
   assert.deepEqual(fs.readdirSync(path.join(dest, '.github/skills')).sort(), all);
   assert.deepEqual(fs.readdirSync(path.join(dest, '.claude/skills')).sort(), shared);
+  for (const name of shared) for (const relative of Object.values(hosts)) {
+    const installed = fs.readFileSync(path.join(dest, relative, name, 'SKILL.md'), 'utf8');
+    assertHostDefaults(installed, name);
+    if (name.startsWith('lean-')) {
+      const nextSection = installed.indexOf('\n## ', installed.indexOf('## Host defaults') + 1);
+      assertHostDefaults(installed.slice(0, nextSection), name);
+    }
+  }
   const forwarded = wrapper('sdd', '--root', dest, 'init');
   success(forwarded);
   const invalid = wrapper('sdd', 'not-a-command');

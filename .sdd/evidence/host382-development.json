@@ -1,0 +1,584 @@
+{
+  "schemaVersion": 1,
+  "issue": 382,
+  "feature": "claude-code-support",
+  "verdict": "PASS",
+  "generatedAt": "2026-11-01T11:20:58.474Z",
+  "sourceCommitBeforeDelivery": "fd7913e53bd0cf3b9aa2b595e6648835caefed4d",
+  "inputs": [
+    {
+      "path": ".github/skills/lean-agentic-coding/SKILL.md",
+      "sha256": "8b656a0d4f52ff042b6713d98888dea2c896d7a95e44772e963992de695ee3b2"
+    },
+    {
+      "path": ".github/skills/lean-sdd-tdd/SKILL.md",
+      "sha256": "d9c10c46c7b43c87075a156adb3abea59463c94b7e7768becdba63328b025909"
+    },
+    {
+      "path": "scripts/host-compatibility.test.mjs",
+      "sha256": "9c7e4836e4bc5ce0e0575a43f225707cabad9e61488ba339e75929eaf2709f7c"
+    },
+    {
+      "path": ".sdd/specs/claude-code-support.md",
+      "sha256": "bb839469f6fa4a44ed80d90fdba1c75069ebac81afd250c38b9698622b7dc27b"
+    },
+    {
+      "path": ".sdd/specs/release-qualification.md",
+      "sha256": "787321ae68e0ea15993c35ea02fd22b3cc75a2b9eca04f1dcfcc18476e5be2ee"
+    },
+    {
+      "path": ".sdd/approvals.json",
+      "sha256": "ad6731af1dd76d394c38ce37eeccad56ca5bf47e7bf4390c095cc12b52574bd9"
+    },
+    {
+      "path": ".sdd/prepare-shown.json",
+      "sha256": "4abd28848c18cd48d58ccb3cb783d8dc195a917c159bc04d2124924e78c257c7"
+    },
+    {
+      "path": ".sdd/tdd.jsonl",
+      "sha256": "d4c0ee004de33529d098b9a8b28a808a871acbeef0d2a033a12ecdf326a8af16"
+    },
+    {
+      "path": ".sdd/config.json",
+      "sha256": "6a09572708b9e204372bae8e52ab1287b907d144053baba313faaaa3bc9cb959"
+    },
+    {
+      "path": "package.json",
+      "sha256": "fc1cd9f08a3656078a24c8e6594ca82298131734bf825512506c4a9d823a871f"
+    },
+    {
+      "path": "package-lock.json",
+      "sha256": "96aa8e90e128e140236b7c61a91d66031d9b928c083fcc7fbf85181b6d61dc1f"
+    },
+    {
+      "path": "bin/musubix6.mjs",
+      "sha256": "ade1dfe6866279c2b39a040228bd4226b43bdde9b18c04d0bb4ac15feee524ad"
+    },
+    {
+      "path": "README.md",
+      "sha256": "052203a3698b1a08273e624e8d2bee7f8097d363a074ae432a70edd2a45b335f"
+    },
+    {
+      "path": "README-ja.md",
+      "sha256": "a953baeabfcbd0346a930d138a77dba86f6b0985409a8e31283dbff1f92a7003"
+    },
+    {
+      "path": "CLANGELOG.md",
+      "sha256": "93d2e277b615f2877d8c2007e2c12ea822d538c409556454c67e69fce7a025e9"
+    },
+    {
+      "path": ".sdd/release-validation.v0.2.4.json",
+      "sha256": "bab5f05b7def7db832eca6b39e95dba62dabbb75024f9f7122e4c5d816f2220a"
+    },
+    {
+      "path": ".sdd/release-content-mutations.v0.2.4.json",
+      "sha256": "f30f0128f8ed40ea6a887d6c391f20a9036c9f3d2f0ce6bdea88c625714b45d8"
+    },
+    {
+      "path": ".sdd/evidence/v024-linux-qualification.json",
+      "sha256": "1f74d4c7a98e9ebc178ce77fb75e871bebdb4369b9522f844f60b4a94c279262"
+    }
+  ],
+  "approval": {
+    "by": "nahisaho",
+    "kind": "human",
+    "review": "Human approved final host-native contract, bounded audit evidence, direct-delta review limitation and full-gate-before-delivery condition.",
+    "at": "2026-11-01T08:05:22.227Z",
+    "artifacts": {
+      ".sdd/specs/claude-code-support.md": "bb839469f6fa4a44ed80d90fdba1c75069ebac81afd250c38b9698622b7dc27b"
+    },
+    "tier": "T2",
+    "requireHuman": true,
+    "code": {
+      "bin/musubix6.mjs": "ade1dfe6866279c2b39a040228bd4226b43bdde9b18c04d0bb4ac15feee524ad"
+    }
+  },
+  "dependencyApproval": {
+    "by": "nahisaho",
+    "kind": "human",
+    "review": "Human approved dependency rebinding to the already-approved #382 host contract only; unchanged 24-cell policy and budgets; no release credit or publishing authorization.",
+    "at": "2026-11-01T10:46:17.565Z",
+    "artifacts": {
+      ".sdd/specs/release-qualification.md": "787321ae68e0ea15993c35ea02fd22b3cc75a2b9eca04f1dcfcc18476e5be2ee",
+      ".sdd/release-validation.v0.2.4.json": "bab5f05b7def7db832eca6b39e95dba62dabbb75024f9f7122e4c5d816f2220a",
+      ".sdd/release-content-mutations.v0.2.4.json": "f30f0128f8ed40ea6a887d6c391f20a9036c9f3d2f0ce6bdea88c625714b45d8",
+      ".sdd/specs/claude-code-support.md": "bb839469f6fa4a44ed80d90fdba1c75069ebac81afd250c38b9698622b7dc27b",
+      "README.md": "052203a3698b1a08273e624e8d2bee7f8097d363a074ae432a70edd2a45b335f",
+      "README-ja.md": "a953baeabfcbd0346a930d138a77dba86f6b0985409a8e31283dbff1f92a7003",
+      "CLANGELOG.md": "93d2e277b615f2877d8c2007e2c12ea822d538c409556454c67e69fce7a025e9"
+    },
+    "tier": "T2",
+    "requireHuman": true,
+    "code": {
+      "scripts/release-host-mutations.mjs": "6ed5d021018184f225d2492fe1458792b43323942fa06e96a4fdadc174214efb",
+      "scripts/release-qualification-content-mutations.mjs": "bbe96ad8a07238f8f5a91497c3e59c11c81899357eaa3113dfd4ea77e5eb9999",
+      "scripts/release-qualification-evidence.mjs": "88d48acfd61964b5c73e99e90249c6d5cd7427c4a7cc9e2e7b87b90501aa85e0",
+      "scripts/release-qualification-io.mjs": "c3a5b80da7a4c1ced23f92d73553745ea3bf50d1d8856434c33a427f30ec7feb",
+      "scripts/release-qualification.mjs": "7f54b39d7d7c942d317ec75081eb311908c275694c285cd8db84b920cb5cae13"
+    }
+  },
+  "previousFailure": {
+    "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/host382-full-gate-failed-1.json",
+    "sha256": "4030a42ba1120de3c0cbc8f4bc6a482c8345943e729b6407339c18ba547219da",
+    "verdict": "FAIL",
+    "reason": "The host specification changed an artifact of the release-qualification approval; related valid fixtures rejected the stale lock.",
+    "correction": "Explicit human dependency reapproval only; no production/test/policy weakening or historical-release evidence changes.",
+    "relatedControl": {
+      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/host382-release-rebound.log",
+      "sha256": "254c7b57b206af71c0cb283f4756455813cdf0606295e925d0873d773d694e9b",
+      "passed": 17,
+      "total": 17,
+      "skipped": 0
+    }
+  },
+  "fullGate": {
+    "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/host382-full-gate.json",
+    "sha256": "a3c3c4a35cb7e490e72a04fea85512523e879b415321950e4517e9ebb313d458",
+    "verdict": "PASS",
+    "lines": [
+      "! human-approved diagnostics-contract: implementation changed since approval (.github/skills/lean-sdd-tdd/scripts/diagnostics.mjs) — a human should re-review, then approve record",
+      "✓ lock claude-code-support: ok [human] (human required)",
+      "✓ lock cost-history: ok [ai, review summary]",
+      "✓ lock diagnostics-contract: ok [human] (human required)",
+      "✓ lock diagnostics-eslint: ok [ai, review file]",
+      "✓ lock diagnostics-javascript: ok [ai, review file]",
+      "✓ lock diagnostics-python: ok [ai, review file]",
+      "✓ lock diagnostics-rust: ok [human] (human required)",
+      "✓ lock diagnostics-typescript: ok [ai, review file]",
+      "✓ lock diagnostics-workflow: ok [ai, review file]",
+      "✓ lock legacy-approval-provenance: ok [ai, review file]",
+      "✓ lock legacy-command-closure: ok [ai, review file]",
+      "✓ lock legacy-native-verdicts: ok [ai, review file]",
+      "✓ lock node-summary-verdict: ok [ai, review file]",
+      "✓ lock r36b-node-red: ok [ai, review summary]",
+      "✓ lock r36e-native-loader: ok [ai, review summary]",
+      "✓ lock r36g-rust-ci: ok [ai, review summary]",
+      "✓ lock r36i-c-compiler: ok [ai, review summary]",
+      "✓ lock r36j-go-compiler: ok [ai, review summary]",
+      "✓ lock release-qualification: ok [human] (human required)",
+      "✓ lock runner-selection: ok [ai, review summary]",
+      "✓ lock rust-stub-confidence: ok [human] (human required)",
+      "✓ lock source-discovery: ok [ai, review file]",
+      "✓ lock spec-context: ok [ai, review summary]",
+      "✓ trace: 96 REQ, 0 errors, 6 warnings",
+      "    warning: REQ-HOST-004 has no @implements code",
+      "    warning: REQ-KOTO-SYNC-001 has no @implements code",
+      "    warning: REQ-KOTO-SYNC-002 has no @implements code",
+      "    … +3 more warnings (all: trace --verbose)",
+      "✓ ledger: 930 entries, chain intact",
+      "✓ tdd evidence: 162/162 tests Red→Green, 1 weak Red 79 characterization (passed without a failing Red; not a weak Red) (1 retest: Red re-recorded with --retest, passed without a failing Red; 1 superseded an earlier strong Red — re-record a failing Red by temporarily breaking the implementation if that evidence matters: TEST-R36D-OWN-001) (19 refactor-recorded after the test/setup changed, no new Red: TEST-RELQ-CONTENT-ADMISSION-001, TEST-RELQ-BASELINE-001, TEST-RELQ-001, TEST-RELQ-CLOSURE-001, TEST-RELQ-002, TEST-RELQ-PROCESS-001, TEST-RELQ-SKILL-001, TEST-RELQ-PH-001, … +11; to replace that with real evidence: tdd red <ID> --retest \"<why>\" then tdd green <ID>)",
+      "! stub: 2 source file(s) of Green REQs still hold SDD-TODO(stub) / 'not implemented:' placeholders: .github/skills/lean-sdd-tdd/scripts/sdd.mjs:1718, .github/skills/lean-sdd-tdd/scripts/sdd.test.mjs:680 — implement or remove them (scopePolicy warn: set \"scopePolicy\": \"strict\" to fail)",
+      "✓ cmd test (1755.1s)"
+    ]
+  },
+  "tdd": [
+    {
+      "test": "TEST-HOST-004",
+      "red": {
+        "seq": 926,
+        "hash": "a5d137d1fa70ad89ae8a052557b2ac9b03ba0a142efbc669dbe92a83c63428e2",
+        "exit": 1
+      },
+      "green": {
+        "seq": 927,
+        "type": "green",
+        "hash": "4dbd374ac33d677388e493e0070f360b2eb3ed010a6f443c6a9258e19acf4f92",
+        "exit": 0
+      },
+      "semanticTestSha256": "cfd266edf192ee3e5174ac3c00e09af76bdb7338aa41cee8ba9f68bb0d970d6b",
+      "regionSha256": "d1d0b28564877df1a14b55a59728a33bbd0ff65ff1f114ca234f6d5a39af7355",
+      "wholeModuleSha256": "9c7e4836e4bc5ce0e0575a43f225707cabad9e61488ba339e75929eaf2709f7c"
+    },
+    {
+      "test": "TEST-HOST-005",
+      "red": {
+        "seq": 923,
+        "hash": "e2dcaf09e5ad2ade63288b2b5cafc4e54f4f2e04ff12664c89db5bb5d4d483ed",
+        "exit": 1
+      },
+      "green": {
+        "seq": 928,
+        "type": "refactor",
+        "hash": "ae6cec59bc914259010d1568c3619fc92b602fb8267bc5b746f78774ea71ed71",
+        "exit": 0
+      },
+      "semanticTestSha256": "eff2e1ae4b978d766f48fd6ce4e1e469b2fdea83f5b036225cde75ca4b563d1a",
+      "regionSha256": "18f165809fa1a268ca85b8ab4479be7467c8483c92c1c0129a753a14489680ae",
+      "wholeModuleSha256": "9c7e4836e4bc5ce0e0575a43f225707cabad9e61488ba339e75929eaf2709f7c"
+    }
+  ],
+  "runtimes": [
+    {
+      "version": "v20.20.2",
+      "tests": 13,
+      "passed": 13,
+      "skipped": 0,
+      "log": {
+        "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/host382-focused-node20.log",
+        "sha256": "777327c5b7fc13feb5ca5c3f2819c57ebc318d6a2944ebd67a351045983924bd"
+      },
+      "modules": [
+        "scripts/host-compatibility.test.mjs",
+        "scripts/kotonoha-skills.test.mjs",
+        "scripts/release-host-mutations.test.mjs"
+      ]
+    },
+    {
+      "version": "v22.23.3",
+      "tests": 13,
+      "passed": 13,
+      "skipped": 0,
+      "log": {
+        "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/host382-focused-node22.log",
+        "sha256": "c7f43e022c4838610b5eb5e18eb67c453f9ff2d92a6878d184643c1a0d234d26"
+      },
+      "modules": [
+        "scripts/host-compatibility.test.mjs",
+        "scripts/kotonoha-skills.test.mjs",
+        "scripts/release-host-mutations.test.mjs"
+      ]
+    },
+    {
+      "version": "v24.22.1",
+      "tests": 13,
+      "passed": 13,
+      "skipped": 0,
+      "log": {
+        "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/host382-focused-node24.log",
+        "sha256": "a0f9b0c15121b07cdd1d3bcac1864b800cee2a7dca2e315ab8c7e943b703f906"
+      },
+      "modules": [
+        "scripts/host-compatibility.test.mjs",
+        "scripts/kotonoha-skills.test.mjs",
+        "scripts/release-host-mutations.test.mjs"
+      ]
+    }
+  ],
+  "mutations": {
+    "proof": {
+      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/host382-mutations-RrANsi/proof.json",
+      "sha256": "44c5d3f4c94975484827180ef1331dee6d32c53505008fd3ac8dc807ebf79a2a"
+    },
+    "sensitivities": [
+      {
+        "skill": "lean-agentic-coding",
+        "mechanism": "unconditional-model",
+        "test": "TEST-HOST-004",
+        "mutationExit": 1,
+        "restoredExit": 0,
+        "mutationLog": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/host382-mutations-RrANsi/lean-agentic-coding-unconditional-model-mutated.log",
+          "sha256": "2c6762408ce10a442fbabe18136800febe04137f854519009e426ab41a95b7be"
+        },
+        "restoredLog": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/host382-mutations-RrANsi/lean-agentic-coding-unconditional-model-restored.log",
+          "sha256": "7d69d067b9f882ad342824bd263e2f4a08fc8787a91fe8ebe996b9922e506239"
+        }
+      },
+      {
+        "skill": "lean-agentic-coding",
+        "mechanism": "unconditional-attribution",
+        "test": "TEST-HOST-004",
+        "mutationExit": 1,
+        "restoredExit": 0,
+        "mutationLog": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/host382-mutations-RrANsi/lean-agentic-coding-unconditional-attribution-mutated.log",
+          "sha256": "7b17044c581903a6196241c5acea1a3effc34a9520d34a1ead9c7c2e3c3d6672"
+        },
+        "restoredLog": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/host382-mutations-RrANsi/lean-agentic-coding-unconditional-attribution-restored.log",
+          "sha256": "4975d8c8809b142db7d5e98bf62139cb773646ea72b1261f3a6d84d5d4395675"
+        }
+      },
+      {
+        "skill": "lean-agentic-coding",
+        "mechanism": "unconditional-reset",
+        "test": "TEST-HOST-004",
+        "mutationExit": 1,
+        "restoredExit": 0,
+        "mutationLog": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/host382-mutations-RrANsi/lean-agentic-coding-unconditional-reset-mutated.log",
+          "sha256": "2829bdf0172cb1612b46b0bd2fb2eb78c094d76fd38f62ba119c6db47aafa6ee"
+        },
+        "restoredLog": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/host382-mutations-RrANsi/lean-agentic-coding-unconditional-reset-restored.log",
+          "sha256": "e34c122e1b0ae9211680f4341ee2b194e911e36982b390f3d63fc84cb8f63e3e"
+        }
+      },
+      {
+        "skill": "lean-agentic-coding",
+        "mechanism": "wrong-claude-model",
+        "test": "TEST-HOST-004",
+        "mutationExit": 1,
+        "restoredExit": 0,
+        "mutationLog": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/host382-mutations-RrANsi/lean-agentic-coding-wrong-claude-model-mutated.log",
+          "sha256": "c2bfab16363136233cbec7b4d57d2371b77ab3ddf3bb70f981e442c40bc54765"
+        },
+        "restoredLog": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/host382-mutations-RrANsi/lean-agentic-coding-wrong-claude-model-restored.log",
+          "sha256": "145c7f2bfe748875a008519e567ff7a993492e5848e2880425751ebbf9a0f342"
+        }
+      },
+      {
+        "skill": "lean-agentic-coding",
+        "mechanism": "wrong-claude-attribution",
+        "test": "TEST-HOST-004",
+        "mutationExit": 1,
+        "restoredExit": 0,
+        "mutationLog": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/host382-mutations-RrANsi/lean-agentic-coding-wrong-claude-attribution-mutated.log",
+          "sha256": "ae2ef66835aa41dd0e109770085b6e135812c586fb67f0bd18fa20caa7a4549e"
+        },
+        "restoredLog": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/host382-mutations-RrANsi/lean-agentic-coding-wrong-claude-attribution-restored.log",
+          "sha256": "3e64d2a5b09cb263d6442c74416f1964489e9a9ab64fb60ddb4d998221763b6b"
+        }
+      },
+      {
+        "skill": "lean-agentic-coding",
+        "mechanism": "wrong-claude-reset",
+        "test": "TEST-HOST-004",
+        "mutationExit": 1,
+        "restoredExit": 0,
+        "mutationLog": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/host382-mutations-RrANsi/lean-agentic-coding-wrong-claude-reset-mutated.log",
+          "sha256": "3f81451ea8a566eb380447e57177660db0f40c291a5d455147305a6c774687f7"
+        },
+        "restoredLog": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/host382-mutations-RrANsi/lean-agentic-coding-wrong-claude-reset-restored.log",
+          "sha256": "a4c6b8703cc344375644a699631126568b4d4e15ccf609e4908d95d13e3b3db0"
+        }
+      },
+      {
+        "skill": "lean-agentic-coding",
+        "mechanism": "section-model",
+        "test": "TEST-HOST-004",
+        "mutationExit": 1,
+        "restoredExit": 0,
+        "mutationLog": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/host382-mutations-RrANsi/lean-agentic-coding-section-model-mutated.log",
+          "sha256": "3a16232739f1c99bc80f74e41ce8bfcab564ad2fe8c084177dc3d1204c1749bd"
+        },
+        "restoredLog": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/host382-mutations-RrANsi/lean-agentic-coding-section-model-restored.log",
+          "sha256": "397ad81936a064719f6bc27804a0c2af1d11a1379c6267712e5d00283b014d2f"
+        }
+      },
+      {
+        "skill": "lean-agentic-coding",
+        "mechanism": "section-attribution",
+        "test": "TEST-HOST-004",
+        "mutationExit": 1,
+        "restoredExit": 0,
+        "mutationLog": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/host382-mutations-RrANsi/lean-agentic-coding-section-attribution-mutated.log",
+          "sha256": "e2acbb333e72993709b26cfbca567a157a48aa211f42fcfcf43cbb475d86d49f"
+        },
+        "restoredLog": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/host382-mutations-RrANsi/lean-agentic-coding-section-attribution-restored.log",
+          "sha256": "e1a757e282cea02e8abe45fdf6279b00354ddc42b4558d60b3618c97364a143d"
+        }
+      },
+      {
+        "skill": "lean-agentic-coding",
+        "mechanism": "section-reset",
+        "test": "TEST-HOST-004",
+        "mutationExit": 1,
+        "restoredExit": 0,
+        "mutationLog": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/host382-mutations-RrANsi/lean-agentic-coding-section-reset-mutated.log",
+          "sha256": "5c65eb8e8c7a5a05369354efe92f53bd67c822f1b1a935d88597082778fd4a00"
+        },
+        "restoredLog": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/host382-mutations-RrANsi/lean-agentic-coding-section-reset-restored.log",
+          "sha256": "4436e2900768002d8f2935049699e527e6c98d5ba61da0fdc084907906b949c0"
+        }
+      },
+      {
+        "skill": "lean-agentic-coding",
+        "mechanism": "host-labels",
+        "test": "TEST-HOST-004",
+        "mutationExit": 1,
+        "restoredExit": 0,
+        "mutationLog": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/host382-mutations-RrANsi/lean-agentic-coding-host-labels-mutated.log",
+          "sha256": "9861f023f1038a032dbdee8035aaabc92c0d8207a734a2a0226a6a8be22e9575"
+        },
+        "restoredLog": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/host382-mutations-RrANsi/lean-agentic-coding-host-labels-restored.log",
+          "sha256": "31f59111bf17f27dac40c3b2c0c028224daa4d5aecfd0b39411c098c60c81fd0"
+        }
+      },
+      {
+        "skill": "lean-sdd-tdd",
+        "mechanism": "unconditional-model",
+        "test": "TEST-HOST-004",
+        "mutationExit": 1,
+        "restoredExit": 0,
+        "mutationLog": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/host382-mutations-RrANsi/lean-sdd-tdd-unconditional-model-mutated.log",
+          "sha256": "540196abc451df648cd0f76228623218447519cdbe21cd1eebaf802d8b797df0"
+        },
+        "restoredLog": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/host382-mutations-RrANsi/lean-sdd-tdd-unconditional-model-restored.log",
+          "sha256": "eba8ed4c8c5e0c788e20adc5231c32d6d359e697a31c37ef2c34a241498b01a8"
+        }
+      },
+      {
+        "skill": "lean-sdd-tdd",
+        "mechanism": "unconditional-attribution",
+        "test": "TEST-HOST-004",
+        "mutationExit": 1,
+        "restoredExit": 0,
+        "mutationLog": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/host382-mutations-RrANsi/lean-sdd-tdd-unconditional-attribution-mutated.log",
+          "sha256": "b241727a0d665d81d58bae44d0666e266809adfd856ee52343997cb675d29c1b"
+        },
+        "restoredLog": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/host382-mutations-RrANsi/lean-sdd-tdd-unconditional-attribution-restored.log",
+          "sha256": "eeceae5e78ee29172487aaac0e3c42bed0aad0259119138d07f06eed119ad149"
+        }
+      },
+      {
+        "skill": "lean-sdd-tdd",
+        "mechanism": "unconditional-reset",
+        "test": "TEST-HOST-004",
+        "mutationExit": 1,
+        "restoredExit": 0,
+        "mutationLog": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/host382-mutations-RrANsi/lean-sdd-tdd-unconditional-reset-mutated.log",
+          "sha256": "afe4eaa78553cb0d2276608862ae631baac6f4103dab03fb05fef1f3011376e0"
+        },
+        "restoredLog": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/host382-mutations-RrANsi/lean-sdd-tdd-unconditional-reset-restored.log",
+          "sha256": "c282b984bfc37549040d52e07101dd9ad0c36582a51db33e6eacf788495467f1"
+        }
+      },
+      {
+        "skill": "lean-sdd-tdd",
+        "mechanism": "wrong-claude-model",
+        "test": "TEST-HOST-004",
+        "mutationExit": 1,
+        "restoredExit": 0,
+        "mutationLog": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/host382-mutations-RrANsi/lean-sdd-tdd-wrong-claude-model-mutated.log",
+          "sha256": "e24cd6ef81b63cc7a95789964d4e99474cd85493befa3d2abcf93bd5a37f7d2a"
+        },
+        "restoredLog": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/host382-mutations-RrANsi/lean-sdd-tdd-wrong-claude-model-restored.log",
+          "sha256": "8b9eb54f24492d90f6017d3c085da339b5bdfa56b4784f014b3ef95b698b84d6"
+        }
+      },
+      {
+        "skill": "lean-sdd-tdd",
+        "mechanism": "wrong-claude-attribution",
+        "test": "TEST-HOST-004",
+        "mutationExit": 1,
+        "restoredExit": 0,
+        "mutationLog": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/host382-mutations-RrANsi/lean-sdd-tdd-wrong-claude-attribution-mutated.log",
+          "sha256": "4ba86b8b05f010532e0f157d3fae30e2a6a5ac8452bc06ed9206d75e6e7cbd65"
+        },
+        "restoredLog": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/host382-mutations-RrANsi/lean-sdd-tdd-wrong-claude-attribution-restored.log",
+          "sha256": "0f20e8fa483dddfa6a38c55dca0242b262fe29a8a8a73ff294e4951eaca01536"
+        }
+      },
+      {
+        "skill": "lean-sdd-tdd",
+        "mechanism": "wrong-claude-reset",
+        "test": "TEST-HOST-004",
+        "mutationExit": 1,
+        "restoredExit": 0,
+        "mutationLog": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/host382-mutations-RrANsi/lean-sdd-tdd-wrong-claude-reset-mutated.log",
+          "sha256": "4a119c3b184b2158bcd879e15f2de0767e9e4c349374f721131e18ab160d7ef1"
+        },
+        "restoredLog": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/host382-mutations-RrANsi/lean-sdd-tdd-wrong-claude-reset-restored.log",
+          "sha256": "310d7cb26f6b34fc12d797a2de296b004b84da3ef825950dd0a9e583c788bb32"
+        }
+      },
+      {
+        "skill": "lean-sdd-tdd",
+        "mechanism": "section-model",
+        "test": "TEST-HOST-004",
+        "mutationExit": 1,
+        "restoredExit": 0,
+        "mutationLog": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/host382-mutations-RrANsi/lean-sdd-tdd-section-model-mutated.log",
+          "sha256": "160d42963ba9713e690b606e7581d26583663426f6308ff4e1278cf390bb9f8c"
+        },
+        "restoredLog": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/host382-mutations-RrANsi/lean-sdd-tdd-section-model-restored.log",
+          "sha256": "bc7ec7ca3efe69068f048f368262462069a700bcfe77eac6b6170fc8d3addae4"
+        }
+      },
+      {
+        "skill": "lean-sdd-tdd",
+        "mechanism": "section-attribution",
+        "test": "TEST-HOST-004",
+        "mutationExit": 1,
+        "restoredExit": 0,
+        "mutationLog": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/host382-mutations-RrANsi/lean-sdd-tdd-section-attribution-mutated.log",
+          "sha256": "8d2e52443a70310e1620cf472080158d9e24c1809e4ba7897ded8439fba69c32"
+        },
+        "restoredLog": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/host382-mutations-RrANsi/lean-sdd-tdd-section-attribution-restored.log",
+          "sha256": "a22be68e5dc8bf5051bcf8b763971ce881b75bf7f497c4bbc7c3cea6486aea73"
+        }
+      },
+      {
+        "skill": "lean-sdd-tdd",
+        "mechanism": "section-reset",
+        "test": "TEST-HOST-004",
+        "mutationExit": 1,
+        "restoredExit": 0,
+        "mutationLog": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/host382-mutations-RrANsi/lean-sdd-tdd-section-reset-mutated.log",
+          "sha256": "8725911db6aa011330196f6752f0226840ed9afc8b44bcd28d0e00b07356a967"
+        },
+        "restoredLog": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/host382-mutations-RrANsi/lean-sdd-tdd-section-reset-restored.log",
+          "sha256": "22fc43af8288a576c6b348a5e4c1222f98d322fe376a412e9b3a4bd5972db1bf"
+        }
+      },
+      {
+        "skill": "lean-sdd-tdd",
+        "mechanism": "host-labels",
+        "test": "TEST-HOST-004",
+        "mutationExit": 1,
+        "restoredExit": 0,
+        "mutationLog": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/host382-mutations-RrANsi/lean-sdd-tdd-host-labels-mutated.log",
+          "sha256": "043bdbcf7fef226c390c9e97129d1f9c8b71d0c22ddecfb933ec689ef81611b3"
+        },
+        "restoredLog": {
+          "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/host382-mutations-RrANsi/lean-sdd-tdd-host-labels-restored.log",
+          "sha256": "37e971407258b97d5490da76d93b8e4b8bbebe446cfe2f67cbb4e689a56a99b1"
+        }
+      }
+    ]
+  },
+  "diagnostics": {
+    "proof": {
+      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/host382-diagnostics-0PKT61/proof.json",
+      "sha256": "cae09691bd46c9488d4df7eddc0c774167a048639d1366365298f43c1740188e"
+    },
+    "profile": "javascript",
+    "baselineErrors": 0,
+    "changedErrors": 0,
+    "addedErrors": 0,
+    "structuralFindings": 0
+  },
+  "limitations": [
+    "Bounded canonical-table lexical audit, not a general Markdown parser.",
+    "Live Claude sessions and actual configured model availability were not executed.",
+    "Direct delta inspection only; no independent AI review was performed for this delta.",
+    "Earlier archive buffer/export/EOF-parser failures are not qualifying Red or PASS evidence.",
+    "No release qualification, npm publication, tagging or issue 381 closure authorized."
+  ],
+  "deliveryAuthorization": "Human authorized commit and normal main push including fd7913e, then close issue 382 after full-gate PASS."
+}

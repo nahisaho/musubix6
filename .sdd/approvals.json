@@ -227,9 +227,10 @@
   "claude-code-support": {
     "by": "nahisaho",
     "kind": "human",
-    "at": "2026-10-29T23:00:41.721Z",
+    "review": "Human approved final host-native contract, bounded audit evidence, direct-delta review limitation and full-gate-before-delivery condition.",
+    "at": "2026-11-01T08:05:22.227Z",
     "artifacts": {
-      ".sdd/specs/claude-code-support.md": "e86bc855f341bedc706832ce5a42e3e5e2eaeaf229b7d5ef3924f49ddc99bd78"
+      ".sdd/specs/claude-code-support.md": "bb839469f6fa4a44ed80d90fdba1c75069ebac81afd250c38b9698622b7dc27b"
     },
     "tier": "T2",
     "requireHuman": true,
@@ -251,12 +252,13 @@
   "release-qualification": {
     "by": "nahisaho",
     "kind": "human",
-    "at": "2026-10-30T07:41:45.704Z",
+    "review": "Human approved dependency rebinding to the already-approved #382 host contract only; unchanged 24-cell policy and budgets; no release credit or publishing authorization.",
+    "at": "2026-11-01T10:46:17.565Z",
     "artifacts": {
       ".sdd/specs/release-qualification.md": "787321ae68e0ea15993c35ea02fd22b3cc75a2b9eca04f1dcfcc18476e5be2ee",
       ".sdd/release-validation.v0.2.4.json": "bab5f05b7def7db832eca6b39e95dba62dabbb75024f9f7122e4c5d816f2220a",
       ".sdd/release-content-mutations.v0.2.4.json": "f30f0128f8ed40ea6a887d6c391f20a9036c9f3d2f0ce6bdea88c625714b45d8",
-      ".sdd/specs/claude-code-support.md": "e86bc855f341bedc706832ce5a42e3e5e2eaeaf229b7d5ef3924f49ddc99bd78",
+      ".sdd/specs/claude-code-support.md": "bb839469f6fa4a44ed80d90fdba1c75069ebac81afd250c38b9698622b7dc27b",
       "README.md": "052203a3698b1a08273e624e8d2bee7f8097d363a074ae432a70edd2a45b335f",
       "README-ja.md": "a953baeabfcbd0346a930d138a77dba86f6b0985409a8e31283dbff1f92a7003",
       "CLANGELOG.md": "93d2e277b615f2877d8c2007e2c12ea822d538c409556454c67e69fce7a025e9"

@@ -14,6 +14,16 @@ If unavailable, ask in conversation and stop for an explicit user response;
 never record human approval without it. Use the host's available independent-agent
 tools for reviews rather than assuming Copilot-specific agent names exist.
 
+## Host defaults
+| Concern | Copilot CLI | Claude Code |
+| --- | --- | --- |
+| Development model | GPT-6.1 Sol | The configured, available Claude model |
+| Commit attribution | Configured defaults; normally `Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>` | Configured Claude Code attribution; never inherit the Copilot trailer |
+| Context reset | `/new` | `/clear` |
+
+Respect explicit user/project model and attribution overrides. If a requested model is unavailable, disclose this and ask before substituting it.
+These defaults do not replace required counterexample-first development or independent reviews. Suggest a context reset only at a safe task boundary with the handoff retained.
+
 ## Autonomy model (human approval is the exception)
 - **Default = auto**: the agent writes the spec, gets an *independent AI review* (rubber-duck / code-review sub-agent, diff-only), fixes findings, then **locks** the spec hash itself. No human prompt.
 - **Human only when the spec says `approval: human`**, which you must set for: loosening a security/policy rule, destructive or irreversible operations (data deletion, force push, release/publish), secrets/credentials handling, or an unresolvable product decision. Then `approve prepare` → show exact paths + hash + residual risks → host question tool/fallback above → `approve record --by <human>` only after explicit approval.
@@ -37,7 +47,7 @@ Unsure → higher tier. Escalate on discovery; never downgrade silently.
 `.sdd/specs/<feature>.md`, template in `references/spec-template.md`. Frontmatter `feature`, `tier`, optional `approval: human`. One `REQ-<F>-nnn` line per requirement (EARS). Bug fix: one REQ describing the correct behavior. First use: `$S init`.
 
 ## 2. T1/T2 loop (each step one command)
-0. **PASS conditions and counterexamples first**: use GPT-6.1 Sol to write observable success conditions and concrete violations in the same spec (`REQ | PASS condition | counterexample | TEST/command | evidence`); wrap referenced REQ IDs in backticks to avoid duplicate definitions. Check contract, inputs, execution, verdict, history and integration risks; explain non-applicable stages. Derive expectations from the spec or an independent reference, not implementation output. Include valid-input controls and relevant boundary/error cases.
+0. **PASS conditions and counterexamples first**: use the host's development model (see Host defaults) to write observable success conditions and concrete violations in the same spec (`REQ | PASS condition | counterexample | TEST/command | evidence`); wrap referenced REQ IDs in backticks to avoid duplicate definitions. Check contract, inputs, execution, verdict, history and integration risks; explain non-applicable stages. Derive expectations from the spec or an independent reference, not implementation output. Include valid-input controls and relevant boundary/error cases.
 1. Write the test with `/** @id TEST-F-001 @verifies REQ-F-001 */` above it and the test title containing `TEST-F-001`.
 2. T2 only: spike risky assumptions in scratch (see `references/t2.md`), AI-review the spec, then `$S approve record <feature> --by ai:<reviewer> --review "<1 line>"`. `approval: human`: see Autonomy model (prepare again after any spec edit).
 3. `$S tdd red TEST-F-001` → must fail by assertion. Load/compile error is rejected: add a failing stub (preferred) or `--weak`.
@@ -107,10 +117,10 @@ T2 only: parallel sub-agents by risk axis (security · correctness/state · cont
 
 ## 5. Token rules
 Before reading existing specs, run `$S context <feature|REQ|file>...` (or `--changed` when every changed file maps to specs). It returns complete selected specs, declared artifacts and recursive `plan.md` prerequisites, not a summary. Default stdout budget: 16384 UTF-8 bytes; override explicitly with `--max-bytes N`, use `--json` for automation. On errors/overflow, resolve selectors or narrow the task; never treat partial/missing context as sufficient, and never bulk-read all specs as a fallback. Static file impact cannot infer undeclared relationships: add explicit feature selectors when needed. Context is not approval/test evidence and does not narrow validation; keep the full gate before merge.
-Read the spec and the specific files only; `view` ranges; quiet commands; one parallel batch for independent reads; no plan recaps; cite `path:line`. Suggest `/new` at boundaries. End with ≤8 lines: tier · REQs · gate verdict · open findings · next.
+Read the spec and the specific files only; `view` ranges; quiet commands; one parallel batch for independent reads; no plan recaps; cite `path:line`. Suggest the host's context reset (see Host defaults) at boundaries. End with ≤8 lines: tier · REQs · gate verdict · open findings · next.
 
 ## Deterministic tests
 No fixed `sleep` (poll with a deadline); inject clock/random; bind port 0; generous timeouts that print diagnostics; isolate signal/kill tests. A gate pass on re-run is `FLAKY suspected` (ledger type `flaky`; `flaky.policy` in `references/config.md`). Only the gate `test` check is retried; a flake in `tdd green` is a plain `GREEN REJECTED` — re-run it.
 
 ## Guardrails
-No secrets; no push to `main` without request; commit trailer `Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>`; state what was not run.
+No secrets; no push to `main` without request; use the host's commit attribution (see Host defaults); state what was not run.
