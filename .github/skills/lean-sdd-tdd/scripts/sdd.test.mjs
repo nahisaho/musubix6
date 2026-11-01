@@ -8778,15 +8778,15 @@ for (const [eco, spec] of Object.entries(R24D_ECOSYSTEMS)) {
 // (2) stub round-trip: synthetic Rust tests modelled on the wave-15 stub captures (own code, not copied)
 const R24D_NO_CARGO = spawnSync('which', ['cargo']).status !== 0;
 const r24dCargoSkip = R24D_NO_CARGO ? 'SKIP: toolchain missing (cargo)' : false;
-const r24dRustStub = (body, uses) => {
+const r24dRustStub = (body, uses, source = '') => {
   const d = mini(R24B_SPEC, {
     'Cargo.toml': '[package]\nname = "repro"\nversion = "0.1.0"\nedition = "2021"\n',
-    'src/lib.rs': '',
+    'src/lib.rs': source,
     'tests/h_test.rs': `use repro::{${uses}};\n\n// @id TEST-H-001\n// @verifies REQ-H-001\n#[test]\nfn test_h_001() {\n${body}\n}\n`,
   });
   const r = sdd(d, 'tdd', 'stub', 'TEST-H-001', '--report');
   const lib = fs.readFileSync(path.join(d, 'src/lib.rs'), 'utf8');
-  const rows = [...r.out.matchAll(/^ {2}(\w+) \| (shown|inferred|guessed) \| (\S+)$/gm)].map((m) => ({ element: m[1], confidence: m[2], evidence: m[3] }));
+  const rows = [...r.out.matchAll(/^ {2}([\w:]+) \| (shown|inferred|guessed) \| (\S+)$/gm)].map((m) => ({ element: m[1], confidence: m[2], evidence: m[3] }));
   return { d, out: r.out, lib, rows };
 };
 // every generated const/type either has evidence-backed confidence or an SDD-TODO(stub) marker, and --report lists it
@@ -8804,10 +8804,10 @@ function r24dAssertStubInvariants({ d, out, lib, rows }, label) {
     if (t) assert.ok(rows.some((r) => r.element === t[1]), `${label}: type ${t[1]} is not listed by --report\n${out}`);
   }
   for (const row of rows) {
-    if (row.confidence === 'guessed') assert.match(lib, new RegExp(`const ${row.element}: \\(\\) = \\(\\); // SDD-TODO\\(stub\\)`), `${label}: guessed ${row.element} has no marker`);
+    if (row.confidence === 'guessed') assert.match(lib, new RegExp(`(?:const|fn) ${row.element.split('::').at(-1)}[^\\n]*SDD-TODO\\(stub\\)`), `${label}: guessed ${row.element} has no marker`);
     const m = /^(.+):(\d+)$/.exec(row.evidence);
     assert.ok(m, `${label}: evidence of ${row.element} has no file:line (${row.evidence})`);
-    assert.match(fs.readFileSync(path.join(d, m[1]), 'utf8').split('\n')[Number(m[2]) - 1] ?? '', new RegExp(`\\b${row.element}\\b`), `${label}: evidence line for ${row.element} does not mention it`);
+    assert.match(fs.readFileSync(path.join(d, m[1]), 'utf8').split('\n')[Number(m[2]) - 1] ?? '', new RegExp(`\\b${row.element.split('::').at(-1)}\\b`), `${label}: evidence line for ${row.element} does not mention it`);
   }
 }
 const R24D_STUB_CORPUS = {
@@ -8839,25 +8839,233 @@ test('r24d stub round-trip: toolchain gaps are counted, never silently dropped',
   assert.ok(R24D_NO_CARGO || r24dCargoSkip === false, 'SKIP: toolchain missing (cargo) must be a counted skip, not a pass');
 });
 
-// shapes the wave-15 captures showed and the stub generator still gets wrong: recorded, not hidden (design 3.2 acceptance)
-const r24dTodo = { todo: 'known stub-heuristic gap (design 3.2); fix when it reproduces twice' };
-test('r24d TODO stub: a call with no return-type evidence is emitted as a concrete i64 without an SDD-TODO(stub) marker', { ...r24dTodo, skip: r24dCargoSkip }, () => {
-  const s = r24dRustStub('    assert!(mystery(5).ok());', 'mystery');
-  assert.match(s.lib, /fn mystery[^\n]*\n[^\n]*\n[^\n]*\n/);
-  assert.doesNotMatch(s.lib, /fn mystery<A0>\(_a0: A0\) -> i64/, s.lib);
+/** @id TEST-RSTUB-001 @verifies REQ-RSTUB-001 */
+test('#381 TEST-RSTUB-001 unsupported function returns carry named markers and guessed rows', () => {
+  assert.equal(R24D_NO_CARGO, false, 'cargo is required');
+  for (const [name, body] of [
+    ['mystery', 'assert!(mystery(5).ok());'],
+    ['parse_flag', 'assert!(parse_flag("yes").ok().is_some());'],
+  ]) {
+    const s = r24dRustStub(`    ${body}`, name);
+    assert.match(s.lib, new RegExp(`fn ${name}[^\\n]*SDD-TODO\\(stub\\)`), s.lib);
+    assert.equal(s.rows.find(row => row.element === name)?.confidence, 'guessed', s.out);
+    assert.match(s.out, new RegExp(`! ${name}:.*fill the type by hand`), s.out);
+    r24dAssertStubInvariants(s, name);
+  }
 });
-test('r24d TODO stub: free functions are generated but not listed by --report', { ...r24dTodo, skip: r24dCargoSkip }, () => {
+/** @id TEST-RSTUB-CONTROL-001 @verifies REQ-RSTUB-004 */
+test('#381 TEST-RSTUB-CONTROL-001 evidenced functions and typed constants preserve native compilation', () => {
+  assert.equal(R24D_NO_CARGO, false, 'cargo is required');
   const s = r24dRustStub('    assert_eq!(tally(&[1u8, 2]), 3);', 'tally');
   assert.match(s.lib, /pub fn tally/);
-  assert.ok(s.rows.some((r) => r.element === 'tally'), s.out);
+  assert.equal(s.rows.find(row => row.element === 'tally')?.confidence, 'inferred', s.out);
+  const typed = r24dRustStub('    let x: f64 = TOLERANCE; assert!(x >= 0.0);', 'TOLERANCE');
+  assert.match(typed.lib, /pub const TOLERANCE: f64 = 0.0;/);
+  assert.equal(typed.rows.find(row => row.element === 'TOLERANCE')?.confidence, 'shown', typed.out);
+  for (const fixture of [s, typed]) {
+    assert.doesNotMatch(fixture.lib, /SDD-TODO\(stub\)/);
+    const native = spawnSync('cargo', ['test', '--offline', '--no-run'], { cwd: fixture.d, encoding: 'utf8', env: ENV });
+    assert.equal(native.status, 0, native.stderr);
+    r24dAssertStubInvariants(fixture, 'supported control');
+  }
 });
-test('r24d TODO stub: a method compared with a float literal is stubbed -> i64', { ...r24dTodo, skip: r24dCargoSkip }, () => {
-  const s = r24dRustStub('    assert_eq!(Ratio::new(1, 2).value(), 0.5);', 'Ratio');
-  assert.doesNotMatch(s.lib, /fn value\(&self\) -> i64/, s.lib);
+/** @id TEST-RSTUB-002 @verifies REQ-RSTUB-002 */
+test('#381 TEST-RSTUB-002 methods report owner-specific evidence or marked unknown returns', () => {
+  assert.equal(R24D_NO_CARGO, false, 'cargo is required');
+  for (const body of [
+    'assert_eq!(Ratio::new(1, 2).value(), 0.5);',
+    'assert_eq!(Gauge::new(4, 8).fraction(), 0.25);',
+    'assert_eq!(0.25, Gauge::new(4, 8).fraction(), "message");',
+    'assert!(Gauge::new(4, 8).fraction() == 0.25);',
+    'let g = Gauge::new(4, 8);\n    assert_eq!(g.fraction(), 0.25);\n    assert_eq!(Switch::new().fraction(), true);',
+  ]) {
+    const ratio = body.includes('Ratio'), s = r24dRustStub(`    ${body}`, ratio ? 'Ratio' : body.includes('Switch') ? 'Gauge, Switch' : 'Gauge');
+    const owner = ratio ? 'Ratio' : 'Gauge', method = ratio ? 'value' : 'fraction';
+    assert.match(s.lib, new RegExp(`fn ${method}\\(&self\\) -> f64`), s.lib);
+    assert.equal(s.rows.find(row => row.element === `${owner}::${method}`)?.confidence, 'inferred', s.out);
+    if (body.includes('Switch')) {
+      assert.match(s.lib, /fn fraction\(&self\) -> bool/, s.lib);
+      assert.equal(s.rows.find(row => row.element === 'Switch::fraction')?.confidence, 'inferred', s.out);
+      assert.notEqual(s.rows.find(row => row.element === 'Gauge::fraction')?.evidence,
+        s.rows.find(row => row.element === 'Switch::fraction')?.evidence, 'distinct owners need their actual usage lines');
+    }
+    assert.doesNotMatch(s.lib, /SDD-TODO\(stub\)/);
+    const native = spawnSync('cargo', ['test', '--offline', '--no-run'], { cwd: s.d, encoding: 'utf8', env: ENV });
+    assert.equal(native.status, 0, native.stderr);
+    r24dAssertStubInvariants(s, 'method control');
+  }
+  for (const body of [
+    'assert!(Gauge::new(4, 8).fraction().ok().is_some(), "0.25");',
+    'assert_eq!(Switch::new().fraction(), true);\n    assert!(Gauge::new(4, 8).fraction().ok().is_some());',
+  ]) {
+    const unknown = r24dRustStub(`    ${body}`, body.includes('Switch') ? 'Gauge, Switch' : 'Gauge');
+    assert.match(unknown.lib, /fn fraction[^\n]*SDD-TODO\(stub\)/, unknown.lib);
+    assert.equal(unknown.rows.find(row => row.element === 'Gauge::fraction')?.confidence, 'guessed', unknown.out);
+    assert.match(unknown.out, /! Gauge::fraction:.*fill the type by hand/, unknown.out);
+    r24dAssertStubInvariants(unknown, 'unsupported method');
+  }
 });
-test('r24d TODO stub: a loop-bound const gets guessed i64 element types reported as inferred', { ...r24dTodo, skip: r24dCargoSkip }, () => {
-  const s = r24dRustStub('    for (a, b) in TABLE { assert_eq!(a, b); }', 'TABLE');
-  assert.doesNotMatch(s.lib, /TABLE: &\[\(i64, i64\)\]/, s.lib);
+/** @id TEST-RSTUB-003 @verifies REQ-RSTUB-003 */
+test('#381 TEST-RSTUB-003 unsupported loop element types remain explicitly guessed', () => {
+  assert.equal(R24D_NO_CARGO, false, 'cargo is required');
+  for (const [name, body] of [
+    ['TABLE', 'for (a, b) in TABLE { assert_eq!(a, b); }'],
+    ['SWITCHES', 'for (enabled, expected) in SWITCHES { assert_eq!(*enabled, true); assert_eq!(expected, expected); }'],
+    ['ITEMS', 'for enabled in ITEMS { assert_eq!(enabled, enabled); }'],
+  ]) {
+    const s = r24dRustStub(`    ${body}`, name);
+    assert.match(s.lib, new RegExp(`const ${name}[^\\n]*SDD-TODO\\(stub\\)`), s.lib);
+    assert.equal(s.rows.find(row => row.element === name)?.confidence, 'guessed', s.out);
+    assert.match(s.out, new RegExp(`! ${name}:.*fill the type by hand`), s.out);
+    r24dAssertStubInvariants(s, name);
+  }
+});
+/** @id TEST-RSTUB-004 @verifies REQ-RSTUB-004 */
+test('#381 TEST-RSTUB-004 placeholder compile failures refuse Red and preserve evidence bytes', () => {
+  assert.equal(R24D_NO_CARGO, false, 'cargo is required');
+  for (const [uses, body, element, repaired] of [
+    ['parse_flag', 'assert!(parse_flag("yes").ok().is_some());', 'parse_flag', 'pub fn parse_flag(_: &str) -> Result<bool, ()> { Err(()) }\n'],
+    ['Gauge', 'assert!(Gauge::new(4, 8).fraction().ok().is_some());', 'fraction', 'pub struct Gauge; impl Gauge { pub fn new(_: i32, _: i32) -> Self { Self } pub fn fraction(&self) -> Result<bool, ()> { Err(()) } }\n'],
+    ['SWITCHES', 'for (enabled, expected) in SWITCHES { assert_eq!(*enabled, true); assert_eq!(expected, expected); }', 'SWITCHES', 'pub const SWITCHES: &[(bool, bool)] = &[(true, false)];\n'],
+  ]) {
+    const s = r24dRustStub(`    ${body}`, uses), source = path.join(s.d, 'src/lib.rs'), ledger = path.join(s.d, '.sdd/tdd.jsonl');
+    const native = spawnSync('cargo', ['test', '--offline', '--no-run'], { cwd: s.d, encoding: 'utf8', env: ENV });
+    assert.notEqual(native.status, 0, 'placeholder must reproduce native type failure');
+    const rejected = sdd(s.d, 'tdd', 'red', 'TEST-H-001');
+    assert.equal(rejected.code, 1, rejected.out);
+    assert.match(rejected.out, new RegExp(`SDD-TODO\\(stub\\) element ${element}.*not a Red`), rejected.out);
+    assert.equal(fs.existsSync(ledger), false, rejected.out);
+    fs.writeFileSync(source, repaired);
+    const valid = spawnSync('cargo', ['test', '--offline', '--no-run'], { cwd: s.d, encoding: 'utf8', env: ENV });
+    assert.equal(valid.status, 0, valid.stderr);
+    if (uses !== 'parse_flag') continue;
+    const red = sdd(s.d, 'tdd', 'red', 'TEST-H-001');
+    assert.equal(red.code, 0, red.out);
+    assert.doesNotMatch(red.out, /\[weak\]/);
+    const before = fs.readFileSync(ledger);
+    fs.writeFileSync(source, s.lib);
+    const refusedAgain = sdd(s.d, 'tdd', 'red', 'TEST-H-001');
+    assert.equal(refusedAgain.code, 1, refusedAgain.out);
+    assert.match(refusedAgain.out, /SDD-TODO\(stub\) element parse_flag.*not a Red/, refusedAgain.out);
+    assert.deepEqual(fs.readFileSync(ledger), before);
+  }
+});
+
+/** @id TEST-RSTUB-005 @verifies REQ-RSTUB-005 */
+test('TEST-RSTUB-005 explicit adjacent Result aliases type whole calls without inventing payloads', () => {
+  assert.equal(R24D_NO_CARGO, false, 'cargo is required');
+  for (const [uses, call, element, errorType] of [
+    ['parse_flag', 'parse_flag("yes")', 'parse_flag', '()'],
+    ['Gauge', 'Gauge::new().parse("yes")', 'Gauge::parse', 'String'],
+    ['Gauge', 'g.parse("yes")', 'Gauge::parse', '()'],
+  ]) {
+    for (const direct of [false, true]) {
+      const ty = `Result<bool, ${errorType}>`;
+      const s = r24dRustStub(`    ${call.startsWith('g.') ? 'let g = Gauge::new();\n    ' : ''}${direct
+        ? `let parsed: ${ty} = ${call}; assert!(parsed.ok().is_some());`
+        : `let parsed = ${call}; let typed: ${ty} = parsed; assert!(typed.ok().is_some());`}`, uses);
+      assert.match(s.lib, new RegExp(`fn ${element.split('::').at(-1)}[^\\n]*-> Result<bool, ${errorType === '()' ? '\\(\\)' : errorType}>`), s.lib);
+      assert.equal(s.rows.find(row => row.element === element)?.confidence,
+        direct && uses === 'parse_flag' ? 'shown' : 'inferred', s.out);
+      assert.doesNotMatch(s.lib, /SDD-TODO\(stub\)/, s.lib);
+      const native = spawnSync('cargo', ['test', '--offline', '--no-run'], { cwd: s.d, encoding: 'utf8', env: ENV });
+      assert.equal(native.status, 0, native.stderr);
+      r24dAssertStubInvariants(s, 'explicit Result');
+    }
+  }
+  for (const [uses, call, element] of [
+    ['parse_flag', 'parse_flag("yes")', 'parse_flag'],
+    ['Gauge', 'Gauge::new().parse("yes")', 'Gauge::parse'],
+    ['Gauge', 'g.parse("yes")', 'Gauge::parse'],
+  ]) for (const body of [
+    `assert!(${call}.ok().is_some());`,
+    `let parsed = ${call}.ok(); let typed: Result<bool, ()> = parsed;`,
+    `let parsed = ${call}; let parsed = Err(()); let typed: Result<bool, ()> = parsed;`,
+    `let parsed = ${call}; let other: Result<bool, ()> = Err(());`,
+    `let parsed = ${call}; let typed: Result<_, ()> = parsed;`,
+  ]) {
+    const s = r24dRustStub(`    ${call.startsWith('g.') ? 'let g = Gauge::new();\n    ' : ''}${body}`, uses);
+    assert.match(s.lib, new RegExp(`fn ${element.split('::').at(-1)}[^\\n]*SDD-TODO\\(stub\\)`), s.lib);
+    assert.equal(s.rows.find(row => row.element === element)?.confidence, 'guessed', s.out);
+    r24dAssertStubInvariants(s, 'insufficient Result evidence');
+  }
+});
+
+/** @id TEST-RSTUB-006 @verifies REQ-RSTUB-006 */
+test('TEST-RSTUB-006 boolean loop evidence is complete consistent and scoped to each binding', () => {
+  assert.equal(R24D_NO_CARGO, false, 'cargo is required');
+  const comparisons = [
+    v => `assert_eq!(*${v}, true);`,
+    v => `assert_eq!(false, *${v});`,
+    v => `assert_ne!(*${v}, false);`,
+    v => `assert!(*${v} == true);`,
+    v => `assert!(false != *${v});`,
+  ];
+  for (const tuple of [false, true]) for (const compare of comparisons) {
+    const s = r24dRustStub(`    for ${tuple ? '(enabled, expected)' : 'enabled'} in SWITCHES { ${compare('enabled')} ${tuple ? compare('expected') : ''} }`, 'SWITCHES');
+    assert.match(s.lib, tuple ? /const SWITCHES: &\[\(bool, bool\)\] = &\[\];/ : /const SWITCHES: &\[bool\] = &\[\];/, s.lib);
+    assert.equal(s.rows.find(row => row.element === 'SWITCHES')?.confidence, 'inferred', s.out);
+    assert.doesNotMatch(s.lib, /SDD-TODO\(stub\)/);
+    const native = spawnSync('cargo', ['test', '--offline', '--no-run'], { cwd: s.d, encoding: 'utf8', env: ENV });
+    assert.equal(native.status, 0, native.stderr);
+    r24dAssertStubInvariants(s, 'bool loop');
+  }
+  for (const body of [
+    'for (enabled, expected) in SWITCHES { assert_eq!(*enabled, true); }',
+    'for (enabled, expected) in SWITCHES { assert_eq!(*enabled, true); assert_eq!(*expected, 1); }',
+    'for enabled in SWITCHES { assert_eq!(*enabled, true); assert_eq!(*enabled, 1); }',
+    'for enabled in SWITCHES { assert_eq!(enabled, enabled); } let enabled = &true; assert_eq!(*enabled, true);',
+    'for enabled in SWITCHES { let enabled = &true; assert_eq!(*enabled, true); }',
+    'for enabled in SWITCHES { for enabled in &[true] { assert_eq!(*enabled, true); } }',
+    'for enabled in SWITCHES { assert_eq!(*enabled, true); } for enabled in SWITCHES { assert_eq!(enabled, enabled); }',
+    'for enabled in SWITCHES { assert_eq!(enabled, enabled, "*enabled == true"); /* assert_eq!(*enabled, true); */ }',
+  ]) {
+    const s = r24dRustStub(`    ${body}`, 'SWITCHES');
+    assert.match(s.lib, /const SWITCHES[^\n]*SDD-TODO\(stub\)/, s.lib);
+    assert.equal(s.rows.find(row => row.element === 'SWITCHES')?.confidence, 'guessed', s.out);
+    r24dAssertStubInvariants(s, 'insufficient bool evidence');
+  }
+});
+
+/** @id TEST-RSTUB-007 @verifies REQ-RSTUB-007 */
+test('TEST-RSTUB-007 same-name method arguments and empty constraints belong to their owner', () => {
+  assert.equal(R24D_NO_CARGO, false, 'cargo is required');
+  for (const shape of ['bound', 'direct', 'builder']) for (const reverse of [false, true]) {
+    const calls = shape === 'bound'
+      ? ['assert_eq!(g.check(1), true);', 'assert_eq!(s.check(1, (2, 3)), false);']
+      : [`assert_eq!(Gauge::new()${shape === 'builder' ? '.ready()' : ''}.check(1), true);`,
+        `assert_eq!(Switch::new()${shape === 'builder' ? '.ready()' : ''}.check(1, (2, 3)), false);`];
+    const s = r24dRustStub(`    ${shape === 'bound' ? 'let g = Gauge::new(); let s = Switch::new();\n    ' : ''}${(reverse ? calls.reverse() : calls).join('\n    ')}`, 'Gauge, Switch');
+    const gauge = /impl Gauge \{([^]*?)\n\}/.exec(s.lib)?.[1] ?? '';
+    const sw = /impl Switch \{([^]*?)\n\}/.exec(s.lib)?.[1] ?? '';
+    assert.match(gauge, /fn check<A0>\(&self, _a0: A0\) -> bool/, s.lib);
+    assert.match(sw, /fn check<A0, A1>\(&self, _a0: A0, _a1: A1\) -> bool/, s.lib);
+    assert.equal(s.rows.find(row => row.element === 'Gauge::check')?.confidence, 'inferred', s.out);
+    assert.equal(s.rows.find(row => row.element === 'Switch::check')?.confidence, 'inferred', s.out);
+    const native = spawnSync('cargo', ['test', '--offline', '--no-run'], { cwd: s.d, encoding: 'utf8', env: ENV });
+    assert.equal(native.status, 0, native.stderr);
+    r24dAssertStubInvariants(s, 'owned arity');
+  }
+  for (const shape of ['bound', 'direct', 'builder']) for (const reverse of [false, true]) {
+    const receiver = owner => shape === 'bound' ? (owner === 'Gauge' ? 'g' : 's') : `${owner}::new()${shape === 'builder' ? '.ready()' : ''}`;
+    const calls = [`assert_eq!(${receiver('Gauge')}.empty(vec![]), true); assert_eq!(${receiver('Gauge')}.empty(vec![true]), false);`,
+      `assert_eq!(${receiver('Switch')}.empty(None), true); assert_eq!(${receiver('Switch')}.empty(Some(1)), false);`];
+    const s = r24dRustStub(`    ${shape === 'bound' ? 'let g = Gauge::new(); let s = Switch::new();\n    ' : ''}${(reverse ? calls.reverse() : calls).join('\n    ')}`, 'Gauge, Switch');
+    assert.match(/impl Gauge \{([^]*?)\n\}/.exec(s.lib)?.[1] ?? '', /fn empty\(&self, _a0: Vec<bool>\) -> bool/, s.lib);
+    assert.match(/impl Switch \{([^]*?)\n\}/.exec(s.lib)?.[1] ?? '', /fn empty\(&self, _a0: Option<i64>\) -> bool/, s.lib);
+    const native = spawnSync('cargo', ['test', '--offline', '--no-run'], { cwd: s.d, encoding: 'utf8', env: ENV });
+    assert.equal(native.status, 0, native.stderr);
+    r24dAssertStubInvariants(s, 'owned empty constraints');
+  }
+  const control = r24dRustStub('    assert_eq!(Gauge::new().check(), true); assert_eq!(Switch::new().check(1), false);', 'Gauge, Switch');
+  assert.match(/impl Gauge \{([^]*?)\n\}/.exec(control.lib)?.[1] ?? '', /fn check\(&self\) -> bool/, control.lib);
+  assert.match(/impl Switch \{([^]*?)\n\}/.exec(control.lib)?.[1] ?? '', /fn check<A0>\(&self, _a0: A0\) -> bool/, control.lib);
+  const repair = r24dRustStub('    fn probe(g: Gauge) { assert_eq!(g.check(1, 2), 1); }\n    probe(Gauge);', 'Gauge', 'pub struct Gauge;\n');
+  assert.match(repair.lib, /fn check<A0, A1>\(&self, _a0: A0, _a1: A1\) -> i64/, repair.lib);
+  assert.equal(repair.rows.find(row => row.element === 'Gauge::check')?.confidence, 'guessed', repair.out);
+  assert.match(repair.lib, /fn check[^\n]*SDD-TODO\(stub\)/, repair.lib);
+  const native = spawnSync('cargo', ['test', '--offline', '--no-run'], { cwd: repair.d, encoding: 'utf8', env: ENV });
+  assert.equal(native.status, 0, native.stderr);
 });
 
 import { createHash } from 'node:crypto';
@@ -8968,7 +9176,7 @@ test('#r25a tdd red rejects a load error located in a marked Python stub element
   assert.match(r.out, /REJECTED[^\n]*SDD-TODO\(stub\) element LIMIT[^\n]*fill LIMIT by hand/, r.out);
 });
 
-test('#r25a Rust: a const typed in the test is reported shown; a fn with no return evidence is guessed (report-only, code unchanged)', cargoOk, () => {
+test('#r25a Rust: a const typed in the test is shown; an unsupported fn is marked and guessed', cargoOk, () => {
   const d = mini(R24B_SPEC, {
     'Cargo.toml': '[package]\nname = "repro"\nversion = "0.1.0"\nedition = "2021"\n',
     'src/lib.rs': '',
@@ -8979,9 +9187,9 @@ test('#r25a Rust: a const typed in the test is reported shown; a fn with no retu
   assert.match(r.out, /LIMIT \| shown \|/, r.out);
   assert.match(r.out, /size \| shown \|/, r.out);
   assert.match(r.out, /run \| guessed \|/, r.out);
-  assert.match(r.out, /! run: return type defaulted to i64 with no evidence/, r.out);
+  assert.match(r.out, /! run: type unknown.*fill the type by hand/, r.out);
   assert.match(lib, /pub fn run[^\n]*-> i64 \{/, lib);
-  assert.doesNotMatch(lib, /run[^\n]*SDD-TODO/, lib);
+  assert.match(lib, /run[^\n]*SDD-TODO/, lib);
 });
 
 // ---- r25b (gate fail-open audit) ----

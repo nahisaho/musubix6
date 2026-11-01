@@ -1,0 +1,362 @@
+{
+  "schemaVersion": 1,
+  "issue": 381,
+  "generatedAt": "2026-10-31T14:05:42.722Z",
+  "status": "PASS",
+  "scope": "Rust return/loop confidence and the directly dependent historical validation fixtures",
+  "baseCommit": "7d9bd7a37a6daed922413829e1068b464c36552d",
+  "source": [
+    {
+      "path": "/home/nahisaho/GitHub/musubix6/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+      "sha256": "fad320ecaa4ab91d444439d2629986b14c1013ab6f8f3a58e37cf91b6f723816"
+    },
+    {
+      "path": "/home/nahisaho/GitHub/musubix6/.github/skills/lean-sdd-tdd/scripts/sdd.test.mjs",
+      "sha256": "04266148cb1da61257fcfb999ca542c52d49e6a7119e2858fed41ad5726332ff"
+    },
+    {
+      "path": "/home/nahisaho/GitHub/musubix6/scripts/release-qualification.test.mjs",
+      "sha256": "31c73abcae961a1e85857037e0e76b2f1645db371ddbee50c9f92c8b77a6fae3"
+    },
+    {
+      "path": "/home/nahisaho/GitHub/musubix6/.github/workflows/ci.yml",
+      "sha256": "f2eab50d9baee464f86ce27dbb18a1a55dc395e48a3a580596ff2186cfd51fb6"
+    },
+    {
+      "path": "/home/nahisaho/GitHub/musubix6/.github/workflows/publish.yml",
+      "sha256": "e1841f893b84b84c16722943e6a1a930640693604c9af7bf57f4841e8812b713"
+    },
+    {
+      "path": "/home/nahisaho/GitHub/musubix6/.sdd/specs/rust-stub-confidence.md",
+      "sha256": "df41e8840ce00c70510694c004a20f69730052df2fbadb11a7ab1d2cb749c0ba"
+    }
+  ],
+  "approval": {
+    "by": "nahisaho",
+    "kind": "human",
+    "at": "2026-10-31T13:29:08.061Z",
+    "specSha256": "df41e8840ce00c70510694c004a20f69730052df2fbadb11a7ab1d2cb749c0ba"
+  },
+  "fullGate": {
+    "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/rust381-stable-final-gate.json",
+    "sha256": "30928fe7dc83d6fa00065b5ced1e7c8ba903c5c7617f36b314d176b9e5fc816f",
+    "command": [
+      "node",
+      ".github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+      "gate",
+      "--json"
+    ],
+    "verdict": "PASS",
+    "lines": [
+      "! human-approved diagnostics-contract: implementation changed since approval (.github/skills/lean-sdd-tdd/scripts/diagnostics.mjs) — a human should re-review, then approve record",
+      "✓ lock claude-code-support: ok [human] (human required)",
+      "✓ lock cost-history: ok [ai, review summary]",
+      "✓ lock diagnostics-contract: ok [human] (human required)",
+      "✓ lock diagnostics-eslint: ok [ai, review file]",
+      "✓ lock diagnostics-javascript: ok [ai, review file]",
+      "✓ lock diagnostics-python: ok [ai, review file]",
+      "✓ lock diagnostics-rust: ok [human] (human required)",
+      "✓ lock diagnostics-typescript: ok [ai, review file]",
+      "✓ lock diagnostics-workflow: ok [ai, review file]",
+      "✓ lock legacy-approval-provenance: ok [ai, review file]",
+      "✓ lock legacy-command-closure: ok [ai, review file]",
+      "✓ lock legacy-native-verdicts: ok [ai, review file]",
+      "✓ lock node-summary-verdict: ok [ai, review file]",
+      "✓ lock r36b-node-red: ok [ai, review summary]",
+      "✓ lock r36e-native-loader: ok [ai, review summary]",
+      "✓ lock r36g-rust-ci: ok [ai, review summary]",
+      "✓ lock r36i-c-compiler: ok [ai, review summary]",
+      "✓ lock r36j-go-compiler: ok [ai, review summary]",
+      "✓ lock release-qualification: ok [human] (human required)",
+      "✓ lock runner-selection: ok [ai, review summary]",
+      "✓ lock rust-stub-confidence: ok [human] (human required)",
+      "✓ lock source-discovery: ok [ai, review file]",
+      "✓ lock spec-context: ok [ai, review summary]",
+      "✓ trace: 93 REQ, 0 errors, 6 warnings",
+      "    warning: REQ-HOST-004 has no @implements code",
+      "    warning: REQ-KOTO-SYNC-001 has no @implements code",
+      "    warning: REQ-KOTO-SYNC-002 has no @implements code",
+      "    … +3 more warnings (all: trace --verbose)",
+      "✓ ledger: 897 entries, chain intact",
+      "✓ tdd evidence: 159/159 tests Red→Green, 1 weak Red 79 characterization (passed without a failing Red; not a weak Red) (1 retest: Red re-recorded with --retest, passed without a failing Red; 1 superseded an earlier strong Red — re-record a failing Red by temporarily breaking the implementation if that evidence matters: TEST-R36D-OWN-001) (17 refactor-recorded after the test/setup changed, no new Red: TEST-RELQ-CONTENT-ADMISSION-001, TEST-RELQ-BASELINE-001, TEST-RELQ-001, TEST-RELQ-CLOSURE-001, TEST-RELQ-002, TEST-RELQ-PROCESS-001, TEST-RELQ-SKILL-001, TEST-RELQ-PH-001, … +9; to replace that with real evidence: tdd red <ID> --retest \"<why>\" then tdd green <ID>)",
+      "! stub: 2 source file(s) of Green REQs still hold SDD-TODO(stub) / 'not implemented:' placeholders: .github/skills/lean-sdd-tdd/scripts/sdd.mjs:1718, .github/skills/lean-sdd-tdd/scripts/sdd.test.mjs:680 — implement or remove them (scopePolicy warn: set \"scopePolicy\": \"strict\" to fail)",
+      "✓ cmd test (1738.1s)",
+      "! scope: a file defining what a gate check runs differs from the last Green record — check resolution (.sdd-test-work-0511ex/sdd-w110-RI3J8J/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-w110-LeCRpV/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-w110-FDyHUe/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-w110-4K0pt2/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-s130-bXyktK/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-s130-bXyktK/packages/server/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-s130-bXyktK/packages/core/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-s112-kEJSg8/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-pystub-6h7f2w/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-oILQbl/packages/lib/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-nest-BYzjU0/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-nest-BRPhEL/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-zLfNHF/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-ygL37I/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-yZTDk0/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-yULmsy/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-y3EkzS/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-y21VDS/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-xx3wGW/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-xnXfNY/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-xnIEO2/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-xSP3TI/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-xSHF0S/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-xGjUcA/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-wbFTfH/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-wXnXq1/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-wWgRmz/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-wQn4sH/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-wF2NP2/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-w9AQ5j/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-w1Bal3/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-vuq0DH/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-vt5fuu/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-vt5fuu/app/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-voT6LK/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-vhT7qY/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-vXPLKZ/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-v3x1JU/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-usplnG/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-uro2h9/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-uRQAqV/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-uBhtYn/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-ty0V28/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-tnbXgQ/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-tkdFZa/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-tUNwJf/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-tSjnq1/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-tSjnq1/js/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-tSjnq1/js/packages/b/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-tSjnq1/js/packages/a/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-tMHIR0/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-szYzPK/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-spMuUo/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-sjjfb5/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-sRE2TF/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-sKGOHP/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-sFPf0k/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-sFA1Qq/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-sC2iJe/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-s5NjBC/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-rufxYD/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-qzhdp7/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-qrEJrV/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-qfIEKV/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-qeNdks/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-qbPKaU/packages/y/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-qbPKaU/packages/x/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-qX2xSu/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-q8KCv7/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-pyfaf5/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-pvpsgE/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-pv9JXt/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-pntqEf/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-pntqEf/app/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-piFtZE/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-phb6BI/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-pf0MLf/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-pesJoj/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-pbeFr1/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-pUHiyW/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-pMyvu8/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-pDNtRz/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-p6JVqh/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-p6JVqh/app/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-oQ4MBI/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-oPTM5V/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-nzh8bA/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-nkthvx/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-njQ8RX/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-naNdqK/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-nSNTlt/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-nFUdeV/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-n94pqv/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-n5koSM/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-n5koSM/app/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-mrIs1K/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-midnsL/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-mVX0Hy/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-mIzxq2/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-mHuN6T/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-mGdn1a/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-m6l1Id/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-lRYCfu/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-lJG9yz/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-lIXxgI/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-lAaWgV/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-l8IJHh/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-l3JuBL/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-kmS9Tg/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-kjzrWg/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-khsgqI/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-kXqmkf/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-kVIHt5/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-kFWCVa/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-k5cU8F/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-jokhpu/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-jjkMbd/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-jhqXpe/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-jHE2ZW/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-jGwxfx/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-jGQdG9/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-jFLlmT/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-iRItBL/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-i4iCCP/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-hCU162/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-h8F81i/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-gmK3Nx/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-glxvId/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-ggpYG7/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-gZikcx/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-gZikcx/app/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-gYhdtK/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-gWChvj/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-gUHCW2/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-g90O1p/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-fxpFT6/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-fko9zv/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-fko9zv/app/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-fdG9kc/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-fPhCCM/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-fJiPYm/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-fIkoNJ/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-fED91C/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-f6cRM8/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-f3m8za/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-enMfmd/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-ecIxg7/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-eagXBr/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-eTH3IM/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-dsVjtB/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-dgNPcg/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-db0z81/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-dJUqMz/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-d2vMl3/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-cW8GVw/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-blhO43/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-bkIjAU/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-biwebi/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-bRSDq8/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-b7p1av/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-aZGEKd/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-aG77O7/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-aEivlq/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-aBzFqR/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-a30AeD/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-Zwk1ld/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-Zqfm7W/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-ZWGOTP/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-ZFSn1G/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-Z7UDSC/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-Yt1TzM/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-Yo983B/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-YU3OO0/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-YTCvMj/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-Y7I6cf/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-XzxVSc/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-Xt2PPm/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-XoG5Db/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-Xe9RhL/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-XA5q4z/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-X9q4UA/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-X2bIQG/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-WwWiQ9/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-WwWiQ9/app/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-Wsb0TR/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-WVYzXN/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-WNTKF3/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-W6FZSV/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-VinPdn/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-VTLmdl/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-VDje9Y/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-Uves7G/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-UrT4Mi/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-UmfGYZ/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-Uht2U6/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-UPP7YD/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-ULfrZv/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-UBKJKj/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-ToYj1l/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-TYnika/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-TX0f5k/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-TSBiWQ/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-TLGXK2/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-TKIaTf/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-TKIaTf/app/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-T4UUEU/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-SyiX5q/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-SYpofN/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-SRb5YJ/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-SDAJBk/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-RjvsP2/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-RcA8Dh/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-RVuMl4/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-RSBjk3/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-RQyGik/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-RILb5j/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-RHyGTe/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-REYwlg/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-QojE66/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-Qe6IuP/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-Q1Ohie/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-Q0OwKw/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-PsCRN2/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-Pem9Sq/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-PTPWZp/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-PR2mFq/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-PN8jUG/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-PMujA7/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-PAuZ6h/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-P1up6s/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-Oghm71/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-Od61qb/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-OXU1h4/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-OU6rum/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-NxRMub/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-Nn51NC/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-Nkm08A/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-NZs9B9/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-NZrhCq/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-NRt6JW/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-NP4tO9/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-N4cfkZ/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-MkmhEQ/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-MgmKCM/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-McoLlH/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-McoLlH/app/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-MZi4EC/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-MNxWUb/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-MNxWUb/app/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-MIQvH1/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-M7h8UH/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-M450hY/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-LwgYyG/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-LuZ62T/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-LkoNZb/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-LeYoOn/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-LeYoOn/app/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-LTfTiP/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-LSIsEo/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-LMo9Kg/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-LJ9Z3Q/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-LIMTWj/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-LICYQW/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-LGA1UN/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-LF0KhA/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-L0yJyg/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-KvgWr9/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-KeenBt/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-KajN07/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-KZOSQL/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-KVt6Pt/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-KTHkXj/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-KOBx0a/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-KO6p90/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-KG9ZAQ/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-KBbaEC/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-K8MJXr/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-K7AFXi/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-JxMeWH/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-JrCTbb/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-JpgexO/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-JQYsYW/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-JJcSLv/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-JAHLty/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-J8ep9K/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-J8ep9K/app/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-IlFkeM/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-IXRPk3/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-IFrzlA/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-Hro8J5/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-Ho4cVY/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-HlPkMq/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-HStLO3/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-HQ6nlN/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-HHdfgn/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-HGn0hM/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-GqSiEl/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-GpkBqi/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-Gmxxwb/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-GiaciO/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-FrJzHm/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-FpVvGB/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-FlwkA8/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-FgDRZO/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-FbI3NC/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-FarWq0/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-FFnahJ/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-Ekt3R7/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-Ee17Ji/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-EHK7n5/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-E58xHO/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-DvjSDi/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-DmfDzE/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-DiptgV/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-DRnih0/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-CtUR40/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-Cje0Pv/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-CbLDeV/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-BqoVmS/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-BnJoTW/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-BkvKqo/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-Be0tot/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-Be0tot/app/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-BIwavD/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-BIwavD/app/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-B93HUU/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-B7vmEi/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-ArxDHU/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-Ao3uGs/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-Ajaml7/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-AdrkjY/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-ARQs9A/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-AIlshZ/packages/y/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-AIlshZ/packages/x/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-AAFLga/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-A9QWWX/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-9wTw5I/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-9uJba0/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-9jVdlR/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-9aO7Ti/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-9aO7Ti/app/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-9ZALTR/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-9EWEEP/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-9EMozr/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-9EAp5M/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-8wnEfV/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-8w0TYr/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-8w0TYr/app/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-8fsbpF/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-8V1vmP/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-8UReeg/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-8OWgAf/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-8CFyAh/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-87zY6y/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-863nNC/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-7cTWAQ/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-7Xf7gz/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-7PFAkM/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-7Nb9zG/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-7LUYmK/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-7DAVuN/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-71NEaz/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-6zyTjR/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-6sQvW6/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-6sOLBX/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-6bC74h/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-6SdXoF/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-6QqZJ6/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-6MJpmV/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-6KrZAr/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-6CD7wv/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-5bDG5z/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-5UQmqc/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-5OQ6Ud/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-5EQrK6/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-56Pao1/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-4xUaLn/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-4ucMc1/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-4uFYqX/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-4sPqf4/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-4lyDtP/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-3zrSdt/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-3icCIB/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-3SDG8v/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-3KUU6G/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-3CC77C/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-33fKk3/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-33fKk3/app/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-2pgxZW/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-2hB3Pw/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-2bFSED/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-27cUIW/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-1kIyA6/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-1ZlPkG/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-1YvNUq/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-1IjOaD/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-1Dc2yy/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-0oloch/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-0iiPfz/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-m-0iVMgl/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-jsstub-y2Jnn3/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-jsstub-puWJWr/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-jsstub-puWJWr/packages/domain/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-jsstub-p2rXOe/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-jsstub-p2rXOe/packages/lib/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-jsstub-m1FjKV/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-jsstub-kqiJqO/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-jsstub-kqiJqO/packages/lib/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-jsstub-j8hfss/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-jsstub-ib3jfJ/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-jsstub-ib3jfJ/packages/lib/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-jsstub-hjKYEi/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-jsstub-Zmoynz/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-jsstub-Zmoynz/packages/lib/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-jsstub-ZJlGZd/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-jsstub-Wcta00/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-jsstub-VIyw62/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-jsstub-9AFTis/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-js-jv6NPf/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-js-cuQkNT/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-js-XtvLzb/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-clsstub-R2HLO8/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-9Kvfni/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-9Kvfni/packages/core/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-9Kvfni/packages/app2/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-9Kvfni/packages/app/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-48uwll/package.json no longer defines it); check resolution (.sdd-test-work-0511ex/sdd-48uwll/packages/a/package.json no longer defines it) — the test run may have been narrowed; review the diff, then re-run `tdd refactor` to re-record (scopePolicy warn: set \"scopePolicy\": \"strict\" to fail)"
+    ],
+    "limitation": "Gate JSON retains the actual verdict/check summary, not a complete native suite-count or skip-count report. No unreported counts are inferred."
+  },
+  "tdd": [
+    {
+      "test": "TEST-RSTUB-001",
+      "redSeq": 866,
+      "greenSeq": 871,
+      "redHash": "9cf68b7f688174fcd787d70ae2a794de1de89f70a477a7ff8a1242e0de44011c",
+      "greenHash": "ab0bfc70a1c6fc9ea1e6c657e2a6fcfc588edc0be9883b970123a398bf39d58b"
+    },
+    {
+      "test": "TEST-RSTUB-002",
+      "redSeq": 877,
+      "greenSeq": 878,
+      "redHash": "df1f3f5b72066162ff38f1eb4fe7c17b53633124c5cd57a2e109eaae80defe55",
+      "greenHash": "709ac9f659b9442c362c6fa97e1697ceb5265c8f4146cea3e74df4ac376622b0"
+    },
+    {
+      "test": "TEST-RSTUB-003",
+      "redSeq": 868,
+      "greenSeq": 873,
+      "redHash": "c89b2c8455f8299411059966d20f1509f2073c6cbd49c01b14278a043cb80f31",
+      "greenHash": "a30b1bcf5c1a972dc0159d64017d4a85986b333565ff762470ae97fea1c4e633"
+    },
+    {
+      "test": "TEST-RSTUB-004",
+      "redSeq": 869,
+      "greenSeq": 874,
+      "redHash": "8c823560cd7f2fad44b0af91f3949cc2ad8aa6090bfdf451ff03ad04f75bc8b7",
+      "greenHash": "9b60c85344e95f2d9b9dc3ecea369078e2105401366f5227025801141bf476d2"
+    }
+  ],
+  "supportedRuntimeSelection": [
+    {
+      "major": 20,
+      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/rust381-rust-node20.log",
+      "sha256": "84bc9cbfca70d367d9d10d345e2ab5f5a274fa315d6368568d8e37cbecc6f370",
+      "counts": {
+        "tests": 1078,
+        "pass": 120,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 958,
+        "todo": 0
+      },
+      "requiredSelectedSkips": 0,
+      "note": "958 name-filter exclusions are not execution evidence."
+    },
+    {
+      "major": 22,
+      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/rust381-rust-node22.log",
+      "sha256": "1e46dfc14fc98619c7978fd72d1b1b554d574000d77326e7466f158cb15f8b74",
+      "counts": {
+        "tests": 120,
+        "pass": 120,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "requiredSelectedSkips": 0,
+      "note": "All 120 selected cases executed."
+    },
+    {
+      "major": 24,
+      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/rust381-rust-node24.log",
+      "sha256": "63c4e2a02cb68ecc74312b30c4a965b51e42ccfb389f605d5ab8fdcad195a158",
+      "counts": {
+        "tests": 120,
+        "pass": 120,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "requiredSelectedSkips": 0,
+      "note": "All 120 selected cases executed."
+    }
+  ],
+  "releaseFixtureRegression": {
+    "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/rust381-release-fixture-restored.log",
+    "sha256": "52ee14060325950d6f24e179a6ef2d8a9ac7963bbb25431aba9c3451353fd268",
+    "pass": 17,
+    "fail": 0,
+    "skipped": 0
+  },
+  "mutations": {
+    "sourceSha256": "fad320ecaa4ab91d444439d2629986b14c1013ab6f8f3a58e37cf91b6f723816",
+    "runtime": "v24.22.1",
+    "mechanisms": [
+      {
+        "mechanism": "function-marker",
+        "test": "TEST-RSTUB-001",
+        "mutationExit": 1,
+        "restoredExit": 0,
+        "mutationLog": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/rust381-mutations-nKQOEG/function-marker-mutated.log",
+        "restoredLog": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/rust381-mutations-nKQOEG/function-marker-restored.log"
+      },
+      {
+        "mechanism": "method-marker",
+        "test": "TEST-RSTUB-002",
+        "mutationExit": 1,
+        "restoredExit": 0,
+        "mutationLog": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/rust381-mutations-nKQOEG/method-marker-mutated.log",
+        "restoredLog": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/rust381-mutations-nKQOEG/method-marker-restored.log"
+      },
+      {
+        "mechanism": "loop-marker",
+        "test": "TEST-RSTUB-003",
+        "mutationExit": 1,
+        "restoredExit": 0,
+        "mutationLog": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/rust381-mutations-nKQOEG/loop-marker-mutated.log",
+        "restoredLog": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/rust381-mutations-nKQOEG/loop-marker-restored.log"
+      },
+      {
+        "mechanism": "loop-confidence",
+        "test": "TEST-RSTUB-003",
+        "mutationExit": 1,
+        "restoredExit": 0,
+        "mutationLog": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/rust381-mutations-nKQOEG/loop-confidence-mutated.log",
+        "restoredLog": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/rust381-mutations-nKQOEG/loop-confidence-restored.log"
+      },
+      {
+        "mechanism": "owner-call",
+        "test": "TEST-RSTUB-002",
+        "mutationExit": 1,
+        "restoredExit": 0,
+        "mutationLog": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/rust381-mutations-nKQOEG/owner-call-mutated.log",
+        "restoredLog": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/rust381-mutations-nKQOEG/owner-call-restored.log"
+      },
+      {
+        "mechanism": "constructor-chaining",
+        "test": "TEST-RSTUB-002",
+        "mutationExit": 1,
+        "restoredExit": 0,
+        "mutationLog": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/rust381-mutations-nKQOEG/constructor-chaining-mutated.log",
+        "restoredLog": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/rust381-mutations-nKQOEG/constructor-chaining-restored.log"
+      },
+      {
+        "mechanism": "method-report",
+        "test": "TEST-RSTUB-002",
+        "mutationExit": 1,
+        "restoredExit": 0,
+        "mutationLog": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/rust381-mutations-nKQOEG/method-report-mutated.log",
+        "restoredLog": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/rust381-mutations-nKQOEG/method-report-restored.log"
+      },
+      {
+        "mechanism": "owner-evidence",
+        "test": "TEST-RSTUB-002",
+        "mutationExit": 1,
+        "restoredExit": 0,
+        "mutationLog": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/rust381-mutations-nKQOEG/owner-evidence-mutated.log",
+        "restoredLog": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/rust381-mutations-nKQOEG/owner-evidence-restored.log"
+      },
+      {
+        "mechanism": "native-placeholder-guidance",
+        "test": "TEST-RSTUB-004",
+        "mutationExit": 1,
+        "restoredExit": 0,
+        "mutationLog": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/rust381-mutations-nKQOEG/native-placeholder-guidance-mutated.log",
+        "restoredLog": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/rust381-mutations-nKQOEG/native-placeholder-guidance-restored.log"
+      }
+    ]
+  },
+  "fixtureMutations": {
+    "mechanisms": [
+      {
+        "mechanism": "source-working-tree",
+        "test": "TEST-RELQ-BASELINE-001",
+        "mutationExit": 1,
+        "restoredExit": 0,
+        "mutationLog": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/rust381-fixture-mutations-WFYcFb/source-working-tree-mutated.log",
+        "restoredLog": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/rust381-fixture-mutations-WFYcFb/source-working-tree-restored.log"
+      },
+      {
+        "mechanism": "package-working-tree",
+        "test": "TEST-RELQ-PACKAGE-BINDING-001",
+        "mutationExit": 1,
+        "restoredExit": 0,
+        "mutationLog": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/rust381-fixture-mutations-WFYcFb/package-working-tree-mutated.log",
+        "restoredLog": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/rust381-fixture-mutations-WFYcFb/package-working-tree-restored.log"
+      },
+      {
+        "mechanism": "content-working-tree",
+        "test": "TEST-RELQ-SKILL-001",
+        "mutationExit": 1,
+        "restoredExit": 0,
+        "mutationLog": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/rust381-fixture-mutations-WFYcFb/content-working-tree-mutated.log",
+        "restoredLog": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/rust381-fixture-mutations-WFYcFb/content-working-tree-restored.log"
+      }
+    ]
+  },
+  "historySpike": {
+    "sourceCommit": "15cae0455fb8c9598db1b7901373fc688ca6a0cb",
+    "shallow": {
+      "command": [
+        "git",
+        "archive",
+        "--output",
+        "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/rust381-history-spike-bqO9K2/source.tar",
+        "15cae0455fb8c9598db1b7901373fc688ca6a0cb"
+      ],
+      "cwd": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/rust381-history-spike-bqO9K2/clone",
+      "exit": 128,
+      "log": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/rust381-history-spike-bqO9K2/shallow.log"
+    },
+    "complete": {
+      "command": [
+        "git",
+        "archive",
+        "--output",
+        "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/rust381-history-spike-bqO9K2/source.tar",
+        "15cae0455fb8c9598db1b7901373fc688ca6a0cb"
+      ],
+      "cwd": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/rust381-history-spike-bqO9K2/clone",
+      "exit": 0,
+      "log": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/rust381-history-spike-bqO9K2/complete.log"
+    },
+    "sourceInventory": "PASS",
+    "limitation": "Local shallow/full-history Git feasibility, not hosted Actions execution or assertion Red."
+  },
+  "diagnostics": {
+    "status": "FAIL",
+    "baselineErrors": 94,
+    "changedErrors": 94,
+    "addedErrors": 0,
+    "proof": {
+      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/rust381-diagnostics-dU9Oqo/proof.json",
+      "sha256": "a6ee0d609e42b4d8187b2a54b02aa3a4f75ce315481bb9800134d125feb4dd78"
+    },
+    "limitation": "Existing recommended-ESLint findings remain; no clean lint claim."
+  },
+  "previousAttempts": [
+    {
+      "shell": "rust381-full-gate",
+      "status": "CANCELLED",
+      "reason": "Historical fixtures changed after execution began; no qualifying credit."
+    },
+    {
+      "shell": "rust381-final-full-gate",
+      "status": "CANCELLED",
+      "reason": "Cancelled-run test copies shadowed production annotation selection; removed only verified task-owned copies, then refreshed same approved spec against actual production."
+    },
+    {
+      "shell": "rust381-clean-final-gate",
+      "status": "SETUP_ERROR",
+      "reason": "A transient test-copy source disappeared during startup snapshot; not assertion Red or PASS."
+    },
+    {
+      "shell": "rust381-verified-clean-gate",
+      "status": "NOT_RUN",
+      "reason": "Wrapper rejected older empty test directories; preserved unrelated older directories and removed only task-owned residue."
+    }
+  ],
+  "preservedFrozenReferences": [
+    {
+      "path": "/home/nahisaho/GitHub/musubix6/.sdd/release-validation.v0.2.4.json",
+      "sha256": "bab5f05b7def7db832eca6b39e95dba62dabbb75024f9f7122e4c5d816f2220a"
+    },
+    {
+      "path": "/home/nahisaho/GitHub/musubix6/.sdd/release-content-mutations.v0.2.4.json",
+      "sha256": "f30f0128f8ed40ea6a887d6c391f20a9036c9f3d2f0ce6bdea88c625714b45d8"
+    },
+    {
+      "path": "/home/nahisaho/GitHub/musubix6/.sdd/evidence/v024-linux-qualification.json",
+      "sha256": "1f74d4c7a98e9ebc178ce77fb75e871bebdb4369b9522f844f60b4a94c279262"
+    }
+  ],
+  "residualRisks": [
+    "Unsupported Rust types require manual signature repair; no unlimited inference guarantee.",
+    "Same-name method parameter arity remains a separate pre-existing heuristic limitation.",
+    "Local Git shallow/full-history spike and YAML parsing do not establish hosted Actions execution.",
+    "This is development validation, not new release qualification or authorization."
+  ],
+  "publicationAuthorized": false,
+  "agentExecutedPublish": false
+}

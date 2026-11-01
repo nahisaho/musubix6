@@ -260,16 +260,16 @@
       "created": "2026-10-29T00:05",
       "models": {
         "claude-sonnet-5.5": {
-          "calls": 161,
-          "inputTokens": 9110680,
-          "nanoAiu": 508598940000,
-          "outputTokens": 107706
+          "calls": 185,
+          "inputTokens": 10025529,
+          "nanoAiu": 587331830000,
+          "outputTokens": 118147
         },
         "gpt-6.1-sol": {
-          "calls": 1195,
-          "inputTokens": 152839335,
-          "nanoAiu": 4003297780000,
-          "outputTokens": 1322692
+          "calls": 1362,
+          "inputTokens": 172972129,
+          "nanoAiu": 4518406990000,
+          "outputTokens": 1457844
         }
       },
       "summary": "Update musubix for GiNZA 5.3"

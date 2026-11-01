@@ -270,5 +270,18 @@
       "scripts/release-qualification-io.mjs": "c3a5b80da7a4c1ced23f92d73553745ea3bf50d1d8856434c33a427f30ec7feb",
       "scripts/release-qualification.mjs": "7f54b39d7d7c942d317ec75081eb311908c275694c285cd8db84b920cb5cae13"
     }
+  },
+  "rust-stub-confidence": {
+    "by": "nahisaho",
+    "kind": "human",
+    "at": "2026-11-01T00:17:44.107Z",
+    "artifacts": {
+      ".sdd/specs/rust-stub-confidence.md": "abc368bc69b2fb764009653c11638cd817a6f0f4f0b6e21a004861665e11f1a0"
+    },
+    "tier": "T2",
+    "requireHuman": true,
+    "code": {
+      ".github/skills/lean-sdd-tdd/scripts/sdd.mjs": "3358d46324144a95e9c1759b94112c14db4d09aa49caa1a3a1234d5ef2ee62f2"
+    }
   }
 }

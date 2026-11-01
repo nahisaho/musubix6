@@ -1,0 +1,323 @@
+{
+  "schemaVersion": 1,
+  "feature": "rust-stub-confidence",
+  "issue": 381,
+  "followUp": true,
+  "generatedAt": "2026-11-01T00:52:04.802Z",
+  "status": "PASS",
+  "scope": "Explicit adjacent Result<bool,E>, complete scoped boolean loop evidence and supported owner-specific method arguments.",
+  "baseCommit": "7d9bd7a37a6daed922413829e1068b464c36552d",
+  "source": [
+    {
+      "path": ".github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+      "sha256": "3358d46324144a95e9c1759b94112c14db4d09aa49caa1a3a1234d5ef2ee62f2"
+    },
+    {
+      "path": ".github/skills/lean-sdd-tdd/scripts/sdd.test.mjs",
+      "sha256": "efa2b21e7de2e10529c7010e8cb8a66531c78576e8cc4469a80821be14e870b2"
+    },
+    {
+      "path": ".sdd/specs/rust-stub-confidence.md",
+      "sha256": "abc368bc69b2fb764009653c11638cd817a6f0f4f0b6e21a004861665e11f1a0"
+    }
+  ],
+  "approval": {
+    "by": "nahisaho",
+    "kind": "human",
+    "specSha256": "abc368bc69b2fb764009653c11638cd817a6f0f4f0b6e21a004861665e11f1a0"
+  },
+  "fullGate": {
+    "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/rust-inference-full-gate.json",
+    "sha256": "8801a756a81121a3205c9e14580ac39c24db9e758cd4d1334d0a79e49e01bf8d",
+    "verdict": "PASS",
+    "lines": [
+      "! human-approved diagnostics-contract: implementation changed since approval (.github/skills/lean-sdd-tdd/scripts/diagnostics.mjs) — a human should re-review, then approve record",
+      "✓ lock claude-code-support: ok [human] (human required)",
+      "✓ lock cost-history: ok [ai, review summary]",
+      "✓ lock diagnostics-contract: ok [human] (human required)",
+      "✓ lock diagnostics-eslint: ok [ai, review file]",
+      "✓ lock diagnostics-javascript: ok [ai, review file]",
+      "✓ lock diagnostics-python: ok [ai, review file]",
+      "✓ lock diagnostics-rust: ok [human] (human required)",
+      "✓ lock diagnostics-typescript: ok [ai, review file]",
+      "✓ lock diagnostics-workflow: ok [ai, review file]",
+      "✓ lock legacy-approval-provenance: ok [ai, review file]",
+      "✓ lock legacy-command-closure: ok [ai, review file]",
+      "✓ lock legacy-native-verdicts: ok [ai, review file]",
+      "✓ lock node-summary-verdict: ok [ai, review file]",
+      "✓ lock r36b-node-red: ok [ai, review summary]",
+      "✓ lock r36e-native-loader: ok [ai, review summary]",
+      "✓ lock r36g-rust-ci: ok [ai, review summary]",
+      "✓ lock r36i-c-compiler: ok [ai, review summary]",
+      "✓ lock r36j-go-compiler: ok [ai, review summary]",
+      "✓ lock release-qualification: ok [human] (human required)",
+      "✓ lock runner-selection: ok [ai, review summary]",
+      "✓ lock rust-stub-confidence: ok [human] (human required)",
+      "✓ lock source-discovery: ok [ai, review file]",
+      "✓ lock spec-context: ok [ai, review summary]",
+      "✓ trace: 96 REQ, 0 errors, 6 warnings",
+      "    warning: REQ-HOST-004 has no @implements code",
+      "    warning: REQ-KOTO-SYNC-001 has no @implements code",
+      "    warning: REQ-KOTO-SYNC-002 has no @implements code",
+      "    … +3 more warnings (all: trace --verbose)",
+      "✓ ledger: 918 entries, chain intact",
+      "✓ tdd evidence: 162/162 tests Red→Green, 1 weak Red 79 characterization (passed without a failing Red; not a weak Red) (1 retest: Red re-recorded with --retest, passed without a failing Red; 1 superseded an earlier strong Red — re-record a failing Red by temporarily breaking the implementation if that evidence matters: TEST-R36D-OWN-001) (19 refactor-recorded after the test/setup changed, no new Red: TEST-RELQ-CONTENT-ADMISSION-001, TEST-RELQ-BASELINE-001, TEST-RELQ-001, TEST-RELQ-CLOSURE-001, TEST-RELQ-002, TEST-RELQ-PROCESS-001, TEST-RELQ-SKILL-001, TEST-RELQ-PH-001, … +11; to replace that with real evidence: tdd red <ID> --retest \"<why>\" then tdd green <ID>)",
+      "! stub: 2 source file(s) of Green REQs still hold SDD-TODO(stub) / 'not implemented:' placeholders: .github/skills/lean-sdd-tdd/scripts/sdd.mjs:1718, .github/skills/lean-sdd-tdd/scripts/sdd.test.mjs:680 — implement or remove them (scopePolicy warn: set \"scopePolicy\": \"strict\" to fail)",
+      "✓ cmd test (1769.0s)"
+    ],
+    "command": [
+      "node",
+      ".github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+      "gate",
+      "--json"
+    ],
+    "limitation": "Gate JSON does not report complete native suite or skip counts; none are inferred from selected runs."
+  },
+  "tdd": [
+    {
+      "test": "TEST-RSTUB-005",
+      "redSeq": 899,
+      "greenSeq": 902,
+      "redHash": "6b7fa41db21471e5581f4a6c5c769861479dae636b36cee71d6aea275d15ead9",
+      "greenHash": "f9a98d35a27c204d45a48e5702d6138f9a15a5ce607276f8e49a56ea861b73f1"
+    },
+    {
+      "test": "TEST-RSTUB-006",
+      "redSeq": 900,
+      "greenSeq": 903,
+      "redHash": "271f3438de107478f9f41589755ef845754ce96d0ede3b6577439ec476bbdc68",
+      "greenHash": "080d5455c9bd59d074edf3db2fc5be99d4968a9f4dde64ccd415010c265306dc"
+    },
+    {
+      "test": "TEST-RSTUB-007",
+      "redSeq": 912,
+      "greenSeq": 913,
+      "redHash": "61c0e1d9be91a7419a1ea705d4b68a0c0e4c00262c0dd6d5aa35e029519d6bfa",
+      "greenHash": "1dfda048afc0cb0027d20af4047bfd37d2d040355da181fc7b5f4db77255b4ab"
+    }
+  ],
+  "supportedRuntimeSelection": [
+    {
+      "major": 20,
+      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/rust-inference-rust-node20.log",
+      "sha256": "494581068a570ed5cff7049ac71c252bd0f7b5dd82fe205dc962dedadf1e6c93",
+      "counts": {
+        "tests": 1081,
+        "pass": 123,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 958,
+        "todo": 0
+      },
+      "requiredSelectedSkips": 0,
+      "limitation": "958 name-filter exclusions are not executed passes."
+    },
+    {
+      "major": 22,
+      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/rust-inference-rust-node22.log",
+      "sha256": "aa50bf4b352ee6ffb002168d7db6efc2863c0a1215335b3ac2811dfb29b86a7f",
+      "counts": {
+        "tests": 123,
+        "pass": 123,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "requiredSelectedSkips": 0,
+      "limitation": "123 selected tests executed."
+    },
+    {
+      "major": 24,
+      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/rust-inference-rust-node24.log",
+      "sha256": "a2b4c9f342733a48b9b9b8a4a6b094cecab17ea5beb24be912b95434de7cf893",
+      "counts": {
+        "tests": 123,
+        "pass": 123,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "requiredSelectedSkips": 0,
+      "limitation": "123 selected tests executed."
+    }
+  ],
+  "mutationProof": {
+    "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/rust-inference-mutations-EHNBWB/proof.json",
+    "sha256": "4884d921ddab0176c8d8ae950b3ea0398fcdb38c36b63d83b84eaef3d6871a00"
+  },
+  "mutations": {
+    "sourceSha256": "3358d46324144a95e9c1759b94112c14db4d09aa49caa1a3a1234d5ef2ee62f2",
+    "runtime": "v24.22.1",
+    "mechanisms": [
+      {
+        "mechanism": "adjacent-result",
+        "test": "TEST-RSTUB-005",
+        "mutationExit": 1,
+        "restoredExit": 0,
+        "mutationLog": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/rust-inference-mutations-EHNBWB/adjacent-result-mutated.log",
+        "restoredLog": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/rust-inference-mutations-EHNBWB/adjacent-result-restored.log"
+      },
+      {
+        "mechanism": "whole-call-result",
+        "test": "TEST-RSTUB-005",
+        "mutationExit": 1,
+        "restoredExit": 0,
+        "mutationLog": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/rust-inference-mutations-EHNBWB/whole-call-result-mutated.log",
+        "restoredLog": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/rust-inference-mutations-EHNBWB/whole-call-result-restored.log"
+      },
+      {
+        "mechanism": "result-not-builder",
+        "test": "TEST-RSTUB-005",
+        "mutationExit": 1,
+        "restoredExit": 0,
+        "mutationLog": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/rust-inference-mutations-EHNBWB/result-not-builder-mutated.log",
+        "restoredLog": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/rust-inference-mutations-EHNBWB/result-not-builder-restored.log"
+      },
+      {
+        "mechanism": "bool-completeness",
+        "test": "TEST-RSTUB-006",
+        "mutationExit": 1,
+        "restoredExit": 0,
+        "mutationLog": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/rust-inference-mutations-EHNBWB/bool-completeness-mutated.log",
+        "restoredLog": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/rust-inference-mutations-EHNBWB/bool-completeness-restored.log"
+      },
+      {
+        "mechanism": "bool-consistency",
+        "test": "TEST-RSTUB-006",
+        "mutationExit": 1,
+        "restoredExit": 0,
+        "mutationLog": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/rust-inference-mutations-EHNBWB/bool-consistency-mutated.log",
+        "restoredLog": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/rust-inference-mutations-EHNBWB/bool-consistency-restored.log"
+      },
+      {
+        "mechanism": "bool-shadow",
+        "test": "TEST-RSTUB-006",
+        "mutationExit": 1,
+        "restoredExit": 0,
+        "mutationLog": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/rust-inference-mutations-EHNBWB/bool-shadow-mutated.log",
+        "restoredLog": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/rust-inference-mutations-EHNBWB/bool-shadow-restored.log"
+      },
+      {
+        "mechanism": "owner-arity",
+        "test": "TEST-RSTUB-007",
+        "mutationExit": 1,
+        "restoredExit": 0,
+        "mutationLog": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/rust-inference-mutations-EHNBWB/owner-arity-mutated.log",
+        "restoredLog": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/rust-inference-mutations-EHNBWB/owner-arity-restored.log"
+      },
+      {
+        "mechanism": "owner-empty-constraint",
+        "test": "TEST-RSTUB-007",
+        "mutationExit": 1,
+        "restoredExit": 0,
+        "mutationLog": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/rust-inference-mutations-EHNBWB/owner-empty-constraint-mutated.log",
+        "restoredLog": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/rust-inference-mutations-EHNBWB/owner-empty-constraint-restored.log"
+      },
+      {
+        "mechanism": "manual-member-arity",
+        "test": "TEST-RSTUB-007",
+        "mutationExit": 1,
+        "restoredExit": 0,
+        "mutationLog": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/rust-inference-mutations-EHNBWB/manual-member-arity-mutated.log",
+        "restoredLog": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/rust-inference-mutations-EHNBWB/manual-member-arity-restored.log"
+      },
+      {
+        "mechanism": "unknown-loop-marker",
+        "test": "TEST-RSTUB-003",
+        "mutationExit": 1,
+        "restoredExit": 0,
+        "mutationLog": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/rust-inference-mutations-EHNBWB/unknown-loop-marker-mutated.log",
+        "restoredLog": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/rust-inference-mutations-EHNBWB/unknown-loop-marker-restored.log"
+      },
+      {
+        "mechanism": "native-placeholder-guidance",
+        "test": "TEST-RSTUB-004",
+        "mutationExit": 1,
+        "restoredExit": 0,
+        "mutationLog": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/rust-inference-mutations-EHNBWB/native-placeholder-guidance-mutated.log",
+        "restoredLog": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/rust-inference-mutations-EHNBWB/native-placeholder-guidance-restored.log"
+      }
+    ]
+  },
+  "diagnostics": {
+    "proof": {
+      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/rust-inference-diagnostics-ZLd60L/proof.json",
+      "sha256": "a43580a8e7037fd13bb995d52ebc45ba28392b887b0544f6e3fa920dde7fc54c"
+    },
+    "status": "FAIL",
+    "baselineErrors": 94,
+    "changedErrors": 94,
+    "addedErrors": 0
+  },
+  "independentReference": {
+    "source": {
+      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/rust-inference-reference.rs",
+      "sha256": "5c25901d7e5d62ce998b74e39da8eebecf0963e9648480699583a6973f663506"
+    },
+    "binary": {
+      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/rust-inference-reference",
+      "sha256": "86b02c0e026dfd0d81a2421e44b50a000e1d30be63e7da8f74a6b9aa6c5a3be2"
+    },
+    "command": [
+      "rustc",
+      "--test",
+      "rust-inference-reference.rs"
+    ],
+    "nativeExecution": {
+      "exit": 0,
+      "stdout": "\nrunning 1 test\ntest reference ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s\n\n"
+    }
+  },
+  "assertionLogs": [
+    {
+      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/rust-inference-initial-red.log",
+      "sha256": "e07bcb56f3ce29b6e687cf68fa38536290d9f1262b620e6c88ba73a36fa556ab"
+    },
+    {
+      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/rust-inference-manual-member-red.log",
+      "sha256": "20abc05dfef50228fddc758704cf102f131639277b39b303d73b2719152d09af"
+    }
+  ],
+  "review": {
+    "model": "claude-sonnet-5.5",
+    "consecutiveCleanDeltas": 2,
+    "findingLedger": {
+      "path": ".sdd/review-rust-stub-confidence.md",
+      "sha256": "79dc41f1d68565bdc5e2c0fa2ffa053d590518b3bff21a501e97c8a28f54bebd"
+    },
+    "limitation": "Second clean delta confirms retained reviewed context and unchanged-byte report; no fresh reads or test reruns."
+  },
+  "nonQualifyingAttempts": [
+    "Early gate --no-run cancelled for review fix: no full-gate credit.",
+    "Fresh-type/reference fixtures did not reach compiler-guided only path: not evidence for that mechanism.",
+    "Diagnostic command without native environment failed setup: not assertion Red."
+  ],
+  "preservedFrozenReferences": [
+    {
+      "path": ".sdd/release-validation.v0.2.4.json",
+      "sha256": "bab5f05b7def7db832eca6b39e95dba62dabbb75024f9f7122e4c5d816f2220a"
+    },
+    {
+      "path": ".sdd/release-content-mutations.v0.2.4.json",
+      "sha256": "f30f0128f8ed40ea6a887d6c391f20a9036c9f3d2f0ce6bdea88c625714b45d8"
+    },
+    {
+      "path": ".sdd/evidence/v024-linux-qualification.json",
+      "sha256": "1f74d4c7a98e9ebc178ce77fb75e871bebdb4369b9522f844f60b4a94c279262"
+    }
+  ],
+  "residualRisks": [
+    "Arbitrary type/dataflow and receiver shadowing remain unsupported heuristics.",
+    "Compiler-guided additions lacking supported owner receivers retain guessed markers and old name-only argument fallback.",
+    "Missing Result payload/error evidence requires manual repair; .ok().is_some() alone cannot establish generic arguments.",
+    "94 pre-existing lint errors remain; hosted Actions and non-Linux environments were not verified."
+  ],
+  "releaseQualification": {
+    "status": "NOT_RUN",
+    "qualifyingStreak": 0
+  },
+  "publicationAuthorized": false,
+  "agentExecutedPublish": false
+}

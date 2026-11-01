@@ -1716,6 +1716,7 @@ function missingDeliverable(text) {
   return [].concat((readJson(CONFIG, null) ?? {}).deliverables ?? []).map(norm).some((d) => d && text.replace(/\\/g, '/').includes(d) && !fs.existsSync(path.join(ROOT, d)));
 }
 // a compile error located in a generated `SDD-TODO(stub)` placeholder (design 3.2): never a Red, the type must be filled by hand
+/** @id CODE-RSTUB-004 @implements REQ-RSTUB-004 */
 const stubTodoHit = (text) => {
   for (const file of workspaceFiles().filter((f) => /\.(?:rs|py|[cm]?[jt]sx?)$/.test(f))) {
     let lines;
@@ -2396,6 +2397,7 @@ function stubRust(testPath, src, dir, made) {
   const probeFile = !fs.existsSync(ownLib);
   if (probeFile) { fs.mkdirSync(path.dirname(ownLib), { recursive: true }); fs.writeFileSync(ownLib, ''); }
   const T = { int: 'i64', float: 'f64', str: 'String', bool: 'bool', result: 'Result<i64, String>' };
+  const unknownMarker = ' // SDD-TODO(stub): type unknown — write the real type by hand';
   // `use k::m::{Real as Alias}`: the body is analysed under the real name (#268)
   const aliases = new Map([...src.matchAll(/^\s*use\s[^;]*;/gm)].flatMap((u) => [...u[0].matchAll(/\b(\w+)\s+as\s+(\w+)/g)].filter((a) => a[1] !== 'self' && a[2] !== '_').map((a) => [a[2], a[1]])));
   if (aliases.size) src = src.replace(new RegExp(`^\\s*use\\s[^;]*;|\\b(${[...aliases.keys()].join('|')})\\b`, 'gm'), (m, a) => a ? aliases.get(a) : m);
@@ -2429,6 +2431,7 @@ function stubRust(testPath, src, dir, made) {
     return null;
   };
   // return type of the first call matching callPat, from what follows/precedes it: `.len()`, `[idx]`, comparisons and assert_eq! against Some/Ok/Err/enum values
+  /** @id CODE-RSTUB-005 @implements REQ-RSTUB-005 */
   const rustRet = (callPat, crate_) => {
     const ms = maskBraces(srcNoUse, true);
     for (const m of ms.matchAll(new RegExp(`${callPat}\\s*(?:::\\s*<[^;(){}]*?>)?\\s*\\(`, 'g'))) {
@@ -2438,6 +2441,9 @@ function stubRust(testPath, src, dir, made) {
       const asrt = /\bassert(?:_eq|_ne)?!\(\s*[\w.:]*$/.test(before);
       const ann = /\blet\s+(?:mut\s+)?\w+\s*:\s*([^=;]+?)\s*=\s*&?[\w.:]*$/.exec(before)?.[1];
       if (ann && !/\b_\b|\bimpl\b/.test(ann)) return ann;
+      const bound = /\blet\s+(?:mut\s+)?(\w+)\s*=\s*$/.exec(before)?.[1];
+      const alias = bound && new RegExp(`^\\s*;\\s*let\\s+(?:mut\\s+)?\\w+\\s*:\\s*(Result\\s*<\\s*bool\\s*,[^=;]+>)\\s*=\\s*${bound}\\s*;`).exec(maskBraces(after, true))?.[1];
+      if (alias && !/\b_\b|\bimpl\b/.test(alias)) return alias.trim();
       const rhs = (a) => { const x = /^\s*(?:==|!=)\s*/.exec(a) ?? (asrt ? /^\s*,\s*/.exec(a) : null); return x ? takeExpr(a.slice(x[0].length)) : null; };
       let x;
       if (/^\s*\.\s*(?:len|count|is_empty)\s*\(\s*\)/.test(after)) return 'Vec<i64>';
@@ -2554,19 +2560,22 @@ function stubRust(testPath, src, dir, made) {
   // builder chains `Type::builder().a(1).b(2).build()`: every link but the last returns Self by value (the last keeps its inferred type)
   const chainsOf = (n) => {
     const ms = maskBraces(srcNoUse, true), all = new Set(), mids = new Set();
+    const builtin = /^(?:unwrap\w*|expect\w*|is_\w+|clone|to_string|into|as_\w+|len|iter|collect|ok|err|map\w*|matches|contains|starts_with|ends_with|trim\w*|lines|chars|bytes|split\w*|to_uppercase|to_lowercase)$/;
     const skip = (i) => { let d = 1; for (i++; i < ms.length && d; i++) d += ms[i] === '(' ? 1 : ms[i] === ')' ? -1 : 0; return i; };
     for (const m of ms.matchAll(new RegExp(`(?<![\\w:])${n}(?:::<[^;(){}]*?>)?::[a-z_]\\w*\\s*\\(`, 'g'))) {
       let i = skip(m.index + m[0].length - 1);
       const links = [];
-      for (let x; (x = /^\s*\.\s*([a-z_]\w*)\s*(?:::\s*<[^;(){}]*?>)?\s*\(/.exec(ms.slice(i))) && !/^(?:unwrap\w*|expect\w*|is_\w+|clone|to_string|into|as_\w+|len|iter|collect|ok|err|map\w*|matches|contains|starts_with|ends_with|trim\w*|lines|chars|bytes|split\w*|to_uppercase|to_lowercase)$/.test(x[1]);) { links.push(x[1]); i = skip(i + x[0].length - 1); }
+      for (let x; (x = /^\s*\.\s*([a-z_]\w*)\s*(?:::\s*<[^;(){}]*?>)?\s*\(/.exec(ms.slice(i))) && !builtin.test(x[1]);) { links.push(x[1]); i = skip(i + x[0].length - 1); }
       const bound = /\blet\s+(?:mut\s+)?(\w+)\s*(?::[^=]+)?=\s*$/.exec(srcNoUse.slice(Math.max(0, m.index - 80), m.index))?.[1];
+      const continued = bound && [...ms.matchAll(new RegExp(`(?<![\\w.])${bound}\\s*\\.\\s*([a-z_]\\w*)\\s*\\(`, 'g'))].some(m => !builtin.test(m[1]));
       links.forEach((k) => all.add(k));
-      links.slice(0, bound && new RegExp(`(?<![\\w.])${bound}\\s*\\.\\s*[a-z_]\\w*\\s*\\(`).test(ms) ? undefined : -1).forEach((k) => mids.add(k));
+      links.slice(0, continued ? undefined : -1).forEach((k) => mids.add(k));
     }
     return { all: [...all], mids };
   };
   // capitalised names are types: `Name::Variant` => enum, otherwise a unit struct (never a function)
   // associated fns `Type::new(..)` and instance methods `v.m(..)` on `let v = Type::new(..)` (#103)
+  /** @id CODE-RSTUB-002 @implements REQ-RSTUB-002 REQ-RSTUB-007 */
   const rustImpl = (n, gn = null, crate_ = ownPkg, only = null) => {
     const tf = '(?:::<[^;(){}]*?>)?';
     // `T::default()` is provided by derive(Default) on our own non-generic stubs
@@ -2585,14 +2594,19 @@ function stubRust(testPath, src, dir, made) {
     const gen = (c) => c.args.map((_, i) => `A${i}`);
     const mk = gn ? 'Self(std::marker::PhantomData)' : 'Self';
     const sig = (k, self) => {
-      const flat = chain.all.includes(k) ? src.replace(/\b\w+\.|(?<=[)\]])\s*\./g, '') : src.replace(/\b\w+\./g, '');
-      // `Type::new(..)` is read from its own call, not from an earlier `Vec::new()`
-      const qual = self ? null : callInfo(flat, `${n}(?:::\\s*<[^;(){}]*?>)?\\s*::\\s*${k}`);
-      const c = qual && qual.argc !== undefined ? qual : callInfo(flat, k);
-      const pty = argTypes(self ? `(?<=[\\w)\\]]\\s*)\\.\\s*${k}` : `(?<![\\w.])${n}(?:::\\s*<[^;(){}]*?>)?\\s*::\\s*${k}`), g = gen(c).filter((_, i) => !pty[i]), mid = self && chain.mids.has(k);
-      const assocRet = !self && !mid && !c.chained && c.ret !== 'result' ? rustRet(`(?<![\\w.])${n}(?:::\\s*<[^;(){}]*?>)?::${k}`, crate_) : null;
-      const ret = mid ? 'Self' : (assocRet && !new RegExp(`^${n}\\b`).test(assocRet) ? assocRet : null) ?? (!self && !mid && c.ret && c.ret !== 'result' && T[c.ret] ? T[c.ret] : null) ?? (self ? rustRet(`(?<=[\\w)\\]]\\s*)\\.\\s*${k}`, crate_) ?? (c.ret?.startsWith('opt:') ? `Option<${c.ret.slice(4)}>` : T[c.ret ?? viaVar(`(?<![\\w])\\w+\\s*\\.\\s*${k}`)] ?? 'i64') : c.ret === 'result' ? 'Result<Self, String>' : ((c.chained ? null : T[viaVar(`(?<![\\w.])${n}(?:::\\s*<[^;(){}]*?>)?::${k}`)]) ?? 'Self'));
-      return `    pub fn ${k}${g.length ? `<${g.join(', ')}>` : ''}(${[self ? (mid ? 'self' : needsMut(k) ? '&mut self' : '&self') : '', ...c.args.map((_, i) => `_a${i}: ${pty[i] ?? `A${i}`}`)].filter(Boolean).join(', ')}) -> ${ret} {\n        ${!self && /^(new|default|with_\w+|from_\w+|create|empty)$/.test(k) ? (c.ret === 'result' ? `Ok(${mk})` : mk) : `unimplemented!("${n}::${k}")`}\n    }\n`;
+      const memberPat = `(?:${vars.map(v => `(?<![\\w.])${v}\\s*\\.\\s*${k}`).concat(`(?<![\\w.])${n}${tf}::[a-z_]\\w*\\s*\\([^;{}]*?\\)(?:\\s*\\.\\s*[a-z_]\\w*\\s*\\([^;{}]*?\\))*\\s*\\.\\s*${k}`).join('|')})`;
+      const memberCall = self ? callInfo(srcNoUse, memberPat) : null;
+      const callPat = self ? memberPat : `(?<![\\w.])${n}(?:::\\s*<[^;(){}]*?>)?\\s*::\\s*${k}`;
+      // Compiler-guided additions without a known receiver remain explicitly guessed.
+      const repair = self && only && memberCall.argc === undefined;
+      const c = repair ? callInfo(src.replace(/\b\w+\./g, ''), k) : self ? memberCall : callInfo(srcNoUse, callPat);
+      const pty = argTypes(repair ? `(?<=[\\w)\\]]\\s*)\\.\\s*${k}` : callPat), g = gen(c).filter((_, i) => !pty[i]), mid = self && chain.mids.has(k);
+      const assocRet = !self && !mid && !c.chained && c.ret !== 'result' ? rustRet(callPat, crate_) : null;
+      const memberRet = self ? rustRet(memberPat, crate_) ?? (memberCall.ret?.startsWith('opt:') ? `Option<${memberCall.ret.slice(4)}>` : T[memberCall.ret ?? viaVar(memberPat)]) : null;
+      const ret = mid ? 'Self' : (assocRet && !new RegExp(`^${n}\\b`).test(assocRet) ? assocRet : null) ?? (!self && !mid && !c.chained && c.ret && c.ret !== 'result' && T[c.ret] ? T[c.ret] : null) ?? (self ? memberRet ?? 'i64' : c.ret === 'result' ? 'Result<Self, String>' : ((c.chained ? null : T[viaVar(`(?<![\\w.])${n}(?:::\\s*<[^;(){}]*?>)?::${k}`)]) ?? 'Self'));
+      const guessed = !!only || (self && !mid && !memberRet);
+      note(`${n}::${k}`, guessed ? 'guessed' : 'inferred', { evidence: evidenceLine(k, self ? memberPat : `(?<![\\w.])${n}${tf}::${k}`) });
+      return `    pub fn ${k}${g.length ? `<${g.join(', ')}>` : ''}(${[self ? (mid ? 'self' : needsMut(k) ? '&mut self' : '&self') : '', ...c.args.map((_, i) => `_a${i}: ${pty[i] ?? `A${i}`}`)].filter(Boolean).join(', ')}) -> ${ret} {${guessed ? unknownMarker : ''}\n        ${!self && /^(new|default|with_\w+|from_\w+|create|empty)$/.test(k) ? (c.ret === 'result' ? `Ok(${mk})` : mk) : `unimplemented!("${n}::${k}")`}\n    }\n`;
     };
     return `\nimpl${gn ? `<${gn.join(', ')}>` : ''} ${n}${gn ? `<${gn.join(', ')}>` : ''} {\n${[...assoc.map((k) => sig(k, false)), ...inst.map((k) => sig(k, true))].join('\n')}}\n`;
   };
@@ -2610,7 +2624,7 @@ function stubRust(testPath, src, dir, made) {
     return [...fields];
   };
   // the `pub fn` blocks of a generated impl
-  const fnBlocks = (impl) => [...impl.matchAll(/^    pub fn (\w+)[^\n]*\{\n(?:        [^\n]*\n)+    \}\n/gm)];
+  const fnBlocks = (impl) => [...impl.matchAll(/^    pub fn (\w+)[^\n]*\{(?: \/\/ SDD-TODO\(stub\):[^\n]*)?\n(?:        [^\n]*\n)+    \}\n/gm)];
   // appends fn blocks to the inherent impl of `x` in `t` (generic impls included); `create` adds `impl<..> x<..> {}` when the type has none
   const addToImpl = (t, x, blocks, create) => {
     if (!blocks.length) return t;
@@ -2651,6 +2665,38 @@ function stubRust(testPath, src, dir, made) {
     const ga = fields.length ? null : genericArgs(n), gn = ga && genNames(ga);
     return fields.length ? `#[derive(Debug, Clone, Default, PartialEq)]\npub struct ${n} {\n${fields.map(([f, t]) => `    pub ${f}: ${t},\n`).join('')}}\n${rustImpl(n, null, crate_)}` : gn ? `#[derive(Debug, Clone, PartialEq)]\npub struct ${n}<${gn.join(', ')}>(pub std::marker::PhantomData<(${gn.map((x) => x.startsWith("'") ? `&${x} ()` : x).join(', ')},)>);\n${rustImpl(n, gn, crate_)}` : `#[derive(Debug, Clone, Default, PartialEq)]\npub struct ${n};\n${rustImpl(n, null, crate_)}`;
   };
+  /** @id CODE-RSTUB-006 @implements REQ-RSTUB-006 */
+  const boolLoopType = (n, crate_) => {
+    const ms = maskBraces(srcNoUse, true);
+    const loops = [...ms.matchAll(new RegExp(`\\bfor\\s+(\\(([^)]*)\\)|\\w+)\\s+in\\s+&?${n}\\b\\s*\\{`, 'g'))];
+    let type = null;
+    for (const loop of loops) {
+      const open = loop.index + loop[0].length - 1, end = matchEnd(srcNoUse, open);
+      if (end < 0) return null;
+      const body = srcNoUse.slice(open + 1, end), masked = ms.slice(open + 1, end);
+      const bindings = loop[2] ? splitTop(loop[2]) : [loop[1]];
+      if (!bindings.length || bindings.some(v => !/^[a-zA-Z]\w*$/.test(v))) return null;
+      for (const v of bindings) {
+        if (new RegExp(`\\b(?:let|for)\\s+[^;={}]*\\b${v}\\b|\\|[^|\\n]*\\b${v}\\b`).test(masked)) return null;
+        const types = [];
+        for (const m of masked.matchAll(new RegExp(`\\bassert_(?:eq|ne)!\\(\\s*\\*\\s*${v}\\s*,\\s*|\\*\\s*${v}\\s*(?:==|!=)\\s*`, 'g'))) {
+          types.push(exprType(takeExpr(body.slice(m.index + m[0].length)), crate_, false));
+        }
+        for (const m of masked.matchAll(new RegExp(`\\bassert_(?:eq|ne)!\\(\\s*([^,()]*)\\s*,\\s*\\*\\s*${v}\\s*[,)]`, 'g'))) {
+          const start = m.index + m[0].indexOf('(') + 1;
+          types.push(exprType(body.slice(start, masked.indexOf(',', start)), crate_, false));
+        }
+        for (const m of masked.matchAll(new RegExp(`([^;(){}]*?)\\s*(?:==|!=)\\s*\\*\\s*${v}\\b`, 'g'))) {
+          types.push(exprType(body.slice(m.index, m.index + m[1].length), crate_, false));
+        }
+        if (!types.length || types.some(t => t !== 'bool')) return null;
+      }
+      const current = loop[2] ? `(${bindings.map(() => 'bool').join(', ')}${bindings.length === 1 ? ',' : ''})` : 'bool';
+      if (type && type !== current) return null;
+      type = current;
+    }
+    return type;
+  };
   // const / static tables: the type comes from what the test compares or iterates them with (tuples, Option, slices), else i64
   const constStub = (n, crate_) => {
     const str = new RegExp(`\\b${n}\\s*(?:\\.\\s*(?:len|chars|as_str|is_empty)\\b|[!=]=\\s*"|,\\s*")`).test(srcNoUse);
@@ -2663,7 +2709,11 @@ function stubRust(testPath, src, dir, made) {
     const loop = new RegExp(`\\bfor\\s+(\\(([^)]*)\\)|\\w+)\\s+in\\s+&?${n}\\b`).exec(srcNoUse);
     if (str) return `pub const ${n}: &str = "";\n`;
     if (idx) return fit(idx, true);
-    if (loop) return fit(loop[2] ? `(${loop[2].split(',').map(() => 'i64').join(', ')}${loop[2].split(',').length === 1 ? ',' : ''})` : 'i64', true);
+    if (loop) {
+      const supported = boolLoopType(n, crate_);
+      if (supported) return fit(supported, true);
+      return fit(loop[2] ? `(${loop[2].split(',').map(() => 'i64').join(', ')}${loop[2].split(',').length === 1 ? ',' : ''})` : 'i64', true).replace(/;\n$/, `;${unknownMarker}\n`);
+    }
     if (direct) return fit(direct);
     // a float literal beside the const (`EPSILON / 2.0`, `assert_eq!(EPSILON, 1e-5)`) makes it f64 (#310)
     const FL = '-?(?:\\d+\\.\\d+(?:[eE][+-]?\\d+)?|\\d+[eE][+-]?\\d+)(?:_?f(?:32|64))?\\b|-?\\d+_?f(?:32|64)\\b';
@@ -2675,13 +2725,20 @@ function stubRust(testPath, src, dir, made) {
   };
   // `tdd stub --report`: confidence (shown | inferred | guessed) and the first test line that mentions the element (design 3.2)
   const report = [];
-  const evidenceLine = (n) => { let full = src; try { full = fs.readFileSync(path.join(ROOT, testPath), 'utf8'); } catch { /* scoped source only */ } const at = full.split('\n').findIndex((l) => !/^\s*use\s/.test(l) && new RegExp(`\\b${n}\\b`).test(l)); return at < 0 ? testPath : `${testPath}:${at + 1}`; };
+  const evidenceLine = (n, pat = null) => {
+    let full = src; try { full = fs.readFileSync(path.join(ROOT, testPath), 'utf8'); } catch { /* scoped source only */ }
+    if (pat) {
+      const match = new RegExp(pat).exec(maskBraces(full, true));
+      if (match) return `${testPath}:${full.slice(0, match.index + match[0].length - n.length).split('\n').length}`;
+    }
+    const at = full.split('\n').findIndex((l) => !/^\s*use\s/.test(l) && new RegExp(`\\b${n.split('::').at(-1)}\\b`).test(l));
+    return at < 0 ? testPath : `${testPath}:${at + 1}`;
+  };
   const note = (element, confidence, extra = {}) => { if (!report.some((r) => r.element === element)) report.push({ element, confidence, evidence: evidenceLine(element), ...extra }); };
   const reEsc = (x) => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  // report-only: a free fn whose return type is literally annotated in the test is `shown`; one defaulted to i64 with no evidence is `guessed` (the emitted code is unchanged)
-  const noteFn = (n, rr, cret, ret) => {
+  const noteFn = (n, rr, supported) => {
     if (rr && new RegExp(`\\blet\\s+(?:mut\\s+)?\\w+\\s*:\\s*${reEsc(rr)}\\s*=\\s*&?[\\w.:]*(?<![\\w.])${n}\\s*(?:::\\s*<[^;(){}]*?>)?\\s*\\(`).test(srcNoUse)) return note(n, 'shown');
-    if (!rr && !cret) return note(n, 'guessed', { unmarked: `return type defaulted to ${ret}` });
+    if (!supported) return note(n, 'guessed');
     note(n, 'inferred');
   };
   // a const typed in the test itself: `let x: f64 = LIMIT;` or `LIMIT as f64`, and the emitted type is that type
@@ -2689,16 +2746,18 @@ function stubRust(testPath, src, dir, made) {
     const ty = new RegExp(`\\blet\\s+(?:mut\\s+)?\\w+\\s*:\\s*([^=;]+?)\\s*=\\s*&?${n}\\s*;`).exec(srcNoUse)?.[1] ?? new RegExp(`\\b${n}\\s+as\\s+([iuf](?:8|16|32|64|128|size))\\b`).exec(srcNoUse)?.[1];
     return !!ty && cs.startsWith(`pub const ${n}: ${ty.trim()} =`);
   };
+  /** @id CODE-RSTUB-003 @implements REQ-RSTUB-003 */
   const itemStub = (n, crate_ = ownPkg) => {
     if (/^[A-Z][A-Z0-9_]+$/.test(n)) {
       const cs = constStub(n, crate_);
-      note(n, cs ? (shownConst(n, cs) ? 'shown' : 'inferred') : 'guessed');
+      note(n, cs && !cs.includes('SDD-TODO(stub)') ? (shownConst(n, cs) ? 'shown' : 'inferred') : 'guessed');
       // no evidence for the type: a wrong concrete type would give a misleading Red, so the placeholder fails to compile at this element
       return cs ?? `pub const ${n}: () = (); // SDD-TODO(stub): type unknown — write the real type and value by hand\n`;
     }
     return itemStub0(n, crate_);
   };
-  const itemStub0 = (n, crate_ = ownPkg) => { if (/^[A-Z]/.test(n)) { const ts = traitStub(n) ?? typeStub(n, crate_); if (ts) note(n, 'inferred'); return ts; } const c = callInfo(src, n); c.ret ??= viaVar(`(?<![\\w.])(?:\\w+::)*${n}`); const ga = genericArgs(n, true)?.filter((a) => !a.startsWith("'")), pty = ga ? [] : argTypes(`(?<![\\w.])(?:\\w+::)*${n}`), g = ga ? genNames(ga) : c.args.map((_, i) => `A${i}`).filter((_, i) => !pty[i]); const rr = rustRet(`(?<![\\w.])(?:\\w+::)*${n}`, crate_); const ret = rr ?? (c.ret?.startsWith('opt:') ? `Option<${c.ret.slice(4)}>` : T[c.ret] ?? 'i64'); noteFn(n, rr, c.ret, ret); return `pub fn ${n}${g.length ? `<${g.join(', ')}>` : ''}(${c.args.map((_, i) => `_a${i}: ${ga ? 'impl Sized' : pty[i] ?? `A${i}`}`).join(', ')}) -> ${ret} {\n    unimplemented!("${n}")\n}\n`; };
+  /** @id CODE-RSTUB-001 @implements REQ-RSTUB-001 */
+  const itemStub0 = (n, crate_ = ownPkg) => { if (/^[A-Z]/.test(n)) { const ts = traitStub(n) ?? typeStub(n, crate_); if (ts) note(n, 'inferred'); return ts; } const c = callInfo(src, n); c.ret ??= viaVar(`(?<![\\w.])(?:\\w+::)*${n}`); const ga = genericArgs(n, true)?.filter((a) => !a.startsWith("'")), pty = ga ? [] : argTypes(`(?<![\\w.])(?:\\w+::)*${n}`), g = ga ? genNames(ga) : c.args.map((_, i) => `A${i}`).filter((_, i) => !pty[i]); const rr = rustRet(`(?<![\\w.])(?:\\w+::)*${n}`, crate_); const supported = rr ?? (c.ret?.startsWith('opt:') ? `Option<${c.ret.slice(4)}>` : T[c.ret]); const ret = supported ?? 'i64'; noteFn(n, rr, supported); return `pub fn ${n}${g.length ? `<${g.join(', ')}>` : ''}(${c.args.map((_, i) => `_a${i}: ${ga ? 'impl Sized' : pty[i] ?? `A${i}`}`).join(', ')}) -> ${ret} {${supported ? '' : unknownMarker}\n    unimplemented!("${n}")\n}\n`; };
   // `use <crate>::a::b::{X, f};` => missing modules `a`, `a/b` (declared in the parent) holding the imported items (#69). Existing modules are never touched.
   const pkgName = (toml) => /\[package\][^[]*?^\s*name\s*=\s*"([^"]+)"/ms.exec(fs.readFileSync(toml, 'utf8'))?.[1]?.replace(/-/g, '_');
   // every workspace member crate by name, so `use other_crate::a::X` is stubbed in that crate (#76)
@@ -2845,7 +2904,7 @@ function stubRust(testPath, src, dir, made) {
         const at = files.map((f) => ({ f, text: fs.readFileSync(f, 'utf8') })).find((x) => new RegExp(`\\b(?:struct|enum)\\s+${t}\\b`).test(x.text));
         if (!at) continue;
         const owner = [...crates].find(([, r]) => at.f.startsWith(r + path.sep))?.[0] ?? ownPkg;
-        const blocks = fnBlocks(rustImpl(t, null, owner, { assoc: [...assoc], inst: [...inst] })).filter((f) => !new RegExp(`\\bfn\\s+${f[1]}\\b`).test(at.text)).map((f) => { note(`${t}::${f[1]}`, 'guessed'); return f[0].replace(/\{\n/, '{ // SDD-TODO(stub): signature guessed from the test — check types\n'); });
+        const blocks = fnBlocks(rustImpl(t, null, owner, { assoc: [...assoc], inst: [...inst] })).filter((f) => !new RegExp(`\\bfn\\s+${f[1]}\\b`).test(at.text)).map((f) => f[0]);
         const next = addToImpl(at.text, t, blocks, true);
         if (next === at.text) continue;
         fs.writeFileSync(at.f, next);

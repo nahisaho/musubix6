@@ -6,6 +6,7 @@ import os from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { test } from 'node:test';
 import { EventEmitter } from 'node:events';
+import { execFileSync } from 'node:child_process';
 import * as processIo from './release-qualification-io.mjs';
 import {
   contentCaseCatalogue, buildContentCasePlan, runContentCase, validateContentCase,
@@ -230,13 +231,14 @@ test('TEST-RELQ-READINESS-001 refuses synthetic inline empty-run readiness witho
 /** @id TEST-RELQ-PACKAGE-BINDING-001 @verifies REQ-RELQ-005 */
 test('TEST-RELQ-PACKAGE-BINDING-001 uses the exact frozen tgz and rejects mismatched packaged origins', async t => {
   const directory = workspace(t);
+  const approvedSource = approvedSourceFixture(directory);
   const npm = path.resolve(path.dirname(process.execPath), '../lib/node_modules/npm/bin/npm-cli.js');
   const packed = await processIo.execute({ command: [process.execPath, npm, 'pack', '--offline',
-    '--ignore-scripts', '--json', '--pack-destination', directory], cwd: root,
+    '--ignore-scripts', '--json', '--pack-destination', directory], cwd: approvedSource,
     env: processIo.cleanEnvironment(process.env, process.env.PATH), timeoutMs: 120000 });
   assert.equal(packed.exit, 0, packed.stderr);
   const tgz = path.join(directory, JSON.parse(packed.stdout)[0].filename);
-  const context = contentContext(directory, 'SKILL-MUTATION');
+  const context = contentContext(directory, 'SKILL-MUTATION', approvedSource);
   context.configuration = { qualifying: true, packagePath: tgz, packageSha256: fileDigest(tgz) };
   const target = contentCaseCatalogue(contentReference, 'SKILL-MUTATION')
     .find(row => row.kind === 'vendor' && row.origin === 'package' && row.policy === 'unauthorized-byte');
@@ -269,13 +271,25 @@ function workspace(t) {
   return directory;
 }
 
-function contentContext(directory, cellId) {
+function contentContext(directory, cellId, source = approvedSourceFixture(directory)) {
+  fs.copyFileSync(path.join(root, '.sdd/release-content-mutations.v0.2.4.json'),
+    path.join(source, '.sdd/release-content-mutations.v0.2.4.json'));
   return {
-    source: root, output: path.join(directory, 'content'), node: process.execPath,
+    source, output: path.join(directory, 'content'), node: process.execPath,
     cell: { id: cellId, runtime: '24', timeoutSeconds: 3600 },
     environment: { ...process.env, TMPDIR: directory, PYTHONDONTWRITEBYTECODE: '1' },
     configuration: {},
   };
+}
+
+function approvedSourceFixture(directory) {
+  const source = path.join(directory, 'approved-source'), archive = path.join(directory, 'approved-source.tar');
+  assert.match(contentReference.vendorReference.sourceCommit, /^[a-f0-9]{40}$/);
+  fs.mkdirSync(source);
+  execFileSync('git', ['archive', '--format=tar', '--output', archive,
+    contentReference.vendorReference.sourceCommit], { cwd: root });
+  execFileSync('tar', ['--extract', '--same-permissions', '--file', archive, '--directory', source]);
+  return source;
 }
 
 function alteredContentReceipt(directory, row, change) {
@@ -305,14 +319,15 @@ test('TEST-RELQ-CONTENT-ADMISSION-001 accepts seven genuine bindings and rejects
 });
 
 /** @id TEST-RELQ-BASELINE-001 @verifies REQ-RELQ-001 REQ-RELQ-002 */
-test('TEST-RELQ-BASELINE-001 validates the approved source inventory before tool preparation', async t => {
+test('TEST-RELQ-BASELINE-001 validates the historical approved source inventory before tool preparation', async t => {
   const { preflight } = await import('./release-qualification-cli.mjs');
   const referencePath = path.join(root, '.sdd/release-content-mutations.v0.2.4.json');
-  assert.doesNotThrow(() => assertContentInventory({ referencePath, referenceSha256: fileDigest(referencePath),
-    originRoot: root, origin: 'source', host: 'copilot' }),
-  'the explicitly approved current source must be a valid positive inventory');
   const directory = workspace(t), scope = scopeFixture(directory);
-  fs.cpSync(path.join(root, '.github/skills'), path.join(scope.root, '.github/skills'), { recursive: true });
+  const approvedSource = approvedSourceFixture(directory);
+  fs.cpSync(path.join(approvedSource, '.github/skills'), path.join(scope.root, '.github/skills'), { recursive: true });
+  assert.doesNotThrow(() => assertContentInventory({ referencePath, referenceSha256: fileDigest(referencePath),
+    originRoot: scope.root, origin: 'source', host: 'copilot' }),
+  'the explicitly approved revision must be a valid positive inventory independently of later development');
   const workRoot = path.join(directory, 'preparation');
   let reachedRuntime = false;
   const configuration = () => ({
