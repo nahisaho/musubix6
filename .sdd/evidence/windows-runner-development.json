@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
   "feature": "windows-runner",
-  "status": "LOCAL_GATE_PASS_AWAITING_NATIVE_CI",
+  "status": "LOCAL_GATE_PASS_NATIVE_CI_FAILURE_UNDER_INVESTIGATION",
   "releaseQualification": false,
   "sourceSha256": "1ce7c7ff59214fd60579023d620ec456d866adf08ca2827c481a4661bcf2c62e",
   "testSha256": {
     ".github/skills/lean-sdd-tdd/scripts/windows-runner.test.mjs": "73c8949a78b25d18961e87f01fec89ec5ef20944d0bfbeb8bd0d2c8a5b009bce",
-    ".github/skills/lean-sdd-tdd/scripts/windows-native.test.mjs": "4cb09e7506f47bfc8bf50a10995484101e8c5ae86819074bf78e1850b0712143"
+    ".github/skills/lean-sdd-tdd/scripts/windows-native.test.mjs": "a683b0ab1dfebf8d468dbe13837e97ae75159cdfd176ae1688dd164d642e5bfa"
   },
   "developmentHost": {
     "platform": "linux",
@@ -90,7 +90,11 @@
     "passed": 0,
     "failed": 0,
     "skipped": 2,
-    "hostedCi": "NOT_RUN",
+    "hostedCi": "FIRST_RUN_FAILED",
+    "firstRunUrl": "https://github.com/nahisaho/musubix6/actions/runs/41410537867",
+    "firstRunCommit": "ade2b64fe96bac712dacbb54830e73d935048e33",
+    "firstRunResults": "All three Node jobs failed in source controls. Node24 logs show MSVC and all four regression controls passed with no skips, but the real-npm control received empty gate stdout and failed JSON parsing. Installed-host and standalone steps were not run.",
+    "diagnosticFollowup": "Native harness now asserts nonempty JSON stdout and includes gate exit/stderr before parsing. This improves failure visibility, not production behavior or native acceptance.",
     "requiredControls": "Actual Windows Node20/22/24: real npm success/nonzero and literal argv/admission; initialized MSVC stdio.h plus Windows SDK linking; source, copied Copilot/Claude skills and lone standalone script."
   },
   "diagnostics": {

@@ -28,6 +28,7 @@ function fixture(t, checks) {
 }
 function gate(root, extra) {
   const result = run(process.execPath, [script, '--root', root, 'gate', '--json'], root, extra);
+  assert.ok(result.stdout.trim(), `gate returned no JSON (exit ${result.status}): ${result.stderr}`);
   return { ...result, report: JSON.parse(result.stdout) };
 }
 
