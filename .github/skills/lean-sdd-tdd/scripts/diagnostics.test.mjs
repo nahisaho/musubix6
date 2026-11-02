@@ -20,6 +20,10 @@ const parser = require.resolve('@typescript-eslint/parser');
 const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'musubix6-diagnostics-test-'));
 after(() => fs.rmSync(scratch, { recursive: true, force: true }));
 const { NODE_TEST_CONTEXT, ...env } = process.env;
+function killOwnedDescendant(pid, kill = process.kill) {
+  try { kill(pid, 'SIGKILL'); }
+  catch (error) { if (error.code !== 'ESRCH') throw error; }
+}
 function write(root, name, contents) {
   fs.mkdirSync(path.dirname(path.join(root, name)), { recursive: true });
   fs.writeFileSync(path.join(root, name), contents);
@@ -216,10 +220,7 @@ test('TEST-DIAGCLI-004 worker success, cwd, timeout, signals, output boundaries 
     while (running() && Date.now() < orphanDeadline) await new Promise(resolve => setImmediate(resolve));
     assert.equal(running(), false, 'owned descendant must not survive a successful worker exit');
   } finally {
-    if (descendant) {
-      try { process.kill(descendant, 'SIGKILL'); }
-      catch (error) { if (error.code !== 'ESRCH') throw error; }
-    }
+    if (descendant) killOwnedDescendant(descendant);
   }
   incomplete(await runProvider('typescript', root, { worker: worker("process.kill(process.pid,'SIGTERM');") }), /signal|SIGTERM|exit/i);
   incomplete(await runProvider('typescript', root, { worker: worker("process.stdout.write('{');") }), /output|JSON|protocol/i);
@@ -249,6 +250,17 @@ test('TEST-DIAGCLI-004 worker success, cwd, timeout, signals, output boundaries 
 
 /** @id TEST-DIAGCLI-CLOSE-001 @verifies REQ-DIAGCLI-004 REQ-DIAGCLI-005 */
 test('TEST-DIAGCLI-CLOSE-001 checks close-time deadlines and retains native failures during descendant cleanup', async () => {
+  const calls = [];
+  killOwnedDescendant(123, (pid, signal) => calls.push([pid, signal]));
+  assert.deepEqual(calls, [[123, 'SIGKILL']], 'cleanup targets only the owned PID with the existing signal');
+  const absent = Object.assign(new Error('owned process already absent'), { code: 'ESRCH' });
+  assert.doesNotThrow(() => killOwnedDescendant(123, () => { throw absent; }),
+    'an owned descendant may exit between the running probe and final kill');
+  for (const code of ['EPERM', 'EIO', undefined]) {
+    const error = Object.assign(new Error('cleanup failed'), { code });
+    assert.throws(() => killOwnedDescendant(123, () => { throw error; }), actual => actual === error,
+      'permission and unknown cleanup errors must propagate unchanged');
+  }
   const root = fixture();
   const timeoutMs = 60000;
   for (const elapsed of [timeoutMs - 1, timeoutMs, timeoutMs + 1]) {
@@ -298,7 +310,7 @@ test('TEST-DIAGCLI-CLOSE-001 checks close-time deadlines and retains native fail
         } finally {
           if (descendants && fs.existsSync(pidFile)) {
             descendant = Number(fs.readFileSync(pidFile, 'utf8'));
-            if (Number.isSafeInteger(descendant) && descendant > 0 && running(descendant)) process.kill(descendant, 'SIGKILL');
+            if (Number.isSafeInteger(descendant) && descendant > 0 && running(descendant)) killOwnedDescendant(descendant);
           }
         }
       }

@@ -128,3 +128,39 @@ scopeはexact0/widened1/unknown0です。user-level `.npmrc` の既存Greenか�
 承認後のRust実装差分は `protocolError ??= parsed.error` をcompiler-message分岐から全recordの処理後へ移した1行だけです。この移動を逆に戻すと、承認時の実装hash `e7e45d7fdc681e9bbd87305c71a26bb0d1325e2b4c7be377cd59291f46cf440e` と一致しました。現行hashは `0e33a254c9dc32ec045588e5e629ba06f83a5c4d2f7351221aae29ad1f00210a` です。
 この差分と、不正末尾を未完了にすること・有効prefixを保持することを説明した後、nahisahoから「承認。コミットします。」という回答を得ました。Rust specは同じhash `22403034ee9681e0aa55f1587f5a34ca21520e6330b35a7f14886358573411c8` のままprepare・recordを行い、保存された実装baselineと現行fileの一致を確認しました。成功gate時に残っていたRustの人間再確認は、この実際の承認記録で更新しました。
 gate後に要件・診断実装・テスト・実行設定は変えていません。以後の変更は承認・観測記録と生成cost logだけです。今回の承認範囲はコミットまでであり、push・merge・tag・公開は含みません。未確認の環境・full evidence gate・release qualificationは引き続き残ります。
+
+## Release 0.2.6: test-owned cleanup race (2026-11-02)
+
+The diagnostics contract directs later evidence updates to this existing plan.
+Hosted run 41541792484 on bb0fdd3 passed the explicit uv installation and
+TEST-GINZA-001, then failed TEST-DIAGCLI-CLOSE-001 at its final SIGKILL with
+ESRCH. The owned process can exit after the running probe. This is a test
+cleanup race, not a provider verdict failure or valid assertion Red.
+The existing TEST-DIAGCLI-004 cleanup already accepts only ESRCH.
+
+| REQ | PASS condition | counterexample | TEST/command | observed evidence |
+| --- | --- | --- | --- | --- |
+| `REQ-DIAGCLI-004`, `REQ-DIAGCLI-005` | Test cleanup sends SIGKILL to the same owned PID; success and ESRCH (already absent) complete normally, while every other error propagates unchanged | A kill callback throws ESRCH after a positive running probe: cleanup must not replace the original test result. EPERM, EIO and an error without a code must still fail | TEST-DIAGCLI-CLOSE-001: injected kill callback, successful argument control, ESRCH and three representative non-ESRCH errors; retain all 12 deadline/payload/descendant rows | Hosted failure retained in v026-ci-uv-dry-run-failed.log. Deterministic assertion Red/Green and bounded restored mutations are required; a successful CI retry alone is not a fix |
+
+First-failure stages: contract = unchanged deadline, reason-retention and
+descendant assertions; trusted inputs = only a validated owned PID enters
+cleanup; execution = the process may disappear between probe and kill;
+verdict = ignore only the independently specified absent-process condition,
+never permission or unknown errors; history = retain both failed CI runs and
+the interrupted zero-credit manifest; integration/distribution = the packaged
+test bytes change, so refresh the Git-bound inventory, package and frozen
+candidate and restart both complete 24-cell runs. No stage is waived.
+This fixture repair does not broaden production cleanup guarantees or prove
+arbitrary PID-reuse, detached-process or non-Linux behavior.
+
+Observed fixture evidence: the deterministic missing-process assertion failed
+before the helper repair. Formal Green was then refused because the changed
+helper is part of the test oracle, not production implementation; retain that
+refusal and do not claim a new same-hash production Red/Green pair.
+TEST-DIAGCLI-CLOSE-001 and TEST-DIAGCLI-004 subsequently passed as explicitly
+labelled Refactor runs. Three isolated mutations (reject ESRCH, swallow other
+errors, change SIGKILL) each produced an assertion failure, with passing
+baseline and restoration. The existing provider budgets, all 12 close-time
+rows and the real descendant assertions remain unchanged. Actual logs are
+retained as v026-cleanup-race-{red,green,refactor}.log and
+v026-cleanup-mutations.json; hosted successor validation remains required.
