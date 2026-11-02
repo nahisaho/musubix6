@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { randomUUID } from 'node:crypto';
 import {
   admitPlan, freezeCandidate, checkFrozenCandidate, validateCellEvidence, evaluateReadiness,
-  recordRun, materializeSource, probeTool, executionInputPaths,
+  recordRun, materializeSource, probeTool, executionInputPaths, resolveHistoricalCatalogue,
 } from './release-qualification.mjs';
 import { hostMutations } from './release-host-mutations.mjs';
 import { assertContentInventory } from './release-qualification-content-mutations.mjs';
@@ -18,7 +18,7 @@ import {
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.dirname(here);
-const policyFile = '.sdd/release-validation.v0.2.4.json';
+const policyFile = '.sdd/release-validation.v0.2.5.json';
 
 export function parseArguments(args) {
   const [mode, flag, file, ...rest] = args;
@@ -137,16 +137,16 @@ export async function preflight(configuration) {
       source, node20: node20.executable, output: path.join(configuration.workRoot, `discovery-${Date.now()}`),
       environment: env.variables,
     });
-    for (const name of inherited.catalogue) ensure(discovery.names.includes(name), `historical regression missing: ${name}`);
-    for (const name of inherited.excludedTodoNames) ensure(discovery.names.includes(name), `unknown TODO exclusion: ${name}`);
+    const historical = resolveHistoricalCatalogue({ root: source, plan: admitted.plan, inherited,
+      registeredNames: discovery.names });
     const catalogues = {
       regressions: discovery.names, oracles: inherited.oracleCatalogue,
       mutations: inherited.mutationCatalogue, diagnosticMutations: inherited.diagnosticMutationCatalogue,
       hostMutations: inherited.hostMutationCatalogue, watchdog: inherited.watchdogCatalogue,
-      scope: inherited.scopeCatalogue, excludedTodos: inherited.excludedTodoNames,
+      scope: inherited.scopeCatalogue, excludedTodos: historical.excludedTodos,
     };
     const plan = json(path.join(source, policyFile));
-    const hostCatalogue = hostMutations('0.2.4').map(mutation => {
+    const hostCatalogue = hostMutations('0.2.5').map(mutation => {
       const row = { ...mutation };
       delete row.mutate;
       const text = fs.readFileSync(path.join(source, 'scripts/host-compatibility.test.mjs'), 'utf8').split('\n');
@@ -251,7 +251,8 @@ export async function prepare(configuration) {
       const catalogue = cellCatalogue({ catalogues: checked.catalogues, execution: request.execution }, cell, source);
       request.cellCatalogues[cell.id] = mapStrings(catalogue, text => text.replaceAll(source, '{source}'));
     }
-    for (const name of inherited.catalogue) ensure(request.catalogues.regressions.includes(name), 'regression catalogue weakened');
+    resolveHistoricalCatalogue({ root: source, plan: json(path.join(source, policyFile)), inherited,
+      registeredNames: request.registeredNames, catalogues: request.catalogues });
     const retained = save(path.join(configuration.workRoot, 'freeze-request.json'), request);
     return { requestPath: retained.path, requestSha256: retained.sha256, qualifyingCredit: 0 };
   });

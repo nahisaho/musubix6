@@ -3,6 +3,39 @@
 User-facing changes to musubix6, with upgrade guidance and known release limitations.
 Release dates use Japan Standard Time (UTC+09:00).
 
+## [0.2.5] - Unreleased draft prepared 2026-11-01
+
+Prepare a stable patch candidate containing the #381 and #382 fixes.
+This draft does not establish publication or release qualification.
+
+### Fixed
+
+- Mark unsupported Rust stub inference explicitly for manual repair instead
+  of presenting guessed signatures as reliable compiler evidence.
+- Infer typed boolean Results, supported boolean loop shapes and method
+  arguments only with sufficient scoped evidence; retain manual fallbacks.
+- Scope development model, commit attribution and safe-boundary context
+  resets to Copilot CLI or Claude Code in both shared development skills.
+- Audit actual source-installed and packed skills for host-default
+  regressions, including hidden directives and swapped host labels.
+
+### Upgrade
+
+Use the documented host-specific update steps. Check
+`npm view musubix6@0.2.5 version` before installing that exact version;
+`@latest` may still resolve to the published 0.2.4.
+Back up local skill edits before running the documented `init --force`
+command: updating the CLI alone does not refresh copied skills.
+
+### Release status and known limitations
+
+- Require two complete clean runs of the unchanged frozen 0.2.5 candidate
+  and inherited 24-cell Linux matrix; previous qualification gives no credit.
+- Keep unsupported Rust inference marked for manual repair, and Windows,
+  macOS, actual WSL containers and live Claude interactions unqualified.
+- Require separate human publication approval of the exact artifact
+  paths/hashes and residual risks; preparation does not authorize publishing.
+
 ## [0.2.4] - Unreleased draft prepared 2026-10-30
 
 Prepare a stable patch candidate in place of the unreleased 0.2.3 candidate.

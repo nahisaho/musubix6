@@ -1,0 +1,491 @@
+{
+  "schemaVersion": 1,
+  "targetVersion": "0.2.5",
+  "status": "development-PASS-not-release-qualification",
+  "generatedAt": "2026-11-02T00:13:21.261Z",
+  "sourceCommitBeforeCandidate": "44e76397bfb1cfe11b79b6e959ffd7912000ac75",
+  "approval": {
+    "by": "nahisaho",
+    "kind": "human",
+    "review": "Human approved exact seven-artifact revision 10 lineage contract; mandatory resolved TODO replacements, no scope/budget weakening, no push/tag/publication authority.",
+    "at": "2026-11-01T23:00:19.894Z",
+    "artifacts": {
+      ".sdd/specs/release-qualification.md": "4f15be7923832f8c707b30dfc67347ecc967a1c1491882a69dfe48b38cf98047",
+      ".sdd/release-validation.v0.2.5.json": "88a97b0a0b9c2158372796eae37df320e8800db0f31a3b18f0679deb530c8309",
+      ".sdd/release-content-mutations.v0.2.5.json": "532a429caac6e10bf6365572e244b154b1311b0f1bf7ab044d258deb493477f0",
+      ".sdd/specs/claude-code-support.md": "03344562e699b94ba6086648672fb1f57a448d7757e9fbbccfdd0daf6e874988",
+      "README.md": "eecbe2c9a4865056dd06861c4bba38146e578a6d80175f80556ea75e1040342a",
+      "README-ja.md": "7795d4d9a057acd7d3871d2d515007b25b96983f5d448fa848d7e68a820e2d28",
+      "CLANGELOG.md": "b9003e62d4b0a5c674d4ee836856ff8ed1d04347fc350be5e50fc8f647d3cbe8"
+    },
+    "tier": "T2",
+    "requireHuman": true,
+    "code": {
+      "scripts/release-host-mutations.mjs": "6ed5d021018184f225d2492fe1458792b43323942fa06e96a4fdadc174214efb",
+      "scripts/release-qualification-content-mutations.mjs": "6a251a550d822dd47b8df11ff0abca2d66c01041b16389bfddefaa7b207fe3ef",
+      "scripts/release-qualification-evidence.mjs": "88d48acfd61964b5c73e99e90249c6d5cd7427c4a7cc9e2e7b87b90501aa85e0",
+      "scripts/release-qualification-io.mjs": "c3a5b80da7a4c1ced23f92d73553745ea3bf50d1d8856434c33a427f30ec7feb",
+      "scripts/release-qualification.mjs": "a519294215b945ba8b0e514c5cb3d0d46937aa4a5c11654afa013715526a2dcf"
+    }
+  },
+  "frozenGateInputs": {
+    "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v025-gate-inputs.json",
+    "sha256": "913813203aa320bed72c87b57dc2e5a9b14573b0b191576eed788c6df4564846"
+  },
+  "fullGate": {
+    "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v025-full-gate.json",
+    "sha256": "01eebd370196e14e76f4901ee551aeb9904e1da8496bc2538e4430b9633cedf1",
+    "command": {
+      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v025-full-gate-command.json",
+      "sha256": "6fd25b8218d136901060412f27dce3c54c0e2e6d27a55a06da79f69b9e919d78"
+    },
+    "verdict": "PASS",
+    "warnings": [
+      "! human-approved diagnostics-contract: implementation changed since approval (.github/skills/lean-sdd-tdd/scripts/diagnostics.mjs) — a human should re-review, then approve record",
+      "! human-approved release-qualification: implementation changed since approval (scripts/release-qualification.mjs) — a human should re-review, then approve record",
+      "    warning: REQ-HOST-004 has no @implements code",
+      "    warning: REQ-KOTO-SYNC-001 has no @implements code",
+      "    warning: REQ-KOTO-SYNC-002 has no @implements code",
+      "! stub: 2 source file(s) of Green REQs still hold SDD-TODO(stub) / 'not implemented:' placeholders: .github/skills/lean-sdd-tdd/scripts/sdd.mjs:1718, .github/skills/lean-sdd-tdd/scripts/sdd.test.mjs:680 — implement or remove them (scopePolicy warn: set \"scopePolicy\": \"strict\" to fail)",
+      "! scope: a file defining what a gate check runs differs from the last Green record — check resolution (.sdd-test-work-IdY01w/sdd-w110-KD0eYY/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-w110-HW0bD5/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-w110-FrTAwc/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-w110-0ETWWn/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-s130-NgeISN/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-s130-NgeISN/packages/server/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-s130-NgeISN/packages/core/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-s112-ZYHPHG/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-pystub-uqRTbg/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-nest-vtwwVb/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-nest-LEiCH9/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-zS5MyB/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-yq8aLQ/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-yFZs2x/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-xm3UjW/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-xfWpNP/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-xWcrQE/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-xN3WUz/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-wagzEG/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-wJE5VY/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-vnB9DW/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-vUqmHy/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-uNCbNK/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-u1ut4P/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-tmV8em/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-tFAHtJ/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-t7te6J/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-roV2IT/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-rJoUPQ/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-r0Y57q/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-qqMHYl/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-qNSHAw/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-pilPn7/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-pTQEPO/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-oYLVDx/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-oUZNdw/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-nLfk2k/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-n4LlBD/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-ms1wrk/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-mNZJFb/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-lnjNtU/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-lTVL93/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-lGaCd0/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-kKkwV0/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-k4mHA9/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-js0vKv/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-issns3/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-iWD5ZJ/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-hGV702/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-gtUk0F/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-fg9p3Q/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-fb5vMz/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-fNVtHo/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-fCcSae/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-dzhMbe/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-dnHsWz/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-d5GRHa/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-cl6U6i/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-bCgrOy/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-b3Vciw/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-ahiRqo/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-a95Ik0/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-XwAwAv/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-XD9XZd/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-V7ewSg/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-Uy9hjT/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-Tj0G8n/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-TVa25D/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-TVZRm4/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-T0V5in/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-SVQX9U/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-Rk2FVJ/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-Qg7lPg/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-Qcex8V/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-Q7QUgl/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-NrT4an/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-Nr9TDo/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-NF879u/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-MJnEST/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-M7kO4y/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-LQNpqY/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-KYIquO/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-H4ChDj/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-H29Ftg/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-Fiby51/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-D5RrIR/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-CIszLa/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-C63lHr/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-AAKM2j/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-84L4RP/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-6sLx4t/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-6glNbW/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-6VFNSJ/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-5Yl69X/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-4wIM19/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-4TPrkh/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-4D2YTK/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-3uq4zh/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-3lEzU4/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-37FFlY/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-1iJEGZ/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-1YJehX/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-1UO7hQ/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-1BhVHY/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-m-0cgYf5/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-jsstub-ra7c1l/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-jsstub-mu3AXh/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-jsstub-mu3AXh/packages/lib/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-jsstub-lHowIH/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-jsstub-lHowIH/packages/lib/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-jsstub-XuVKLr/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-jsstub-XXTRSe/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-jsstub-XXTRSe/packages/lib/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-jsstub-M79QXR/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-jsstub-KSinO9/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-jsstub-K0IKrp/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-jsstub-HcEb4a/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-jsstub-B3Apu4/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-jsstub-B3Apu4/packages/lib/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-jsstub-8tpkYn/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-jsstub-3Z1XfC/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-jsstub-3Z1XfC/packages/domain/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-js-DE7pQh/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-js-9sI9ii/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-ibFwvX/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-ibFwvX/packages/core/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-ibFwvX/packages/app2/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-ibFwvX/packages/app/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-clsstub-mfNugX/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-KPe5Bq/packages/lib/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-DPF7jS/package.json no longer defines it); check resolution (.sdd-test-work-IdY01w/sdd-DPF7jS/packages/a/package.json no longer defines it) — the test run may have been narrowed; review the diff, then re-run `tdd refactor` to re-record (scopePolicy warn: set \"scopePolicy\": \"strict\" to fail)"
+    ]
+  },
+  "tdd": [
+    {
+      "test": "TEST-HOST-005",
+      "red": {
+        "seq": 932,
+        "hash": "4c282fad85f6908dcbffca3c98521c7b71b415d1d1692c9185ad015b8d41cf77",
+        "exit": 1
+      },
+      "green": {
+        "seq": 933,
+        "hash": "4ea48d4ae3613eda1303d2198c0044a29dc10d85991eb153e0619b76237bb2ba",
+        "exit": 0
+      },
+      "regionSha256": "466b0cca3b7bc00f4e62fa2c4c7890015e7029f9e265fdc577c1e2b7b9503887",
+      "semanticTestSha256": "7f92bfbd3ee3629e4d35c080440d8c7ece2f236e4095d4ea4a59549555ca87c3"
+    },
+    {
+      "test": "TEST-RELQ-001",
+      "red": {
+        "seq": 935,
+        "hash": "3bfc86a6f7b6973863b009d1463b0c240e247cdc254e915d63687ade08fe4747",
+        "exit": 1
+      },
+      "green": {
+        "seq": 937,
+        "hash": "05bcbb9840dda4ef656c993f9537ea6cec5f67e4883a67e26298de1de61d1b81",
+        "exit": 0
+      },
+      "regionSha256": "d0ffabaf0ff36152844cb137b779d163e0edf7f4fe0290959ce12884953ce355",
+      "semanticTestSha256": "0da349f63fb9b227a67e903f68c6993b180a0efa9bb327601aec640f59d6afce"
+    },
+    {
+      "test": "TEST-RELQ-005",
+      "red": {
+        "seq": 936,
+        "hash": "6dabec087f669983fdc4c6e4aed6d61a63dbfb7f931854392a6d5578a2f98e66",
+        "exit": 1
+      },
+      "green": {
+        "seq": 938,
+        "hash": "e9475b62712c4d64f2f7f770ba1dc34a8d7cdb8d1cbf3ae972da33d7487df1d8",
+        "exit": 0
+      },
+      "regionSha256": "eaab9c0e96240d1b7283e40c2b8a2737c3211d233c8ed8575616ad1db7a778f1",
+      "semanticTestSha256": "9552b9d1accbe9e0acbb44a42c65df3e046eb88d55de93842d25e1aea835eb64"
+    },
+    {
+      "test": "TEST-RELQ-LINEAGE-001",
+      "red": {
+        "seq": 958,
+        "hash": "c2d50f3042a0aab5883dec133da089d53a325d9f2d27bd0610cd506d2a37c865",
+        "exit": 1
+      },
+      "green": {
+        "seq": 960,
+        "hash": "08d0e7fdb8e085e50eb8c411a019fc103c82b7e05ab988cb46afa33a358c4ee4",
+        "exit": 0
+      },
+      "regionSha256": "470963e84a6624fbbcdd15b64c27d5b3f553c4f6059eeadbca35f1dc060669df",
+      "semanticTestSha256": "53e6675d754036df36119f34ac202b8a02c869c1f5d58b8df3e6d5fa01de5ff7"
+    },
+    {
+      "test": "TEST-RELQ-LINEAGE-002",
+      "red": {
+        "seq": 959,
+        "hash": "654056bb19ffd4b59fc90fc417eb5b597046bc778b4e6f1c06b758445aaad6e1",
+        "exit": 1
+      },
+      "green": {
+        "seq": 961,
+        "hash": "4a69941218a6255dacb9d963fe97d4a3816a55ffef4d35c34f137b76d030a86f",
+        "exit": 0
+      },
+      "regionSha256": "48f616ccfed223ca73472a8d662386a0e37443d0291550298e5fa7e69696ec8d",
+      "semanticTestSha256": "a0ea1e2c44e73798c81f69ba123172944f0e3610cd3d3f7d074299df054a5206"
+    }
+  ],
+  "runtimes": [
+    {
+      "major": 20,
+      "tests": 32,
+      "passed": 32,
+      "skipped": 0,
+      "log": {
+        "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v025-lineage-focused-node20.log",
+        "sha256": "a8a725ea33a068c02a35fc51913e92103abffcf789e100e05968709ec2bbb251"
+      }
+    },
+    {
+      "major": 22,
+      "tests": 32,
+      "passed": 32,
+      "skipped": 0,
+      "log": {
+        "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v025-lineage-focused-node22.log",
+        "sha256": "f939d0e2775a4ebc93a5b30d3f3aadf45761f36d31b10cac323412aa9c418be1"
+      }
+    },
+    {
+      "major": 24,
+      "tests": 32,
+      "passed": 32,
+      "skipped": 0,
+      "log": {
+        "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v025-lineage-focused-node24.log",
+        "sha256": "1a3c43e2a39f605f3954154b12e5376104318a4942c9852d335ccb2289da1ba6"
+      }
+    }
+  ],
+  "mutations": [
+    {
+      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v025-mutations.json",
+      "sha256": "0ff3030236da87551817d6aa6b97b75bb135b1f53ca4858cb5bd121297cb2360",
+      "mechanisms": [
+        {
+          "name": "root-version",
+          "file": "package.json",
+          "baselineExit": 0,
+          "mutationExit": 1,
+          "restoredExit": 0,
+          "logs": [
+            {
+              "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v025-mutations-8iomH4/root-version-baseline.log",
+              "sha256": "5dfff26125002985cf8916ba872905d2a9365dcd36024d9507697260294b3d59"
+            },
+            {
+              "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v025-mutations-8iomH4/root-version-mutant.log",
+              "sha256": "f0eeb5d97de7799bdb630effd40b810a6b2272f9021f6f1848ed592202af21f3"
+            },
+            {
+              "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v025-mutations-8iomH4/root-version-restored.log",
+              "sha256": "d55a869f963fdc7426929ade94eadbc52bffdcac37c09660f257b91d3508c4c1"
+            }
+          ]
+        },
+        {
+          "name": "lock-version",
+          "file": "package-lock.json",
+          "baselineExit": 0,
+          "mutationExit": 1,
+          "restoredExit": 0,
+          "logs": [
+            {
+              "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v025-mutations-8iomH4/lock-version-baseline.log",
+              "sha256": "6cb939373c83ca67f2a35217190c31463c43135315c677cc8788c737193c425f"
+            },
+            {
+              "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v025-mutations-8iomH4/lock-version-mutant.log",
+              "sha256": "45f8220f6d1930c182bdaef5bc3f2f83e40074887ce951e0eb5391034cd41ab0"
+            },
+            {
+              "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v025-mutations-8iomH4/lock-version-restored.log",
+              "sha256": "2833e0f13c5f81b8f84aced3d6c4f10ca81c5026209279b4707823eb0fe1b1a5"
+            }
+          ]
+        },
+        {
+          "name": "plan-admission",
+          "file": "scripts/release-qualification.mjs",
+          "baselineExit": 0,
+          "mutationExit": 1,
+          "restoredExit": 0,
+          "logs": [
+            {
+              "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v025-mutations-8iomH4/plan-admission-baseline.log",
+              "sha256": "8d5939e6cc617ea959484e6ff4023648abba0f440b27049099fbded74b23da78"
+            },
+            {
+              "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v025-mutations-8iomH4/plan-admission-mutant.log",
+              "sha256": "3c8e8fbf354d89b0f74dea637bc715c2243380461c9db487cc7331fcd9a5cfbc"
+            },
+            {
+              "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v025-mutations-8iomH4/plan-admission-restored.log",
+              "sha256": "401c57be20903cc3bf6ed215e31b2c927cd427d6e1eda91a307b21351c2aa236"
+            }
+          ]
+        },
+        {
+          "name": "package-verdict",
+          "file": "scripts/release-qualification-cells.mjs",
+          "baselineExit": 0,
+          "mutationExit": 1,
+          "restoredExit": 0,
+          "logs": [
+            {
+              "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v025-mutations-8iomH4/package-verdict-baseline.log",
+              "sha256": "6941580c8e3ebe0b60ac50d7333aa8217a6f1992e5d0b3c35b0c9c8ad4c8271e"
+            },
+            {
+              "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v025-mutations-8iomH4/package-verdict-mutant.log",
+              "sha256": "bda3b4c9aece50ae6978a1715ddb7c676ca6a7cd01371d0c433b55325c949b7b"
+            },
+            {
+              "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v025-mutations-8iomH4/package-verdict-restored.log",
+              "sha256": "230d8ee3cb7a45aa900cfc39638453bcb61990f114be6c50b7fdc246385950de"
+            }
+          ]
+        },
+        {
+          "name": "package-execution",
+          "file": "scripts/release-qualification-cells.mjs",
+          "baselineExit": 0,
+          "mutationExit": 1,
+          "restoredExit": 0,
+          "logs": [
+            {
+              "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v025-mutations-8iomH4/package-execution-baseline.log",
+              "sha256": "4dbb2cf516edd5e92078dc1ce07a05525a1d030214363c15136cd03699bd99cb"
+            },
+            {
+              "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v025-mutations-8iomH4/package-execution-mutant.log",
+              "sha256": "34d6b77018a88791728d8b851bf22c054dc6cc4ba972b87a2593d98980fca427"
+            },
+            {
+              "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v025-mutations-8iomH4/package-execution-restored.log",
+              "sha256": "4dbb2cf516edd5e92078dc1ce07a05525a1d030214363c15136cd03699bd99cb"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v025-lineage-mutations.json",
+      "sha256": "1d351edc70d5387e89aaf4b21639ed62996445309efbaabbb23b35411cbba91f",
+      "mechanisms": [
+        {
+          "name": "suite-byte-binding",
+          "baselineExit": 0,
+          "mutationExit": 1,
+          "restoredExit": 0,
+          "logs": [
+            {
+              "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v025-lineage-mutations-MCzhTe/suite-byte-binding-baseline.log",
+              "sha256": "340179aad42dd88bc205e8b41fb98e8befaf1beec11d28891f60704450ee4b6b"
+            },
+            {
+              "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v025-lineage-mutations-MCzhTe/suite-byte-binding-mutant.log",
+              "sha256": "18c205e0ace2a952df13c92d69d80fd3f08f7134926a4c6206e786ae1ef1fba6"
+            },
+            {
+              "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v025-lineage-mutations-MCzhTe/suite-byte-binding-restored.log",
+              "sha256": "4928842e61c985826119ce4732e897ce8858a0eb8506db51187d9bc2e8b0c305"
+            }
+          ]
+        },
+        {
+          "name": "target-reference-binding",
+          "baselineExit": 0,
+          "mutationExit": 1,
+          "restoredExit": 0,
+          "logs": [
+            {
+              "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v025-lineage-mutations-MCzhTe/target-reference-binding-baseline.log",
+              "sha256": "bf111e30379b1374b83ac766845528e7d1e32d732b6db1767726aefee6729f25"
+            },
+            {
+              "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v025-lineage-mutations-MCzhTe/target-reference-binding-mutant.log",
+              "sha256": "eef1803f3fbc3c92559ea251ade9f77c17ec70d703e356391e1cf83934b7b240"
+            },
+            {
+              "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v025-lineage-mutations-MCzhTe/target-reference-binding-restored.log",
+              "sha256": "be34f8837d85b8e994e0dbbe8578e3484864ff934722c66f3d52a5f9df2cdb3e"
+            }
+          ]
+        },
+        {
+          "name": "todo-classification",
+          "baselineExit": 0,
+          "mutationExit": 1,
+          "restoredExit": 0,
+          "logs": [
+            {
+              "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v025-lineage-mutations-MCzhTe/todo-classification-baseline.log",
+              "sha256": "6ba9f437c6d3b8d15bfd526de5796eeeff28f3acd4b0e09b0d101a7353191c31"
+            },
+            {
+              "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v025-lineage-mutations-MCzhTe/todo-classification-mutant.log",
+              "sha256": "6399e2841e2e1c12a1c6ed82cf7d1cb72e61454c4127527ae9a6bf79502d04e7"
+            },
+            {
+              "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v025-lineage-mutations-MCzhTe/todo-classification-restored.log",
+              "sha256": "af49c7984bd8cd7824dbc4396688015f52958b718df64c8dbe1ca239a0fc8689"
+            }
+          ]
+        },
+        {
+          "name": "registration-membership",
+          "baselineExit": 0,
+          "mutationExit": 1,
+          "restoredExit": 0,
+          "logs": [
+            {
+              "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v025-lineage-mutations-MCzhTe/registration-membership-baseline.log",
+              "sha256": "5542ed01f7282340de354398ce94d211cefb8423e743fd2352861b6ac050f0b3"
+            },
+            {
+              "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v025-lineage-mutations-MCzhTe/registration-membership-mutant.log",
+              "sha256": "9e567e4f28bab6002c868ee5b1dd7f4ed2a54d9a21d9ebba9a3b35ac814309af"
+            },
+            {
+              "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v025-lineage-mutations-MCzhTe/registration-membership-restored.log",
+              "sha256": "e047cb5d9b9cb57673b77faad5baab8784402c2b681a154bb7f384a81bf527ba"
+            }
+          ]
+        },
+        {
+          "name": "required-membership",
+          "baselineExit": 0,
+          "mutationExit": 1,
+          "restoredExit": 0,
+          "logs": [
+            {
+              "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v025-lineage-mutations-MCzhTe/required-membership-baseline.log",
+              "sha256": "48540bd279df6f8ec82a1f77e140d04a0b9fd38a22f05f46d6ea3469e7bed0bc"
+            },
+            {
+              "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v025-lineage-mutations-MCzhTe/required-membership-mutant.log",
+              "sha256": "7783f920aa5b81cd6055d89c36498479615687dd5c72c230844f49c96c50f0bd"
+            },
+            {
+              "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v025-lineage-mutations-MCzhTe/required-membership-restored.log",
+              "sha256": "ad5afe082215c96c2cb3cc42947e8fc1602cb108b214d7eaf9159a1f4f452c0a"
+            }
+          ]
+        },
+        {
+          "name": "promoted-exclusion",
+          "baselineExit": 0,
+          "mutationExit": 1,
+          "restoredExit": 0,
+          "logs": [
+            {
+              "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v025-lineage-mutations-MCzhTe/promoted-exclusion-baseline.log",
+              "sha256": "d6e83230b4126e240dc423f39233632973085e8c0df6f95cb88bc1b1cc86662d"
+            },
+            {
+              "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v025-lineage-mutations-MCzhTe/promoted-exclusion-mutant.log",
+              "sha256": "b8c80e36ee1868d4504f2b970cd671d7cd79235726aecc7974c399794a43d373"
+            },
+            {
+              "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v025-lineage-mutations-MCzhTe/promoted-exclusion-restored.log",
+              "sha256": "dc514c6c2f7282d8ff9bef4dfc39e5a7b7d9ece7377493377ecd6426a6d889e1"
+            }
+          ]
+        },
+        {
+          "name": "frozen-recheck",
+          "baselineExit": 0,
+          "mutationExit": 1,
+          "restoredExit": 0,
+          "logs": [
+            {
+              "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v025-lineage-mutations-MCzhTe/frozen-recheck-baseline.log",
+              "sha256": "b2e1058efaa517a7a7269d711b0df3795ca0f7db5c42c2b935a3fc3bfb374a2e"
+            },
+            {
+              "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v025-lineage-mutations-MCzhTe/frozen-recheck-mutant.log",
+              "sha256": "b5d1c157077dbb02418a216c36c3b5f409727e87b29f36117493ac539785cdc8"
+            },
+            {
+              "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v025-lineage-mutations-MCzhTe/frozen-recheck-restored.log",
+              "sha256": "1777a3081dc162ac5da1ecd0b292ccf2d2fdc0bf902b3fd9a7bdc803e8c70879"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "diagnostics": {
+    "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v025-diagnostics-1kmJzq/proof.json",
+    "sha256": "f0a9623aa956532750d0225294ff254b67af3af0e5bb93fd004426c5b824d39b"
+  },
+  "nativePreflight": {
+    "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v025-lineage-preflight.json",
+    "sha256": "481a6a790d813870badfdb5d383911755fcdefc9c172797b0c79df8942f2b53e"
+  },
+  "nativeLineageControls": {
+    "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v025-lineage-native-controls.json",
+    "sha256": "d3c99b0c361db019c86062ceadb3d7effd6304266b79e1bdf0ae805fa1b53a34"
+  },
+  "feasibility": {
+    "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v025-feasibility.json",
+    "sha256": "5693dbf380e6c405870e0bd116b7837bbac99b559cf4c53767929651c2488465"
+  },
+  "packageAdapters": {
+    "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v025-native-package.json",
+    "sha256": "d4b1fa0066ff97c238e125136a0bfbf3513e65f11a73d9e120550082695b07a3"
+  },
+  "historicalFilesUnchanged": [
+    {
+      "path": "/home/nahisaho/GitHub/musubix6/.sdd/release-validation.v0.2.4.json",
+      "sha256": "bab5f05b7def7db832eca6b39e95dba62dabbb75024f9f7122e4c5d816f2220a"
+    },
+    {
+      "path": "/home/nahisaho/GitHub/musubix6/.sdd/release-content-mutations.v0.2.4.json",
+      "sha256": "f30f0128f8ed40ea6a887d6c391f20a9036c9f3d2f0ce6bdea88c625714b45d8"
+    },
+    {
+      "path": "/home/nahisaho/GitHub/musubix6/.sdd/evidence/v024-linux-qualification.json",
+      "sha256": "1f74d4c7a98e9ebc178ce77fb75e871bebdb4369b9522f844f60b4a94c279262"
+    },
+    {
+      "path": "/home/nahisaho/GitHub/musubix6/.sdd/evidence/host382-development.json",
+      "sha256": "0d77174f96edc929eded32509c66aeeab17a9589d32d308a328389baa8b7e812"
+    }
+  ],
+  "canonicalSkillTreeUnchanged": true,
+  "retainedFailures": [
+    {
+      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v025-preflight-before-commit.json",
+      "sha256": "1dacc473c1f33c0744729398058b3807c2d0cc4223dbdacb60bc6714e22e8e0c",
+      "reason": "Unresolved exact historical test names before approved revision 10."
+    },
+    {
+      "path": "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/v025-full-gate-r10-failed-trace.json",
+      "sha256": "69a956396a7be1e8c316ef64c294d7f2ac9f155686cda488b32e3a56130980ac",
+      "reason": "Interrupted revision 9 gate left untracked generated fixtures inside the scan root; exact work root quarantined, no source changes."
+    }
+  ],
+  "reviewBoundaries": [
+    "Sonnet JSON review covered cell/budget/reference/lineage data only.",
+    "Sonnet version implementation review covered seven scripts and package metadata; no tests, full spec or prose review.",
+    "Sonnet lineage design review requested frozen recheck and half-missing controls; those tests and provenance clarification were added.",
+    "Sonnet lineage implementation review inspected production resolver/call sites only; no test/spec review or test execution.",
+    "Agent independently verified all 109 committed blob references and target suite; machine tests and isolated mutations provide observed execution evidence."
+  ],
+  "limitations": [
+    "No previous gate, spike, historical release or test evidence transfers qualification credit.",
+    "No frozen candidate or complete qualification run yet; readiness streak is zero.",
+    "Existing implementation-drift, trace/stub and refactor-evidence warnings remain visible.",
+    "Quarantined interrupted fixtures were included in earlier check-resolution snapshots; subsequent full gate reports missing fixture package definitions as scope warnings. Actual project checks ran completely with stable tracked inputs.",
+    "An initial single-guard required-membership mutant survived because another guard enforces the same condition; the bounded complete-mechanism mutation removes both and is detected.",
+    "Windows/macOS, actual WSL containers and live Claude interactions remain unqualified.",
+    "Local candidate commit is authorized, but main push/tag/npm publication require separate permission."
+  ],
+  "qualifyingCredit": 0,
+  "publishingAuthorized": false,
+  "humanReleaseApproved": false
+}

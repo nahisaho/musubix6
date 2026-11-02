@@ -10,9 +10,9 @@ import {
 } from './release-qualification-evidence.mjs';
 
 const inheritedSha256 = 'e2f221e308e2fb4389f044e12c42cb2083e314b97305ae1701f65cd399c37de6';
-const locked = ['.sdd/specs/release-qualification.md', '.sdd/release-validation.v0.2.4.json',
+const locked = ['.sdd/specs/release-qualification.md', '.sdd/release-validation.v0.2.5.json',
   '.sdd/specs/claude-code-support.md', 'README.md', 'README-ja.md', 'CLANGELOG.md',
-  '.sdd/release-content-mutations.v0.2.4.json'];
+  '.sdd/release-content-mutations.v0.2.5.json'];
 const tuple = cell => ({ id: cell.id, runtime: cell.runtime, kind: cell.kind,
   mode: cell.mode ?? null, timeoutSeconds: cell.timeoutSeconds });
 const sortedCells = cells => cells.map(tuple).sort((a, b) => a.id.localeCompare(b.id));
@@ -31,6 +31,58 @@ async function must(promise) {
 }
 function assertUnique(rows, key, label) {
   ensure(new Set(rows.map(row => row[key])).size === rows.length, `duplicate ${label}`);
+}
+
+function historicalPolicy(root, plan, inherited) {
+  const lineage = plan.historicalTestLineage;
+  const fields = ['version', 'sourceCommit', 'suite', 'suiteSha256', 'mappings'];
+  ensure(lineage && Object.keys(lineage).length === fields.length &&
+    Object.keys(lineage).every(key => fields.includes(key)) && lineage.version === 1,
+  'complete explicit historical test lineage required');
+  const reference = json(path.join(root, plan.contentMutationContract.path)).vendorReference;
+  equal(lineage.sourceCommit, reference.sourceCommit);
+  equal(lineage.suite, '.github/skills/lean-sdd-tdd/scripts/sdd.test.mjs');
+  const suite = reference.referenceFiles.find(row => row.path === lineage.suite);
+  ensure(suite, 'committed target suite reference required');
+  equal(lineage.suiteSha256, suite.sha256);
+  equal(fileSha(path.join(root, lineage.suite)), suite.sha256);
+  ensure(Array.isArray(lineage.mappings) && lineage.mappings.length > 0, 'nonempty historical mappings required');
+  assertUnique(lineage.mappings, 'from', 'historical source');
+  const previous = new Set(inherited.catalogue), todos = new Set(inherited.excludedTodoNames);
+  const replacements = new Map();
+  for (const row of lineage.mappings) {
+    ensure(Object.keys(row).length === 4 && Object.keys(row).every(key =>
+      ['from', 'kind', 'to', 'reason'].includes(key)), 'unknown historical mapping field');
+    ensure(previous.has(row.from), 'unknown historical source');
+    equal(row.kind, todos.has(row.from) ? 'todo-promoted' : 'rename');
+    ensure(typeof row.reason === 'string' && row.reason.trim(), 'historical correspondence reason required');
+    ensure(Array.isArray(row.to) && row.to.length > 0 && row.to.every(name =>
+      typeof name === 'string' && name.trim() && name !== row.from && !previous.has(name)),
+    'explicit nonidentity replacement names required');
+    ensure(new Set(row.to).size === row.to.length, 'duplicate replacement target');
+    replacements.set(row.from, row.to);
+  }
+  return {
+    regressions: [...new Set(inherited.catalogue.flatMap(name => replacements.get(name) || [name]))],
+    excludedTodos: inherited.excludedTodoNames.filter(name => !replacements.has(name)),
+  };
+}
+
+/** @id CODE-RELQ-LINEAGE-001 @implements REQ-RELQ-001 REQ-RELQ-002 REQ-RELQ-003 */
+export function resolveHistoricalCatalogue({ root, plan, inherited, registeredNames, catalogues }) {
+  const policy = historicalPolicy(root, plan, inherited);
+  ensure(Array.isArray(registeredNames) && new Set(registeredNames).size === registeredNames.length,
+    'unique actual registered names required');
+  for (const name of policy.regressions) {
+    ensure(registeredNames.includes(name), `historical replacement not registered: ${name}`);
+    if (catalogues) ensure(catalogues.regressions.includes(name), `historical replacement not required: ${name}`);
+  }
+  if (catalogues) {
+    equal(catalogues.excludedTodos, policy.excludedTodos);
+    for (const name of registeredNames) ensure(catalogues.regressions.includes(name), `missing named regression: ${name}`);
+    ensure(new Set(catalogues.regressions).size === catalogues.regressions.length, 'duplicate regression name');
+  }
+  return policy;
 }
 
 export function executionInputPaths(execution, environment = execution.environment) {
@@ -104,18 +156,21 @@ function assertMatrix(manifest, scope) {
 }
 
 async function assertExecutionPolicy(manifest, scope) {
+  const inherited = json(scope.inheritedPath);
+  const policy = resolveHistoricalCatalogue({ root: scope.root, plan: scope.plan, inherited,
+    registeredNames: manifest.registeredNames, catalogues: manifest.catalogues });
   if (!manifest.execution?.qualifying) return;
   const source = manifest.files.find(file => file.kind === 'source').path;
   equal(manifest.execution.sourceRoot, source);
   const packageFile = manifest.files.find(file => file.kind === 'package').path;
   equal(manifest.execution.packagePath, packageFile);
   equal(manifest.execution.packageSha256, fileSha(packageFile));
-  const inherited = json(scope.inheritedPath);
   for (const [key, historical] of [
     ['oracles', 'oracleCatalogue'], ['mutations', 'mutationCatalogue'],
     ['diagnosticMutations', 'diagnosticMutationCatalogue'], ['hostMutations', 'hostMutationCatalogue'],
-    ['watchdog', 'watchdogCatalogue'], ['scope', 'scopeCatalogue'], ['excludedTodos', 'excludedTodoNames'],
+    ['watchdog', 'watchdogCatalogue'], ['scope', 'scopeCatalogue'],
   ]) equal(manifest.catalogues[key], inherited[historical]);
+  equal(manifest.catalogues.excludedTodos, policy.excludedTodos);
   const files = json(path.join(source, 'package.json')).scripts.test.split(/\s+/).filter(arg => arg.endsWith('.test.mjs'));
   equal(manifest.execution.rootTestFiles, files);
   const { commandForCell, cellCatalogue } = await import('./release-qualification-cells.mjs');
@@ -132,7 +187,7 @@ export async function admitPlan(request) {
     const paths = scopePaths(request);
     equal(fileSha(paths.inheritedPath), inheritedSha256);
     const inherited = json(paths.inheritedPath), plan = json(paths.planPath);
-    ensure(plan.schemaVersion === 1 && plan.targetVersion === '0.2.4', 'unknown qualification plan');
+    ensure(plan.schemaVersion === 1 && plan.targetVersion === '0.2.5', 'unknown qualification plan');
     const required = inherited.requiredCells.filter(cell => cell.id !== 'NATIVE-WSLC');
     equal(sortedCells(plan.requiredCells), sortedCells(required));
     assertUnique(plan.requiredCells, 'id', 'required cell');
@@ -154,6 +209,7 @@ export async function admitPlan(request) {
     equal(plan.contentMutationContract.path, locked[6]);
     equal(plan.contentMutationContract.sha256, approval.artifacts[locked[6]]);
     ensure(plan.contentMutationContract.approvalRequired === true, 'content catalogue approval required');
+    historicalPolicy(paths.root, plan, inherited);
     return { ...paths, plan, planSha256: fileSha(paths.planPath), requiredCells: plan.requiredCells,
       exclusions: plan.excludedCells };
   });
@@ -184,14 +240,12 @@ export async function freezeCandidate(request, effects = {}) {
     ensure(!fs.existsSync(request.outputPath), 'frozen revision already exists');
     const inherited = json(scope.inheritedPath);
     const catalogues = request.catalogues;
-    for (const name of [...inherited.catalogue, ...request.registeredNames]) {
-      ensure(catalogues.regressions.includes(name), `missing named regression: ${name}`);
-    }
-    ensure(new Set(catalogues.regressions).size === catalogues.regressions.length, 'duplicate regression name');
+    resolveHistoricalCatalogue({ root: scope.root, plan: scope.plan, inherited,
+      registeredNames: request.registeredNames, catalogues });
     for (const [key, historical] of [
       ['oracles', 'oracleCatalogue'], ['mutations', 'mutationCatalogue'],
       ['diagnosticMutations', 'diagnosticMutationCatalogue'], ['hostMutations', 'hostMutationCatalogue'],
-      ['watchdog', 'watchdogCatalogue'], ['scope', 'scopeCatalogue'], ['excludedTodos', 'excludedTodoNames'],
+      ['watchdog', 'watchdogCatalogue'], ['scope', 'scopeCatalogue'],
     ]) equal(catalogues[key], inherited[historical]);
     for (const kind of requiredKinds) ensure(request.files.some(file => file.kind === kind), `missing ${kind} input`);
     ensure(new Set(request.files.map(file => path.resolve(file.path))).size === request.files.length, 'duplicate input path');

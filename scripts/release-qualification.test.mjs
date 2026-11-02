@@ -21,7 +21,7 @@ import {
 } from './release-qualification.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const planRelative = '.sdd/release-validation.v0.2.4.json';
+const planRelative = '.sdd/release-validation.v0.2.5.json';
 const inheritedRelative = '.sdd/release-validation.v0.2.0.json';
 const approvalsRelative = '.sdd/approvals.json';
 const read = file => JSON.parse(fs.readFileSync(file, 'utf8'));
@@ -32,7 +32,7 @@ const inherited = read(path.join(root, inheritedRelative));
 const approvedPlan = read(path.join(root, planRelative));
 const genuineLock = read(path.join(root, approvalsRelative))['release-qualification'];
 const required = inherited.requiredCells.filter(cell => cell.id !== 'NATIVE-WSLC');
-const contentReference = read(path.join(root, '.sdd/release-content-mutations.v0.2.4.json'));
+const contentReference = read(path.join(root, '.sdd/release-content-mutations.v0.2.5.json'));
 const write = (file, value) => {
   fs.mkdirSync(path.dirname(file), { recursive: true });
   fs.writeFileSync(file, typeof value === 'string' ? value : JSON.stringify(value, null, 2));
@@ -161,11 +161,7 @@ test('TEST-RELQ-CLOSURE-001 rejects unbound execution inputs and manifest policy
     copy => { copy.execution.nodeModules = path.join(directory, 'outside'); },
   ]) {
     const copy = clone(manifest); change(copy);
-    copy.inputsSha256 = digest(JSON.stringify({ files: copy.files, tools: copy.tools, environment: copy.environment,
-      commands: copy.commands, catalogues: copy.catalogues, execution: copy.execution,
-      cellCatalogues: copy.cellCatalogues, requiredCells: copy.requiredCells, exclusions: copy.exclusions,
-      registeredNames: copy.registeredNames }));
-    write(input.manifestPath, copy);
+    write(input.manifestPath, rehashManifestFixture(copy));
     await reject(checkFrozenCandidate({ ...input, manifestSha256: fileDigest(input.manifestPath) }, effects),
       'rehashing a structurally weakened manifest cannot establish a valid frozen candidate');
   }
@@ -272,8 +268,8 @@ function workspace(t) {
 }
 
 function contentContext(directory, cellId, source = approvedSourceFixture(directory)) {
-  fs.copyFileSync(path.join(root, '.sdd/release-content-mutations.v0.2.4.json'),
-    path.join(source, '.sdd/release-content-mutations.v0.2.4.json'));
+  fs.copyFileSync(path.join(root, '.sdd/release-content-mutations.v0.2.5.json'),
+    path.join(source, '.sdd/release-content-mutations.v0.2.5.json'));
   return {
     source, output: path.join(directory, 'content'), node: process.execPath,
     cell: { id: cellId, runtime: '24', timeoutSeconds: 3600 },
@@ -289,6 +285,9 @@ function approvedSourceFixture(directory) {
   execFileSync('git', ['archive', '--format=tar', '--output', archive,
     contentReference.vendorReference.sourceCommit], { cwd: root });
   execFileSync('tar', ['--extract', '--same-permissions', '--file', archive, '--directory', source]);
+  for (const file of ['package.json', 'package-lock.json']) {
+    fs.copyFileSync(path.join(root, file), path.join(source, file));
+  }
   return source;
 }
 
@@ -305,7 +304,7 @@ function alteredContentReceipt(directory, row, change) {
 test('TEST-RELQ-CONTENT-ADMISSION-001 accepts seven genuine bindings and rejects absent or changed content catalogue', async t => {
   const scope = scopeFixture(workspace(t));
   await pass(admitPlan(scope), 'matching seven-artifact unit must be admitted');
-  const reference = path.join(scope.root, '.sdd/release-content-mutations.v0.2.4.json');
+  const reference = path.join(scope.root, '.sdd/release-content-mutations.v0.2.5.json');
   const original = fs.readFileSync(reference);
   fs.appendFileSync(reference, '\n');
   await reject(admitPlan(scope), 'changed content catalogue must reject');
@@ -321,7 +320,7 @@ test('TEST-RELQ-CONTENT-ADMISSION-001 accepts seven genuine bindings and rejects
 /** @id TEST-RELQ-BASELINE-001 @verifies REQ-RELQ-001 REQ-RELQ-002 */
 test('TEST-RELQ-BASELINE-001 validates the historical approved source inventory before tool preparation', async t => {
   const { preflight } = await import('./release-qualification-cli.mjs');
-  const referencePath = path.join(root, '.sdd/release-content-mutations.v0.2.4.json');
+  const referencePath = path.join(root, '.sdd/release-content-mutations.v0.2.5.json');
   const directory = workspace(t), scope = scopeFixture(directory);
   const approvedSource = approvedSourceFixture(directory);
   fs.cpSync(path.join(approvedSource, '.github/skills'), path.join(scope.root, '.github/skills'), { recursive: true });
@@ -372,8 +371,8 @@ test('TEST-RELQ-SKILL-001 preserves 1163 exact cases and owned native inventory 
   const row = await runContentCase(context, target);
   assert.equal(row.status, 'PASS');
   assert.doesNotThrow(() => validateContentCase({ row, target, plan, reference: contentReference }));
-  const inventoryInput = { referencePath: path.join(root, '.sdd/release-content-mutations.v0.2.4.json'),
-    referenceSha256: fileDigest(path.join(root, '.sdd/release-content-mutations.v0.2.4.json')),
+  const inventoryInput = { referencePath: path.join(root, '.sdd/release-content-mutations.v0.2.5.json'),
+    referenceSha256: fileDigest(path.join(root, '.sdd/release-content-mutations.v0.2.5.json')),
     originRoot: plan.originRoot, origin: 'source', host: 'copilot' };
   assert.doesNotThrow(() => assertContentInventory(inventoryInput));
   assert.throws(() => assertContentInventory({ ...inventoryInput, duplicateProbe: true }), /duplicate paths/);
@@ -450,7 +449,7 @@ test('TEST-RELQ-SKILL-001 preserves 1163 exact cases and owned native inventory 
   const unsafeSource = path.join(directory, 'unsafe-source'), unsafeOutput = path.join(unsafeSource, 'evidence');
   write(path.join(unsafeSource, 'scripts/release-qualification-content-mutations.mjs'),
     fs.readFileSync(path.join(root, 'scripts/release-qualification-content-mutations.mjs'), 'utf8'));
-  write(path.join(unsafeSource, '.sdd/release-content-mutations.v0.2.4.json'), contentReference);
+  write(path.join(unsafeSource, '.sdd/release-content-mutations.v0.2.5.json'), contentReference);
   try { await runContentCase({ ...context, source: unsafeSource, output: unsafeOutput }, target); }
   catch (error) { assert.ok(error); }
   assert.equal(fs.existsSync(unsafeOutput), false, 'source-contained case output must reject before any mkdir');
@@ -590,6 +589,8 @@ function scopeFixture(directory) {
     write(path.join(source, relative), fs.readFileSync(path.join(root, relative), 'utf8'));
   }
   write(path.join(source, inheritedRelative), fs.readFileSync(path.join(root, inheritedRelative), 'utf8'));
+  const lineageSuite = read(path.join(root, planRelative)).historicalTestLineage.suite;
+  write(path.join(source, lineageSuite), fs.readFileSync(path.join(root, lineageSuite), 'utf8'));
   write(path.join(source, approvalsRelative), { 'release-qualification': clone(genuineLock) });
   return {
     root: source,
@@ -630,16 +631,27 @@ function currentLiteralRegressionNames() {
 }
 
 function frozenCatalogues() {
+  const mappings = read(path.join(root, planRelative)).historicalTestLineage.mappings;
+  const replaced = new Set(mappings.map(row => row.from));
   return {
-    regressions: [...new Set([...inherited.catalogue, ...currentLiteralRegressionNames()])],
+    regressions: [...new Set([...inherited.catalogue.filter(name => !replaced.has(name)),
+      ...mappings.flatMap(row => row.to), ...currentLiteralRegressionNames()])],
     oracles: clone(inherited.oracleCatalogue),
     mutations: clone(inherited.mutationCatalogue),
     diagnosticMutations: clone(inherited.diagnosticMutationCatalogue),
     hostMutations: clone(inherited.hostMutationCatalogue),
     watchdog: clone(inherited.watchdogCatalogue),
     scope: clone(inherited.scopeCatalogue),
-    excludedTodos: clone(inherited.excludedTodoNames),
+    excludedTodos: inherited.excludedTodoNames.filter(name => !replaced.has(name)),
   };
+}
+
+function rehashManifestFixture(copy) {
+  copy.inputsSha256 = digest(JSON.stringify({ files: copy.files, tools: copy.tools, environment: copy.environment,
+    commands: copy.commands, catalogues: copy.catalogues, execution: copy.execution,
+    cellCatalogues: copy.cellCatalogues, requiredCells: copy.requiredCells, exclusions: copy.exclusions,
+    registeredNames: copy.registeredNames }));
+  return copy;
 }
 
 function freezeFixture(directory) {
@@ -667,7 +679,7 @@ function freezeFixture(directory) {
     ...scope, files, tools,
     outputPath: path.join(directory, 'external', 'manifest.json'),
     catalogues: frozenCatalogues(),
-    registeredNames: currentLiteralRegressionNames(),
+    registeredNames: frozenCatalogues().regressions,
     commands: required.map(cell => ({
       cellId: cell.id, argv: ['node', 'fixture-cell.mjs', cell.id], timeoutSeconds: cell.timeoutSeconds,
     })),
@@ -795,7 +807,8 @@ function readinessFixture(directory, history = []) {
 /** @id TEST-RELQ-001 @verifies REQ-RELQ-001 */
 test('TEST-RELQ-001 admits the locked Linux plan and enumerates every cell-policy violation', async t => {
   const scope = scopeFixture(workspace(t));
-  await pass(admitPlan(scope), 'the complete genuinely locked 24-cell Linux plan must be admitted');
+  const admitted = await pass(admitPlan(scope), 'the complete genuinely locked 24-cell Linux plan must be admitted');
+  assert.equal(admitted.plan.targetVersion, '0.2.5', 'admit only the independently selected current candidate');
   const baseline = read(scope.planPath);
   const changes = [];
   for (const cell of required) {
@@ -811,6 +824,8 @@ test('TEST-RELQ-001 admits the locked Linux plan and enumerates every cell-polic
     }
   }
   changes.push(
+    ['previous published version', p => { p.targetVersion = '0.2.4'; }],
+    ['prerelease candidate', p => { p.targetVersion = '0.2.5-dev.0'; }],
     ['missing WSL exclusion', p => { p.excludedCells = []; }],
     ['WSL falsely passed', p => { p.excludedCells[0].status = 'PASS'; }],
     ['WSL made required', p => { p.requiredCells.push(clone(p.excludedCells[0])); }],
@@ -842,6 +857,87 @@ test('TEST-RELQ-001 admits the locked Linux plan and enumerates every cell-polic
   }
   write(scope.approvalsPath, { 'release-qualification': clone(genuineLock) });
   await pass(admitPlan(scope), 'restored genuine approval remains valid');
+});
+
+/** @id TEST-RELQ-LINEAGE-001 @verifies REQ-RELQ-001 REQ-RELQ-002 */
+test('TEST-RELQ-LINEAGE-001 admits committed lineage and rejects every invalid mapping shape', async t => {
+  const scope = scopeFixture(workspace(t)), original = read(scope.planPath);
+  await pass(admitPlan(scope), 'valid human-locked committed lineage is admitted');
+  const changes = [
+    ['missing lineage', p => { delete p.historicalTestLineage; }],
+    ['unknown lineage field', p => { p.historicalTestLineage.ignoreMissing = true; }],
+    ['unknown version', p => { p.historicalTestLineage.version = 2; }],
+    ['unbound suite', p => { p.historicalTestLineage.suite = '../outside.mjs'; }],
+    ['stale suite digest', p => { p.historicalTestLineage.suiteSha256 = '0'.repeat(64); }],
+    ['unknown source commit', p => { p.historicalTestLineage.sourceCommit = '0'.repeat(40); }],
+    ['empty mappings', p => { p.historicalTestLineage.mappings = []; }],
+  ];
+  for (let index = 0; index < original.historicalTestLineage.mappings.length; index++) {
+    changes.push(
+      [`duplicate source ${index}`, p => { p.historicalTestLineage.mappings.push(clone(p.historicalTestLineage.mappings[index])); }],
+      [`unknown source ${index}`, p => { p.historicalTestLineage.mappings[index].from = 'UNKNOWN'; }],
+      [`unknown kind ${index}`, p => { p.historicalTestLineage.mappings[index].kind = 'ignore'; }],
+      [`wrong TODO classification ${index}`, p => {
+        const row = p.historicalTestLineage.mappings[index];
+        row.kind = row.kind === 'rename' ? 'todo-promoted' : 'rename';
+      }],
+      [`empty targets ${index}`, p => { p.historicalTestLineage.mappings[index].to = []; }],
+      [`duplicate target ${index}`, p => { p.historicalTestLineage.mappings[index].to.push(p.historicalTestLineage.mappings[index].to[0]); }],
+      [`identity target ${index}`, p => { p.historicalTestLineage.mappings[index].to = [p.historicalTestLineage.mappings[index].from]; }],
+      [`empty reason ${index}`, p => { p.historicalTestLineage.mappings[index].reason = ''; }],
+      [`unknown row field ${index}`, p => { p.historicalTestLineage.mappings[index].optional = true; }],
+    );
+  }
+  for (const [label, change] of changes) {
+    const invalid = clone(original); change(invalid); write(scope.planPath, invalid); relockFixture(scope);
+    await reject(admitPlan(scope), label);
+  }
+  write(scope.planPath, original); relockFixture(scope);
+  const suite = path.join(scope.root, original.historicalTestLineage.suite), bytes = fs.readFileSync(suite);
+  fs.appendFileSync(suite, '\n');
+  await reject(admitPlan(scope), 'actual committed suite bytes changed');
+  fs.writeFileSync(suite, bytes);
+  await pass(admitPlan(scope), 'exact suite and mapping restoration remains admitted');
+});
+
+/** @id TEST-RELQ-LINEAGE-002 @verifies REQ-RELQ-002 REQ-RELQ-003 */
+test('TEST-RELQ-LINEAGE-002 freezes required replacements and never excludes promoted TODOs', async t => {
+  const directory = workspace(t), mappings = read(path.join(root, planRelative)).historicalTestLineage.mappings;
+  const baseline = freezeFixture(path.join(directory, 'valid'));
+  const frozen = await pass(freezeCandidate(baseline.request, baseline.effects), 'complete current replacements must freeze without obsolete names');
+  assert.deepEqual(frozen.manifest.catalogues.excludedTodos, [], 'all four resolved TODOs are required, not exclusions');
+  await pass(checkFrozenCandidate({ ...baseline.request, manifestPath: baseline.request.outputPath,
+    manifestSha256: fileDigest(baseline.request.outputPath) }, baseline.effects), 'same resolved frozen catalogue is valid');
+  const targets = [...new Set(mappings.flatMap(row => row.to))];
+  const manifestBytes = fs.readFileSync(baseline.request.outputPath);
+  for (const [index, name] of targets.entries()) {
+    for (const cataloguePresent of [false, true]) for (const registrationPresent of [false, true]) for (const excluded of [false, true]) {
+      if (cataloguePresent && registrationPresent && !excluded) continue;
+      const label = `${index}-${Number(cataloguePresent)}${Number(registrationPresent)}${Number(excluded)}`;
+      const invalid = freezeFixture(path.join(directory, `invalid-${label}`));
+      const change = request => {
+        if (!cataloguePresent) request.catalogues.regressions = request.catalogues.regressions.filter(value => value !== name);
+        if (!registrationPresent) request.registeredNames = request.registeredNames.filter(value => value !== name);
+        if (excluded) request.catalogues.excludedTodos.push(name);
+      };
+      change(invalid.request);
+      await reject(freezeCandidate(invalid.request, invalid.effects), `invalid replacement state ${name}: ${label}`);
+      const copy = clone(frozen.manifest); change(copy);
+      write(baseline.request.outputPath, rehashManifestFixture(copy));
+      await reject(checkFrozenCandidate({ ...baseline.request, manifestPath: baseline.request.outputPath,
+        manifestSha256: fileDigest(baseline.request.outputPath) }, baseline.effects), `rehashed invalid replacement state ${name}: ${label}`);
+    }
+  }
+  fs.writeFileSync(baseline.request.outputPath, manifestBytes);
+  await pass(checkFrozenCandidate({ ...baseline.request, manifestPath: baseline.request.outputPath,
+    manifestSha256: fileDigest(baseline.request.outputPath) }, baseline.effects), 'restored exact replacement catalogue rechecks');
+  for (const [index, row] of mappings.entries()) {
+    const dropped = freezeFixture(path.join(directory, `dropped-${index}`));
+    const plan = read(dropped.request.planPath);
+    plan.historicalTestLineage.mappings.splice(index, 1);
+    write(dropped.request.planPath, plan); relockFixture(dropped.request);
+    await reject(freezeCandidate(dropped.request, dropped.effects), `missing historical correspondence ${row.from}`);
+  }
 });
 
 /** @id TEST-RELQ-002 @verifies REQ-RELQ-002 */
@@ -1537,7 +1633,7 @@ test('TEST-RELQ-005 binds durable helpers and exact package-entry receipts witho
   assert.equal(cli.status, 1, 'real durable CLI must refuse malformed input without a cyclic-module exit');
   assert.equal(JSON.parse(cli.stderr.trim()).status, 'FAIL');
   assert.equal(cli.signal, null);
-  const tgz = write(path.join(directory, 'musubix6-0.2.4.tgz'), 'synthetic package bytes for verifier fixtures');
+  const tgz = write(path.join(directory, 'musubix6-0.2.5.tgz'), 'synthetic package bytes for verifier fixtures');
   const helpers = ['release-qualification.mjs', 'release-qualification.test.mjs',
     'release-host-mutations.mjs', 'release-host-mutations.test.mjs'].map(name => {
     const file = write(path.join(directory, 'source', 'scripts', name), `export const fixture = '${name}';\n`);
@@ -1545,7 +1641,7 @@ test('TEST-RELQ-005 binds durable helpers and exact package-entry receipts witho
   });
   const packageCommands = major => [
     { command: [`/fixture/node${major}`, '/fixture/npm-cli.js', 'install', '--offline', tgz], output: 'installed' },
-    { command: [`/fixture/node${major}`, '/fixture/node_modules/.bin/musubix6', '--version'], output: '0.2.4\n' },
+    { command: [`/fixture/node${major}`, '/fixture/node_modules/.bin/musubix6', '--version'], output: '0.2.5\n' },
     { command: [`/fixture/node${major}`, '/fixture/node_modules/.bin/musubix6', 'init', '--host', 'both'], output: 'copied both hosts' },
   ].map((row, index) => ({
     command: row.command, exit: 0, signal: null, timedOut: false,
@@ -1553,12 +1649,12 @@ test('TEST-RELQ-005 binds durable helpers and exact package-entry receipts witho
     stderr: retained(directory, `package-${major}-command-${index}.stderr`, ''),
   }));
   const packageReceipts = [20, 22, 24].map(major => ({
-    runtimeMajor: major, tgzPath: tgz, tgzSha256: fileDigest(tgz), installedVersion: '0.2.4',
+    runtimeMajor: major, tgzPath: tgz, tgzSha256: fileDigest(tgz), installedVersion: '0.2.5',
     offline: true, entrypoint: 'node_modules/.bin/musubix6', host: 'both',
     command: ['npm', 'exec', '--offline', '--', 'musubix6', 'init', '--host', 'both'],
     exit: 0, signal: null, timedOut: false,
     log: retained(directory, `package-${major}.json`, JSON.stringify({
-      runtimeMajor: major, version: '0.2.4', host: 'both',
+      runtimeMajor: major, version: '0.2.5', host: 'both',
       copiedHosts: ['.github/skills', '.claude/skills'], status: 'PASS',
       commands: packageCommands(major),
     })),
@@ -1568,7 +1664,7 @@ test('TEST-RELQ-005 binds durable helpers and exact package-entry receipts witho
     },
   }));
   const request = {
-    targetVersion: '0.2.4', packagePath: tgz, packageSha256: fileDigest(tgz), helpers, packageReceipts,
+    targetVersion: '0.2.5', packagePath: tgz, packageSha256: fileDigest(tgz), helpers, packageReceipts,
     readiness: { status: 'PASS', technicalReady: true, streak: 2, publishingAuthorized: false },
     artifacts: [{ path: tgz, sha256: fileDigest(tgz) }],
     exclusions: clone(approvedPlan.excludedCells),
@@ -1576,6 +1672,19 @@ test('TEST-RELQ-005 binds durable helpers and exact package-entry receipts witho
     outputPath: path.join(directory, 'release-report.json'),
     humanReleaseApproved: false, publishingAuthorized: false,
   };
+  const { validateAdapter } = await import('./release-qualification-cells.mjs');
+  const cell = { id: 'PACKAGE-20', runtime: '20', kind: 'extra', mode: 'package' };
+  const catalogue = [{ packagePath: tgz, packageSha256: fileDigest(tgz) }];
+  const adapterEvidence = receipt => ({
+    command: ['fixture-adapter', '--cell', cell.id], exit: 0, signal: null, timedOut: false,
+    stdout: retained(directory, `adapter-${randomUUID()}.json`, JSON.stringify({ status: 'PASS', packageReceipt: receipt })),
+    stderr: retained(directory, `adapter-${randomUUID()}.stderr`, ''),
+  });
+  assert.doesNotThrow(() => validateAdapter({ cell, catalogue, evidence: adapterEvidence(packageReceipts[0]) }),
+    'the independently chosen stable candidate receipt must pass the package adapter');
+  const oldVersion = clone(packageReceipts[0]); oldVersion.installedVersion = '0.2.4';
+  assert.throws(() => validateAdapter({ cell, catalogue, evidence: adapterEvidence(oldVersion) }),
+    /runtime\/entrypoint mismatch/, 'the previous published version is not this candidate');
   const report = await pass(prepareReleaseReport(request),
     'complete exact package receipts produce only a technical report, never publication authority');
   assert.equal(report.publishingAuthorized, false);
@@ -1614,7 +1723,7 @@ test('TEST-RELQ-005 binds durable helpers and exact package-entry receipts witho
   const calls = [];
   const runtimes = [20, 22, 24].map(major => ({ major, executable: `/fixture/node${major}/bin/node` }));
   await pass(verifyPackageEntrypoints({
-    packagePath: tgz, packageSha256: fileDigest(tgz), targetVersion: '0.2.4',
+    packagePath: tgz, packageSha256: fileDigest(tgz), targetVersion: '0.2.5',
     runtimes, workRoot: path.join(directory, 'package-work'),
   }, {
     installAndInvoke: async invocation => {
