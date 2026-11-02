@@ -1635,6 +1635,32 @@ test('TEST-RELQ-004 enumerates streak resets, fresh per-cell state and immutable
 test('TEST-RELQ-PUBLISH-001 publishes only the exact remotely approved archive and preserves dry runs', async t => {
   const { spawnSync } = await import('node:child_process');
   const workflow = fs.readFileSync(path.join(root, '.github/workflows/publish.yml'), 'utf8');
+  const testJob = workflow.match(/\n {2}test:\n([\s\S]*?)\n {2}publish:\n/)?.[1];
+  assert.ok(testJob, 'the actual publish workflow must retain its prerequisite test job');
+  const provision = testJob.match(/ {6}- name: Install uv for GiNZA integration tests\n {8}run: ([^\n]+)/);
+  assert.ok(provision, 'publish CI must explicitly provision uv for the required GiNZA test');
+  assert.ok(testJob.indexOf("python-version: '3.12'") >= 0 &&
+    testJob.indexOf("python-version: '3.12'") < provision.index &&
+    provision.index < testJob.indexOf('- name: Run lean-sdd-tdd suite'),
+  'provision uv with the selected Python before running the prerequisite suite');
+  const directory = workspace(t);
+  const installerBin = path.join(directory, 'installer-bin');
+  fs.mkdirSync(installerBin);
+  fs.writeFileSync(path.join(installerBin, 'python3'), [
+    '#!/bin/sh', 'printf "%s\\n" "$@" > "$PYTHON_CALL_LOG"', 'exit "$PYTHON_INSTALL_EXIT"', '',
+  ].join('\n'), { mode: 0o755 });
+  for (const exit of [0, 7]) {
+    const log = path.join(directory, `installer-${exit}.argv`);
+    const result = spawnSync('bash', ['-euo', 'pipefail', '-c', provision[1]], {
+      cwd: directory, encoding: 'utf8', timeout: 30000,
+      env: { ...process.env, PATH: `${installerBin}${path.delimiter}${process.env.PATH}`,
+        PYTHON_CALL_LOG: log, PYTHON_INSTALL_EXIT: String(exit) },
+    });
+    assert.ifError(result.error);
+    assert.equal(result.signal, null);
+    assert.equal(result.status, exit, 'the actual provisioning shell must preserve installer failure');
+    assert.deepEqual(fs.readFileSync(log, 'utf8').trim().split('\n'), ['-m', 'pip', 'install', 'uv']);
+  }
   const step = workflow.match(/ {6}- name: Publish\n {8}run: (?:(\|)\n((?: {10}[^\n]*\n)+)|([^\n]+))/);
   assert.ok(step, 'execute the actual publication step, not a separately implemented guard');
   const script = step[1] ? step[2].split('\n').map(line => line.slice(10)).join('\n') : step[3];
@@ -1643,7 +1669,6 @@ test('TEST-RELQ-PUBLISH-001 publishes only the exact remotely approved archive a
   assert.equal(workflow.match(/^ {10}PUBLISH_DRY_RUN: (.+)$/m)?.[1],
     "${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}",
     'the actual guard must use the same event and input policy as the publish argument');
-  const directory = workspace(t);
   const artifact = 'musubix6-0.2.6.tgz', approved = 'independently approved archive bytes\n';
   const approvedSha = digest(approved);
   const rows = [

@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "purpose": "stable0.2.6 development evidence, not release qualification or publication authorization",
-  "recordedAt": "2026-11-02T22:10:47.588Z",
+  "recordedAt": "2026-11-02T22:59:14.821Z",
   "targetVersion": "0.2.6",
   "qualifyingCredit": 0,
   "technicalReady": false,
@@ -9,7 +9,7 @@
   "source": [
     {
       "path": ".github/workflows/publish.yml",
-      "sha256": "3ef3e833d53aad6f0d978200d97700b0e3aec68c9b289a8be4a6ef4b2c1e586f"
+      "sha256": "097f0f03b38bce0a2ff3260af847c8aa191d68bb37807cbafa9e4b022057a30f"
     },
     {
       "path": ".sdd/release-content-mutations.v0.2.6.json",
@@ -25,7 +25,7 @@
     },
     {
       "path": ".sdd/specs/release-qualification.md",
-      "sha256": "a0330b6b3577536b7944083adca2e38029158941b60bb272b962dc3a4ede15b4"
+      "sha256": "32612fd772e11538393aa2fae2584329378119d83b1a15303a6fa1191a86896d"
     },
     {
       "path": "CLANGELOG.md",
@@ -77,7 +77,7 @@
     },
     {
       "path": "scripts/release-qualification.test.mjs",
-      "sha256": "ad5bbb6ee1bea5b2d18b0243d10ee0fd1ff9fe2c689dd78ebac5e60f8008ea38"
+      "sha256": "8aeb81f4eb6ecad5ef56d48badbaa03b20de7062c8f23321274ab8dc023f6dd2"
     }
   ],
   "tdd": [
@@ -209,31 +209,35 @@
     {
       "id": "TEST-RELQ-PUBLISH-001",
       "red": {
-        "seq": 1121,
+        "seq": 1125,
         "type": "red",
         "test": "TEST-RELQ-PUBLISH-001",
         "req": "REQ-RELQ-005",
         "exit": 1,
-        "at": "2026-11-02T18:09:53.349Z",
-        "hash": "4f0df8b7ea71e0425c4af93407b8e3b185c27defe292135e438d17b475959fd2",
-        "fileSha": "48f5ceb36ec515d38aa2f74de8d9157e7acf04e6838646e094db56e859019253",
+        "at": "2026-11-02T22:54:42.443Z",
+        "hash": "3c37e17054385e1c7e62e05195a763809b3820765e280f5a136548b7d913042b",
+        "fileSha": "5d3770d1cf4537cdaadd0f3ea0877ac4ed8054db315b509ff481d30d54bd114a",
         "cmdSha": "2171f22d1605e67a9f823e045189b57a8a01b0d189f749d6d0833f76b50b48f1"
       },
       "green": {
-        "seq": 1122,
+        "seq": 1126,
         "type": "green",
         "test": "TEST-RELQ-PUBLISH-001",
         "req": "REQ-RELQ-005",
         "exit": 0,
-        "at": "2026-11-02T18:10:07.207Z",
-        "hash": "fe3e001d6683a637025134020a81eb263f8e260818024e931c207a23e67aaaa5",
-        "fileSha": "48f5ceb36ec515d38aa2f74de8d9157e7acf04e6838646e094db56e859019253",
+        "at": "2026-11-02T22:55:14.898Z",
+        "hash": "8b4ede36656edcf81283b99faf683dd084330f11df18526ffb3688b1efdb3fa7",
+        "fileSha": "5d3770d1cf4537cdaadd0f3ea0877ac4ed8054db315b509ff481d30d54bd114a",
         "cmdSha": "2171f22d1605e67a9f823e045189b57a8a01b0d189f749d6d0833f76b50b48f1"
       }
     }
   ],
   "publisherStateRows": 21,
   "refEventInputPolicyRows": 8,
+  "provisioningInstallerExitControls": [
+    0,
+    7
+  ],
   "isolatedMutations": [
     {
       "name": "root-old-version",
@@ -453,16 +457,16 @@
       "restoredExit": 0,
       "logs": [
         {
-          "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-mutations-BN5SCd/skip-publisher-digest-baseline.log",
-          "sha256": "644fb9d36a7223d2c54e3d75796a60feae0fb051b51409d05dfd9b19af0aa826"
+          "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-mutations-d5yFoY/skip-publisher-digest-baseline.log",
+          "sha256": "54abc6e8d5fe2ae23cf83332d286418803ea589997381886c59131534281153e"
         },
         {
-          "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-mutations-BN5SCd/skip-publisher-digest-mutant.log",
-          "sha256": "7babb55e30fcf0fc8a2a6873add824a585ef26b909d6253b63e09c39a097189a"
+          "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-mutations-d5yFoY/skip-publisher-digest-mutant.log",
+          "sha256": "b559eec42e71e4e78d9e09611c38ce44ef98ec8f18ce24cea7fd4f8a85c520d3"
         },
         {
-          "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-mutations-BN5SCd/skip-publisher-digest-restored.log",
-          "sha256": "6e28a3599001f8e7f2c053e1aec198af4593857a4abb5c9b434c9e8c31b21456"
+          "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-mutations-d5yFoY/skip-publisher-digest-restored.log",
+          "sha256": "5179c7398752f6c756938c25906c6e449c713815329a9d9b52da79a160ccf97d"
         }
       ]
     },
@@ -474,16 +478,16 @@
       "restoredExit": 0,
       "logs": [
         {
-          "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-mutations-BN5SCd/trust-local-flattened-tag-baseline.log",
-          "sha256": "75bbd64272c76a92379c819b477d29b58b3f71bc2b8fdcce3c2961192828eb45"
+          "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-mutations-d5yFoY/trust-local-flattened-tag-baseline.log",
+          "sha256": "45468c12f0e7f3585b5ce6912896a274c2d5ac983b53bcba3ca2290305d397b7"
         },
         {
-          "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-mutations-BN5SCd/trust-local-flattened-tag-mutant.log",
-          "sha256": "4381d0940253c0fb2ec166b8c6eee5406da2ebe26ffd7c49220000c8a31909a0"
+          "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-mutations-d5yFoY/trust-local-flattened-tag-mutant.log",
+          "sha256": "868bebe3071cdace1352cd74525bfa7d5ba03577fca87954ea1b0345247f395d"
         },
         {
-          "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-mutations-BN5SCd/trust-local-flattened-tag-restored.log",
-          "sha256": "d5328c47e27d38c3925702fec2b847b4d06dfb242498b39ec35010e7c4eef5c6"
+          "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-mutations-d5yFoY/trust-local-flattened-tag-restored.log",
+          "sha256": "4ae17666629f5a378acfdc15d82f147a96b12ad58087ae6f55b047d55a79e1db"
         }
       ]
     },
@@ -495,16 +499,16 @@
       "restoredExit": 0,
       "logs": [
         {
-          "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-mutations-BN5SCd/skip-remote-commit-binding-baseline.log",
-          "sha256": "a9fbca141062a542f37aa986bba02ec10559eb1e512cc06b3fb8479b169e9160"
+          "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-mutations-d5yFoY/skip-remote-commit-binding-baseline.log",
+          "sha256": "68d4a61d2b1f4b71bdedd4a2425c447c9d7ee31a940c15f53704986fa1920c63"
         },
         {
-          "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-mutations-BN5SCd/skip-remote-commit-binding-mutant.log",
-          "sha256": "2bc0fccd4e3b48f01997bde19cbf3b4877fc287f1ccc7a5b5234f6e409dfb872"
+          "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-mutations-d5yFoY/skip-remote-commit-binding-mutant.log",
+          "sha256": "35bb6eb19dc8ee2f94c5b4d06fead1397a8863fc54c4361739e0c7deb0f9d5f0"
         },
         {
-          "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-mutations-BN5SCd/skip-remote-commit-binding-restored.log",
-          "sha256": "c3848473457905de5a3d915d6717a8dd4cd2c03681fe9f579ec2744c3313c44e"
+          "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-mutations-d5yFoY/skip-remote-commit-binding-restored.log",
+          "sha256": "e94ee108aaa589024245b70faca77bb7f24a3f40f86678cf88f06e60a215d605"
         }
       ]
     },
@@ -516,16 +520,16 @@
       "restoredExit": 0,
       "logs": [
         {
-          "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-mutations-BN5SCd/publish-unchecked-source-baseline.log",
-          "sha256": "28fc0c6e4c234e8034a956f5d26c813b075eb4a44c00d7ef2ffde00355dbf978"
+          "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-mutations-d5yFoY/publish-unchecked-source-baseline.log",
+          "sha256": "53715b524dd047a336842f87f0704ab9f342ea8cfba0aceb33980fae19ce11b0"
         },
         {
-          "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-mutations-BN5SCd/publish-unchecked-source-mutant.log",
-          "sha256": "f6d3f857f6967b9b238695b19b00e2ec792fe97a340e386c7edb3a54b314cd71"
+          "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-mutations-d5yFoY/publish-unchecked-source-mutant.log",
+          "sha256": "33891e1a4b2506c1d4bd6ddb64b86329dfefb43f417739484c8ec4e0da9d5f46"
         },
         {
-          "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-mutations-BN5SCd/publish-unchecked-source-restored.log",
-          "sha256": "a1d2141e89d18f1c11dfeef546a363aa4b3c825431d90153e6e8b60de016a728"
+          "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-mutations-d5yFoY/publish-unchecked-source-restored.log",
+          "sha256": "b5c7aba5f8739e6f32d0171f77097438b3b1ea023c52cbdd7e014e22b4298e5d"
         }
       ]
     },
@@ -537,16 +541,16 @@
       "restoredExit": 0,
       "logs": [
         {
-          "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-mutations-BN5SCd/skip-publisher-identity-baseline.log",
-          "sha256": "6492ec018d5fa659347fbd716d48c853332115fae923284dac2d5bee2050f2b6"
+          "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-mutations-d5yFoY/skip-publisher-identity-baseline.log",
+          "sha256": "9bf0a2313da354a85ebe528bdc684731a5ee680c92a7de9c1dbe198f1fdc5711"
         },
         {
-          "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-mutations-BN5SCd/skip-publisher-identity-mutant.log",
-          "sha256": "4eaf608db14577b29d1141cd59db78daf6a2414f65c1e708f8008312213f1c5b"
+          "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-mutations-d5yFoY/skip-publisher-identity-mutant.log",
+          "sha256": "70d442bcd51f9357557bb219680220d2ce265b5fda24d8ddfd7e18bdf5cd0bf9"
         },
         {
-          "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-mutations-BN5SCd/skip-publisher-identity-restored.log",
-          "sha256": "89a7d3e1cadd8a60be26a729e2104dd733291e1dcdfc6a0445ab441d7ec09fd0"
+          "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-mutations-d5yFoY/skip-publisher-identity-restored.log",
+          "sha256": "7ae5d3075e9b7d7a62715315ad9dd68345d8d8f5d0380b2d9d4f1fd265db2d1e"
         }
       ]
     },
@@ -558,16 +562,16 @@
       "restoredExit": 0,
       "logs": [
         {
-          "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-mutations-BN5SCd/force-publisher-dry-run-baseline.log",
-          "sha256": "ad78fe26ee4a516d7d4e7f33cdab31d90e69a96621b4202cfb20b54a7fb7d223"
+          "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-mutations-d5yFoY/force-publisher-dry-run-baseline.log",
+          "sha256": "465dffc6e2f3e4dde224d2793c8c4aad0efd2ab0dd1efb2ea6dcb0efb33bafee"
         },
         {
-          "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-mutations-BN5SCd/force-publisher-dry-run-mutant.log",
-          "sha256": "cc274fcfacd47c52637f562c80cf0ee758329fcff8041288fff49520a04b790c"
+          "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-mutations-d5yFoY/force-publisher-dry-run-mutant.log",
+          "sha256": "2c862f1adacdb5faf9a6e82a5221a8362d5821e12edc934ef8dae5d634567d4d"
         },
         {
-          "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-mutations-BN5SCd/force-publisher-dry-run-restored.log",
-          "sha256": "9fa5de5d24d8427c3f6c9647573bcdc892925f21052fc382366a6c19f25fff4c"
+          "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-mutations-d5yFoY/force-publisher-dry-run-restored.log",
+          "sha256": "9e1db07edd7aa811e2154bcee4e9366edb6b74c892d90d40eeede3eaa5e63728"
         }
       ]
     },
@@ -579,16 +583,16 @@
       "restoredExit": 0,
       "logs": [
         {
-          "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-mutations-BN5SCd/force-publisher-live-run-baseline.log",
-          "sha256": "12e6a9d169afc190c52c12991caef5d933b43bf9025d9b3584a043d4b465ba82"
+          "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-mutations-d5yFoY/force-publisher-live-run-baseline.log",
+          "sha256": "403ef59e885cee13f2ad8e332437fa7e8b8a24ce272970955f881a60f227b456"
         },
         {
-          "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-mutations-BN5SCd/force-publisher-live-run-mutant.log",
-          "sha256": "cdf9614290941320d14e5559c923be95f1e05309194881ffd1834aa5021a6703"
+          "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-mutations-d5yFoY/force-publisher-live-run-mutant.log",
+          "sha256": "510a94dceadf87282c48c43ceff0072a6630bbf9dd701bbab866debf17403142"
         },
         {
-          "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-mutations-BN5SCd/force-publisher-live-run-restored.log",
-          "sha256": "11de9f1dc520b9a147e06f0917eceffa9dd96c3f3912c5a11eb119e4643da66a"
+          "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-mutations-d5yFoY/force-publisher-live-run-restored.log",
+          "sha256": "475689eb5c61b12f4c41f20b1b2986fc1be6ee3e279ce3b5e36ca3f1333ac6d2"
         }
       ]
     },
@@ -600,16 +604,16 @@
       "restoredExit": 0,
       "logs": [
         {
-          "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-mutations-BN5SCd/ignore-publisher-event-baseline.log",
-          "sha256": "5d1e44c8194c3743c93ff18261ad6b1ef800e3bab3bf47727db5c40f03483883"
+          "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-mutations-d5yFoY/ignore-publisher-event-baseline.log",
+          "sha256": "c7a6c928299f3a8c25000e9044d9e9bc13e829b79ed61b26611c1de8ebafb8b8"
         },
         {
-          "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-mutations-BN5SCd/ignore-publisher-event-mutant.log",
-          "sha256": "d7587fdbb4ca43fcd90f43523e60392fcab11b9161462e63198495e1d91bb684"
+          "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-mutations-d5yFoY/ignore-publisher-event-mutant.log",
+          "sha256": "c686d4993c042a659dd5280be6c611ba1fd3f87dc82786d42b9a091d65372e2b"
         },
         {
-          "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-mutations-BN5SCd/ignore-publisher-event-restored.log",
-          "sha256": "f0aa8ca0b0e819b10174b76d6421450194a127014d83893e204bde8c83595d15"
+          "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-mutations-d5yFoY/ignore-publisher-event-restored.log",
+          "sha256": "3e4f44952c086617a14343817cd31bb7bf5895de9a1505d12345e219ef653a12"
         }
       ]
     },
@@ -621,16 +625,16 @@
       "restoredExit": 0,
       "logs": [
         {
-          "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-mutations-BN5SCd/skip-publisher-pack-baseline.log",
-          "sha256": "02849c1d75c8cc7ac0bfb93555dbd9014c970d0b83bc8eb50072a23a16109cec"
+          "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-mutations-d5yFoY/skip-publisher-pack-baseline.log",
+          "sha256": "b6a14a7de5509d68f778479278b53ace048e064469519e0aefd3f963d79580b5"
         },
         {
-          "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-mutations-BN5SCd/skip-publisher-pack-mutant.log",
-          "sha256": "4ccab6d574ccca116c7e557d1406e7d3cd4b9d978957eec295fd1bfbc3f86c27"
+          "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-mutations-d5yFoY/skip-publisher-pack-mutant.log",
+          "sha256": "276225192b5fe7de6212745f8ffa13334ebc955386f20c99dc448333c3fc5bf2"
         },
         {
-          "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-mutations-BN5SCd/skip-publisher-pack-restored.log",
-          "sha256": "6d841c6d09404d71b7f0a53b053bc6d858955a1e8c7ed9c9c045e06f8b703ba8"
+          "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-mutations-d5yFoY/skip-publisher-pack-restored.log",
+          "sha256": "406e3ef7721585cab197246fb5b89a94c85e3d94d7e3047e79db8d12593c48e4"
         }
       ]
     },
@@ -642,16 +646,58 @@
       "restoredExit": 0,
       "logs": [
         {
-          "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-mutations-BN5SCd/enable-publisher-pack-scripts-baseline.log",
-          "sha256": "540b5cfa2de2c9738934d59b6524033d248bdf130ef31bf8ca44deed0ca0f3f5"
+          "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-mutations-d5yFoY/enable-publisher-pack-scripts-baseline.log",
+          "sha256": "1d35a0c4ff60a8e220c568ab87708270036e9d584c851b91d004ed8005be5214"
         },
         {
-          "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-mutations-BN5SCd/enable-publisher-pack-scripts-mutant.log",
-          "sha256": "7240ae3caa5c0cf621aba5356917773fe28d9532e7b378df9746c0954e475be1"
+          "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-mutations-d5yFoY/enable-publisher-pack-scripts-mutant.log",
+          "sha256": "f3fb93b2ed434195d2a01fcbbcc37695719a352fa69f1c1be5b4ae10c1713186"
         },
         {
-          "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-mutations-BN5SCd/enable-publisher-pack-scripts-restored.log",
-          "sha256": "63f7e8760f7601e69e5074dd9131b2687f388339584c2c50f5d7a30a13007e1b"
+          "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-mutations-d5yFoY/enable-publisher-pack-scripts-restored.log",
+          "sha256": "754d690998002be27c48decfc3b1c3a0e3e191956a32b3752621c285098347e6"
+        }
+      ]
+    },
+    {
+      "name": "omit-publisher-uv-provision",
+      "file": ".github/workflows/publish.yml",
+      "baselineExit": 0,
+      "mutationExit": 1,
+      "restoredExit": 0,
+      "logs": [
+        {
+          "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-mutations-d5yFoY/omit-publisher-uv-provision-baseline.log",
+          "sha256": "5cd114f91ec317a932cfab64f1f3fc54cf71940d74b782983a7cdcf057d0ec3a"
+        },
+        {
+          "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-mutations-d5yFoY/omit-publisher-uv-provision-mutant.log",
+          "sha256": "e7e19393ac1cc55aed02169b6f21ecdd3dd1994948867f8dc784569df0a7ea80"
+        },
+        {
+          "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-mutations-d5yFoY/omit-publisher-uv-provision-restored.log",
+          "sha256": "21ecbec2e0de9f3cf4f4e5ccb6f8474f96daff03ad3e1a6ebfbb7b0c5f2fd1c2"
+        }
+      ]
+    },
+    {
+      "name": "mask-publisher-uv-install-error",
+      "file": ".github/workflows/publish.yml",
+      "baselineExit": 0,
+      "mutationExit": 1,
+      "restoredExit": 0,
+      "logs": [
+        {
+          "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-mutations-d5yFoY/mask-publisher-uv-install-error-baseline.log",
+          "sha256": "4aa7721888c6ab50edbe314e4e2c73003d0895fa0cf2eae31b35beeab348bb3d"
+        },
+        {
+          "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-mutations-d5yFoY/mask-publisher-uv-install-error-mutant.log",
+          "sha256": "1c5bb526d3d5b5843d2d118bc633f5cced9609ce3ae4987aeb8da40779b18fd7"
+        },
+        {
+          "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-mutations-d5yFoY/mask-publisher-uv-install-error-restored.log",
+          "sha256": "a916b578be2b48dd9392b63725b1f30ecd9b3fce52a5f1dc834008f5f3c7355e"
         }
       ]
     }
@@ -678,8 +724,12 @@
       "sha256": "1be1ae3d425fe6c60ea4318b9b9d15ded68400a083ea6a246f0baf501bf5a295"
     },
     {
+      "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-publisher-mutations-uv-restored.json",
+      "sha256": "19a214908eb2561b8edaf5da557b03916a7bdbc5d6f1bb4f5554f65c77ac63cf"
+    },
+    {
       "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-diagnostics.json",
-      "sha256": "75637bb14ebc8ccbda8ba711c6dff07f6a5f921222a3eb854643fb0aa5df3979"
+      "sha256": "98ab61747bf52e2c1df1e2c19ef81bef74b924f63b3ee4fcfeb3558ff36d7f6e"
     },
     {
       "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-publisher-policy-red.log",
@@ -692,6 +742,30 @@
     {
       "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-final-dependent-refactors.log",
       "sha256": "27fb045418c0149ffc40aa96345167f12e3856406aee7be28d7748ff8fa41286"
+    },
+    {
+      "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-publisher-uv-red.log",
+      "sha256": "2ab79d8f5e300bea355fd2e82f67c3302bd4b79cebd33fa3e52f304f47c15c75"
+    },
+    {
+      "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-publisher-uv-green.log",
+      "sha256": "317f10d9781fda076e9efde887a1294516f70cc95d7fde8cec6ec7afaca8f0ce"
+    },
+    {
+      "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-native-ginza-control.log",
+      "sha256": "a317d11f83531fb739a6957941bc8a4832d6dc3d022b7f7acb62ef8774784bd7"
+    },
+    {
+      "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-ci-dry-run-failed.log",
+      "sha256": "cdcfa76a42986301d21c169d18748780d6c82da2b2ae7b0c67a5f9e79189e899"
+    },
+    {
+      "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-qualification-aborted.json",
+      "sha256": "21bf8049eec5e24c11d13e4966efee7d8c72747799a4a4297ddeb17b5334b0e6"
+    },
+    {
+      "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-superseded-input-check.json",
+      "sha256": "372d07bba9f5e38c3e6a4c3f495a278760d95c7bbda35e96aa37e743e66f9094"
     },
     {
       "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-readme-en-lint.json",
@@ -708,10 +782,11 @@
     "publisherDelta": "Workflow clean; initial reviewer explicitly did not inspect the test oracle.",
     "oracleFollowup": "Found unbound actual dry-run env; pack order and intended failure reasons also strengthened.",
     "fixDelta": "Clean: actual-expression binding, all eight policy rows, pack/auth ordering and intended failures.",
+    "provisioningDelta": "Directly reviewed two-line existing-CI provisioning reuse plus actual-shell successful/nonzero installer controls. Earlier independent reviews do not cover this subsequent delta; hosted verification remains required.",
     "openFindings": []
   },
   "diagnostics": {
-    "changedJavaScriptFiles": 8,
+    "changedJavaScriptFiles": 1,
     "baselineErrors": 0,
     "changedErrors": 0,
     "workflowYaml": "Parsed by existing private Ruby YAML.safe_load_file",
@@ -723,53 +798,23 @@
     "Default Ruby was absent; YAML validation subsequently passed using the existing private runtime."
   ],
   "fullGate": {
-    "status": "PASS",
-    "output": {
-      "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-full-gate.json",
-      "sha256": "707b0b652fb823334d6a8317110604db05e5b82e304d05771f91e79d634caa44"
-    },
-    "command": {
-      "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-full-gate-command.json",
-      "sha256": "ec825ebaa7d868a993e955b15a5c7d97a0f5fa4da17ea86fc9b33c4c0a21d6f0"
-    },
-    "lines": [
-      "! human-approved diagnostics-contract: implementation changed since approval (.github/skills/lean-sdd-tdd/scripts/diagnostics.mjs) — a human should re-review, then approve record",
-      "! human-approved rust-stub-confidence: implementation changed since approval (.github/skills/lean-sdd-tdd/scripts/sdd.mjs) — a human should re-review, then approve record",
-      "! human-approved windows-runner: implementation changed since approval (.github/skills/lean-sdd-tdd/scripts/sdd.mjs) — a human should re-review, then approve record",
-      "✓ lock claude-code-support: ok [human] (human required)",
-      "✓ lock cost-history: ok [ai, review summary]",
-      "✓ lock diagnostics-contract: ok [human] (human required)",
-      "✓ lock diagnostics-eslint: ok [ai, review file]",
-      "✓ lock diagnostics-javascript: ok [ai, review file]",
-      "✓ lock diagnostics-python: ok [ai, review file]",
-      "✓ lock diagnostics-rust: ok [human] (human required)",
-      "✓ lock diagnostics-typescript: ok [ai, review file]",
-      "✓ lock diagnostics-workflow: ok [ai, review file]",
-      "✓ lock legacy-approval-provenance: ok [ai, review file]",
-      "✓ lock legacy-command-closure: ok [ai, review file]",
-      "✓ lock legacy-native-verdicts: ok [ai, review file]",
-      "✓ lock node-summary-verdict: ok [ai, review file]",
-      "✓ lock r36b-node-red: ok [ai, review summary]",
-      "✓ lock r36e-native-loader: ok [ai, review summary]",
-      "✓ lock r36g-rust-ci: ok [ai, review summary]",
-      "✓ lock r36i-c-compiler: ok [ai, review summary]",
-      "✓ lock r36j-go-compiler: ok [ai, review summary]",
-      "✓ lock release-qualification: ok [human] (human required)",
-      "✓ lock runner-selection: ok [ai, review summary]",
-      "✓ lock rust-stub-confidence: ok [human] (human required)",
-      "✓ lock source-discovery: ok [ai, review file]",
-      "✓ lock spec-context: ok [ai, review summary]",
-      "✓ lock windows-runner: ok [human] (human required)",
-      "✓ trace: 100 REQ, 0 errors, 6 warnings",
-      "    warning: REQ-HOST-004 has no @implements code",
-      "    warning: REQ-KOTO-SYNC-001 has no @implements code",
-      "    warning: REQ-KOTO-SYNC-002 has no @implements code",
-      "    … +3 more warnings (all: trace --verbose)",
-      "✓ ledger: 1123 entries, chain intact",
-      "✓ tdd evidence: 169/169 tests Red→Green, 1 weak Red 79 characterization (passed without a failing Red; not a weak Red) (1 retest: Red re-recorded with --retest, passed without a failing Red; 1 superseded an earlier strong Red — re-record a failing Red by temporarily breaking the implementation if that evidence matters: TEST-R36D-OWN-001) (9 refactor-recorded after the test/setup changed, no new Red: TEST-RELQ-CONTENT-ADMISSION-001, TEST-RELQ-BASELINE-001, TEST-RELQ-LINEAGE-001, TEST-RELQ-CLOSURE-001, TEST-RELQ-002, TEST-RELQ-READINESS-001, TEST-RELQ-004, TEST-RSTUB-003, … +1; to replace that with real evidence: tdd red <ID> --retest \"<why>\" then tdd green <ID>)",
-      "! stub: 2 source file(s) of Green REQs still hold SDD-TODO(stub) / 'not implemented:' placeholders: .github/skills/lean-sdd-tdd/scripts/sdd.mjs:1777, .github/skills/lean-sdd-tdd/scripts/sdd.test.mjs:680 — implement or remove them (scopePolicy warn: set \"scopePolicy\": \"strict\" to fail)",
-      "✓ cmd test (1787.8s)"
-    ]
+    "status": "NOT_RUN"
+  },
+  "supersededCandidate": {
+    "sourceCommit": "00fa172f1cb30a660f23dd795b6d3d5e10c3ad86",
+    "frozenManifestSha256": "224bd7a02839c95c5c49b6284be5eba445abe3ae62ff6bd4837f0a967346d181",
+    "localGate": "PASS before provisioning/test changes, not evidence for the successor candidate",
+    "hostedDryRun": "41535041561 failed required GiNZA test: uv ENOENT; publish job skipped",
+    "interruptedMatrix": "18 cells retained; interrupted first run, no complete clean run or transferred credit",
+    "invalidation": "Public frozen-input check now genuinely returns FAIL for the changed trusted regression helper; observed failure/reset history retained.",
+    "qualifyingCredit": 0
+  },
+  "integrationFinding": {
+    "id": "REL026-CI-UV",
+    "severity": "S2",
+    "firstFailureStage": "trusted inputs",
+    "state": "FIXED_IN_SOURCE_HOSTED_VERIFICATION_PENDING",
+    "description": "Publish workflow lacked explicit uv provisioning for required GiNZA integration tests."
   },
   "limits": [
     "Recording npm fixture is not actual registry publication.",

@@ -252,10 +252,10 @@
   "release-qualification": {
     "by": "nahisaho",
     "kind": "human",
-    "review": "Explicit human reapproval of seven exact paths/hashes after observed-evidence-only amendment;20isolated mechanisms/21publisher rows; no policy or publication approval change",
-    "at": "2026-11-02T21:35:50.078Z",
+    "review": "Explicit approval of seven exact paths/hashes for missing-uv counterexample; retain all24cells and reset interrupted candidate credit, no tagging/publication authority",
+    "at": "2026-11-02T22:54:40.819Z",
     "artifacts": {
-      ".sdd/specs/release-qualification.md": "a0330b6b3577536b7944083adca2e38029158941b60bb272b962dc3a4ede15b4",
+      ".sdd/specs/release-qualification.md": "32612fd772e11538393aa2fae2584329378119d83b1a15303a6fa1191a86896d",
       ".sdd/release-validation.v0.2.6.json": "7ef445e62e3c31faf73c4bd5849f2df44a6b917d1bdfc155ba0d731deb06fe8f",
       ".sdd/release-content-mutations.v0.2.6.json": "3c121aaab9978dba64586ad72fc014108237aaacad79d9c7519c2f183aa78d69",
       ".sdd/specs/claude-code-support.md": "cfe802292d3869e71e432e076c4617eb99738bb9e9275719dda9596c13647f84",
