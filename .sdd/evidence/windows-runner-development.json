@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "feature": "windows-runner",
-  "status": "BINARY_FIX_TARGETED_PASS_AWAITING_NATIVE_CI_AND_CURRENT_FULL_GATE",
+  "status": "DEVELOPMENT_VALIDATED_NOT_RELEASE_QUALIFIED",
   "releaseQualification": false,
   "sourceSha256": "36c40215409fc2b331994a0cef224807fc242c5bd5bc76f497e3a000425410b1",
   "testSha256": {
@@ -96,11 +96,22 @@
     "passed": 0,
     "failed": 0,
     "skipped": 2,
-    "hostedCi": "FIRST_RUN_FAILED",
+    "hostedCi": "PASS_AFTER_BINARY_CLASSIFICATION_FIX",
+    "successfulRunUrl": "https://github.com/nahisaho/musubix6/actions/runs/41413644040",
+    "successfulRunCommit": "4de2db69e98b5263d84198f68e4f3f139849210e",
+    "successfulSourceSha256": "36c40215409fc2b331994a0cef224807fc242c5bd5bc76f497e3a000425410b1",
+    "successfulMatrix": {
+      "node": [20, 22, 24],
+      "modes": ["source", "installed-copilot", "installed-claude", "standalone"],
+      "suites": 12,
+      "passed": 72,
+      "failed": 0,
+      "skipped": 0
+    },
     "firstRunUrl": "https://github.com/nahisaho/musubix6/actions/runs/41410537867",
     "firstRunCommit": "ade2b64fe96bac712dacbb54830e73d935048e33",
     "firstRunResults": "All three Node jobs failed in source controls. Node24 logs show MSVC and all four regression controls passed with no skips, but the real-npm control received empty gate stdout and failed JSON parsing. Installed-host and standalone steps were not run.",
-    "diagnosticFollowup": "Run 41410870099 on 4615728 exposed the actual 16MiB textual-definition budget refusal at node.exe. Windows native binaries are now pinned as raw bytes in both referenced-file discovery and executable fingerprinting; text budgets remain unchanged. Current source still needs native rerun and a new full gate.",
+    "diagnosticFollowup": "Run 41410870099 on 4615728 exposed the actual 16MiB textual-definition budget refusal at node.exe. Windows native binaries are now pinned as raw bytes in both referenced-file discovery and executable fingerprinting; text budgets remain unchanged. Run 41413644040 verified all native modes after this fix, and the final local full gate passed for the same source hash.",
     "requiredControls": "Actual Windows Node20/22/24: real npm success/nonzero and literal argv/admission; initialized MSVC stdio.h plus Windows SDK linking; source, copied Copilot/Claude skills and lone standalone script."
   },
   "diagnostics": {
@@ -131,31 +142,44 @@
   "independentReview": {
     "model": "claude-sonnet-5.5",
     "productionDelta": "No high-confidence findings; reviewed virtual SDK keys, admission, resolver/adapter and symlink baseline hashing. This reviewer explicitly did not read tests/spec.",
-    "controlsAndDocumentation": "Read both complete new test files, workflow and README/changelog diff; no blocking findings. Native-only path/junction behavior remains unknown.",
+    "controlsAndDocumentation": "Read both complete new test files, workflow and README/changelog diff; no blocking findings. Initially unknown native-only path/junction behavior was subsequently exercised in successful run 41413644040.",
     "binaryFixDelta": "Independent plan and implementation review found no blocking defects. Checked lexical/real native classification, raw live/Git hash parity, missing-vs-I/O failures, visited/cache/budget semantics, POSIX preservation and regression byte-drift rejection.",
     "resolvedObservations": [
-      "Forward-slash relative provenance keys are the existing rel() contract used by production and tests; actual Windows path aliases still require CI.",
+      "Forward-slash relative provenance keys are the existing rel() contract used by production and tests; the actual Windows fixture paths/junctions passed run 41413644040.",
       "No-spec fixtures intentionally produce INCOMPLETE/exit2 while still running configured checks; native MSVC test separately asserts successful cmd status and executable output.",
       "Both push and pull_request triggers are intentional development CI coverage; duplicate runs are not a correctness defect."
     ]
   },
   "fullRepositoryGate": {
-    "status": "PREVIOUS_SOURCE_PASS_CURRENT_SOURCE_PENDING",
-    "validatedSourceSha256": "1ce7c7ff59214fd60579023d620ec456d866adf08ca2827c481a4661bcf2c62e",
+    "status": "PASS",
+    "validatedSourceSha256": "36c40215409fc2b331994a0cef224807fc242c5bd5bc76f497e3a000425410b1",
     "command": "node .github/skills/lean-sdd-tdd/scripts/sdd.mjs gate --json",
     "exitCode": 0,
-    "rawReportSha256": "ff813c85281811ec18e3162ff05d3781c0e3b9de5d81e3771afdaa847448e06f",
+    "rawReportSha256": "fa9700fa09758dc2713835ed503dc94d123f12a1a5b11d68b51ae57264a12b6f",
     "traceRequirements": 100,
     "traceErrors": 0,
     "traceWarnings": 6,
     "tddEvidenceAccepted": "168/168",
-    "projectTestSeconds": 1777.6,
+    "projectTestSeconds": 1777.3,
+    "previousSourceGate": {
+      "sourceSha256": "1ce7c7ff59214fd60579023d620ec456d866adf08ca2827c481a4661bcf2c62e",
+      "rawReportSha256": "ff813c85281811ec18e3162ff05d3781c0e3b9de5d81e3771afdaa847448e06f",
+      "verdict": "PASS",
+      "qualification": "Superseded by the binary-classification change, not a second frozen-matrix qualification run."
+    },
     "preflight": "gate --no-run was FAIL/INCOMPLETE, not a passing gate. It observed a stale human release-qualification documentation binding and an in-flight TEST-WINRUN-003 test hash. The latter was replaced by genuine final Red/Green; the updated Windows evidence text required renewed spec approval.",
     "approvalResolution": "nahisaho explicitly renewed both windows-runner and release-qualification development/documentation bindings before the complete gate. No release authorization was granted.",
     "remainingWarnings": "Existing diagnostics-contract and shared rust-stub-confidence implementation-review advisories, trace/test-only warnings and stub-marker advisories remain. Historical ledger includes weak/characterization/retest evidence; a gate PASS does not upgrade it or prove Windows qualification."
   },
+  "hostedRegression": {
+    "runUrl": "https://github.com/nahisaho/musubix6/actions/runs/41413643960",
+    "commit": "4de2db69e98b5263d84198f68e4f3f139849210e",
+    "node": [20, 22, 24],
+    "conclusion": "success",
+    "scope": "All three hosted project-regression jobs passed; this is development regression coverage, not release qualification."
+  },
   "limits": [
-    "No native Windows result and no Windows Issue closure based only on simulation.",
+    "Native development controls are verified for the stated run/source hash, not general Windows release qualification. Windows Issues remain open pending integration.",
     "No tag, publish, package-version bump or release support expansion.",
     "Frozen 0.2.5 release artifacts and validation matrices remain unchanged; current development results do not renew their qualification."
   ]
