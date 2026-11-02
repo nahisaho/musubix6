@@ -18,7 +18,7 @@ import {
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.dirname(here);
-const policyFile = '.sdd/release-validation.v0.2.5.json';
+const policyFile = '.sdd/release-validation.v0.2.6.json';
 
 export function parseArguments(args) {
   const [mode, flag, file, ...rest] = args;
@@ -146,7 +146,7 @@ export async function preflight(configuration) {
       scope: inherited.scopeCatalogue, excludedTodos: historical.excludedTodos,
     };
     const plan = json(path.join(source, policyFile));
-    const hostCatalogue = hostMutations('0.2.5').map(mutation => {
+    const hostCatalogue = hostMutations('0.2.6').map(mutation => {
       const row = { ...mutation };
       delete row.mutate;
       const text = fs.readFileSync(path.join(source, 'scripts/host-compatibility.test.mjs'), 'utf8').split('\n');

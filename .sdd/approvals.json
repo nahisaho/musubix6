@@ -227,10 +227,10 @@
   "claude-code-support": {
     "by": "nahisaho",
     "kind": "human",
-    "review": "Human approved stable 0.2.5 metadata and host contract after isolated version/pack/install spike; no publication, tagging or main-push authorization.",
-    "at": "2026-11-01T21:45:41.832Z",
+    "review": "Human approved stable 0.2.6 identity at cfe802292d3869e71e432e076c4617eb99738bb9e9275719dda9596c13647f84; publication excluded.",
+    "at": "2026-11-02T12:26:56.286Z",
     "artifacts": {
-      ".sdd/specs/claude-code-support.md": "03344562e699b94ba6086648672fb1f57a448d7757e9fbbccfdd0daf6e874988"
+      ".sdd/specs/claude-code-support.md": "cfe802292d3869e71e432e076c4617eb99738bb9e9275719dda9596c13647f84"
     },
     "tier": "T2",
     "requireHuman": true,
@@ -252,24 +252,25 @@
   "release-qualification": {
     "by": "nahisaho",
     "kind": "human",
-    "at": "2026-11-02T07:31:04.535Z",
+    "review": "Explicit human reapproval of seven exact paths/hashes after observed-evidence-only amendment;20isolated mechanisms/21publisher rows; no policy or publication approval change",
+    "at": "2026-11-02T21:35:50.078Z",
     "artifacts": {
-      ".sdd/specs/release-qualification.md": "4f15be7923832f8c707b30dfc67347ecc967a1c1491882a69dfe48b38cf98047",
-      ".sdd/release-validation.v0.2.5.json": "88a97b0a0b9c2158372796eae37df320e8800db0f31a3b18f0679deb530c8309",
-      ".sdd/release-content-mutations.v0.2.5.json": "532a429caac6e10bf6365572e244b154b1311b0f1bf7ab044d258deb493477f0",
-      ".sdd/specs/claude-code-support.md": "03344562e699b94ba6086648672fb1f57a448d7757e9fbbccfdd0daf6e874988",
-      "README.md": "6caf69327bfd4935d6b2ef6059da4ec92d045cf2d6f3379d5789b03e4a58b989",
-      "README-ja.md": "4e4ce7b1515ca6a737b0e208f04e28e6981f123c50de8a7a3231ccf87173e871",
-      "CLANGELOG.md": "e2cac30444b16bab43b472d3e879745eda8cc6b7dcc72f244a67e6a86654319b"
+      ".sdd/specs/release-qualification.md": "a0330b6b3577536b7944083adca2e38029158941b60bb272b962dc3a4ede15b4",
+      ".sdd/release-validation.v0.2.6.json": "7ef445e62e3c31faf73c4bd5849f2df44a6b917d1bdfc155ba0d731deb06fe8f",
+      ".sdd/release-content-mutations.v0.2.6.json": "3c121aaab9978dba64586ad72fc014108237aaacad79d9c7519c2f183aa78d69",
+      ".sdd/specs/claude-code-support.md": "cfe802292d3869e71e432e076c4617eb99738bb9e9275719dda9596c13647f84",
+      "README.md": "21855184a2a8dc015ec050918cb1cd789cb166ec64867ee503a6bf0ebf852dca",
+      "README-ja.md": "cf8c172207c14d0fae8fa62f76f4db15b0ad7036aec3733103c1ccf864f91a63",
+      "CLANGELOG.md": "1e554fda859b7ecd99a92dfe7a67c0f059b7287170edac9f0873e6671fdc1ed6"
     },
     "tier": "T2",
     "requireHuman": true,
     "code": {
-      "scripts/release-host-mutations.mjs": "6ed5d021018184f225d2492fe1458792b43323942fa06e96a4fdadc174214efb",
-      "scripts/release-qualification-content-mutations.mjs": "6a251a550d822dd47b8df11ff0abca2d66c01041b16389bfddefaa7b207fe3ef",
+      "scripts/release-host-mutations.mjs": "12aa3cc0de5f75da022c17aef7f1ee543fe2008a135312e685848a311f014f68",
+      "scripts/release-qualification-content-mutations.mjs": "7effad8ea075b54ef29b9f74b98967df3c5d7aa6c6cf7d0a9a3a29928b1c6eaf",
       "scripts/release-qualification-evidence.mjs": "88d48acfd61964b5c73e99e90249c6d5cd7427c4a7cc9e2e7b87b90501aa85e0",
       "scripts/release-qualification-io.mjs": "c3a5b80da7a4c1ced23f92d73553745ea3bf50d1d8856434c33a427f30ec7feb",
-      "scripts/release-qualification.mjs": "e23d128665ee8a6bfeb625a79eae3217afd1a149f5b346a1b5e89cab7cb0736c"
+      "scripts/release-qualification.mjs": "39c72efac809ca21a5faabee3053255b054fa2d831374324171b24dd0d00b9f5"
     }
   },
   "rust-stub-confidence": {

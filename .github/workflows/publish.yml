@@ -71,6 +71,42 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/v')
         run: test "v$(node -p "require('./package.json').version")" = "${GITHUB_REF_NAME}"
       - name: Publish
-        run: npm publish --provenance --access public ${{ (github.event_name == 'workflow_dispatch' && inputs.dry_run) && '--dry-run' || '' }}
+        run: |
+          set -euo pipefail
+          npm pack --ignore-scripts
+          artifact="musubix6-$(node -p "require('./package.json').version").tgz"
+          if [ "$PUBLISH_DRY_RUN" != true ]; then
+            case "$GITHUB_REF" in
+              refs/tags/v*) ;;
+              *) echo "Publication requires an approved release tag" >&2; exit 1 ;;
+            esac
+            if [ "$GITHUB_REF_NAME" != "v$(node -p "require('./package.json').version")" ]; then
+              echo "Release tag does not match package version" >&2
+              exit 1
+            fi
+            git fetch --no-tags origin "$GITHUB_REF"
+            if [ "$(git cat-file -t FETCH_HEAD)" != tag ]; then
+              echo "Publication requires an annotated release tag" >&2
+              exit 1
+            fi
+            if [ "$(git rev-parse 'FETCH_HEAD^{commit}')" != "$(git rev-parse HEAD)" ]; then
+              echo "Release tag does not match the checked-out candidate" >&2
+              exit 1
+            fi
+            expected="$(git cat-file tag FETCH_HEAD | node --input-type=module -e '
+              import fs from "node:fs";
+              const rows = fs.readFileSync(0, "utf8").split(/\r?\n/)
+                .filter(line => line.startsWith("Approved-Package-SHA256:"));
+              if (rows.length !== 1 || !/^Approved-Package-SHA256: [a-f0-9]{64}$/.test(rows[0])) {
+                console.error("Exactly one approved package SHA-256 is required");
+                process.exit(1);
+              }
+              console.log(rows[0].slice("Approved-Package-SHA256: ".length));
+            ')"
+            printf '%s  %s\n' "$expected" "$artifact" | sha256sum --check
+          fi
+          npm whoami --registry https://registry.npmjs.org/
+          npm publish --provenance --access public "$artifact" ${{ (github.event_name == 'workflow_dispatch' && inputs.dry_run) && '--dry-run' || '' }}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          PUBLISH_DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}

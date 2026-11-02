@@ -127,7 +127,7 @@ export function hostMutations(version) {
       replace("else if (cmd === '-v' || cmd === '--version') console.log(pkg.version);",
         `else if (cmd === '-v' || cmd === '--version') console.log('${version}-dev.0');`),
       "assert.equal(wrapper('--version').stdout.trim(),"],
-    ['changelog-version', '005', 'CLANGELOG.md', replace(`## [${version}] - Unreleased`, `## [${version}-dev.1] - Unreleased`),
+    ['changelog-version', '005', 'CLANGELOG.md', replace(`## [${version}] - `, `## [${version}-dev.1] - `),
       "assert.match(fs.readFileSync(path.join(root, 'CLANGELOG.md'),"],
     ...['README.md', 'README-ja.md'].flatMap(file => [
       [`${file}-stable-version`, '005', file, replace(`**${version}**`, `**${version}-dev.0**`, true), 'assert.ok(body.includes(\'**'],

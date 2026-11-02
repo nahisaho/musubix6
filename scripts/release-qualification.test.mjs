@@ -21,7 +21,7 @@ import {
 } from './release-qualification.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const planRelative = '.sdd/release-validation.v0.2.5.json';
+const planRelative = '.sdd/release-validation.v0.2.6.json';
 const inheritedRelative = '.sdd/release-validation.v0.2.0.json';
 const approvalsRelative = '.sdd/approvals.json';
 const read = file => JSON.parse(fs.readFileSync(file, 'utf8'));
@@ -32,7 +32,7 @@ const inherited = read(path.join(root, inheritedRelative));
 const approvedPlan = read(path.join(root, planRelative));
 const genuineLock = read(path.join(root, approvalsRelative))['release-qualification'];
 const required = inherited.requiredCells.filter(cell => cell.id !== 'NATIVE-WSLC');
-const contentReference = read(path.join(root, '.sdd/release-content-mutations.v0.2.5.json'));
+const contentReference = read(path.join(root, '.sdd/release-content-mutations.v0.2.6.json'));
 const write = (file, value) => {
   fs.mkdirSync(path.dirname(file), { recursive: true });
   fs.writeFileSync(file, typeof value === 'string' ? value : JSON.stringify(value, null, 2));
@@ -268,8 +268,8 @@ function workspace(t) {
 }
 
 function contentContext(directory, cellId, source = approvedSourceFixture(directory)) {
-  fs.copyFileSync(path.join(root, '.sdd/release-content-mutations.v0.2.5.json'),
-    path.join(source, '.sdd/release-content-mutations.v0.2.5.json'));
+  fs.copyFileSync(path.join(root, '.sdd/release-content-mutations.v0.2.6.json'),
+    path.join(source, '.sdd/release-content-mutations.v0.2.6.json'));
   return {
     source, output: path.join(directory, 'content'), node: process.execPath,
     cell: { id: cellId, runtime: '24', timeoutSeconds: 3600 },
@@ -304,7 +304,7 @@ function alteredContentReceipt(directory, row, change) {
 test('TEST-RELQ-CONTENT-ADMISSION-001 accepts seven genuine bindings and rejects absent or changed content catalogue', async t => {
   const scope = scopeFixture(workspace(t));
   await pass(admitPlan(scope), 'matching seven-artifact unit must be admitted');
-  const reference = path.join(scope.root, '.sdd/release-content-mutations.v0.2.5.json');
+  const reference = path.join(scope.root, '.sdd/release-content-mutations.v0.2.6.json');
   const original = fs.readFileSync(reference);
   fs.appendFileSync(reference, '\n');
   await reject(admitPlan(scope), 'changed content catalogue must reject');
@@ -320,7 +320,7 @@ test('TEST-RELQ-CONTENT-ADMISSION-001 accepts seven genuine bindings and rejects
 /** @id TEST-RELQ-BASELINE-001 @verifies REQ-RELQ-001 REQ-RELQ-002 */
 test('TEST-RELQ-BASELINE-001 validates the historical approved source inventory before tool preparation', async t => {
   const { preflight } = await import('./release-qualification-cli.mjs');
-  const referencePath = path.join(root, '.sdd/release-content-mutations.v0.2.5.json');
+  const referencePath = path.join(root, '.sdd/release-content-mutations.v0.2.6.json');
   const directory = workspace(t), scope = scopeFixture(directory);
   const approvedSource = approvedSourceFixture(directory);
   fs.cpSync(path.join(approvedSource, '.github/skills'), path.join(scope.root, '.github/skills'), { recursive: true });
@@ -356,13 +356,21 @@ test('TEST-RELQ-BASELINE-001 validates the historical approved source inventory 
 });
 
 /** @id TEST-RELQ-SKILL-001 @verifies REQ-RELQ-003, REQ-RELQ-005 */
-test('TEST-RELQ-SKILL-001 preserves 1163 exact cases and owned native inventory controls', async t => {
+test('TEST-RELQ-SKILL-001 preserves 1183 exact cases and owned native inventory controls', async t => {
   const directory = workspace(t);
   const catalogue = contentCaseCatalogue(contentReference, 'SKILL-MUTATION');
-  assert.equal(catalogue.length, 1163, '13 semantic plus 1150 vendor mechanisms');
-  assert.equal(new Set(catalogue.map(row => row.id)).size, 1163);
+  assert.equal(catalogue.length, 1183, '13 semantic plus 1170 vendor mechanisms');
+  assert.equal(new Set(catalogue.map(row => row.id)).size, 1183);
   assert.equal(catalogue.filter(row => row.kind === 'semantic').length, 13);
-  assert.equal(catalogue.filter(row => row.kind === 'vendor').length, 1150);
+  assert.equal(catalogue.filter(row => row.kind === 'vendor').length, 1170);
+  for (const file of ['windows-native.test.mjs', 'windows-runner.test.mjs']) {
+    const cases = catalogue.filter(row => row.origin === 'source' &&
+      row.file === `.github/skills/lean-sdd-tdd/scripts/${file}`);
+    assert.deepEqual(cases.map(row => row.policy).sort(), [
+      'unauthorized-byte', ...['400', '200', '100', '040', '020', '010', '004', '002', '001']
+        .map(bit => `unauthorized-mode-${bit}`),
+    ].sort(), `${file}: byte and every independent permission-bit policy are required`);
+  }
   assert.deepEqual(catalogue.slice(0, 13).map(row => row.id), contentReference.skillCatalogue.map(row => row.proposedId));
   assert.deepEqual(catalogue.slice(-60).map(row => row.id), contentReference.vendorReference.originSensitivityCases.map(row => row.id));
   const context = contentContext(directory, 'SKILL-MUTATION');
@@ -371,8 +379,8 @@ test('TEST-RELQ-SKILL-001 preserves 1163 exact cases and owned native inventory 
   const row = await runContentCase(context, target);
   assert.equal(row.status, 'PASS');
   assert.doesNotThrow(() => validateContentCase({ row, target, plan, reference: contentReference }));
-  const inventoryInput = { referencePath: path.join(root, '.sdd/release-content-mutations.v0.2.5.json'),
-    referenceSha256: fileDigest(path.join(root, '.sdd/release-content-mutations.v0.2.5.json')),
+  const inventoryInput = { referencePath: path.join(root, '.sdd/release-content-mutations.v0.2.6.json'),
+    referenceSha256: fileDigest(path.join(root, '.sdd/release-content-mutations.v0.2.6.json')),
     originRoot: plan.originRoot, origin: 'source', host: 'copilot' };
   assert.doesNotThrow(() => assertContentInventory(inventoryInput));
   assert.throws(() => assertContentInventory({ ...inventoryInput, duplicateProbe: true }), /duplicate paths/);
@@ -449,7 +457,7 @@ test('TEST-RELQ-SKILL-001 preserves 1163 exact cases and owned native inventory 
   const unsafeSource = path.join(directory, 'unsafe-source'), unsafeOutput = path.join(unsafeSource, 'evidence');
   write(path.join(unsafeSource, 'scripts/release-qualification-content-mutations.mjs'),
     fs.readFileSync(path.join(root, 'scripts/release-qualification-content-mutations.mjs'), 'utf8'));
-  write(path.join(unsafeSource, '.sdd/release-content-mutations.v0.2.5.json'), contentReference);
+  write(path.join(unsafeSource, '.sdd/release-content-mutations.v0.2.6.json'), contentReference);
   try { await runContentCase({ ...context, source: unsafeSource, output: unsafeOutput }, target); }
   catch (error) { assert.ok(error); }
   assert.equal(fs.existsSync(unsafeOutput), false, 'source-contained case output must reject before any mkdir');
@@ -808,7 +816,7 @@ function readinessFixture(directory, history = []) {
 test('TEST-RELQ-001 admits the locked Linux plan and enumerates every cell-policy violation', async t => {
   const scope = scopeFixture(workspace(t));
   const admitted = await pass(admitPlan(scope), 'the complete genuinely locked 24-cell Linux plan must be admitted');
-  assert.equal(admitted.plan.targetVersion, '0.2.5', 'admit only the independently selected current candidate');
+  assert.equal(admitted.plan.targetVersion, '0.2.6', 'admit only the independently selected current candidate');
   const baseline = read(scope.planPath);
   const changes = [];
   for (const cell of required) {
@@ -825,7 +833,8 @@ test('TEST-RELQ-001 admits the locked Linux plan and enumerates every cell-polic
   }
   changes.push(
     ['previous published version', p => { p.targetVersion = '0.2.4'; }],
-    ['prerelease candidate', p => { p.targetVersion = '0.2.5-dev.0'; }],
+    ['previous unpublished candidate', p => { p.targetVersion = '0.2.5'; }],
+    ['prerelease candidate', p => { p.targetVersion = '0.2.6-dev.0'; }],
     ['missing WSL exclusion', p => { p.excludedCells = []; }],
     ['WSL falsely passed', p => { p.excludedCells[0].status = 'PASS'; }],
     ['WSL made required', p => { p.requiredCells.push(clone(p.excludedCells[0])); }],
@@ -1622,6 +1631,123 @@ test('TEST-RELQ-004 enumerates streak resets, fresh per-cell state and immutable
   assert.equal(fs.readFileSync(path.join(juliaSecond, 'dependency'), 'utf8'), 'second frozen Julia dependency');
 });
 
+/** @id TEST-RELQ-PUBLISH-001 @verifies REQ-RELQ-005 */
+test('TEST-RELQ-PUBLISH-001 publishes only the exact remotely approved archive and preserves dry runs', async t => {
+  const { spawnSync } = await import('node:child_process');
+  const workflow = fs.readFileSync(path.join(root, '.github/workflows/publish.yml'), 'utf8');
+  const step = workflow.match(/ {6}- name: Publish\n {8}run: (?:(\|)\n((?: {10}[^\n]*\n)+)|([^\n]+))/);
+  assert.ok(step, 'execute the actual publication step, not a separately implemented guard');
+  const script = step[1] ? step[2].split('\n').map(line => line.slice(10)).join('\n') : step[3];
+  const dryExpression = "${{ (github.event_name == 'workflow_dispatch' && inputs.dry_run) && '--dry-run' || '' }}";
+  assert.ok(script.includes(dryExpression), 'the actual dry-run argument must be evaluated for each event');
+  assert.equal(workflow.match(/^ {10}PUBLISH_DRY_RUN: (.+)$/m)?.[1],
+    "${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}",
+    'the actual guard must use the same event and input policy as the publish argument');
+  const directory = workspace(t);
+  const artifact = 'musubix6-0.2.6.tgz', approved = 'independently approved archive bytes\n';
+  const approvedSha = digest(approved);
+  const rows = [
+    { name: 'tag-push', pass: true },
+    { name: 'tag-push-ignores-dry-input', dry: true, pass: true },
+    { name: 'tag-dispatch', dispatch: true, pass: true },
+    { name: 'tag-dry-run', dispatch: true, dry: true, pass: true },
+    { name: 'flattened-checkout', flattened: true, pass: true },
+    { name: 'wrong-bytes', changed: true, error: /computed checksum did NOT match/ },
+    { name: 'missing-archive', missing: true, error: /No such file or directory/ },
+    { name: 'missing-digest', annotation: 'Release fixture', error: /Exactly one approved package SHA-256/ },
+    { name: 'malformed-digest', annotation: 'Approved-Package-SHA256: short', error: /Exactly one approved package SHA-256/ },
+    { name: 'duplicate-digest', annotation: `Approved-Package-SHA256: ${approvedSha}\nApproved-Package-SHA256: ${approvedSha}`,
+      error: /Exactly one approved package SHA-256/ },
+    { name: 'duplicate-empty-digest', annotation: `Approved-Package-SHA256: ${approvedSha}\nApproved-Package-SHA256:`,
+      error: /Exactly one approved package SHA-256/ },
+    { name: 'uppercase-digest', annotation: `Approved-Package-SHA256: ${approvedSha.toUpperCase()}`,
+      error: /Exactly one approved package SHA-256/ },
+    { name: 'lightweight-tag', lightweight: true, error: /Publication requires an annotated release tag/ },
+    { name: 'wrong-version', tag: 'v0.2.5', error: /Release tag does not match package version/ },
+    { name: 'moved-remote-commit', moved: true, error: /Release tag does not match the checked-out candidate/ },
+    { name: 'branch-push', branch: true, error: /Publication requires an approved release tag/ },
+    { name: 'branch-push-ignores-dry-input', branch: true, dry: true, error: /Publication requires an approved release tag/ },
+    { name: 'branch-dispatch', branch: true, dispatch: true, error: /Publication requires an approved release tag/ },
+    { name: 'pack-error', packError: true, error: /pack error/ },
+    { name: 'credential-error', credentialError: true, error: /credential error/ },
+    { name: 'branch-dry-run', branch: true, dispatch: true, dry: true, pass: true },
+  ];
+  for (const row of rows) {
+    const home = path.join(directory, row.name), origin = path.join(home, 'origin');
+    const checkout = path.join(home, 'checkout'), bin = path.join(home, 'bin');
+    fs.mkdirSync(bin, { recursive: true });
+    const git = (cwd, ...args) => execFileSync('git', [
+      '-c', 'user.name=Release fixture', '-c', 'user.email=fixture@example.invalid', ...args,
+    ], { cwd, encoding: 'utf8', timeout: 30000, stdio: ['ignore', 'pipe', 'pipe'] }).trim();
+    git(home, 'init', '-q', '--initial-branch=main', origin);
+    fs.writeFileSync(path.join(origin, 'package.json'), '{"name":"musubix6","version":"0.2.6"}\n');
+    git(origin, 'add', 'package.json');
+    git(origin, 'commit', '-qm', 'qualified source fixture');
+    const commit = git(origin, 'rev-parse', 'HEAD');
+    git(home, 'clone', '-q', '--no-checkout', origin, checkout);
+    git(checkout, 'checkout', '-q', '--detach', commit);
+    if (row.moved) git(origin, 'commit', '--allow-empty', '-qm', 'unqualified source fixture');
+    const tag = row.tag || 'v0.2.6';
+    const annotation = row.annotation ?? `Approved-Package-SHA256: ${approvedSha}`;
+    if (row.lightweight) git(origin, 'tag', tag);
+    else git(origin, 'tag', '-a', tag, '-m', annotation);
+    git(checkout, 'fetch', '--no-tags', 'origin', `refs/tags/${tag}:refs/tags/${tag}`);
+    if (row.flattened) git(checkout, 'update-ref', `refs/tags/${tag}`, commit);
+    if (!row.missing) fs.writeFileSync(path.join(checkout, artifact), row.changed ? 'different archive\n' : approved);
+    const log = path.join(home, 'publish-args'), marker = path.join(home, 'published');
+    const calls = path.join(home, 'npm-calls');
+    fs.writeFileSync(path.join(bin, 'npm'), [
+      '#!/bin/sh',
+      'printf "%s\\n" "$*" >> "$NPM_CALL_LOG"',
+      'if [ "$1" = pack ] && [ "$NPM_PACK_EXIT" != 0 ]; then echo "pack error" >&2; exit "$NPM_PACK_EXIT"; fi',
+      'if [ "$1" = whoami ]; then',
+      '  if [ "$NPM_WHOAMI_EXIT" != 0 ]; then echo "credential error" >&2; exit "$NPM_WHOAMI_EXIT"; fi',
+      '  echo fixture-publisher',
+      'fi',
+      'if [ "$1" = publish ]; then',
+      '  printf "%s\\n" "$@" > "$PUBLISH_LOG"',
+      '  case " $* " in *" --dry-run "*) ;; *) : > "$PUBLISH_MARKER";; esac',
+      'fi',
+      '',
+    ].join('\n'), { mode: 0o755 });
+    const event = row.dispatch ? 'workflow_dispatch' : 'push';
+    const dryRun = event === 'workflow_dispatch' && row.dry === true;
+    const command = script.replaceAll(dryExpression, dryRun ? '--dry-run' : '');
+    const result = spawnSync('bash', ['-euo', 'pipefail', '-c', command], {
+      cwd: checkout, encoding: 'utf8', timeout: 30000,
+      env: { ...process.env, PATH: `${bin}${path.delimiter}${process.env.PATH}`,
+        GITHUB_REF: row.branch ? 'refs/heads/main' : `refs/tags/${tag}`,
+        GITHUB_REF_NAME: row.branch ? 'main' : tag,
+        GITHUB_EVENT_NAME: event,
+        PUBLISH_DRY_RUN: String(dryRun),
+        PUBLISH_LOG: log, PUBLISH_MARKER: marker, NPM_CALL_LOG: calls,
+        NPM_PACK_EXIT: row.packError ? '1' : '0', NPM_WHOAMI_EXIT: row.credentialError ? '1' : '0' },
+    });
+    assert.ifError(result.error);
+    assert.equal(result.signal, null, row.name);
+    const npmCalls = fs.readFileSync(calls, 'utf8').trim().split('\n');
+    assert.equal(npmCalls[0], 'pack --ignore-scripts', `${row.name}: pack once with scripts disabled`);
+    if (row.pass) {
+      assert.equal(result.status, 0, `${row.name}: ${result.stdout}${result.stderr}`);
+      assert.deepEqual(fs.readFileSync(log, 'utf8').trim().split('\n'),
+        ['publish', '--provenance', '--access', 'public', artifact, ...(dryRun ? ['--dry-run'] : [])],
+        `${row.name}: publish that same approved file, never unchecked source`);
+      assert.deepEqual(npmCalls, ['pack --ignore-scripts', 'whoami --registry https://registry.npmjs.org/',
+        `publish --provenance --access public ${artifact}${dryRun ? ' --dry-run' : ''}`], row.name);
+      assert.equal(fs.existsSync(marker), !dryRun, row.name);
+      if (row.flattened) assert.equal(git(checkout, 'cat-file', '-t', `refs/tags/${tag}`), 'commit',
+        'reading the remote annotation must not overwrite checkout refs');
+    } else {
+      assert.notEqual(result.status, 0, `${row.name}: invalid evidence must refuse publication`);
+      assert.match(result.stderr, row.error, `${row.name}: reject the intended violation, not a fixture error`);
+      assert.deepEqual(npmCalls, ['pack --ignore-scripts',
+        ...(row.credentialError ? ['whoami --registry https://registry.npmjs.org/'] : [])], row.name);
+      assert.equal(fs.existsSync(log), false, `${row.name}: npm publish must not be invoked`);
+      assert.equal(fs.existsSync(marker), false, row.name);
+    }
+  }
+});
+
 /** @id TEST-RELQ-005 @verifies REQ-RELQ-005 */
 test('TEST-RELQ-005 binds durable helpers and exact package-entry receipts without release authorization', async t => {
   const directory = workspace(t);
@@ -1633,7 +1759,7 @@ test('TEST-RELQ-005 binds durable helpers and exact package-entry receipts witho
   assert.equal(cli.status, 1, 'real durable CLI must refuse malformed input without a cyclic-module exit');
   assert.equal(JSON.parse(cli.stderr.trim()).status, 'FAIL');
   assert.equal(cli.signal, null);
-  const tgz = write(path.join(directory, 'musubix6-0.2.5.tgz'), 'synthetic package bytes for verifier fixtures');
+  const tgz = write(path.join(directory, 'musubix6-0.2.6.tgz'), 'synthetic package bytes for verifier fixtures');
   const helpers = ['release-qualification.mjs', 'release-qualification.test.mjs',
     'release-host-mutations.mjs', 'release-host-mutations.test.mjs'].map(name => {
     const file = write(path.join(directory, 'source', 'scripts', name), `export const fixture = '${name}';\n`);
@@ -1641,7 +1767,7 @@ test('TEST-RELQ-005 binds durable helpers and exact package-entry receipts witho
   });
   const packageCommands = major => [
     { command: [`/fixture/node${major}`, '/fixture/npm-cli.js', 'install', '--offline', tgz], output: 'installed' },
-    { command: [`/fixture/node${major}`, '/fixture/node_modules/.bin/musubix6', '--version'], output: '0.2.5\n' },
+    { command: [`/fixture/node${major}`, '/fixture/node_modules/.bin/musubix6', '--version'], output: '0.2.6\n' },
     { command: [`/fixture/node${major}`, '/fixture/node_modules/.bin/musubix6', 'init', '--host', 'both'], output: 'copied both hosts' },
   ].map((row, index) => ({
     command: row.command, exit: 0, signal: null, timedOut: false,
@@ -1649,12 +1775,12 @@ test('TEST-RELQ-005 binds durable helpers and exact package-entry receipts witho
     stderr: retained(directory, `package-${major}-command-${index}.stderr`, ''),
   }));
   const packageReceipts = [20, 22, 24].map(major => ({
-    runtimeMajor: major, tgzPath: tgz, tgzSha256: fileDigest(tgz), installedVersion: '0.2.5',
+    runtimeMajor: major, tgzPath: tgz, tgzSha256: fileDigest(tgz), installedVersion: '0.2.6',
     offline: true, entrypoint: 'node_modules/.bin/musubix6', host: 'both',
     command: ['npm', 'exec', '--offline', '--', 'musubix6', 'init', '--host', 'both'],
     exit: 0, signal: null, timedOut: false,
     log: retained(directory, `package-${major}.json`, JSON.stringify({
-      runtimeMajor: major, version: '0.2.5', host: 'both',
+      runtimeMajor: major, version: '0.2.6', host: 'both',
       copiedHosts: ['.github/skills', '.claude/skills'], status: 'PASS',
       commands: packageCommands(major),
     })),
@@ -1664,7 +1790,7 @@ test('TEST-RELQ-005 binds durable helpers and exact package-entry receipts witho
     },
   }));
   const request = {
-    targetVersion: '0.2.5', packagePath: tgz, packageSha256: fileDigest(tgz), helpers, packageReceipts,
+    targetVersion: '0.2.6', packagePath: tgz, packageSha256: fileDigest(tgz), helpers, packageReceipts,
     readiness: { status: 'PASS', technicalReady: true, streak: 2, publishingAuthorized: false },
     artifacts: [{ path: tgz, sha256: fileDigest(tgz) }],
     exclusions: clone(approvedPlan.excludedCells),
@@ -1685,6 +1811,11 @@ test('TEST-RELQ-005 binds durable helpers and exact package-entry receipts witho
   const oldVersion = clone(packageReceipts[0]); oldVersion.installedVersion = '0.2.4';
   assert.throws(() => validateAdapter({ cell, catalogue, evidence: adapterEvidence(oldVersion) }),
     /runtime\/entrypoint mismatch/, 'the previous published version is not this candidate');
+  for (const version of ['0.2.5', '0.2.6-dev.0']) {
+    const invalidVersion = clone(packageReceipts[0]); invalidVersion.installedVersion = version;
+    assert.throws(() => validateAdapter({ cell, catalogue, evidence: adapterEvidence(invalidVersion) }),
+      /runtime\/entrypoint mismatch/, `${version} is not the selected stable candidate`);
+  }
   const report = await pass(prepareReleaseReport(request),
     'complete exact package receipts produce only a technical report, never publication authority');
   assert.equal(report.publishingAuthorized, false);
@@ -1723,7 +1854,7 @@ test('TEST-RELQ-005 binds durable helpers and exact package-entry receipts witho
   const calls = [];
   const runtimes = [20, 22, 24].map(major => ({ major, executable: `/fixture/node${major}/bin/node` }));
   await pass(verifyPackageEntrypoints({
-    packagePath: tgz, packageSha256: fileDigest(tgz), targetVersion: '0.2.5',
+    packagePath: tgz, packageSha256: fileDigest(tgz), targetVersion: '0.2.6',
     runtimes, workRoot: path.join(directory, 'package-work'),
   }, {
     installAndInvoke: async invocation => {

@@ -3,7 +3,11 @@
 User-facing changes to musubix6, with upgrade guidance and known release limitations.
 Release dates use Japan Standard Time (UTC+09:00).
 
-## [0.2.6] - Unreleased development
+## [0.2.6] - Candidate prepared 2026-11-02
+
+This entry describes the prepared candidate, not its publication status or
+release date. Check npm availability and the GitHub release record before
+installing this exact version. No CLI option or minimum-runtime changes.
 
 ### Fixed
 
@@ -14,18 +18,32 @@ Release dates use Japan Standard Time (UTC+09:00).
 - Preserve Windows MSVC `INCLUDE`, `LIB` and `LIBPATH` while keeping inherited
   runner overrides blocked. Bind these effective inputs and the actual npm
   launcher inputs to command provenance and Red admission.
+- Include the unpublished 0.2.5 draft fixes: mark unsupported Rust stub
+  inference for manual repair and scope shared development instructions
+  to the active Copilot CLI or Claude Code host.
+
+### Upgrade
+
+Check `npm view musubix6@0.2.6 version` before installing the exact version;
+`@latest` may point elsewhere. Follow the host-specific README update steps,
+back up local skill edits and refresh copied skills with `init --force`.
+Updating the CLI alone does not refresh existing project skill copies.
 
 ### Validation and limitations
 
-- Add dedicated native Windows development controls for npm and MSVC on
-  Node 20/22/24, including source, copied-host and standalone script paths.
-  Configuring the workflow does not establish a successful Windows run.
+- Pass 72 native Windows development tests with no failures or skips on
+  Node 20/22/24, including real npm/MSVC, source, Copilot/Claude copies and
+  standalone script paths. This does not qualify Windows release support.
 - Support only the standard adjacent `node_modules/npm/bin` layout for
   Windows npm/npx batch adapters. Other `.cmd`/`.bat` commands require an
   explicit native executable or Node-script command.
-- Package metadata and the frozen 0.2.5 release artifacts remain unchanged
-  during this development work. No 0.2.6 publication or release
-  qualification is claimed.
+- Preserve the inherited 24-cell Linux x86_64 release scope and budgets.
+  Add both Windows test files to the exact skill inventory without
+  dropping any existing case. Two fresh unchanged qualification runs and
+  separate exact-artifact human publication approval remain required.
+- Keep macOS, actual WSL containers and live Claude interactions outside
+  release qualification; no 0.2.6 publication or qualification is claimed
+  by this candidate-preparation entry.
 
 ## [0.2.5] - Unreleased draft prepared 2026-11-01
 
