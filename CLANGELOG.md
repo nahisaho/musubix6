@@ -3,6 +3,30 @@
 User-facing changes to musubix6, with upgrade guidance and known release limitations.
 Release dates use Japan Standard Time (UTC+09:00).
 
+## [0.2.6] - Unreleased development
+
+### Fixed
+
+- Resolve Windows native executable extensions without selecting the
+  extensionless POSIX npm shim. Launch standard `npm.cmd` and `npx.cmd`
+  through their JavaScript entry points with SDD's Node runtime, without
+  introducing an implicit shell.
+- Preserve Windows MSVC `INCLUDE`, `LIB` and `LIBPATH` while keeping inherited
+  runner overrides blocked. Bind these effective inputs and the actual npm
+  launcher inputs to command provenance and Red admission.
+
+### Validation and limitations
+
+- Add dedicated native Windows development controls for npm and MSVC on
+  Node 20/22/24, including source, copied-host and standalone script paths.
+  Configuring the workflow does not establish a successful Windows run.
+- Support only the standard adjacent `node_modules/npm/bin` layout for
+  Windows npm/npx batch adapters. Other `.cmd`/`.bat` commands require an
+  explicit native executable or Node-script command.
+- Package metadata and the frozen 0.2.5 release artifacts remain unchanged
+  during this development work. No 0.2.6 publication or release
+  qualification is claimed.
+
 ## [0.2.5] - Unreleased draft prepared 2026-11-01
 
 Prepare a stable patch candidate containing the #381 and #382 fixes.

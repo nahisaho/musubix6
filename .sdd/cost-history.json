@@ -266,10 +266,10 @@
           "outputTokens": 125125
         },
         "gpt-6.1-sol": {
-          "calls": 1556,
-          "inputTokens": 197985338,
-          "nanoAiu": 5299722460000,
-          "outputTokens": 1647692
+          "calls": 1572,
+          "inputTokens": 200156299,
+          "nanoAiu": 5329591550000,
+          "outputTokens": 1653241
         }
       },
       "summary": "Update musubix for GiNZA 5.3"
@@ -277,11 +277,17 @@
     "28b37d8f-56f4-4e28-b9c8-71cc59366d60": {
       "created": "2026-10-27T10:37",
       "models": {
+        "claude-sonnet-5.5": {
+          "calls": 20,
+          "inputTokens": 720783,
+          "nanoAiu": 72324930000,
+          "outputTokens": 17242
+        },
         "gpt-6.1-sol": {
-          "calls": 26,
-          "inputTokens": 1619382,
-          "nanoAiu": 60469040000,
-          "outputTokens": 9506
+          "calls": 139,
+          "inputTokens": 16757002,
+          "nanoAiu": 465566170000,
+          "outputTokens": 104403
         }
       },
       "summary": "Install musubix6 and Verify README"

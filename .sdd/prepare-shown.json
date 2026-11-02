@@ -3,5 +3,6 @@
   "release-qualification": "4f15be7923832f8c707b30dfc67347ecc967a1c1491882a69dfe48b38cf98047",
   "npx-update-notice": "f4ceea311a4fac6e6cfc64feac1e2898276c3fb93573f20f71742a4a6a47f631",
   "diagnostics-contract": "95d303e10ce1bf4b954af0e978e6a8a0a9034ed8fafc136f99d650dfc00a972f",
-  "rust-stub-confidence": "abc368bc69b2fb764009653c11638cd817a6f0f4f0b6e21a004861665e11f1a0"
+  "rust-stub-confidence": "abc368bc69b2fb764009653c11638cd817a6f0f4f0b6e21a004861665e11f1a0",
+  "windows-runner": "7feabffce1f130e216308523a90287b17d2f9cd1a4f0c7d5f4ddc3860a132599"
 }

@@ -252,16 +252,15 @@
   "release-qualification": {
     "by": "nahisaho",
     "kind": "human",
-    "review": "Human approved exact seven-artifact revision 10 lineage contract; mandatory resolved TODO replacements, no scope/budget weakening, no push/tag/publication authority.",
-    "at": "2026-11-01T23:00:19.894Z",
+    "at": "2026-11-02T07:31:04.535Z",
     "artifacts": {
       ".sdd/specs/release-qualification.md": "4f15be7923832f8c707b30dfc67347ecc967a1c1491882a69dfe48b38cf98047",
       ".sdd/release-validation.v0.2.5.json": "88a97b0a0b9c2158372796eae37df320e8800db0f31a3b18f0679deb530c8309",
       ".sdd/release-content-mutations.v0.2.5.json": "532a429caac6e10bf6365572e244b154b1311b0f1bf7ab044d258deb493477f0",
       ".sdd/specs/claude-code-support.md": "03344562e699b94ba6086648672fb1f57a448d7757e9fbbccfdd0daf6e874988",
-      "README.md": "eecbe2c9a4865056dd06861c4bba38146e578a6d80175f80556ea75e1040342a",
-      "README-ja.md": "7795d4d9a057acd7d3871d2d515007b25b96983f5d448fa848d7e68a820e2d28",
-      "CLANGELOG.md": "b9003e62d4b0a5c674d4ee836856ff8ed1d04347fc350be5e50fc8f647d3cbe8"
+      "README.md": "6caf69327bfd4935d6b2ef6059da4ec92d045cf2d6f3379d5789b03e4a58b989",
+      "README-ja.md": "4e4ce7b1515ca6a737b0e208f04e28e6981f123c50de8a7a3231ccf87173e871",
+      "CLANGELOG.md": "e2cac30444b16bab43b472d3e879745eda8cc6b7dcc72f244a67e6a86654319b"
     },
     "tier": "T2",
     "requireHuman": true,
@@ -270,7 +269,7 @@
       "scripts/release-qualification-content-mutations.mjs": "6a251a550d822dd47b8df11ff0abca2d66c01041b16389bfddefaa7b207fe3ef",
       "scripts/release-qualification-evidence.mjs": "88d48acfd61964b5c73e99e90249c6d5cd7427c4a7cc9e2e7b87b90501aa85e0",
       "scripts/release-qualification-io.mjs": "c3a5b80da7a4c1ced23f92d73553745ea3bf50d1d8856434c33a427f30ec7feb",
-      "scripts/release-qualification.mjs": "a519294215b945ba8b0e514c5cb3d0d46937aa4a5c11654afa013715526a2dcf"
+      "scripts/release-qualification.mjs": "e23d128665ee8a6bfeb625a79eae3217afd1a149f5b346a1b5e89cab7cb0736c"
     }
   },
   "rust-stub-confidence": {
@@ -284,6 +283,19 @@
     "requireHuman": true,
     "code": {
       ".github/skills/lean-sdd-tdd/scripts/sdd.mjs": "3358d46324144a95e9c1759b94112c14db4d09aa49caa1a3a1234d5ef2ee62f2"
+    }
+  },
+  "windows-runner": {
+    "by": "nahisaho",
+    "kind": "human",
+    "at": "2026-11-02T07:31:03.751Z",
+    "artifacts": {
+      ".sdd/specs/windows-runner.md": "7feabffce1f130e216308523a90287b17d2f9cd1a4f0c7d5f4ddc3860a132599"
+    },
+    "tier": "T2",
+    "requireHuman": true,
+    "code": {
+      ".github/skills/lean-sdd-tdd/scripts/sdd.mjs": "1ce7c7ff59214fd60579023d620ec456d866adf08ca2827c481a4661bcf2c62e"
     }
   }
 }

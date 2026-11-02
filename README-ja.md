@@ -332,6 +332,25 @@ Claude Code では `/lean-sdd-tdd`、または自然な言葉でスキルを呼�
 移設後のスクリプト確認は、Claude の実セッションでの検証を意味しません。
 WSL コンテナーの実機実行、macOS / Windows、Claude の実セッションは対象外で、未検証です。
 
+### v0.2.6 開発中の Windows ランナー修正
+
+開発ブランチでは、Windows の実行ファイル拡張子を解決し、標準配置の `npm.cmd` / `npx.cmd` を
+隣接する `node_modules/npm/bin` の JavaScript エントリーから起動します。
+暗黙のシェルは使わず、SDD を実行している Node を使います。
+その他のバッチ配置や任意の `.cmd` / `.bat` は拒否するため、
+ネイティブ実行ファイルか、Node スクリプトを明示したコマンドを設定してください。
+
+初期化済みの MSVC 開発環境では、Windows に限り `INCLUDE`・`LIB`・`LIBPATH` を継承します。
+これらの値と npm の実際の起動対象をハッシュで証跡に結び付け、
+Red から Green の間に SDK 設定が変わった場合は、Red の再実行を求めます。
+gate でのコマンド定義の変化は、既存の `scopePolicy` に従います。
+既定では警告、`strict` では失敗です。
+継承した `NODE_OPTIONS`・`RUSTFLAGS`・`PYTEST_ADDOPTS` は引き続き除外します。
+
+専用の Windows CI は開発用の確認であり、リリース適格性の検証ではありません。
+ローカルでのネイティブ Windows 動作は未確認です。
+npm の `latest` にこれらの修正が含まれることも意味しません。
+
 ## CLI と導入済みスキルの更新方法
 
 更新は **CLI** と **プロジェクトごとのスキル** の 2 段階で行います。

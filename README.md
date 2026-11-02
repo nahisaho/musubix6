@@ -333,6 +333,25 @@ payload. Release qualification targets Linux x86_64 only. Local relocated-script
 checks are not live Claude qualification; actual WSL container execution,
 macOS/Windows and live Claude interactions are excluded and remain unverified.
 
+### Windows runner fixes in v0.2.6 development
+
+The development branch resolves Windows executable extensions and runs standard
+`npm.cmd`/`npx.cmd` through the adjacent `node_modules/npm/bin` JavaScript entry
+point using SDD's Node runtime, not an implicit shell. Other batch layouts and
+arbitrary `.cmd`/`.bat` commands are refused; configure a native executable or
+an explicit Node-script command instead.
+
+An initialized MSVC developer environment retains `INCLUDE`, `LIB` and `LIBPATH`
+on Windows. Their values and actual npm launch inputs are hash-bound to command
+provenance and Red admission; SDK changes between Red and Green require a new
+Red. Gate definition drift follows the existing `scopePolicy` (warn by default,
+fail under `strict`). Inherited `NODE_OPTIONS`, `RUSTFLAGS` and `PYTEST_ADDOPTS`
+remain blocked.
+
+The dedicated Windows CI controls are development checks, not release
+qualification. Native Windows results are still unverified locally. These
+changes do not imply that npm's `latest` tag contains the fixes.
+
 ## Update the CLI and installed skills
 
 Updating musubix6 has **two separate parts**: update the CLI, then refresh the

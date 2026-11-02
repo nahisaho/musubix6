@@ -1,0 +1,150 @@
+{
+  "schemaVersion": 1,
+  "feature": "windows-runner",
+  "status": "LOCAL_GATE_PASS_AWAITING_NATIVE_CI",
+  "releaseQualification": false,
+  "sourceSha256": "1ce7c7ff59214fd60579023d620ec456d866adf08ca2827c481a4661bcf2c62e",
+  "testSha256": {
+    ".github/skills/lean-sdd-tdd/scripts/windows-runner.test.mjs": "73c8949a78b25d18961e87f01fec89ec5ef20944d0bfbeb8bd0d2c8a5b009bce",
+    ".github/skills/lean-sdd-tdd/scripts/windows-native.test.mjs": "4cb09e7506f47bfc8bf50a10995484101e8c5ae86819074bf78e1850b0712143"
+  },
+  "developmentHost": {
+    "platform": "linux",
+    "node": "24.22.1",
+    "windowsSimulation": "Only runner helpers use an injected win32 platform; actual child processes run on Linux."
+  },
+  "targetedRegression": {
+    "command": "node --test --test-reporter=spec .github/skills/lean-sdd-tdd/scripts/windows-runner.test.mjs",
+    "passed": 4,
+    "failed": 0,
+    "skipped": 0,
+    "assertionRedAndGreen": [
+      "TEST-WINRUN-001",
+      "TEST-WINRUN-002",
+      "TEST-WINRUN-003",
+      "TEST-WINRUN-004"
+    ],
+    "finiteOracles": {
+      "supportedExtensionPermutations": 24,
+      "sdkAbsentEmptyValueCombinations": 27
+    },
+    "gateControls": "Strict full and changed gates reject altered shim, CLI, pre/post lifecycle, package selection and each SDK value; each restoration accepts. CLI/SDK Red admission rejection preserves ledger bytes. A tracked INCLUDE scratch file and unchanged directory-symlink launcher do not invalidate valid evidence.",
+    "additionalAssertionReds": [
+      "Virtual environment:msvc|INCLUDE was incorrectly snapshotted as a physical file named INCLUDE.",
+      "An unchanged symlinked launcher was incorrectly rejected because Git does not track files below a directory symlink."
+    ]
+  },
+  "isolatedMutations": {
+    "detectedByAssertion": [
+      "extensionless-shim",
+      "collapsed-argv",
+      "unresolved-fallback",
+      "unbound-cli",
+      "fixed-sdk-hash",
+      "virtual-sdk-alias",
+      "symlink-baseline",
+      "dropped-sdk-env",
+      "override-admitted"
+    ],
+    "unchangedProductionSourceRestorationExit": 0,
+    "restoredControlsPassed": 4,
+    "limit": "Nine isolated failure mechanisms, not exhaustive Windows behavior. Hosting Node is fingerprinted but its binary was not independently mutated."
+  },
+  "dependentRegression": {
+    "command": "node .github/skills/lean-sdd-tdd/scripts/sdd.mjs tdd refactor <the 27 affected TEST IDs>",
+    "passed": 27,
+    "failed": 0,
+    "skipped": 0,
+    "tests": [
+      "TEST-NODE-SUMMARY-001",
+      "TEST-RSTUB-002",
+      "TEST-RSTUB-007",
+      "TEST-GATESNAPSHOT-001",
+      "TEST-CHECK-CLOSURE-001",
+      "TEST-CHECK-CLOSURE-002",
+      "TEST-CHECK-CLOSURE-003",
+      "TEST-CHECK-CLOSURE-004",
+      "TEST-CHECK-CLOSURE-005",
+      "TEST-R34-PYREL-001",
+      "TEST-R34-PYREL-002",
+      "TEST-R34-PYREL-003",
+      "TEST-R34-PYREL-004",
+      "TEST-R34-PYREL-005",
+      "TEST-R34-PYREL-006",
+      "TEST-R34-PYREL-007",
+      "TEST-R34-PYREL-008",
+      "TEST-R34-PYREL-009",
+      "TEST-R34-PYREL-010",
+      "TEST-R34-CLOSURE-001",
+      "TEST-R34-CLOSURE-002",
+      "TEST-R34-CLOSURE-003",
+      "TEST-R34-CLOSURE-004",
+      "TEST-R34-INTEGRATION-002",
+      "TEST-R34-INTEGRATION-003",
+      "TEST-R36C-CLOSURE-001",
+      "TEST-R36C-CLOSURE-002"
+    ]
+  },
+  "nativeWindows": {
+    "command": "node --test --test-reporter=spec .github/skills/lean-sdd-tdd/scripts/windows-native.test.mjs",
+    "passed": 0,
+    "failed": 0,
+    "skipped": 2,
+    "hostedCi": "NOT_RUN",
+    "requiredControls": "Actual Windows Node20/22/24: real npm success/nonzero and literal argv/admission; initialized MSVC stdio.h plus Windows SDK linking; source, copied Copilot/Claude skills and lone standalone script."
+  },
+  "diagnostics": {
+    "javascript": {
+      "command": "sdd.mjs diagnostics --root <isolated snapshot> --profile javascript --json",
+      "status": "FAIL_PREEXISTING",
+      "eslint": "9.39.5",
+      "configuration": "@eslint/js recommended with globals.node, same before/after; scratch snapshots only, not a new repository lint policy.",
+      "headErrors": 74,
+      "currentErrors": 74,
+      "newErrors": 0
+    },
+    "readmeStructure": {
+      "headFindingsPerLanguage": 16,
+      "currentFindingsPerLanguage": 16,
+      "newFindings": 0
+    },
+    "japaneseProse": {
+      "mode": "review",
+      "engine": "GiNZA",
+      "score": 97,
+      "informationalFindings": 3,
+      "decision": "Keep two existing findings and the new genitive-chain advisory: the coordinated SDK-values/actual-npm-launch-inputs phrase is precise and readable in context.",
+      "readOnlyReviewInvariant": "passed",
+      "wordingEditsDuringReview": 0
+    }
+  },
+  "independentReview": {
+    "model": "claude-sonnet-5.5",
+    "productionDelta": "No high-confidence findings; reviewed virtual SDK keys, admission, resolver/adapter and symlink baseline hashing. This reviewer explicitly did not read tests/spec.",
+    "controlsAndDocumentation": "Read both complete new test files, workflow and README/changelog diff; no blocking findings. Native-only path/junction behavior remains unknown.",
+    "resolvedObservations": [
+      "Forward-slash relative provenance keys are the existing rel() contract used by production and tests; actual Windows path aliases still require CI.",
+      "No-spec fixtures intentionally produce INCOMPLETE/exit2 while still running configured checks; native MSVC test separately asserts successful cmd status and executable output.",
+      "Both push and pull_request triggers are intentional development CI coverage; duplicate runs are not a correctness defect."
+    ]
+  },
+  "fullRepositoryGate": {
+    "status": "PASS",
+    "command": "node .github/skills/lean-sdd-tdd/scripts/sdd.mjs gate --json",
+    "exitCode": 0,
+    "rawReportSha256": "ff813c85281811ec18e3162ff05d3781c0e3b9de5d81e3771afdaa847448e06f",
+    "traceRequirements": 100,
+    "traceErrors": 0,
+    "traceWarnings": 6,
+    "tddEvidenceAccepted": "168/168",
+    "projectTestSeconds": 1777.6,
+    "preflight": "gate --no-run was FAIL/INCOMPLETE, not a passing gate. It observed a stale human release-qualification documentation binding and an in-flight TEST-WINRUN-003 test hash. The latter was replaced by genuine final Red/Green; the updated Windows evidence text required renewed spec approval.",
+    "approvalResolution": "nahisaho explicitly renewed both windows-runner and release-qualification development/documentation bindings before the complete gate. No release authorization was granted.",
+    "remainingWarnings": "Existing diagnostics-contract and shared rust-stub-confidence implementation-review advisories, trace/test-only warnings and stub-marker advisories remain. Historical ledger includes weak/characterization/retest evidence; a gate PASS does not upgrade it or prove Windows qualification."
+  },
+  "limits": [
+    "No native Windows result and no Windows Issue closure based only on simulation.",
+    "No tag, publish, package-version bump or release support expansion.",
+    "Frozen 0.2.5 release artifacts and validation matrices remain unchanged; current development results do not renew their qualification."
+  ]
+}

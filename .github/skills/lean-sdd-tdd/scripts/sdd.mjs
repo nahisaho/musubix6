@@ -1443,12 +1443,57 @@ const RUNNER_ENV_ALLOWLIST = [
   'JAVA_HOME', 'JDK_HOME', 'DOTNET_ROOT', 'DOTNET_ROOT_X64', 'DOTNET_ROOT_X86', 'DOTNET_CLI_HOME',
   'RUSTUP_HOME', 'CARGO_HOME', 'CI', 'TERM', 'NO_COLOR', 'FORCE_COLOR',
 ];
+const WINDOWS_SDK_ENV = ['INCLUDE', 'LIB', 'LIBPATH'];
+function runnerEnvValue(name) {
+  const key = Object.keys(process.env).sort().find((key) => key.toUpperCase() === name);
+  return key === undefined ? undefined : process.env[key];
+}
+function runnerCommandName(token) {
+  const name = path.basename(token);
+  return process.platform === 'win32' ? name.toLowerCase().replace(/\.cmd$/, '') : name;
+}
+/** @id CODE-WINRUN-003 @implements REQ-WINRUN-003 */
+function runnerSdkDefinitions() {
+  return process.platform !== 'win32' ? [] : WINDOWS_SDK_ENV.map((name) => [
+    `environment:msvc|${name}`,
+    { sha: sha(JSON.stringify(['sdd-msvc-env-v1', name, runnerEnvValue(name) ?? null])),
+      label: `Windows SDK environment ${name} (changed)` },
+  ]);
+}
+/** @id CODE-WINRUN-001 @implements REQ-WINRUN-001 */
 function resolveExecutable(exe, cwd = ROOT) {
   if (!exe) return null;
-  for (const p of /[/\\]/.test(exe) ? [path.resolve(cwd, exe)] : (process.env.PATH ?? '').split(path.delimiter).map((d) => path.resolve(cwd, d || '.', exe))) {
+  const windows = process.platform === 'win32';
+  const search = windows ? runnerEnvValue('PATH') : process.env.PATH;
+  const extensions = windows ? [...new Set((runnerEnvValue('PATHEXT') ?? '.COM;.EXE;.BAT;.CMD')
+    .split(';').map((value) => value.trim().toLowerCase()).filter((value) => /^\.(?:com|exe|bat|cmd)$/.test(value)))] : [''];
+  const suffixes = !windows || /^\.(?:com|exe|bat|cmd)$/i.test(path.extname(exe))
+    || path.resolve(cwd, exe) === process.execPath ? [''] : path.extname(exe) ? [] : extensions;
+  const candidates = /[/\\]/.test(exe) ? [path.resolve(cwd, exe)]
+    : (search ?? '').split(path.delimiter).map((d) => path.resolve(cwd, d || '.', exe));
+  for (const base of candidates) for (const extension of suffixes) {
+    const p = base + extension;
     try { const s = fs.statSync(p); if (s.isFile() && (process.platform === 'win32' || (s.mode & 0o111))) return p; } catch {}
   }
   return null;
+}
+/** @id CODE-WINRUN-002 @implements REQ-WINRUN-002 */
+function runnerCommand(argv, cwd = ROOT, resolve = resolveExecutable) {
+  const selected = resolve(argv[0], cwd);
+  if (process.platform === 'win32' && !selected) throw new Error(`Windows executable not found: ${argv[0]}`);
+  if (process.platform !== 'win32' || !/\.(?:cmd|bat)$/i.test(selected ?? argv[0] ?? '')) {
+    return { file: selected ?? argv[0], args: argv.slice(1) };
+  }
+  if (!selected) throw new Error(`Windows batch launcher not found: ${argv[0]}`);
+  const name = /^(npm|npx)\.cmd$/i.exec(path.basename(selected))?.[1].toLowerCase();
+  if (!name) throw new Error(`unsupported Windows batch launcher: ${selected}; use an explicit native executable or Node script`);
+  const shim = fs.realpathSync(selected);
+  const script = path.join(path.dirname(shim), 'node_modules/npm/bin', `${name}-cli.js`);
+  let regular = false;
+  try { regular = fs.statSync(script).isFile(); }
+  catch (error) { if (!['ENOENT', 'ENOTDIR'].includes(error.code)) throw error; }
+  if (!regular) throw new Error(`Windows ${name} launcher requires the standard npm entry point: ${script}`);
+  return { file: process.execPath, args: [script, ...argv.slice(1)], shim: selected, script };
 }
 const executableHashes = new Map();
 function executableHash(p) {
@@ -1459,8 +1504,10 @@ function executableHash(p) {
   executableHashes.set(p, { stamp, sha: digest });
   return digest;
 }
+/** @id CODE-WINRUN-004 @implements REQ-WINRUN-004 */
 function runnerEnv(cmd = [], cwd = '.') {
-  const allowed = new Set(RUNNER_ENV_ALLOWLIST);
+  const windows = process.platform === 'win32';
+  const allowed = new Set([...RUNNER_ENV_ALLOWLIST, ...(windows ? WINDOWS_SDK_ENV : [])]);
   const blocked = /^(?:PYTEST_.*|PYTHONPATH|NPM_CONFIG_.*|NODE_OPTIONS|NODE_TEST_CONTEXT|GOFLAGS|RUSTFLAGS|RUSTDOCFLAGS|CARGO_.*(?:RUSTFLAGS|RUNNER)|JAVA_TOOL_OPTIONS|JDK_JAVA_OPTIONS|MAVEN_OPTS|GRADLE_OPTS|RUBYOPT|PERL5OPT)$|_(?:SELECTOR|FILTER|OPTIONS|FLAGS|OPTS|PLUGINS?)$/i;
   const inspect = (text) => {
     const patterns = [
@@ -1493,12 +1540,18 @@ function runnerEnv(cmd = [], cwd = '.') {
     } catch { /* try the next executable location */ }
     finally { if (fd !== undefined) fs.closeSync(fd); }
   }
-  return { ...Object.fromEntries(Object.entries(process.env).filter(([key]) => allowed.has(key.toUpperCase()))),
+  return { ...Object.fromEntries(Object.entries(process.env).filter(([key]) => allowed.has(key.toUpperCase())
+      && !(windows && WINDOWS_SDK_ENV.includes(key.toUpperCase())))),
+    ...(windows ? Object.fromEntries(WINDOWS_SDK_ENV.flatMap((name) => {
+      const value = runnerEnvValue(name);
+      return value === undefined ? [] : [[name, value]];
+    })) : {}),
     PYTHONSAFEPATH: '1', PYTHONNOUSERSITE: '1' };
 }
 function runnerEnvRecord(cmd = []) {
   const inherited = Object.keys(runnerEnv(cmd)).sort(), allowed = new Set(inherited.map((k) => k.toUpperCase()));
-  return { allowlist: RUNNER_ENV_ALLOWLIST, inherited, removed: Object.keys(process.env).filter((key) => !allowed.has(key.toUpperCase())).sort() };
+  return { allowlist: [...RUNNER_ENV_ALLOWLIST, ...(process.platform === 'win32' ? WINDOWS_SDK_ENV : [])],
+    inherited, removed: Object.keys(process.env).filter((key) => !allowed.has(key.toUpperCase())).sort() };
 }
 function dotnetStamp(abs) {
   const r = spawnSync('git', ['ls-files', '-co', '--exclude-standard'], { cwd: abs, encoding: 'utf8', maxBuffer: 64e6 });
@@ -1528,7 +1581,11 @@ function run1(cmd, timeoutMs, cwd = '.') {
   // PHPUnit/Pest runaway tests can outlive a killed sdd (the group is detached, so nothing signals it): a watchdog in the group kills it once this process is gone (#237)
   const guarded = process.platform !== 'win32' && /phpunit|\bpest\b/.test(cmd.join(' '));
   const argv = guarded ? ['sh', '-c', 'G=$$; P=$1; shift; ( while kill -0 "$P" 2>/dev/null && kill -0 "$G" 2>/dev/null; do sleep 1; done; kill -0 "$P" 2>/dev/null || kill -s KILL -- "-$G" 2>/dev/null ) </dev/null >/dev/null 2>&1 & exec "$@"', 'sdd-watchdog', String(process.pid), ...safeCmd] : safeCmd;
-  const r = spawnSync(resolveExecutable(argv[0], path.resolve(ROOT, cwd)) ?? argv[0], argv.slice(1), { cwd: path.resolve(ROOT, cwd), env: runnerEnv(cmd, cwd), encoding: 'utf8', timeout: timeoutMs, maxBuffer: 64e6, detached: true });
+  let launch;
+  try { launch = runnerCommand(argv, path.resolve(ROOT, cwd)); }
+  catch (error) { return { exit: 127, signal: null, text: `runner setup error: ${error.message}`, ms: Date.now() - t0, timedOut: false, pytestResults: null }; }
+  const r = spawnSync(launch.file, launch.args, { cwd: path.resolve(ROOT, cwd), env: runnerEnv(cmd, cwd),
+    shell: false, windowsVerbatimArguments: false, encoding: 'utf8', timeout: timeoutMs, maxBuffer: 64e6, detached: true });
   const timedOut = r.error?.code === 'ETIMEDOUT';
   // spawnSync's timeout signals only the launcher (cargo, npm, mvn); the detached group also holds the hung test binary (#225)
   if (timedOut && r.pid) { try { process.kill(-r.pid, 'SIGKILL'); } catch { /* group already gone */ } }
@@ -1569,7 +1626,9 @@ raise SystemExit(pytest.main(sys.argv[1:], plugins=[Evidence()]))
 }
 // Scope placeholders for changedCmd. An empty result means "cannot scope" and the caller falls back to the full check.
 function cmdOut(cmd, cwd) {
-  const r = spawnSync(cmd[0], cmd.slice(1), { cwd, env: runnerEnv(cmd, cwd), encoding: 'utf8', timeout: 60000, maxBuffer: 64e6 });
+  const launch = runnerCommand(cmd, cwd);
+  const r = spawnSync(launch.file, launch.args, { cwd, env: runnerEnv(cmd, cwd), shell: false,
+    windowsVerbatimArguments: false, encoding: 'utf8', timeout: 60000, maxBuffer: 64e6 });
   return r.status === 0 ? r.stdout : null;
 }
 function nearestDir(abs, rel, marker) {
@@ -5738,7 +5797,7 @@ function checkDefClosure(cfg, read = null, knownFiles = null) {
   read ??= (f) => { try { return fs.readFileSync(path.resolve(ROOT, f), 'utf8'); } catch { return null; } };
   const all = [...(cfg.checks ?? []), ...(cfg.testCmd ? [{ name: 'tdd', cmd: cfg.testCmd }] : []),
     ...(cfg.projects ?? []).flatMap((p) => [...(p.checks ?? []), ...(p.testCmd ? [{ name: 'tdd', cmd: p.testCmd }] : [])].map((c) => ({ ...c, name: `${p.root}:${c.name}`, cwd: p.root })))];
-  const cache = new Map(), defs = new Map(), directories = new Map(), resolutions = new Map(), executableInputs = new Map(), pythonDirectories = new Map(), tokenCache = new Map(), tokenKinds = new Map();
+  const cache = new Map(), defs = new Map(runnerSdkDefinitions()), directories = new Map(), resolutions = new Map(), executableInputs = new Map(), pythonDirectories = new Map(), tokenCache = new Map(), tokenKinds = new Map();
   const relative = (f) => path.relative(ROOT, f).split(path.sep).join('/');
   let bytes = 0, tokenCount = 0, directoryEntries = 0, inspectionWork = 0;
   const refuse = (f, reason) => { throw new Error(`REFUSED: check-definition discovery budget (${reason}) at ${f}; simplify the command closure or split its definitions; no evidence recorded`); };
@@ -6164,7 +6223,7 @@ function checkDefClosure(cfg, read = null, knownFiles = null) {
           contextCwd = cwd;
         }
         if (!tokenKinds.has(token)) {
-          const exe = path.basename(token);
+          const exe = runnerCommandName(token);
           tokenKinds.set(token, { exe, command: /^(?:cd|import|from|node|npm|pnpm|yarn|bun|npx|bunx|tsc)(?:\.cmd)?$|^(?:python[\d.]*|pytest|cargo|go|dotnet|make|gmake|sh|bash|env)$/.test(exe) || /^(?:CARGO_BUILD_)?RUSTC(?:_WORKSPACE)?_WRAPPER=/.test(token) });
         }
         const { exe, command } = tokenKinds.get(token);
@@ -6266,8 +6325,10 @@ function checkDefClosure(cfg, read = null, knownFiles = null) {
             const f = relative(resolved), real = fs.realpathSync(resolved), target = relative(real);
             let digest;
             if (resolved.startsWith(ROOT + path.sep)) {
-              const text = rd(f);
-              if (text !== null) digest = live ? executableHash(resolved) : sha(read.raw?.(f) ?? text);
+              // Git tracks a directory symlink, not files below its lexical path.
+              const source = !live && real !== resolved && rd(f) === null ? target : f;
+              const text = rd(source);
+              if (text !== null) digest = live ? executableHash(resolved) : sha(read.raw?.(source) ?? text);
             } else digest = executableHash(resolved);
             input = { f, real, target, digest, fingerprint: digest ? sha(`${target}\0${digest}`) : null, targetSha: digest ? sha(digest) : null };
             executableInputs.set(resolved, input);
@@ -6302,6 +6363,23 @@ function checkDefClosure(cfg, read = null, knownFiles = null) {
       const cwd = path.resolve(ROOT, c.cwd ?? '.');
       inspect(argv, cwd);
       inspect(argv.flatMap(tokens), cwd);
+      /** @id CODE-WINRUN-005 @implements REQ-WINRUN-003 */
+      const launch = runnerCommand(raw, cwd, resolve);
+      if (launch.script) {
+        inspect([launch.file], cwd);
+        file(launch.shim, cwd, undefined, true);
+        const realShim = fs.realpathSync(launch.shim);
+        if (realShim !== launch.shim) file(realShim, cwd, undefined, true);
+        file(launch.script, cwd, undefined, true);
+        const realScript = fs.realpathSync(launch.script);
+        if (realScript !== launch.script) file(realScript, cwd, undefined, true);
+        for (const input of [launch.shim, launch.file, launch.script]) {
+          defs.set(`launcher:windows|${relative(input)}`, {
+            sha: sha(`${relative(fs.realpathSync(input))}\0${executableHash(input)}`),
+            label: `Windows launcher input ${relative(input)} (changed)`,
+          });
+        }
+      }
       const pytest = pytestArgs(raw);
       if (pytest) inspect([isolatedPytest(raw, pytest, c.cwd)[0]], cwd);
     }
@@ -6321,7 +6399,8 @@ function packageResolutionSha(text) {
 }
 function checkAdmissionShas(cfg, pinned = null) {
   const inputs = Object.fromEntries([...checkDefClosure(cfg)]
-    .filter(([k, v]) => v.python || k.startsWith('resolution|') || /^executable:rustc(?:-workspace)?-wrapper:/.test(k) || /\|(?:.*\/)?\.cargo\/config(?:\.toml)?$/.test(k))
+    .filter(([k, v]) => v.python || k.startsWith('resolution|') || k.startsWith('environment:msvc|') || k.startsWith('launcher:windows|')
+      || /^executable:rustc(?:-workspace)?-wrapper:/.test(k) || /\|(?:.*\/)?\.cargo\/config(?:\.toml)?$/.test(k))
     .map(([k, v]) => [k, v.sha]));
   // Runner/check renames do not change metadata; recorded paths remain protected even if discovery changes.
   for (const k of Object.keys(pinned ?? {})) if (k.startsWith('resolution|') && !Object.hasOwn(inputs, k)) {
@@ -6665,6 +6744,7 @@ function scanless(res) {
 
 // Keep the bytes validated by the gate immutable across project-controlled commands (#342).
 function gatePathSha(f, seen = new Set()) {
+  if (f.startsWith('environment:msvc|')) return new Map(runnerSdkDefinitions()).get(f)?.sha ?? null;
   const p = path.resolve(ROOT, f);
   try {
     if (!fs.statSync(p).isDirectory()) return executableHashes.has(p) ? executableHash(p) : fileSha(f);
@@ -6691,7 +6771,7 @@ function gateInputSnapshot(specs, ents, cfg) {
     for (const f of oracleDependencyFiles) if (!isOutput(f)) paths.add(f);
     for (const f of Object.keys(artifactShasFor(e.path, e.id) ?? {})) if (!isOutput(f)) paths.add(f);
   }
-  for (const k of Object.keys(checkDefShas(cfg))) paths.add(k.slice(k.indexOf('|') + 1));
+  for (const k of Object.keys(checkDefShas(cfg))) paths.add(k.startsWith('environment:msvc|') ? k : k.slice(k.indexOf('|') + 1));
   // Direct command files and their local imports share the same closure for prepare and checks.
   for (const c of [cfg.prepare, ...cfg.checks ?? [], ...(cfg.projects ?? []).flatMap((p) => (p.checks ?? []).map((c) => ({ ...c, cwd: p.root })))].filter(Boolean)) {
     for (const arg of [...c.cmd ?? [], ...c.changedCmd ?? [], ...c.hubFallbackCmd ?? []]) {
@@ -6710,7 +6790,7 @@ function gateInputSnapshot(specs, ents, cfg) {
 }
 function changedGateInputs(snapshot, cfg) {
   const paths = new Set([...snapshot.keys(), ...gateSpecPaths(), ...[...scanEntities(listFiles()).ents.values()].map((e) => e.path)]);
-  for (const k of Object.keys(checkDefShas(cfg))) paths.add(k.slice(k.indexOf('|') + 1));
+  for (const k of Object.keys(checkDefShas(cfg))) paths.add(k.startsWith('environment:msvc|') ? k : k.slice(k.indexOf('|') + 1));
   return [...paths].filter((f) => !snapshot.has(f) || snapshot.get(f) !== gatePathSha(f)).sort();
 }
 
@@ -7140,6 +7220,7 @@ function cmdGate() {
     const recordedDefs = readLedger().reverse().find((e) => e.checkDefShas)?.checkDefShas ?? {};
     const defs = [...new Set([...currentDefs.keys(), ...baselineDefs.keys(), ...Object.keys(recordedDefs)])]
       .filter((k) => {
+        if (k.startsWith('environment:msvc|')) return currentDefs.get(k)?.sha !== recordedDefs[k];
         const f = k.slice(k.indexOf('|') + 1);
         const external = f === '..' || f.startsWith('../') || path.isAbsolute(f);
         const installed = /(^|\/)node_modules\//.test(f);
