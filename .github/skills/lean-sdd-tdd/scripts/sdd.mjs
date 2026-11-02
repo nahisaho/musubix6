@@ -5805,6 +5805,37 @@ function checkDefClosure(cfg, read = null, knownFiles = null) {
     inspectionWork += count;
     if (inspectionWork > 8000000) refuse('source tokens', '8000000 inspection steps');
   };
+  const nativeInputs = new Map();
+  const nativeBinary = (abs) => {
+    if (process.platform !== 'win32') return false;
+    if (/\.(?:exe|com)$/i.test(abs)) return true;
+    try { return /\.(?:exe|com)$/i.test(fs.realpathSync(abs)); }
+    catch (error) {
+      if (!['ENOENT', 'ENOTDIR'].includes(error.code)) throw error;
+      return false;
+    }
+  };
+  const nativeDigest = (abs) => {
+    if (nativeInputs.has(abs)) return nativeInputs.get(abs);
+    if (nativeInputs.size >= 200000) refuse(relative(abs), '200000 native executable inputs');
+    let digest = null;
+    if (live) {
+      try { if (fs.statSync(abs).isFile()) digest = executableHash(abs); }
+      catch (error) { if (!['ENOENT', 'ENOTDIR'].includes(error.code)) throw error; }
+    } else {
+      let real = abs;
+      try { real = fs.realpathSync(abs); }
+      catch (error) { if (!['ENOENT', 'ENOTDIR'].includes(error.code)) throw error; }
+      const readBinary = read.raw ?? read;
+      for (const f of new Set([relative(abs), relative(real)])) {
+        const raw = readBinary(f);
+        if (raw !== null) { digest = sha(raw); break; }
+        if (knownFiles?.includes(f)) refuse(f, 'native executable baseline unreadable');
+      }
+    }
+    nativeInputs.set(abs, digest);
+    return digest;
+  };
   const suffix = (ts, start) => { inspectBudget(ts.length - start); return ts.slice(start); };
   const directory = (abs) => {
     if (!directories.has(abs)) {
@@ -5906,6 +5937,14 @@ function checkDefClosure(cfg, read = null, knownFiles = null) {
       if (visited.has(key) || activeFiles.has(f)) {
         const entry = defs.get(`${c.name}|${f}`);
         if (entry && pythonDefinitions.has(f)) entry.python = true;
+        return;
+      }
+      if (nativeBinary(abs)) {
+        const digest = nativeDigest(abs);
+        if (digest !== null) {
+          defs.set(`${c.name}|${f}`, { sha: digest, label: label ?? `check ${c.name} (${f} changed)` });
+          visited.add(key);
+        }
         return;
       }
       const t = rd(f);
@@ -6324,7 +6363,8 @@ function checkDefClosure(cfg, read = null, knownFiles = null) {
           if (!input) {
             const f = relative(resolved), real = fs.realpathSync(resolved), target = relative(real);
             let digest;
-            if (resolved.startsWith(ROOT + path.sep)) {
+            if (nativeBinary(resolved)) digest = nativeDigest(resolved);
+            else if (resolved.startsWith(ROOT + path.sep)) {
               // Git tracks a directory symlink, not files below its lexical path.
               const source = !live && real !== resolved && rd(f) === null ? target : f;
               const text = rd(source);

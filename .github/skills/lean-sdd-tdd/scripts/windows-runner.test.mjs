@@ -146,6 +146,13 @@ test('TEST-WINRUN-003 adapter and SDK drift invalidate real Red Green command pr
   const probeCli = path.join(bin, 'node_modules/npm/bin/npm-cli.js');
   fs.writeFileSync(probeCli, "require('node:fs').writeFileSync('INCLUDE', 'compiler scratch output');\n"
     + fs.readFileSync(probeCli, 'utf8'));
+  fs.writeFileSync(path.join(bin, 'npm.cmd'), 'node.exe\n');
+  const nativeBinary = path.join(bin, 'node.exe');
+  const binaryFd = fs.openSync(nativeBinary, 'w');
+  try { fs.ftruncateSync(binaryFd, 16 * 1024 * 1024 + 1); }
+  finally { fs.closeSync(binaryFd); }
+  const testNode = path.join(root, 'test-node.exe');
+  fs.copyFileSync(process.execPath, testNode);
   const linked = path.join(root, 'linked tools');
   fs.symlinkSync(bin, linked, process.platform === 'win32' ? 'junction' : 'dir');
   const measured = path.join(work, `measured-${path.basename(root)}.mjs`);
@@ -153,7 +160,7 @@ test('TEST-WINRUN-003 adapter and SDK drift invalidate real Red Green command pr
   const end = source.indexOf('function dotnetStamp(');
   fs.writeFileSync(measured, source.slice(0, start)
     + source.slice(start, end).replaceAll('process.platform', "'win32'")
-    + source.slice(end));
+    + source.slice(end).replace("if (process.platform !== 'win32') return false;", 'if (false) return false;'));
   const sdk = { INCLUDE: 'sdk headers', LIB: 'sdk libraries', LIBPATH: '' };
   const run = (...args) => spawnSync(process.execPath, [measured, '--root', root, ...args],
     { encoding: 'utf8', env: { ...baseEnv, ...sdk } });
@@ -163,7 +170,7 @@ test('TEST-WINRUN-003 adapter and SDK drift invalidate real Red Green command pr
   fs.writeFileSync(path.join(root, '.sdd/config.json'), JSON.stringify({
     schemaVersion: 1,
     scopePolicy: 'strict',
-    testCmd: [process.execPath, '--test', '--test-name-pattern', '{id}', '{file}'],
+    testCmd: [testNode, '--test', '--test-name-pattern', '{id}', '{file}'],
     checks: [{ name: 'probe', cmd: [path.join(linked, 'npm.cmd'), 'run', 'probe'] }],
   }));
   fs.writeFileSync(path.join(root, 'package.json'), JSON.stringify({
@@ -224,6 +231,7 @@ test('TEST-WINRUN-003 adapter and SDK drift invalidate real Red Green command pr
   checkGate();
   for (const file of [
     path.join(bin, 'npm.cmd'), path.join(bin, 'node_modules/npm/bin/npm-cli.js'),
+    nativeBinary, testNode,
     path.join(root, 'before.cjs'), path.join(root, 'after.cjs'), path.join(root, 'package.json'),
   ]) {
     const original = fs.readFileSync(file);

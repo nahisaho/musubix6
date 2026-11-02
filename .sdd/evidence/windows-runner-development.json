@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
   "feature": "windows-runner",
-  "status": "LOCAL_GATE_PASS_NATIVE_CI_FAILURE_UNDER_INVESTIGATION",
+  "status": "BINARY_FIX_TARGETED_PASS_AWAITING_NATIVE_CI_AND_CURRENT_FULL_GATE",
   "releaseQualification": false,
-  "sourceSha256": "1ce7c7ff59214fd60579023d620ec456d866adf08ca2827c481a4661bcf2c62e",
+  "sourceSha256": "36c40215409fc2b331994a0cef224807fc242c5bd5bc76f497e3a000425410b1",
   "testSha256": {
-    ".github/skills/lean-sdd-tdd/scripts/windows-runner.test.mjs": "73c8949a78b25d18961e87f01fec89ec5ef20944d0bfbeb8bd0d2c8a5b009bce",
+    ".github/skills/lean-sdd-tdd/scripts/windows-runner.test.mjs": "39ddf70f9324fa35fb3df8b91bbabc54a1f2f3cf03a57ad1a58ef85af331d4b9",
     ".github/skills/lean-sdd-tdd/scripts/windows-native.test.mjs": "a683b0ab1dfebf8d468dbe13837e97ae75159cdfd176ae1688dd164d642e5bfa"
   },
   "developmentHost": {
@@ -31,7 +31,8 @@
     "gateControls": "Strict full and changed gates reject altered shim, CLI, pre/post lifecycle, package selection and each SDK value; each restoration accepts. CLI/SDK Red admission rejection preserves ledger bytes. A tracked INCLUDE scratch file and unchanged directory-symlink launcher do not invalidate valid evidence.",
     "additionalAssertionReds": [
       "Virtual environment:msvc|INCLUDE was incorrectly snapshotted as a physical file named INCLUDE.",
-      "An unchanged symlinked launcher was incorrectly rejected because Git does not track files below a directory symlink."
+      "An unchanged symlinked launcher was incorrectly rejected because Git does not track files below a directory symlink.",
+      "The npm shim's referenced 16MiB+1 node.exe and an actual copied in-project Node executable were incorrectly parsed as textual definitions. Final Red and Green confirmed opaque binary hashing, baseline parity and changed/restored byte controls."
     ]
   },
   "isolatedMutations": {
@@ -43,16 +44,21 @@
       "fixed-sdk-hash",
       "virtual-sdk-alias",
       "symlink-baseline",
+      "native-binary-as-text",
       "dropped-sdk-env",
       "override-admitted"
     ],
     "unchangedProductionSourceRestorationExit": 0,
     "restoredControlsPassed": 4,
-    "limit": "Nine isolated failure mechanisms, not exhaustive Windows behavior. Hosting Node is fingerprinted but its binary was not independently mutated."
+    "limit": "Ten isolated failure mechanisms, not exhaustive Windows behavior. The configured copied Node executable is byte-mutated/restored; SDD's original hosting binary is fingerprinted but not independently modified."
   },
   "dependentRegression": {
     "command": "node .github/skills/lean-sdd-tdd/scripts/sdd.mjs tdd refactor <the 27 affected TEST IDs>",
-    "passed": 27,
+    "initialSourceSha256": "1ce7c7ff59214fd60579023d620ec456d866adf08ca2827c481a4661bcf2c62e",
+    "initialPassed": 27,
+    "binaryFixRefreshCommand": "node .github/skills/lean-sdd-tdd/scripts/sdd.mjs tdd refactor --stale",
+    "binaryFixSourceSha256": "36c40215409fc2b331994a0cef224807fc242c5bd5bc76f497e3a000425410b1",
+    "binaryFixStaleTestsPassed": 26,
     "failed": 0,
     "skipped": 0,
     "tests": [
@@ -94,7 +100,7 @@
     "firstRunUrl": "https://github.com/nahisaho/musubix6/actions/runs/41410537867",
     "firstRunCommit": "ade2b64fe96bac712dacbb54830e73d935048e33",
     "firstRunResults": "All three Node jobs failed in source controls. Node24 logs show MSVC and all four regression controls passed with no skips, but the real-npm control received empty gate stdout and failed JSON parsing. Installed-host and standalone steps were not run.",
-    "diagnosticFollowup": "Native harness now asserts nonempty JSON stdout and includes gate exit/stderr before parsing. This improves failure visibility, not production behavior or native acceptance.",
+    "diagnosticFollowup": "Run 41410870099 on 4615728 exposed the actual 16MiB textual-definition budget refusal at node.exe. Windows native binaries are now pinned as raw bytes in both referenced-file discovery and executable fingerprinting; text budgets remain unchanged. Current source still needs native rerun and a new full gate.",
     "requiredControls": "Actual Windows Node20/22/24: real npm success/nonzero and literal argv/admission; initialized MSVC stdio.h plus Windows SDK linking; source, copied Copilot/Claude skills and lone standalone script."
   },
   "diagnostics": {
@@ -126,6 +132,7 @@
     "model": "claude-sonnet-5.5",
     "productionDelta": "No high-confidence findings; reviewed virtual SDK keys, admission, resolver/adapter and symlink baseline hashing. This reviewer explicitly did not read tests/spec.",
     "controlsAndDocumentation": "Read both complete new test files, workflow and README/changelog diff; no blocking findings. Native-only path/junction behavior remains unknown.",
+    "binaryFixDelta": "Independent plan and implementation review found no blocking defects. Checked lexical/real native classification, raw live/Git hash parity, missing-vs-I/O failures, visited/cache/budget semantics, POSIX preservation and regression byte-drift rejection.",
     "resolvedObservations": [
       "Forward-slash relative provenance keys are the existing rel() contract used by production and tests; actual Windows path aliases still require CI.",
       "No-spec fixtures intentionally produce INCOMPLETE/exit2 while still running configured checks; native MSVC test separately asserts successful cmd status and executable output.",
@@ -133,7 +140,8 @@
     ]
   },
   "fullRepositoryGate": {
-    "status": "PASS",
+    "status": "PREVIOUS_SOURCE_PASS_CURRENT_SOURCE_PENDING",
+    "validatedSourceSha256": "1ce7c7ff59214fd60579023d620ec456d866adf08ca2827c481a4661bcf2c62e",
     "command": "node .github/skills/lean-sdd-tdd/scripts/sdd.mjs gate --json",
     "exitCode": 0,
     "rawReportSha256": "ff813c85281811ec18e3162ff05d3781c0e3b9de5d81e3771afdaa847448e06f",

@@ -288,9 +288,9 @@
   "windows-runner": {
     "by": "nahisaho",
     "kind": "human",
-    "at": "2026-11-02T07:31:03.751Z",
+    "at": "2026-11-02T08:19:14.728Z",
     "artifacts": {
-      ".sdd/specs/windows-runner.md": "7feabffce1f130e216308523a90287b17d2f9cd1a4f0c7d5f4ddc3860a132599"
+      ".sdd/specs/windows-runner.md": "c95ec5e975258ae1e82f13ad70fea56403ebdddc4cad2f2eb28c3b521d06f07c"
     },
     "tier": "T2",
     "requireHuman": true,

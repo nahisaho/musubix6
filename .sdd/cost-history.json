@@ -278,16 +278,16 @@
       "created": "2026-10-27T10:37",
       "models": {
         "claude-sonnet-5.5": {
-          "calls": 20,
-          "inputTokens": 720783,
-          "nanoAiu": 72324930000,
-          "outputTokens": 17242
+          "calls": 28,
+          "inputTokens": 979625,
+          "nanoAiu": 97550590000,
+          "outputTokens": 22756
         },
         "gpt-6.1-sol": {
-          "calls": 147,
-          "inputTokens": 17801172,
-          "nanoAiu": 483047430000,
-          "outputTokens": 108768
+          "calls": 166,
+          "inputTokens": 20780251,
+          "nanoAiu": 546685370000,
+          "outputTokens": 133960
         }
       },
       "summary": "Install musubix6 and Verify README"
