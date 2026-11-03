@@ -179,7 +179,28 @@ test('TEST-PLAN-STATE-003 current native evidence, selected checks and retained 
   f.inspectionError('No current Red/Green exists.');
   assert.equal(f.verify('A').exit, 2, 'Arbitrary successful document checks cannot replace native TDD evidence.');
   f.inspectionError(null);
+  const nativeInspection = f.adapter.inspect, nativeRunner = f.adapter.run;
+  let preflightRuns = 0;
+  f.adapter.inspect = task => ({ ...nativeInspection(task),
+    errors: [{ id: task.id, reason: 'Current native TEST is conclusively stale.', exit: 1 }] });
+  f.adapter.run = (...args) => { preflightRuns++; return nativeRunner(...args); };
+  const stalePreflight = f.verify('A');
+  assert.equal(stalePreflight.exit, 1, 'A conclusive native preflight failure must retain fail1, not become unknown2.');
+  assert.equal(preflightRuns, 0, 'Stale native evidence cannot be repaired by automatically executing Refactor.');
+  assert.equal(JSON.parse(fs.readFileSync(path.join(f.root, stalePreflight.receipt))).exit, 1);
+  f.adapter.inspect = nativeInspection; f.adapter.run = nativeRunner;
   const original = f.complete('A');
+  const knownAInput = f.row('A').fingerprint;
+  f.document.tasks[1].dependsOn = ['A'];
+  f.document.tasks[1].dependencies = { A: knownAInput };
+  f.adapter.inspect = task => ({ ...nativeInspection(task),
+    bindings: Object.fromEntries(task.tests.map(id => [id, null])),
+    errors: [{ id: task.id, reason: 'Required native TEST bytes are unavailable.', exit: 2 }] });
+  assert.equal(f.row('A').exit, 2, 'Unmeasurable TEST bindings are unknown, not a proven fingerprint change.');
+  assert.equal(f.row('B').exit, 2, 'An unknown prerequisite input cannot manufacture conclusive dependency staleness.');
+  assert.equal(f.row('B').state, 'revalidation-required');
+  f.adapter.inspect = nativeInspection;
+  f.document.tasks[1].dependsOn = []; f.document.tasks[1].dependencies = {};
   assert.equal(fs.existsSync(path.join(f.root, path.posix.dirname(original.receipt), 'verify.lock')), false);
   f.nativePass(false);
   const failedNative = f.verify('A');

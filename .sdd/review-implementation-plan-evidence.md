@@ -1,4 +1,4 @@
-spec: sha256:dae7a3b83b041dda3c83fec269834467d46de659e5958a6e00e1cd98a6204a72
+spec: sha256:2fd2e3453b97873e49cd4b6c01a5784951f4e7cf07efcb46f798a6645715a2fd
 verdict: pass
 open: 0
 
@@ -30,7 +30,7 @@ stubs. Native Reds/Greens and the following production checks subsequently ran.
 
 ## Implementation review and observed checks
 
-The final implementation source SHA256 is
+The core-checkpoint implementation source SHA256, before native-integration fixes, is
 `91e59bdfd403513f35bd45f1fdecea474f7bd4a58fdc29abe1154fad7873cfce`;
 test SHA256 is
 `2ca0aead3d6c7edeaffd92f63c7d5d425ca1fcfdc55f13e4f57e8bd5c5bc9b14`.
@@ -53,8 +53,21 @@ Red/Green/Refactor history, including historical moved-oracle warnings; the
 mutation report, not a fictional new initial Red, demonstrates the strengthened
 boundary assertions can fail.
 
-Remaining limits: unit adapter only; no native CLI/gate or installed-host
+Remaining limits of that checkpoint: unit adapter only; no native CLI/gate or installed-host
 integration, full-project gate, release qualification or publication checked.
 Lock-release failure may leave a retained success receipt whose path is not
 returned with the incomplete refusal; the occupied lock still refuses evaluation
 until explicit owner-confirmed recovery. No history is deleted automatically.
+
+## Native-integration fix review
+
+STATE-NATIVE-FAIL | S2 | Native preflight now preserves conclusive exit1 without executing Refactor. | Closed
+STATE-NATIVE-UNKNOWN | S2 | Unknown TEST bindings and prerequisite fingerprints remain incomplete2, not false conclusive staleness. | Closed
+
+The retained state reviewer inspected the narrow fixes and reported CLEAN.
+CLEAN2 accepted the corrected fixture ordering and reported isolated
+classification Red/Green, explicitly without rereading the source, checking a
+source hash or executing validation. It did not review CLI adapter mapping or
+diagnostics. The initial dependency-ordering fixture failure is excluded from
+behavioral Red evidence, not relabeled as a pass. Current native integration
+evidence and snapshot limits are recorded in the existing feature spec.

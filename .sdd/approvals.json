@@ -315,10 +315,22 @@
     "by": "ai:claude-sonnet-5.5",
     "kind": "ai",
     "review": ".sdd/review-implementation-plan-evidence.md",
-    "reviewSha": "1a337bb46bed9ef3d3556c5598fb2a2aa7be799c8ba42752d5a5a8ae31982e7f",
-    "at": "2026-11-03T20:40:54.505Z",
+    "reviewSha": "605d0c7f0c4432fd7a1b1e651e3c7c5f5a1c5d9b07f3fb2738f50b62432b46b0",
+    "at": "2026-11-03T21:43:53.904Z",
     "artifacts": {
-      ".sdd/specs/implementation-plan-evidence.md": "dae7a3b83b041dda3c83fec269834467d46de659e5958a6e00e1cd98a6204a72"
+      ".sdd/specs/implementation-plan-evidence.md": "2fd2e3453b97873e49cd4b6c01a5784951f4e7cf07efcb46f798a6645715a2fd"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "implementation-plan-cli": {
+    "by": "ai:claude-sonnet-5.5",
+    "kind": "ai",
+    "review": ".sdd/review-implementation-plan-cli.md",
+    "reviewSha": "34c78a8b181e32fed7048b760db8b6387b1163be8982e5d087b17539b60b13ef",
+    "at": "2026-11-03T21:43:53.071Z",
+    "artifacts": {
+      ".sdd/specs/implementation-plan-cli.md": "46060ea10432968cc8cadcdbcca8a1f116097823243dba825231ded60b5a5047"
     },
     "tier": "T2",
     "requireHuman": false

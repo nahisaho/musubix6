@@ -1,9 +1,11 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
+import { planningFeatureClosure } from './implementation-plan-cli.mjs';
+import { containedPlanningPath } from './implementation-plan.mjs';
 
 /** @id CODE-SPECCTX-001 @implements REQ-SPECCTX-001 REQ-SPECCTX-002 REQ-SPECCTX-003 REQ-SPECCTX-004 REQ-SPECCTX-005 */
-export function runContext({ ROOT, pos, flags, loadSpecs, loadPlan, changedFiles, workspaceFiles, impactOne }) {
+export function runContext({ ROOT, pos, flags, loadSpecs, loadPlan, changedFiles, workspaceFiles, impactOne, planning = null }) {
   const SDD = path.join(ROOT, '.sdd'), SPECS = path.join(SDD, 'specs');
   const rel = (file) => path.relative(ROOT, file).split(path.sep).join('/');
   const refuse = (message) => { throw new Error(`CONTEXT REFUSED: ${message}`); };
@@ -34,8 +36,8 @@ export function runContext({ ROOT, pos, flags, loadSpecs, loadPlan, changedFiles
         byReq.set(req.id, spec);
       }
     }
-    if (fs.existsSync(path.join(SDD, 'plan.md'))) containedFile('.sdd/plan.md');
-    const plan = loadPlan();
+    if (!planning && fs.existsSync(path.join(SDD, 'plan.md'))) containedFile('.sdd/plan.md');
+    const plan = planning ? null : loadPlan();
     if (plan && (!plan.length || plan.bad?.length || plan.some((row) => !row.feature))) refuse('malformed plan rows');
     const deps = new Map();
     for (const row of plan ?? []) {
@@ -44,6 +46,13 @@ export function runContext({ ROOT, pos, flags, loadSpecs, loadPlan, changedFiles
     }
     const selected = new Set(), active = new Set();
     const include = (feature) => {
+      if (planning) {
+        for (const id of planningFeatureClosure(planning, [feature])) {
+          if (!byFeature.has(id)) refuse('missing prerequisite spec');
+          selected.add(id);
+        }
+        return;
+      }
       if (active.has(feature)) refuse('plan dependency cycle');
       if (selected.has(feature)) return;
       if (!byFeature.has(feature)) refuse('missing prerequisite spec');
@@ -72,6 +81,9 @@ export function runContext({ ROOT, pos, flags, loadSpecs, loadPlan, changedFiles
       }
       const file = containedFile(target);
       if (byPath.has(file)) { include(byPath.get(file).feature); continue; }
+      const canonical = planning ? rel(containedPlanningPath(ROOT, file)) : file;
+      const owners = planning?.owners[canonical] ?? [];
+      for (const id of owners) include(planning.tasks.find(task => task.id === id).feature);
       if (!checkedWorkspace) {
         for (const source of workspaceFiles()) containedFile(source);
         checkedWorkspace = true;
@@ -79,7 +91,7 @@ export function runContext({ ROOT, pos, flags, loadSpecs, loadPlan, changedFiles
       const impact = impactOne(file, true);
       if (typeof impact !== 'object') refuse('file impact could not be resolved; specify a feature/REQ');
       const reqs = new Set([...impact.reqs, ...impact.sameFeatureReqs, ...impact.otherReqs.map((r) => r.req)]);
-      if (!reqs.size) refuse('file has no known owning/impacted requirements; specify a feature/REQ');
+      if (!reqs.size && !owners.length) refuse('file has no known owning/impacted requirements; specify a feature/REQ');
       for (const req of reqs) {
         if (!byReq.has(req)) refuse('impact references an undefined REQ');
         include(byReq.get(req).feature);
@@ -94,7 +106,8 @@ export function runContext({ ROOT, pos, flags, loadSpecs, loadPlan, changedFiles
     const { specs, selected } = selection();
     const files = new Map();
     const features = selected.map((spec) => {
-      const paths = [...new Set(spec.artifacts.map((file) => containedFile(file)))].sort();
+      const owned = planning?.tasks.filter(task => task.feature === spec.feature).flatMap(task => task.artifacts) ?? [];
+      const paths = [...new Set([...spec.artifacts, ...owned].map((file) => containedFile(file)))].sort();
       for (const file of paths) if (!files.has(file)) {
         const bytes = fs.readFileSync(path.join(ROOT, file));
         files.set(file, { path: file, sha256: createHash('sha256').update(bytes).digest('hex'), bytes: bytes.length, text: bytes.toString('utf8') });
@@ -107,6 +120,9 @@ export function runContext({ ROOT, pos, flags, loadSpecs, loadPlan, changedFiles
       totalSpecs: specs.length,
       features,
       files: [...files.values()].sort((a, b) => a.path < b.path ? -1 : a.path > b.path ? 1 : 0),
+      ...(planning ? { planning: { enabled: true, stage: 'context', status: 'PASS', exit: 0,
+        taskIds: planning.tasks.filter(task => features.some(feature => feature.feature === task.feature)).map(task => task.id).sort(),
+        reqs: [...new Set(selected.flatMap(spec => spec.reqs.map(req => req.id)))].sort() } } : {}),
     };
     const rendered = flags.json ? JSON.stringify(payload) + '\n' : [
       `CONTEXT ${features.length}/${specs.length} specs`,

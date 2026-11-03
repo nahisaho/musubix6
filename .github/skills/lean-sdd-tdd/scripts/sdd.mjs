@@ -2,11 +2,13 @@
 // Lean SDD/TDD evidence tool. Zero dependencies, Node >= 20.
 // Commands: init | approve prepare|record | guard | tdd red|green|refactor|check | trace | gate | status
 import { createHash } from 'node:crypto';
+import { isUtf8 } from 'node:buffer';
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import { builtinModules } from 'node:module';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const BOOL = new Set(['allow-setup-red', 'allow-config-weaken', 'missing-module', 'baseline', 'weak', 'changed', 'json', 'no-run', 'verbose', 'help', 'stale', 'report', 'explain']);
 function parseArgs(argv) {
@@ -33,6 +35,21 @@ const APPROVALS = path.join(SDD, 'approvals.json');
 const PREPARE_SHOWN = path.join(SDD, 'prepare-shown.json');
 const LEDGER = path.join(SDD, 'tdd.jsonl');
 const RETIRED_REQS = path.join(SDD, 'retired-reqs.json');
+const planningCommand = ['plan', 'context', 'gate'].includes(pos[0]);
+let planningModules = [];
+if (planningCommand) {
+  try {
+    planningModules = await Promise.all([import('./implementation-plan.mjs'),
+      import('./implementation-plan-evidence.mjs'), import('./implementation-plan-cli.mjs')]);
+  } catch (error) {
+    if (error.code !== 'ERR_MODULE_NOT_FOUND') throw error;
+  }
+}
+const [planningModel = {}, planningEvidence = {}, planningCli = {}] = planningModules;
+const { PlanningError, loadImplementationPlan } = planningModel;
+const { evaluateImplementationPlan } = planningEvidence;
+const { readPlanningConfiguration, planningRefusal, planningTaskScope,
+  publicPlanningResult, emitPlanningResult, runPlanningCommand } = planningCli;
 
 const sha = (b) => createHash('sha256').update(b).digest('hex');
 const rel = (p) => path.relative(ROOT, p).split(path.sep).join('/');
@@ -1050,7 +1067,8 @@ function loadSpecs() {
     const di = tl.findIndex((l) => /^#{1,4}\s*(?:\d+[.)]?\s*)?(Design|設計)\b/i.test(l));
     let designLines = 0;
     if (di >= 0) for (const l of tl.slice(di + 1)) { if (/^#{1,4}\s/.test(l)) break; if (l.trim()) designLines += Math.max(1, l.split(/(?<=[。！？；])|(?<=[.!?;])\s+/).filter((x) => x.trim().length >= 8).length); }
-    specs.push({ path: p, feature: fm.feature || f.replace(/\.md$/, ''), tier: (fm.tier || 'T1').toUpperCase(), approval: (fm.approval || 'auto').toLowerCase(), reqs, designLines, artifacts: [p, ...extra] });
+    specs.push({ path: p, feature: fm.feature || f.replace(/\.md$/, ''), tier: (fm.tier || 'T1').toUpperCase(), approval: (fm.approval || 'auto').toLowerCase(), reqs, designLines, artifacts: [p, ...extra],
+      dependsOn: fm.dependsOn ? fm.dependsOn.split(',').map(value => value.trim()) : [] });
   }
   return specs;
 }
@@ -1574,7 +1592,7 @@ function run(cmd, timeoutMs, cwd = '.') {
   if (stamp && !/\berror (CS|MSB|NETSDK|NU)\d+|Build FAILED|Restore failed/i.test(r.text) && !r.timedOut) dotnetBuilt.set(key, stamp); else dotnetBuilt.delete(key);
   return r;
 }
-function run1(cmd, timeoutMs, cwd = '.') {
+function run1(cmd, timeoutMs, cwd = '.', maxBuffer = 64e6) {
   const t0 = Date.now();
   const pytest = pytestArgs(cmd);
   const safeCmd = pytest ? isolatedPytest(cmd, pytest, cwd) : cmd;
@@ -1583,15 +1601,16 @@ function run1(cmd, timeoutMs, cwd = '.') {
   const argv = guarded ? ['sh', '-c', 'G=$$; P=$1; shift; ( while kill -0 "$P" 2>/dev/null && kill -0 "$G" 2>/dev/null; do sleep 1; done; kill -0 "$P" 2>/dev/null || kill -s KILL -- "-$G" 2>/dev/null ) </dev/null >/dev/null 2>&1 & exec "$@"', 'sdd-watchdog', String(process.pid), ...safeCmd] : safeCmd;
   let launch;
   try { launch = runnerCommand(argv, path.resolve(ROOT, cwd)); }
-  catch (error) { return { exit: 127, signal: null, text: `runner setup error: ${error.message}`, ms: Date.now() - t0, timedOut: false, pytestResults: null }; }
+  catch (error) { return { exit: 127, signal: null, text: `runner setup error: ${error.message}`, ms: Date.now() - t0, timedOut: false, pytestResults: null, error: error.message }; }
   const r = spawnSync(launch.file, launch.args, { cwd: path.resolve(ROOT, cwd), env: runnerEnv(cmd, cwd),
-    shell: false, windowsVerbatimArguments: false, encoding: 'utf8', timeout: timeoutMs, maxBuffer: 64e6, detached: true });
+    shell: false, windowsVerbatimArguments: false, encoding: 'utf8', timeout: timeoutMs, maxBuffer, detached: true });
   const timedOut = r.error?.code === 'ETIMEDOUT';
   // spawnSync's timeout signals only the launcher (cargo, npm, mvn); the detached group also holds the hung test binary (#225)
-  if (timedOut && r.pid) { try { process.kill(-r.pid, 'SIGKILL'); } catch { /* group already gone */ } }
+  if ((timedOut || r.error?.code === 'ENOBUFS') && r.pid) { try { process.kill(-r.pid, 'SIGKILL'); } catch { /* group already gone */ } }
   const text = (r.stdout ?? '') + (r.stderr ?? '') + (timedOut ? `test timed out after ${timeoutMs} ms (hung test? the whole process group was killed)` : r.error ? String(r.error.message) : '');
   const pytestResults = pytest ? [...text.matchAll(/^SDD-PYTEST (\{[^\n]+\})$/gm)].flatMap((m) => { try { const r = JSON.parse(m[1]); return typeof r.nodeid === 'string' && /^(passed|failed|skipped)$/.test(r.outcome) ? [r] : []; } catch { return []; } }) : null;
-  return { exit: r.status ?? (r.error ? 127 : 1), signal: r.signal, text, ms: Date.now() - t0, timedOut, pytestResults };
+  return { exit: r.status ?? (r.error ? 127 : 1), signal: r.signal, text, ms: Date.now() - t0, timedOut, pytestResults,
+    error: r.error?.message ?? null };
 }
 function pytestArgs(cmd) {
   const exe = path.basename(cmd[0] ?? '');
@@ -6834,6 +6853,172 @@ function changedGateInputs(snapshot, cfg) {
   return [...paths].filter((f) => !snapshot.has(f) || snapshot.get(f) !== gatePathSha(f)).sort();
 }
 
+/** @id CODE-PLAN-CLI-STANDALONE @implements REQ-PLAN-CLI-001 REQ-PLAN-CLI-004 */
+function standalonePlanningRefusal() {
+  const refuse = (exit, reason) => ({ enabled: true,
+    stage: pos[0] === 'plan' ? pos[1] === 'verify' ? 'verify' : 'consistency' : pos[0],
+    status: exit === 1 ? 'FAIL' : 'INCOMPLETE', exit,
+    errors: [{ id: '.sdd/config.json', reason, exit }], tasks: [] });
+  const record = value => value !== null && typeof value === 'object' && !Array.isArray(value);
+  const inside = (base, target) => {
+    const tail = path.relative(base, target);
+    return tail !== '..' && !tail.startsWith('..' + path.sep) && !path.isAbsolute(tail);
+  };
+  let config = {}, exists = false, fd;
+  try {
+    try { fs.lstatSync(CONFIG); exists = true; }
+    catch (error) { if (error.code !== 'ENOENT') throw error; }
+    if (exists) {
+      const base = fs.realpathSync(ROOT);
+      let file = base;
+      for (const part of ['.sdd', 'config.json']) {
+        file = path.join(file, part);
+        const entry = fs.lstatSync(file);
+        try { file = fs.realpathSync(file); }
+        catch (error) {
+          if (error.code === 'ENOENT' && entry.isSymbolicLink()
+            && !inside(base, path.resolve(path.dirname(file), fs.readlinkSync(file)))) {
+            return refuse(1, 'Configuration symlink points outside project root');
+          }
+          throw error;
+        }
+        if (!inside(base, file)) return refuse(1, 'Configuration symlink resolves outside project root');
+      }
+      if (!fs.statSync(file).isFile()) return refuse(1, 'Configuration must be a regular file');
+      fd = fs.openSync(file, 'r');
+      const limit = 1048576, bytes = Buffer.alloc(limit + 1);
+      if (fs.fstatSync(fd).size > limit) return refuse(1, 'Configuration exceeds 1048576 bytes');
+      let length = 0, count;
+      while (length < bytes.length && (count = fs.readSync(fd, bytes, length, bytes.length - length, null)) > 0) length += count;
+      if (length > limit) return refuse(1, 'Configuration exceeds 1048576 bytes');
+      if (!isUtf8(bytes.subarray(0, length))) return refuse(1, 'Configuration is not valid UTF-8 JSON');
+      config = JSON.parse(bytes.subarray(0, length).toString('utf8'));
+    }
+  } catch (error) {
+    if (error instanceof SyntaxError) return refuse(1, 'Configuration is not valid JSON');
+    if (error.code) return refuse(2, `Configuration unavailable (${error.code})`);
+    throw error;
+  } finally { if (fd !== undefined) fs.closeSync(fd); }
+  if (!record(config)) return refuse(1, 'Project configuration must be a JSON object');
+  if (Object.hasOwn(config, 'planning')
+    && (!record(config.planning) || typeof config.planning.required !== 'boolean')) {
+    return refuse(1, 'planning.required must be a boolean');
+  }
+  if (config.planning?.required !== true && (pos[0] === 'gate' || pos[0] === 'plan' && pos.length === 1)) return null;
+  return refuse(2, 'Planning modules unavailable; install the complete lean-sdd-tdd skill');
+}
+
+/** @id CODE-PLAN-CLI-NATIVE @implements REQ-PLAN-CLI-001 REQ-PLAN-CLI-002 REQ-PLAN-CLI-004 */
+function planningSession(specs, scanned) {
+  if (!planningModules.length) return { enabled: false, stage: 'structure', status: 'DISABLED', exit: 0, errors: [] };
+  try {
+    const config = readPlanningConfiguration(ROOT, loadConfig);
+    if (config.planning?.required !== true) return loadImplementationPlan({ root: ROOT, config, specs: [] });
+    specs ??= loadSpecs();
+    scanned ??= scanEntities(listFiles());
+    const metadata = specs.map(spec => ({ ...spec, reqs: spec.reqs.map(req => ({ ...req,
+      tests: [...new Set([...req.tests, ...[...scanned.ents.values()].filter(entity => entity.kind === 'TEST'
+        && entity.refs.verifies.includes(req.id)).map(entity => entity.id)])] })) }));
+    const loaded = loadImplementationPlan({ root: ROOT, config, specs: metadata });
+    if (loaded.exit) return loaded;
+    const nativeScript = fileURLToPath(import.meta.url);
+    const nativeChecks = task => task.tests.map(id => ({ name: `native-${id}`,
+      argv: [process.execPath, nativeScript, 'tdd', 'refactor', id, '--root', ROOT],
+      timeoutMs: Math.min(config.timeoutMs ?? 600000, 600000) }));
+    const inspect = task => {
+      const bindings = Object.fromEntries(task.tests.map(id => [id, null])), errors = [], events = [];
+      const problem = (id, exit, reason) => errors.push({ id, exit, reason });
+      try {
+        const currentConfig = readPlanningConfiguration(ROOT, loadConfig);
+        const currentSpecs = loadSpecs(), { ents, dups } = scanEntities(listFiles());
+        const tool = sha(['sdd.mjs', 'implementation-plan.mjs', 'implementation-plan-evidence.mjs',
+          'implementation-plan-cli.mjs', 'spec-context.mjs'].map(file => file + '\0'
+            + sha(fs.readFileSync(new URL(file, import.meta.url)))).join('\0'));
+        const trace = traceCheck(ents, dups, currentSpecs);
+        const ids = new Set([...task.reqs, ...task.tests]);
+        for (const reason of trace.errors) if ([...reason.matchAll(/\b(?:REQ|TEST|CODE)-[A-Z0-9-]+\b/g)].some(match => ids.has(match[0]))) {
+          problem(task.id, / has no test \(@verifies\)/.test(reason) ? 2 : 1, reason);
+        }
+        let entries = [], ledgerUnavailable = false;
+        try {
+          const fd = fs.openSync(LEDGER, 'r');
+          try {
+            if (fs.fstatSync(fd).size > 67108864) throw new PlanningError(2, task.id, 'Native ledger exceeds read budget');
+            const bytes = fs.readFileSync(fd);
+            if (bytes.length > 67108864) throw new PlanningError(2, task.id, 'Native ledger exceeds read budget');
+            entries = new TextDecoder('utf-8', { fatal: true }).decode(bytes).split('\n').filter(Boolean).map(line => JSON.parse(line));
+          } finally { fs.closeSync(fd); }
+        } catch (error) {
+          if (error.code !== 'ENOENT') {
+            if (error instanceof PlanningError) problem(error.id, error.exit, error.message);
+            else if (error instanceof SyntaxError || error instanceof TypeError || error.code) {
+              problem(task.id, 2, 'Native ledger is unavailable or unparseable');
+            } else throw error;
+            ledgerUnavailable = true;
+          }
+        }
+        const chain = ledgerUnavailable ? null : verifyChain(entries);
+        if (chain) problem(task.id, 1, `invalid native ledger: ${chain}`);
+        for (const id of task.tests) {
+          const entity = ents.get(id);
+          if (!entity || entity.kind !== 'TEST') { problem(id, 2, 'Required native TEST is unavailable'); continue; }
+          const project = projectFor(entity.path);
+          bindings[id] = { path: entity.path, sha256: testSha(entity.path, id), tool,
+            reqs: Object.fromEntries(currentSpecs.flatMap(spec => spec.reqs)
+              .filter(req => entity.refs.verifies.includes(req.id)).map(req => [req.id, req.sha])),
+            runner: project?.testCmd ?? currentConfig.testCmd, project: project?.root ?? '.' };
+          for (const spec of currentSpecs.filter(spec => !ledgerUnavailable && spec.reqs.some(req => entity.refs.verifies.includes(req.id)))) {
+            if (needsLock(spec)) {
+              const state = approvalState(spec);
+              if (state !== 'ok') problem(id, state === 'missing' ? 2 : 1, `${spec.feature}: approval ${state}`);
+              const design = designProblem(spec);
+              if (design) problem(id, 1, design);
+            }
+          }
+          if (chain || ledgerUnavailable) continue;
+          const status = evidenceStatus(id, entity.path, entries);
+          if (!status.ok) {
+            problem(id, /^no (?:Green|Red)/.test(status.why) ? 2 : 1, status.why);
+            continue;
+          }
+          const hashes = new Set(), reds = new Map();
+          let latest = null, matching = null;
+          for (const entry of entries.filter(entry => entry.test === id)) {
+            if (entry.type === 'red') { reds.set(entry.fileSha, entry); continue; }
+            if (!['green', 'refactor'].includes(entry.type)) continue;
+            const current = shaMatches(entry.fileSha, entity.path, id);
+            if (entry.type === 'green') {
+              latest = { green: entry, red: reds.get(entry.fileSha) };
+              if (current) matching = latest;
+            }
+            const pair = matching ?? latest;
+            if (!current || !pair?.red || changedArtifacts(entry).length
+              || Object.entries(entry.reqShas ?? { [entry.req]: entry.reqSha })
+                .some(([req, hash]) => hash && reqShaOf(req) && !reqShaSame(req, hash))) continue;
+            [pair.red.hash, pair.green.hash, entry.hash].forEach(hash => hashes.add(hash));
+          }
+          events.push({ test: id, hashes: [...hashes].sort() });
+        }
+        for (const req of task.reqs) if (!task.tests.some(id => ents.get(id)?.refs.verifies.includes(req))) {
+          problem(req, 2, 'Required native REQ/TEST mapping is unavailable');
+        }
+      } catch (error) {
+        if (error instanceof PlanningError) problem(error.id, error.exit, error.message);
+        else if (error.code) problem(task.id, 2, `Native evidence input unavailable (${error.code})`);
+        else throw error;
+      }
+      return { bindings, events, errors };
+    };
+    return { ...loaded, adapter: { inspect, nativeChecks, run(argv, timeoutMs) {
+      const result = run1(argv, timeoutMs, '.', 8388609);
+      if (argv[1] === nativeScript && argv[2] === 'tdd' && result.exit === 2 && !result.error) {
+        result.error = 'Native verification is incomplete (exit 2)';
+      }
+      return result;
+    } } };
+  } catch (error) { return planningRefusal(error, 'structure'); }
+}
+
 /** @id CODE-GATESNAPSHOT-001 @implements REQ-GATESNAPSHOT-001 */
 function cmdGate() {
   const lines = [];
@@ -6852,6 +7037,9 @@ function cmdGate() {
   const specs = loadSpecs();
   const { ents, dups } = scanEntities(listFiles());
   const cfg = loadConfig();
+  const planning = planningSession(specs, { ents, dups });
+  if (planning.exit) return emitPlanningResult({ ...planning, stage: 'gate' }, flags.json);
+  let planningDecision = null, planningIds = null;
   const inputSnapshot = flags['no-run'] ? null : gateInputSnapshot(specs, ents, cfg);
   let inputsStable = true;
   const checkInputs = (stage) => {
@@ -6911,6 +7099,18 @@ function cmdGate() {
     for (const e of ents.values()) if (e.kind === 'TEST') { const last = entries.filter((x) => x.test === e.id && (x.type === 'green' || x.type === 'refactor')).at(-1); if (changedOracleDeps(last, e.path, e.id).some((f) => ch.has(f))) [...e.refs.verifies].forEach((r) => relevant.add(r)); }
     // a REQ edited in an already-committed spec is still stale evidence (#70)
     for (const e of ents.values()) if (e.kind === 'TEST') for (const r of e.refs.verifies) if (!relevant.has(r) && /changed in the spec/.test(evidenceStatus(e.id, e.path, entries).why ?? '')) relevant.add(r);
+  }
+  if (planning.enabled) {
+    try { planningIds = planningTaskScope(planning.model, {
+      changed: flags.changed ? changedFiles() : null, relevant, impactOne }); }
+    catch (error) { return emitPlanningResult(planningRefusal(error, 'gate'), flags.json); }
+    planningDecision = publicPlanningResult(evaluateImplementationPlan({ model: planning.model,
+      adapter: planning.adapter, stage: 'gate', taskIds: planningIds }));
+    if (planningDecision.exit === 1) add(false, 'planning: FAIL', planningDecision.errors.map(error => `${error.id}: ${error.reason}`));
+    else if (planningDecision.exit === 2) {
+      incomplete = true;
+      lines.push('! planning: INCOMPLETE', ...planningDecision.errors.map(error => `    ${error.id}: ${error.reason}`));
+    } else lines.push('✓ planning: PASS');
   }
   const problems = [];
   let covered = 0;
@@ -7294,8 +7494,22 @@ function cmdGate() {
     }
     scopeJson = { ...scopeCount, policy: cfg.scopePolicy === 'strict' ? 'strict' : 'warn', unscoped, waived, ...(newSrc.length ? { unannotated: newSrc } : {}), ...(flags.explain ? { explain } : {}) };
   }
+  if (planning.enabled && !flags['no-run']) {
+    const after = planningSession();
+    const result = after.exit ? { ...after, stage: 'gate' } : after.enabled
+      ? evaluateImplementationPlan({ model: after.model, adapter: after.adapter, stage: 'gate', taskIds: planningIds })
+      : { enabled: false, stage: 'gate', status: 'FAIL', exit: 1,
+        errors: [{ id: 'planning', reason: 'planning policy changed during gate', exit: 1 }], tasks: [] };
+    const current = publicPlanningResult(result);
+    if (current.exit === 1) add(false, 'planning inputs changed or are invalid after checks',
+      current.errors.map(error => `${error.id}: ${error.reason}`));
+    else if (current.exit === 2) { incomplete = true; lines.push('! planning after checks: INCOMPLETE',
+      ...current.errors.map(error => `    ${error.id}: ${error.reason}`)); }
+    planningDecision = current;
+  }
   const verdict = fail ? 'FAIL' : incomplete ? 'INCOMPLETE' : 'PASS';
-  if (flags.json) out(JSON.stringify({ verdict, lines, runnerEnv: runnerEnvRecord(), tdd: { weak: weakIds, suspect: suspectIds }, ...(scopeJson ? { scope: scopeJson } : {}) }));
+  if (flags.json) out(JSON.stringify({ verdict, lines, runnerEnv: runnerEnvRecord(), tdd: { weak: weakIds, suspect: suspectIds },
+    ...(planningDecision ? { planning: planningDecision } : {}), ...(scopeJson ? { scope: scopeJson } : {}) }));
   else { out(`SDD GATE ${verdict}`); lines.forEach((l) => out(l)); }
   return fail ? 1 : incomplete ? 2 : 0;
 }
@@ -7329,6 +7543,8 @@ function loadPlan() {
 }
 
 function cmdPlan(args) {
+  const planning = planningSession();
+  if (planning.enabled || planning.exit || pos.length > 1) return emitPlanningResult(runPlanningCommand(planning, pos, flags), flags.json);
   const rows = loadPlan();
   if (!rows) { out('no .sdd/plan.md (table: | order | feature | depends | note |)'); return 1; }
   const specs = loadSpecs();
@@ -7361,15 +7577,15 @@ function cmdPlan(args) {
   const problems = [];
   const warns = [...rows.bad];
   const seen = new Set();
-  const pos = new Map(rows.map((r) => [r.feature, r.order]));
+  const orderByFeature = new Map(rows.map((r) => [r.feature, r.order]));
   for (const r of rows) {
     if (seen.has(r.feature)) problems.push(`duplicate feature ${r.feature}`);
     seen.add(r.feature);
     if (!byFeat.has(r.feature)) warns.push(`${r.feature}: no spec yet`);
     for (const d of r.deps) {
-      if (!pos.has(d)) problems.push(`${r.feature}: unknown dependency ${d}`);
-      else if (pos.get(d) === r.order) problems.push(`${r.feature}: dependency ${d} has the same order number (${r.order}); give ${r.feature} a larger number`);
-      else if (pos.get(d) > r.order) problems.push(`${r.feature}: dependency ${d} is ordered after it (cycle or wrong order)`);
+      if (!orderByFeature.has(d)) problems.push(`${r.feature}: unknown dependency ${d}`);
+      else if (orderByFeature.get(d) === r.order) problems.push(`${r.feature}: dependency ${d} has the same order number (${r.order}); give ${r.feature} a larger number`);
+      else if (orderByFeature.get(d) > r.order) problems.push(`${r.feature}: dependency ${d} is ordered after it (cycle or wrong order)`);
     }
   }
   const done = new Map(rows.map((r) => [r.feature, isDone(r.feature)]));
@@ -7389,7 +7605,7 @@ function cmdPlan(args) {
   }
   const orphanReqs = [...new Set(tr.errors.map((e) => /references unknown (REQ-[A-Z0-9-]+)/.exec(e)?.[1]).filter(Boolean))].filter((u) => !specs.some((sp) => sp.reqs.some((r) => prefixOf(r.id) === prefixOf(u))));
   for (const u of orphanReqs) problems.push(`${u} is referenced by tests/code but no spec defines it (write the spec first)`);
-  const unlisted = specs.filter((sp) => !pos.has(sp.feature)).map((sp) => sp.feature);
+  const unlisted = specs.filter((sp) => !orderByFeature.has(sp.feature)).map((sp) => sp.feature);
   for (const f of unlisted) warns.push(`${f}: spec is not in plan.md${isDone(f) ? '' : ' and is not done'}`);
   for (const w of warns) out(`  ! ${w}`);
   for (const p of problems) out(`  ✗ ${p}`);
@@ -7779,7 +7995,10 @@ function impactOne(target, collect = false) {
 
 async function cmdContext() {
   const { runContext } = await import('./spec-context.mjs');
-  return runContext({ ROOT, pos, flags, loadSpecs, loadPlan, changedFiles, workspaceFiles, impactOne });
+  const planning = planningSession();
+  if (planning.exit) return emitPlanningResult({ ...planning, stage: 'context' }, flags.json);
+  return runContext({ ROOT, pos, flags, loadSpecs, loadPlan, changedFiles, workspaceFiles, impactOne,
+    planning: planning.enabled ? planning.model : null });
 }
 
 /** @id CODE-DIAGFLOW-001 @implements REQ-DIAGFLOW-001 REQ-DIAGFLOW-003 */
@@ -7805,6 +8024,13 @@ if (!fn) {
 if (fn && flags.help && !['impact', 'diagnostics'].includes(pos[0])) {
   out(`usage: sdd.mjs ${pos[0]} ${{ gate: '[--changed] [--no-run] [--verbose]', trace: '[--baseline] [--verbose]', context: '<feature|REQ|file>... [--changed] [--max-bytes N] [--json]' }[pos[0]] ?? '(see sdd.mjs --help for all commands)'}`.replace('sdd.mjs gate', 'gate').replace('sdd.mjs trace', 'trace'));
   process.exit(0);
+}
+if (planningCommand && !planningModules.length) {
+  const refusal = standalonePlanningRefusal();
+  if (refusal) {
+    out(flags.json ? JSON.stringify(refusal) : `SDD PLAN ${refusal.status}: ${refusal.errors[0].reason}`);
+    process.exit(refusal.exit);
+  }
 }
 try { process.exit(await fn() ?? 0); }
 catch (error) {

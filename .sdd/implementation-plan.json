@@ -212,7 +212,7 @@
         }
       ],
       "specs": {
-        ".sdd/specs/implementation-plan-evidence.md": "dae7a3b83b041dda3c83fec269834467d46de659e5958a6e00e1cd98a6204a72"
+        ".sdd/specs/implementation-plan-evidence.md": "2fd2e3453b97873e49cd4b6c01a5784951f4e7cf07efcb46f798a6645715a2fd"
       },
       "dependencies": {
         "TASK-PLAN-MODEL-001": "d50116ea76d5d4b601f2177591a7384dc96aa55a264702e0f521da6144a2a7fa",
@@ -255,7 +255,7 @@
         }
       ],
       "specs": {
-        ".sdd/specs/implementation-plan-evidence.md": "dae7a3b83b041dda3c83fec269834467d46de659e5958a6e00e1cd98a6204a72"
+        ".sdd/specs/implementation-plan-evidence.md": "2fd2e3453b97873e49cd4b6c01a5784951f4e7cf07efcb46f798a6645715a2fd"
       },
       "dependencies": {
         "TASK-PLAN-MODEL-001": "d50116ea76d5d4b601f2177591a7384dc96aa55a264702e0f521da6144a2a7fa",
@@ -299,7 +299,7 @@
         }
       ],
       "specs": {
-        ".sdd/specs/implementation-plan-evidence.md": "dae7a3b83b041dda3c83fec269834467d46de659e5958a6e00e1cd98a6204a72"
+        ".sdd/specs/implementation-plan-evidence.md": "2fd2e3453b97873e49cd4b6c01a5784951f4e7cf07efcb46f798a6645715a2fd"
       },
       "dependencies": {
         "TASK-PLAN-MODEL-001": "d50116ea76d5d4b601f2177591a7384dc96aa55a264702e0f521da6144a2a7fa",
@@ -344,7 +344,7 @@
         }
       ],
       "specs": {
-        ".sdd/specs/implementation-plan-evidence.md": "dae7a3b83b041dda3c83fec269834467d46de659e5958a6e00e1cd98a6204a72"
+        ".sdd/specs/implementation-plan-evidence.md": "2fd2e3453b97873e49cd4b6c01a5784951f4e7cf07efcb46f798a6645715a2fd"
       },
       "dependencies": {
         "TASK-PLAN-MODEL-001": "d50116ea76d5d4b601f2177591a7384dc96aa55a264702e0f521da6144a2a7fa",
@@ -367,12 +367,14 @@
       "dependsOn": [],
       "artifacts": [
         ".github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        ".github/skills/lean-sdd-tdd/scripts/implementation-plan-cli.mjs",
         ".github/skills/lean-sdd-tdd/scripts/implementation-plan-cli.test.mjs",
         "bin/musubix6.mjs"
       ],
       "condition": "Valid disabled legacy calls retain behavior; enabled plan/context/gate consume the same JSON and never fall back to Markdown.",
       "tests": [
-        "TEST-PLAN-CLI-001"
+        "TEST-PLAN-CLI-001",
+        "TEST-PLAN-CLI-005"
       ],
       "checks": [
         {
@@ -388,7 +390,7 @@
         }
       ],
       "specs": {
-        ".sdd/specs/implementation-plan-cli.md": "0f9bb125a22bcf76b1b0f1fac54a1bbf8539b4e48189cdfbb1922a45c14a34ce"
+        ".sdd/specs/implementation-plan-cli.md": "46060ea10432968cc8cadcdbcca8a1f116097823243dba825231ded60b5a5047"
       },
       "dependencies": {
         "TASK-PLAN-MODEL-001": "d50116ea76d5d4b601f2177591a7384dc96aa55a264702e0f521da6144a2a7fa",
@@ -400,7 +402,7 @@
         "TASK-PLAN-STATE-003": "d6510aeb57e0ec730a0b2b70b8ee2429b5cb40b3a2d448f22e9aa243c8c6ddf0",
         "TASK-PLAN-STATE-004": "3087097b5901d47d1dd16784baf81f5a3258df917bb7b26d92d5f37860678b55"
       },
-      "status": "not-started",
+      "status": "in-progress",
       "receipt": null
     },
     {
@@ -415,6 +417,7 @@
       ],
       "artifacts": [
         ".github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        ".github/skills/lean-sdd-tdd/scripts/implementation-plan-cli.mjs",
         ".github/skills/lean-sdd-tdd/scripts/implementation-plan-cli.test.mjs",
         "bin/musubix6.mjs"
       ],
@@ -436,7 +439,7 @@
         }
       ],
       "specs": {
-        ".sdd/specs/implementation-plan-cli.md": "0f9bb125a22bcf76b1b0f1fac54a1bbf8539b4e48189cdfbb1922a45c14a34ce"
+        ".sdd/specs/implementation-plan-cli.md": "46060ea10432968cc8cadcdbcca8a1f116097823243dba825231ded60b5a5047"
       },
       "dependencies": {
         "TASK-PLAN-CLI-001": "c64b7e37bb0907f437b5d8feee0ae826d35c6ce001ce90591017acd9bdeb4607",
@@ -449,7 +452,7 @@
         "TASK-PLAN-STATE-003": "d6510aeb57e0ec730a0b2b70b8ee2429b5cb40b3a2d448f22e9aa243c8c6ddf0",
         "TASK-PLAN-STATE-004": "3087097b5901d47d1dd16784baf81f5a3258df917bb7b26d92d5f37860678b55"
       },
-      "status": "not-started",
+      "status": "in-progress",
       "receipt": null
     },
     {
@@ -464,6 +467,8 @@
       ],
       "artifacts": [
         ".github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        ".github/skills/lean-sdd-tdd/scripts/implementation-plan-cli.mjs",
+        ".github/skills/lean-sdd-tdd/scripts/spec-context.mjs",
         ".github/skills/lean-sdd-tdd/scripts/implementation-plan-cli.test.mjs",
         "bin/musubix6.mjs"
       ],
@@ -485,7 +490,7 @@
         }
       ],
       "specs": {
-        ".sdd/specs/implementation-plan-cli.md": "0f9bb125a22bcf76b1b0f1fac54a1bbf8539b4e48189cdfbb1922a45c14a34ce"
+        ".sdd/specs/implementation-plan-cli.md": "46060ea10432968cc8cadcdbcca8a1f116097823243dba825231ded60b5a5047"
       },
       "dependencies": {
         "TASK-PLAN-CLI-001": "c64b7e37bb0907f437b5d8feee0ae826d35c6ce001ce90591017acd9bdeb4607",
@@ -498,7 +503,7 @@
         "TASK-PLAN-STATE-003": "d6510aeb57e0ec730a0b2b70b8ee2429b5cb40b3a2d448f22e9aa243c8c6ddf0",
         "TASK-PLAN-STATE-004": "3087097b5901d47d1dd16784baf81f5a3258df917bb7b26d92d5f37860678b55"
       },
-      "status": "not-started",
+      "status": "in-progress",
       "receipt": null
     },
     {
@@ -514,12 +519,14 @@
       ],
       "artifacts": [
         ".github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        ".github/skills/lean-sdd-tdd/scripts/implementation-plan-cli.mjs",
         ".github/skills/lean-sdd-tdd/scripts/implementation-plan-cli.test.mjs",
         "bin/musubix6.mjs"
       ],
       "condition": "Direct/wrapper human/JSON decisions agree: stage success0, invalid1, missing/unresolved/unavailable2; all command shapes are exercised.",
       "tests": [
-        "TEST-PLAN-CLI-004"
+        "TEST-PLAN-CLI-004",
+        "TEST-PLAN-CLI-005"
       ],
       "checks": [
         {
@@ -535,7 +542,7 @@
         }
       ],
       "specs": {
-        ".sdd/specs/implementation-plan-cli.md": "0f9bb125a22bcf76b1b0f1fac54a1bbf8539b4e48189cdfbb1922a45c14a34ce"
+        ".sdd/specs/implementation-plan-cli.md": "46060ea10432968cc8cadcdbcca8a1f116097823243dba825231ded60b5a5047"
       },
       "dependencies": {
         "TASK-PLAN-CLI-002": "fa3a43f266bb5c8812e012ac231826603d1e31967bb19c37ac3a602f8a03b81e",
@@ -549,7 +556,7 @@
         "TASK-PLAN-STATE-003": "d6510aeb57e0ec730a0b2b70b8ee2429b5cb40b3a2d448f22e9aa243c8c6ddf0",
         "TASK-PLAN-STATE-004": "3087097b5901d47d1dd16784baf81f5a3258df917bb7b26d92d5f37860678b55"
       },
-      "status": "not-started",
+      "status": "in-progress",
       "receipt": null
     },
     {

@@ -194,6 +194,9 @@ function taskInputs(model, task, adapter, rows) {
     if (!inspection.errors.length && !coverage) inspection = { ...inspection,
       errors: [{ id: task.id, exit: 2, reason: 'required current native ledger-event coverage is missing' }] };
   }
+  const inputsKnown = Object.values(inspection.bindings).every(value => value !== null && value !== undefined);
+  if (!inputsKnown && !inspection.errors.length) inspection = { ...inspection,
+    errors: [{ id: task.id, exit: 2, reason: 'required current native TEST binding is unavailable' }] };
   const commands = [...task.checks, ...native];
   for (const check of commands) EvidenceStore.require(check && typeof check.name === 'string'
     && Array.isArray(check.argv) && check.argv.length > 0 && check.argv.every(arg => typeof arg === 'string' && !arg.includes('\0'))
@@ -211,14 +214,15 @@ function taskInputs(model, task, adapter, rows) {
   const artifacts = task.artifacts.map(relative => [relative, fileBinding(relative)]);
   const dependencies = Object.fromEntries(task.effectiveDeps.map(id => {
     const dependency = rows.get(id);
-    EvidenceStore.require(dependency?.fingerprint, 2, task.id, `current prerequisite input ${id} is unavailable`);
+    EvidenceStore.require(dependency?.fingerprint && dependency.inputsKnown !== false,
+      2, task.id, `current prerequisite input ${id} is unavailable`);
     return [id, dependency.fingerprint];
   }));
   const specs = Object.keys(task.specs).sort().map(relative => [relative, planningFileSha256(model.root, relative)]);
   const fingerprint = planningSha256(JSON.stringify({ definition: task.definitionSha256, specs, artifacts,
     configuration: { declared: model.config, sha256: fileBinding('.sdd/config.json') },
     dependencies, verification: inspection.bindings, commands }));
-  return { fingerprint, dependencies, inspection, commands, artifacts,
+  return { fingerprint, dependencies, inspection, commands, artifacts, inputsKnown,
     bindingsCurrent: specs.every(([relative, current]) => task.specs[relative] === current)
       && Object.entries(dependencies).every(([id, current]) => task.dependencies[id] === current) };
 }
@@ -254,7 +258,8 @@ function evaluate(model, adapter, stage, taskIds, owner = null) {
         } else if (task.receipt !== head.path) {
           verificationExit = 1; reasons.push('authored receipt must name the current history head');
         } else if (head.inputSha256 !== inputs.fingerprint) {
-          verificationExit = 1; reasons.push('verification inputs changed');
+          verificationExit = inputs.inputsKnown ? 1 : EvidenceStore.verdict(inputs.inspection.errors).exit || 2;
+          reasons.push(inputs.inputsKnown ? 'verification inputs changed' : 'current native TEST binding is unavailable');
         } else if (head.exit !== 0) {
           verificationExit = head.exit; reasons.push('latest verification did not pass');
         } else if (inputs.inspection.errors.length) {
@@ -328,7 +333,7 @@ export function verifyImplementationTask({ model, taskId, adapter } = {}) {
       if (Buffer.byteLength(JSON.stringify(maximum, null, 2)) + 8192 > EvidenceStore.maxReceipt) {
         addError(2, 'verification metadata exceeds receipt budget; no checks executed');
       } else if (!before.ready) {
-        addError(before.state === 'replan-required' ? 1 : 2,
+        addError(before.state === 'replan-required' ? 1 : EvidenceStore.verdict(before.inspection.errors).exit || 2,
           before.reasons.join('; ') || before.inspection.errors.map(error => error.reason).join('; ') || 'current artifacts and complete prerequisites are required');
       } else {
         EvidenceStore.require(adapter && typeof adapter.run === 'function', 2, task.id, 'native command runner required');
