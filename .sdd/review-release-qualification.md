@@ -19,3 +19,29 @@ completed, tracked inputs stayed fixed, and trace has zero errors. No warning
 was silently removed or downgraded. Technical release readiness remains pending
 two fresh complete runs of one exact frozen 24-cell manifest. This record grants
 no main push, tag or npm-publication authority.
+
+## 0.2.6 nested oracle runtime delta (2026-11-03)
+
+| ID | Severity | Evidence | State |
+| --- | --- | --- | --- |
+| V026-ORACLE-PATH | S2 | The outer Node24 oracle supplied its PATH to mandatory nested Node20 mutations; required frozen ownership control timed out. | Fixture corrected using the existing canonicalEnvironment helper; preserves private environment, required controls, titles and budgets. Fresh qualification remains pending. |
+
+Claude Sonnet 5.5 reviewed only the source delta and its existing-plan evidence
+section: CLEAN. It inspected the actualMutation call site, canonicalEnvironment
+and environment consumption, but did not inspect execution logs or run tests.
+A subsequent narrower Sonnet 5.5 evidence review was CLEAN after reading the
+actual Red/Green, mutant and baseline/restoration logs and report. This was
+not a second full source review. Neither reviewer executed tests.
+
+The evidence review confirmed two native runtime-invariant assertion failures
+before correction, 29/29 zero-skip controls after correction, the same two
+assertion failures under isolated PATH reversal, and 29/29 restored controls.
+It verified the repository oracle SHA256
+`a02433743edbf70cf1c3bc36e33949c15fc946c6ad03d6dfe8679e9a9598d9b5`
+and read matching original/current work-copy digests in
+`v026-oracle-path-mutation-NExjTS/report.json`; it did not independently hash
+that work copy or read the entire external execution helper.
+The first spike's dependency setup error is not Red, and neither the fixture
+runs nor the failed 14-cell frozen prefix carry qualification credit.
+No requirement/policy approval, timeout increase, release-readiness finding,
+tag or publication authorization follows from these bounded reviews.
