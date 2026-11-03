@@ -1,0 +1,1352 @@
+{
+  "schemaVersion": 1,
+  "targetVersion": "0.2.7",
+  "stage": "candidate preparation only",
+  "qualificationCredit": 0,
+  "generatedAt": "2026-11-03T23:42:24.848Z",
+  "approval": {
+    "by": "nahisaho",
+    "source": "Explicit ask_user response: candidate preparation only",
+    "path": ".sdd/specs/claude-code-support.md",
+    "sha256": "4f61a0a55156505d3658907a5b8dd0c8b8e3eeb316f6723089f6501c16ee5d14",
+    "doesNotAuthorize": [
+      "main merge",
+      "tag",
+      "npm publication",
+      "support narrowing"
+    ]
+  },
+  "native": [
+    {
+      "phase": "red",
+      "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-version-native-red.log",
+      "sha256": "85014af2099577bf2dfb0d34bd0f4c012975010372735f43df92a0b0737eb0f3",
+      "output": "RED ok TEST-HOST-005 (REQ-HOST-005) 146ms — fails with: AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:"
+    },
+    {
+      "phase": "green",
+      "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-version-native-green.log",
+      "sha256": "b502ff64f423797fd824b2e877ab53df9d22a59d98ee104ca143a8824a1f1c92",
+      "output": "GREEN ok TEST-HOST-005 (REQ-HOST-005) 1013ms"
+    },
+    {
+      "phase": "final-refactor",
+      "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-version-native-final-refactor.log",
+      "sha256": "9b54ab73c6c5ee1527bf88c8d6319bd6b6b8bcf27536fb0520003a33c3a35d73",
+      "output": "REFACTOR ok TEST-HOST-005 (REQ-HOST-005) 1007ms"
+    }
+  ],
+  "validation": {
+    "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-version-validation-l034Gm/report.json",
+    "sha256": "a0d72b53397d64fe346a0086950017e9f4241e1770cd87e7382e5475e3625bd1",
+    "directory": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-version-validation-l034Gm",
+    "manifest": {
+      "package.json": "ceb7e371cf9812574dc221c6e4a0cd3e59f38046454de12a23ebf212c3450c39",
+      "package-lock.json": "20dd6417b700148f3059d2f1d392d278a7696de42740e1d4b15711a9792d4c57",
+      "bin/musubix6.mjs": "ade1dfe6866279c2b39a040228bd4226b43bdde9b18c04d0bb4ac15feee524ad",
+      "scripts/host-compatibility.test.mjs": "764d577dcbd4330de8d771b749880f1cca9bf96dd87cbf2ea59e2c8f9a546acc",
+      "README.md": "85c8b4a2da1f1b096701fe91e7ac21786ad6eafbfac57a0381e10d9d37b5146a",
+      "README-ja.md": "8c0629712e65236e21e024ac27e2a5531ff8e48c0b75c570e2f7f9e0fb3b3053",
+      "CLANGELOG.md": "4672f8cdbf67d0af126a0113ae57551739441110f693421772bf38124ee6c510"
+    },
+    "qualificationCredit": 0,
+    "runtimes": [
+      {
+        "argv": [
+          "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/runtimes/node20/bin/node",
+          "--test",
+          "--test-reporter=tap",
+          "scripts/host-compatibility.test.mjs"
+        ],
+        "exit": 0,
+        "signal": null,
+        "error": null,
+        "counts": {
+          "tests": 5,
+          "pass": 5,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "log": "node20-host.log",
+        "assertion": false,
+        "setupFailure": false,
+        "actualVersion": "v20.20.2",
+        "pass": true
+      },
+      {
+        "argv": [
+          "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/runtimes/node22/bin/node",
+          "--test",
+          "--test-reporter=tap",
+          "scripts/host-compatibility.test.mjs"
+        ],
+        "exit": 0,
+        "signal": null,
+        "error": null,
+        "counts": {
+          "tests": 5,
+          "pass": 5,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "log": "node22-host.log",
+        "assertion": false,
+        "setupFailure": false,
+        "actualVersion": "v22.23.3",
+        "pass": true
+      },
+      {
+        "argv": [
+          "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+          "--test",
+          "--test-reporter=tap",
+          "scripts/host-compatibility.test.mjs"
+        ],
+        "exit": 0,
+        "signal": null,
+        "error": null,
+        "counts": {
+          "tests": 5,
+          "pass": 5,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "log": "node24-host.log",
+        "assertion": false,
+        "setupFailure": false,
+        "actualVersion": "v24.22.1",
+        "pass": true
+      }
+    ],
+    "mutations": [
+      {
+        "name": "root-old",
+        "file": "package.json",
+        "mutant": {
+          "argv": [
+            "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+            "--test",
+            "--test-reporter=tap",
+            "--test-name-pattern",
+            "TEST-HOST-005(?![0-9A-Za-z])",
+            "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-version-validation-l034Gm/snapshot/scripts/host-compatibility.test.mjs"
+          ],
+          "exit": 1,
+          "signal": null,
+          "error": null,
+          "counts": {
+            "tests": 1,
+            "pass": 0,
+            "fail": 1,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          },
+          "log": "root-old-mutant.log",
+          "assertion": true,
+          "setupFailure": false
+        },
+        "restored": {
+          "argv": [
+            "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+            "--test",
+            "--test-reporter=tap",
+            "--test-name-pattern",
+            "TEST-HOST-005(?![0-9A-Za-z])",
+            "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-version-validation-l034Gm/snapshot/scripts/host-compatibility.test.mjs"
+          ],
+          "exit": 0,
+          "signal": null,
+          "error": null,
+          "counts": {
+            "tests": 1,
+            "pass": 1,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          },
+          "log": "root-old-restored.log",
+          "assertion": false,
+          "setupFailure": false
+        },
+        "pass": true
+      },
+      {
+        "name": "root-prerelease",
+        "file": "package.json",
+        "mutant": {
+          "argv": [
+            "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+            "--test",
+            "--test-reporter=tap",
+            "--test-name-pattern",
+            "TEST-HOST-005(?![0-9A-Za-z])",
+            "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-version-validation-l034Gm/snapshot/scripts/host-compatibility.test.mjs"
+          ],
+          "exit": 1,
+          "signal": null,
+          "error": null,
+          "counts": {
+            "tests": 1,
+            "pass": 0,
+            "fail": 1,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          },
+          "log": "root-prerelease-mutant.log",
+          "assertion": true,
+          "setupFailure": false
+        },
+        "restored": {
+          "argv": [
+            "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+            "--test",
+            "--test-reporter=tap",
+            "--test-name-pattern",
+            "TEST-HOST-005(?![0-9A-Za-z])",
+            "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-version-validation-l034Gm/snapshot/scripts/host-compatibility.test.mjs"
+          ],
+          "exit": 0,
+          "signal": null,
+          "error": null,
+          "counts": {
+            "tests": 1,
+            "pass": 1,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          },
+          "log": "root-prerelease-restored.log",
+          "assertion": false,
+          "setupFailure": false
+        },
+        "pass": true
+      },
+      {
+        "name": "lock-version",
+        "file": "package-lock.json",
+        "mutant": {
+          "argv": [
+            "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+            "--test",
+            "--test-reporter=tap",
+            "--test-name-pattern",
+            "TEST-HOST-005(?![0-9A-Za-z])",
+            "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-version-validation-l034Gm/snapshot/scripts/host-compatibility.test.mjs"
+          ],
+          "exit": 1,
+          "signal": null,
+          "error": null,
+          "counts": {
+            "tests": 1,
+            "pass": 0,
+            "fail": 1,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          },
+          "log": "lock-version-mutant.log",
+          "assertion": true,
+          "setupFailure": false
+        },
+        "restored": {
+          "argv": [
+            "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+            "--test",
+            "--test-reporter=tap",
+            "--test-name-pattern",
+            "TEST-HOST-005(?![0-9A-Za-z])",
+            "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-version-validation-l034Gm/snapshot/scripts/host-compatibility.test.mjs"
+          ],
+          "exit": 0,
+          "signal": null,
+          "error": null,
+          "counts": {
+            "tests": 1,
+            "pass": 1,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          },
+          "log": "lock-version-restored.log",
+          "assertion": false,
+          "setupFailure": false
+        },
+        "pass": true
+      },
+      {
+        "name": "root-lock-version",
+        "file": "package-lock.json",
+        "mutant": {
+          "argv": [
+            "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+            "--test",
+            "--test-reporter=tap",
+            "--test-name-pattern",
+            "TEST-HOST-005(?![0-9A-Za-z])",
+            "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-version-validation-l034Gm/snapshot/scripts/host-compatibility.test.mjs"
+          ],
+          "exit": 1,
+          "signal": null,
+          "error": null,
+          "counts": {
+            "tests": 1,
+            "pass": 0,
+            "fail": 1,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          },
+          "log": "root-lock-version-mutant.log",
+          "assertion": true,
+          "setupFailure": false
+        },
+        "restored": {
+          "argv": [
+            "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+            "--test",
+            "--test-reporter=tap",
+            "--test-name-pattern",
+            "TEST-HOST-005(?![0-9A-Za-z])",
+            "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-version-validation-l034Gm/snapshot/scripts/host-compatibility.test.mjs"
+          ],
+          "exit": 0,
+          "signal": null,
+          "error": null,
+          "counts": {
+            "tests": 1,
+            "pass": 1,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          },
+          "log": "root-lock-version-restored.log",
+          "assertion": false,
+          "setupFailure": false
+        },
+        "pass": true
+      },
+      {
+        "name": "packed-cli",
+        "file": "bin/musubix6.mjs",
+        "mutant": {
+          "argv": [
+            "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+            "--test",
+            "--test-reporter=tap",
+            "--test-name-pattern",
+            "TEST-HOST-005(?![0-9A-Za-z])",
+            "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-version-validation-l034Gm/snapshot/scripts/host-compatibility.test.mjs"
+          ],
+          "exit": 1,
+          "signal": null,
+          "error": null,
+          "counts": {
+            "tests": 1,
+            "pass": 0,
+            "fail": 1,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          },
+          "log": "packed-cli-mutant.log",
+          "assertion": true,
+          "setupFailure": false
+        },
+        "restored": {
+          "argv": [
+            "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+            "--test",
+            "--test-reporter=tap",
+            "--test-name-pattern",
+            "TEST-HOST-005(?![0-9A-Za-z])",
+            "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-version-validation-l034Gm/snapshot/scripts/host-compatibility.test.mjs"
+          ],
+          "exit": 0,
+          "signal": null,
+          "error": null,
+          "counts": {
+            "tests": 1,
+            "pass": 1,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          },
+          "log": "packed-cli-restored.log",
+          "assertion": false,
+          "setupFailure": false
+        },
+        "pass": true
+      },
+      {
+        "name": "candidate-heading",
+        "file": "CLANGELOG.md",
+        "mutant": {
+          "argv": [
+            "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+            "--test",
+            "--test-reporter=tap",
+            "--test-name-pattern",
+            "TEST-HOST-005(?![0-9A-Za-z])",
+            "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-version-validation-l034Gm/snapshot/scripts/host-compatibility.test.mjs"
+          ],
+          "exit": 1,
+          "signal": null,
+          "error": null,
+          "counts": {
+            "tests": 1,
+            "pass": 0,
+            "fail": 1,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          },
+          "log": "candidate-heading-mutant.log",
+          "assertion": true,
+          "setupFailure": false
+        },
+        "restored": {
+          "argv": [
+            "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+            "--test",
+            "--test-reporter=tap",
+            "--test-name-pattern",
+            "TEST-HOST-005(?![0-9A-Za-z])",
+            "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-version-validation-l034Gm/snapshot/scripts/host-compatibility.test.mjs"
+          ],
+          "exit": 0,
+          "signal": null,
+          "error": null,
+          "counts": {
+            "tests": 1,
+            "pass": 1,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          },
+          "log": "candidate-heading-restored.log",
+          "assertion": false,
+          "setupFailure": false
+        },
+        "pass": true
+      },
+      {
+        "name": "README.md-source",
+        "file": "README.md",
+        "mutant": {
+          "argv": [
+            "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+            "--test",
+            "--test-reporter=tap",
+            "--test-name-pattern",
+            "TEST-HOST-005(?![0-9A-Za-z])",
+            "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-version-validation-l034Gm/snapshot/scripts/host-compatibility.test.mjs"
+          ],
+          "exit": 1,
+          "signal": null,
+          "error": null,
+          "counts": {
+            "tests": 1,
+            "pass": 0,
+            "fail": 1,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          },
+          "log": "README.md-source-mutant.log",
+          "assertion": true,
+          "setupFailure": false
+        },
+        "restored": {
+          "argv": [
+            "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+            "--test",
+            "--test-reporter=tap",
+            "--test-name-pattern",
+            "TEST-HOST-005(?![0-9A-Za-z])",
+            "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-version-validation-l034Gm/snapshot/scripts/host-compatibility.test.mjs"
+          ],
+          "exit": 0,
+          "signal": null,
+          "error": null,
+          "counts": {
+            "tests": 1,
+            "pass": 1,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          },
+          "log": "README.md-source-restored.log",
+          "assertion": false,
+          "setupFailure": false
+        },
+        "pass": true
+      },
+      {
+        "name": "README.md-availability",
+        "file": "README.md",
+        "mutant": {
+          "argv": [
+            "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+            "--test",
+            "--test-reporter=tap",
+            "--test-name-pattern",
+            "TEST-HOST-005(?![0-9A-Za-z])",
+            "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-version-validation-l034Gm/snapshot/scripts/host-compatibility.test.mjs"
+          ],
+          "exit": 1,
+          "signal": null,
+          "error": null,
+          "counts": {
+            "tests": 1,
+            "pass": 0,
+            "fail": 1,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          },
+          "log": "README.md-availability-mutant.log",
+          "assertion": true,
+          "setupFailure": false
+        },
+        "restored": {
+          "argv": [
+            "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+            "--test",
+            "--test-reporter=tap",
+            "--test-name-pattern",
+            "TEST-HOST-005(?![0-9A-Za-z])",
+            "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-version-validation-l034Gm/snapshot/scripts/host-compatibility.test.mjs"
+          ],
+          "exit": 0,
+          "signal": null,
+          "error": null,
+          "counts": {
+            "tests": 1,
+            "pass": 1,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          },
+          "log": "README.md-availability-restored.log",
+          "assertion": false,
+          "setupFailure": false
+        },
+        "pass": true
+      },
+      {
+        "name": "README.md-update-availability",
+        "file": "README.md",
+        "mutant": {
+          "argv": [
+            "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+            "--test",
+            "--test-reporter=tap",
+            "--test-name-pattern",
+            "TEST-HOST-005(?![0-9A-Za-z])",
+            "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-version-validation-l034Gm/snapshot/scripts/host-compatibility.test.mjs"
+          ],
+          "exit": 1,
+          "signal": null,
+          "error": null,
+          "counts": {
+            "tests": 1,
+            "pass": 0,
+            "fail": 1,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          },
+          "log": "README.md-update-availability-mutant.log",
+          "assertion": true,
+          "setupFailure": false
+        },
+        "restored": {
+          "argv": [
+            "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+            "--test",
+            "--test-reporter=tap",
+            "--test-name-pattern",
+            "TEST-HOST-005(?![0-9A-Za-z])",
+            "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-version-validation-l034Gm/snapshot/scripts/host-compatibility.test.mjs"
+          ],
+          "exit": 0,
+          "signal": null,
+          "error": null,
+          "counts": {
+            "tests": 1,
+            "pass": 1,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          },
+          "log": "README.md-update-availability-restored.log",
+          "assertion": false,
+          "setupFailure": false
+        },
+        "pass": true
+      },
+      {
+        "name": "README.md-tag",
+        "file": "README.md",
+        "mutant": {
+          "argv": [
+            "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+            "--test",
+            "--test-reporter=tap",
+            "--test-name-pattern",
+            "TEST-HOST-005(?![0-9A-Za-z])",
+            "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-version-validation-l034Gm/snapshot/scripts/host-compatibility.test.mjs"
+          ],
+          "exit": 1,
+          "signal": null,
+          "error": null,
+          "counts": {
+            "tests": 1,
+            "pass": 0,
+            "fail": 1,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          },
+          "log": "README.md-tag-mutant.log",
+          "assertion": true,
+          "setupFailure": false
+        },
+        "restored": {
+          "argv": [
+            "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+            "--test",
+            "--test-reporter=tap",
+            "--test-name-pattern",
+            "TEST-HOST-005(?![0-9A-Za-z])",
+            "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-version-validation-l034Gm/snapshot/scripts/host-compatibility.test.mjs"
+          ],
+          "exit": 0,
+          "signal": null,
+          "error": null,
+          "counts": {
+            "tests": 1,
+            "pass": 1,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          },
+          "log": "README.md-tag-restored.log",
+          "assertion": false,
+          "setupFailure": false
+        },
+        "pass": true
+      },
+      {
+        "name": "README.md-divergence",
+        "file": "README.md",
+        "mutant": {
+          "argv": [
+            "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+            "--test",
+            "--test-reporter=tap",
+            "--test-name-pattern",
+            "TEST-HOST-005(?![0-9A-Za-z])",
+            "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-version-validation-l034Gm/snapshot/scripts/host-compatibility.test.mjs"
+          ],
+          "exit": 1,
+          "signal": null,
+          "error": null,
+          "counts": {
+            "tests": 1,
+            "pass": 0,
+            "fail": 1,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          },
+          "log": "README.md-divergence-mutant.log",
+          "assertion": true,
+          "setupFailure": false
+        },
+        "restored": {
+          "argv": [
+            "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+            "--test",
+            "--test-reporter=tap",
+            "--test-name-pattern",
+            "TEST-HOST-005(?![0-9A-Za-z])",
+            "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-version-validation-l034Gm/snapshot/scripts/host-compatibility.test.mjs"
+          ],
+          "exit": 0,
+          "signal": null,
+          "error": null,
+          "counts": {
+            "tests": 1,
+            "pass": 1,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          },
+          "log": "README.md-divergence-restored.log",
+          "assertion": false,
+          "setupFailure": false
+        },
+        "pass": true
+      },
+      {
+        "name": "README.md-publication-limit",
+        "file": "README.md",
+        "mutant": {
+          "argv": [
+            "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+            "--test",
+            "--test-reporter=tap",
+            "--test-name-pattern",
+            "TEST-HOST-005(?![0-9A-Za-z])",
+            "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-version-validation-l034Gm/snapshot/scripts/host-compatibility.test.mjs"
+          ],
+          "exit": 1,
+          "signal": null,
+          "error": null,
+          "counts": {
+            "tests": 1,
+            "pass": 0,
+            "fail": 1,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          },
+          "log": "README.md-publication-limit-mutant.log",
+          "assertion": true,
+          "setupFailure": false
+        },
+        "restored": {
+          "argv": [
+            "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+            "--test",
+            "--test-reporter=tap",
+            "--test-name-pattern",
+            "TEST-HOST-005(?![0-9A-Za-z])",
+            "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-version-validation-l034Gm/snapshot/scripts/host-compatibility.test.mjs"
+          ],
+          "exit": 0,
+          "signal": null,
+          "error": null,
+          "counts": {
+            "tests": 1,
+            "pass": 1,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          },
+          "log": "README.md-publication-limit-restored.log",
+          "assertion": false,
+          "setupFailure": false
+        },
+        "pass": true
+      },
+      {
+        "name": "README-ja.md-source",
+        "file": "README-ja.md",
+        "mutant": {
+          "argv": [
+            "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+            "--test",
+            "--test-reporter=tap",
+            "--test-name-pattern",
+            "TEST-HOST-005(?![0-9A-Za-z])",
+            "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-version-validation-l034Gm/snapshot/scripts/host-compatibility.test.mjs"
+          ],
+          "exit": 1,
+          "signal": null,
+          "error": null,
+          "counts": {
+            "tests": 1,
+            "pass": 0,
+            "fail": 1,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          },
+          "log": "README-ja.md-source-mutant.log",
+          "assertion": true,
+          "setupFailure": false
+        },
+        "restored": {
+          "argv": [
+            "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+            "--test",
+            "--test-reporter=tap",
+            "--test-name-pattern",
+            "TEST-HOST-005(?![0-9A-Za-z])",
+            "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-version-validation-l034Gm/snapshot/scripts/host-compatibility.test.mjs"
+          ],
+          "exit": 0,
+          "signal": null,
+          "error": null,
+          "counts": {
+            "tests": 1,
+            "pass": 1,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          },
+          "log": "README-ja.md-source-restored.log",
+          "assertion": false,
+          "setupFailure": false
+        },
+        "pass": true
+      },
+      {
+        "name": "README-ja.md-availability",
+        "file": "README-ja.md",
+        "mutant": {
+          "argv": [
+            "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+            "--test",
+            "--test-reporter=tap",
+            "--test-name-pattern",
+            "TEST-HOST-005(?![0-9A-Za-z])",
+            "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-version-validation-l034Gm/snapshot/scripts/host-compatibility.test.mjs"
+          ],
+          "exit": 1,
+          "signal": null,
+          "error": null,
+          "counts": {
+            "tests": 1,
+            "pass": 0,
+            "fail": 1,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          },
+          "log": "README-ja.md-availability-mutant.log",
+          "assertion": true,
+          "setupFailure": false
+        },
+        "restored": {
+          "argv": [
+            "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+            "--test",
+            "--test-reporter=tap",
+            "--test-name-pattern",
+            "TEST-HOST-005(?![0-9A-Za-z])",
+            "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-version-validation-l034Gm/snapshot/scripts/host-compatibility.test.mjs"
+          ],
+          "exit": 0,
+          "signal": null,
+          "error": null,
+          "counts": {
+            "tests": 1,
+            "pass": 1,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          },
+          "log": "README-ja.md-availability-restored.log",
+          "assertion": false,
+          "setupFailure": false
+        },
+        "pass": true
+      },
+      {
+        "name": "README-ja.md-update-availability",
+        "file": "README-ja.md",
+        "mutant": {
+          "argv": [
+            "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+            "--test",
+            "--test-reporter=tap",
+            "--test-name-pattern",
+            "TEST-HOST-005(?![0-9A-Za-z])",
+            "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-version-validation-l034Gm/snapshot/scripts/host-compatibility.test.mjs"
+          ],
+          "exit": 1,
+          "signal": null,
+          "error": null,
+          "counts": {
+            "tests": 1,
+            "pass": 0,
+            "fail": 1,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          },
+          "log": "README-ja.md-update-availability-mutant.log",
+          "assertion": true,
+          "setupFailure": false
+        },
+        "restored": {
+          "argv": [
+            "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+            "--test",
+            "--test-reporter=tap",
+            "--test-name-pattern",
+            "TEST-HOST-005(?![0-9A-Za-z])",
+            "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-version-validation-l034Gm/snapshot/scripts/host-compatibility.test.mjs"
+          ],
+          "exit": 0,
+          "signal": null,
+          "error": null,
+          "counts": {
+            "tests": 1,
+            "pass": 1,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          },
+          "log": "README-ja.md-update-availability-restored.log",
+          "assertion": false,
+          "setupFailure": false
+        },
+        "pass": true
+      },
+      {
+        "name": "README-ja.md-tag",
+        "file": "README-ja.md",
+        "mutant": {
+          "argv": [
+            "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+            "--test",
+            "--test-reporter=tap",
+            "--test-name-pattern",
+            "TEST-HOST-005(?![0-9A-Za-z])",
+            "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-version-validation-l034Gm/snapshot/scripts/host-compatibility.test.mjs"
+          ],
+          "exit": 1,
+          "signal": null,
+          "error": null,
+          "counts": {
+            "tests": 1,
+            "pass": 0,
+            "fail": 1,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          },
+          "log": "README-ja.md-tag-mutant.log",
+          "assertion": true,
+          "setupFailure": false
+        },
+        "restored": {
+          "argv": [
+            "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+            "--test",
+            "--test-reporter=tap",
+            "--test-name-pattern",
+            "TEST-HOST-005(?![0-9A-Za-z])",
+            "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-version-validation-l034Gm/snapshot/scripts/host-compatibility.test.mjs"
+          ],
+          "exit": 0,
+          "signal": null,
+          "error": null,
+          "counts": {
+            "tests": 1,
+            "pass": 1,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          },
+          "log": "README-ja.md-tag-restored.log",
+          "assertion": false,
+          "setupFailure": false
+        },
+        "pass": true
+      },
+      {
+        "name": "README-ja.md-divergence",
+        "file": "README-ja.md",
+        "mutant": {
+          "argv": [
+            "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+            "--test",
+            "--test-reporter=tap",
+            "--test-name-pattern",
+            "TEST-HOST-005(?![0-9A-Za-z])",
+            "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-version-validation-l034Gm/snapshot/scripts/host-compatibility.test.mjs"
+          ],
+          "exit": 1,
+          "signal": null,
+          "error": null,
+          "counts": {
+            "tests": 1,
+            "pass": 0,
+            "fail": 1,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          },
+          "log": "README-ja.md-divergence-mutant.log",
+          "assertion": true,
+          "setupFailure": false
+        },
+        "restored": {
+          "argv": [
+            "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+            "--test",
+            "--test-reporter=tap",
+            "--test-name-pattern",
+            "TEST-HOST-005(?![0-9A-Za-z])",
+            "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-version-validation-l034Gm/snapshot/scripts/host-compatibility.test.mjs"
+          ],
+          "exit": 0,
+          "signal": null,
+          "error": null,
+          "counts": {
+            "tests": 1,
+            "pass": 1,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          },
+          "log": "README-ja.md-divergence-restored.log",
+          "assertion": false,
+          "setupFailure": false
+        },
+        "pass": true
+      },
+      {
+        "name": "README-ja.md-publication-limit",
+        "file": "README-ja.md",
+        "mutant": {
+          "argv": [
+            "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+            "--test",
+            "--test-reporter=tap",
+            "--test-name-pattern",
+            "TEST-HOST-005(?![0-9A-Za-z])",
+            "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-version-validation-l034Gm/snapshot/scripts/host-compatibility.test.mjs"
+          ],
+          "exit": 1,
+          "signal": null,
+          "error": null,
+          "counts": {
+            "tests": 1,
+            "pass": 0,
+            "fail": 1,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          },
+          "log": "README-ja.md-publication-limit-mutant.log",
+          "assertion": true,
+          "setupFailure": false
+        },
+        "restored": {
+          "argv": [
+            "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+            "--test",
+            "--test-reporter=tap",
+            "--test-name-pattern",
+            "TEST-HOST-005(?![0-9A-Za-z])",
+            "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-version-validation-l034Gm/snapshot/scripts/host-compatibility.test.mjs"
+          ],
+          "exit": 0,
+          "signal": null,
+          "error": null,
+          "counts": {
+            "tests": 1,
+            "pass": 1,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          },
+          "log": "README-ja.md-publication-limit-restored.log",
+          "assertion": false,
+          "setupFailure": false
+        },
+        "pass": true
+      }
+    ],
+    "isolatedBaseline": {
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "--test",
+        "--test-reporter=tap",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-version-validation-l034Gm/snapshot/scripts/host-compatibility.test.mjs"
+      ],
+      "exit": 0,
+      "signal": null,
+      "error": null,
+      "counts": {
+        "tests": 5,
+        "pass": 5,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "log": "isolated-baseline.log",
+      "assertion": false,
+      "setupFailure": false
+    },
+    "isolatedFinal": {
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "--test",
+        "--test-reporter=tap",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-version-validation-l034Gm/snapshot/scripts/host-compatibility.test.mjs"
+      ],
+      "exit": 0,
+      "signal": null,
+      "error": null,
+      "counts": {
+        "tests": 5,
+        "pass": 5,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "log": "isolated-final.log",
+      "assertion": false,
+      "setupFailure": false
+    },
+    "diagnostics": {
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "diagnostics",
+        "--profile",
+        "javascript",
+        "--root",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-version-validation-l034Gm/diagnostics",
+        "--json"
+      ],
+      "exit": 0,
+      "signal": null,
+      "error": null,
+      "counts": {},
+      "log": "diagnostics.log",
+      "assertion": false,
+      "setupFailure": false
+    },
+    "sourceUnchanged": true,
+    "pass": true,
+    "limits": "Version-bound host controls and isolated changed-test JS diagnostics only; not a full native gate, all-stack lint, new planning revalidation or frozen release qualification."
+  },
+  "prose": {
+    "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-version-prose-LZrE4z/report.json",
+    "sha256": "1636a22fb0d10279d6d3d19b82e3d57239f16a5388b9c6351127a6a6d8d64e71",
+    "directory": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-version-prose-LZrE4z",
+    "wholeFileSha256": "8c0629712e65236e21e024ac27e2a5531ff8e48c0b75c570e2f7f9e0fb3b3053",
+    "immutableOriginalSha256": "8c0629712e65236e21e024ac27e2a5531ff8e48c0b75c570e2f7f9e0fb3b3053",
+    "scope": "Only required candidate-version references and inherited-Windows heading changed before the prose pass. Optimize/review the changed Japanese paragraphs only; preserve all commands, versions, obligations and scope. No optional prose rewrite.",
+    "changedParagraphs": 9,
+    "commands": [
+      {
+        "argv": [
+          "/home/nahisaho/.cache/uv/environments-v2/test-engine-881fc0be89d7ab82/bin/python",
+          "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree/.github/skills/japanese-prose/scripts/lint.py",
+          "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-version-prose-LZrE4z/changed-ja.md",
+          "--genre",
+          "tech",
+          "--json"
+        ],
+        "exit": 0,
+        "signal": null,
+        "error": null,
+        "log": "prose-baseline.json"
+      },
+      {
+        "argv": [
+          "/home/nahisaho/.cache/uv/environments-v2/test-engine-881fc0be89d7ab82/bin/python",
+          "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree/.github/skills/japanese-prose/scripts/lint.py",
+          "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-version-prose-LZrE4z/changed-ja.md",
+          "--genre",
+          "tech",
+          "--reading-load",
+          "--json"
+        ],
+        "exit": 0,
+        "signal": null,
+        "error": null,
+        "log": "reading-load.json"
+      },
+      {
+        "argv": [
+          "/home/nahisaho/.cache/uv/environments-v2/test-engine-881fc0be89d7ab82/bin/python",
+          "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree/.github/skills/japanese-prose/scripts/outline.py",
+          "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-version-prose-LZrE4z/changed-ja.md"
+        ],
+        "exit": 0,
+        "signal": null,
+        "error": null,
+        "log": "outline.json"
+      },
+      {
+        "argv": [
+          "/home/nahisaho/.cache/uv/environments-v2/test-engine-881fc0be89d7ab82/bin/python",
+          "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree/.github/skills/japanese-prose/scripts/terms.py",
+          "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-version-prose-LZrE4z/changed-ja.md",
+          "--json"
+        ],
+        "exit": 0,
+        "signal": null,
+        "error": null,
+        "log": "terms.json"
+      },
+      {
+        "argv": [
+          "/home/nahisaho/.cache/uv/environments-v2/test-engine-881fc0be89d7ab82/bin/python",
+          "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree/.github/skills/japanese-prose/scripts/lint.py",
+          "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-version-prose-LZrE4z/changed-ja.md",
+          "--genre",
+          "tech",
+          "--baseline",
+          "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-version-prose-LZrE4z/prose-baseline.json",
+          "--json"
+        ],
+        "exit": 0,
+        "signal": null,
+        "error": null,
+        "log": "prose-final.json"
+      },
+      {
+        "argv": [
+          "/home/nahisaho/.cache/uv/environments-v2/test-engine-881fc0be89d7ab82/bin/python",
+          "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree/.github/skills/japanese-prose/scripts/invariants.py",
+          "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-version-prose-original.md",
+          "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree/README-ja.md",
+          "--protect",
+          "musubix6",
+          "--protect",
+          "Claude",
+          "--protect",
+          "Copilot",
+          "--json"
+        ],
+        "exit": 0,
+        "signal": null,
+        "error": null,
+        "log": "invariants.json"
+      },
+      {
+        "argv": [
+          "/home/nahisaho/.cache/uv/environments-v2/test-engine-881fc0be89d7ab82/bin/python",
+          "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree/.github/skills/tech-writer/scripts/lint.py",
+          "--json",
+          "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree/README.md"
+        ],
+        "exit": 0,
+        "signal": null,
+        "error": null,
+        "log": "README.md-structure.json"
+      },
+      {
+        "argv": [
+          "/home/nahisaho/.cache/uv/environments-v2/test-engine-881fc0be89d7ab82/bin/python",
+          "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree/.github/skills/tech-writer/scripts/lint.py",
+          "--json",
+          "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-version-prose-LZrE4z/baseline-README.md"
+        ],
+        "exit": 0,
+        "signal": null,
+        "error": null,
+        "log": "README.md-structure-baseline.json"
+      },
+      {
+        "argv": [
+          "/home/nahisaho/.cache/uv/environments-v2/test-engine-881fc0be89d7ab82/bin/python",
+          "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree/.github/skills/tech-writer/scripts/lint.py",
+          "--json",
+          "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree/README-ja.md"
+        ],
+        "exit": 0,
+        "signal": null,
+        "error": null,
+        "log": "README-ja.md-structure.json"
+      },
+      {
+        "argv": [
+          "/home/nahisaho/.cache/uv/environments-v2/test-engine-881fc0be89d7ab82/bin/python",
+          "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree/.github/skills/tech-writer/scripts/lint.py",
+          "--json",
+          "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-version-prose-LZrE4z/baseline-README-ja.md"
+        ],
+        "exit": 0,
+        "signal": null,
+        "error": null,
+        "log": "README-ja.md-structure-baseline.json"
+      },
+      {
+        "argv": [
+          "/home/nahisaho/.cache/uv/environments-v2/test-engine-881fc0be89d7ab82/bin/python",
+          "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree/.github/skills/tech-writer/scripts/lint.py",
+          "--atomic",
+          "--json",
+          "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-version-prose-LZrE4z/candidate-entry.md"
+        ],
+        "exit": 0,
+        "signal": null,
+        "error": null,
+        "log": "candidate-entry-structure.json"
+      }
+    ],
+    "wholeFileUnchanged": true,
+    "status": "Japanese prose optimization completed",
+    "initialScore": 100,
+    "finalScore": 100,
+    "decisions": "No optional rewrite. Six extracted terms retain established product/technical meanings in existing README context.",
+    "structuralDecisions": "Both whole-README lints exactly match their16 baseline flags by category/message/snippet; zero new flags. New atomic candidate entry has zero flags."
+  },
+  "reviews": [
+    {
+      "agent": "46c60bff-e22d-497a-b107-6ff6dad59083",
+      "model": "claude-sonnet-5.5",
+      "result": "CLEAN after stale dependent-oracle S2 fix and final metadata/docs diff review",
+      "limits": "Diff/one-line reads only; no execution or implementation-claim audit."
+    },
+    {
+      "agent": "71a28a67-40b0-43e5-b278-74d593ddb14b",
+      "model": "claude-sonnet-5.5",
+      "result": "CLEAN on test diff, actual report/native logs/scoped diagnostics",
+      "limits": "No execution, runner-body or prose audit."
+    }
+  ],
+  "checkpointCI": {
+    "commit": "d7659a1c06fe3d5d222201d1bc42b9ddfb93f57d",
+    "windows": {
+      "runId": 41730888352,
+      "conclusion": "success"
+    },
+    "test": {
+      "runId": 41730888446,
+      "conclusion": "failure",
+      "failures": [
+        "invalid-Git diagnostic oracle",
+        "release-policy fixture admission"
+      ]
+    },
+    "candidateCredit": 0
+  },
+  "remaining": [
+    "fix retained CI failures",
+    "own-plan bindings/adoption",
+    "integrated full native gate",
+    "two complete identical frozen qualification runs",
+    "exact-artifact human release approval"
+  ]
+}

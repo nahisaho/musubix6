@@ -227,10 +227,10 @@
   "claude-code-support": {
     "by": "nahisaho",
     "kind": "human",
-    "review": "Human approved stable 0.2.6 identity at cfe802292d3869e71e432e076c4617eb99738bb9e9275719dda9596c13647f84; publication excluded.",
-    "at": "2026-11-02T12:26:56.286Z",
+    "review": "Explicit ask_user approval of the prepared0.2.7 host requirement SHA2564f61a0a55156505d3658907a5b8dd0c8b8e3eeb316f6723089f6501c16ee5d14 and shown coupled oracle/test paths and hashes; candidate preparation only, no main merge/tag/npm publication authority; version contract and oracle reviewed independently by Claude Sonnet5.5.",
+    "at": "2026-11-03T23:33:16.667Z",
     "artifacts": {
-      ".sdd/specs/claude-code-support.md": "cfe802292d3869e71e432e076c4617eb99738bb9e9275719dda9596c13647f84"
+      ".sdd/specs/claude-code-support.md": "4f61a0a55156505d3658907a5b8dd0c8b8e3eeb316f6723089f6501c16ee5d14"
     },
     "tier": "T2",
     "requireHuman": true,

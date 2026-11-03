@@ -3,6 +3,43 @@
 User-facing changes to musubix6, with upgrade guidance and known release limitations.
 Release dates use Japan Standard Time (UTC+09:00).
 
+## [0.2.7] - Candidate prepared 2026-11-04
+
+This entry describes the prepared candidate, not its publication status or
+release date. No existing CLI command or minimum-runtime requirement is removed.
+Implementation planning remains disabled unless explicitly enabled.
+
+### Added
+
+- Add opt-in JSON implementation plans with specification and requirement
+  coverage, task dependencies and current-input fingerprints.
+- Track transitive stale inputs and verify tasks against native TDD evidence
+  and required checks, retaining successful and failed verification receipts.
+- Extend context and scoped/full gates with task ownership and prerequisite
+  closure while preserving existing behavior when planning is disabled.
+- Document plan authoring, explicit receipt adoption, progress updates and
+  stale-input recovery in the four development roles and both READMEs.
+
+### Upgrade
+
+Check `npm view musubix6@0.2.7 version` before installing the exact version;
+`@latest` may point elsewhere. Back up local skill edits and follow the
+host-specific README update steps to refresh copied skills with `init --force`.
+Updating the CLI alone does not refresh existing project skill copies.
+
+Planning does not rewrite the authored JSON. After successful task verification,
+explicitly adopt the returned current successful receipt and update task status.
+Projects that do not enable planning retain the existing workflow.
+
+### Validation and limitations
+
+- Retain the Linux x86_64 release scope. Windows development controls, macOS,
+  actual WSL containers and live Claude interactions do not establish
+  qualified release support.
+- Require the full native gate, two fresh unchanged qualification runs and
+  separate exact-artifact human publication approval before release.
+  Earlier versions' evidence grants this candidate no qualification credit.
+
 ## [0.2.6] - Candidate prepared 2026-11-02
 
 This entry describes the prepared candidate, not its publication status or
