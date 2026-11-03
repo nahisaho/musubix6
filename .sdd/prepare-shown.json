@@ -1,6 +1,6 @@
 {
   "claude-code-support": "cfe802292d3869e71e432e076c4617eb99738bb9e9275719dda9596c13647f84",
-  "release-qualification": "32612fd772e11538393aa2fae2584329378119d83b1a15303a6fa1191a86896d",
+  "release-qualification": "43327c66886f6bd4a1cde99c489b7c9cf4853eb57fc78564d8811e7cad44161f",
   "npx-update-notice": "f4ceea311a4fac6e6cfc64feac1e2898276c3fb93573f20f71742a4a6a47f631",
   "diagnostics-contract": "95d303e10ce1bf4b954af0e978e6a8a0a9034ed8fafc136f99d650dfc00a972f",
   "rust-stub-confidence": "abc368bc69b2fb764009653c11638cd817a6f0f4f0b6e21a004861665e11f1a0",

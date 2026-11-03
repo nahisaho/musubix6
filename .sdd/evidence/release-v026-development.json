@@ -1,23 +1,31 @@
 {
   "schema": 1,
   "purpose": "stable0.2.6 development evidence, not release qualification or publication authorization",
-  "recordedAt": "2026-11-02T22:59:14.821Z",
+  "recordedAt": "2026-11-03T00:29:36.374Z",
   "targetVersion": "0.2.6",
   "qualifyingCredit": 0,
   "technicalReady": false,
   "publishingAuthorized": false,
   "source": [
     {
+      "path": ".github/skills/lean-sdd-tdd/scripts/diagnostics.test.mjs",
+      "sha256": "62e481e0e708679889da7b984e2c1438071a08da0e061f7a432e1e4759b07519"
+    },
+    {
       "path": ".github/workflows/publish.yml",
       "sha256": "097f0f03b38bce0a2ff3260af847c8aa191d68bb37807cbafa9e4b022057a30f"
     },
     {
+      "path": ".sdd/plan.md",
+      "sha256": "3a3c5d8767175d0e33520a10a5a2efb71f43c137811ce8e57adecab06799e6c0"
+    },
+    {
       "path": ".sdd/release-content-mutations.v0.2.6.json",
-      "sha256": "3c121aaab9978dba64586ad72fc014108237aaacad79d9c7519c2f183aa78d69"
+      "sha256": "0d43b5eec2450e446a47a00b6789c5f2ca93ed7373bfd15d9b1b86ae1be977fb"
     },
     {
       "path": ".sdd/release-validation.v0.2.6.json",
-      "sha256": "7ef445e62e3c31faf73c4bd5849f2df44a6b917d1bdfc155ba0d731deb06fe8f"
+      "sha256": "53e9794c78104332fa0ffe0590adcc85151befa2bb3f78875380d7653683e245"
     },
     {
       "path": ".sdd/specs/claude-code-support.md",
@@ -25,7 +33,7 @@
     },
     {
       "path": ".sdd/specs/release-qualification.md",
-      "sha256": "32612fd772e11538393aa2fae2584329378119d83b1a15303a6fa1191a86896d"
+      "sha256": "43327c66886f6bd4a1cde99c489b7c9cf4853eb57fc78564d8811e7cad44161f"
     },
     {
       "path": "CLANGELOG.md",
@@ -700,20 +708,83 @@
           "sha256": "a916b578be2b48dd9392b63725b1f30ecd9b3fce52a5f1dc834008f5f3c7355e"
         }
       ]
+    },
+    {
+      "name": "reject-absent-owned-process",
+      "file": ".github/skills/lean-sdd-tdd/scripts/diagnostics.test.mjs",
+      "baselineExit": 0,
+      "mutationExit": 1,
+      "restoredExit": 0,
+      "logs": [
+        {
+          "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-mutations-yCe2EJ/reject-absent-owned-process-baseline.log",
+          "sha256": "85a8ff0d710174e9e0f0d062bc2cefcd13c47083bea6ca4b7c47aaaf9de3e1a4"
+        },
+        {
+          "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-mutations-yCe2EJ/reject-absent-owned-process-mutant.log",
+          "sha256": "43c42c7fc8c411e54221d047afca15520d340c849ab0f3fce854cd1a863b1706"
+        },
+        {
+          "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-mutations-yCe2EJ/reject-absent-owned-process-restored.log",
+          "sha256": "9658655617adf316e112d00d4da75a9b09559d9da685ecc81d10d472c0930618"
+        }
+      ]
+    },
+    {
+      "name": "swallow-owned-cleanup-errors",
+      "file": ".github/skills/lean-sdd-tdd/scripts/diagnostics.test.mjs",
+      "baselineExit": 0,
+      "mutationExit": 1,
+      "restoredExit": 0,
+      "logs": [
+        {
+          "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-mutations-yCe2EJ/swallow-owned-cleanup-errors-baseline.log",
+          "sha256": "ba87c8843732d6e8ed8056476fcc12327128813bdcb485621fc8b297a1ad7c4d"
+        },
+        {
+          "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-mutations-yCe2EJ/swallow-owned-cleanup-errors-mutant.log",
+          "sha256": "f6709b3e4d7da1357c1fe75112423219808e884247791eb5f781af3b90a3ef77"
+        },
+        {
+          "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-mutations-yCe2EJ/swallow-owned-cleanup-errors-restored.log",
+          "sha256": "239842e506c16a0d0b346fdfb34e4810075be04be20b110e5b53e87c4713b09c"
+        }
+      ]
+    },
+    {
+      "name": "change-owned-cleanup-signal",
+      "file": ".github/skills/lean-sdd-tdd/scripts/diagnostics.test.mjs",
+      "baselineExit": 0,
+      "mutationExit": 1,
+      "restoredExit": 0,
+      "logs": [
+        {
+          "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-mutations-yCe2EJ/change-owned-cleanup-signal-baseline.log",
+          "sha256": "a70abe3e04631bc7c5808859ba08a811c964e7666f3f2099d6c85df87dca1441"
+        },
+        {
+          "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-mutations-yCe2EJ/change-owned-cleanup-signal-mutant.log",
+          "sha256": "544ea8ca285baba9e11e9d13d4940f60dc6c6378ccd296d0df126c062651c201"
+        },
+        {
+          "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-mutations-yCe2EJ/change-owned-cleanup-signal-restored.log",
+          "sha256": "bf98bdffb17031e27b0198bd5be2941251b683b5e5242ce9a920653dfcb03ee3"
+        }
+      ]
     }
   ],
   "retainedReports": [
     {
-      "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-feasibility.json",
-      "sha256": "1d9e2a7276be955f4b7fd2f34dd4f94ae565516d0cf95a2dc3fe277389a0eec2"
+      "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-cleanup-feasibility.json",
+      "sha256": "0336b0bde15c89525f8a0b1c89a828d9efb8fb38848c0521aa03cc3496d6894e"
     },
     {
-      "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-publication-feasibility.json",
-      "sha256": "ff86d940344ebd46857b9dbdcc83409ce9561aa0df7be26d54ed1fb4f1d9a422"
+      "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-cleanup-publication-feasibility.json",
+      "sha256": "e29a3e14dc342084cc9b19a4832fffe98d77cdf57af54a2fa10acb14e465bf60"
     },
     {
-      "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-native-package.json",
-      "sha256": "45a21521bcab1d2091624eb9cbb7c332bdff8b2cb0ab335b73939c8de1f247bd"
+      "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-cleanup-native-package.json",
+      "sha256": "bc0c2e4853d50b4d675be673ef675e6f54df0484545e8c5f4daef7eaf7c17ac6"
     },
     {
       "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-mutations.json",
@@ -729,7 +800,7 @@
     },
     {
       "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-diagnostics.json",
-      "sha256": "98ab61747bf52e2c1df1e2c19ef81bef74b924f63b3ee4fcfeb3558ff36d7f6e"
+      "sha256": "5ded69902b73aa0208eb9263813ac938b782f6491a3772ea20533077a1f39db2"
     },
     {
       "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-publisher-policy-red.log",
@@ -754,6 +825,34 @@
     {
       "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-native-ginza-control.log",
       "sha256": "a317d11f83531fb739a6957941bc8a4832d6dc3d022b7f7acb62ef8774784bd7"
+    },
+    {
+      "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-cleanup-race-red.log",
+      "sha256": "969cd9e56a2aea24ef2302ece60bc7dbdfd9a3fc805e5f2d8f3639646ba6cf93"
+    },
+    {
+      "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-cleanup-race-green.log",
+      "sha256": "ad98d224825cf885e5da2dfec3ae2a9d4f13a33ac1f6e5bc96eceecdac1a2251"
+    },
+    {
+      "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-cleanup-race-refactor.log",
+      "sha256": "44384395de8d161db6358664cd21f703895722b9917de295428f57783a5d7a52"
+    },
+    {
+      "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-cleanup-dependent-refactors.log",
+      "sha256": "2555ec8aca557f4b9aef6bd40b2ec37e90ef82e7168acf6d740980f5a51e7ffc"
+    },
+    {
+      "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-cleanup-mutations.json",
+      "sha256": "1ef1aa9d8206b62bad8c3eb988c4c08392c68c49ad5ba8f6f36f9cd8d7f18571"
+    },
+    {
+      "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-cleanup-contract-transform.json",
+      "sha256": "66015ef9af569ba0c933c6ef8635e38e03f8b6e1b6d6203c327017fef3f7fbc9"
+    },
+    {
+      "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-ci-uv-dry-run-failed.log",
+      "sha256": "7ffa7135c28051e606015ebef6433749662f26b593c1383ab371cb0e687e78ee"
     },
     {
       "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-ci-dry-run-failed.log",
@@ -783,12 +882,26 @@
     "oracleFollowup": "Found unbound actual dry-run env; pack order and intended failure reasons also strengthened.",
     "fixDelta": "Clean: actual-expression binding, all eight policy rows, pack/auth ordering and intended failures.",
     "provisioningDelta": "Directly reviewed two-line existing-CI provisioning reuse plus actual-shell successful/nonzero installer controls. Earlier independent reviews do not cover this subsequent delta; hosted verification remains required.",
+    "cleanupInventoryDelta": "Independent Claude Sonnet5.5 review clean: errno-only cleanup, deterministic controls and approved successor inventory/metadata. Review did not rerun full gate or native spike.",
     "openFindings": []
+  },
+  "fixtureRepair": {
+    "assertionRed": {
+      "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-cleanup-race-red.log",
+      "sha256": "969cd9e56a2aea24ef2302ece60bc7dbdfd9a3fc805e5f2d8f3639646ba6cf93"
+    },
+    "formalGreen": "REFUSED because the shared test helper changed the oracle hash; not claimed as a new matching Red/Green",
+    "passingEvidence": "Two targeted explicitly labelled Refactors, followed by all actual stale dependent Refactors, plus three isolated detected/restored mutations; all existing deadline/payload/descendant rows retained. Shared-preamble warning is retained, not new assertion Red/Green evidence."
   },
   "diagnostics": {
     "changedJavaScriptFiles": 1,
-    "baselineErrors": 0,
-    "changedErrors": 0,
+    "baselineErrors": 3,
+    "changedErrors": 2,
+    "addedErrors": 0,
+    "removedErrors": 1,
+    "baselineStatus": "FAIL",
+    "changedStatus": "FAIL",
+    "remaining": "Pre-existing literal ESC no-control-regex and unused NODE_TEST_CONTEXT in fixture source; not diagnostics-clean.",
     "workflowYaml": "Parsed by existing private Ruby YAML.safe_load_file",
     "documentation": "16 inherited structural findings per README; zero new findings. Japanese prose97/reading-load99; invariants preserved."
   },
@@ -813,8 +926,21 @@
     "id": "REL026-CI-UV",
     "severity": "S2",
     "firstFailureStage": "trusted inputs",
-    "state": "FIXED_IN_SOURCE_HOSTED_VERIFICATION_PENDING",
+    "state": "RESOLVED_HOSTED_GINZA_PASSED",
     "description": "Publish workflow lacked explicit uv provisioning for required GiNZA integration tests."
+  },
+  "supersededProvisioningCandidate": {
+    "sourceCommit": "bb0fdd368d4f71b18de402bda2180335e5f1d97a",
+    "localGate": "PASS before packaged cleanup fixture changed; no transferred gate or qualification credit",
+    "hostedDryRun": "41541792484: uv installation and GiNZA passed, owned descendant cleanup threw ESRCH; Publish skipped",
+    "qualifyingCredit": 0
+  },
+  "cleanupIntegrationFinding": {
+    "id": "REL026-CI-CLEANUP",
+    "severity": "S2",
+    "firstFailureStage": "execution",
+    "state": "FIXED_IN_SOURCE_HOSTED_VERIFICATION_PENDING",
+    "description": "Test-owned descendant can exit between running probe and final kill; accept only ESRCH and propagate other errors."
   },
   "limits": [
     "Recording npm fixture is not actual registry publication.",

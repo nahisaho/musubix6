@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "revision": 5,
+  "revision": 6,
   "targetVersion": "0.2.6",
-  "revisionReason": "Stable 0.2.6 successor from committed b30a1bd4deef46126337d710b3a87e486103c106: retain every previous skill path and source/package mode; refresh approved sdd.mjs bytes and add both committed Windows test files. All 111 Git blobs/archive/package modes independently verified. Preserve 24 required cells/budgets, historical mappings, 13 semantic mechanisms, 60 origin sensitivities and all placeholder policies. Extend the unchanged ten source byte/mode challenges to both added files (1110 source, 1170 vendor, 1183 total skill cases). Preserve old contracts and failed evidence; transfer zero credit.",
+  "revisionReason": "Refresh only the committed diagnostics.test.mjs fixture bytes after hosted41541792484 exposed an ESRCH cleanup race. Reference Git1dccdfb093ce367127dd09eae16a3fc2c1585bfc and its independently verified111-file tree; retain every file/mode,1110source/60origin/1183total skill cases,13semantic and14placeholder mechanisms. Publish CI explicitly provisions required uv; test cleanup accepts only an already-absent owned process and retains other errors. Preserve all24Linux cells/budgets/exclusions and failed/interrupted evidence; transfer zero credit.",
   "previousRevision": {
-    "number": 4,
-    "sha256": "532a429caac6e10bf6365572e244b154b1311b0f1bf7ab044d258deb493477f0"
+    "number": 5,
+    "sha256": "3c121aaab9978dba64586ad72fc014108237aaacad79d9c7519c2f183aa78d69"
   },
   "status": "proposed-normative-contract-not-approval-or-run-evidence",
   "originalExactSemanticsRecovered": false,
@@ -1401,8 +1401,8 @@
     "definition": "existing markerPolicyRows/contextPolicyRows expected-count pairs, not the linter output; same line numbers/snippets/JSON keys checked in source and installed outputs; no replacement by full-suite-only coverage"
   },
   "vendorReference": {
-    "sourceCommit": "b30a1bd4deef46126337d710b3a87e486103c106",
-    "sourceSkillTree": "fe1743df8532cf6b3314b5275a32f8f797ec4fb7",
+    "sourceCommit": "1dccdfb093ce367127dd09eae16a3fc2c1585bfc",
+    "sourceSkillTree": "79f75a015b60568c3e8c4a53fcdeae13c5953cb1",
     "origin": "Exact committed musubix6 candidate, not an upstream-equivalence claim. All 111 content digests independently checked against committed Git blobs; exact nine-bit source modes require this human approval.",
     "intendedLocalDeltas": [
       {
@@ -1434,6 +1434,11 @@
         "path": ".sdd/specs/windows-runner.md",
         "description": "#383/#384 verified Windows executable/npm/SDK provenance behavior; native CI is development evidence, not release support expansion.",
         "sha256": "c95ec5e975258ae1e82f13ad70fea56403ebdddc4cad2f2eb28c3b521d06f07c"
+      },
+      {
+        "path": ".github/skills/lean-sdd-tdd/scripts/diagnostics.test.mjs",
+        "sha256": "62e481e0e708679889da7b984e2c1438071a08da0e061f7a432e1e4759b07519",
+        "description": "Test-only owned-process cleanup race repair: ESRCH is already absent; all other errors propagate. Deterministic controls and three restored mutations; provider implementation and twelve close-time rows unchanged."
       }
     ],
     "skillNames": [
@@ -1845,7 +1850,7 @@
       {
         "path": ".github/skills/lean-sdd-tdd/scripts/diagnostics.test.mjs",
         "mode": 436,
-        "sha256": "74cb5ef0f0ae18c792e9c9cdaddaf5d4c936145d51b24e825b142f40d15e5955",
+        "sha256": "62e481e0e708679889da7b984e2c1438071a08da0e061f7a432e1e4759b07519",
         "packageMode": 420,
         "sourceModeOctal": "0664",
         "packageModeOctal": "0644"

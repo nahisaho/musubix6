@@ -2,13 +2,13 @@
   "schemaVersion": 1,
   "targetVersion": "0.2.6",
   "status": "scope-contract-not-run-evidence",
-  "revision": 11,
+  "revision": 12,
   "policy": "docs/design-sdd-hardening.md section 3.5",
   "inheritedManifest": {
     "path": ".sdd/release-validation.v0.2.0.json",
     "sha256": "e2f221e308e2fb4389f044e12c42cb2083e314b97305ae1701f65cd399c37de6"
   },
-  "revisionReason": "Stable 0.2.6 successor from committed b30a1bd4deef46126337d710b3a87e486103c106: retain every previous skill path and source/package mode; refresh approved sdd.mjs bytes and add both committed Windows test files. All 111 Git blobs/archive/package modes independently verified. Preserve 24 required cells/budgets, historical mappings, 13 semantic mechanisms, 60 origin sensitivities and all placeholder policies. Extend the unchanged ten source byte/mode challenges to both added files (1110 source, 1170 vendor, 1183 total skill cases). Preserve old contracts and failed evidence; transfer zero credit.",
+  "revisionReason": "Refresh only the committed diagnostics.test.mjs fixture bytes after hosted41541792484 exposed an ESRCH cleanup race. Reference Git1dccdfb093ce367127dd09eae16a3fc2c1585bfc and its independently verified111-file tree; retain every file/mode,1110source/60origin/1183total skill cases,13semantic and14placeholder mechanisms. Publish CI explicitly provisions required uv; test cleanup accepts only an already-absent owned process and retains other errors. Preserve all24Linux cells/budgets/exclusions and failed/interrupted evidence; transfer zero credit.",
   "historicalTestLineage": {
     "version": 1,
     "sourceCommit": "b30a1bd4deef46126337d710b3a87e486103c106",
@@ -89,7 +89,7 @@
   },
   "contentMutationContract": {
     "path": ".sdd/release-content-mutations.v0.2.6.json",
-    "sha256": "3c121aaab9978dba64586ad72fc014108237aaacad79d9c7519c2f183aa78d69",
+    "sha256": "0d43b5eec2450e446a47a00b6789c5f2ca93ed7373bfd15d9b1b86ae1be977fb",
     "approvalRequired": true,
     "status": "proposed-not-approved-or-executed"
   },
@@ -100,8 +100,8 @@
   },
   "frozenManifest": "Generated separately after preflight; binds this approved plan's SHA256, exact candidate inputs, commands and named catalogues before any qualifying run",
   "previousRevision": {
-    "number": 10,
-    "sha256": "88a97b0a0b9c2158372796eae37df320e8800db0f31a3b18f0679deb530c8309",
+    "number": 11,
+    "sha256": "7ef445e62e3c31faf73c4bd5849f2df44a6b917d1bdfc155ba0d731deb06fe8f",
     "qualificationCreditBefore": 0,
     "qualificationCreditAfter": 0
   },
@@ -290,7 +290,9 @@
       "#381 Rust stub confidence and scoped inference",
       "#382 host-aware development instructions",
       "#383 Windows native npm/npm.cmd launch and executable provenance",
-      "#384 MSVC INCLUDE/LIB/LIBPATH inheritance and SDK provenance"
+      "#384 MSVC INCLUDE/LIB/LIBPATH inheritance and SDK provenance",
+      "Explicit uv provisioning before required publish-CI GiNZA integration tests",
+      "ESRCH-only owned-descendant test cleanup repair, with unchanged provider behavior and close-time assertions"
     ],
     "currentNamedCatalogue": "pending reconstruction and freeze; no historical count assumed"
   },

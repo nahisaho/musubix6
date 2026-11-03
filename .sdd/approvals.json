@@ -252,12 +252,12 @@
   "release-qualification": {
     "by": "nahisaho",
     "kind": "human",
-    "review": "Explicit approval of seven exact paths/hashes for missing-uv counterexample; retain all24cells and reset interrupted candidate credit, no tagging/publication authority",
-    "at": "2026-11-02T22:54:40.819Z",
+    "review": "Explicit approval of7exactpaths/hashes forplanrev12/contentrev6;111files/1183cases/24cells unchanged, newGit-bound packagedfixture bytes, labelledRefactor/mutations notnewformalGreen; zero transferredcredit and no publication approval",
+    "at": "2026-11-03T00:26:01.418Z",
     "artifacts": {
-      ".sdd/specs/release-qualification.md": "32612fd772e11538393aa2fae2584329378119d83b1a15303a6fa1191a86896d",
-      ".sdd/release-validation.v0.2.6.json": "7ef445e62e3c31faf73c4bd5849f2df44a6b917d1bdfc155ba0d731deb06fe8f",
-      ".sdd/release-content-mutations.v0.2.6.json": "3c121aaab9978dba64586ad72fc014108237aaacad79d9c7519c2f183aa78d69",
+      ".sdd/specs/release-qualification.md": "43327c66886f6bd4a1cde99c489b7c9cf4853eb57fc78564d8811e7cad44161f",
+      ".sdd/release-validation.v0.2.6.json": "53e9794c78104332fa0ffe0590adcc85151befa2bb3f78875380d7653683e245",
+      ".sdd/release-content-mutations.v0.2.6.json": "0d43b5eec2450e446a47a00b6789c5f2ca93ed7373bfd15d9b1b86ae1be977fb",
       ".sdd/specs/claude-code-support.md": "cfe802292d3869e71e432e076c4617eb99738bb9e9275719dda9596c13647f84",
       "README.md": "21855184a2a8dc015ec050918cb1cd789cb166ec64867ee503a6bf0ebf852dca",
       "README-ja.md": "cf8c172207c14d0fae8fa62f76f4db15b0ad7036aec3733103c1ccf864f91a63",
