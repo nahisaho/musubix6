@@ -310,5 +310,17 @@
     },
     "tier": "T2",
     "requireHuman": false
+  },
+  "implementation-plan-evidence": {
+    "by": "ai:claude-sonnet-5.5",
+    "kind": "ai",
+    "review": ".sdd/review-implementation-plan-evidence.md",
+    "reviewSha": "1a337bb46bed9ef3d3556c5598fb2a2aa7be799c8ba42752d5a5a8ae31982e7f",
+    "at": "2026-11-03T20:40:54.505Z",
+    "artifacts": {
+      ".sdd/specs/implementation-plan-evidence.md": "dae7a3b83b041dda3c83fec269834467d46de659e5958a6e00e1cd98a6204a72"
+    },
+    "tier": "T2",
+    "requireHuman": false
   }
 }

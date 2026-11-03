@@ -212,7 +212,7 @@
         }
       ],
       "specs": {
-        ".sdd/specs/implementation-plan-evidence.md": "a22bb1998cdee2dee1b012b505a356b6048ee87685b2ef9cb0fe73ea3a9bfea0"
+        ".sdd/specs/implementation-plan-evidence.md": "dae7a3b83b041dda3c83fec269834467d46de659e5958a6e00e1cd98a6204a72"
       },
       "dependencies": {
         "TASK-PLAN-MODEL-001": "d50116ea76d5d4b601f2177591a7384dc96aa55a264702e0f521da6144a2a7fa",
@@ -220,7 +220,7 @@
         "TASK-PLAN-MODEL-003": "d0ae64978f778ee8e8e5b98b59fedf3e2a3760d6d4c0291ecf4047c2774c2572",
         "TASK-PLAN-MODEL-004": "441ca4712b4bb671d1dfbd6141afd9cb9ffb1574aa0f5183328daa64fd3609f6"
       },
-      "status": "not-started",
+      "status": "in-progress",
       "receipt": null
     },
     {
@@ -255,7 +255,7 @@
         }
       ],
       "specs": {
-        ".sdd/specs/implementation-plan-evidence.md": "a22bb1998cdee2dee1b012b505a356b6048ee87685b2ef9cb0fe73ea3a9bfea0"
+        ".sdd/specs/implementation-plan-evidence.md": "dae7a3b83b041dda3c83fec269834467d46de659e5958a6e00e1cd98a6204a72"
       },
       "dependencies": {
         "TASK-PLAN-MODEL-001": "d50116ea76d5d4b601f2177591a7384dc96aa55a264702e0f521da6144a2a7fa",
@@ -264,7 +264,7 @@
         "TASK-PLAN-MODEL-004": "441ca4712b4bb671d1dfbd6141afd9cb9ffb1574aa0f5183328daa64fd3609f6",
         "TASK-PLAN-STATE-001": "0b109ca6321d5356e6f54357bd5c2c8cb2f44cb246788962cfa4751e5c4d9219"
       },
-      "status": "not-started",
+      "status": "in-progress",
       "receipt": null
     },
     {
@@ -299,7 +299,7 @@
         }
       ],
       "specs": {
-        ".sdd/specs/implementation-plan-evidence.md": "a22bb1998cdee2dee1b012b505a356b6048ee87685b2ef9cb0fe73ea3a9bfea0"
+        ".sdd/specs/implementation-plan-evidence.md": "dae7a3b83b041dda3c83fec269834467d46de659e5958a6e00e1cd98a6204a72"
       },
       "dependencies": {
         "TASK-PLAN-MODEL-001": "d50116ea76d5d4b601f2177591a7384dc96aa55a264702e0f521da6144a2a7fa",
@@ -308,7 +308,7 @@
         "TASK-PLAN-MODEL-004": "441ca4712b4bb671d1dfbd6141afd9cb9ffb1574aa0f5183328daa64fd3609f6",
         "TASK-PLAN-STATE-001": "0b109ca6321d5356e6f54357bd5c2c8cb2f44cb246788962cfa4751e5c4d9219"
       },
-      "status": "not-started",
+      "status": "in-progress",
       "receipt": null
     },
     {
@@ -344,7 +344,7 @@
         }
       ],
       "specs": {
-        ".sdd/specs/implementation-plan-evidence.md": "a22bb1998cdee2dee1b012b505a356b6048ee87685b2ef9cb0fe73ea3a9bfea0"
+        ".sdd/specs/implementation-plan-evidence.md": "dae7a3b83b041dda3c83fec269834467d46de659e5958a6e00e1cd98a6204a72"
       },
       "dependencies": {
         "TASK-PLAN-MODEL-001": "d50116ea76d5d4b601f2177591a7384dc96aa55a264702e0f521da6144a2a7fa",
@@ -354,7 +354,7 @@
         "TASK-PLAN-STATE-002": "7d10f7049d486610457d01cb1b7d479875924ae5125cca9a5fd25617b4dabaa9",
         "TASK-PLAN-STATE-003": "d6510aeb57e0ec730a0b2b70b8ee2429b5cb40b3a2d448f22e9aa243c8c6ddf0"
       },
-      "status": "not-started",
+      "status": "in-progress",
       "receipt": null
     },
     {
