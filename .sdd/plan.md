@@ -194,3 +194,39 @@ baseline and restoration. The existing provider budgets, all 12 close-time
 rows and the real descendant assertions remain unchanged. Actual logs are
 retained as v026-cleanup-race-{red,green,refactor}.log and
 v026-cleanup-mutations.json; hosted successor validation remains required.
+
+## Release 0.2.6: nested oracle runtime pairing (2026-11-03)
+
+- REQ: `REQ-RELQ-002`, `REQ-RELQ-003`, `REQ-RELQ-004`.
+- PASS condition: Each actual mandatory nested mutation selects Node20 both by explicit executable and by the first canonical PATH directory, preserves the outer cell's private HOME/cache variables, and passes its original baseline, owned-assertion mutant and byte-restoration controls. All 29 named oracle self-tests remain required with the original 300-second per-test and 600-second cell budgets.
+- Counterexample: The Node24 ORACLE-SELFTEST context supplies a Node24-first PATH to an explicitly selected Node20 mutation. Reject that mismatched input by assertion; reconstruct only PATH for the selected Node20 and accept the genuine iterator and ownership controls. Reversing that correction must again fail the same assertion.
+- TEST/command: `v026-oracle-root-check.mjs runtime-red 1`; `v026-oracle-root-check.mjs runtime-green 0 all`; `v026-oracle-path-mutation.mjs`. These external harnesses execute the actual repository oracle file under the retained Node24 context; they grant zero qualification credit.
+- Observed evidence: The assertion-only repository change failed both mandatory controls before the helper repair (`v026-oracle-runtime-red-8tt9wy`). After repair, all 29 controls passed, zero skipped/cancelled/TODO, in 43.0 seconds (`v026-oracle-runtime-green-lwnbe8`). The isolated PATH reversal was assertion-detected; all 29 passed before mutation and after exact restoration (`v026-oracle-path-mutation-NExjTS/report.json`, restored duration 43.7 seconds). The restored oracle SHA256 is `a02433743edbf70cf1c3bc36e33949c15fc946c6ad03d6dfe8679e9a9598d9b5`.
+
+First-failure stages: contract = retain the existing per-runtime canonical PATH
+and exact-control rules; trusted inputs = first violated condition is mixing
+the selected Node20 executable with the outer Node24 PATH; execution = nested
+children must inherit that same selected runtime and private cell state;
+verdict = mismatched inputs assertion-fail and genuine controls remain accepted;
+history = retain the original timeout, both assertion Reds and all restoration
+evidence; integration/distribution = the oracle helper is not npm-shipped, but
+its Git-bound source changes, requiring a new candidate/full checks/freeze and
+two entirely fresh complete 24-cell runs. No stage is waived.
+
+The original frozen run `run-9ifKby` passed 14 cells, then timed out the required
+ownership oracle at 300 seconds; its second run never started and its clean-run
+streak remains zero. The isolated comparison corrected only PATH and completed
+the ownership control in 24.7 seconds. This establishes the input defect and a
+working correction, not a reconstruction of the original timeout's stack.
+The first spike failed setup because its copy omitted pinned node_modules;
+that attempt (`v026-oracle-environment-A0CDSO`) is retained and is not Red or
+qualification evidence. The dependency-restored comparison is retained as
+`v026-oracle-environment-X94Zel`.
+
+This is a test-fixture correction, not a new same-hash production Red/Green
+pair. No release requirement, approved policy/content artifact, catalogue
+title, owned assertion, timeout or support exclusion was weakened. Actual npm
+authentication now succeeds in same-head hosted dry-run 41625285777 (attempt
+3, npm identity nahisaho); that repairs the credential blocker, not the failed
+matrix or publication approval. Full checks and fresh qualification of the
+successor candidate are still required; no tag or npm publication is authorized.

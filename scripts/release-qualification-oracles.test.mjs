@@ -69,9 +69,14 @@ async function actualMutation(t, id) {
   const cell = { id: 'MUTATION', runtime: '20', kind: 'mutation', timeoutSeconds: 300 };
   const catalogue = cellCatalogue(manifest, cell, source).filter(row => row.id === id);
   assert.equal(catalogue.length, 1);
-  const node = context.configuration.runtimes.find(row => row.major === 20).executable;
+  const runtime = context.configuration.runtimes.find(row => row.major === 20);
+  const node = runtime.executable;
+  const environment = { ...context.environment,
+    PATH: canonicalEnvironment(context.configuration, runtime).canonicalPath };
+  assert.equal(environment.PATH.split(path.delimiter)[0], path.dirname(node),
+    'Nested mutation PATH must select its declared Node20, not the outer oracle Node24.');
   const result = await runAdapter({ cell, source, output: root, node, catalogue,
-    environment: context.environment, configuration: context.configuration });
+    environment, configuration: context.configuration });
   assert.equal(result.status, 'PASS');
   assert.equal(result.cases.length, 1);
   assert.equal(result.cases[0].mutant.exit, 1);
