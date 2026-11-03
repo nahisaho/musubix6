@@ -4,5 +4,9 @@
   "npx-update-notice": "f4ceea311a4fac6e6cfc64feac1e2898276c3fb93573f20f71742a4a6a47f631",
   "diagnostics-contract": "95d303e10ce1bf4b954af0e978e6a8a0a9034ed8fafc136f99d650dfc00a972f",
   "rust-stub-confidence": "abc368bc69b2fb764009653c11638cd817a6f0f4f0b6e21a004861665e11f1a0",
-  "windows-runner": "c95ec5e975258ae1e82f13ad70fea56403ebdddc4cad2f2eb28c3b521d06f07c"
+  "windows-runner": "c95ec5e975258ae1e82f13ad70fea56403ebdddc4cad2f2eb28c3b521d06f07c",
+  "implementation-plan-contract": "e17d79769daddaee739076e77033225e13a2173dfa0f4aa9813eb6fd03adcf67",
+  "implementation-plan-evidence": "7e88457e5fe509f41d3480c1f4d62ec8492af11857afc4cbad5397caa846175c",
+  "implementation-plan-cli": "5a5b6c5e5280ff57d099e801eb340f4bf122187576ce1f35ef2e4b66b21b6652",
+  "implementation-plan-workflow": "bed75633241e34b7e6efe8ca9080a97d96d3c5cc4749d9fe5a9805c5ff543ff3"
 }

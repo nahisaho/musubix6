@@ -1,6 +1,12 @@
-# Diagnostics: 要件定義と実装順序
-対象読者は musubix6 の利用者・開発エージェント・実装担当者です。編集後の診断契約と、実装前に確かめる条件を共有します。
-更新日: 2026-10-19。v1はcommit `58b0f8f` で変更対象gate（全npmテストを含む）まで成功しました。v2のJavaScript単独・Python・Rustは実装と34件の診断回帰を終え、独立実装レビューの指摘を検証中です。全機能T2で、共通実行方針のRust例外とRust仕様はhuman承認、他はauto承認です。最新specの再承認・最終gate・公開承認は未実施です。
+# v0.2.7: 仕様連動の実装計画機能
+musubix6 の利用者・開発エージェント・実装担当者向けに、要件と実装順序を示します。
+対象は v0.2.7、更新日は 2026-11-03 です。現在は要件定義段階で、新機能の実装・検証・仕様ロックは未実施です。v0.2.6 の検証候補とは別の worktree で管理します。
+## 合意した範囲と完了条件
+エージェントが仕様から計画を作成・更新し、CLI が整合性と検証証拠を確認します。`.sdd/implementation-plan.json` を唯一の正本とし、機能と実装タスクの2階層を管理します。
+計画必須は明示設定で有効にします。関連仕様の変更は対応タスクと推移的な依存先を再確認対象にし、証拠のない完了申告は受理しません。計画整合、変更対象の検証、全必須タスク完了を分けます。
+外部サービス、新しい必須依存、GitHub Issue 同期、並列編集、CLI による自然文からの計画自動生成は対象外です。既存プロジェクトの計画機能は明示設定なしで変更しません。
+## 機能別の実装順序
+順序1〜7は既存の診断機能です。新機能は8〜11の順で進めます。各仕様の TEST ID は受け入れ条件であり、未実行のテストを合格と扱いません。
 
 | order | feature | depends | note |
 | --- | --- | --- | --- |
@@ -11,7 +17,17 @@
 | 5 | diagnostics-python | diagnostics-contract | v2: .venvのRuff/mypyと薄いnative bridge |
 | 6 | diagnostics-rust | diagnostics-contract | v2: offline/locked cargo、一時生成物は人間承認 |
 | 7 | diagnostics-workflow | diagnostics-contract,diagnostics-typescript,diagnostics-eslint,diagnostics-javascript,diagnostics-python,diagnostics-rust | 全profileの手順・ラッパー・コピー・npm 同梱 |
-順序表は診断7機能を扱います。他の既存仕様も検証から外しません。新仕様のmissing lock/test警告は未実装を表し、PASSではありません。human対象はspike・独立レビュー後に正確な全path/hash/残余リスクを示して承認を求めます。
+| 8 | implementation-plan-contract | - | JSON正本、機能／タスク／REQ対応、依存グラフの検証 |
+| 9 | implementation-plan-evidence | implementation-plan-contract | 証拠に基づく状態判定、仕様変更と依存先への影響 |
+| 10 | implementation-plan-cli | implementation-plan-contract,implementation-plan-evidence | plan/context/gateの共通契約、段階別判定と互換性 |
+| 11 | implementation-plan-workflow | implementation-plan-cli | 両ホストの作成・更新手順、両README、npm配布 |
+他の既存仕様も検証から外しません。新仕様の missing lock/test 警告は未実装を表し、PASS ではありません。仕様からタスクへの詳細化は、この要件定義のレビュー後に行います。human 対象の変更と公開には、別途正確なパス・ハッシュ・残存リスクを示して承認を求めます。
+## v0.2.7 の進め方と未確定事項
+各機能で契約と反例を確認し、隔離 spike と独立レビューを行います。仕様をロックしてから Assertion Red、実装、Green の順に進めます。その後、失敗機構ごとの mutation と復元を行います。各タスクの実装・検証が終わるごとに計画を更新します。仕様変更時は関連する計画と完了状態を再評価します。
+要件定義後の実装計画は REQ、依存関係、成果物、PASS 条件、TEST/command と実測証拠を対応付けます。実装前に CLI 形式・数値上限・文書タスクの証拠形式を spike と設計レビューで確定します。未確定の項目は合格扱いせず、仕様変更があれば実装計画も改訂します。
+この段階では既存の `.sdd/plan.md` を実装順序の表示に使います。新JSON方式への切り替えは新機能の実装後であり、現行CLIに新方式が実装済みとは扱いません。最終の全体 gate、配布検証、公開承認は別の完了条件です。
+## 診断機能の過去の計画
+以下は 2026-10-19 時点の記録です。v1はcommit `58b0f8f` で変更対象gate（全npmテストを含む）まで成功しました。v2のJavaScript単独・Python・Rustは実装と34件の診断回帰を終え、独立実装レビューの指摘を検証中でした。全機能T2で、共通実行方針のRust例外とRust仕様はhuman承認、他はauto承認です。当時の未承認・未検証の記述は現在の完了証拠ではありません。
 
 ## v1の合意した対象と対象外（以下は実装済みの記録）
 主な利用言語は TypeScript・JavaScript・Python・Rust です。共通契約は言語別の診断セットを扱い、初期版は TypeScript セットのみとします。
@@ -138,9 +154,11 @@ ESRCH. The owned process can exit after the running probe. This is a test
 cleanup race, not a provider verdict failure or valid assertion Red.
 The existing TEST-DIAGCLI-004 cleanup already accepts only ESRCH.
 
-| REQ | PASS condition | counterexample | TEST/command | observed evidence |
-| --- | --- | --- | --- | --- |
-| `REQ-DIAGCLI-004`, `REQ-DIAGCLI-005` | Test cleanup sends SIGKILL to the same owned PID; success and ESRCH (already absent) complete normally, while every other error propagates unchanged | A kill callback throws ESRCH after a positive running probe: cleanup must not replace the original test result. EPERM, EIO and an error without a code must still fail | TEST-DIAGCLI-CLOSE-001: injected kill callback, successful argument control, ESRCH and three representative non-ESRCH errors; retain all 12 deadline/payload/descendant rows | Hosted failure retained in v026-ci-uv-dry-run-failed.log. Deterministic assertion Red/Green and bounded restored mutations are required; a successful CI retry alone is not a fix |
+- REQ: `REQ-DIAGCLI-004`, `REQ-DIAGCLI-005`.
+- PASS condition: Test cleanup sends SIGKILL to the same owned PID; success and ESRCH (already absent) complete normally, while every other error propagates unchanged.
+- Counterexample: A kill callback throws ESRCH after a positive running probe: cleanup must not replace the original test result. EPERM, EIO and an error without a code must still fail.
+- TEST/command: TEST-DIAGCLI-CLOSE-001: injected kill callback, successful argument control, ESRCH and three representative non-ESRCH errors; retain all 12 deadline/payload/descendant rows.
+- Observed evidence: Hosted failure retained in v026-ci-uv-dry-run-failed.log. Deterministic assertion Red/Green and bounded restored mutations are required; a successful CI retry alone is not a fix.
 
 First-failure stages: contract = unchanged deadline, reason-retention and
 descendant assertions; trusted inputs = only a validated owned PID enters
