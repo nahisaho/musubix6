@@ -303,10 +303,10 @@
     "by": "ai:claude-sonnet-5.5",
     "kind": "ai",
     "review": ".sdd/review-implementation-plan-contract.md",
-    "reviewSha": "d5659000a4362fbe218ead9ce763c5059a7775f06667cf7e238e5558d21f00b0",
-    "at": "2026-11-03T10:54:51.961Z",
+    "reviewSha": "baed28ee599524b200d9b1fb28ad753dd9d9c3ac035367f4e2594bca78f94b8d",
+    "at": "2026-11-03T22:07:33.605Z",
     "artifacts": {
-      ".sdd/specs/implementation-plan-contract.md": "a6d75149e7fa82e8da77a9c5579b9c8f5bf539e2ee1a3074e32d5a9217020784"
+      ".sdd/specs/implementation-plan-contract.md": "672c1806bf05e18d983c85062981aa65d31db8a9f4a64b85114d49bc1de74999"
     },
     "tier": "T2",
     "requireHuman": false
@@ -331,6 +331,18 @@
     "at": "2026-11-03T21:43:53.071Z",
     "artifacts": {
       ".sdd/specs/implementation-plan-cli.md": "46060ea10432968cc8cadcdbcca8a1f116097823243dba825231ded60b5a5047"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "implementation-plan-workflow": {
+    "by": "ai:claude-sonnet-5.5",
+    "kind": "ai",
+    "review": ".sdd/review-implementation-plan-workflow.md",
+    "reviewSha": "c1fa410a02c7a2f02a04e5d7df1cf2ac2b5c61a2e7ae53b81e1e9958f7ad49a7",
+    "at": "2026-11-03T22:23:55.309Z",
+    "artifacts": {
+      ".sdd/specs/implementation-plan-workflow.md": "72e0e77bd6fae712e1292e55e5c8b3446961e544713890264f4a7f0959b0d374"
     },
     "tier": "T2",
     "requireHuman": false

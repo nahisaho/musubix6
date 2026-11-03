@@ -135,6 +135,98 @@ lint of `tech-writer` still works without `uv`:
 `python3 .github/skills/tech-writer/scripts/lint.py path/to/document.md`.
 GiNZA dependency and license details: [`NOTICE.md`](.github/skills/japanese-prose/NOTICE.md).
 
+## Keep implementation plans aligned with specifications (v0.2.7 candidate)
+
+<!-- implementation-planning:v0.2.7 -->
+
+For multi-feature work, an agent can maintain one specification-linked JSON
+plan instead of a separate Markdown task list. This describes the v0.2.7
+candidate, not an assertion that it is already published.
+
+**Prerequisites:** use the CLI and skills from this candidate, current approved
+`.sdd/specs/*.md`, and an agent-authored `.sdd/implementation-plan.json`.
+Merge `"planning":{"required":true}` into the existing `.sdd/config.json`
+(`planning.required:true`); do not replace its test runners or checks.
+Optional `planning.features` selects trusted scope; otherwise all current spec
+features and prerequisites are required. Plan JSON cannot narrow that scope.
+Absent/false policy preserves existing Markdown planning without reading JSON;
+enabled mode uses only JSON and ignores Markdown.
+
+The installed `lean-sdd-tdd` skill owns the complete schema and workflow.
+There is no automatic natural-language task decomposition or status editing.
+
+| Authored fields | Meaning |
+| --- | --- |
+| `schemaVersion`, `features`, `tasks` | Version1; feature entries have `id` and `dependsOn`; tasks have unique IDs and one owning feature. |
+| `id`, `feature`, `kind`, `reqs`, `dependsOn` | Task identity, owner, implementation/documentation kind, covered REQs and prerequisite task IDs. Feature dependencies also induce task dependencies. |
+| `artifacts`, `condition` | Explicit in-root paths, including every shared owner, and an observable completion condition. Documentation tasks own only .md/.rst/.txt/.adoc files. |
+| `tests`, `checks` | Required native TEST IDs plus explicit checks with `name`, literal `argv`, `timeoutMs`. Documentation can omit native TEST IDs, not checks. |
+| `specs`, `dependencies` | Whole owning-spec SHA256 values and every effective prerequisite's current input fingerprint, not its definition hash. Obtain measurable fingerprints from the current plan-check output; unknown partial values do not establish valid bindings. |
+| `status`, `receipt` | Authored progress claim and null/current in-root receipt path; only current observed evidence establishes completion. |
+
+JSON is limited to1MiB; each check timeout is1..600000ms. Derived states are
+`not-started`, `in-progress`, `blocked`, `replan-required`,
+`revalidation-required`, `complete`. Drafts and placeholders are not passes:
+author planned regression tests/stubs as needed to make inputs measurable,
+and resolve consistency failures before production implementation.
+Replace `FEATURE` and `TASK` below with real IDs from the current plan.
+
+### Check consistency and read the task context
+
+```bash
+musubix6 sdd plan check --json
+musubix6 sdd context FEATURE --json
+```
+
+### Implement and verify one ready task
+
+Implement in dependency order using genuine assertion Red/Green, valid controls
+and bounded restored mutations. Current native TDD evidence must exist before
+task verification; a passing arbitrary command is insufficient.
+
+```bash
+musubix6 sdd plan verify TASK --json
+```
+
+### Adopt the receipt and update affected plans
+
+Adopt only the returned current successful `receipt` in JSON and update `status`
+after each verified task. Verification never edits the plan. Keep failed
+receipts/logs. After specification changes, update whole-file bindings and
+affected/transitive dependency input fingerprints, then freshly verify in
+dependency order. A hash-only update cannot restore completion.
+
+### Run the changed and full gates
+
+Run the changed-scope gate during development and the full gate before merge.
+
+```bash
+musubix6 sdd gate --changed --json
+musubix6 sdd gate --json
+```
+
+Plan consistency can pass legitimate pending work; task verification proves
+only that task. Changed-scope gates require reached tasks/prerequisites
+complete; full gates require the entire configured/default scope and all
+existing checks. Exit0 means success only for that stage,1 means invalid/stale
+input, and2 means INCOMPLETE (missing/unresolved/unparseable required evidence).
+`--no-run` remains INCOMPLETE, exit2. Unknown/skipped checks never pass.
+Read-only plan/context views are not task evidence.
+
+Commands execute trusted local code, not a sandbox. Receipts bind the current
+tool/runtime/commands; moving an installation can require fresh verification.
+An occupied lock refuses2; recover only after confirming its owner is absent
+and remove that exact lock, never history or another task's lock. Local
+single-writer evidence is not hostile-host attestation, and text instructions
+cannot guarantee agent obedience.
+
+Plan consistency, task verification, full-project gate, frozen release
+qualification and human publication approval are separate stages. A fixture
+gate is not the project gate. Release readiness requires two complete clean
+runs of the same frozen matrix; publication additionally requires exact
+artifact paths/hashes, residual risks and explicit human approval. Scope or
+policy weakening also requires approval.
+
 ## Usage
 
 Copilot CLI loads the skills from `.github/skills/`; Claude Code discovers

@@ -45,6 +45,21 @@ Unsure → pick the higher tier. Escalate mid-task if a T2 trigger appears; neve
 ## 2. Contract = single source of truth (T1+)
 Keep one file per feature (`docs/contract/<feature>.md` or the repo's existing equivalent) with: goal, `REQ-<F>-nnn` EARS lines, non-goals, verification command per REQ. No second requirements/design copy. Missing → write ≤30 lines, not a long spec. See `references/contract-template.md`.
 
+## Specification-linked implementation planning (v0.2.7)
+
+With `planning.required:true`, create/update `.sdd/implementation-plan.json`
+from current specifications before production implementation. Delegate the
+complete schema and seven-step workflow to sibling `lean-sdd-tdd`; do not
+create a second contract or invent a parallel evidence format.
+Run its read-only `plan check`, then implement ready tasks in dependency order
+with actual Red/Green. Run `plan verify TASK` against current native evidence
+and update authored progress/receipt after each verified task.
+After specification changes, replan affected/transitive bindings and obtain
+fresh verification; status claims and views do not establish completion.
+Retain failures and distinguish consistency, task verification, full-project
+gate, frozen qualification and explicit human publication approval.
+When planning is absent/disabled, retain the existing workflow.
+
 ## 3. T1 loop
 0. **PASS conditions and counterexamples first**: use the host's development model (see Host defaults) to define observable success conditions and concrete violations in the existing contract (`REQ | PASS condition | counterexample | TEST/command | evidence`). Check contract, inputs, execution, verdict, history and integration risks; explain non-applicable stages. Derive expectations from the contract or an independent reference, never the implementation's output.
 1. Failing test first, named/annotated with its REQ ID (`@verifies REQ-F-001`). Run it, confirm Red for the right assertion, not a setup/compile failure or skip. Add valid-input controls and relevant boundary/error cases.

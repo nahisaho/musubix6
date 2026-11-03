@@ -10,7 +10,7 @@ A reverse spec records **current behaviour**, not intent. Every row is labelled 
 
 ## Rules
 1. **Read first, ask later.** Inspect the target (entry points, public API, tests, README, git log) before any question. Read existing `.sdd/specs/` through the bundled `lean-sdd-tdd/scripts/sdd.mjs context <feature|REQ|file>...` (complete feature specs and declared prerequisites; default 16384 UTF-8 bytes, explicit `--max-bytes N` override). Resolve errors/overflow with narrower or explicit selectors, never a bulk read; a new/unannotated target may have no spec yet. Static impact cannot infer undeclared relationships. This reading context does not narrow full validation or replace the full gate. Never ask what the code answers.
-2. **Scope it.** One feature = one cohesive module or entry point. More than ~30 spec lines, or several modules → propose a split and a `.sdd/plan.md` (see `sdd-spec-interview` rule 11); do one feature at a time.
+2. **Scope it.** One feature = one cohesive module or entry point. More than ~30 spec lines, or several modules → propose a split (see `sdd-spec-interview` rule 11); use `.sdd/plan.md` only with planning disabled, otherwise the JSON handoff below. Do one feature at a time.
 3. **Evidence per row.** Each REQ cites `path:line` and a confidence: `high` (covered by tests or unambiguous code), `medium` (code only, no test), `low` (inferred, dead or odd code). Put them in a trailing `[src: path:line, conf: medium]`; `path` is **repo-relative** (`py/pkg/mod.py:4`, not `mod.py:4`), otherwise the gate warns the file does not exist.
 4. **Observe, don't assume.** Run the code/tests to confirm a behaviour. A row whose behaviour was not observed is `low`.
 5. **Ask only about intent**, one question at a time via Copilot CLI `ask_user` or Claude Code `AskUserQuestion` (2–4 options, recommended default, free text allowed). If unavailable, ask in conversation and stop for an explicit response; never fabricate answers or approval. Triggers: behaviour looks like a bug; two code paths disagree; dead branch; undocumented magic value. Options: keep as is (spec it) / treat as bug (`(deferred)` row + assumption entry) / remove. Hard cap 10 questions, then take "keep as is" and log an assumption.
@@ -28,6 +28,21 @@ A reverse spec records **current behaviour**, not intent. Every row is labelled 
 - Path `.sdd/specs/<feature>.md`; front matter `feature`, `tier`, `approval`; first body line states `Reverse spec: rows describe current behaviour`.
 - IDs `REQ-<F>-nnn`, `TEST-<F>-nnn`, globally unique. Postponed/unknown → `(deferred)` row with `—` test.
 - `## Assumptions / risks`: every default taken, every suspected bug (with its evidence line), every `low` row, each with the test or question that would retire it.
+
+## Specification-linked implementation planning (v0.2.7)
+
+After characterization pins observed requirements, prepare the planning handoff without changing behavior or bypassing required approval.
+With `planning.required:true`, author/update `.sdd/implementation-plan.json`
+from those current specs; delegate the schema and seven-step workflow to
+sibling `lean-sdd-tdd`. Record existing characterization honestly rather than
+relabelling it a new failing regression. Run `plan check` and report unknown
+bindings before production implementation.
+Subsequent behavior changes require the ordinary new-REQ Red/Green cycle and
+`plan verify TASK`; adopt only its current successful receipt and update
+progress after each verified task. After specification changes, replan
+affected/transitive bindings and freshly verify; never erase old failures.
+Consistency, task verification, full gate, qualification and human publication
+approval remain separate. With planning disabled, retain the Markdown handoff.
 
 ## Hand-off
 1. `node <lean-sdd-tdd>/scripts/sdd.mjs approve prepare <feature>` to confirm the spec parses (T2 only needs it for approval; T1 is just a parse check).

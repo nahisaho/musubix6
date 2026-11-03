@@ -30,7 +30,7 @@ Follow the user's language. Output of this skill = `.sdd/specs/<feature>.md` in 
 8. **Security / data / irreversible actions**: auth, secrets, deletion, publishing → decides `tier: T2` and possibly `approval: human`.
 9. **Non-functional** only if relevant: performance bound, compatibility.
 10. **Design (T2 only, after the requirements are agreed)**, one question each: components and boundaries (what owns what); data flow / external dependencies; state machine (states, transitions, illegal ones) or policy table; key decisions with the rejected alternative; riskiest assumption (becomes a spike). Write answers into `## Design`.
-11. **Large work (more than ~5 features or one spec would exceed 30 lines)**: propose a split into features and a build order with dependencies; confirm with the user; write `.sdd/plan.md`, then interview and spec each feature in that order.
+11. **Large work (more than ~5 features or one spec would exceed 30 lines)**: propose a split into features and a build order with dependencies; confirm with the user; interview and spec each feature in that order. Write `.sdd/plan.md` only with planning disabled; otherwise author the JSON plan after current requirements exist, as below.
 
 ## Tier and approval (decide, do not ask unless unclear)
 - T1: behaviour change/bug fix. T2: security, policy, public contract, data, state machine, concurrency. Unsure → T2.
@@ -41,8 +41,21 @@ Follow the user's language. Output of this skill = `.sdd/specs/<feature>.md` in 
 - One EARS row per testable behaviour: `When <trigger>, the system shall <response>.` / `If <bad condition>, then the system shall <response>.` / `While <state>, …`. Each row is atomic, observable, has a concrete value or status code, and one or more `TEST-<F>-nnn`.
 - IDs: `REQ-<F>-nnn`, `TEST-<F>-nnn`, globally unique. Unknowns that the user postponed → `(deferred)` row with `—` test. REQs verified only by golden/characterization tests → add `(test-only)` to the row.
 - `## Design` (≥2 non-blank lines, ≤10) is **required for T2** (`approve record`, `guard` and `gate` reject a T2 spec without it); for T1 only when decisions are non-obvious. Add `## Assumptions / risks`.
-- Large work: `.sdd/plan.md` table `| order | feature | depends | note |` (`depends` = comma-separated features or `-`); check with `node <lean-sdd-tdd>/scripts/sdd.mjs plan`.
+- Large work with planning disabled: `.sdd/plan.md` table `| order | feature | depends | note |` (`depends` = comma-separated features or `-`); check with `node <lean-sdd-tdd>/scripts/sdd.mjs plan`.
 - Do not invent requirements the user did not confirm and that are not recorded as assumptions.
+
+## Specification-linked implementation planning (v0.2.7)
+
+After current requirements and their required approvals exist, before implementation, author/update `.sdd/implementation-plan.json` when `planning.required:true`.
+Delegate schema, scope, fingerprints and the seven-step execution sequence to
+sibling `lean-sdd-tdd`; requirements/design remain in the existing specs.
+Cover every active REQ, task owner and prerequisite, then run `plan check`.
+Hand off planned tests/stubs and unresolved bindings explicitly; only the
+implementation workflow runs `plan verify TASK` against current native
+evidence and adopts its successful receipt. It updates progress after each
+verified task and replans affected/transitive bindings after specification changes.
+Do not claim consistency is completion, a full gate or publication approval.
+With planning disabled, retain the Markdown handoff.
 
 ## Hand-off
 1. Run `node <lean-sdd-tdd>/scripts/sdd.mjs approve prepare <feature>` to confirm the spec parses (REQ list printed).

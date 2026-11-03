@@ -40,8 +40,57 @@ These defaults do not replace required counterexample-first development or indep
 - **T0** typo/docs/rename, no behavior change: edit → project checks. No spec, no ledger.
 - **T1** behavior change / bug fix: spec (≤15 lines) → Red → Green → gate.
 - **T2** security, policy, public contract, data, state machine, concurrency: T1 + required `## Design` section + spike + spec lock after AI review + parallel risk review.
-- **Large work** (several features): split into features, write `.sdd/plan.md` (`| order | feature | depends | note |`), run `$S plan` (shows done/lock state, flags unknown/misordered dependencies, prints `next:`), then do each feature as T1/T2. The Red-test order inside a feature is its implementation plan; no separate plan document.
+- **Large work** (several features): split into features. With planning disabled, retain `.sdd/plan.md` (`| order | feature | depends | note |`) and `$S plan`; with planning enabled, use the JSON workflow below instead. Then do each feature as T1/T2; do not create a second requirements/design document.
 Unsure → higher tier. Escalate on discovery; never downgrade silently.
+
+## Specification-linked implementation planning (v0.2.7)
+
+Opt in by merging `planning.required:true` into `.sdd/config.json`; the JSON form is
+`"planning":{"required":true}`. Absent/false policy retains the legacy workflow
+without reading JSON. Enabled mode makes `.sdd/implementation-plan.json` the sole
+plan authority and ignores Markdown. This applies to both hosts; resolve `$S`
+from this skill's actual installed directory, never another checkout.
+
+1. Read current approved specifications; define PASS conditions and counterexamples in those same specs.
+2. Author/update the JSON feature/task graph and trusted scope before production implementation; cover every active REQ and explicit artifact owner.
+3. Run `$S plan check --json`; resolve stale/unknown bindings before production changes. Planned regression tests/stubs may be needed to make TEST inputs measurable; a draft or an unknown fingerprint is not a pass.
+4. Implement one ready task in dependency order using genuine assertion Red and Green, valid controls and bounded restored mutations.
+5. Run `$S plan verify TASK --json` only after current native TDD evidence exists; declared checks plus guarded native verification must succeed. Never use an aggregate gate as a task check.
+6. Update progress after each task: adopt the returned current successful `receipt` and set authored `status`; retain failure receipts and report pending/unknown work honestly.
+7. After specification changes, update whole-file bindings and affected/transitive dependency input fingerprints; run consistency and fresh verification in dependency order, not a hash-only completion refresh.
+
+Required JSON schema1 fields (no automatic natural-language decomposition):
+
+| Field | Authored contract |
+| --- | --- |
+| `schemaVersion`, `features`, `tasks` | Version1; features have unique `id` and `dependsOn`; tasks belong to exactly one `feature`. Configured `planning.features`, or all current spec features by default, determines required scope and prerequisite closure. JSON cannot narrow it. |
+| `id`, `feature`, `kind`, `reqs`, `dependsOn` | Unique task ID; `implementation` or `documentation`; owned REQs; explicit task prerequisites. Feature prerequisites also induce task dependencies. |
+| `artifacts`, `condition` | Explicit in-root forward-slash paths and observable completion condition. Shared files list every owner. Documentation tasks own only .md/.rst/.txt/.adoc files. |
+| `tests`, `checks` | Implementation tasks list the complete required native TEST union. Documentation may use an empty TEST list but still needs explicit checks. Each check has `name`, literal `argv`, `timeoutMs` in1..600000; trusted commands are not sandboxed. |
+| `specs` | Exact owning spec path to current whole-file SHA256, including commentary. |
+| `dependencies` | Every effective prerequisite task ID to its current input fingerprint from `plan check --json`, not its definition hash. Unknown partial fingerprints cannot establish current dependency bindings. Recompute affected downstream bindings as task inputs change. |
+| `status`, `receipt` | Authored not-started/in-progress/blocked/complete claim and null/current in-root receipt path. Neither a claim nor an old receipt overrides observed history. Verification prints a receipt; only the agent edits JSON. |
+
+JSON is bounded1MiB. Derived states are `not-started`, `in-progress`, `blocked`,
+`replan-required`, `revalidation-required`, `complete`. Spec/definition/dependency
+changes require replanning; changed artifacts, commands or evidence require
+revalidation. Verification binds current tool/runtime/commands and outputs:
+moving an installation can require fresh verification. Keep old failures.
+An occupied lock refuses2; recover only after confirming its owner is absent,
+then remove that exact lock, never an entire history or another task's lock.
+
+Distinguish plan consistency, task verification, full-project gate, frozen release qualification and human publication approval.
+`plan check` can pass
+pending current-bound work; `gate --changed` requires reached tasks/prerequisites
+complete; full `gate` requires the entire configured/default scope complete and
+all existing checks. `--no-run` is INCOMPLETE2. Missing/unknown/skipped required
+evidence never passes. Exit0 is success only for the requested stage, invalid
+or stale inputs use1, missing/unresolved/unparseable evidence uses2.
+Read-only plan/context views are not task evidence; fixture gates are not the
+project gate. Two frozen clean qualification runs do not authorize publication:
+retain exact artifact paths/hashes, residual risks and explicit human approval.
+Instructions cannot mechanically guarantee agent obedience or hostile-host
+attestation. Scope/policy weakening still needs explicit approval.
 
 ## 1. Spec (one file = requirements + design + approval unit)
 `.sdd/specs/<feature>.md`, template in `references/spec-template.md`. Frontmatter `feature`, `tier`, optional `approval: human`. One `REQ-<F>-nnn` line per requirement (EARS). Bug fix: one REQ describing the correct behavior. First use: `$S init`.

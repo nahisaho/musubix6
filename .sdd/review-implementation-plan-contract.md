@@ -1,8 +1,11 @@
-spec: sha256:a6d75149e7fa82e8da77a9c5579b9c8f5bf539e2ee1a3074e32d5a9217020784
+spec: sha256:672c1806bf05e18d983c85062981aa65d31db8a9f4a64b85114d49bc1de74999
 verdict: pass
 open: 0
 
 ## Scope
+Current clarification: the Design now calls dependency bindings current task-input SHA256 fingerprints, not definition hashes. This corrects obsolete wording to the already implemented evidence/CLI contract; the structural model still validates only binding shape/key coverage. No EARS row, policy, source or test changed. The workflow ownership reviewer (Claude Sonnet 5.5, 06b31918-7c7f-4a3b-a354-76f8fd40dd6b) independently read that Design sentence and accepted it against STATE002/CLI002 semantics without rereviewing production code or running commands. Actual unchanged model/state/CLI/context tests plus the new workflow tests each pass21/21 on Node20/22/24 in `v027-workflow-validation-zlfmG6/report.json`; no full-project/qualification claim follows.
+
+The remainder records historical model-stage review and its then-current limits:
 Pre-implementation T2 design and regression-oracle review by independent Claude Sonnet 5.5 agents.
 Contract/state axis: 0f25338f-5f36-4195-b9f2-d7c9703dede9; verification axis: f3e17315-9ede-4ab6-aca7-fc2e975207b5.
 Both design delta reviews returned CLEAN after the findings below were resolved.
