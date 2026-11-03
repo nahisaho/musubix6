@@ -138,9 +138,11 @@ ESRCH. The owned process can exit after the running probe. This is a test
 cleanup race, not a provider verdict failure or valid assertion Red.
 The existing TEST-DIAGCLI-004 cleanup already accepts only ESRCH.
 
-| REQ | PASS condition | counterexample | TEST/command | observed evidence |
-| --- | --- | --- | --- | --- |
-| `REQ-DIAGCLI-004`, `REQ-DIAGCLI-005` | Test cleanup sends SIGKILL to the same owned PID; success and ESRCH (already absent) complete normally, while every other error propagates unchanged | A kill callback throws ESRCH after a positive running probe: cleanup must not replace the original test result. EPERM, EIO and an error without a code must still fail | TEST-DIAGCLI-CLOSE-001: injected kill callback, successful argument control, ESRCH and three representative non-ESRCH errors; retain all 12 deadline/payload/descendant rows | Hosted failure retained in v026-ci-uv-dry-run-failed.log. Deterministic assertion Red/Green and bounded restored mutations are required; a successful CI retry alone is not a fix |
+- REQ: `REQ-DIAGCLI-004`, `REQ-DIAGCLI-005`.
+- PASS condition: Test cleanup sends SIGKILL to the same owned PID; success and ESRCH (already absent) complete normally, while every other error propagates unchanged.
+- Counterexample: A kill callback throws ESRCH after a positive running probe: cleanup must not replace the original test result. EPERM, EIO and an error without a code must still fail.
+- TEST/command: TEST-DIAGCLI-CLOSE-001: injected kill callback, successful argument control, ESRCH and three representative non-ESRCH errors; retain all 12 deadline/payload/descendant rows.
+- Observed evidence: Hosted failure retained in v026-ci-uv-dry-run-failed.log. Deterministic assertion Red/Green and bounded restored mutations are required; a successful CI retry alone is not a fix.
 
 First-failure stages: contract = unchanged deadline, reason-retention and
 descendant assertions; trusted inputs = only a validated owned PID enters
