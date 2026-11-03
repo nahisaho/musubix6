@@ -2,9 +2,10 @@
 feature: implementation-plan-workflow
 tier: T2
 approval: auto
+dependsOn: implementation-plan-cli
 ---
 # v0.2.7: Agent workflow and distribution
-Goal: make specification-linked planning usable and consistent in Copilot CLI and Claude Code, from requirements through verified completion. Readers: users, agents and maintainers. Status: requirements draft, 2026-11-03.
+Goal: make specification-linked planning usable and consistent in Copilot CLI and Claude Code, from requirements through verified completion. Readers: users, agents and maintainers. Status: pre-implementation design, 2026-11-03.
 | ID | EARS requirement | Test |
 | --- | --- | --- |
 | REQ-PLAN-FLOW-001 | When using planning-enabled SDD skills, the agent workflow shall create or update the implementation plan from the current specifications before implementation, follow dependencies, update the plan after each task's implementation and verification, and revise affected plans after specification changes. | TEST-PLAN-FLOW-001 |
@@ -20,7 +21,7 @@ Risk stages: contract=workflow instructions; inputs=current specs/plan; executio
 Oracle: the agreed nine interview decisions, preceding three planning specs and independent source/package/host fixtures. Text checks alone do not prove an agent will obey.
 ## Design
 Update lean-sdd-tdd, lean-agentic-coding, sdd-spec-interview and sdd-reverse-spec only where their workflow owns a planning step; use shared CLI rules rather than duplicated status logic.
-Keep README examples runnable after implementation. This requirements-only change does not bump package.json, install dependencies, implement commands, lock unfinished specs or publish v0.2.7.
+Pin actual `plan check`, `plan verify TASK`, read-only state, scoped/full gates and stale-update sequences through source/wrapper/extracted-package/both-host controls on Node20/22/24. README examples become runnable only after implementation; no credentials, publication, global configuration change or implicit installation is authorized. Version preparation for0.2.7 remains separate from release qualification and publication.
 ## Assumptions / risks
 No GitHub Issue sync, multiwriter coordination or CLI-generated natural-language task decomposition. Existing feature-specific human approvals and exact-artifact publication approval remain required.
 Behavioral acceptance requires TEST-PLAN-FLOW-001/003 plus real installed-host controls for TEST-PLAN-FLOW-002; keyword checks alone are insufficient. Agent obedience and prose quality have limits distinct from CLI enforcement.

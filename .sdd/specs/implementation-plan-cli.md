@@ -2,9 +2,10 @@
 feature: implementation-plan-cli
 tier: T2
 approval: auto
+dependsOn: implementation-plan-contract,implementation-plan-evidence
 ---
 # v0.2.7: Plan, context and gate integration
-Goal: expose one consistent plan contract without breaking existing projects or blocking all intermediate development. Readers: users, agents and implementers. Status: requirements draft, 2026-11-03.
+Goal: expose one consistent plan contract without breaking existing projects or blocking all intermediate development. Readers: users, agents and implementers. Status: pre-implementation design, 2026-11-03.
 | ID | EARS requirement | Test |
 | --- | --- | --- |
 | REQ-PLAN-CLI-001 | When plan-required mode is absent or disabled, the system shall preserve existing plan/context/gate behavior; when explicitly enabled, all three commands shall use the same validated JSON model, ignore Markdown plan contents/existence and report missing or invalid required planning inputs without silently falling back. | TEST-PLAN-CLI-001 |
@@ -21,8 +22,9 @@ Goal: expose one consistent plan contract without breaking existing projects or 
 Risk stages: contract=opt-in/stage policy; inputs=scope resolution; execution=shared evaluator; verdict=three-valued outcomes; history=no completion from views; integration=all entry points. No stage is waived.
 Oracle: the stage examples above, existing disabled-mode controls and independent finite policy fixtures; passing a weaker selector is not a full-gate pass.
 ## Design
-Extend existing `plan`, `context` and `gate` through one shared model/evaluator; no natural-language planner, external service or mandatory dependency. Enabled mode replaces Markdown dependency ownership with JSON; disabled mode retains the existing `REQ-SPECCTX-002` contract.
-Bind changed-scope results to all reached tasks/prerequisites; independent untouched tasks do not block a scoped gate, but every required task blocks final readiness until complete. Keep evidence checks independent of a task's own aggregate gate to avoid a dependency cycle.
+Enable via config `planning.required:true`; optionally set `planning.features`. `plan` and `plan check` provide read-only consistency/state plus current fingerprints, with `--json` parity; `plan verify TASK` is the only explicit execution/receipt-write operation and does not edit the plan. Human/JSON results contain stage, planning-enabled flag, status, exit, IDs, reasons and derived states; unsupported arguments refuse rather than silently selecting another stage.
+Load the same JSON feature/task graph for context and gate; enabled context ignores Markdown and retains full-file selection/bounds. Gate uses existing relevant REQs plus changed artifact ownership, reaches all owners and task prerequisites, rejects every unresolved changed input except the known ledger/approval/receipt bookkeeping outputs; plan/config changes conservatively reach the configured scope. Retain all existing checks/approval rules; no-run remains INCOMPLETE. Tasks cannot use their own aggregate gate to create completion evidence.
+Consistency checks all stale bindings/derived states but accepts legitimate not-started work; scoped gate checks global structure and only reached-task current completion, not stale dependents outside that selected/prerequisite closure. Such dependents stay stale and block consistency/full gate, not this narrower stage; a fixture must pin this distinction. Full gate checks every effective-scope task. Valid disabled mode preserves legacy outputs/exits/context. Prior native TDD shapes passed Node20/22/24 scratch spike; new command/installed-host shapes still require tests.
 ## Assumptions / risks
-Exact subcommands/config key and JSON shape are design-stage decisions; pin them with direct/wrapper/host fixtures before lock. Planned new evaluation refusals use 1/2 without changing disabled-mode legacy exits.
+Exact subcommands/config key and JSON shape above are the design baseline; direct/wrapper/host fixtures must pin them. New evaluation refusals use1/2; valid disabled configurations retain legacy behavior, while malformed config explicitly refuses rather than guessing that planning is disabled.
 No release authorization is added. Numeric input/output limits and cross-language impact boundaries require a pre-implementation spike; unresolved scope never succeeds. TEST-PLAN-CLI-001/003/004 retire these assumptions.

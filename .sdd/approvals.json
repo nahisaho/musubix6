@@ -298,5 +298,17 @@
     "code": {
       ".github/skills/lean-sdd-tdd/scripts/sdd.mjs": "1ce7c7ff59214fd60579023d620ec456d866adf08ca2827c481a4661bcf2c62e"
     }
+  },
+  "implementation-plan-contract": {
+    "by": "ai:claude-sonnet-5.5",
+    "kind": "ai",
+    "review": ".sdd/review-implementation-plan-contract.md",
+    "reviewSha": "d5659000a4362fbe218ead9ce763c5059a7775f06667cf7e238e5558d21f00b0",
+    "at": "2026-11-03T10:54:51.961Z",
+    "artifacts": {
+      ".sdd/specs/implementation-plan-contract.md": "a6d75149e7fa82e8da77a9c5579b9c8f5bf539e2ee1a3074e32d5a9217020784"
+    },
+    "tier": "T2",
+    "requireHuman": false
   }
 }
