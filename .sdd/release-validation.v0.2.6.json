@@ -2,16 +2,16 @@
   "schemaVersion": 1,
   "targetVersion": "0.2.6",
   "status": "scope-contract-not-run-evidence",
-  "revision": 12,
+  "revision": 13,
   "policy": "docs/design-sdd-hardening.md section 3.5",
   "inheritedManifest": {
     "path": ".sdd/release-validation.v0.2.0.json",
     "sha256": "e2f221e308e2fb4389f044e12c42cb2083e314b97305ae1701f65cd399c37de6"
   },
-  "revisionReason": "Refresh only the committed diagnostics.test.mjs fixture bytes after hosted41541792484 exposed an ESRCH cleanup race. Reference Git1dccdfb093ce367127dd09eae16a3fc2c1585bfc and its independently verified111-file tree; retain every file/mode,1110source/60origin/1183total skill cases,13semantic and14placeholder mechanisms. Publish CI explicitly provisions required uv; test cleanup accepts only an already-absent owned process and retains other errors. Preserve all24Linux cells/budgets/exclusions and failed/interrupted evidence; transfer zero credit.",
+  "revisionReason": "Correct the stale historicalTestLineage.sourceCommit exposed by hosted41553255487: bind it to the same approved Git1dccdfb093ce367127dd09eae16a3fc2c1585bfc as vendorReference, as the unchanged validator requires. Git verifies identical sdd.test.mjs SHA256 at original b30a1bd and successor1dccdfb; retain all historical mappings and suite bytes. Content revision6,111-file inventory,1183skillcases,24Linux cells/budgets/exclusions and tgz e9224470 are unchanged. Preserve failed revision12 and interrupted local gate with zero credit; do not weaken admission.",
   "historicalTestLineage": {
     "version": 1,
-    "sourceCommit": "b30a1bd4deef46126337d710b3a87e486103c106",
+    "sourceCommit": "1dccdfb093ce367127dd09eae16a3fc2c1585bfc",
     "suite": ".github/skills/lean-sdd-tdd/scripts/sdd.test.mjs",
     "suiteSha256": "efa2b21e7de2e10529c7010e8cb8a66531c78576e8cc4469a80821be14e870b2",
     "mappings": [
@@ -100,8 +100,8 @@
   },
   "frozenManifest": "Generated separately after preflight; binds this approved plan's SHA256, exact candidate inputs, commands and named catalogues before any qualifying run",
   "previousRevision": {
-    "number": 11,
-    "sha256": "7ef445e62e3c31faf73c4bd5849f2df44a6b917d1bdfc155ba0d731deb06fe8f",
+    "number": 12,
+    "sha256": "53e9794c78104332fa0ffe0590adcc85151befa2bb3f78875380d7653683e245",
     "qualificationCreditBefore": 0,
     "qualificationCreditAfter": 0
   },

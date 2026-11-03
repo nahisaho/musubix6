@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "purpose": "stable0.2.6 development evidence, not release qualification or publication authorization",
-  "recordedAt": "2026-11-03T00:29:36.374Z",
+  "recordedAt": "2026-11-03T01:11:05.548Z",
   "targetVersion": "0.2.6",
   "qualifyingCredit": 0,
   "technicalReady": false,
@@ -25,7 +25,7 @@
     },
     {
       "path": ".sdd/release-validation.v0.2.6.json",
-      "sha256": "53e9794c78104332fa0ffe0590adcc85151befa2bb3f78875380d7653683e245"
+      "sha256": "647594a138182e676de87a64d81859d29a5e66fe6c01646888f4c9d069aadf59"
     },
     {
       "path": ".sdd/specs/claude-code-support.md",
@@ -33,7 +33,7 @@
     },
     {
       "path": ".sdd/specs/release-qualification.md",
-      "sha256": "43327c66886f6bd4a1cde99c489b7c9cf4853eb57fc78564d8811e7cad44161f"
+      "sha256": "b15d1de61bc25edc42545d701b4537d72dbe13040470dc85dab475f97c40d195"
     },
     {
       "path": "CLANGELOG.md",
@@ -855,6 +855,38 @@
       "sha256": "7ffa7135c28051e606015ebef6433749662f26b593c1383ab371cb0e687e78ee"
     },
     {
+      "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-ci-cleanup-dry-run-failed.log",
+      "sha256": "7fb23f12b7b4f2ed1e7c39bfc5c57688a53486069b63a2377d14e8d2f2b2c2fe"
+    },
+    {
+      "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-f1f52e7-validation-blocked.json",
+      "sha256": "1528d6c9f8430dabf403e60d75a04f986c68cef50160a6d03b3cbe824cbabf00"
+    },
+    {
+      "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-lineage-metadata-red.log",
+      "sha256": "3580fa7a93033b8083e10e7b2f01df051be32323478bd087a969be86b76ae5ed"
+    },
+    {
+      "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-lineage-metadata-green.log",
+      "sha256": "2e511b167e7d08f20decc4887b5e3dccd4ffbf6a09e134c32f66e31a38684a95"
+    },
+    {
+      "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-lineage-isolated-red.log",
+      "sha256": "8b9e168870cb48e53257b09f00ef7f68a3fcc729d147fb924599ae1a95095a7c"
+    },
+    {
+      "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-lineage-isolated-green.log",
+      "sha256": "b20f93ebbccf88e0bacc4f709c93770015858913896f6cb9fad40dfde837a9e2"
+    },
+    {
+      "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-lineage-metadata-spike.json",
+      "sha256": "5c5a42cb14d7fb3d70aa3bc0e6a318389ca79f630ab4bb3b56089d9c2273ab68"
+    },
+    {
+      "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-lineage-complete-selftests.log",
+      "sha256": "59d1bd40a4e8739b51bb89cfc40e9902f0409719042a2b5a78c8462a1d7aa131"
+    },
+    {
       "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v026-ci-dry-run-failed.log",
       "sha256": "cdcfa76a42986301d21c169d18748780d6c82da2b2ae7b0c67a5f9e79189e899"
     },
@@ -883,6 +915,8 @@
     "fixDelta": "Clean: actual-expression binding, all eight policy rows, pack/auth ordering and intended failures.",
     "provisioningDelta": "Directly reviewed two-line existing-CI provisioning reuse plus actual-shell successful/nonzero installer controls. Earlier independent reviews do not cover this subsequent delta; hosted verification remains required.",
     "cleanupInventoryDelta": "Independent Claude Sonnet5.5 review clean: errno-only cleanup, deterministic controls and approved successor inventory/metadata. Review did not rerun full gate or native spike.",
+    "cleanupInventoryReviewLimit": "The earlier clean review missed stale lineage.sourceCommit metadata; hosted admission and direct admitPlan correctly rejected it. Not treated as admission PASS.",
+    "lineageMetadataDelta": "Independent Claude Sonnet5.5 narrow review clean: unchanged historicalPolicy, identical suite blobs at b30a1bd/1dccdfb, correct revision12 predecessor hash and metadata-only diff. Did not run admission, native package, full gate or inspect external spike.",
     "openFindings": []
   },
   "fixtureRepair": {
@@ -939,8 +973,21 @@
     "id": "REL026-CI-CLEANUP",
     "severity": "S2",
     "firstFailureStage": "execution",
-    "state": "FIXED_IN_SOURCE_HOSTED_VERIFICATION_PENDING",
+    "state": "RESOLVED_HOSTED_CLEANUP_CONTROLS_PASSED",
     "description": "Test-owned descendant can exit between running probe and final kill; accept only ESRCH and propagate other errors."
+  },
+  "lineageMetadataFinding": {
+    "id": "REL026-LINEAGE-METADATA",
+    "severity": "S2",
+    "firstFailureStage": "contract",
+    "state": "FIXED_IN_APPROVED_METADATA_HOSTED_VERIFICATION_PENDING",
+    "sourceCommit": "f1f52e727ecf6ab5a100d04f287a80c90cd811da",
+    "hostedDryRun": "41553255487 failed9 admission-dependent tests; Publish skipped. Interrupted local gate is not PASS.",
+    "repair": "Planrev13 rebinds historical lineage sourceCommit to vendorReference1dccdfb; suite bytes/mappings and24cells/111files/1183cases/tgz unchanged. Validator and tests unchanged.",
+    "actualControl": "20/20 qualification selftests passed,0skips; direct real-human-approved admitPlanPASS",
+    "mutationControls": "Four isolated invalid bindings reject with restored valid acceptance; stale approval rejected. Separate hardcoded stale-commit validator mutation produced expected assertion Red and restored formal Green.",
+    "evidenceIntegrity": "Initial formal Green refused changed check definition from interrupted test workspace packages. Retained refusal. Moved owned interrupted workspace externally, recorded a fresh expected assertion Red with stable inputs, restored validator and recorded formal Green; no refusal bypass.",
+    "qualifyingCredit": 0
   },
   "limits": [
     "Recording npm fixture is not actual registry publication.",

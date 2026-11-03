@@ -252,11 +252,11 @@
   "release-qualification": {
     "by": "nahisaho",
     "kind": "human",
-    "review": "Explicit approval of7exactpaths/hashes forplanrev12/contentrev6;111files/1183cases/24cells unchanged, newGit-bound packagedfixture bytes, labelledRefactor/mutations notnewformalGreen; zero transferredcredit and no publication approval",
-    "at": "2026-11-03T00:26:01.418Z",
+    "review": "Explicit approval of7exactpaths/hashes, specb15d1de6/plan647594a1; metadata-only lineagecommit rebinding1dccdfb with identical historicalsuite, unchanged24cells/111files/1183cases/tgz; Green/fullgate/hostedidentity/twoqualifyingruns pending, no publication authorization",
+    "at": "2026-11-03T01:09:27.420Z",
     "artifacts": {
-      ".sdd/specs/release-qualification.md": "43327c66886f6bd4a1cde99c489b7c9cf4853eb57fc78564d8811e7cad44161f",
-      ".sdd/release-validation.v0.2.6.json": "53e9794c78104332fa0ffe0590adcc85151befa2bb3f78875380d7653683e245",
+      ".sdd/specs/release-qualification.md": "b15d1de61bc25edc42545d701b4537d72dbe13040470dc85dab475f97c40d195",
+      ".sdd/release-validation.v0.2.6.json": "647594a138182e676de87a64d81859d29a5e66fe6c01646888f4c9d069aadf59",
       ".sdd/release-content-mutations.v0.2.6.json": "0d43b5eec2450e446a47a00b6789c5f2ca93ed7373bfd15d9b1b86ae1be977fb",
       ".sdd/specs/claude-code-support.md": "cfe802292d3869e71e432e076c4617eb99738bb9e9275719dda9596c13647f84",
       "README.md": "21855184a2a8dc015ec050918cb1cd789cb166ec64867ee503a6bf0ebf852dca",
