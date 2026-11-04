@@ -4,15 +4,26 @@ Agent skills for **lean, spec-driven and test-driven development** and for
 **technical writing in Japanese and English, structured analysis and presentation planning**, packaged for GitHub Copilot CLI
 (`.github/skills/`) and Claude Code (`.claude/skills/`).
 
-The source checkout targets **0.2.7**. As checked on **2026-11-05 at 05:02 JST**,
-the candidate tagged `v0.2.7` ([`7b18615`](https://github.com/nahisaho/musubix6/commit/7b18615577e74d785241e668cbb0b407c239d06e))
-has passed the full native gate and two consecutive unchanged 24-cell Linux x86_64
-qualification runs. Main integration, tag push and human publication approval
-are complete; the [npm publication workflow](https://github.com/nahisaho/musubix6/actions/runs/41898861716)
-is still running its tests, and npm does not yet list 0.2.7.
+The source checkout targets **0.2.7**, but npm does not yet list it as checked on
+**2026-11-05 at 05:50 JST**. The
+[npm publication workflow](https://github.com/nahisaho/musubix6/actions/runs/41898861716)
+failed `TEST-DIAGCLI-CLOSE-001` in its test job; publication was skipped.
+The candidate tagged `v0.2.7` ([`7b18615`](https://github.com/nahisaho/musubix6/commit/7b18615577e74d785241e668cbb0b407c239d06e))
+previously passed the full native gate and two consecutive unchanged 24-cell
+Linux x86_64 qualification runs. Those passes remain historical evidence,
+not current release readiness after the hosted failure.
 
-Check npm availability below before installing. Qualification applies to that
-exact tagged candidate, not later source changes. Windows Node 20/22/24 CI
+The test-only process-state oracle has been repaired; the production diagnostic
+runner and its time limits are unchanged. Requalification is pending.
+This repair is not in the tagged commit `7b18615`. At this repair checkpoint,
+the full gate is blocked by a stale release-qualification artifact lock;
+fresh canonical references and human preparation approval are required
+before successor qualification.
+The existing tag is unchanged; replacing it and publishing require new
+exact-artifact human approval after requalification.
+
+Check npm availability below before installing. Earlier qualification and
+publication approval do not carry over to the repair. Windows Node 20/22/24 CI
 passed as development controls, not qualified Windows release support.
 macOS, actual WSL containers and Claude live-session interaction remain unverified.
 See the [changelog](CLANGELOG.md) for fixes, artifact hashes and residual risks.

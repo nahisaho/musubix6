@@ -2,7 +2,7 @@
   "claude-code-support": "4f61a0a55156505d3658907a5b8dd0c8b8e3eeb316f6723089f6501c16ee5d14",
   "release-qualification": "5914e39b4134afe5c44de97fdd1f576c010afdc0874cde3e725fb4e5c39f6858",
   "npx-update-notice": "f4ceea311a4fac6e6cfc64feac1e2898276c3fb93573f20f71742a4a6a47f631",
-  "diagnostics-contract": "95d303e10ce1bf4b954af0e978e6a8a0a9034ed8fafc136f99d650dfc00a972f",
+  "diagnostics-contract": "a003560a9411fc9573eb13947c0218ec0b90d585d657d2f996e35c3ba32e8257",
   "rust-stub-confidence": "abc368bc69b2fb764009653c11638cd817a6f0f4f0b6e21a004861665e11f1a0",
   "windows-runner": "c95ec5e975258ae1e82f13ad70fea56403ebdddc4cad2f2eb28c3b521d06f07c",
   "implementation-plan-contract": "e17d79769daddaee739076e77033225e13a2173dfa0f4aa9813eb6fd03adcf67",

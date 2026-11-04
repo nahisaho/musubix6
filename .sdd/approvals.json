@@ -139,16 +139,18 @@
   "diagnostics-contract": {
     "by": "nahisaho",
     "kind": "human",
-    "at": "2026-10-30T06:57:16.216Z",
+    "review": "Explicit human approval of a003560a9411fc9573eb13947c0218ec0b90d585d657d2f996e35c3ba32e8257: 承認する（この契約に沿った修正・後続検証のみ）. No tag replacement or publication authorization.",
+    "at": "2026-11-04T20:47:38.798Z",
     "artifacts": {
-      ".sdd/specs/diagnostics-contract.md": "95d303e10ce1bf4b954af0e978e6a8a0a9034ed8fafc136f99d650dfc00a972f"
+      ".sdd/specs/diagnostics-contract.md": "a003560a9411fc9573eb13947c0218ec0b90d585d657d2f996e35c3ba32e8257"
     },
     "tier": "T2",
     "requireHuman": true,
     "code": {
       ".github/skills/lean-sdd-tdd/scripts/diagnostics-native.mjs": "286a5d308345e7154e98efad1bedb174c426d455cc95162563897231d1c3d6d4",
       ".github/skills/lean-sdd-tdd/scripts/diagnostics-worker.mjs": "8b734433687a6370d49ef77080a2a93bbf66bec47d2039a5297c3e4118c7c108",
-      ".github/skills/lean-sdd-tdd/scripts/diagnostics.mjs": "c32e1a75ed8a33cec4e630b12d89ce27756b33dcdc2affeb36c0a873facfb2d7"
+      ".github/skills/lean-sdd-tdd/scripts/diagnostics.mjs": "333180a600d1555c2e8c377cfd256c1c9993c43d474d6f509af8d4385489fc42",
+      ".github/skills/lean-sdd-tdd/scripts/diagnostics.test.mjs": "576b64432e46d179fd8ed1c32b6d0b9de1d340715611f82d49cb1710df17109c"
     }
   },
   "diagnostics-typescript": {

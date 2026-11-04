@@ -5,13 +5,19 @@ Release dates use Japan Standard Time (UTC+09:00).
 
 ## [0.2.7] - Candidate prepared 2026-11-04
 
-Status checked **2026-11-05 at 05:02 JST**: the qualified candidate is integrated
-into main and tagged `v0.2.7`, with separate human approval to publish.
+Status checked **2026-11-05 at 05:50 JST**: npm does not yet list 0.2.7.
 The [publication workflow](https://github.com/nahisaho/musubix6/actions/runs/41898861716)
-is still running its tests; npm does not yet list 0.2.7. The candidate-preparation
-date above is not a publication date.
-Confirm npm availability with `npm view musubix6@0.2.7 version`; a running
-workflow does not guarantee that publication will succeed.
+failed `TEST-DIAGCLI-CLOSE-001`; its publish job was skipped. Earlier clean
+qualification runs and human approval apply only to the unchanged existing
+tag, not this repair, and do not establish current release readiness.
+Version 0.2.7 is retained and the existing tag is unchanged. Requalification
+and new exact-artifact human approval are required before replacing that tag
+and publishing. The candidate-preparation date above is not a publication date.
+Confirm npm availability with `npm view musubix6@0.2.7 version`.
+The repair is not in the tagged commit `7b18615`. At this repair checkpoint,
+the full gate is blocked by a stale release-qualification artifact lock.
+Fresh canonical references and human preparation approval are required
+before successor qualification, separately from publication approval.
 
 No existing CLI command or minimum-runtime requirement is removed.
 Implementation planning remains disabled unless explicitly enabled.
@@ -29,6 +35,10 @@ Implementation planning remains disabled unless explicitly enabled.
 
 ### Fixed
 
+- Recognize zombie/dead Linux states `Z`, `X` and `x` in the shared test-only
+  owned-descendant probe. Read the state after the final command-name delimiter
+  so names containing terminal-looking text cannot hide a live process.
+  Keep production diagnostics, cleanup assertions and time limits unchanged.
 - Let normal core and wrapper CLI dispatch finish through Node's natural
   shutdown while preserving returned exit statuses, avoiding a forced-exit
   deadlock observed on Node 24. Early-abort and refusal exits remain unchanged.
@@ -62,7 +72,12 @@ Projects that do not enable planning retain the existing workflow.
   The approved npm package SHA-256 is
   `c068949417b8ae62b568705fbd219fece25e25690e2054218fca4cacf8363930`;
   the tag-triggered workflow must verify that hash before publication.
-  These results do not qualify later documentation or source changes.
+  These results are retained as history after the hosted failure and do not
+  qualify the repaired candidate or later documentation/source changes.
+- Pass the repaired six-test family on Node 20/22/24, detect 36 isolated
+  helper mutations with 39 baseline/restored controls, and pass 36 bounded
+  repeated real-process invocations. These are development checks, not fresh
+  release qualification; they cannot prove every schedule.
 - Pass Linux and Windows development CI on Node 20/22/24 and an authenticated
   npm dry-run. Windows controls do not establish qualified Windows release
   support; macOS, actual WSL containers and live Claude interactions remain
@@ -70,9 +85,10 @@ Projects that do not enable planning retain the existing workflow.
 - Disclose nine trace warnings, five approval/code-drift warnings and two
   historical stub markers from the full gate. The shutdown regression checks
   declared JavaScript exit boundaries, not all VM-internal hang mechanisms.
-- Keep publication separate from technical readiness: human approval is
-  recorded, but actual npm publication, registry artifact bytes and provenance
-  still require confirmation.
+- Keep publication separate from technical readiness: the earlier approval
+  does not cover changed bytes. Fresh qualification, new exact-artifact human
+  approval, actual publication, registry artifact bytes and provenance remain
+  outstanding.
 
 ## [0.2.6] - Candidate prepared 2026-11-02
 

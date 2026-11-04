@@ -24,6 +24,27 @@ function killOwnedDescendant(pid, kill = process.kill) {
   try { kill(pid, 'SIGKILL'); }
   catch (error) { if (error.code !== 'ESRCH') throw error; }
 }
+/** @id CODE-DIAGCLI-PROCSTATE-001 @implements REQ-DIAGCLI-004 REQ-DIAGCLI-005 */
+function ownedDescendantRunning(pid, {
+  platform = process.platform,
+  kill = process.kill,
+  readStat = target => fs.readFileSync(`/proc/${target}/stat`, 'utf8'),
+} = {}) {
+  try {
+    kill(pid, 0);
+    if (platform === 'linux') {
+      const stat = readStat(pid);
+      const prefix = `${pid} (`;
+      const closing = stat.lastIndexOf(')');
+      if (stat.startsWith(prefix) && closing >= prefix.length
+        && /^ [ZXx] /.test(stat.slice(closing + 1))) return false;
+    }
+    return true;
+  } catch (error) {
+    if (['ESRCH', 'ENOENT'].includes(error.code)) return false;
+    throw error;
+  }
+}
 function write(root, name, contents) {
   fs.mkdirSync(path.dirname(path.join(root, name)), { recursive: true });
   fs.writeFileSync(path.join(root, name), contents);
@@ -199,16 +220,7 @@ test('TEST-DIAGCLI-004 worker success, cwd, timeout, signals, output boundaries 
   try {
     incomplete(await runProvider('typescript', root, { worker: descendantWorker, timeoutMs: 500 }), /time/i);
     descendant = Number(fs.readFileSync(pidFile, 'utf8'));
-    const running = () => {
-      try {
-        process.kill(descendant, 0);
-        if (process.platform === 'linux' && /^\d+ \(.+\) Z /.test(fs.readFileSync(`/proc/${descendant}/stat`, 'utf8'))) return false;
-        return true;
-      } catch (error) {
-        if (error.code === 'ESRCH' || error.code === 'ENOENT') return false;
-        throw error;
-      }
-    };
+    const running = () => ownedDescendantRunning(descendant);
     const deadline = Date.now() + 3000;
     while (running() && Date.now() < deadline) await new Promise(resolve => setImmediate(resolve));
     assert.equal(running(), false, 'owned descendant must not survive provider timeout');
@@ -248,6 +260,69 @@ test('TEST-DIAGCLI-004 worker success, cwd, timeout, signals, output boundaries 
   assert.equal(both.providers[1].status, 'incomplete');
 });
 
+/** @id TEST-DIAGCLI-PROCSTATE-001 @verifies REQ-DIAGCLI-004 REQ-DIAGCLI-005 */
+test('TEST-DIAGCLI-PROCSTATE-001 distinguishes terminal transitions from live unknown and failed probes', () => {
+  const pid = 123;
+  const states = [
+    ['R', true], ['S', true], ['D', true], ['Z', false], ['T', true], ['t', true],
+    ['W', true], ['X', false], ['x', false], ['K', true], ['P', true], ['I', true],
+  ];
+  const stat = (state, name = 'node') => `${pid} (${name}) ${state} 1 123 123 0`;
+  for (const name of ['node', 'MainThread', 'worker (nested)', 'a) Z b', 'a) X b', 'a) x b']) {
+    for (const [state, expected] of states) {
+      const calls = [];
+      const actual = ownedDescendantRunning(pid, {
+        platform: 'linux',
+        kill: (...args) => calls.push(args),
+        readStat: target => {
+          assert.equal(target, pid);
+          return stat(state, name);
+        },
+      });
+      assert.equal(actual, expected, `Linux ${state} in ${name}: terminal must not mean running`);
+      assert.deepEqual(calls, [[pid, 0]], 'probe only the owned PID without delivering a signal');
+    }
+  }
+  for (const text of [stat('?'), '', 'garbled stat', `${pid} (node) X`]) {
+    assert.equal(ownedDescendantRunning(pid, {
+      platform: 'linux', kill() {}, readStat: () => text,
+    }), true, 'unknown or malformed observations cannot prove termination');
+  }
+  for (const platform of ['win32', 'darwin']) {
+    assert.equal(ownedDescendantRunning(pid, {
+      platform, kill() {}, readStat: () => assert.fail('non-Linux must not read /proc'),
+    }), true);
+  }
+  const vanished = Object.assign(new Error('owned PID absent'), { code: 'ESRCH' });
+  assert.doesNotThrow(() => assert.equal(ownedDescendantRunning(pid, {
+    kill: () => { throw vanished; },
+    readStat: () => assert.fail('absent PID must not require stat'),
+  }), false), 'owned PID absent');
+  const missingStat = Object.assign(new Error('owned PID disappeared during stat'), { code: 'ENOENT' });
+  assert.doesNotThrow(() => assert.equal(ownedDescendantRunning(pid, {
+    platform: 'linux', kill() {}, readStat: () => { throw missingStat; },
+  }), false), 'owned PID disappeared during stat');
+  for (const code of ['EPERM', 'EIO', undefined]) {
+    for (const operation of ['kill', 'stat']) {
+      const error = Object.assign(new Error('owned PID probe failed'), { code });
+      assert.throws(() => ownedDescendantRunning(pid, {
+        platform: 'linux',
+        kill: () => { if (operation === 'kill') throw error; },
+        readStat: () => { if (operation === 'stat') throw error; return stat('R'); },
+      }), actual => actual === error, `${operation}/${code}: preserve unexpected errors`);
+    }
+  }
+  let step = 0;
+  const transition = {
+    platform: 'linux',
+    kill: () => { if (step === 2) throw vanished; },
+    readStat: () => stat(['Z', 'X'][step++]),
+  };
+  assert.equal(ownedDescendantRunning(pid, transition), false, 'zombie ends the wait');
+  assert.equal(ownedDescendantRunning(pid, transition), false, 'dead state remains terminal');
+  assert.equal(ownedDescendantRunning(pid, transition), false, 'reaped PID remains absent');
+});
+
 /** @id TEST-DIAGCLI-CLOSE-001 @verifies REQ-DIAGCLI-004 REQ-DIAGCLI-005 */
 test('TEST-DIAGCLI-CLOSE-001 checks close-time deadlines and retains native failures during descendant cleanup', async () => {
   const calls = [];
@@ -281,16 +356,7 @@ test('TEST-DIAGCLI-CLOSE-001 checks close-time deadlines and retains native fail
           process.stdout.write(${JSON.stringify(JSON.stringify(value))},()=>process.exit(0));`);
         const started = Date.now();
         const clock = () => fs.existsSync(marker) ? started + elapsed : started;
-        const running = pid => {
-          try {
-            process.kill(pid, 0);
-            if (process.platform === 'linux' && /^\d+ \(.+\) Z /.test(fs.readFileSync(`/proc/${pid}/stat`, 'utf8'))) return false;
-            return true;
-          } catch (error) {
-            if (['ESRCH', 'ENOENT'].includes(error.code)) return false;
-            throw error;
-          }
-        };
+        const running = ownedDescendantRunning;
         let descendant;
         try {
           const actual = await runProvider('typescript', root, { worker: code, timeoutMs, clock });

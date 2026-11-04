@@ -65,3 +65,84 @@ manifest after relevant changes; integration/distribution = revalidate source,
 packed/copied helpers and the unchanged complete 24-cell Linux matrix twice.
 No stage is inapplicable. These are execution/verdict repairs, not a weaker
 timeout assertion, matrix reduction, budget extension or publication approval.
+
+## Linux terminal-state test oracle repair (2026-11-05)
+
+The approved 0.2.7 tag workflow `41898861716` failed
+`TEST-DIAGCLI-CLOSE-001`; its publish job was skipped. Retain the failed log
+and both earlier clean frozen runs as history, not current release readiness.
+Twelve bounded unmodified local trials reproduced one assertion failure.
+Twenty-four observation-only trials reproduced another: the same owned PID
+was observed as `Z`, then `X`, then absent (`ESRCH`). The test-only probe
+recognized `Z` but incorrectly classified `X` as running between its loop
+condition and final assertion. These diagnostic trials grant no release credit.
+For durable audit, observed PID `2321607` was `Z` at monotonic
+431.786243 ms, `X` at 431.843024 ms, then signal-zero returned `ESRCH` at
+432.692074 ms. Raw trace SHA-256:
+`c6834563da1b944acdf9ca10466cf8b5ff381d3e170c4cf28f67bd24484e856f`.
+Failure-analysis SHA-256:
+`3ab0d7dba377083bb6f614edc46ea31ebdeaf8532388e945069c3b2ecbda11ee`.
+
+Independent reference:
+[Linux proc_pid_stat(5), field 3](https://man7.org/linux/man-pages/man5/proc_pid_stat.5.html)
+defines `Z` as zombie, `X` as dead, and historical `x` as dead. The finite
+distinct documented states are `R S D Z T t W X x K P I`; `W` has two
+historical meanings, neither terminal.
+
+| REQ | PASS condition | counterexample | TEST/command | observed evidence |
+| --- | --- | --- | --- | --- |
+| `REQ-DIAGCLI-004`, `REQ-DIAGCLI-005` | A test-only shared owned-PID probe reports not-running for Linux `Z`, `X`, `x` and disappearance (`ESRCH`/`ENOENT`); all other documented states remain running; a deterministic `Z -> X -> ESRCH` sequence is false/false/false | The recorded `123 (MainThread) X 1 ...` state becomes running after an earlier zombie observation; `123 (a) Z b) R 1 ...` is incorrectly treated as stopped by matching a terminal-state lookalike inside its command name | TEST-DIAGCLI-PROCSTATE-001; enumerate all 12 distinct reference states, nested-parenthesis and terminal-lookalike command names, terminal transitions and positive live controls | Hosted assertion failure and raw local PID/state observations retained in session artifact `v027-publication-failure-analysis.json`; initial X assertion Red/Green recorded, strengthened command-name Red/Green pending |
+| `REQ-DIAGCLI-004` | Unknown/malformed stat text, including state `?` or an empty/garbled line, reports running because termination is not established; permission/IO/unknown errors propagate unchanged; non-Linux probes retain signal-zero behavior without reading `/proc` | A failed probe silently reports absence, or Linux stat parsing is required on Windows | TEST-DIAGCLI-PROCSTATE-001; controlled probe errors, absent-process races and non-Linux controls | Pending; no new success claimed |
+
+### Design, counterexamples and scope
+
+Repair the regression oracle, not the production diagnostic runner. Extract
+the two duplicated test-only owned-descendant probes into one helper with
+injected signal-zero/stat/platform dependencies for deterministic controls.
+Initially retain the old zombie-only behavior to obtain an owning assertion
+Red specifically on the expected false result for state `X`, not an import,
+syntax or setup failure. Retain the actual Red output before the fix.
+Annotate the helper's implementation ownership before Red, without changing
+the new test body between Red and Green. Only then recognize the three
+reference terminal states and use the
+shared helper in both existing worker/close-time tests. Keep all existing
+budgets, worker payloads, native failure/diagnostic assertions, real descendant
+termination checks and production cleanup/error handling unchanged.
+Unknown stat text remains nonterminal so the bounded caller fails rather
+than claiming termination; unexpected probe errors remain explicit errors.
+Parse field 3 only after the final closing parenthesis of the owned PID's
+command field; terminal-looking text inside `comm` must not supply the state.
+The first implementation review found the old greedy regex could backtrack
+into names such as `a) Z b`, `a) X b` or `a) x b`. Add those valid live/terminal
+controls and record a new owning assertion Red on live state `R` before
+replacing that parser. Keep the earlier genuine X-state Red/Green as history.
+
+Before claiming repair, detect separate isolated omissions of `Z`, `X` and
+`x`, plus reversals of live/unknown-state protection, signal-zero `ESRCH`,
+stat-read `ENOENT`, signal/stat error propagation, nested-parenthesis command
+parsing, greedy backtracking into terminal-lookalike command text and the
+non-Linux no-stat boundary. Restore exact bytes and rerun
+affected controls. Run the new deterministic regression
+and the two existing real-process tests on Node 20/22/24. Bounded repeated
+live-process trials supplement those controls but cannot prove every schedule.
+
+Six failure stages: contract = retain the stop requirement and distinguish
+terminal from runnable states using the independent reference; trusted inputs =
+probe only test-owned PIDs, never interpret failed/unknown observations as
+successful termination; execution = retain actual signal delivery and the
+existing bounded real-process checks; verdict = prevent a `Z -> X` observation
+from becoming a false cleanup failure without accepting live children;
+evidence history = preserve the hosted failure and all bounded trial outcomes,
+invalidate readiness and transfer no old clean-run credit; integration/
+distribution = the shipped test file changes package bytes, requiring a new
+approved canonical reference and predecessor-bound frozen candidate with
+two consecutive unchanged complete runs. No stage is inapplicable.
+
+This amendment does not relax diagnostic behavior, remove a required test,
+increase a budget or authorize replacing the existing `v0.2.7` tag. The user
+selected retaining version 0.2.7; tag replacement and publication still require
+new exact-artifact human approval after requalification.
+Pending evidence above describes this approval-stage checkpoint, not a later
+completion claim. Record actual Red/Green, mutation and restored-control
+outcomes in `.sdd/evidence/v027-close-oracle.json` and append review findings
+to `.sdd/review-diagnostics-contract.md` without rewriting earlier history.

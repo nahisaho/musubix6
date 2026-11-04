@@ -1,0 +1,3103 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-11-04T21:01:57.881Z",
+  "purpose": "Bounded test-oracle repair development evidence; no release qualification or publication authorization",
+  "requirements": [
+    "REQ-DIAGCLI-004",
+    "REQ-DIAGCLI-005"
+  ],
+  "contract": {
+    "path": ".sdd/specs/diagnostics-contract.md",
+    "sha256": "a003560a9411fc9573eb13947c0218ec0b90d585d657d2f996e35c3ba32e8257",
+    "approval": "Genuine human approval by nahisaho for repair and testing only; native approval record retained"
+  },
+  "sourceSha256": "ea2f5f38bfdb3ef68cd4845c39bd980f6ff22272244f1abe32b890fe46b8c82d",
+  "independentStateReference": "https://man7.org/linux/man-pages/man5/proc_pid_stat.5.html",
+  "finiteControls": {
+    "states": [
+      "R",
+      "S",
+      "D",
+      "Z",
+      "T",
+      "t",
+      "W",
+      "X",
+      "x",
+      "K",
+      "P",
+      "I"
+    ],
+    "terminal": [
+      "Z",
+      "X",
+      "x"
+    ],
+    "commandNames": [
+      "node",
+      "MainThread",
+      "worker (nested)",
+      "a) Z b",
+      "a) X b",
+      "a) x b"
+    ],
+    "expected": "72 state/name rows per runtime; only Z/X/x terminal, all other states running; Z->X->ESRCH false/false/false",
+    "errorControls": "ESRCH/ENOENT absent; EPERM/EIO/undefined rethrown by identity for signal/stat; unknown/malformed stat running; Windows/macOS do not read /proc"
+  },
+  "commands": {
+    "native": "node .github/skills/lean-sdd-tdd/scripts/sdd.mjs tdd red|green|refactor TEST-DIAGCLI-PROCSTATE-001 (and five affected refactors)",
+    "checks": "node v027-close-oracle-checks.mjs; exact runtime executables/environment and per-command selections retained in driver/report",
+    "selectedFamily": "TEST-DIAGCLI-(PROCSTATE-001|CLOSE-001|004|005|007|008)",
+    "mutations": "Twelve isolated helper reversals per runtime, each detected by its owning assertion; exact bytes restored and control rerun",
+    "repetitions": "Twelve invocations per runtime, each selecting TEST-DIAGCLI-(004|CLOSE-001)"
+  },
+  "checks": {
+    "status": "PASS",
+    "report": {
+      "path": "v027-close-oracle-checks-C4vBow/report.json",
+      "sha256": "d9c0a055e2372138f6d49059f9b46dc332104531163f2a4807a8b380366c64d0"
+    },
+    "driver": {
+      "path": "v027-close-oracle-checks.mjs",
+      "sha256": "5d102e55016fd750755cec1762627cef90c0c26e158f5e16bb6c1dbb4ce9a12a"
+    },
+    "configuration": {
+      "path": "qualification-v027-linux-r3-frozen-2ICs2O/configuration.json",
+      "sha256": "531cc1e49f589edbe9bde6b38deeac139f631f185c996f498315aa9cb992b46f"
+    },
+    "primaryRequiredPasses": 18,
+    "mutationsDetected": 36,
+    "baselineRestoredControls": 39,
+    "repeatedInvocations": 36,
+    "requiredSkipped": 0,
+    "logs": [
+      {
+        "family": "primary",
+        "major": 20,
+        "label": "primary",
+        "exit": 0,
+        "counts": {
+          "tests": 36,
+          "pass": 6,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 30,
+          "todo": 0
+        },
+        "requiredTests": 6,
+        "expectedAssertion": null,
+        "selectionExclusions": 30,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/20-primary.stdout.log",
+          "sha256": "2ca04089ea3d60c5005430d6a893811f2a696b23abfdbfae080eaafe145150ab"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/20-primary.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "primary",
+        "major": 22,
+        "label": "primary",
+        "exit": 0,
+        "counts": {
+          "tests": 6,
+          "pass": 6,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "requiredTests": 6,
+        "expectedAssertion": null,
+        "selectionExclusions": 0,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/22-primary.stdout.log",
+          "sha256": "0fcebe4b9294e9b1096a32e800a36579703695a69b5025db9c98a7379376380c"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/22-primary.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "primary",
+        "major": 24,
+        "label": "primary",
+        "exit": 0,
+        "counts": {
+          "tests": 6,
+          "pass": 6,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "requiredTests": 6,
+        "expectedAssertion": null,
+        "selectionExclusions": 0,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/24-primary.stdout.log",
+          "sha256": "989e0652944eb50a791877e80bbff762121e70a587e8d0ad450290a44113a152"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/24-primary.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "mutations",
+        "major": 20,
+        "label": "omit-Z",
+        "exit": 1,
+        "counts": {
+          "tests": 19,
+          "pass": 0,
+          "fail": 1,
+          "cancelled": 0,
+          "skipped": 18,
+          "todo": 0
+        },
+        "requiredTests": 1,
+        "expectedAssertion": "Linux Z in node",
+        "selectionExclusions": 18,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/20-omit-Z.stdout.log",
+          "sha256": "019dc130e52017d387051c5526eb280dce91e097f73bb5011f9e4f68d3c46a6a"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/20-omit-Z.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "mutations",
+        "major": 20,
+        "label": "omit-X",
+        "exit": 1,
+        "counts": {
+          "tests": 19,
+          "pass": 0,
+          "fail": 1,
+          "cancelled": 0,
+          "skipped": 18,
+          "todo": 0
+        },
+        "requiredTests": 1,
+        "expectedAssertion": "Linux X in node",
+        "selectionExclusions": 18,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/20-omit-X.stdout.log",
+          "sha256": "580ab8e39f5a1e9be233451725ea6ca1205881c90894089eb35fa1b4aa6dcacb"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/20-omit-X.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "mutations",
+        "major": 20,
+        "label": "omit-x",
+        "exit": 1,
+        "counts": {
+          "tests": 19,
+          "pass": 0,
+          "fail": 1,
+          "cancelled": 0,
+          "skipped": 18,
+          "todo": 0
+        },
+        "requiredTests": 1,
+        "expectedAssertion": "Linux x in node",
+        "selectionExclusions": 18,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/20-omit-x.stdout.log",
+          "sha256": "4c6e65374dd82a27f84ac23c62d13acbacd581ee1e2c0ecf299b836f6f421e7d"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/20-omit-x.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "mutations",
+        "major": 20,
+        "label": "accept-live-R",
+        "exit": 1,
+        "counts": {
+          "tests": 19,
+          "pass": 0,
+          "fail": 1,
+          "cancelled": 0,
+          "skipped": 18,
+          "todo": 0
+        },
+        "requiredTests": 1,
+        "expectedAssertion": "Linux R in node",
+        "selectionExclusions": 18,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/20-accept-live-R.stdout.log",
+          "sha256": "86f3c9aa85bb801ee8cf5b49ed5d96a563535f345b0e7ccddaacbaa19da8d6f9"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/20-accept-live-R.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "mutations",
+        "major": 20,
+        "label": "accept-unknown",
+        "exit": 1,
+        "counts": {
+          "tests": 19,
+          "pass": 0,
+          "fail": 1,
+          "cancelled": 0,
+          "skipped": 18,
+          "todo": 0
+        },
+        "requiredTests": 1,
+        "expectedAssertion": "unknown or malformed observations",
+        "selectionExclusions": 18,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/20-accept-unknown.stdout.log",
+          "sha256": "e1a8299deca123ce950a66bdc15b26dc206f5fd6785b2982ce21bc272ff96eef"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/20-accept-unknown.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "mutations",
+        "major": 20,
+        "label": "lose-ESRCH",
+        "exit": 1,
+        "counts": {
+          "tests": 19,
+          "pass": 0,
+          "fail": 1,
+          "cancelled": 0,
+          "skipped": 18,
+          "todo": 0
+        },
+        "requiredTests": 1,
+        "expectedAssertion": "owned PID absent",
+        "selectionExclusions": 18,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/20-lose-ESRCH.stdout.log",
+          "sha256": "5c98a2b3c69e38c59be375537f1225c049d3755c1ce149c913fe69d02083371a"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/20-lose-ESRCH.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "mutations",
+        "major": 20,
+        "label": "lose-ENOENT",
+        "exit": 1,
+        "counts": {
+          "tests": 19,
+          "pass": 0,
+          "fail": 1,
+          "cancelled": 0,
+          "skipped": 18,
+          "todo": 0
+        },
+        "requiredTests": 1,
+        "expectedAssertion": "owned PID disappeared during stat",
+        "selectionExclusions": 18,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/20-lose-ENOENT.stdout.log",
+          "sha256": "bf57882ecb6ebc7008b55b15588325699df69763f14a74fd99df7706a890546d"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/20-lose-ENOENT.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "mutations",
+        "major": 20,
+        "label": "swallow-kill-error",
+        "exit": 1,
+        "counts": {
+          "tests": 19,
+          "pass": 0,
+          "fail": 1,
+          "cancelled": 0,
+          "skipped": 18,
+          "todo": 0
+        },
+        "requiredTests": 1,
+        "expectedAssertion": "kill/EPERM: preserve unexpected errors",
+        "selectionExclusions": 18,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/20-swallow-kill-error.stdout.log",
+          "sha256": "16e2af2ae582d8a052dcd8e88c3bd030e5960843db4c754d16d83a68f4d1472c"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/20-swallow-kill-error.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "mutations",
+        "major": 20,
+        "label": "swallow-stat-error",
+        "exit": 1,
+        "counts": {
+          "tests": 19,
+          "pass": 0,
+          "fail": 1,
+          "cancelled": 0,
+          "skipped": 18,
+          "todo": 0
+        },
+        "requiredTests": 1,
+        "expectedAssertion": "stat/EPERM: preserve unexpected errors",
+        "selectionExclusions": 18,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/20-swallow-stat-error.stdout.log",
+          "sha256": "f5d8ee62220e7f41fb606b860b51069a25c9b18313323ee4c218d10838ff638c"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/20-swallow-stat-error.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "mutations",
+        "major": 20,
+        "label": "truncate-nested-name",
+        "exit": 1,
+        "counts": {
+          "tests": 19,
+          "pass": 0,
+          "fail": 1,
+          "cancelled": 0,
+          "skipped": 18,
+          "todo": 0
+        },
+        "requiredTests": 1,
+        "expectedAssertion": "Linux Z in worker (nested)",
+        "selectionExclusions": 18,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/20-truncate-nested-name.stdout.log",
+          "sha256": "1316d244066320fa4e160cd01cd1681ab2ab379c9ea8f1591d6d8b7cef49d789"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/20-truncate-nested-name.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "mutations",
+        "major": 20,
+        "label": "backtrack-into-comm",
+        "exit": 1,
+        "counts": {
+          "tests": 19,
+          "pass": 0,
+          "fail": 1,
+          "cancelled": 0,
+          "skipped": 18,
+          "todo": 0
+        },
+        "requiredTests": 1,
+        "expectedAssertion": "Linux R in a) Z b",
+        "selectionExclusions": 18,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/20-backtrack-into-comm.stdout.log",
+          "sha256": "350c64b36a766147766f8c2cf1e90bd856a4cfb1f9d7a29f74fa0550dd91e0f1"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/20-backtrack-into-comm.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "mutations",
+        "major": 20,
+        "label": "remove-platform-boundary",
+        "exit": 1,
+        "counts": {
+          "tests": 19,
+          "pass": 0,
+          "fail": 1,
+          "cancelled": 0,
+          "skipped": 18,
+          "todo": 0
+        },
+        "requiredTests": 1,
+        "expectedAssertion": "non-Linux must not read /proc",
+        "selectionExclusions": 18,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/20-remove-platform-boundary.stdout.log",
+          "sha256": "f2ded4513c67b3c6ef51cc107e5175e085aa1505a052e9acdf6f71b4cc764c0e"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/20-remove-platform-boundary.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "mutations",
+        "major": 22,
+        "label": "omit-Z",
+        "exit": 1,
+        "counts": {
+          "tests": 1,
+          "pass": 0,
+          "fail": 1,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "requiredTests": 1,
+        "expectedAssertion": "Linux Z in node",
+        "selectionExclusions": 0,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/22-omit-Z.stdout.log",
+          "sha256": "42290b9a68953ec3cb179c861536bbac2df569275c26782c15ff1840fdca9ffb"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/22-omit-Z.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "mutations",
+        "major": 22,
+        "label": "omit-X",
+        "exit": 1,
+        "counts": {
+          "tests": 1,
+          "pass": 0,
+          "fail": 1,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "requiredTests": 1,
+        "expectedAssertion": "Linux X in node",
+        "selectionExclusions": 0,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/22-omit-X.stdout.log",
+          "sha256": "94a30b0d4a5d877dadd30b43f1e9ba5d28f2a31e62f828eab35900775fc9afd5"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/22-omit-X.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "mutations",
+        "major": 22,
+        "label": "omit-x",
+        "exit": 1,
+        "counts": {
+          "tests": 1,
+          "pass": 0,
+          "fail": 1,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "requiredTests": 1,
+        "expectedAssertion": "Linux x in node",
+        "selectionExclusions": 0,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/22-omit-x.stdout.log",
+          "sha256": "9b1380a8cdbff1eeee095cee82019727df36186b99df3e471f4d3e0471b464bb"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/22-omit-x.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "mutations",
+        "major": 22,
+        "label": "accept-live-R",
+        "exit": 1,
+        "counts": {
+          "tests": 1,
+          "pass": 0,
+          "fail": 1,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "requiredTests": 1,
+        "expectedAssertion": "Linux R in node",
+        "selectionExclusions": 0,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/22-accept-live-R.stdout.log",
+          "sha256": "0da4c2f40a6584333c07fff7651a3cd4228c83e6c9dd36469ced4bc5133e117a"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/22-accept-live-R.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "mutations",
+        "major": 22,
+        "label": "accept-unknown",
+        "exit": 1,
+        "counts": {
+          "tests": 1,
+          "pass": 0,
+          "fail": 1,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "requiredTests": 1,
+        "expectedAssertion": "unknown or malformed observations",
+        "selectionExclusions": 0,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/22-accept-unknown.stdout.log",
+          "sha256": "7092d2fe2888dfbf4ceb90bc98dde3d26c852d89d319f22a39ca73153aae9196"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/22-accept-unknown.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "mutations",
+        "major": 22,
+        "label": "lose-ESRCH",
+        "exit": 1,
+        "counts": {
+          "tests": 1,
+          "pass": 0,
+          "fail": 1,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "requiredTests": 1,
+        "expectedAssertion": "owned PID absent",
+        "selectionExclusions": 0,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/22-lose-ESRCH.stdout.log",
+          "sha256": "f24295b677605a0df66a54c55d4095663c83fb6b7476d3ed99118109afb76aef"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/22-lose-ESRCH.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "mutations",
+        "major": 22,
+        "label": "lose-ENOENT",
+        "exit": 1,
+        "counts": {
+          "tests": 1,
+          "pass": 0,
+          "fail": 1,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "requiredTests": 1,
+        "expectedAssertion": "owned PID disappeared during stat",
+        "selectionExclusions": 0,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/22-lose-ENOENT.stdout.log",
+          "sha256": "f1031f949234d81fc7da7ba96f51c6ac16a0eb3b145ad9661f2b84b0d7027b9f"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/22-lose-ENOENT.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "mutations",
+        "major": 22,
+        "label": "swallow-kill-error",
+        "exit": 1,
+        "counts": {
+          "tests": 1,
+          "pass": 0,
+          "fail": 1,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "requiredTests": 1,
+        "expectedAssertion": "kill/EPERM: preserve unexpected errors",
+        "selectionExclusions": 0,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/22-swallow-kill-error.stdout.log",
+          "sha256": "1dcf076b7974284f7d14be032f11cab26997546eff48553e23a6edbd559de8bf"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/22-swallow-kill-error.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "mutations",
+        "major": 22,
+        "label": "swallow-stat-error",
+        "exit": 1,
+        "counts": {
+          "tests": 1,
+          "pass": 0,
+          "fail": 1,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "requiredTests": 1,
+        "expectedAssertion": "stat/EPERM: preserve unexpected errors",
+        "selectionExclusions": 0,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/22-swallow-stat-error.stdout.log",
+          "sha256": "03ecf2a07953e8c238ea8be4bba5fd5b2de03c5f059ca8f1399cf0582452597f"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/22-swallow-stat-error.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "mutations",
+        "major": 22,
+        "label": "truncate-nested-name",
+        "exit": 1,
+        "counts": {
+          "tests": 1,
+          "pass": 0,
+          "fail": 1,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "requiredTests": 1,
+        "expectedAssertion": "Linux Z in worker (nested)",
+        "selectionExclusions": 0,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/22-truncate-nested-name.stdout.log",
+          "sha256": "fc28009f509e96e1bf25b57a0dea87b0afcf9068027855eed03f50033b127872"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/22-truncate-nested-name.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "mutations",
+        "major": 22,
+        "label": "backtrack-into-comm",
+        "exit": 1,
+        "counts": {
+          "tests": 1,
+          "pass": 0,
+          "fail": 1,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "requiredTests": 1,
+        "expectedAssertion": "Linux R in a) Z b",
+        "selectionExclusions": 0,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/22-backtrack-into-comm.stdout.log",
+          "sha256": "094333d30a8b2d763fd62e4259121558a32e31548b516b0cff0e073c53b6273e"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/22-backtrack-into-comm.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "mutations",
+        "major": 22,
+        "label": "remove-platform-boundary",
+        "exit": 1,
+        "counts": {
+          "tests": 1,
+          "pass": 0,
+          "fail": 1,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "requiredTests": 1,
+        "expectedAssertion": "non-Linux must not read /proc",
+        "selectionExclusions": 0,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/22-remove-platform-boundary.stdout.log",
+          "sha256": "a4e93f344c2682b9f0be9dc14fc502e9bb43d00f999e9dbd28f9cedebf67a919"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/22-remove-platform-boundary.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "mutations",
+        "major": 24,
+        "label": "omit-Z",
+        "exit": 1,
+        "counts": {
+          "tests": 1,
+          "pass": 0,
+          "fail": 1,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "requiredTests": 1,
+        "expectedAssertion": "Linux Z in node",
+        "selectionExclusions": 0,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/24-omit-Z.stdout.log",
+          "sha256": "6663abc8f7b98c3ded70f846bb62b5003876c6ff8f9cf45888bfde18f87513df"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/24-omit-Z.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "mutations",
+        "major": 24,
+        "label": "omit-X",
+        "exit": 1,
+        "counts": {
+          "tests": 1,
+          "pass": 0,
+          "fail": 1,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "requiredTests": 1,
+        "expectedAssertion": "Linux X in node",
+        "selectionExclusions": 0,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/24-omit-X.stdout.log",
+          "sha256": "538f1ac35ff152f0c0b523280e074ba138ac2b446a19424f2b6b68aff0c4c62d"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/24-omit-X.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "mutations",
+        "major": 24,
+        "label": "omit-x",
+        "exit": 1,
+        "counts": {
+          "tests": 1,
+          "pass": 0,
+          "fail": 1,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "requiredTests": 1,
+        "expectedAssertion": "Linux x in node",
+        "selectionExclusions": 0,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/24-omit-x.stdout.log",
+          "sha256": "c534193fe93761f9c78303085463a31ee860a98abb2e58a431b7ba32441318a7"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/24-omit-x.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "mutations",
+        "major": 24,
+        "label": "accept-live-R",
+        "exit": 1,
+        "counts": {
+          "tests": 1,
+          "pass": 0,
+          "fail": 1,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "requiredTests": 1,
+        "expectedAssertion": "Linux R in node",
+        "selectionExclusions": 0,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/24-accept-live-R.stdout.log",
+          "sha256": "ec0c3d0bd600e3070b946d8ceb00c9fead9bee89b48360a12f04557b52f8248f"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/24-accept-live-R.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "mutations",
+        "major": 24,
+        "label": "accept-unknown",
+        "exit": 1,
+        "counts": {
+          "tests": 1,
+          "pass": 0,
+          "fail": 1,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "requiredTests": 1,
+        "expectedAssertion": "unknown or malformed observations",
+        "selectionExclusions": 0,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/24-accept-unknown.stdout.log",
+          "sha256": "232e4089a3fa01f1d972d29d616153cd92d6cedcf67bc1f4b78b41e9ad97bcc4"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/24-accept-unknown.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "mutations",
+        "major": 24,
+        "label": "lose-ESRCH",
+        "exit": 1,
+        "counts": {
+          "tests": 1,
+          "pass": 0,
+          "fail": 1,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "requiredTests": 1,
+        "expectedAssertion": "owned PID absent",
+        "selectionExclusions": 0,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/24-lose-ESRCH.stdout.log",
+          "sha256": "61ff6bbbf7488bff7a5bf72b91bd9361a44379bac642ee7aeb644b7ad93bbd2e"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/24-lose-ESRCH.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "mutations",
+        "major": 24,
+        "label": "lose-ENOENT",
+        "exit": 1,
+        "counts": {
+          "tests": 1,
+          "pass": 0,
+          "fail": 1,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "requiredTests": 1,
+        "expectedAssertion": "owned PID disappeared during stat",
+        "selectionExclusions": 0,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/24-lose-ENOENT.stdout.log",
+          "sha256": "e8f98d989f405fde69720da873fce9347e7375eabdc63469d9c2a0c86c089985"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/24-lose-ENOENT.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "mutations",
+        "major": 24,
+        "label": "swallow-kill-error",
+        "exit": 1,
+        "counts": {
+          "tests": 1,
+          "pass": 0,
+          "fail": 1,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "requiredTests": 1,
+        "expectedAssertion": "kill/EPERM: preserve unexpected errors",
+        "selectionExclusions": 0,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/24-swallow-kill-error.stdout.log",
+          "sha256": "0106b555861fd531453da74e4b916d200d67d977263825fff376b94fc236dbbe"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/24-swallow-kill-error.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "mutations",
+        "major": 24,
+        "label": "swallow-stat-error",
+        "exit": 1,
+        "counts": {
+          "tests": 1,
+          "pass": 0,
+          "fail": 1,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "requiredTests": 1,
+        "expectedAssertion": "stat/EPERM: preserve unexpected errors",
+        "selectionExclusions": 0,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/24-swallow-stat-error.stdout.log",
+          "sha256": "08ea659ecaa51baac771e337d724f005174d59186f88d8dbce78862b0dfdd2f6"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/24-swallow-stat-error.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "mutations",
+        "major": 24,
+        "label": "truncate-nested-name",
+        "exit": 1,
+        "counts": {
+          "tests": 1,
+          "pass": 0,
+          "fail": 1,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "requiredTests": 1,
+        "expectedAssertion": "Linux Z in worker (nested)",
+        "selectionExclusions": 0,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/24-truncate-nested-name.stdout.log",
+          "sha256": "fda264e667bcdcb7fa6e0c820e99b723c5c9c73619805b65c4dba3acb39f7a89"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/24-truncate-nested-name.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "mutations",
+        "major": 24,
+        "label": "backtrack-into-comm",
+        "exit": 1,
+        "counts": {
+          "tests": 1,
+          "pass": 0,
+          "fail": 1,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "requiredTests": 1,
+        "expectedAssertion": "Linux R in a) Z b",
+        "selectionExclusions": 0,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/24-backtrack-into-comm.stdout.log",
+          "sha256": "ddb7d0f8426cd6edc9b81e28a32e01e43a21fd5b4ec1914fbd4c27479581c796"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/24-backtrack-into-comm.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "mutations",
+        "major": 24,
+        "label": "remove-platform-boundary",
+        "exit": 1,
+        "counts": {
+          "tests": 1,
+          "pass": 0,
+          "fail": 1,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "requiredTests": 1,
+        "expectedAssertion": "non-Linux must not read /proc",
+        "selectionExclusions": 0,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/24-remove-platform-boundary.stdout.log",
+          "sha256": "0f0b55a5d9a82a3d39c7865fdd1897a1cb4504bd5fb6605043aa03de013a05a9"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/24-remove-platform-boundary.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "controls",
+        "major": 20,
+        "label": "shadow-control",
+        "exit": 0,
+        "counts": {
+          "tests": 19,
+          "pass": 1,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 18,
+          "todo": 0
+        },
+        "requiredTests": 1,
+        "expectedAssertion": null,
+        "selectionExclusions": 18,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/20-shadow-control.stdout.log",
+          "sha256": "f8a83c70184c537bd586245bd5b0e95b373cfbcbd2c46415131d0b2566e4d9eb"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/20-shadow-control.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "controls",
+        "major": 20,
+        "label": "omit-Z-restored",
+        "exit": 0,
+        "counts": {
+          "tests": 19,
+          "pass": 1,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 18,
+          "todo": 0
+        },
+        "requiredTests": 1,
+        "expectedAssertion": null,
+        "selectionExclusions": 18,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/20-omit-Z-restored.stdout.log",
+          "sha256": "1bf8bb55caa451d2799236448035c3f02667749f3824e53d1d8e501b644a1d4f"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/20-omit-Z-restored.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "controls",
+        "major": 20,
+        "label": "omit-X-restored",
+        "exit": 0,
+        "counts": {
+          "tests": 19,
+          "pass": 1,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 18,
+          "todo": 0
+        },
+        "requiredTests": 1,
+        "expectedAssertion": null,
+        "selectionExclusions": 18,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/20-omit-X-restored.stdout.log",
+          "sha256": "8f344a231b343896a2e021944c2b1f921b59a5def8d5079191f2f319737fe357"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/20-omit-X-restored.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "controls",
+        "major": 20,
+        "label": "omit-x-restored",
+        "exit": 0,
+        "counts": {
+          "tests": 19,
+          "pass": 1,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 18,
+          "todo": 0
+        },
+        "requiredTests": 1,
+        "expectedAssertion": null,
+        "selectionExclusions": 18,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/20-omit-x-restored.stdout.log",
+          "sha256": "3827d3df6c4825b43eed512c619839e7ee213df53656fd5c97519b4688a533c1"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/20-omit-x-restored.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "controls",
+        "major": 20,
+        "label": "accept-live-R-restored",
+        "exit": 0,
+        "counts": {
+          "tests": 19,
+          "pass": 1,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 18,
+          "todo": 0
+        },
+        "requiredTests": 1,
+        "expectedAssertion": null,
+        "selectionExclusions": 18,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/20-accept-live-R-restored.stdout.log",
+          "sha256": "b68fd6defffea81e324f599253b53b1436dcabb42f7743965b0375fa8909c093"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/20-accept-live-R-restored.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "controls",
+        "major": 20,
+        "label": "accept-unknown-restored",
+        "exit": 0,
+        "counts": {
+          "tests": 19,
+          "pass": 1,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 18,
+          "todo": 0
+        },
+        "requiredTests": 1,
+        "expectedAssertion": null,
+        "selectionExclusions": 18,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/20-accept-unknown-restored.stdout.log",
+          "sha256": "6d57b3ede1bb3316cfb52363c8ed255b305be0afc669058a4918acf4c8f6083d"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/20-accept-unknown-restored.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "controls",
+        "major": 20,
+        "label": "lose-ESRCH-restored",
+        "exit": 0,
+        "counts": {
+          "tests": 19,
+          "pass": 1,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 18,
+          "todo": 0
+        },
+        "requiredTests": 1,
+        "expectedAssertion": null,
+        "selectionExclusions": 18,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/20-lose-ESRCH-restored.stdout.log",
+          "sha256": "c20db5bec849537423dcf7ee763478b2b0140f71f8bd34c6af1d43d0c5cc261f"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/20-lose-ESRCH-restored.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "controls",
+        "major": 20,
+        "label": "lose-ENOENT-restored",
+        "exit": 0,
+        "counts": {
+          "tests": 19,
+          "pass": 1,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 18,
+          "todo": 0
+        },
+        "requiredTests": 1,
+        "expectedAssertion": null,
+        "selectionExclusions": 18,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/20-lose-ENOENT-restored.stdout.log",
+          "sha256": "7ff178475b0b2487c8b8c17f2a5464b10ab426bbd77eeea6c5442f65308c9d2b"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/20-lose-ENOENT-restored.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "controls",
+        "major": 20,
+        "label": "swallow-kill-error-restored",
+        "exit": 0,
+        "counts": {
+          "tests": 19,
+          "pass": 1,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 18,
+          "todo": 0
+        },
+        "requiredTests": 1,
+        "expectedAssertion": null,
+        "selectionExclusions": 18,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/20-swallow-kill-error-restored.stdout.log",
+          "sha256": "8556ff99f21ab0809365c724060c03bda1a313ac3913f210d3390bf26823ce7c"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/20-swallow-kill-error-restored.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "controls",
+        "major": 20,
+        "label": "swallow-stat-error-restored",
+        "exit": 0,
+        "counts": {
+          "tests": 19,
+          "pass": 1,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 18,
+          "todo": 0
+        },
+        "requiredTests": 1,
+        "expectedAssertion": null,
+        "selectionExclusions": 18,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/20-swallow-stat-error-restored.stdout.log",
+          "sha256": "828ffe02ce888f3a804fa026121874d8a09828850a1aa5120992159247976fc3"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/20-swallow-stat-error-restored.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "controls",
+        "major": 20,
+        "label": "truncate-nested-name-restored",
+        "exit": 0,
+        "counts": {
+          "tests": 19,
+          "pass": 1,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 18,
+          "todo": 0
+        },
+        "requiredTests": 1,
+        "expectedAssertion": null,
+        "selectionExclusions": 18,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/20-truncate-nested-name-restored.stdout.log",
+          "sha256": "50a56db68a0ed6b41d19d4820d5d63414b1fddc4c7a11fd3c8784b1c8505e24f"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/20-truncate-nested-name-restored.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "controls",
+        "major": 20,
+        "label": "backtrack-into-comm-restored",
+        "exit": 0,
+        "counts": {
+          "tests": 19,
+          "pass": 1,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 18,
+          "todo": 0
+        },
+        "requiredTests": 1,
+        "expectedAssertion": null,
+        "selectionExclusions": 18,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/20-backtrack-into-comm-restored.stdout.log",
+          "sha256": "a0693ecc7a1435253597298cdf78aa2c1bd20c3f28ec2659d1849b19dd4cd0d9"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/20-backtrack-into-comm-restored.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "controls",
+        "major": 20,
+        "label": "remove-platform-boundary-restored",
+        "exit": 0,
+        "counts": {
+          "tests": 19,
+          "pass": 1,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 18,
+          "todo": 0
+        },
+        "requiredTests": 1,
+        "expectedAssertion": null,
+        "selectionExclusions": 18,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/20-remove-platform-boundary-restored.stdout.log",
+          "sha256": "44b94fa8941168716766acc7cc45cd0f128ef530eb4f89dae81f3c5ebafcff0e"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/20-remove-platform-boundary-restored.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "controls",
+        "major": 22,
+        "label": "shadow-control",
+        "exit": 0,
+        "counts": {
+          "tests": 1,
+          "pass": 1,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "requiredTests": 1,
+        "expectedAssertion": null,
+        "selectionExclusions": 0,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/22-shadow-control.stdout.log",
+          "sha256": "73daac9c4ac40caf63aee008b2e7818fbb42099600f26ede18da1e805fbc340d"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/22-shadow-control.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "controls",
+        "major": 22,
+        "label": "omit-Z-restored",
+        "exit": 0,
+        "counts": {
+          "tests": 1,
+          "pass": 1,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "requiredTests": 1,
+        "expectedAssertion": null,
+        "selectionExclusions": 0,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/22-omit-Z-restored.stdout.log",
+          "sha256": "10123596c4503f7ff876d4994d93bf52970c255b223b6ab569f8e072f0ee3f9d"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/22-omit-Z-restored.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "controls",
+        "major": 22,
+        "label": "omit-X-restored",
+        "exit": 0,
+        "counts": {
+          "tests": 1,
+          "pass": 1,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "requiredTests": 1,
+        "expectedAssertion": null,
+        "selectionExclusions": 0,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/22-omit-X-restored.stdout.log",
+          "sha256": "e163dac7b2dd3cd5d5a4c164baa6e587bc22791be656fafa630fb25a5f08b274"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/22-omit-X-restored.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "controls",
+        "major": 22,
+        "label": "omit-x-restored",
+        "exit": 0,
+        "counts": {
+          "tests": 1,
+          "pass": 1,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "requiredTests": 1,
+        "expectedAssertion": null,
+        "selectionExclusions": 0,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/22-omit-x-restored.stdout.log",
+          "sha256": "53eb65f8177021208e5ebb60920b6b544a8d257194aad3f935469ed935461ba0"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/22-omit-x-restored.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "controls",
+        "major": 22,
+        "label": "accept-live-R-restored",
+        "exit": 0,
+        "counts": {
+          "tests": 1,
+          "pass": 1,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "requiredTests": 1,
+        "expectedAssertion": null,
+        "selectionExclusions": 0,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/22-accept-live-R-restored.stdout.log",
+          "sha256": "30904ffd3a5b3118c2ef683fa59877a4e4bca9303a8b455086f59ea8b07de368"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/22-accept-live-R-restored.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "controls",
+        "major": 22,
+        "label": "accept-unknown-restored",
+        "exit": 0,
+        "counts": {
+          "tests": 1,
+          "pass": 1,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "requiredTests": 1,
+        "expectedAssertion": null,
+        "selectionExclusions": 0,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/22-accept-unknown-restored.stdout.log",
+          "sha256": "f6885017068d29e0c0548d7948f29fa369219072f111dab179d7c209cf51d3db"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/22-accept-unknown-restored.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "controls",
+        "major": 22,
+        "label": "lose-ESRCH-restored",
+        "exit": 0,
+        "counts": {
+          "tests": 1,
+          "pass": 1,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "requiredTests": 1,
+        "expectedAssertion": null,
+        "selectionExclusions": 0,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/22-lose-ESRCH-restored.stdout.log",
+          "sha256": "7ef9facaaaed24febd2c24efca4f72c0a0221825cad3b244353c5b1efe35e424"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/22-lose-ESRCH-restored.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "controls",
+        "major": 22,
+        "label": "lose-ENOENT-restored",
+        "exit": 0,
+        "counts": {
+          "tests": 1,
+          "pass": 1,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "requiredTests": 1,
+        "expectedAssertion": null,
+        "selectionExclusions": 0,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/22-lose-ENOENT-restored.stdout.log",
+          "sha256": "5b1e0768763ffded39a3a4e6fc5e9b015a331b1506a60affa55e9d27ab17d6d0"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/22-lose-ENOENT-restored.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "controls",
+        "major": 22,
+        "label": "swallow-kill-error-restored",
+        "exit": 0,
+        "counts": {
+          "tests": 1,
+          "pass": 1,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "requiredTests": 1,
+        "expectedAssertion": null,
+        "selectionExclusions": 0,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/22-swallow-kill-error-restored.stdout.log",
+          "sha256": "a607e15decbd8ed2ad889fd95f9f6c4f518a113084f5269598a73bc9a8966a42"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/22-swallow-kill-error-restored.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "controls",
+        "major": 22,
+        "label": "swallow-stat-error-restored",
+        "exit": 0,
+        "counts": {
+          "tests": 1,
+          "pass": 1,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "requiredTests": 1,
+        "expectedAssertion": null,
+        "selectionExclusions": 0,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/22-swallow-stat-error-restored.stdout.log",
+          "sha256": "e59d37f044216a6994dd2182f9dcfeaa2d652a4317904a5aaf22696d49797da7"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/22-swallow-stat-error-restored.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "controls",
+        "major": 22,
+        "label": "truncate-nested-name-restored",
+        "exit": 0,
+        "counts": {
+          "tests": 1,
+          "pass": 1,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "requiredTests": 1,
+        "expectedAssertion": null,
+        "selectionExclusions": 0,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/22-truncate-nested-name-restored.stdout.log",
+          "sha256": "7adce678712d5b223f4b663a3fb282962ffe9d697728375becbaea40d8a81773"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/22-truncate-nested-name-restored.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "controls",
+        "major": 22,
+        "label": "backtrack-into-comm-restored",
+        "exit": 0,
+        "counts": {
+          "tests": 1,
+          "pass": 1,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "requiredTests": 1,
+        "expectedAssertion": null,
+        "selectionExclusions": 0,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/22-backtrack-into-comm-restored.stdout.log",
+          "sha256": "1d22a973ec0bf147e08368778206fa5d7b44863dc37290095e9d3bd844e2f17e"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/22-backtrack-into-comm-restored.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "controls",
+        "major": 22,
+        "label": "remove-platform-boundary-restored",
+        "exit": 0,
+        "counts": {
+          "tests": 1,
+          "pass": 1,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "requiredTests": 1,
+        "expectedAssertion": null,
+        "selectionExclusions": 0,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/22-remove-platform-boundary-restored.stdout.log",
+          "sha256": "8fd71571b03bd012001fb9eae6e4d6bebfcce38e725dc6c8723525be1e205563"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/22-remove-platform-boundary-restored.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "controls",
+        "major": 24,
+        "label": "shadow-control",
+        "exit": 0,
+        "counts": {
+          "tests": 1,
+          "pass": 1,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "requiredTests": 1,
+        "expectedAssertion": null,
+        "selectionExclusions": 0,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/24-shadow-control.stdout.log",
+          "sha256": "6645ac297a23f75efbd4c385f6ae64b09b9b141e36dd8971dcd44c560435400a"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/24-shadow-control.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "controls",
+        "major": 24,
+        "label": "omit-Z-restored",
+        "exit": 0,
+        "counts": {
+          "tests": 1,
+          "pass": 1,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "requiredTests": 1,
+        "expectedAssertion": null,
+        "selectionExclusions": 0,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/24-omit-Z-restored.stdout.log",
+          "sha256": "6c8ce6c488d67166d8fbe0f738bf64a2aecbfb2bf901c424c2dbc6438b7ee028"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/24-omit-Z-restored.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "controls",
+        "major": 24,
+        "label": "omit-X-restored",
+        "exit": 0,
+        "counts": {
+          "tests": 1,
+          "pass": 1,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "requiredTests": 1,
+        "expectedAssertion": null,
+        "selectionExclusions": 0,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/24-omit-X-restored.stdout.log",
+          "sha256": "ac12bd93b3f098ed38a0ee613ec773781238cc9c3f6f2139f6352b79b6df7ab1"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/24-omit-X-restored.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "controls",
+        "major": 24,
+        "label": "omit-x-restored",
+        "exit": 0,
+        "counts": {
+          "tests": 1,
+          "pass": 1,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "requiredTests": 1,
+        "expectedAssertion": null,
+        "selectionExclusions": 0,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/24-omit-x-restored.stdout.log",
+          "sha256": "e2e666e57ec090c6e14d77b0bd7272a13112eee2a9d5be6f86fce367941f2946"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/24-omit-x-restored.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "controls",
+        "major": 24,
+        "label": "accept-live-R-restored",
+        "exit": 0,
+        "counts": {
+          "tests": 1,
+          "pass": 1,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "requiredTests": 1,
+        "expectedAssertion": null,
+        "selectionExclusions": 0,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/24-accept-live-R-restored.stdout.log",
+          "sha256": "f50abf44ff2776b956ab0c6f2165771d9140af572d854246a5aa1e24841d5bfa"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/24-accept-live-R-restored.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "controls",
+        "major": 24,
+        "label": "accept-unknown-restored",
+        "exit": 0,
+        "counts": {
+          "tests": 1,
+          "pass": 1,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "requiredTests": 1,
+        "expectedAssertion": null,
+        "selectionExclusions": 0,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/24-accept-unknown-restored.stdout.log",
+          "sha256": "f3d4141c0ead8760aabb3fa41cb709ee6529049b2597afb47c93277d35ffa0c2"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/24-accept-unknown-restored.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "controls",
+        "major": 24,
+        "label": "lose-ESRCH-restored",
+        "exit": 0,
+        "counts": {
+          "tests": 1,
+          "pass": 1,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "requiredTests": 1,
+        "expectedAssertion": null,
+        "selectionExclusions": 0,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/24-lose-ESRCH-restored.stdout.log",
+          "sha256": "5972db0a10542d6794436c1caa61ee57765b27ee7402e6cb268821a007d92650"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/24-lose-ESRCH-restored.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "controls",
+        "major": 24,
+        "label": "lose-ENOENT-restored",
+        "exit": 0,
+        "counts": {
+          "tests": 1,
+          "pass": 1,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "requiredTests": 1,
+        "expectedAssertion": null,
+        "selectionExclusions": 0,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/24-lose-ENOENT-restored.stdout.log",
+          "sha256": "edb9a9079c0297fa15e0ac375a2031e118ecf141cd53450ed16cf6868048591d"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/24-lose-ENOENT-restored.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "controls",
+        "major": 24,
+        "label": "swallow-kill-error-restored",
+        "exit": 0,
+        "counts": {
+          "tests": 1,
+          "pass": 1,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "requiredTests": 1,
+        "expectedAssertion": null,
+        "selectionExclusions": 0,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/24-swallow-kill-error-restored.stdout.log",
+          "sha256": "80943f03c10db9d43c8eb88e655a3ff7e617b8b1927b32e2b129a8d65d4691a3"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/24-swallow-kill-error-restored.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "controls",
+        "major": 24,
+        "label": "swallow-stat-error-restored",
+        "exit": 0,
+        "counts": {
+          "tests": 1,
+          "pass": 1,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "requiredTests": 1,
+        "expectedAssertion": null,
+        "selectionExclusions": 0,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/24-swallow-stat-error-restored.stdout.log",
+          "sha256": "bc25e4d150d5a2ae4da03c34f80c85c2c116d06d9b17432d9967fbf865b25330"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/24-swallow-stat-error-restored.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "controls",
+        "major": 24,
+        "label": "truncate-nested-name-restored",
+        "exit": 0,
+        "counts": {
+          "tests": 1,
+          "pass": 1,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "requiredTests": 1,
+        "expectedAssertion": null,
+        "selectionExclusions": 0,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/24-truncate-nested-name-restored.stdout.log",
+          "sha256": "a9792d8906d987550cc931af76213bb92d639448ad55e1fe2f21974ff07942cf"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/24-truncate-nested-name-restored.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "controls",
+        "major": 24,
+        "label": "backtrack-into-comm-restored",
+        "exit": 0,
+        "counts": {
+          "tests": 1,
+          "pass": 1,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "requiredTests": 1,
+        "expectedAssertion": null,
+        "selectionExclusions": 0,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/24-backtrack-into-comm-restored.stdout.log",
+          "sha256": "de515a423515193cc0f55eacf405fa1b9952147bf323d801f4c5cda07e6a933f"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/24-backtrack-into-comm-restored.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "controls",
+        "major": 24,
+        "label": "remove-platform-boundary-restored",
+        "exit": 0,
+        "counts": {
+          "tests": 1,
+          "pass": 1,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "requiredTests": 1,
+        "expectedAssertion": null,
+        "selectionExclusions": 0,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/24-remove-platform-boundary-restored.stdout.log",
+          "sha256": "2eee99e940744bea41829fe354c4d009e503aae8e247ef3ab92d6438eb59ae4d"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/24-remove-platform-boundary-restored.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "repetitions",
+        "major": 20,
+        "label": "real-process-0",
+        "exit": 0,
+        "counts": {
+          "tests": 19,
+          "pass": 2,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 17,
+          "todo": 0
+        },
+        "requiredTests": 2,
+        "expectedAssertion": null,
+        "selectionExclusions": 17,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/20-real-process-0.stdout.log",
+          "sha256": "587528aaf879ed3a23ad8c8c977ef35f33f5aa731a90db90ff597d018010a376"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/20-real-process-0.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "repetitions",
+        "major": 20,
+        "label": "real-process-1",
+        "exit": 0,
+        "counts": {
+          "tests": 19,
+          "pass": 2,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 17,
+          "todo": 0
+        },
+        "requiredTests": 2,
+        "expectedAssertion": null,
+        "selectionExclusions": 17,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/20-real-process-1.stdout.log",
+          "sha256": "721ddc7af72ed50241f8662770664975e78f8777911340361522b6c2c999190e"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/20-real-process-1.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "repetitions",
+        "major": 20,
+        "label": "real-process-2",
+        "exit": 0,
+        "counts": {
+          "tests": 19,
+          "pass": 2,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 17,
+          "todo": 0
+        },
+        "requiredTests": 2,
+        "expectedAssertion": null,
+        "selectionExclusions": 17,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/20-real-process-2.stdout.log",
+          "sha256": "c50588d1fdd27f0bfb7f2572f1993a369b51039be965048830981a6c94fb3e66"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/20-real-process-2.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "repetitions",
+        "major": 20,
+        "label": "real-process-3",
+        "exit": 0,
+        "counts": {
+          "tests": 19,
+          "pass": 2,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 17,
+          "todo": 0
+        },
+        "requiredTests": 2,
+        "expectedAssertion": null,
+        "selectionExclusions": 17,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/20-real-process-3.stdout.log",
+          "sha256": "77700bb5d6c659b2cffd2ab7410031618ef91a32e556a559962ed8c65fe43cf6"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/20-real-process-3.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "repetitions",
+        "major": 20,
+        "label": "real-process-4",
+        "exit": 0,
+        "counts": {
+          "tests": 19,
+          "pass": 2,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 17,
+          "todo": 0
+        },
+        "requiredTests": 2,
+        "expectedAssertion": null,
+        "selectionExclusions": 17,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/20-real-process-4.stdout.log",
+          "sha256": "ca9e654f05b72b8494f97cc2d32065d90414053585f6589933cfbf8510454ca2"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/20-real-process-4.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "repetitions",
+        "major": 20,
+        "label": "real-process-5",
+        "exit": 0,
+        "counts": {
+          "tests": 19,
+          "pass": 2,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 17,
+          "todo": 0
+        },
+        "requiredTests": 2,
+        "expectedAssertion": null,
+        "selectionExclusions": 17,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/20-real-process-5.stdout.log",
+          "sha256": "15a3cc0af6dd8b7d03048d408a44d6cac52544b5be8be6455c90d403fc441057"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/20-real-process-5.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "repetitions",
+        "major": 20,
+        "label": "real-process-6",
+        "exit": 0,
+        "counts": {
+          "tests": 19,
+          "pass": 2,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 17,
+          "todo": 0
+        },
+        "requiredTests": 2,
+        "expectedAssertion": null,
+        "selectionExclusions": 17,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/20-real-process-6.stdout.log",
+          "sha256": "b0a7b6fbcdbaf3ed2bf9361b39f5f4aa2fd517c29beb958c926adecc4907d72f"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/20-real-process-6.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "repetitions",
+        "major": 20,
+        "label": "real-process-7",
+        "exit": 0,
+        "counts": {
+          "tests": 19,
+          "pass": 2,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 17,
+          "todo": 0
+        },
+        "requiredTests": 2,
+        "expectedAssertion": null,
+        "selectionExclusions": 17,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/20-real-process-7.stdout.log",
+          "sha256": "a5dcb9312c67df18bccc36e01d7113f99836c43da7c458d46970e2b4555c2023"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/20-real-process-7.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "repetitions",
+        "major": 20,
+        "label": "real-process-8",
+        "exit": 0,
+        "counts": {
+          "tests": 19,
+          "pass": 2,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 17,
+          "todo": 0
+        },
+        "requiredTests": 2,
+        "expectedAssertion": null,
+        "selectionExclusions": 17,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/20-real-process-8.stdout.log",
+          "sha256": "7e24f0ce0cc4d58c073bbbef89ec9bc2f171e436ad3c0ac3abb29b6cd2146363"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/20-real-process-8.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "repetitions",
+        "major": 20,
+        "label": "real-process-9",
+        "exit": 0,
+        "counts": {
+          "tests": 19,
+          "pass": 2,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 17,
+          "todo": 0
+        },
+        "requiredTests": 2,
+        "expectedAssertion": null,
+        "selectionExclusions": 17,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/20-real-process-9.stdout.log",
+          "sha256": "1c254c8e7faa294d550cfcf4255dba6335b799995bd60b5f06a3bcdaa25d750a"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/20-real-process-9.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "repetitions",
+        "major": 20,
+        "label": "real-process-10",
+        "exit": 0,
+        "counts": {
+          "tests": 19,
+          "pass": 2,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 17,
+          "todo": 0
+        },
+        "requiredTests": 2,
+        "expectedAssertion": null,
+        "selectionExclusions": 17,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/20-real-process-10.stdout.log",
+          "sha256": "33441afaf83414d88569a9d021a0095d0df9bf1818b9cdeed81bb2ef5bf47e2f"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/20-real-process-10.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "repetitions",
+        "major": 20,
+        "label": "real-process-11",
+        "exit": 0,
+        "counts": {
+          "tests": 19,
+          "pass": 2,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 17,
+          "todo": 0
+        },
+        "requiredTests": 2,
+        "expectedAssertion": null,
+        "selectionExclusions": 17,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/20-real-process-11.stdout.log",
+          "sha256": "191e778630b469bcfd0dfa38e34d7cac02d13c51736af5ce99432a1f957b2503"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/20-real-process-11.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "repetitions",
+        "major": 22,
+        "label": "real-process-0",
+        "exit": 0,
+        "counts": {
+          "tests": 2,
+          "pass": 2,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "requiredTests": 2,
+        "expectedAssertion": null,
+        "selectionExclusions": 0,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/22-real-process-0.stdout.log",
+          "sha256": "ea01f6b8b5e4dc1532cbac9eac6edff74874739c3aa50ad3108448af09d6a8f2"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/22-real-process-0.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "repetitions",
+        "major": 22,
+        "label": "real-process-1",
+        "exit": 0,
+        "counts": {
+          "tests": 2,
+          "pass": 2,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "requiredTests": 2,
+        "expectedAssertion": null,
+        "selectionExclusions": 0,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/22-real-process-1.stdout.log",
+          "sha256": "eaa9e3172b6773f4e36fe5c676514bd08752bf13d6534f6e2856a4da7fd05b8e"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/22-real-process-1.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "repetitions",
+        "major": 22,
+        "label": "real-process-2",
+        "exit": 0,
+        "counts": {
+          "tests": 2,
+          "pass": 2,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "requiredTests": 2,
+        "expectedAssertion": null,
+        "selectionExclusions": 0,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/22-real-process-2.stdout.log",
+          "sha256": "1288817b1b90f1e9253becb7b7017180b579634945fb83685528b6ceff250525"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/22-real-process-2.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "repetitions",
+        "major": 22,
+        "label": "real-process-3",
+        "exit": 0,
+        "counts": {
+          "tests": 2,
+          "pass": 2,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "requiredTests": 2,
+        "expectedAssertion": null,
+        "selectionExclusions": 0,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/22-real-process-3.stdout.log",
+          "sha256": "1b0b332efcb655768704a47bb756b6c4bd0f79cdef401b89835659977e031bd9"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/22-real-process-3.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "repetitions",
+        "major": 22,
+        "label": "real-process-4",
+        "exit": 0,
+        "counts": {
+          "tests": 2,
+          "pass": 2,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "requiredTests": 2,
+        "expectedAssertion": null,
+        "selectionExclusions": 0,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/22-real-process-4.stdout.log",
+          "sha256": "dc5166de7595c317dada7c66572fb456608ce58ba798fc2793b55f70d6c39869"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/22-real-process-4.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "repetitions",
+        "major": 22,
+        "label": "real-process-5",
+        "exit": 0,
+        "counts": {
+          "tests": 2,
+          "pass": 2,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "requiredTests": 2,
+        "expectedAssertion": null,
+        "selectionExclusions": 0,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/22-real-process-5.stdout.log",
+          "sha256": "ad085440fc2e9a5021d970cea54279e66704dca533dbeda507db92f3cd25f57e"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/22-real-process-5.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "repetitions",
+        "major": 22,
+        "label": "real-process-6",
+        "exit": 0,
+        "counts": {
+          "tests": 2,
+          "pass": 2,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "requiredTests": 2,
+        "expectedAssertion": null,
+        "selectionExclusions": 0,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/22-real-process-6.stdout.log",
+          "sha256": "fc6ed0683f33591181e87c04c1a5755f1a35cef9193060a5f6a3862729fa611c"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/22-real-process-6.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "repetitions",
+        "major": 22,
+        "label": "real-process-7",
+        "exit": 0,
+        "counts": {
+          "tests": 2,
+          "pass": 2,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "requiredTests": 2,
+        "expectedAssertion": null,
+        "selectionExclusions": 0,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/22-real-process-7.stdout.log",
+          "sha256": "90a946b954ef3fc88a12de723a6b89d9163afee357e4ca2d7e67eb8264ecb1f6"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/22-real-process-7.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "repetitions",
+        "major": 22,
+        "label": "real-process-8",
+        "exit": 0,
+        "counts": {
+          "tests": 2,
+          "pass": 2,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "requiredTests": 2,
+        "expectedAssertion": null,
+        "selectionExclusions": 0,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/22-real-process-8.stdout.log",
+          "sha256": "071a5df45b03c3bd1632a24e74fc51f68b2f21cda704757251a81a0b34b35195"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/22-real-process-8.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "repetitions",
+        "major": 22,
+        "label": "real-process-9",
+        "exit": 0,
+        "counts": {
+          "tests": 2,
+          "pass": 2,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "requiredTests": 2,
+        "expectedAssertion": null,
+        "selectionExclusions": 0,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/22-real-process-9.stdout.log",
+          "sha256": "9f61f1a649c10baeb5d5c3648296fe2e88f37d562a7384acd64f9ac9d209320c"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/22-real-process-9.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "repetitions",
+        "major": 22,
+        "label": "real-process-10",
+        "exit": 0,
+        "counts": {
+          "tests": 2,
+          "pass": 2,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "requiredTests": 2,
+        "expectedAssertion": null,
+        "selectionExclusions": 0,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/22-real-process-10.stdout.log",
+          "sha256": "57d3fa4ebacff2953719739820ce2366ee23440ce0116342ead974a60a2895a8"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/22-real-process-10.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "repetitions",
+        "major": 22,
+        "label": "real-process-11",
+        "exit": 0,
+        "counts": {
+          "tests": 2,
+          "pass": 2,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "requiredTests": 2,
+        "expectedAssertion": null,
+        "selectionExclusions": 0,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/22-real-process-11.stdout.log",
+          "sha256": "8804647724986027c2417b1cd43083c203ad8befd54dc427e8412bf9d107e3e0"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/22-real-process-11.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "repetitions",
+        "major": 24,
+        "label": "real-process-0",
+        "exit": 0,
+        "counts": {
+          "tests": 2,
+          "pass": 2,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "requiredTests": 2,
+        "expectedAssertion": null,
+        "selectionExclusions": 0,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/24-real-process-0.stdout.log",
+          "sha256": "e520216931524f3bba120c86cc7d77f11b33558178f7fcad0acc4876e077329e"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/24-real-process-0.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "repetitions",
+        "major": 24,
+        "label": "real-process-1",
+        "exit": 0,
+        "counts": {
+          "tests": 2,
+          "pass": 2,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "requiredTests": 2,
+        "expectedAssertion": null,
+        "selectionExclusions": 0,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/24-real-process-1.stdout.log",
+          "sha256": "4247f7ea16d8f32bb337ac852301b3b1317c83e6164ba390ca83dcabd2332ae1"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/24-real-process-1.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "repetitions",
+        "major": 24,
+        "label": "real-process-2",
+        "exit": 0,
+        "counts": {
+          "tests": 2,
+          "pass": 2,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "requiredTests": 2,
+        "expectedAssertion": null,
+        "selectionExclusions": 0,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/24-real-process-2.stdout.log",
+          "sha256": "64616e0335014f4c6b8acf37bdfc40b9f1dd4e484864915f9ebb526687c5feb3"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/24-real-process-2.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "repetitions",
+        "major": 24,
+        "label": "real-process-3",
+        "exit": 0,
+        "counts": {
+          "tests": 2,
+          "pass": 2,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "requiredTests": 2,
+        "expectedAssertion": null,
+        "selectionExclusions": 0,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/24-real-process-3.stdout.log",
+          "sha256": "6af67ca815031003465d5d7e49d861b62894cf2582474ca0f627765214774b4f"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/24-real-process-3.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "repetitions",
+        "major": 24,
+        "label": "real-process-4",
+        "exit": 0,
+        "counts": {
+          "tests": 2,
+          "pass": 2,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "requiredTests": 2,
+        "expectedAssertion": null,
+        "selectionExclusions": 0,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/24-real-process-4.stdout.log",
+          "sha256": "7eff208480e11439f6c93ef7da99652cca1be81edc12696595058ea1ded4f2ae"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/24-real-process-4.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "repetitions",
+        "major": 24,
+        "label": "real-process-5",
+        "exit": 0,
+        "counts": {
+          "tests": 2,
+          "pass": 2,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "requiredTests": 2,
+        "expectedAssertion": null,
+        "selectionExclusions": 0,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/24-real-process-5.stdout.log",
+          "sha256": "3564744bcf78f9d0bdf916aea390c511967ec7750fc3ea6eb195dac6051692b2"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/24-real-process-5.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "repetitions",
+        "major": 24,
+        "label": "real-process-6",
+        "exit": 0,
+        "counts": {
+          "tests": 2,
+          "pass": 2,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "requiredTests": 2,
+        "expectedAssertion": null,
+        "selectionExclusions": 0,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/24-real-process-6.stdout.log",
+          "sha256": "979b7e2e292ec3ed429b648a4fd7f2b68c24ee8b2abc14b18b3e502d80a4eef5"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/24-real-process-6.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "repetitions",
+        "major": 24,
+        "label": "real-process-7",
+        "exit": 0,
+        "counts": {
+          "tests": 2,
+          "pass": 2,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "requiredTests": 2,
+        "expectedAssertion": null,
+        "selectionExclusions": 0,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/24-real-process-7.stdout.log",
+          "sha256": "c314b246264c9e93c4f9a83169fc035c885ac62964b1a5443f09d18da9ed7aab"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/24-real-process-7.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "repetitions",
+        "major": 24,
+        "label": "real-process-8",
+        "exit": 0,
+        "counts": {
+          "tests": 2,
+          "pass": 2,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "requiredTests": 2,
+        "expectedAssertion": null,
+        "selectionExclusions": 0,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/24-real-process-8.stdout.log",
+          "sha256": "319ff018f07d4cd025cebf766d29097e5509eb1fad2ff542ba32f38d8137dc2e"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/24-real-process-8.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "repetitions",
+        "major": 24,
+        "label": "real-process-9",
+        "exit": 0,
+        "counts": {
+          "tests": 2,
+          "pass": 2,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "requiredTests": 2,
+        "expectedAssertion": null,
+        "selectionExclusions": 0,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/24-real-process-9.stdout.log",
+          "sha256": "20a542b21b220bcee85c584e02fffe2ceb0afff505969552fa38318ccd7bebea"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/24-real-process-9.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "repetitions",
+        "major": 24,
+        "label": "real-process-10",
+        "exit": 0,
+        "counts": {
+          "tests": 2,
+          "pass": 2,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "requiredTests": 2,
+        "expectedAssertion": null,
+        "selectionExclusions": 0,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/24-real-process-10.stdout.log",
+          "sha256": "150c1e083016204c27e7f6341e85a11ca8cbe2ac76758f04ed35367d7320ada8"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/24-real-process-10.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "family": "repetitions",
+        "major": 24,
+        "label": "real-process-11",
+        "exit": 0,
+        "counts": {
+          "tests": 2,
+          "pass": 2,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "requiredTests": 2,
+        "expectedAssertion": null,
+        "selectionExclusions": 0,
+        "stdout": {
+          "path": "v027-close-oracle-checks-C4vBow/24-real-process-11.stdout.log",
+          "sha256": "845f4c874a1339a5c729d0edf3706236bb6a6bef21c327bd664760fee6afac48"
+        },
+        "stderr": {
+          "path": "v027-close-oracle-checks-C4vBow/24-real-process-11.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    ]
+  },
+  "native": [
+    {
+      "path": "v027-close-oracle-native-red.log",
+      "sha256": "66def2317ec0416b0b5e56a4d874ab72ed2d73b40311125ef8f1ed57e8638f94",
+      "output": "RED ok TEST-DIAGCLI-PROCSTATE-001 (REQ-DIAGCLI-004) 336ms — fails with: AssertionError [ERR_ASSERTION]: Linux X in node: terminal must not mean running"
+    },
+    {
+      "path": "v027-close-oracle-native-green.log",
+      "sha256": "72a485bcc6140940b0486432bcd638bfec5543519d8c1d60dff3b28c4a4b02a5",
+      "output": "GREEN ok TEST-DIAGCLI-PROCSTATE-001 (REQ-DIAGCLI-004) 323ms\n⚠ implementation shared with other REQs changed since their Green: TEST-DIAGCLI-007, TEST-DIAGCLI-008, TEST-DIAGCLI-004, TEST-DIAGCLI-CLOSE-001, TEST-DIAGCLI-005 — re-run them (tdd refactor TEST-DIAGCLI-007 TEST-DIAGCLI-008 TEST-DIAGCLI-004 TEST-DIAGCLI-CLOSE-001 TEST-DIAGCLI-005) or the project tests; their evidence is not re-checked automatically"
+    },
+    {
+      "path": "v027-close-oracle-strengthened-red.log",
+      "sha256": "5898dea9e28423a8015e0f8f82e316c1afacde58b3d13e35e8435015798641c5",
+      "output": "RED ok TEST-DIAGCLI-PROCSTATE-001 (REQ-DIAGCLI-004) 327ms — fails with: AssertionError [ERR_ASSERTION]: Linux X in node: terminal must not mean running"
+    },
+    {
+      "path": "v027-close-oracle-strengthened-green.log",
+      "sha256": "8491bd7292356dbe1746d1bdb931b90126b212788fb1af00db2e075c7256e3f2",
+      "output": "GREEN ok TEST-DIAGCLI-PROCSTATE-001 (REQ-DIAGCLI-004) 329ms\n⚠ implementation shared with other REQs changed since their Green: TEST-DIAGCLI-007, TEST-DIAGCLI-008, TEST-DIAGCLI-004, TEST-DIAGCLI-CLOSE-001, TEST-DIAGCLI-005 — re-run them (tdd refactor TEST-DIAGCLI-007 TEST-DIAGCLI-008 TEST-DIAGCLI-004 TEST-DIAGCLI-CLOSE-001 TEST-DIAGCLI-005) or the project tests; their evidence is not re-checked automatically"
+    },
+    {
+      "path": "v027-close-oracle-parser-red.log",
+      "sha256": "62bf73a806ff038bf9800cd96cb25672016dbe3b06ec84809997176331f841e7",
+      "output": "RED ok TEST-DIAGCLI-PROCSTATE-001 (REQ-DIAGCLI-004) 323ms — fails with: AssertionError [ERR_ASSERTION]: Linux R in a) Z b: terminal must not mean running"
+    },
+    {
+      "path": "v027-close-oracle-parser-green.log",
+      "sha256": "2c7bc1dd9c168638cd75bddbcfe54ae8bcac52b9a99aecdd00a5f69a73c219d6",
+      "output": "GREEN ok TEST-DIAGCLI-PROCSTATE-001 (REQ-DIAGCLI-004) 320ms"
+    },
+    {
+      "path": "v027-close-oracle-parser-native-refactors.log",
+      "sha256": "7c909b4b75a25f65d1e8c7d34843be95a22d441a2946e9490e50522957aaed4b",
+      "output": "TEST-DIAGCLI-007\nREFACTOR ok TEST-DIAGCLI-007 (REQ-DIAGCLI-004) 834ms\n\nTEST-DIAGCLI-008\nREFACTOR ok TEST-DIAGCLI-008 (REQ-DIAGCLI-004) 5784ms\n\nTEST-DIAGCLI-004\nREFACTOR ok TEST-DIAGCLI-004 (REQ-DIAGCLI-004) 2073ms\n\nTEST-DIAGCLI-CLOSE-001\nREFACTOR ok TEST-DIAGCLI-CLOSE-001 (REQ-DIAGCLI-004) 839ms\n\nTEST-DIAGCLI-005\nREFACTOR ok TEST-DIAGCLI-005 (REQ-DIAGCLI-005) 2728ms"
+    }
+  ],
+  "staticDiagnostics": {
+    "status": "FAIL",
+    "report": {
+      "path": "v027-close-oracle-lint-Ipbm9k/report.json",
+      "sha256": "031b2ebb77b44142105e5a33af4c5c62c16fb22bfea1f659fc5b5f6bfce0cde7"
+    },
+    "baselineCommit": "7e7ec0197f671923dba616e6c2f9fa19fef32bc4",
+    "unchangedBaselineFindings": 2,
+    "introducedDiagnostics": [],
+    "ruleDisabling": false,
+    "scope": "Changed diagnostics regression file and isolated existing-standard ESLint9 recommended config, not full-project lint",
+    "diagnostics": [
+      {
+        "source": "eslint",
+        "file": ".github/skills/lean-sdd-tdd/scripts/diagnostics.test.mjs",
+        "line": 22,
+        "column": 9,
+        "code": "no-unused-vars",
+        "severity": "error",
+        "message": "'NODE_TEST_CONTEXT' is assigned a value but never used."
+      },
+      {
+        "source": "eslint",
+        "file": ".github/skills/lean-sdd-tdd/scripts/diagnostics.test.mjs",
+        "line": 164,
+        "column": 38,
+        "code": "no-control-regex",
+        "severity": "error",
+        "message": "Unexpected control character(s) in regular expression: \\x1b."
+      }
+    ]
+  },
+  "history": [
+    {
+      "path": "v027-publication-failure-analysis.json",
+      "sha256": "3ab0d7dba377083bb6f614edc46ea31ebdeaf8532388e945069c3b2ecbda11ee",
+      "status": "Hosted test failed and publication skipped; earlier two frozen clean runs provide no current credit"
+    },
+    {
+      "path": "v027-close-oracle-checks-4kcltS/report.json",
+      "sha256": "95d74450fac5fa240a4df47580808191a4dc16e4efec35905525f66cef5f3010",
+      "status": "Retained harness PATH setup failure; not Red or PASS"
+    },
+    {
+      "path": "v027-close-oracle-checks-xGG0K4/report.json",
+      "sha256": "7fe2b4c490e1b9ab82d1289e71dae3d8946f923a0e49905d5fff7ef23fc85e49",
+      "status": "Earlier narrower development PASS did not cover comm lookalikes; superseded by strengthened checks, not release credit"
+    }
+  ],
+  "review": "Claude Sonnet 5.5: two final CLEAN design-delta rounds, then two final CLEAN helper/test fix-delta rounds; reviewers did not execute checks or approve release readiness",
+  "documentation": {
+    "files": [
+      {
+        "path": "README.md",
+        "sha256": "eb21b1e8fcd6d6eb405af06b52fb17e2cf16dce91f7880250d480d024532210c"
+      },
+      {
+        "path": "README-ja.md",
+        "sha256": "ef0c28b2ea16216a643f4c5e1833f34026a4cc002c8e5adcc8fb8eca861001d2"
+      },
+      {
+        "path": "CLANGELOG.md",
+        "sha256": "e99697bb4316f29589f8dced2a9d0033c7c77b3ef20e634c16d064284c549a8a"
+      }
+    ],
+    "purpose": "Truthful failed-publication status, test-only repair scope, no old qualification/approval carryover, absent repair in old tagged commit, prerequisite reference/preparation approval",
+    "independentReview": "Initial document reviewer found three omissions; all applied. A separate bounded fix-delta reviewer returned CLEAN on those three header fixes only, not a broader audit",
+    "prose": {
+      "mode": "full with changed-paragraph follow-up",
+      "status": "Japanese prose optimization completed",
+      "initialStructuralDraftScore": 97,
+      "initialScore": 96,
+      "finalScore": 96,
+      "readingLoadScore": 99,
+      "findingsFixed": 0,
+      "findingsKept": 4,
+      "keepReason": "Intentional repair-versus-checkpoint lead distinguishes old tagged bytes from preparation status; unchanged command-option lead repetition, precise cumulative-budget means and SDK provenance genitives remain accurate. These information-level observations do not justify cosmetic rewrites",
+      "necessaryCorrections": "Factual status/approval-scope corrections by the document structure pass",
+      "optionalWordingChanges": 0,
+      "invariant": {
+        "path": "v027-close-oracle-docs-prose-r2/invariants.json",
+        "sha256": "2437ee53969c22bf62d2d87d751d99a8af84adb98ce0b8dbf2f2f5ce52746130"
+      },
+      "proseDiagnostics": {
+        "path": "v027-close-oracle-docs-prose-r2/prose-baseline.json",
+        "sha256": "c13711fcd720b408ef9f38abfce7e0d6c11043bd0562cc162ea3b835c17edfac"
+      },
+      "readingLoad": {
+        "path": "v027-close-oracle-docs-prose-r2/reading-load.json",
+        "sha256": "da615826c6b4da5f05964dbc384ba11bc11b4e7fdea579a892f8769a207d6af2"
+      },
+      "semanticReview": "Completed structural draft is byte-identical after prose review; no prose-only edit requiring a semantic review"
+    },
+    "structuralLint": [
+      {
+        "path": "v027-close-oracle-docs-prose/structure-en-final.json",
+        "sha256": "3cbb80287577cb2be30ddc1b0e90057ba17f99faf5fc021081902e93bebb55c3"
+      },
+      {
+        "path": "v027-close-oracle-docs-prose/structure-ja-final.json",
+        "sha256": "38df5be20bacb4d2e0cf3be21308c85562797774d71ec80fa3e66794e6bacf26"
+      },
+      {
+        "path": "v027-close-oracle-docs-prose/structure-changelog-final.json",
+        "sha256": "7a8d84bcf12053637e367a09ae7916b04627f4a14f195a007314b5ff39f20814"
+      }
+    ],
+    "retainedStructuralFlags": "Inline-code link-label false positives, pre-existing generic headings/unlabelled fences and historical TODO disclosures; no scope expansion or false no-findings claim",
+    "normativeBilingualWorkflow": {
+      "requiredTests": 1,
+      "passed": 1,
+      "skipped": 0,
+      "log": {
+        "path": "v027-close-oracle-docs-prose-r2/bilingual-flow.log",
+        "sha256": "b1cb22124d84b3404bb0e04d5206c26fb42c40cb8b1103e7b5a9165a82a742f8"
+      }
+    }
+  },
+  "gate": {
+    "status": "BLOCKED",
+    "fullGateRun": false,
+    "actualPreflight": "node .github/skills/lean-sdd-tdd/scripts/sdd.mjs guard",
+    "actualExit": 1,
+    "actualOutput": "GUARD FAIL release-qualification (T2): approval stale",
+    "reason": "Existing seven-artifact release reference lock is correctly stale; new canonical reference and genuine exact-artifact preparation approval required before full gate and successor qualification"
+  },
+  "failureStages": {
+    "contract": "Independent finite state table defines terminal versus live states; no stop requirement weakened",
+    "trustedInputs": "Owned PID only; malformed/unknown observations cannot establish termination; command-field boundary checked before state interpretation",
+    "execution": "Original process cleanup assertions, budgets, payloads and production runner unchanged",
+    "verdict": "Original false-live X regression and false-terminal live-R comm lookalike separately reproduced and fixed",
+    "evidenceHistory": "All failed/earlier checkpoints retained; no reset of failure history or transferred qualification credit",
+    "integrationDistribution": "Shipped test changes package bytes; new canonical reference and two consecutive unchanged fresh qualification runs still required"
+  },
+  "limits": [
+    "Finite documented-state and injected error controls; 12 repeated live-process invocations per major do not prove every schedule or platform",
+    "No production diagnostics change; PID reuse, hostile /proc inputs and deliberately self-detached processes are outside this bounded repair",
+    "Full gate, fresh release reference/matrix and exact-artifact publication approval are not established by this evidence",
+    "External raw logs remain in the named session files; this committed receipt binds their bytes, actual commands, assertions and outcomes"
+  ]
+}
