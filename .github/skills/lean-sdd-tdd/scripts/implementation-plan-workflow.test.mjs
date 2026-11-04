@@ -65,6 +65,8 @@ function roleFiles(root, environment) {
   return prefixes.flatMap(prefix => inventory(path.join(root, prefix))
     .map(([relative]) => prefix + relative)).sort();
 }
+const invalidGitFailure = error => error instanceof assert.AssertionError
+  && error.actual === 128 && error.expected === 0;
 function section(body, start) {
   const index = body.indexOf(start);
   assert.ok(index >= 0, `Required operational planning instructions are missing: ${start}`);
@@ -225,7 +227,18 @@ test('TEST-PLAN-FLOW-002 real tarball and both hosts execute the same complete p
   const invalidGit = path.join(archive, '.git');
   fs.writeFileSync(invalidGit, 'gitdir: missing-planning-fixture\n');
   try {
-    assert.throws(() => roleFiles(archive, environment), /not a git repository/,
+    for (const diagnostic of [
+      'fatal: not a git repository: missing-planning-fixture',
+      'fatal: gitfile does not point to a valid repository: package/.git',
+    ]) {
+      assert.throws(() => run(work, process.execPath, ['-e',
+        `process.stderr.write(${JSON.stringify(diagnostic)});process.exit(128)`], 0, environment),
+      invalidGitFailure, 'Both observed fatal Git diagnostics must satisfy the refusal control.');
+    }
+    assert.throws(() => assert.throws(() => run(work, process.execPath, ['-e',
+      'process.stderr.write("not a git repository");process.exit(2)'], 0, environment), invalidGitFailure),
+    assert.AssertionError, 'An unrelated exit2 must not borrow a fatal Git diagnostic.');
+    assert.throws(() => roleFiles(archive, environment), invalidGitFailure,
       'Invalid present Git metadata must not silently switch to archive inventory.');
   } finally {
     fs.unlinkSync(invalidGit);

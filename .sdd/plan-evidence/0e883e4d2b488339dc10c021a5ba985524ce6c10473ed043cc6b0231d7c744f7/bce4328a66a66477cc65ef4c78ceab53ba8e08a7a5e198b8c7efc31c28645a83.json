@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "task": "TASK-PLAN-MODEL-003",
+  "sequence": 1,
+  "previous": "",
+  "definitionSha256": "9d4ebe5983523dd763c6e384c998ab59eb52ae80276055963ba99f413f4c4ea3",
+  "inputSha256": "3a4cb3667d607c3fe06640801d6d1730a8cf91e41818043fead6497ae47a3362",
+  "status": "PASS",
+  "exit": 0,
+  "checks": [
+    {
+      "name": "regression",
+      "argv": [
+        "node",
+        "--test",
+        "--test-name-pattern",
+        "TEST-PLAN-MODEL-003(?![0-9A-Za-z])",
+        ".github/skills/lean-sdd-tdd/scripts/implementation-plan.test.mjs"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/0e883e4d2b488339dc10c021a5ba985524ce6c10473ed043cc6b0231d7c744f7/attempt-12519e12-fac8-4eda-8182-eaaf8fd641fe/0.log",
+        "sha256": "68bae1ac4a9a7e74e2de932aa202eb2b2cc75b3c5abc014f887a3b140dea79ff",
+        "bytes": 220
+      }
+    },
+    {
+      "name": "native-TEST-PLAN-MODEL-003",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-PLAN-MODEL-003",
+        "--root",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/0e883e4d2b488339dc10c021a5ba985524ce6c10473ed043cc6b0231d7c744f7/attempt-12519e12-fac8-4eda-8182-eaaf8fd641fe/1.log",
+        "sha256": "129fa461066e011cb50cccfb22d29c2eeece0d5361cc44c77c75da41380c8b12",
+        "bytes": 59
+      }
+    }
+  ],
+  "ledgerEvents": [
+    {
+      "test": "TEST-PLAN-MODEL-003",
+      "hashes": [
+        "00e07ae89e8b1bd659768ae8269ff8e867eb5b2344a04cef360c409e9cbffdf6",
+        "11dffa935f355df38d6c32f550d8ec774f7f39fea4dbfe337c7fea64e5f47702",
+        "7b1ab45eb9e38f4e2e0edc73eeb0f583a6da6261ec3aebf310ffdeef19723499",
+        "d5bf845f862382aa551dbf7ab4db8feda636c92c7dcb27eb1c255e7a43f3566a",
+        "d8835ff3d388a548da0af059e5b4d33f7c0a499b989131ae2db4382cef10665e"
+      ]
+    }
+  ],
+  "errors": []
+}

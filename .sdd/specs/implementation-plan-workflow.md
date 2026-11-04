@@ -5,7 +5,7 @@ approval: auto
 dependsOn: implementation-plan-cli
 ---
 # v0.2.7: Agent workflow and distribution
-Goal: make specification-linked planning usable and consistent in Copilot CLI and Claude Code, from requirements through verified completion. Readers: users, agents and maintainers. Status: implemented and targeted validation complete; own-project receipt adoption, integrated full gate and release qualification remain pending.
+Goal: make specification-linked planning usable and consistent in Copilot CLI and Claude Code, from requirements through verified completion. Readers: users, agents and maintainers. Status: implementation and targeted validation observed; initial own-project task adoption observed under the earlier85db56af binding. Current-source proof belongs to `.sdd/evidence/v027-workflow-integration.json`; integrated full gate and release qualification remain separate requirements.
 | ID | EARS requirement | Test |
 | --- | --- | --- |
 | REQ-PLAN-FLOW-001 | When using planning-enabled SDD skills, the agent workflow shall create or update the implementation plan from the current specifications before implementation, follow dependencies, update the plan after each task's implementation and verification, and revise affected plans after specification changes. | TEST-PLAN-FLOW-001 |
@@ -38,4 +38,87 @@ Paths below are external session28b37d8f-56f4-4e28-b9c8-71cc59366d60 `files/` ar
 `v027-workflow-mutations-eocqo5/report.json` records17/17 isolated assertion detections, exact restoration, one actually selected restored test per mutation and three-test zero-skip baseline/final controls. It covers each role's spec-change obligation, dependency ordering, successful receipt adoption, disabled Markdown compatibility, separate full gate, skipped-evidence wording, bilingual command/state parity, missing packaged helper, Claude role drift, exact native script identity, wrapper no-run, valid archive inventory and invalid-present-Git refusal. The last two mutate fixture-input interpretation, not production CLI logic. Snapshots were removed after source/snapshot-restoration checks; source hashes and logs remain.
 Two in-scope S2 findings blocked completion and were fixed: FLOW-ADOPTION-ORACLE (first violated stage=verdict) survived the earlier token-only14/15 run in `v027-workflow-mutations-AzSwgi/report.json`; FLOW-ARCHIVE-INPUT (first violated stage=trusted inputs) failed the Git-free source shape in `v027-workflow-archive-control-8Vd3AU/`. The latter was a fixture-input failure, not a feature Red. Explicit absent-Git traversal, independent checkout/archive comparison and present-invalid-Git refusal fix the input distinction without weakening the original Git-backed coverage.
 Japanese optimization full mode ran GiNZA prose/reading-load diagnostics100→100 with no findings, outline and25-term extraction, and contextual continuous review of the new section. No optional rewriting was needed; immutable full README-ja equality/protected-invariant gate passed. `v027-workflow-prose-cquYaI/` retains originals, outputs and decisions. Both whole-README structural lints have exactly16 pre-existing flags each and no new flags, verified against HEAD snapshots; no clean-whole-document claim. Independent Sonnet5.5 role, bilingual-document, model-wording and distribution reviews reported CLEAN with actual read scopes and no execution/log-audit claim. Exact-phrase tests remain normative regressions, not proof of agent obedience.
-No Windows/macOS check, own-project adopted receipt/full planning gate, integrated full-project gate, frozen two-run qualification, merge or publication is claimed. Project planning policy remains unchanged/disabled; authored progress is in-progress until final current binding/evidence adoption.
+At the preceding historical checkpoint, no Windows/macOS check, own-project adopted receipt/full planning gate, integrated full-project gate, frozen two-run qualification, merge or publication was claimed. Project planning policy remains unchanged/disabled; current completion requires current binding/evidence adoption, not that checkpoint's authored status.
+
+## Git refusal oracle portability follow-up
+
+Checkpoint CI `41730888446` on `d7659a1` failed FLOW002 on all three supported
+Node versions: newer Git reports `fatal: gitfile does not point to a valid repository`
+where the local Git reports `fatal: not a git repository`. Git correctly refused
+the invalid present metadata; the oracle incorrectly required one diagnostic.
+The first violated stage is verdict, not source authenticity or production
+inventory selection. Retain the failed CI and all prior reports with zero new
+qualification credit.
+
+| REQ | PASS condition | counterexample | TEST/command | observed evidence |
+| --- | --- | --- | --- | --- |
+| `REQ-PLAN-FLOW-002` | Both observed fatal diagnostics satisfy the exact owned assertion for Git exit128 versus expected0; valid checkout/archive inventories still pass, and invalid present metadata still fails without fallback. | A text-only `/not a git repository/` oracle rejects the newer fatal diagnostic; an unrelated exit2 with the old words must not borrow the fatal refusal control. | TEST-PLAN-FLOW-002; native assertion Red/Green; isolated text-only, unbound-exit and silent-fallback mutations with restored valid controls | Native regression assertion Red preceded the shared predicate fix; Green and unaffected001/003 Refactors passed. Actual nb50t1 matrix21/21 each Node20/22/24, unfiltered Git-free3/3 and isolated JS diagnostics pass. Actual3fgIeQ mutations19/19 detected/restored with valid controls. No hosted fixed-head or fullgate/qualification pass is claimed. |
+
+Keep the structured refusal predicate outside the annotated regression body
+so the genuine failing regression remains byte-identical across its fix.
+Bind it to the owned `AssertionError` with actual128/expected0, not localized
+stderr wording. The existing actual invalid-Git call and valid Git-free
+archive/source/package controls remain required. Contract, trusted inputs,
+execution, history and integration checks are unchanged and still apply;
+none is waived by making diagnostic wording portable.
+
+Actual external session artifacts: `v027-git-oracle-{direct-red,native-red,native-green,native-refactors}.log`,
+`v027-workflow-validation-nb50t1/report.json` and
+`v027-workflow-mutations-3fgIeQ/report.json`. Both the diagnostic-restricted
+predicate and the unbound nonzero-exit predicate were assertion-detected,
+in addition to all17 retained workflow mechanisms. Mutation coverage is bounded
+to these19 cases on Linux/Node24; the runtime matrix uses actual Node20.20.2,
+22.23.3 and24.22.1. Independent reviewers read only the contract/regression delta,
+not executed logs, and correctly retained the limit that any Git exit128 matches
+the refusal shape. The preceding valid checkout inventory and actual invalid
+gitfile fixture supply cause/context; this is not a general Git diagnostic parser.
+
+## Own-project optional execution protocol
+
+The repository's committed planning policy remains disabled. Self-adoption is
+an additional, explicit temporary opt-in at this development root: preserve
+the exact original `.sdd/config.json`, add only `planning.required:true` and
+the four existing planning features as the planning scope, and leave all
+native runners, required project checks, timeouts and legacy requirements
+unchanged. This is not a permanent policy flip or a release-scope reduction.
+
+Update all current whole-spec bindings, rebind dependencies to their actual
+current task-input fingerprints in prerequisite order, verify each real task
+and adopt only its current successful receipt before authoring completion.
+Retain receipts, logs and failure history. An authored status or definition
+hash never substitutes for verification. Run enabled consistency with every
+task effectively completed, restore the exact original disabled configuration
+in a guarded `finally`, and check disabled compatibility. Re-enabling the
+identical temporary scope and rechecking completion before restoring it again
+is a valid control for the retained development-root evidence.
+
+Receipts remain bound to this root and selected native tool/runtime; they are
+not portable qualification evidence. Other checkouts/installed tools must
+reverify when opting in. The final full native gate runs against the original
+committed project policy and all existing checks, not a narrowed substitute.
+Temporary enabled consistency/task verification is not an enabled full-project
+gate or release readiness. Frozen qualification and publication approval remain
+separate. If source/configuration changes invalidate a receipt, rebind and
+verify again rather than silently accepting it.
+Guarded restoration does not survive SIGKILL or a lost session. Explicitly
+compare `.sdd/config.json` with the original committed bytes before the final
+native gate and again before commit; a mismatch must stop rather than silently
+overwrite another writer.
+
+Initial actual self-adoption `v027-self-adoption-lrY8oe/report.json` verified
+and explicitly adopted all15 real task receipts under specification85db56af.
+Enabled and identical-reenabled controls each reported15complete; the exact
+original disabled configuration was restored and both disabled controls passed.
+The first attempt `v027-self-adoption-U06kEb/` retained a real first-task PASS
+receipt, then the development driver authored unsupported `completed` instead
+of `complete`; the model correctly rejected that input and original config was
+restored. This setup failure is not feature Red or qualification credit.
+
+This evidence amendment changes the workflow whole-spec binding. Rebind and
+freshly verify affected tasks in dependency order; retain already-current
+receipts only after an actual current-input consistency check. Record the
+initial and final reports/current receipt hashes in the source-bound
+`.sdd/evidence/v027-workflow-integration.json`. An absent/stale report cannot
+establish current completion. No original-policy full native gate, same-head CI
+success, portable receipt, frozen qualifying run, merge or publication follows
+from self-adoption.

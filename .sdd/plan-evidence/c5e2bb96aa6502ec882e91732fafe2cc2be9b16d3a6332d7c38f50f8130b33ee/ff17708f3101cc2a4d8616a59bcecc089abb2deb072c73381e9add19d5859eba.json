@@ -1,0 +1,98 @@
+{
+  "schemaVersion": 1,
+  "task": "TASK-PLAN-CLI-004",
+  "sequence": 1,
+  "previous": "",
+  "definitionSha256": "4e3ae4ce4f514de5484bb795c81ccc009d627cf0c2c152524af2c588a4fe08e1",
+  "inputSha256": "e6251a5f6e993d2409d058faa2603b8883b58acf4258beac9359efb45955bb34",
+  "status": "PASS",
+  "exit": 0,
+  "checks": [
+    {
+      "name": "regression",
+      "argv": [
+        "node",
+        "--test",
+        "--test-name-pattern",
+        "TEST-PLAN-CLI-004(?![0-9A-Za-z])",
+        ".github/skills/lean-sdd-tdd/scripts/implementation-plan-cli.test.mjs"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/c5e2bb96aa6502ec882e91732fafe2cc2be9b16d3a6332d7c38f50f8130b33ee/attempt-3d2535f3-6dc5-4069-b685-82e8c85df578/0.log",
+        "sha256": "3b4a4713acbdcc48285bd9b91a0c2084eac96bed2e5009bad6c234bb164b32c1",
+        "bytes": 226
+      }
+    },
+    {
+      "name": "native-TEST-PLAN-CLI-004",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-PLAN-CLI-004",
+        "--root",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/c5e2bb96aa6502ec882e91732fafe2cc2be9b16d3a6332d7c38f50f8130b33ee/attempt-3d2535f3-6dc5-4069-b685-82e8c85df578/1.log",
+        "sha256": "6745462ede25ad19e67fe822ddfc1a2ca566c68b53af1689ff499e3cb17a0abd",
+        "bytes": 56
+      }
+    },
+    {
+      "name": "native-TEST-PLAN-CLI-005",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-PLAN-CLI-005",
+        "--root",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/c5e2bb96aa6502ec882e91732fafe2cc2be9b16d3a6332d7c38f50f8130b33ee/attempt-3d2535f3-6dc5-4069-b685-82e8c85df578/2.log",
+        "sha256": "49bb854d9c5670b5ae937386d4e6c43ec1524641a8abc25d8f54f2ed70c7bdaa",
+        "bytes": 57
+      }
+    }
+  ],
+  "ledgerEvents": [
+    {
+      "test": "TEST-PLAN-CLI-004",
+      "hashes": [
+        "1feec515afbd0ad42a0bfa798ad4fb793a8c991cfcc954e1df184649864d4378",
+        "969a1dc0f04e87abd67dff8bb82cf1d501590b1d7b833b63908c571ef3179c59",
+        "c4cf57bd4c1437bbbb4665932b96b5e96755024038b4a3bfa9f1332456cc5b50",
+        "cb1994416082aa7aee447130743c6e666f20e6ea8641246d8f80585e47cd530c"
+      ]
+    },
+    {
+      "test": "TEST-PLAN-CLI-005",
+      "hashes": [
+        "02c060f4fe3877f160d76d0aee2a4d9521b5d7146f4eb8aaed5f8041bd6bb95c",
+        "25ba4e8a99410f70363cc1af4ee6aba54a80fc8733294404b757ac3658ae1416",
+        "4255966b1edd8c7df5bedddd0a3bfd59023b15d87a409f3cf92200617960d2bc",
+        "78a84f487a392d6b6fbb8d30aaa9f7cf15e8888c1497fa8e71590320ce1b3625",
+        "a9d6be9ff450efd0776bfd95db5053e1fa94ed108b3b458bcffecbbf0c774ec5"
+      ]
+    }
+  ],
+  "errors": []
+}

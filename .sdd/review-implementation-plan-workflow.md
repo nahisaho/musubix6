@@ -1,4 +1,4 @@
-spec: sha256:72e0e77bd6fae712e1292e55e5c8b3446961e544713890264f4a7f0959b0d374
+spec: sha256:97fabda265361a78dd07854d76e38880fd40483009ef6be65310ac44ce4aac56
 verdict: pass
 open: 0
 
@@ -13,6 +13,8 @@ open: 0
 | FLOW-ADOPTION-ORACLE | S2 | Regression001: token-only receipt check accepted omitted adoption because failed receipts were still mentioned; require the explicit current-successful adoption and status obligations. | Closed; actual final-hash assertion Red/Green and isolated detected/restored mutation |
 | FLOW-ARCHIVE-INPUT | S2 | Regression002: Git-free materialized source failed because the fixture assumed checkout metadata; select explicit archive inventory only when .git is absent, retain Git-error refusal and compare archive against checkout inventory. | Closed; actual unfiltered Git-free Node20 control and both isolated detected/restored input mutations |
 | FLOW-EVIDENCE-FLAG | S3 | Observed002 table cell must distinguish passing runtime rows from the overall-false earlier report and separate unfiltered archive follow-up. | Closed; explicit cell wording with both report identities and Node20-only archive limit |
+| FLOW-GIT-DIAGNOSTIC | S2 | Regression002's invalid-present-Git control rejected newer Git's correct exit128 because stderr wording differed. First failed condition: verdict. | Closed; genuine same-body native assertion Red/Green, both observed diagnostics, unrelated-exit negative control, actual three-runtime/archive controls and19/19 restored mutations |
+| FLOW-OPTIONAL-POLICY | S3 | Own-project adoption must not silently enable permanent planning or replace the full native gate with a four-feature check. | Closed design; explicit temporary scope, unchanged native policy, guarded exact restoration, identical re-enable control and before-gate/commit equality checks |
 
 Claude Sonnet 5.5 independently reviewed workflow ownership and distribution
 on separate risk axes before production edits. The ownership reviewer accepted
@@ -69,3 +71,58 @@ the other evidence/limits wording. It then read only the corrected cell
 and reported CLEAN2 without execution or report/log reads. Production files are unchanged after
 the actual final validation. All own-project/full-gate/qualification and
 publication limits remain explicit.
+
+## Git-oracle checkpoint follow-up
+
+The preceding observations are historical. Hosted test run41730888446 on
+d7659a1 failed FLOW002 across Node20/22/24 because Git's valid refusal text
+changed; Windows development controls passed independently. Production
+inventory selection was already correctly refusing invalid present Git
+metadata. The repaired test predicate requires its owned AssertionError with
+actual128/expected0, not localized stderr. It is not a general diagnostic
+parser: any Git exit128 has this shape; the preceding valid checkout and
+actual invalid-gitfile fixture provide cause/context.
+
+Native assertion Red preceded the shared predicate change, preserving the
+annotated regression body; Green and unaffected001/003 Refactors passed.
+`v027-workflow-validation-nb50t1/report.json` actually records21/21 on each
+Node20.20.2/22.23.3/24.22.1, unfiltered Git-free3/3, zero skips and JS
+diagnostics PASS. `v027-workflow-mutations-3fgIeQ/report.json` records19/19
+isolated assertion detections with restored valid controls and unchanged
+source, retaining all17 earlier mechanisms and adding text-restricted and
+unbound-exit predicate reversals. These are development controls, not frozen
+qualification runs or a current-head hosted success.
+
+Both existing Sonnet5.5 workflow reviewers independently read only the
+contract/regression delta and optional self-execution protocol, then reported
+CLEAN2. They did not execute commands or inspect report/log contents.
+The bounded restoration-equality suggestion was incorporated; reviewers'
+clean text verdict does not attest execution or automatic cleanup after
+SIGKILL/lost session. Root-specific task adoption still requires actual
+current receipts and exact final configuration checks; the complete original
+native project gate, renewed release-preparation approval and frozen
+qualification remain separate requirements.
+
+## Initial own-project execution and final-binding review
+
+Actual `v027-self-adoption-lrY8oe/report.json` passed15 genuine task
+verifications and explicit receipt adoptions under the earlier85db56af
+binding. Both enabled controls reported15complete and both disabled controls
+passed. Original config matched committed bytes, SHA256
+`6a09572708b9e204372bae8e52ab1287b907d144053baba313faaaa3bc9cb959`.
+The retained first `U06kEb` attempt had one real PASS receipt followed by the
+driver's unsupported authored `completed`; the model correctly rejected it.
+Guarded restoration passed. Correcting the harness spelling is not product
+Red evidence, a new product defect or qualification credit.
+
+Both existing Sonnet5.5 reviewers read only the Goal, historical-status
+sentence and final observation/rebinding paragraphs, without execution or
+report/log audit. The distribution reviewer requested explicit same-head-CI
+and earlier-binding wording; both were applied. Both reviewers read only
+the final changed Goal/closing lines and returned CLEAN with no unresolved
+correctness finding. This final amendment deliberately changes the whole-spec
+digest; the initial report is not current-source proof.
+Current receipt/input hashes, affected-task fresh verification and
+configuration restoration must be recorded in the generated
+`.sdd/evidence/v027-workflow-integration.json` before current completion is
+claimed. No full native gate, current-head CI or release credit is inferred.

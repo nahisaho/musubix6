@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "task": "TASK-PLAN-FLOW-002",
+  "sequence": 2,
+  "previous": "5fa5594c9f298c9d9985f61cbde109a10d171df210709c8770501dcdaa3d911c",
+  "definitionSha256": "a5555b3a344b721ec083014b121b39429f50b7cd86739b407639fdc914f6de0c",
+  "inputSha256": "18c6589176718b059a28e80d3adb0022c5c91535cf487c332cd311611629d46e",
+  "status": "PASS",
+  "exit": 0,
+  "checks": [
+    {
+      "name": "regression",
+      "argv": [
+        "node",
+        "--test",
+        "--test-name-pattern",
+        "TEST-PLAN-FLOW-002(?![0-9A-Za-z])",
+        ".github/skills/lean-sdd-tdd/scripts/implementation-plan-workflow.test.mjs"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/f2011d695b0132d2d487c2156117d0df66c9839a1c093b3b22f324ab03e9d1ae/attempt-c7215cb1-7dd9-4b21-ad6f-39e45fd15a5d/0.log",
+        "sha256": "4b1326a8367223737b5f8342f3df1cf5f1a3cff870cb63db7b8a3aea6d95e731",
+        "bytes": 370
+      }
+    },
+    {
+      "name": "native-TEST-PLAN-FLOW-002",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-PLAN-FLOW-002",
+        "--root",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/f2011d695b0132d2d487c2156117d0df66c9839a1c093b3b22f324ab03e9d1ae/attempt-c7215cb1-7dd9-4b21-ad6f-39e45fd15a5d/1.log",
+        "sha256": "860c0349cfd52174001e3fe21b368bd1dd635dca17b5bcc0d4711e5f57d9bf19",
+        "bytes": 59
+      }
+    }
+  ],
+  "ledgerEvents": [
+    {
+      "test": "TEST-PLAN-FLOW-002",
+      "hashes": [
+        "4bc61f0c6e1028e73b22e7f3537543ad08dfbac8bcc86bcaef9f227dba93c9e2",
+        "af3a7a9ec78826f35effc096b6e9d79cc480dcd84227101081009ccc757e795b",
+        "bc7a9d86986e563c1321c7c2e8b07ea0b90ecda2c17ee516c7c6ff81fe0e77c1",
+        "d85695e4a07998f1e1cb666ceb7d0de4598a23d4623663cd3c0ed63643d22abe"
+      ]
+    }
+  ],
+  "errors": []
+}
