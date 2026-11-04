@@ -78,6 +78,78 @@ function fixture(t, { implementation = false } = {}) {
 const plan = f => json(call(f.root, ['plan', 'check', '--json']));
 const taskState = (result, id) => result.tasks.find(task => task.id === id).state;
 
+/** @id TEST-PLAN-CLI-006 @verifies REQ-PLAN-CLI-004 */
+test('TEST-PLAN-CLI-006 normal dispatch retains decisions without forcing runtime exit', t => {
+  const f = fixture(t);
+  const observer = fs.mkdtempSync(path.join(os.tmpdir(), 'musubix-exit-observer-'));
+  t.after(() => fs.rmSync(observer, { recursive: true, force: true }));
+  const preload = path.join(observer, 'observe-exit.cjs');
+  fs.writeFileSync(preload, `
+const fs = require('node:fs');
+const prefix = process.env.MUSUBIX_EXIT_OBSERVER_PREFIX;
+fs.writeFileSync(prefix + '.loaded', String(process.pid));
+for (const method of ['exit', 'reallyExit']) {
+  const original = process[method].bind(process);
+  process[method] = (...args) => {
+    fs.appendFileSync(prefix + '.calls', JSON.stringify({ method, args }) + '\\n');
+    return original(...args);
+  };
+}
+`);
+  for (const method of ['exit', 'reallyExit']) {
+    const prefix = path.join(observer, `positive-${method}`);
+    const result = spawnSync(process.execPath, ['--require', preload, '-e', `process.${method}(7)`],
+      { env: { ...env, MUSUBIX_EXIT_OBSERVER_PREFIX: prefix }, encoding: 'utf8',
+        timeout: 20000, killSignal: 'SIGKILL', maxBuffer: 8 * 1024 * 1024 });
+    assert.equal(result.error, undefined, result.error?.message);
+    assert.equal(result.signal, null);
+    assert.equal(result.status, 7, result.stderr);
+    assert.equal(result.stdout, '');
+    assert.equal(result.stderr, '');
+    assert.match(fs.readFileSync(prefix + '.loaded', 'utf8'), /^[1-9][0-9]*$/);
+    const calls = fs.readFileSync(prefix + '.calls', 'utf8').trim().split('\n').map(line => JSON.parse(line));
+    assert.deepEqual(calls[0], { method, args: [7] });
+  }
+  const forced = [];
+  const states = [
+    { name: 'disabled', exit: 0, status: 'DISABLED', prepare: () => {} },
+    { name: 'pending', exit: 0, status: 'PASS', prepare: () => f.enable() },
+    { name: 'malformed', exit: 1, status: 'FAIL',
+      prepare: () => write(f.root, '.sdd/implementation-plan.json', '{') },
+    { name: 'missing', exit: 2, status: 'INCOMPLETE',
+      prepare: () => fs.rmSync(path.join(f.root, '.sdd/implementation-plan.json')) },
+  ];
+  for (const state of states) {
+    state.prepare();
+    for (const entry of [script, wrapper]) {
+      const label = `${state.name}/${entry === wrapper ? 'wrapper' : 'native'}`;
+      const control = json(call(f.root, ['plan', 'check', '--json'], entry), state.exit);
+      assert.equal(control.exit, state.exit, label);
+      assert.equal(control.status, state.status, label);
+      const prefix = path.join(observer, label.replace('/', '-'));
+      assert.equal(fs.existsSync(prefix + '.loaded'), false);
+      assert.equal(fs.existsSync(prefix + '.calls'), false);
+      const result = spawnSync(process.execPath, ['--require', preload,
+        entry, ...(entry === wrapper ? ['sdd'] : []), 'plan', 'check', '--json', '--root', f.root],
+      { cwd: f.root, env: { ...env, MUSUBIX_EXIT_OBSERVER_PREFIX: prefix }, encoding: 'utf8',
+        timeout: 20000, killSignal: 'SIGKILL', maxBuffer: 8 * 1024 * 1024 });
+      assert.equal(result.stderr, '', result.stderr);
+      const decision = JSON.parse(result.stdout);
+      assert.equal(decision.exit, state.exit, label);
+      assert.equal(decision.status, state.status, label);
+      assert.match(fs.readFileSync(prefix + '.loaded', 'utf8'), /^[1-9][0-9]*$/);
+      if (fs.existsSync(prefix + '.calls')) {
+        const calls = fs.readFileSync(prefix + '.calls', 'utf8').trim().split('\n').map(line => JSON.parse(line));
+        forced.push({ label, calls });
+      }
+      assert.equal(result.error, undefined, result.error?.message);
+      assert.equal(result.signal, null, `${label}: dispatched process must finish normally`);
+      assert.equal(result.status, state.exit, label);
+    }
+  }
+  assert.deepEqual(forced, [], 'normal dispatch must not call process.exit');
+});
+
 /** @id TEST-PLAN-CLI-001 @verifies REQ-PLAN-CLI-001 */
 test('TEST-PLAN-CLI-001 opt-in authority, strict config and unchanged disabled commands', t => {
   const f = fixture(t);

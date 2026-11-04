@@ -1,0 +1,165 @@
+{
+  "schemaVersion": 1,
+  "feature": "implementation-plan-cli",
+  "requirement": "REQ-PLAN-CLI-004",
+  "checkpoint": "Locally verified normal-shutdown repair; not release readiness",
+  "qualifyingCredit": 0,
+  "sourceHashes": {
+    ".github/skills/lean-sdd-tdd/scripts/implementation-plan-cli.test.mjs": "2a88c2e3741e132ef2e6963369b42cddcedf5974633ea704d9c07f96edacfc99",
+    ".github/skills/lean-sdd-tdd/scripts/sdd.mjs": "0f80b4f19b2e7ffe92533f4bb93f8bf6740c9a3dcf8f2a765ce7cb6d4dcdc358",
+    "bin/musubix6.mjs": "4a5c46092f9a5fed601abfbf50e20dd039e47a34702defce0864869f39eb764d"
+  },
+  "contract": {
+    "path": ".sdd/specs/implementation-plan-cli.md",
+    "sha256": "8c1e560bc73bdaadb5c02f1355baee7397c06e23bdf2a350da6b1cc53a96ac34"
+  },
+  "native": {
+    "test": "TEST-PLAN-CLI-006",
+    "red": {
+      "path": "v027-cli-shutdown-observer-native-red.log",
+      "sha256": "13e0c06507d7821284a947fca8a013761dd892f66e72365361ba33a7094fdbfe"
+    },
+    "green": {
+      "path": "v027-cli-shutdown-observer-native-green.log",
+      "sha256": "4a434d1309011fcac5955e05e27a658d48e25c5e85074f89a31aa34a136daa05"
+    },
+    "redScope": "Actual original-wrapper forced-exit reversal, then exact restoration; unchanged test body. Not a fabricated initial pre-fix baseline.",
+    "sharedRefactors": {
+      "path": "v027-shutdown-native-refactors-r4gghzuq/native.log",
+      "sha256": "432a256c9797d321c5d50cbed83f4f3ed6e80009b1eb26e6d7879f748d9cc62d"
+    },
+    "trace": {
+      "path": "v027-cli-shutdown-observer-trace.log",
+      "sha256": "19d67d146f341fd4be6fd5ad8bba4b11034eec43bd02d490c6aaaafca2a106b0"
+    }
+  },
+  "targetMatrix": {
+    "path": "v027-cli-shutdown-validation-SazJbW/report.json",
+    "sha256": "6fb99a0d8380fcfd2df5704737cc4f3b611a9b23c6dc8917e2630e70e46bba48",
+    "runtimes": [
+      {
+        "major": 20,
+        "version": "v20.20.2",
+        "exit": 0,
+        "signal": null,
+        "error": null,
+        "counts": {
+          "tests": 20,
+          "pass": 20,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "pass": true
+      },
+      {
+        "major": 22,
+        "version": "v22.23.3",
+        "exit": 0,
+        "signal": null,
+        "error": null,
+        "counts": {
+          "tests": 20,
+          "pass": 20,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "pass": true
+      },
+      {
+        "major": 24,
+        "version": "v24.22.1",
+        "exit": 0,
+        "signal": null,
+        "error": null,
+        "counts": {
+          "tests": 20,
+          "pass": 20,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "pass": true
+      }
+    ]
+  },
+  "mutations": {
+    "path": "v027-shutdown-boundary-oracle-OmLI1Y/report.json",
+    "sha256": "8bd27e15c532b8002ab7b03d03b83d07284adea7046997dab76174ebfe0dae88",
+    "detected": 12,
+    "repeatsPerMechanismPerMajor": 2,
+    "majors": [
+      20,
+      22,
+      24
+    ],
+    "stateRowsDetectedPerReversal": 4,
+    "validControlsPassed": true,
+    "exactRestoration": true
+  },
+  "stability": {
+    "path": "v027-cli-shutdown-stability-x5p1f3/report.json",
+    "sha256": "6196b1a882234836e2e9db9cfa54de3060fdaa703b3cd00037f0b353555b15ed",
+    "selectedExecutions": 36,
+    "executionsPerMajor": 12,
+    "concurrentWorkersPerMajor": 3,
+    "limits": "Bounded diagnostic stability sample, not proof of zero failure probability or release qualification. Only TEST006 selected; Node20 reports five nonselected tests as skips. All required tests remain covered separately by the unfiltered target matrix."
+  },
+  "diagnostics": {
+    "path": "v027-shutdown-boundary-diagnostics-hfR3eE/report.json",
+    "sha256": "37f959aeb045a1cf09ff061286034379886cd0d773f1c13a3284766f1c887093",
+    "verdict": "PASS",
+    "files": 3,
+    "legacyCoreLintCovered": false
+  },
+  "installedHosts": {
+    "path": "v027-workflow-feasibility-9Ynci9/report.json",
+    "sha256": "73640d39bd79e3f70f8243d28d408e379aa1068ddd21ace3148e441ca67e0b26",
+    "calls": 111,
+    "hosts": [
+      "copilot",
+      "claude"
+    ],
+    "npmPayloadTested": false
+  },
+  "ownPlan": {
+    "path": "v027-self-adoption-HuPtV0/report.json",
+    "sha256": "4f78e6d829200ae52c59df899831b07e74501fef9e28507ab88f42c1b9df55c3",
+    "tasks": 15,
+    "originalConfigRestored": true
+  },
+  "retainedFailures": [
+    {
+      "path": "v027-cli-shutdown-validation-NIgnyp/report.json",
+      "sha256": "fd84de75322c9d8afbcb65801abb369f9c935bf40798ef605c8424ac2f4a18ad"
+    },
+    {
+      "path": "v027-node22-shutdown-diagnostic-IqzvhQ/report.json",
+      "sha256": "f619e5c1d572c2e1817af55ae93126722b6223d3d43d701125c5c8471d37c357"
+    },
+    {
+      "path": "v027-cli-shutdown-validation-6BZhCv/report.json",
+      "sha256": "8bb1a405a099738e3784ec1db69e5733277bb4f2e3146b1595c54379135d1625"
+    },
+    {
+      "path": "v027-cli-shutdown-stability-UaGecM/report.json",
+      "sha256": "8987a466618fdc9ce0f8ccf94c4c7c8eb2cd709834f88a393f12b1d034725c32"
+    },
+    {
+      "path": "v027-cli-shutdown-mutations-ApN4ef/report.json",
+      "sha256": "21c08894017d9f958e87e24005f46f4e3250be06676b696e1a983561e580ba2a"
+    }
+  ],
+  "limitations": [
+    "The V8 diagnostic timing oracle false-failed the repaired natural path and was replaced under the same auto CLI contract, not retried to PASS. Failed histories remain retained.",
+    "Observers cover exit/reallyExit property calls loaded before entry JavaScript, not arbitrary preexisting native exit bindings or elimination of every VM-GC hazard.",
+    "The wrapper observer covers only its outer process; direct cases independently cover the native core.",
+    "Scoped ESLint does not cover the legacy core. Repeated samples are bounded, not statistical zero-failure proof.",
+    "Source-installed lifecycle controls are not npm-payload, actual Windows/macOS or original full-project acceptance.",
+    "Canonical reference revision/human approval, original full gate, same-head hosted checks, two consecutive frozen runs and exact-artifact publication approval remain required."
+  ]
+}

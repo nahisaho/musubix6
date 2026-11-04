@@ -1,0 +1,11 @@
+✔ TEST-PLAN-CLI-006 normal dispatch retains decisions without forcing runtime exit (1493.868847ms)
+✔ TEST-PLAN-CLI-004 real native evidence, durable refusals and direct/wrapper verdict parity (9289.723909ms)
+✔ TEST-PLAN-CLI-005 standalone legacy commands survive absent optional planning modules (16153.256831ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 27006.593363

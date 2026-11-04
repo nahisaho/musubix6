@@ -1,0 +1,73 @@
+{
+  "schemaVersion": 1,
+  "task": "TASK-PLAN-STATE-001",
+  "sequence": 2,
+  "previous": "4844fe918f07ce6a9b89b1d207b75e3d3bcd951c284f393d09c8fa813a5ad734",
+  "definitionSha256": "8e885a919fa42eff76fd7f42f040523a2955004e9c6b2f86f0d420cabc12b50e",
+  "inputSha256": "641d9f31785850be3c2980add9b9099f16526c2363f318f53aade4ae0b8e6257",
+  "status": "PASS",
+  "exit": 0,
+  "checks": [
+    {
+      "name": "regression",
+      "argv": [
+        "node",
+        "--test",
+        "--test-name-pattern",
+        "TEST-PLAN-STATE-001(?![0-9A-Za-z])",
+        ".github/skills/lean-sdd-tdd/scripts/implementation-plan-evidence.test.mjs"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/816423d456b92312c84d754641f8104d7a9d9ac0f65e1af5d09609feed7a4704/attempt-8bb7a828-b3e6-4312-908a-b41de17d40a9/0.log",
+        "sha256": "a58204cd5dd0f3eb0cb1373c603b5b6a92cfbeeb73a0f5b8c40ab52fcdfeb194",
+        "bytes": 217
+      }
+    },
+    {
+      "name": "native-TEST-PLAN-STATE-001",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-PLAN-STATE-001",
+        "--root",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/816423d456b92312c84d754641f8104d7a9d9ac0f65e1af5d09609feed7a4704/attempt-8bb7a828-b3e6-4312-908a-b41de17d40a9/1.log",
+        "sha256": "61c0affb663ae1c97761ef5ec718c9e60f3f7e2eebdbd7773cb7a120d0a6fdd6",
+        "bytes": 59
+      }
+    }
+  ],
+  "ledgerEvents": [
+    {
+      "test": "TEST-PLAN-STATE-001",
+      "hashes": [
+        "1d2f10f21282305f9f214650d70d44a890d063b01811598b53a42801cdf8aeee",
+        "29d0f8ee975f1be2f74a499de9c606d68f78fd95ce18099fccbafd08d9a1392a",
+        "2a64232244b42410798ef1fc9cce9218867e0b01ae339067e9d16930136ee5f1",
+        "60f488750499c10412c46f230760306856bc1340f3556212cefa6a0428d8e204",
+        "7e1a47528bc786975e00466e4b296e5228ca3dbb826bd67378d5cdd0a017657f",
+        "822402c61525215258dcf29a964e949781c0781edd17cbc764ea55296ee3a62f",
+        "8a987e0b1be4451003cefef121011eccdcce09165ad729fd373aacdc3f1741a8",
+        "8e9726ba10c37e93c2c5b4cdc146ca4b9a2e4b37fadc9e00b089a74455452386",
+        "91d5717d2e07e7458fbdadbbc15da38ecb716d014db9a869798e7d9619e6dbfe",
+        "a80fad6535652e21da7c9fbef084d0f83912fa12fd643709d37aac09bf25a1a7",
+        "d409a6aec3970350f2fda35a808c1816bad8a4ad419bc225e7e2cde7e9312304"
+      ]
+    }
+  ],
+  "errors": []
+}

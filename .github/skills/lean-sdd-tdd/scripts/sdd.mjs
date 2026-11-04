@@ -8032,7 +8032,8 @@ if (planningCommand && !planningModules.length) {
     process.exit(refusal.exit);
   }
 }
-try { process.exit(await fn() ?? 0); }
+/** @id CODE-PLAN-CLI-006 @implements REQ-PLAN-CLI-004 */
+try { process.exitCode = await fn() ?? 0; }
 catch (error) {
   if (!/^REFUSED: (?:source scan:|unresolved (?:Rust include (?:oracle|ownership)|pytest_plugins|Python (?:relative import|module)))/.test(error.message)) throw error;
   out(error.message);

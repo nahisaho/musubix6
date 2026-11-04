@@ -102,8 +102,9 @@ if (!cmd || cmd === '-h' || cmd === '--help') usage();
 else if (cmd === '-v' || cmd === '--version') console.log(pkg.version);
 else if (cmd === 'list') skills().forEach((s) => console.log(s));
 else if (cmd === 'sdd') {
+  /** @id CODE-PLAN-CLI-007 @implements REQ-PLAN-CLI-004 */
   const r = spawnSync(process.execPath, [join(skillsSrc, 'lean-sdd-tdd', 'scripts', 'sdd.mjs'), ...rest], { stdio: 'inherit' });
-  process.exit(r.status ?? 1);
+  process.exitCode = r.status ?? 1;
 } else if (cmd === 'init') {
   init(rest);
 } else { usage(); process.exit(2); }

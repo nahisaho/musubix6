@@ -1,4 +1,4 @@
-spec: sha256:46060ea10432968cc8cadcdbcca8a1f116097823243dba825231ded60b5a5047
+spec: sha256:8c1e560bc73bdaadb5c02f1355baee7397c06e23bdf2a350da6b1cc53a96ac34
 verdict: pass
 open: 0
 
@@ -74,3 +74,28 @@ feasibility reports are recorded in the existing CLI spec. The earlier18/19
 mutation report's survivor and invalid first STATE setup Red remain historical
 failures, not hidden passes. Packaged planning, own-project full gate, frozen
 qualification and publication remain pending.
+
+## Normal-shutdown followup
+
+CLI-NORMAL-EXIT | S2 | Native normal dispatch and the wrapper's returned-child result retain0/1/2 through exitCode instead of forced runtime termination; early aborts remain unchanged. | Closed
+CLI-GC-ORACLE | S2 | The synthetic V8 flag also stopped the repaired Node22 natural path. Retain all failed histories and replace that unsound verdict with actual exit/reallyExit observation, preserving every public state/entry/deadline. | Closed
+CLI-OBSERVER-VACUITY | S2 | Both exit7 positive controls, unique outside-project startup/call markers and the final all-row forbidden-call assertion prevent a missing observer or first-row-only mutation verdict. | Closed
+CLI-OBSERVER-WORDING | S3 | The terminal design now says observes, not stresses; wrapper-only and internal-native-reference limits are explicit. | Closed
+
+Both retained Claude Sonnet5.5 reviewers read the actual proposed observer
+fragment and terminal design. Their final CLEAN2 reviews confirmed the
+unchanged actual test/native/wrapper hashes, corrected wording and report
+summaries for the unfiltered20/20-per-major matrix and12 isolated mutations.
+They executed no tests and did not independently verify every state label,
+native Red/Green, stability, installed-host or diagnostics log. Those limits
+are not replaced by a blanket integration-review claim.
+
+The final test is the exact reviewed fragment, not a weaker post-review
+version. Its actual original-wrapper reversal has native assertion Red and
+same-body restored Green; raw mutation logs independently retain all four
+relevant state labels for each reversal. Bounded stability, scoped diagnostics,
+111 source/source-installed-host calls and seven shared native Refactors
+are recorded in the existing CLI spec. The default-disabled configuration
+is unchanged. Own-plan re-adoption, canonical reference/human approval,
+original full gate, same-head hosted checks, frozen qualification and
+publication remain pending at this followup checkpoint.
