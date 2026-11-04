@@ -37,11 +37,53 @@ function spawnSync(command, args, options = {}) {
 const hook = "after(() => fs.rmSync(work, { recursive: true, force: true }));";
 assert.equal(original.split("import { spawnSync } from 'node:child_process';").length, 2);
 assert.equal(original.split(hook).length, 2);
-fs.writeFileSync(target, original
+const firstMutation = '\n  for (const file of [';
+const finalTest = '\n/** @id TEST-WINRUN-004';
+const mutationStart = original.indexOf(firstMutation), finalStart = original.indexOf(finalTest);
+assert.ok(mutationStart > 0 && finalStart > mutationStart);
+const focused = original.slice(0, mutationStart) + '\n});\n' + original.slice(finalStart);
+fs.writeFileSync(target, focused
   .replace("import { spawnSync } from 'node:child_process';", replacement)
   .replace(hook, `after(() => {
     diagnosticRecord({ phase: 'cleanup-start' });
     fs.rmSync(work, { recursive: true, force: true });
     diagnosticRecord({ phase: 'cleanup-end', resources: process.getActiveResourcesInfo() });
   });`));
+const core = fs.readFileSync('.github/skills/lean-sdd-tdd/scripts/sdd.mjs', 'utf8');
+const imports = `planningModules = await Promise.all([import('./implementation-plan.mjs'),
+      import('./implementation-plan-evidence.mjs'), import('./implementation-plan-cli.mjs')]);`;
+assert.equal(core.split(imports).length, 2);
+const debug = `const _diagnosticFile = ${JSON.stringify(log)};
+const _diagnosticRecord = row => fs.appendFileSync(_diagnosticFile,
+  JSON.stringify({ at: new Date().toISOString(), pid: process.pid, argv: process.argv.slice(2), ...row }) + '\\n');
+const _nativeExit = process.exit.bind(process);
+process.exit = code => {
+  _diagnosticRecord({ phase: 'cli-exit-call', code, resources: process.getActiveResourcesInfo(),
+    requests: process._getActiveRequests().map(value => value.constructor.name),
+    handles: process._getActiveHandles().map(value => value.constructor.name),
+    hasCompileCache: Boolean(process.env.NODE_COMPILE_CACHE),
+    hasV8Coverage: Boolean(process.env.NODE_V8_COVERAGE),
+    hasNodeOptions: Boolean(process.env.NODE_OPTIONS) });
+  return _nativeExit(code);
+};
+process.on('exit', code => _diagnosticRecord({ phase: 'cli-exit-event', code }));
+`;
+const variants = {
+  baseline: core,
+  drain: core.replace(imports, `const _pendingImports = [import('./implementation-plan.mjs'),
+      import('./implementation-plan-evidence.mjs'), import('./implementation-plan-cli.mjs')];
+    planningModules = await Promise.all(_pendingImports).catch(async error => {
+      await Promise.allSettled(_pendingImports);
+      throw error;
+    });`),
+  missing: core.replace('if (planningCommand) {', `if (planningCommand &&
+  ['./implementation-plan.mjs', './implementation-plan-evidence.mjs', './implementation-plan-cli.mjs']
+    .every(file => fs.existsSync(new URL(file, import.meta.url)))) {`),
+};
+for (const [name, value] of Object.entries(variants)) {
+  fs.writeFileSync(path.join('test-logs', `sdd-${name}.mjs`), value.replace('const BOOL =', debug + '\nconst BOOL ='));
+}
+const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+pkg.scripts.test = 'node --test --test-reporter=tap --test-name-pattern=TEST-WINRUN-003 .github/skills/lean-sdd-tdd/scripts/windows-runner.test.mjs';
+fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
 console.log('Diagnostic instrumentation only; no release qualification or original-source PASS follows.');
