@@ -5,8 +5,15 @@ Release dates use Japan Standard Time (UTC+09:00).
 
 ## [0.2.7] - Candidate prepared 2026-11-04
 
-This entry describes the prepared candidate, not its publication status or
-release date. No existing CLI command or minimum-runtime requirement is removed.
+Status checked **2026-11-05 at 05:02 JST**: the qualified candidate is integrated
+into main and tagged `v0.2.7`, with separate human approval to publish.
+The [publication workflow](https://github.com/nahisaho/musubix6/actions/runs/41898861716)
+is still running its tests; npm does not yet list 0.2.7. The candidate-preparation
+date above is not a publication date.
+Confirm npm availability with `npm view musubix6@0.2.7 version`; a running
+workflow does not guarantee that publication will succeed.
+
+No existing CLI command or minimum-runtime requirement is removed.
 Implementation planning remains disabled unless explicitly enabled.
 
 ### Added
@@ -19,6 +26,18 @@ Implementation planning remains disabled unless explicitly enabled.
   closure while preserving existing behavior when planning is disabled.
 - Document plan authoring, explicit receipt adoption, progress updates and
   stale-input recovery in the four development roles and both READMEs.
+
+### Fixed
+
+- Let normal core and wrapper CLI dispatch finish through Node's natural
+  shutdown while preserving returned exit statuses, avoiding a forced-exit
+  deadlock observed on Node 24. Early-abort and refusal exits remain unchanged.
+- Restore digest-bound private Git history for executed frozen regression
+  suites, so tests can archive the approved historical source; keep
+  registration-only discovery Git-free.
+- Include the Windows native-runner/provenance, Rust stub-confidence and
+  host-specific instruction fixes described in the unpublished 0.2.6 and
+  0.2.5 entries below.
 
 ### Upgrade
 
@@ -33,12 +52,27 @@ Projects that do not enable planning retain the existing workflow.
 
 ### Validation and limitations
 
-- Retain the Linux x86_64 release scope. Windows development controls, macOS,
-  actual WSL containers and live Claude interactions do not establish
-  qualified release support.
-- Require the full native gate, two fresh unchanged qualification runs and
-  separate exact-artifact human publication approval before release.
-  Earlier versions' evidence grants this candidate no qualification credit.
+- Pass the full native gate and two consecutive unchanged 24-cell Linux
+  x86_64 qualification runs (`run-Lo02Jd`, `run-sWewCX`), each with fresh
+  source, HOME and cache directories and all 24 required cells passing.
+  Earlier versions' evidence contributes no qualification credit.
+- Bind qualification to commit
+  `7b18615577e74d785241e668cbb0b407c239d06e` and frozen manifest SHA-256
+  `f8dae968dc12412dc174241be70657992e7c8d31e7618c0a4b0a95bc3787c351`.
+  The approved npm package SHA-256 is
+  `c068949417b8ae62b568705fbd219fece25e25690e2054218fca4cacf8363930`;
+  the tag-triggered workflow must verify that hash before publication.
+  These results do not qualify later documentation or source changes.
+- Pass Linux and Windows development CI on Node 20/22/24 and an authenticated
+  npm dry-run. Windows controls do not establish qualified Windows release
+  support; macOS, actual WSL containers and live Claude interactions remain
+  unverified.
+- Disclose nine trace warnings, five approval/code-drift warnings and two
+  historical stub markers from the full gate. The shutdown regression checks
+  declared JavaScript exit boundaries, not all VM-internal hang mechanisms.
+- Keep publication separate from technical readiness: human approval is
+  recorded, but actual npm publication, registry artifact bytes and provenance
+  still require confirmation.
 
 ## [0.2.6] - Candidate prepared 2026-11-02
 

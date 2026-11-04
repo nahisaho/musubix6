@@ -4,9 +4,18 @@ GitHub Copilot CLI と Claude Code 向けのエージェントスキル集です
 **軽量な仕様駆動(SDD)・テスト駆動(TDD)開発** と **日本語・英語の技術文書作成、課題分析、プレゼン資料の構成設計** を支援します。
 Copilot は `.github/skills/`、Claude Code は `.claude/skills/` からスキルを読み込みます。
 
-ソースが対象とする版は **0.2.7** です。導入前に、後述のコマンドで npm の公開状況を確認してください。
-版番号だけでは、公開済みであることやリリース適格性を確認できません。
-Claude の実セッションでのスキル検出と対話は、まだ確認していません。
+ソースが対象とする版は **0.2.7** です。**2026-11-05 05:02 JST 時点** で、
+タグ `v0.2.7` の候補（[`7b18615`](https://github.com/nahisaho/musubix6/commit/7b18615577e74d785241e668cbb0b407c239d06e)）は、
+全体の native gate と、条件を固定した Linux x86_64 の 24 セル検証に 2 回連続で合格しました。
+main への統合、タグの push、人間による公開承認は完了しています。
+[npm 公開 workflow](https://github.com/nahisaho/musubix6/actions/runs/41898861716) はテストを実行中で、
+npm にはまだ 0.2.7 が公開されていません。
+
+導入前に、後述のコマンドで npm の公開状況を確認してください。
+リリース適格性の検証結果は、このタグの候補にのみ適用され、以後のソース変更には適用されません。
+Windows の Node 20/22/24 CI も合格していますが、開発時の確認であり、Windows のリリース適格性を示すものではありません。
+macOS、実際の WSL コンテナー、Claude の実セッションでの対話は未検証です。
+修正内容、成果物のハッシュ、残存リスクは [変更履歴](CLANGELOG.md) を参照してください。
 
 [English](README.md) | [npm](https://www.npmjs.com/package/musubix6) | [変更履歴](CLANGELOG.md)
 

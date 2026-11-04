@@ -4,9 +4,18 @@ Agent skills for **lean, spec-driven and test-driven development** and for
 **technical writing in Japanese and English, structured analysis and presentation planning**, packaged for GitHub Copilot CLI
 (`.github/skills/`) and Claude Code (`.claude/skills/`).
 
-The source checkout targets **0.2.7**. Check npm availability below before
-installing; a version string does not establish publication or release
-qualification. Claude live-session discovery and interaction remain unverified.
+The source checkout targets **0.2.7**. As checked on **2026-11-05 at 05:02 JST**,
+the candidate tagged `v0.2.7` ([`7b18615`](https://github.com/nahisaho/musubix6/commit/7b18615577e74d785241e668cbb0b407c239d06e))
+has passed the full native gate and two consecutive unchanged 24-cell Linux x86_64
+qualification runs. Main integration, tag push and human publication approval
+are complete; the [npm publication workflow](https://github.com/nahisaho/musubix6/actions/runs/41898861716)
+is still running its tests, and npm does not yet list 0.2.7.
+
+Check npm availability below before installing. Qualification applies to that
+exact tagged candidate, not later source changes. Windows Node 20/22/24 CI
+passed as development controls, not qualified Windows release support.
+macOS, actual WSL containers and Claude live-session interaction remain unverified.
+See the [changelog](CLANGELOG.md) for fixes, artifact hashes and residual risks.
 
 [日本語](README-ja.md) | [npm](https://www.npmjs.com/package/musubix6) | [Changelog](CLANGELOG.md)
 
