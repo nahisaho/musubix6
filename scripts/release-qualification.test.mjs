@@ -21,7 +21,8 @@ import {
 } from './release-qualification.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const planRelative = '.sdd/release-validation.v0.2.6.json';
+const planRelative = '.sdd/release-validation.v0.2.7.json';
+const contentRelative = '.sdd/release-content-mutations.v0.2.7.json';
 const inheritedRelative = '.sdd/release-validation.v0.2.0.json';
 const approvalsRelative = '.sdd/approvals.json';
 const read = file => JSON.parse(fs.readFileSync(file, 'utf8'));
@@ -32,7 +33,7 @@ const inherited = read(path.join(root, inheritedRelative));
 const approvedPlan = read(path.join(root, planRelative));
 const genuineLock = read(path.join(root, approvalsRelative))['release-qualification'];
 const required = inherited.requiredCells.filter(cell => cell.id !== 'NATIVE-WSLC');
-const contentReference = read(path.join(root, '.sdd/release-content-mutations.v0.2.6.json'));
+const contentReference = read(path.join(root, contentRelative));
 const write = (file, value) => {
   fs.mkdirSync(path.dirname(file), { recursive: true });
   fs.writeFileSync(file, typeof value === 'string' ? value : JSON.stringify(value, null, 2));
@@ -255,6 +256,20 @@ test('TEST-RELQ-PACKAGE-BINDING-001 uses the exact frozen tgz and rejects mismat
   const development = buildContentCasePlan({ ...context, configuration: {} }, target);
   assert.ok(development.setupCommands.some(command => command.includes('pack')),
     'explicit development repacking remains supported without qualification credit');
+  const { runAdapter } = await import('./release-qualification-cells.mjs');
+  const major = Number(process.versions.node.split('.')[0]);
+  let actualPackage;
+  await assert.doesNotReject(async () => {
+    actualPackage = await runAdapter({
+      ...context, output: path.join(directory, 'actual-package-adapter'),
+      cell: { id: `PACKAGE-${major}`, runtime: String(major), mode: 'package' },
+      configuration: { ...context.configuration,
+        runtimes: [{ major, executable: process.execPath, npm }] },
+    });
+  }, 'the actual package adapter must select the approved stable0.2.7 execution target');
+  assert.equal(actualPackage.status, 'PASS');
+  assert.equal(actualPackage.packageReceipt.installedVersion, '0.2.7');
+  assert.equal(actualPackage.packageReceipt.tgzSha256, fileDigest(tgz));
 });
 
 function workspace(t) {
@@ -268,8 +283,8 @@ function workspace(t) {
 }
 
 function contentContext(directory, cellId, source = approvedSourceFixture(directory)) {
-  fs.copyFileSync(path.join(root, '.sdd/release-content-mutations.v0.2.6.json'),
-    path.join(source, '.sdd/release-content-mutations.v0.2.6.json'));
+  fs.copyFileSync(path.join(root, contentRelative),
+    path.join(source, contentRelative));
   return {
     source, output: path.join(directory, 'content'), node: process.execPath,
     cell: { id: cellId, runtime: '24', timeoutSeconds: 3600 },
@@ -304,7 +319,7 @@ function alteredContentReceipt(directory, row, change) {
 test('TEST-RELQ-CONTENT-ADMISSION-001 accepts seven genuine bindings and rejects absent or changed content catalogue', async t => {
   const scope = scopeFixture(workspace(t));
   await pass(admitPlan(scope), 'matching seven-artifact unit must be admitted');
-  const reference = path.join(scope.root, '.sdd/release-content-mutations.v0.2.6.json');
+  const reference = path.join(scope.root, contentRelative);
   const original = fs.readFileSync(reference);
   fs.appendFileSync(reference, '\n');
   await reject(admitPlan(scope), 'changed content catalogue must reject');
@@ -320,7 +335,7 @@ test('TEST-RELQ-CONTENT-ADMISSION-001 accepts seven genuine bindings and rejects
 /** @id TEST-RELQ-BASELINE-001 @verifies REQ-RELQ-001 REQ-RELQ-002 */
 test('TEST-RELQ-BASELINE-001 validates the historical approved source inventory before tool preparation', async t => {
   const { preflight } = await import('./release-qualification-cli.mjs');
-  const referencePath = path.join(root, '.sdd/release-content-mutations.v0.2.6.json');
+  const referencePath = path.join(root, contentRelative);
   const directory = workspace(t), scope = scopeFixture(directory);
   const approvedSource = approvedSourceFixture(directory);
   fs.cpSync(path.join(approvedSource, '.github/skills'), path.join(scope.root, '.github/skills'), { recursive: true });
@@ -356,14 +371,20 @@ test('TEST-RELQ-BASELINE-001 validates the historical approved source inventory 
 });
 
 /** @id TEST-RELQ-SKILL-001 @verifies REQ-RELQ-003, REQ-RELQ-005 */
-test('TEST-RELQ-SKILL-001 preserves 1183 exact cases and owned native inventory controls', async t => {
+test('TEST-RELQ-SKILL-001 preserves 1253 exact cases and owned native inventory controls', async t => {
   const directory = workspace(t);
-  const catalogue = contentCaseCatalogue(contentReference, 'SKILL-MUTATION');
-  assert.equal(catalogue.length, 1183, '13 semantic plus 1170 vendor mechanisms');
-  assert.equal(new Set(catalogue.map(row => row.id)).size, 1183);
+  let catalogue;
+  assert.doesNotThrow(() => { catalogue = contentCaseCatalogue(contentReference, 'SKILL-MUTATION'); },
+    'the independently approved 118-file catalogue must accept before case execution');
+  assert.equal(catalogue.length, 1253, '13 semantic plus 1240 vendor mechanisms');
+  assert.equal(new Set(catalogue.map(row => row.id)).size, 1253);
   assert.equal(catalogue.filter(row => row.kind === 'semantic').length, 13);
-  assert.equal(catalogue.filter(row => row.kind === 'vendor').length, 1170);
-  for (const file of ['windows-native.test.mjs', 'windows-runner.test.mjs']) {
+  assert.equal(catalogue.filter(row => row.kind === 'vendor').length, 1240);
+  for (const file of ['windows-native.test.mjs', 'windows-runner.test.mjs',
+    'implementation-plan.mjs', 'implementation-plan.test.mjs',
+    'implementation-plan-evidence.mjs', 'implementation-plan-evidence.test.mjs',
+    'implementation-plan-cli.mjs', 'implementation-plan-cli.test.mjs',
+    'implementation-plan-workflow.test.mjs']) {
     const cases = catalogue.filter(row => row.origin === 'source' &&
       row.file === `.github/skills/lean-sdd-tdd/scripts/${file}`);
     assert.deepEqual(cases.map(row => row.policy).sort(), [
@@ -379,8 +400,8 @@ test('TEST-RELQ-SKILL-001 preserves 1183 exact cases and owned native inventory 
   const row = await runContentCase(context, target);
   assert.equal(row.status, 'PASS');
   assert.doesNotThrow(() => validateContentCase({ row, target, plan, reference: contentReference }));
-  const inventoryInput = { referencePath: path.join(root, '.sdd/release-content-mutations.v0.2.6.json'),
-    referenceSha256: fileDigest(path.join(root, '.sdd/release-content-mutations.v0.2.6.json')),
+  const inventoryInput = { referencePath: path.join(root, contentRelative),
+    referenceSha256: fileDigest(path.join(root, contentRelative)),
     originRoot: plan.originRoot, origin: 'source', host: 'copilot' };
   assert.doesNotThrow(() => assertContentInventory(inventoryInput));
   assert.throws(() => assertContentInventory({ ...inventoryInput, duplicateProbe: true }), /duplicate paths/);
@@ -457,7 +478,7 @@ test('TEST-RELQ-SKILL-001 preserves 1183 exact cases and owned native inventory 
   const unsafeSource = path.join(directory, 'unsafe-source'), unsafeOutput = path.join(unsafeSource, 'evidence');
   write(path.join(unsafeSource, 'scripts/release-qualification-content-mutations.mjs'),
     fs.readFileSync(path.join(root, 'scripts/release-qualification-content-mutations.mjs'), 'utf8'));
-  write(path.join(unsafeSource, '.sdd/release-content-mutations.v0.2.6.json'), contentReference);
+  write(path.join(unsafeSource, contentRelative), contentReference);
   try { await runContentCase({ ...context, source: unsafeSource, output: unsafeOutput }, target); }
   catch (error) { assert.ok(error); }
   assert.equal(fs.existsSync(unsafeOutput), false, 'source-contained case output must reject before any mkdir');
@@ -815,8 +836,9 @@ function readinessFixture(directory, history = []) {
 /** @id TEST-RELQ-001 @verifies REQ-RELQ-001 */
 test('TEST-RELQ-001 admits the locked Linux plan and enumerates every cell-policy violation', async t => {
   const scope = scopeFixture(workspace(t));
-  const admitted = await pass(admitPlan(scope), 'the complete genuinely locked 24-cell Linux plan must be admitted');
-  assert.equal(admitted.plan.targetVersion, '0.2.6', 'admit only the independently selected current candidate');
+  const admitted = await admitPlan(scope);
+  assert.equal(admitted.status, 'PASS', 'the complete genuinely locked stable0.2.7 24-cell plan must be admitted');
+  assert.equal(admitted.plan.targetVersion, '0.2.7', 'admit only the independently selected current candidate');
   const baseline = read(scope.planPath);
   const changes = [];
   for (const cell of required) {
@@ -835,6 +857,8 @@ test('TEST-RELQ-001 admits the locked Linux plan and enumerates every cell-polic
     ['previous published version', p => { p.targetVersion = '0.2.4'; }],
     ['previous unpublished candidate', p => { p.targetVersion = '0.2.5'; }],
     ['prerelease candidate', p => { p.targetVersion = '0.2.6-dev.0'; }],
+    ['previous stable candidate', p => { p.targetVersion = '0.2.6'; }],
+    ['current prerelease candidate', p => { p.targetVersion = '0.2.7-dev.0'; }],
     ['missing WSL exclusion', p => { p.excludedCells = []; }],
     ['WSL falsely passed', p => { p.excludedCells[0].status = 'PASS'; }],
     ['WSL made required', p => { p.requiredCells.push(clone(p.excludedCells[0])); }],
@@ -1784,7 +1808,7 @@ test('TEST-RELQ-005 binds durable helpers and exact package-entry receipts witho
   assert.equal(cli.status, 1, 'real durable CLI must refuse malformed input without a cyclic-module exit');
   assert.equal(JSON.parse(cli.stderr.trim()).status, 'FAIL');
   assert.equal(cli.signal, null);
-  const tgz = write(path.join(directory, 'musubix6-0.2.6.tgz'), 'synthetic package bytes for verifier fixtures');
+  const tgz = write(path.join(directory, 'musubix6-0.2.7.tgz'), 'synthetic package bytes for verifier fixtures');
   const helpers = ['release-qualification.mjs', 'release-qualification.test.mjs',
     'release-host-mutations.mjs', 'release-host-mutations.test.mjs'].map(name => {
     const file = write(path.join(directory, 'source', 'scripts', name), `export const fixture = '${name}';\n`);
@@ -1792,7 +1816,7 @@ test('TEST-RELQ-005 binds durable helpers and exact package-entry receipts witho
   });
   const packageCommands = major => [
     { command: [`/fixture/node${major}`, '/fixture/npm-cli.js', 'install', '--offline', tgz], output: 'installed' },
-    { command: [`/fixture/node${major}`, '/fixture/node_modules/.bin/musubix6', '--version'], output: '0.2.6\n' },
+    { command: [`/fixture/node${major}`, '/fixture/node_modules/.bin/musubix6', '--version'], output: '0.2.7\n' },
     { command: [`/fixture/node${major}`, '/fixture/node_modules/.bin/musubix6', 'init', '--host', 'both'], output: 'copied both hosts' },
   ].map((row, index) => ({
     command: row.command, exit: 0, signal: null, timedOut: false,
@@ -1800,12 +1824,12 @@ test('TEST-RELQ-005 binds durable helpers and exact package-entry receipts witho
     stderr: retained(directory, `package-${major}-command-${index}.stderr`, ''),
   }));
   const packageReceipts = [20, 22, 24].map(major => ({
-    runtimeMajor: major, tgzPath: tgz, tgzSha256: fileDigest(tgz), installedVersion: '0.2.6',
+    runtimeMajor: major, tgzPath: tgz, tgzSha256: fileDigest(tgz), installedVersion: '0.2.7',
     offline: true, entrypoint: 'node_modules/.bin/musubix6', host: 'both',
     command: ['npm', 'exec', '--offline', '--', 'musubix6', 'init', '--host', 'both'],
     exit: 0, signal: null, timedOut: false,
     log: retained(directory, `package-${major}.json`, JSON.stringify({
-      runtimeMajor: major, version: '0.2.6', host: 'both',
+      runtimeMajor: major, version: '0.2.7', host: 'both',
       copiedHosts: ['.github/skills', '.claude/skills'], status: 'PASS',
       commands: packageCommands(major),
     })),
@@ -1815,7 +1839,7 @@ test('TEST-RELQ-005 binds durable helpers and exact package-entry receipts witho
     },
   }));
   const request = {
-    targetVersion: '0.2.6', packagePath: tgz, packageSha256: fileDigest(tgz), helpers, packageReceipts,
+    targetVersion: '0.2.7', packagePath: tgz, packageSha256: fileDigest(tgz), helpers, packageReceipts,
     readiness: { status: 'PASS', technicalReady: true, streak: 2, publishingAuthorized: false },
     artifacts: [{ path: tgz, sha256: fileDigest(tgz) }],
     exclusions: clone(approvedPlan.excludedCells),
@@ -1836,7 +1860,7 @@ test('TEST-RELQ-005 binds durable helpers and exact package-entry receipts witho
   const oldVersion = clone(packageReceipts[0]); oldVersion.installedVersion = '0.2.4';
   assert.throws(() => validateAdapter({ cell, catalogue, evidence: adapterEvidence(oldVersion) }),
     /runtime\/entrypoint mismatch/, 'the previous published version is not this candidate');
-  for (const version of ['0.2.5', '0.2.6-dev.0']) {
+  for (const version of ['0.2.5', '0.2.6-dev.0', '0.2.6', '0.2.7-dev.0']) {
     const invalidVersion = clone(packageReceipts[0]); invalidVersion.installedVersion = version;
     assert.throws(() => validateAdapter({ cell, catalogue, evidence: adapterEvidence(invalidVersion) }),
       /runtime\/entrypoint mismatch/, `${version} is not the selected stable candidate`);
@@ -1879,7 +1903,7 @@ test('TEST-RELQ-005 binds durable helpers and exact package-entry receipts witho
   const calls = [];
   const runtimes = [20, 22, 24].map(major => ({ major, executable: `/fixture/node${major}/bin/node` }));
   await pass(verifyPackageEntrypoints({
-    packagePath: tgz, packageSha256: fileDigest(tgz), targetVersion: '0.2.6',
+    packagePath: tgz, packageSha256: fileDigest(tgz), targetVersion: '0.2.7',
     runtimes, workRoot: path.join(directory, 'package-work'),
   }, {
     installAndInvoke: async invocation => {

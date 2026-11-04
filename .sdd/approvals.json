@@ -252,16 +252,16 @@
   "release-qualification": {
     "by": "nahisaho",
     "kind": "human",
-    "review": "Explicit approval of7exactpaths/hashes, specb15d1de6/plan647594a1; metadata-only lineagecommit rebinding1dccdfb with identical historicalsuite, unchanged24cells/111files/1183cases/tgz; Green/fullgate/hostedidentity/twoqualifyingruns pending, no publication authorization",
-    "at": "2026-11-03T01:09:27.420Z",
+    "review": "User explicitly approved the displayed seven exact v0.2.7 qualification-preparation artifact paths/hashes; subsequent implementation/testing only, not publication.",
+    "at": "2026-11-04T00:28:19.795Z",
     "artifacts": {
-      ".sdd/specs/release-qualification.md": "b15d1de61bc25edc42545d701b4537d72dbe13040470dc85dab475f97c40d195",
-      ".sdd/release-validation.v0.2.6.json": "647594a138182e676de87a64d81859d29a5e66fe6c01646888f4c9d069aadf59",
-      ".sdd/release-content-mutations.v0.2.6.json": "0d43b5eec2450e446a47a00b6789c5f2ca93ed7373bfd15d9b1b86ae1be977fb",
-      ".sdd/specs/claude-code-support.md": "cfe802292d3869e71e432e076c4617eb99738bb9e9275719dda9596c13647f84",
-      "README.md": "21855184a2a8dc015ec050918cb1cd789cb166ec64867ee503a6bf0ebf852dca",
-      "README-ja.md": "cf8c172207c14d0fae8fa62f76f4db15b0ad7036aec3733103c1ccf864f91a63",
-      "CLANGELOG.md": "1e554fda859b7ecd99a92dfe7a67c0f059b7287170edac9f0873e6671fdc1ed6"
+      ".sdd/specs/release-qualification.md": "5fc637d0dac55de1920533cd7f3a5f7a965eba8046958a0bd29db414f1586de0",
+      ".sdd/release-validation.v0.2.7.json": "ca1e5ccc404c88dedb6998f1208bcdfe3250aad3ba716525c7e3d8a958320e76",
+      ".sdd/release-content-mutations.v0.2.7.json": "195550f984027f5f131115be39de4150e4143bd1e0edd212c9d39e60cdab74d5",
+      ".sdd/specs/claude-code-support.md": "4f61a0a55156505d3658907a5b8dd0c8b8e3eeb316f6723089f6501c16ee5d14",
+      "README.md": "85c8b4a2da1f1b096701fe91e7ac21786ad6eafbfac57a0381e10d9d37b5146a",
+      "README-ja.md": "8c0629712e65236e21e024ac27e2a5531ff8e48c0b75c570e2f7f9e0fb3b3053",
+      "CLANGELOG.md": "4672f8cdbf67d0af126a0113ae57551739441110f693421772bf38124ee6c510"
     },
     "tier": "T2",
     "requireHuman": true,

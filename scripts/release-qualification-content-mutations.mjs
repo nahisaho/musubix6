@@ -6,7 +6,7 @@ import { test } from 'node:test';
 import { sha, fileSha, json, equal, ensure, mkdir, save, execute, retainProcess, cleanEnvironment, externalOutput } from './release-qualification-io.mjs';
 import { validateContentNative } from './release-qualification-evidence.mjs';
 
-export const contentRelative = '.sdd/release-content-mutations.v0.2.6.json';
+export const contentRelative = '.sdd/release-content-mutations.v0.2.7.json';
 const nativeTest = '.github/skills/japanese-prose/scripts/test_engine.py';
 const nodeTest = 'scripts/kotonoha-skills.test.mjs';
 const self = fileURLToPath(import.meta.url);
@@ -16,12 +16,12 @@ const phases = ['baseline', 'mutant', 'restored'];
 /** @id CODE-RELQ-CONTENT-001 @implements REQ-RELQ-003, REQ-RELQ-005 */
 export function contentCaseCatalogue(reference, cellId) {
   equal(reference.exactRequiredCaseCounts, {
-    skillMechanisms: 13, sourceVendorChallenges: 1110, originSensitivityChallenges: 60,
-    vendorChallenges: 1170, skillCellTotal: 1183, placeholderMechanisms: 14,
+    skillMechanisms: 13, sourceVendorChallenges: 1180, originSensitivityChallenges: 60,
+    vendorChallenges: 1240, skillCellTotal: 1253, placeholderMechanisms: 14,
   });
   equal(reference.skillCatalogue.length, 13);
   equal(reference.placeholderCatalogue.length, 14);
-  equal(reference.vendorReference.referenceFiles.length, 111);
+  equal(reference.vendorReference.referenceFiles.length, 118);
   equal(reference.vendorReference.originSensitivityCases.length, 60);
   const semantic = rows => rows.map(row => ({ ...row, id: row.proposedId, kind: 'semantic' }));
   let result;
@@ -132,7 +132,7 @@ export function buildContentCasePlan(context, target) {
       tgz = context.configuration.packagePath;
       plan.packageInput = { path: tgz, sha256: context.configuration.packageSha256 };
     } else {
-      tgz = path.join(pack, 'musubix6-0.2.6.tgz');
+      tgz = path.join(pack, 'musubix6-0.2.7.tgz');
       plan.developmentRepack = true;
       setupCommands.push([context.node, npm, 'pack', '--ignore-scripts', '--json', '--pack-destination', pack]);
     }

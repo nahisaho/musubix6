@@ -89,3 +89,58 @@ and there are zero new flags. This is not a clean-whole-document claim.
 Commit the proposed contracts before human preparation approval.
 No new human lock, native qualification Red/Green, final full gate/current-head
 CI success, two qualifying runs, merge, tag or publication is claimed here.
+
+## Approved0.2.7 implementation and targeted validation
+
+The prospective section above records the7060ce4 checkpoint, not the current
+approval status. The user subsequently approved all seven displayed exact
+paths/hashes for preparation and subsequent implementation only. Native
+`approve record release-qualification --by nahisaho` recorded that genuine
+human decision; all seven artifact bytes remain unchanged.
+
+The four production helpers now select the approved0.2.7 scope/content,
+stable target and118/1180/1240/1253 inventory together. Actual native owning
+assertion Red then same-body Green passed for admission, catalogue and
+package-receipt verdict. A fourth actual-package execution regression
+failed against the restored original stale0.2.6 execution target, then passed
+after its0.2.7 repair. This is separate from the earlier receipt-verdict Red.
+Existing synthetic0.2.6 publisher/changelog fixtures remain intentionally
+version-generic historical controls.
+
+The first shared Refactor batch retained six failures: a stale host-fixture
+target and missing TypeScript through the absent worktree dependencies.
+After those real failures, the existing approved dependencies were restored
+without installation, and the current host fixture was aligned while
+retaining its separate synthetic legacy control. All six affected Refactors
+then passed; all18 shared controls have actual successful native Refactors.
+Those setup/harness failures and Refactors are not additional assertion Reds.
+
+`release-v027-development.json` retains the actual native events/logs and
+the bound runtime/mutation reports. Actual Node20.20.2,22.23.3 and24.22.1 each
+passed all26 independently named release/host tests with zero skips, TODOs,
+cancellations or failures, including real offline package execution.
+All11 isolated Node24 mechanism mutants failed by assertion; every exact
+restoration and selected valid control passed, as did initial/final complete
+controls. Original source bytes were unchanged and the owned snapshot was
+removed. This is bounded mechanism coverage, not exhaustive mutation proof.
+Scoped ESLint9 recommended diagnostics passed for the six changed modules
+plus the generated flat config, seven files total, not full-project lint.
+
+Both retained Claude Sonnet5.5 reviewers reported CLEAN on the six-script
+implementation delta. They read the production diff and changed test
+ranges/stale-selector search, not complete test bodies or raw execution
+logs, and executed nothing. Both reviewers subsequently reported a second
+CLEAN round after independently matching all13 runtime source-manifest
+digests and all seven genuine approved artifact digests to current files,
+checking approval/configuration and zero-credit/pending flags, and reading
+the actual runtime/mutation report metadata. They did not inspect the raw
+assertion/TAP logs or execute tests. The inventory reviewer also did not
+read this appended prose or independently recount exactly six failed
+Refactors. These are bounded hash/contract/report reviews, not independent
+duplicate execution proof; implementation source remained unchanged.
+
+The old CODE hashes captured at preparation approval remain honest history;
+they were not rewritten into a fictitious later human implementation approval.
+Full project gate, current-head hosted CI, two identical frozen24-cell clean
+runs and separate exact-artifact human publication approval remain pending.
+Qualification credit is0; there is no merge, tag or publication claim.

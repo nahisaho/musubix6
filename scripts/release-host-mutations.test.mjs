@@ -14,7 +14,7 @@ const digest = file => crypto.createHash('sha256').update(fs.readFileSync(file))
 
 /** @id TEST-RELQ-HOST-001 @verifies REQ-RELQ-003 REQ-RELQ-005 */
 test('TEST-RELQ-HOST-001 retains every inherited host mechanism and detects current version mutants with owned restored controls', t => {
-  const cases = hostMutations('0.2.6');
+  const cases = hostMutations('0.2.7');
   assert.deepEqual(cases.map(item => item.name), inherited.hostMutationCatalogue,
     'all28 inherited host mechanisms must remain executable on the current candidate');
   assert.equal(replace('alpha', 'beta')('alpha'), 'beta');
@@ -23,7 +23,8 @@ test('TEST-RELQ-HOST-001 retains every inherited host mechanism and detects curr
   assert.throws(() => replace('alpha', 'beta')('alpha alpha'), /anchor/);
   assert.throws(() => replace('alpha', 'alpha')('alpha'), /no.op/);
   assert.throws(() => hostMutations('0.2.6-dev.0'), /stable/);
-  const changelog = cases.find(item => item.name === 'changelog-version');
+  assert.throws(() => hostMutations('0.2.7-dev.0'), /stable/);
+  const changelog = hostMutations('0.2.6').find(item => item.name === 'changelog-version');
   for (const suffix of ['Unreleased', 'Candidate prepared 2026-11-02', '2026-11-02']) {
     const body = `## [0.2.6] - ${suffix}\n\nKeep upgrade guidance.\n`;
     let mutated;
