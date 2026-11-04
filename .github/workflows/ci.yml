@@ -1,4 +1,4 @@
-name: test
+name: Linux Windows-runner hang diagnosis (not qualification)
 
 on:
   push:
@@ -15,7 +15,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node: [20, 22, 24]
+        node: [24]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -115,17 +115,19 @@ jobs:
           status=${PIPESTATUS[0]}
           printf 'toolchain versions exit=%s\n' "$status" | tee -a test-logs/toolchain-versions.log
           exit "$status"
-      - name: Run full lean-sdd-tdd suite
+      - name: Instrument isolated Windows test (not qualification)
+        run: node scripts/diagnose-windows-test.mjs
+      - name: Run diagnostic full lean-sdd-tdd suite
         run: |
           set +e
           timeout --signal=TERM --kill-after=30s 100m npm test 2>&1 | tee test-logs/sdd.log
           status=${PIPESTATUS[0]}
           printf 'node --test exit=%s\n' "$status" | tee -a test-logs/sdd.log
           exit "$status"
-      - name: Retain failure logs
-        if: failure()
+      - name: Retain diagnostic logs regardless of outcome
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-failure-node-${{ matrix.node }}
+          name: non-qualifying-windows-diagnosis-node-${{ matrix.node }}
           path: test-logs/
           retention-days: 14
