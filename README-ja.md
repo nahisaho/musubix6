@@ -4,6 +4,8 @@ GitHub Copilot CLI と Claude Code 向けのエージェントスキル集です
 **軽量な仕様駆動(SDD)・テスト駆動(TDD)開発** と **日本語・英語の技術文書作成、課題分析、プレゼン資料の構成設計** を支援します。
 Copilot は `.github/skills/`、Claude Code は `.claude/skills/` からスキルを読み込みます。
 
+版番号だけでは、公開済みであることやリリース適格性を確認できません。
+
 ソースが対象とする版は **0.2.7** ですが、**2026-11-05 05:50 JST 時点** で npm には未公開です。
 [npm 公開 workflow](https://github.com/nahisaho/musubix6/actions/runs/41898861716) のテストジョブで
 `TEST-DIAGCLI-CLOSE-001` が失敗し、公開ジョブはスキップされました。

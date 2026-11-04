@@ -2,16 +2,16 @@
   "schemaVersion": 1,
   "targetVersion": "0.2.7",
   "status": "scope-contract-not-run-evidence",
-  "revision": 2,
+  "revision": 3,
   "policy": "docs/design-sdd-hardening.md section 3.5",
   "inheritedManifest": {
     "path": ".sdd/release-validation.v0.2.0.json",
     "sha256": "e2f221e308e2fb4389f044e12c42cb2083e314b97305ae1701f65cd399c37de6"
   },
-  "revisionReason": "Refresh stable0.2.7 reference after the normal-shutdown repair at committed Git946647fd6822de63df1a35bfcd09949ad7042230; independently match all118 unchanged paths/modes against source/archive/npm and both-host initialization. Keep all24Linux cells/budgets/exclusions,13semantic/14placeholder mechanisms, ten byte/mode policies per file and60origin sensitivities. Include the new named terminal-shutdown regression through actual registered catalogue discovery. Retain the failed original CI and unsound V8-stress-oracle history; reset credit to zero. Prospective revision requiring fresh human approval, not readiness or publication authorization.",
+  "revisionReason": "Refresh stable0.2.7 reference after the test-only descendant terminal-state/comm-boundary repair at committed Git7ae4cb01934fe7835e0c26038d4a2156b2928170; independently match all118 unchanged paths/modes against source/archive/npm and both-host initialization. Keep all24Linux cells/budgets/exclusions,13semantic/14placeholder mechanisms, ten byte/mode policies per file and60origin sensitivities. Discover the new named TEST-DIAGCLI-PROCSTATE-001 in every regression runtime. Retain failed tag workflow41898861716 and frozen predecessor f8dae968dc12412dc174241be70657992e7c8d31e7618c0a4b0a95bc3787c351 with its two historical24-cell passes, not current credit; reset to zero. Production diagnostic implementation and budgets are unchanged. Prospective revision requiring genuine seven-artifact human preparation approval, not readiness, tag replacement or publication authorization.",
   "historicalTestLineage": {
     "version": 1,
-    "sourceCommit": "946647fd6822de63df1a35bfcd09949ad7042230",
+    "sourceCommit": "7ae4cb01934fe7835e0c26038d4a2156b2928170",
     "suite": ".github/skills/lean-sdd-tdd/scripts/sdd.test.mjs",
     "suiteSha256": "efa2b21e7de2e10529c7010e8cb8a66531c78576e8cc4469a80821be14e870b2",
     "mappings": [
@@ -89,7 +89,7 @@
   },
   "contentMutationContract": {
     "path": ".sdd/release-content-mutations.v0.2.7.json",
-    "sha256": "e000005cc903200b0cd37c749f3f878bfe8694dace997ea6ee949eb055cbc0fe",
+    "sha256": "f32b962801d0df1b794dd15f57f7624396edf3e9285bf077ff5cb5f5f5dd7421",
     "approvalRequired": true,
     "status": "proposed-not-approved-or-executed"
   },
@@ -100,8 +100,8 @@
   },
   "frozenManifest": "Generated separately after preflight; binds this approved plan's SHA256, exact candidate inputs, commands and named catalogues before any qualifying run",
   "previousRevision": {
-    "number": 1,
-    "sha256": "ca1e5ccc404c88dedb6998f1208bcdfe3250aad3ba716525c7e3d8a958320e76",
+    "number": 2,
+    "sha256": "f6a2b3b67a771b5085c1474ff5c6a45c5870f0c74db34a315b11f62d28b4736c",
     "qualificationCreditBefore": 0,
     "qualificationCreditAfter": 0
   },

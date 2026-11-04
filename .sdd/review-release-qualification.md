@@ -1,3 +1,58 @@
+# Stable 0.2.7 revision 3 preparation review (2026-11-05)
+
+Current scope: prospective seven-artifact preparation only, not current
+technical readiness or tag/publication approval. Historical findings below
+remain preserved. No new Open finding in the bounded revision3 proposal.
+
+Claude Sonnet 5.5 reviewed two risk axes in parallel, each ending with two
+bounded CLEAN rounds on unchanged bytes:
+
+- Policy/history/document reviewer: new spec/plan amendment, all24 inherited
+  cells/budgets/exclusions, retained failed publication and prior clean runs
+  with zero credit, seven-artifact approval unit and the release headers'
+  separate preparation/publication obligations. No runtime execution or
+  independent inventory verification was claimed.
+- Inventory/binding reviewer: committed skill-subtree/source identifiers,
+  exact predecessor/content hashes, unchanged historical suite/lineage,
+  one changed diagnostic-test reference and no path/mode loss. The first
+  round explicitly did not check complete policy/origin equality; the final
+  structural JSON comparison closed that gap: all118 ordered paths/modes,
+  ten byte/mode policy definitions,60 origin sensitivities,13 semantic and
+  14 placeholder catalogues unchanged, no dropped references. It did not
+  rerun the source/archive/npm/init spike or full tests.
+
+The developer separately executed the Node24 committed/archive/offline-npm/
+both-host inventory spike `v027-release-policy-spike-qbEFO3/report.json`.
+Its independently retained result is feasibility, not qualification credit.
+The test-oracle repair's assertion Red/Green, actual three-major controls
+and bounded mutations are in `.sdd/evidence/v027-close-oracle.json`.
+The guard correctly rejects the stale production release artifact lock;
+genuine new seven-artifact human approval, current native admission/full
+gate, same-head hosted checks and two unchanged fresh complete runs remain
+required. Existing tag bytes remain untouched.
+
+## Revision3 restored-README-notice follow-up
+
+The first genuine current controls exposed an omitted existing early
+version-not-publication warning and its required mutation anchor. Both
+READMEs restore the exact existing sentence within1000 characters; neither
+test/assertion nor mutation anchor changes. Node24 targeted HOST-005 and
+RELQ-HOST-001 actually passed2/2. Full control failures25/27 and18/27 are
+retained; the latter correctly rejects the now-stale artifact lock.
+
+Both original risk reviewers returned two bounded CLEAN rounds on the
+follow-up text and one-sentence README correction. The policy reviewer
+read the unchanged notice test to confirm the1000-character contract.
+The inventory reviewer checked the historical-spike/future-package boundary;
+its final conceptual round reused the prior read rather than rereading
+files. Neither executed runtime checks or approved changed bytes.
+
+The skill inventory/policies/reference commit remain unchanged. Root
+documentation changes require a new genuine exact seven-artifact approval,
+then current complete controls/preflight and full gate. No frozen candidate
+or qualifying credit exists at this checkpoint; the old spike package hash
+is not the future corrected-root package hash.
+
 # Stable 0.2.5 qualification delta findings
 
 | ID | Severity | Evidence | State |

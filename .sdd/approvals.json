@@ -254,16 +254,16 @@
   "release-qualification": {
     "by": "nahisaho",
     "kind": "human",
-    "review": "User explicitly approved the displayed seven exact artifact paths/hashes for frozen-suite Git-history correction and subsequent verification only; no main merge, tag or npm publication authorization.",
-    "at": "2026-11-04T08:05:56.057Z",
+    "review": "Explicit renewed approval: 承認する（この7成果物で準備・後続検証のみ）. Corrected exact seven artifacts including restored existing early README disclaimers and retained actual failed controls were shown with full SHA256 and residual risks. Preparation/validation only, no main merge/tag replacement/publication.",
+    "at": "2026-11-04T21:29:16.053Z",
     "artifacts": {
-      ".sdd/specs/release-qualification.md": "5914e39b4134afe5c44de97fdd1f576c010afdc0874cde3e725fb4e5c39f6858",
-      ".sdd/release-validation.v0.2.7.json": "f6a2b3b67a771b5085c1474ff5c6a45c5870f0c74db34a315b11f62d28b4736c",
-      ".sdd/release-content-mutations.v0.2.7.json": "e000005cc903200b0cd37c749f3f878bfe8694dace997ea6ee949eb055cbc0fe",
+      ".sdd/specs/release-qualification.md": "fca2fe1b7a5bf39ef562be5440c68f13311490a46bdaab70ba2e065866279144",
+      ".sdd/release-validation.v0.2.7.json": "82c22aa74f8005ff320b6e244c6a873d65ef9070546e9021c35a034e2ccfe450",
+      ".sdd/release-content-mutations.v0.2.7.json": "f32b962801d0df1b794dd15f57f7624396edf3e9285bf077ff5cb5f5f5dd7421",
       ".sdd/specs/claude-code-support.md": "4f61a0a55156505d3658907a5b8dd0c8b8e3eeb316f6723089f6501c16ee5d14",
-      "README.md": "85c8b4a2da1f1b096701fe91e7ac21786ad6eafbfac57a0381e10d9d37b5146a",
-      "README-ja.md": "8c0629712e65236e21e024ac27e2a5531ff8e48c0b75c570e2f7f9e0fb3b3053",
-      "CLANGELOG.md": "4672f8cdbf67d0af126a0113ae57551739441110f693421772bf38124ee6c510"
+      "README.md": "811baf471a7b9397ee69a9e7b7f756df5fd3805b46d97323433d830d3cdbcaea",
+      "README-ja.md": "a381b0b1a2d09e2c5df1c9c64a4291db0ccbe29ef8c8c8e02f5766d2af36f855",
+      "CLANGELOG.md": "e99697bb4316f29589f8dced2a9d0033c7c77b3ef20e634c16d064284c549a8a"
     },
     "tier": "T2",
     "requireHuman": true,
@@ -272,7 +272,7 @@
       "scripts/release-qualification-content-mutations.mjs": "d41906fd4327dd5971c7cc438a906791bdcf4c967609131dbcada55d73e5d20f",
       "scripts/release-qualification-evidence.mjs": "88d48acfd61964b5c73e99e90249c6d5cd7427c4a7cc9e2e7b87b90501aa85e0",
       "scripts/release-qualification-io.mjs": "c3a5b80da7a4c1ced23f92d73553745ea3bf50d1d8856434c33a427f30ec7feb",
-      "scripts/release-qualification.mjs": "d8fda3cbe0adb0214ce13974fc8602ee8f435f5447d0badb5a5380ffae0768eb"
+      "scripts/release-qualification.mjs": "6080a78d25db148b167cc8b0db2efc449b85126576499837a4b43d9d65275634"
     }
   },
   "rust-stub-confidence": {

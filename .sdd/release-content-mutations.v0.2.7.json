@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "revision": 2,
+  "revision": 3,
   "targetVersion": "0.2.7",
-  "revisionReason": "Refresh stable0.2.7 reference after the normal-shutdown repair at committed Git946647fd6822de63df1a35bfcd09949ad7042230; independently match all118 unchanged paths/modes against source/archive/npm and both-host initialization. Keep all24Linux cells/budgets/exclusions,13semantic/14placeholder mechanisms, ten byte/mode policies per file and60origin sensitivities. Include the new named terminal-shutdown regression through actual registered catalogue discovery. Retain the failed original CI and unsound V8-stress-oracle history; reset credit to zero. Prospective revision requiring fresh human approval, not readiness or publication authorization.",
+  "revisionReason": "Refresh stable0.2.7 reference after the test-only descendant terminal-state/comm-boundary repair at committed Git7ae4cb01934fe7835e0c26038d4a2156b2928170; independently match all118 unchanged paths/modes against source/archive/npm and both-host initialization. Keep all24Linux cells/budgets/exclusions,13semantic/14placeholder mechanisms, ten byte/mode policies per file and60origin sensitivities. Discover the new named TEST-DIAGCLI-PROCSTATE-001 in every regression runtime. Retain failed tag workflow41898861716 and frozen predecessor f8dae968dc12412dc174241be70657992e7c8d31e7618c0a4b0a95bc3787c351 with its two historical24-cell passes, not current credit; reset to zero. Production diagnostic implementation and budgets are unchanged. Prospective revision requiring genuine seven-artifact human preparation approval, not readiness, tag replacement or publication authorization.",
   "previousRevision": {
-    "number": 1,
-    "sha256": "195550f984027f5f131115be39de4150e4143bd1e0edd212c9d39e60cdab74d5"
+    "number": 2,
+    "sha256": "e000005cc903200b0cd37c749f3f878bfe8694dace997ea6ee949eb055cbc0fe"
   },
   "status": "proposed-normative-contract-not-approval-or-run-evidence",
   "originalExactSemanticsRecovered": false,
@@ -1401,8 +1401,8 @@
     "definition": "existing markerPolicyRows/contextPolicyRows expected-count pairs, not the linter output; same line numbers/snippets/JSON keys checked in source and installed outputs; no replacement by full-suite-only coverage"
   },
   "vendorReference": {
-    "sourceCommit": "946647fd6822de63df1a35bfcd09949ad7042230",
-    "sourceSkillTree": "19e6e201d120d4b89c41a185507058848b2bce6b",
+    "sourceCommit": "7ae4cb01934fe7835e0c26038d4a2156b2928170",
+    "sourceSkillTree": "b8f263ac34a586fe37d083cb72870ef6116ab514",
     "origin": "Exact committed musubix6 candidate, not an upstream-equivalence claim. All118 files/modes independently matched committed Git archive, real npm payload and actual source/package both-host initialization (Copilot118/Claude115); these prospective digests require genuine human approval.",
     "intendedLocalDeltas": [
       {
@@ -1437,7 +1437,7 @@
       },
       {
         "path": ".github/skills/lean-sdd-tdd/scripts/diagnostics.test.mjs",
-        "sha256": "62e481e0e708679889da7b984e2c1438071a08da0e061f7a432e1e4759b07519",
+        "sha256": "ea2f5f38bfdb3ef68cd4845c39bd980f6ff22272244f1abe32b890fe46b8c82d",
         "description": "Test-only owned-process cleanup race repair: ESRCH is already absent; all other errors propagate. Deterministic controls and three restored mutations; provider implementation and twelve close-time rows unchanged."
       },
       {
@@ -1459,6 +1459,11 @@
         "path": ".sdd/specs/implementation-plan-workflow.md",
         "sha256": "97fabda265361a78dd07854d76e38880fd40483009ef6be65310ac44ce4aac56",
         "description": "Specification-linked opt-in planning, native evidence, CLI integration and workflow/distribution; default-disabled behavior retained."
+      },
+      {
+        "path": ".sdd/specs/diagnostics-contract.md",
+        "sha256": "a003560a9411fc9573eb13947c0218ec0b90d585d657d2f996e35c3ba32e8257",
+        "description": "Genuinely human-approved test-only terminal-state and final-comm-delimiter oracle repair; production diagnostic implementation and budgets unchanged."
       }
     ],
     "skillNames": [
@@ -1878,7 +1883,7 @@
       {
         "path": ".github/skills/lean-sdd-tdd/scripts/diagnostics.test.mjs",
         "mode": 436,
-        "sha256": "62e481e0e708679889da7b984e2c1438071a08da0e061f7a432e1e4759b07519",
+        "sha256": "ea2f5f38bfdb3ef68cd4845c39bd980f6ff22272244f1abe32b890fe46b8c82d",
         "packageMode": 420,
         "sourceModeOctal": "0664",
         "packageModeOctal": "0644"

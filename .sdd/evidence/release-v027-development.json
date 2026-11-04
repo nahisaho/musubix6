@@ -6180,5 +6180,284 @@
     ],
     "qualificationCredit": 0,
     "publishingAuthorized": false
+  },
+  "referenceRevision3Preparation": {
+    "previousCheckpointEvidenceSha256": "e609b7634c431e65e770b7988703d6143eef6ae9d67f8280ca1c3ee59800b51b",
+    "recordedAt": "2026-11-04T21:08:22.140Z",
+    "contractSha256": "2ce1b31723f3f5920586b624353e95555582095ca5fc26fe30c2d1b3832b63d6",
+    "canonicalCommit": "7ae4cb01934fe7835e0c26038d4a2156b2928170",
+    "canonicalSkillTree": "b8f263ac34a586fe37d083cb72870ef6116ab514",
+    "changedReferenceFiles": [
+      {
+        "path": ".github/skills/lean-sdd-tdd/scripts/diagnostics.test.mjs",
+        "previousSha256": "62e481e0e708679889da7b984e2c1438071a08da0e061f7a432e1e4759b07519",
+        "sha256": "ea2f5f38bfdb3ef68cd4845c39bd980f6ff22272244f1abe32b890fe46b8c82d"
+      }
+    ],
+    "unchangedPathAndModeCount": 118,
+    "exactRequiredCaseCounts": {
+      "skillMechanisms": 13,
+      "sourceVendorChallenges": 1180,
+      "originSensitivityChallenges": 60,
+      "vendorChallenges": 1240,
+      "skillCellTotal": 1253,
+      "placeholderMechanisms": 14
+    },
+    "scopeAndContentRevision": 3,
+    "independentFeasibility": {
+      "path": "v027-release-policy-spike-qbEFO3/report.json",
+      "sha256": "77d725d1a3431f7975a35709cc615f1364d53292c0b2c74bcf3576f64371d477",
+      "actualRuntimeScope": "Node24 only; committed source/archive/offline npm/both-host initialization",
+      "hostInventories": [
+        {
+          "origin": "sourceInit",
+          "host": "copilot",
+          "files": 118,
+          "bytesAndModesMatched": true,
+          "pass": true
+        },
+        {
+          "origin": "sourceInit",
+          "host": "claude",
+          "files": 115,
+          "bytesAndModesMatched": true,
+          "pass": true
+        },
+        {
+          "origin": "packageInit",
+          "host": "copilot",
+          "files": 118,
+          "bytesAndModesMatched": true,
+          "pass": true
+        },
+        {
+          "origin": "packageInit",
+          "host": "claude",
+          "files": 115,
+          "bytesAndModesMatched": true,
+          "pass": true
+        }
+      ],
+      "packageInputs": [
+        {
+          "path": "bin/musubix6.mjs",
+          "sha256": "4a5c46092f9a5fed601abfbf50e20dd039e47a34702defce0864869f39eb764d",
+          "sourceMode": 509,
+          "packageMode": 493,
+          "pass": true
+        },
+        {
+          "path": "package.json",
+          "sha256": "ceb7e371cf9812574dc221c6e4a0cd3e59f38046454de12a23ebf212c3450c39",
+          "sourceMode": 436,
+          "packageMode": 420,
+          "pass": true
+        },
+        {
+          "path": "README.md",
+          "sha256": "eb21b1e8fcd6d6eb405af06b52fb17e2cf16dce91f7880250d480d024532210c",
+          "sourceMode": 436,
+          "packageMode": 420,
+          "pass": true
+        },
+        {
+          "path": "README-ja.md",
+          "sha256": "ef0c28b2ea16216a643f4c5e1833f34026a4cc002c8e5adcc8fb8eca861001d2",
+          "sourceMode": 436,
+          "packageMode": 420,
+          "pass": true
+        },
+        {
+          "path": "CLANGELOG.md",
+          "sha256": "e99697bb4316f29589f8dced2a9d0033c7c77b3ef20e634c16d064284c549a8a",
+          "sourceMode": 436,
+          "packageMode": 420,
+          "pass": true
+        }
+      ],
+      "terminalControls": 24,
+      "sourceArchiveSha256": "93ec8ae4f99eb7ef761f4c715967186857dd180e83868b03ec62ead34c2b8cb3",
+      "developmentOnlyPackageSha256": "fad58198d8d296195147adbb21e3eb9325432e5d6c0045cb126369b6d69001e0"
+    },
+    "repairEvidence": {
+      "path": ".sdd/evidence/v027-close-oracle.json",
+      "sha256": "e40f86af43a082aecb548190235729fa67e7d9ffce847b9b881cdbfa34a0d832",
+      "nativeAssertionRedGreen": "X state and live R in terminal-lookalike comm independently recorded",
+      "requiredThreeMajorPasses": 18,
+      "isolatedDetections": 36,
+      "baselineRestoredControls": 39,
+      "twoTestLiveInvocations": 36,
+      "staticDiagnosis": "FAIL on two unchanged baseline findings; zero new"
+    },
+    "reset": {
+      "predecessorFrozenManifestSha256": "f8dae968dc12412dc174241be70657992e7c8d31e7618c0a4b0a95bc3787c351",
+      "historicalCleanRuns": [
+        "run-Lo02Jd",
+        "run-sWewCX"
+      ],
+      "hostedFailure": 41898861716,
+      "publishJob": "skipped",
+      "transferredCredit": 0
+    },
+    "preparationApproval": "pending genuine current seven-artifact human approval; no fabricated or refreshed lock",
+    "reviews": "Two bounded final CLEAN rounds per policy/history/document and inventory/binding risk axis; exact scope retained in review-release-qualification.md",
+    "fullGate": "Blocked by correctly stale release-qualification approval at this preparation checkpoint",
+    "currentHeadHostedChecks": "Repair commit7ae4cb01 has Linux/Windows controls running; no PASS inferred",
+    "successorQualification": "Not started; require complete unchanged fresh24-cell matrix twice",
+    "qualificationCredit": 0,
+    "publishingAuthorized": false,
+    "tagReplacementAuthorized": false
+  },
+  "referenceRevision3ReadmeNoticeRepair": {
+    "previousCheckpointEvidenceSha256": "45d78f61d3bf402877b9f08cd9c82743df21ac38fed684641669ee5bd268c89b",
+    "recordedAt": "2026-11-04T21:24:57.756Z",
+    "previousGenuineApprovalEvent": {
+      "by": "nahisaho",
+      "kind": "human",
+      "review": "Explicit approval: 承認する（この7成果物で準備・後続検証のみ）. Exact seven paths/hashes and residual risks shown by current prepare. Preparation/validation only: no main merge, tag replacement or publication authorization.",
+      "at": "2026-11-04T21:17:25.507Z",
+      "artifacts": {
+        ".sdd/specs/release-qualification.md": "2ce1b31723f3f5920586b624353e95555582095ca5fc26fe30c2d1b3832b63d6",
+        ".sdd/release-validation.v0.2.7.json": "82c22aa74f8005ff320b6e244c6a873d65ef9070546e9021c35a034e2ccfe450",
+        ".sdd/release-content-mutations.v0.2.7.json": "f32b962801d0df1b794dd15f57f7624396edf3e9285bf077ff5cb5f5f5dd7421",
+        ".sdd/specs/claude-code-support.md": "4f61a0a55156505d3658907a5b8dd0c8b8e3eeb316f6723089f6501c16ee5d14",
+        "README.md": "eb21b1e8fcd6d6eb405af06b52fb17e2cf16dce91f7880250d480d024532210c",
+        "README-ja.md": "ef0c28b2ea16216a643f4c5e1833f34026a4cc002c8e5adcc8fb8eca861001d2",
+        "CLANGELOG.md": "e99697bb4316f29589f8dced2a9d0033c7c77b3ef20e634c16d064284c549a8a"
+      },
+      "tier": "T2",
+      "requireHuman": true,
+      "code": {
+        "scripts/release-host-mutations.mjs": "12aa3cc0de5f75da022c17aef7f1ee543fe2008a135312e685848a311f014f68",
+        "scripts/release-qualification-content-mutations.mjs": "d41906fd4327dd5971c7cc438a906791bdcf4c967609131dbcada55d73e5d20f",
+        "scripts/release-qualification-evidence.mjs": "88d48acfd61964b5c73e99e90249c6d5cd7427c4a7cc9e2e7b87b90501aa85e0",
+        "scripts/release-qualification-io.mjs": "c3a5b80da7a4c1ced23f92d73553745ea3bf50d1d8856434c33a427f30ec7feb",
+        "scripts/release-qualification.mjs": "6080a78d25db148b167cc8b0db2efc449b85126576499837a4b43d9d65275634"
+      }
+    },
+    "firstFailureStage": "Existing documentation contract: required early disclaimer omitted by status rewrite",
+    "retainedControlFailures": [
+      {
+        "path": "v027-release-validation-62YqDx/report.json",
+        "sha256": "fe05535ac9b57c4e506cd929b708ad12527465afa7382bbf7582292e14d7ca2a",
+        "counts": {
+          "tests": 27,
+          "pass": 25,
+          "fail": 2,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "path": "v027-release-validation-P6oZbV/report.json",
+        "sha256": "34c81a90891dbbf4886da2a16892e08a4c30297b5ba948381f964b342e37c602",
+        "counts": {
+          "tests": 27,
+          "pass": 18,
+          "fail": 9,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    ],
+    "correction": "Restore exact existing English/Japanese version-is-not-publication warning within first1000 characters; no test, assertion, mutation-anchor or production code change",
+    "actualTargetedChecks": {
+      "tests": [
+        "TEST-HOST-005",
+        "TEST-RELQ-HOST-001"
+      ],
+      "runtime": "Node24",
+      "passed": 2,
+      "skipped": 0,
+      "log": "v027-doc-notice-restored.log",
+      "logSha256": "814e28d639147bd176ab8d438540b60300339499bea6fb12940b58fa2be0b668"
+    },
+    "preparationArtifactChange": [
+      "README.md",
+      "README-ja.md",
+      ".sdd/specs/release-qualification.md"
+    ],
+    "canonicalSkillInventory": "All118 bytes/modes, b8f263ac34a586fe37d083cb72870ef6116ab514 and canonical7ae4cb01 unchanged; scope/content3/3 policies unchanged",
+    "oldRegistrationOnlyPreflight": {
+      "path": "qualification-v027-linux-r4-preflight-UoBCgS/driver-report.json",
+      "sha256": "dea31b1eb601b63e9f73a64111e4f473e46ff1ae7f23dcb419a15216126ed25a",
+      "requiredNames": 1182,
+      "cells": 24,
+      "qualificationCredit": 0,
+      "limit": "Before restored root-document artifact lock; no credit or approval transfers"
+    },
+    "renewedPreparationApproval": "Pending genuine seven-artifact approval; old event retained, not silently relocked",
+    "fullControlsAndGate": "Do not repeat until genuine renewed lock; no full gate or qualifying run completed",
+    "qualificationCredit": 0,
+    "publishingAuthorized": false,
+    "tagReplacementAuthorized": false
+  },
+  "referenceRevision3Verification": {
+    "previousCheckpointEvidenceSha256": "37755c746b413b1559766f24128ea649da15514ff0b50a4ef5a216b74ed46ddb",
+    "recordedAt": "2026-11-04T21:31:58.702Z",
+    "genuineCorrectedPreparationApproval": {
+      "by": "nahisaho",
+      "kind": "human",
+      "review": "Explicit renewed approval: 承認する（この7成果物で準備・後続検証のみ）. Corrected exact seven artifacts including restored existing early README disclaimers and retained actual failed controls were shown with full SHA256 and residual risks. Preparation/validation only, no main merge/tag replacement/publication.",
+      "at": "2026-11-04T21:29:16.053Z",
+      "artifacts": {
+        ".sdd/specs/release-qualification.md": "fca2fe1b7a5bf39ef562be5440c68f13311490a46bdaab70ba2e065866279144",
+        ".sdd/release-validation.v0.2.7.json": "82c22aa74f8005ff320b6e244c6a873d65ef9070546e9021c35a034e2ccfe450",
+        ".sdd/release-content-mutations.v0.2.7.json": "f32b962801d0df1b794dd15f57f7624396edf3e9285bf077ff5cb5f5f5dd7421",
+        ".sdd/specs/claude-code-support.md": "4f61a0a55156505d3658907a5b8dd0c8b8e3eeb316f6723089f6501c16ee5d14",
+        "README.md": "811baf471a7b9397ee69a9e7b7f756df5fd3805b46d97323433d830d3cdbcaea",
+        "README-ja.md": "a381b0b1a2d09e2c5df1c9c64a4291db0ccbe29ef8c8c8e02f5766d2af36f855",
+        "CLANGELOG.md": "e99697bb4316f29589f8dced2a9d0033c7c77b3ef20e634c16d064284c549a8a"
+      },
+      "tier": "T2",
+      "requireHuman": true,
+      "code": {
+        "scripts/release-host-mutations.mjs": "12aa3cc0de5f75da022c17aef7f1ee543fe2008a135312e685848a311f014f68",
+        "scripts/release-qualification-content-mutations.mjs": "d41906fd4327dd5971c7cc438a906791bdcf4c967609131dbcada55d73e5d20f",
+        "scripts/release-qualification-evidence.mjs": "88d48acfd61964b5c73e99e90249c6d5cd7427c4a7cc9e2e7b87b90501aa85e0",
+        "scripts/release-qualification-io.mjs": "c3a5b80da7a4c1ced23f92d73553745ea3bf50d1d8856434c33a427f30ec7feb",
+        "scripts/release-qualification.mjs": "6080a78d25db148b167cc8b0db2efc449b85126576499837a4b43d9d65275634"
+      }
+    },
+    "authorityLimit": "Preparation and validation only; no main merge, tag replacement or publication",
+    "controls": {
+      "path": "v027-release-validation-VqzkPj/report.json",
+      "sha256": "7e9780d79e7c49b1a423ced21ebdf962c29a0515da212490b0655c617370bdda",
+      "actualNodeVersions": [
+        "v20.20.2",
+        "v22.23.3",
+        "v24.22.1"
+      ],
+      "requiredTestsPerRuntime": 27,
+      "failedCancelledSkippedTodo": 0,
+      "scopedReleaseHelperDiagnostics": "PASS; six existing release helper/test modules only, not project-wide lint",
+      "diagnosticTestFileBaseline": "Separate scoped diagnosis remains FAIL on two unchanged baseline findings/no new"
+    },
+    "genuineNativeAdmissionAndPreflight": {
+      "path": "qualification-v027-linux-r4-preflight-Ybijxp/driver-report.json",
+      "sha256": "fe553f94e3adb3dfd306cc4ce62f410d959827233beb14bb6365e1ccd87e7a23",
+      "registeredRequiredRegressions": 1182,
+      "requiredNewRegression": "TEST-DIAGCLI-PROCSTATE-001 distinguishes terminal transitions from live unknown and failed probes",
+      "requiredCells": 24,
+      "blockers": [],
+      "qualifyingCredit": 0
+    },
+    "restoredReadmeWarning": {
+      "testsChanged": false,
+      "invariant": {
+        "path": "v027-doc-notice-prose/invariants.json",
+        "sha256": "7063fecfe4cf03c5f473129dd87d07035f6145850a5eb6e60f4a59efe80a616c"
+      },
+      "prose": 96,
+      "limit": "Restored exact existing contractual warning; no optional prose-only rewrite"
+    },
+    "fullGateAtFinalCommittedHead": "pending at this checkpoint",
+    "finalHeadHostedChecks": "pending final reference/approval checkpoint push",
+    "successorQualification": "not started; require two unchanged complete fresh24-cell runs",
+    "qualificationCredit": 0,
+    "publishingAuthorized": false,
+    "tagReplacementAuthorized": false
   }
 }

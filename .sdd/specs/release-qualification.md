@@ -297,6 +297,87 @@ Old-name provenance is the SHA-bound inherited manifest, not commit 44e7639: tha
 | `REQ-RELQ-003` | Former TODO replacements are actual required tests, not exclusions | Add TEST-RSTUB-001 to excludedTodos or report its missing/skip/TODO result: reject; complete named PASS controls: accept | TEST-RELQ-LINEAGE-002; existing named-verdict regression; bounded exclusion mutation | Pending; earlier #381 development evidence is historical, not release qualification credit. |
 All six first-failure stages apply: contract = explicit reviewed lineage and human seven-artifact reapproval; trusted inputs = exact committed suite/hash and exact old/current names; execution = actual replacement bodies run in fresh native state; verdict = missing/skip/TODO replacements fail while valid controls pass; history = preserve revision 9 failure/interruption and reset validation; integration/distribution = new clean candidate/freeze and two unchanged full 24-cell runs before separate exact-package publication approval. No stage is waived and no policy is weakened.
 
+## Stable 0.2.7 revision 3: failed-publication oracle successor
+
+This is the current preparation checkpoint; earlier revision2 statements above
+remain historical, not current readiness. Tag workflow `41898861716` failed
+`TEST-DIAGCLI-CLOSE-001` and skipped publication after the two clean runs of
+frozen manifest
+`f8dae968dc12412dc174241be70657992e7c8d31e7618c0a4b0a95bc3787c351`.
+Retain both runs (`run-Lo02Jd`, `run-sWewCX`), the hosted failure and all bounded
+reproduction outcomes. None transfers credit to this successor.
+
+Scope/content revisions3/3 retain their exact revision2 predecessor digests.
+The new independently checked committed source is
+`7ae4cb01934fe7835e0c26038d4a2156b2928170`, skill tree
+`b8f263ac34a586fe37d083cb72870ef6116ab514`.
+Only `diagnostics.test.mjs` changes among the118 canonical paths; its digest
+changes from
+`62e481e0e708679889da7b984e2c1438071a08da0e061f7a432e1e4759b07519`
+to `ea2f5f38bfdb3ef68cd4845c39bd980f6ff22272244f1abe32b890fe46b8c82d`.
+All paths, source/package modes,24 required Linux cells, budgets, exclusions,
+1253 skill cases (13semantic/1180source/60origin),14 placeholder mechanisms,
+historical mappings and verdict policies remain unchanged. Production
+diagnostic behavior, worker payloads, cleanup assertions and budgets do not change.
+
+Independent `v027-release-policy-spike-qbEFO3/report.json` (SHA256
+`77d725d1a3431f7975a35709cc615f1364d53292c0b2c74bcf3576f64371d477`)
+matched all118 committed/source/archive/npm paths and exact origin modes,
+both source/package host initializations (Copilot118/Claude115), five root
+package inputs and24 terminal controls. Its source archive SHA256 is
+`93ec8ae4f99eb7ef761f4c715967186857dd180e83868b03ec62ead34c2b8cb3`;
+development-only npm SHA256 is
+`fad58198d8d296195147adbb21e3eb9325432e5d6c0045cb126369b6d69001e0`.
+These Node24 feasibility outputs are not frozen qualification or approved
+publication artifacts.
+
+| REQ | PASS condition | counterexample | TEST/command | observed evidence |
+| --- | --- | --- | --- | --- |
+| `REQ-RELQ-001`, `REQ-RELQ-002` | Genuine current seven-artifact approval admits the unchanged24-cell successor and complete committed118-file inventory; lineage and reference point to the same committed suite | Old revision2 approval, old diagnostic-test digest, mismatched lineage, missing path/mode/policy or weaker cell rejects; exact approved revision3 control accepts | TEST-RELQ-001, TEST-RELQ-BASELINE-001, TEST-RELQ-LINEAGE-001, TEST-RELQ-CONTENT-ADMISSION-001 | Independent committed/archive/npm/both-host spike passed; human preparation approval and current admission remain pending |
+| `REQ-RELQ-003` | Every Node20/22/24 regression catalogue contains and actually executes TEST-DIAGCLI-PROCSTATE-001 plus all previously required names | Missing/excluded/skipped new oracle regression or any inherited required case rejects; complete exact named PASS results accept | Native preflight/registered discovery, REGRESSION-20/22/24 | Test-only repair evidence is committed in `.sdd/evidence/v027-close-oracle.json`: genuine X and live-R Red/Green,36 isolated detections,39 controls and36 two-test live invocations; zero qualification credit |
+| `REQ-RELQ-004`, `REQ-RELQ-005` | New committed candidate, original-policy full gate, same-head hosted checks and two identical fresh complete runs yield technical readiness only | Reuse either old clean run, mutate candidate/manifest, substitute bytes, force-retag or publish under the old approval: reject | Native gate, CI, freeze/check/run/status and existing streak/publication controls | Native guard correctly rejects the stale release artifact lock. Full gate, successor qualification and new exact-artifact publication approval remain outstanding |
+
+First violated stages: verdict for the old X-state false-live observation;
+trusted-input field parsing for the greedy command-name false-terminal case;
+contract for the now-stale release artifact lock. The independently reviewed
+diagnostics contract governs the assertion-first test-only correction.
+All six stages apply: contract = genuine seven-artifact reference approval;
+trusted inputs = independently committed bytes/modes and field ownership;
+execution = unchanged native cases/budgets in fresh state; verdict = live
+controls accepted, invalid evidence rejected; history = retain failures and
+zero inherited credit; integration/distribution = new frozen candidate and
+two consecutive unchanged runs, then separate exact-artifact human approval.
+No stage, policy or case is waived and no S1/S2 finding is downgraded.
+The existing tag remains unchanged. This preparation contract does not
+authorize replacing `v0.2.7`, tagging or publishing.
+
+### Revision3 preparation follow-up: retain the existing README warning
+
+The first current Node20 control run passed25/27 and failed the two existing
+host checks: the rewritten status removed the required early statement that
+a version is not publication evidence, and its mandatory host mutation anchor.
+Retain `v027-release-validation-62YqDx/report.json`, not a PASS or qualifying run.
+Restore the exact existing English/Japanese warnings within the first1000
+characters; do not weaken either assertion or change its mutation anchor.
+The first violated condition is the existing documentation contract.
+Actual Node24 targeted TEST-HOST-005 and TEST-RELQ-HOST-001 then passed2/2,
+including real package-entry controls, in `v027-doc-notice-restored.log`.
+
+Only the two root READMEs change; the118 canonical skill bytes/modes, reference
+commit/tree, scope/content revisions3/3 and all required policies remain fixed.
+The root-document change correctly invalidates the seven-artifact approval.
+Retain the original approval event and require a new exact seven-artifact
+human lock; no frozen candidate exists and qualification credit remains0.
+The subsequent premature unit run `v027-release-validation-P6oZbV/report.json`
+passed18/27 and rejected nine admission-dependent controls under that stale
+lock. This is retained contract-bound rejection, not permission to repair the
+lock automatically or repeat to PASS. New full controls/preflight must wait
+for genuine renewed approval. The previous registration-only preflight
+`qualification-v027-linux-r4-preflight-UoBCgS` discovered1182 required names
+including the new oracle regression; it grants no credit to changed artifacts.
+The earlier Node24 archive/npm feasibility hashes identify their historical
+checkpoint, not the package after this root-document correction.
+
 ## Risks / assumptions
 Six first-failure stages: contract — approved Linux scope and exact inherited 24-cell equality; trusted inputs — pin actual files/tools/configuration and reject absent dependencies; execution — fresh isolated work, bounded commands, real native controls; verdict — independent named catalogues, positive controls and assertion mutants; evidence history — immutable failed records, no old credit, deterministic streak reset; integration/distribution — exact tgz and both-host inventories on Node20/22/24, separate human approval.
 Replacement first-failure classification: contract — missing original edits/seven path identities require this explicit approved replacement; trusted inputs — approved committed-byte references, origin-specific exact modes and real interpreter/dependency identities; execution — permission/import/timeout failures are not kills; verdict — exact native assertion/argv/receipt and valid controls, not arbitrary failure; evidence history — no historical or spike credit and reset on any relevant revision; integration/distribution — real source/init/extracted-package fixed lexical and inventory controls. All six stages apply; none is waived.

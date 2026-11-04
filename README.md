@@ -4,6 +4,8 @@ Agent skills for **lean, spec-driven and test-driven development** and for
 **technical writing in Japanese and English, structured analysis and presentation planning**, packaged for GitHub Copilot CLI
 (`.github/skills/`) and Claude Code (`.claude/skills/`).
 
+For this source checkout, a version string does not establish publication or release qualification.
+
 The source checkout targets **0.2.7**, but npm does not yet list it as checked on
 **2026-11-05 at 05:50 JST**. The
 [npm publication workflow](https://github.com/nahisaho/musubix6/actions/runs/41898861716)
