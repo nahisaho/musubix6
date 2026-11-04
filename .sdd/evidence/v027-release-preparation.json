@@ -1,0 +1,449 @@
+{
+  "schemaVersion": 1,
+  "stage": "prospective-release-preparation-before-human-approval",
+  "sourceSpec": {
+    "path": ".sdd/specs/release-qualification.md",
+    "sha256": "5fc637d0dac55de1920533cd7f3a5f7a965eba8046958a0bd29db414f1586de0"
+  },
+  "summaryPath": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-release-policy-summary.json",
+  "summarySha256": "7d202a467bb2f79dc969282f58a846567442e8f528997ef536fe5c255e71bbc1",
+  "observed": {
+    "sourceCommit": "0f055b4e4c07bcaef05ec85b76fa36f01e8e89dd",
+    "skillTree": "6dbbbd6da9ad3fecf2c486bc17b0db36e44e35b3",
+    "scopeRevision": 1,
+    "contentRevision": 1,
+    "requiredCells": 24,
+    "excludedCells": [
+      {
+        "id": "NATIVE-WSLC",
+        "runtime": "24",
+        "kind": "extra",
+        "mode": "wslc",
+        "timeoutSeconds": 600,
+        "status": "excluded-unvalidated",
+        "reason": "User selected Linux-only verification; actual Windows/WSL container execution is outside this qualification scope",
+        "approvalRequired": true
+      }
+    ],
+    "allInheritedCellBudgetsSupportPoliciesAndHistoricalMappingsIdentical": true,
+    "allInheritedSemanticPlaceholderAndOriginPolicyRowsIdentical": true,
+    "retainedFiles": 111,
+    "currentFiles": 118,
+    "addedFiles": [
+      ".github/skills/lean-sdd-tdd/scripts/implementation-plan-cli.mjs",
+      ".github/skills/lean-sdd-tdd/scripts/implementation-plan-cli.test.mjs",
+      ".github/skills/lean-sdd-tdd/scripts/implementation-plan-evidence.mjs",
+      ".github/skills/lean-sdd-tdd/scripts/implementation-plan-evidence.test.mjs",
+      ".github/skills/lean-sdd-tdd/scripts/implementation-plan-workflow.test.mjs",
+      ".github/skills/lean-sdd-tdd/scripts/implementation-plan.mjs",
+      ".github/skills/lean-sdd-tdd/scripts/implementation-plan.test.mjs"
+    ],
+    "changedBytes": [
+      ".github/skills/lean-agentic-coding/SKILL.md",
+      ".github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+      ".github/skills/lean-sdd-tdd/scripts/spec-context.mjs",
+      ".github/skills/lean-sdd-tdd/SKILL.md",
+      ".github/skills/sdd-reverse-spec/SKILL.md",
+      ".github/skills/sdd-spec-interview/SKILL.md"
+    ],
+    "counts": {
+      "skillMechanisms": 13,
+      "sourceVendorChallenges": 1180,
+      "originSensitivityChallenges": 60,
+      "vendorChallenges": 1240,
+      "skillCellTotal": 1253,
+      "placeholderMechanisms": 14
+    },
+    "scopeSha256": "ca1e5ccc404c88dedb6998f1208bcdfe3250aad3ba716525c7e3d8a958320e76",
+    "contentSha256": "195550f984027f5f131115be39de4150e4143bd1e0edd212c9d39e60cdab74d5",
+    "spikes": [
+      {
+        "path": "v027-release-policy-spike-sO7vtt/report.json",
+        "work": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-release-policy-spike-sO7vtt",
+        "commit": "0f055b4e4c07bcaef05ec85b76fa36f01e8e89dd",
+        "tree": "6dbbbd6da9ad3fecf2c486bc17b0db36e44e35b3",
+        "previousFiles": 111,
+        "currentFiles": 118,
+        "addedFiles": [
+          ".github/skills/lean-sdd-tdd/scripts/implementation-plan-cli.mjs",
+          ".github/skills/lean-sdd-tdd/scripts/implementation-plan-cli.test.mjs",
+          ".github/skills/lean-sdd-tdd/scripts/implementation-plan-evidence.mjs",
+          ".github/skills/lean-sdd-tdd/scripts/implementation-plan-evidence.test.mjs",
+          ".github/skills/lean-sdd-tdd/scripts/implementation-plan-workflow.test.mjs",
+          ".github/skills/lean-sdd-tdd/scripts/implementation-plan.mjs",
+          ".github/skills/lean-sdd-tdd/scripts/implementation-plan.test.mjs"
+        ],
+        "exactRequiredCaseCounts": {
+          "skillMechanisms": 13,
+          "sourceVendorChallenges": 1180,
+          "originSensitivityChallenges": 60,
+          "vendorChallenges": 1240,
+          "skillCellTotal": 1253,
+          "placeholderMechanisms": 14
+        },
+        "sourceArchiveSha256": "53f15f458c9da17f49bae3ac8734aa6f1b5b84baebddc48fab3e3be38b577333",
+        "tarballSha256": "63b6b406962a6d59b6aa672e090a02af2e9a17819fb305be647f19f5ddc7a9cf",
+        "commands": [
+          {
+            "argv": [
+              "git",
+              "rev-parse",
+              "HEAD"
+            ],
+            "cwd": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree",
+            "exit": 0,
+            "signal": null,
+            "error": null,
+            "log": "commit.log"
+          },
+          {
+            "argv": [
+              "git",
+              "rev-parse",
+              "HEAD:.github/skills"
+            ],
+            "cwd": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree",
+            "exit": 0,
+            "signal": null,
+            "error": null,
+            "log": "skill-tree.log"
+          },
+          {
+            "argv": [
+              "git",
+              "diff",
+              "HEAD",
+              "--",
+              ".github/skills"
+            ],
+            "cwd": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree",
+            "exit": 0,
+            "signal": null,
+            "error": null,
+            "log": "canonical-clean.log"
+          },
+          {
+            "argv": [
+              "git",
+              "ls-files",
+              "-z",
+              "--",
+              ".github/skills"
+            ],
+            "cwd": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree",
+            "exit": 0,
+            "signal": null,
+            "error": null,
+            "log": "tracked.log"
+          },
+          {
+            "argv": [
+              "git",
+              "archive",
+              "--format=tar",
+              "--output=/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-release-policy-spike-sO7vtt/source.tar",
+              "0f055b4e4c07bcaef05ec85b76fa36f01e8e89dd"
+            ],
+            "cwd": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree",
+            "exit": 0,
+            "signal": null,
+            "error": null,
+            "log": "archive.log"
+          },
+          {
+            "argv": [
+              "tar",
+              "-xpf",
+              "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-release-policy-spike-sO7vtt/source.tar",
+              "-C",
+              "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-release-policy-spike-sO7vtt/source"
+            ],
+            "cwd": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree",
+            "exit": 0,
+            "signal": null,
+            "error": null,
+            "log": "extract.log"
+          },
+          {
+            "argv": [
+              "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+              "/home/nahisaho/.nvm/versions/node/v24.22.1/lib/node_modules/npm/bin/npm-cli.js",
+              "pack",
+              "--offline",
+              "--ignore-scripts",
+              "--json",
+              "--pack-destination",
+              "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-release-policy-spike-sO7vtt/packed"
+            ],
+            "cwd": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-release-policy-spike-sO7vtt/source",
+            "exit": 0,
+            "signal": null,
+            "error": null,
+            "log": "pack.log"
+          },
+          {
+            "argv": [
+              "tar",
+              "-xpzf",
+              "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-release-policy-spike-sO7vtt/packed/musubix6-0.2.7.tgz",
+              "-C",
+              "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-release-policy-spike-sO7vtt/packed"
+            ],
+            "cwd": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree",
+            "exit": 0,
+            "signal": null,
+            "error": null,
+            "log": "extract-package.log"
+          }
+        ],
+        "qualificationCredit": 0,
+        "policyApproved": false,
+        "pass": true,
+        "limits": "Independent committed source/archive/real npm inventory feasibility only; no forged human lock, admission, native release Red/Green, fullgate or qualification credit."
+      },
+      {
+        "path": "v027-release-policy-spike-rKZZ61/report.json",
+        "work": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-release-policy-spike-rKZZ61",
+        "commit": "0f055b4e4c07bcaef05ec85b76fa36f01e8e89dd",
+        "tree": "6dbbbd6da9ad3fecf2c486bc17b0db36e44e35b3",
+        "previousFiles": 111,
+        "currentFiles": 118,
+        "addedFiles": [
+          ".github/skills/lean-sdd-tdd/scripts/implementation-plan-cli.mjs",
+          ".github/skills/lean-sdd-tdd/scripts/implementation-plan-cli.test.mjs",
+          ".github/skills/lean-sdd-tdd/scripts/implementation-plan-evidence.mjs",
+          ".github/skills/lean-sdd-tdd/scripts/implementation-plan-evidence.test.mjs",
+          ".github/skills/lean-sdd-tdd/scripts/implementation-plan-workflow.test.mjs",
+          ".github/skills/lean-sdd-tdd/scripts/implementation-plan.mjs",
+          ".github/skills/lean-sdd-tdd/scripts/implementation-plan.test.mjs"
+        ],
+        "exactRequiredCaseCounts": {
+          "skillMechanisms": 13,
+          "sourceVendorChallenges": 1180,
+          "originSensitivityChallenges": 60,
+          "vendorChallenges": 1240,
+          "skillCellTotal": 1253,
+          "placeholderMechanisms": 14
+        },
+        "sourceArchiveSha256": "53f15f458c9da17f49bae3ac8734aa6f1b5b84baebddc48fab3e3be38b577333",
+        "tarballSha256": "63b6b406962a6d59b6aa672e090a02af2e9a17819fb305be647f19f5ddc7a9cf",
+        "commands": [
+          {
+            "argv": [
+              "git",
+              "rev-parse",
+              "HEAD"
+            ],
+            "cwd": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree",
+            "exit": 0,
+            "signal": null,
+            "error": null,
+            "log": "commit.log"
+          },
+          {
+            "argv": [
+              "git",
+              "rev-parse",
+              "HEAD:.github/skills"
+            ],
+            "cwd": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree",
+            "exit": 0,
+            "signal": null,
+            "error": null,
+            "log": "skill-tree.log"
+          },
+          {
+            "argv": [
+              "git",
+              "diff",
+              "HEAD",
+              "--",
+              ".github/skills"
+            ],
+            "cwd": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree",
+            "exit": 0,
+            "signal": null,
+            "error": null,
+            "log": "canonical-clean.log"
+          },
+          {
+            "argv": [
+              "git",
+              "ls-files",
+              "-z",
+              "--",
+              ".github/skills"
+            ],
+            "cwd": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree",
+            "exit": 0,
+            "signal": null,
+            "error": null,
+            "log": "tracked.log"
+          },
+          {
+            "argv": [
+              "git",
+              "archive",
+              "--format=tar",
+              "--output=/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-release-policy-spike-rKZZ61/source.tar",
+              "0f055b4e4c07bcaef05ec85b76fa36f01e8e89dd"
+            ],
+            "cwd": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree",
+            "exit": 0,
+            "signal": null,
+            "error": null,
+            "log": "archive.log"
+          },
+          {
+            "argv": [
+              "tar",
+              "-xpf",
+              "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-release-policy-spike-rKZZ61/source.tar",
+              "-C",
+              "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-release-policy-spike-rKZZ61/source"
+            ],
+            "cwd": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree",
+            "exit": 0,
+            "signal": null,
+            "error": null,
+            "log": "extract.log"
+          },
+          {
+            "argv": [
+              "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+              "/home/nahisaho/.nvm/versions/node/v24.22.1/lib/node_modules/npm/bin/npm-cli.js",
+              "pack",
+              "--offline",
+              "--ignore-scripts",
+              "--json",
+              "--pack-destination",
+              "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-release-policy-spike-rKZZ61/packed"
+            ],
+            "cwd": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-release-policy-spike-rKZZ61/source",
+            "exit": 0,
+            "signal": null,
+            "error": null,
+            "log": "pack.log"
+          },
+          {
+            "argv": [
+              "tar",
+              "-xpzf",
+              "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-release-policy-spike-rKZZ61/packed/musubix6-0.2.7.tgz",
+              "-C",
+              "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-release-policy-spike-rKZZ61/packed"
+            ],
+            "cwd": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree",
+            "exit": 0,
+            "signal": null,
+            "error": null,
+            "log": "extract-package.log"
+          },
+          {
+            "argv": [
+              "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+              "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-release-policy-spike-rKZZ61/source/bin/musubix6.mjs",
+              "init",
+              "--host",
+              "copilot"
+            ],
+            "cwd": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-release-policy-spike-rKZZ61/home/sourceInit-copilot",
+            "exit": 0,
+            "signal": null,
+            "error": null,
+            "log": "sourceInit-copilot.log"
+          },
+          {
+            "argv": [
+              "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+              "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-release-policy-spike-rKZZ61/source/bin/musubix6.mjs",
+              "init",
+              "--host",
+              "claude"
+            ],
+            "cwd": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-release-policy-spike-rKZZ61/home/sourceInit-claude",
+            "exit": 0,
+            "signal": null,
+            "error": null,
+            "log": "sourceInit-claude.log"
+          },
+          {
+            "argv": [
+              "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+              "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-release-policy-spike-rKZZ61/packed/package/bin/musubix6.mjs",
+              "init",
+              "--host",
+              "copilot"
+            ],
+            "cwd": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-release-policy-spike-rKZZ61/home/packageInit-copilot",
+            "exit": 0,
+            "signal": null,
+            "error": null,
+            "log": "packageInit-copilot.log"
+          },
+          {
+            "argv": [
+              "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+              "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-release-policy-spike-rKZZ61/packed/package/bin/musubix6.mjs",
+              "init",
+              "--host",
+              "claude"
+            ],
+            "cwd": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-release-policy-spike-rKZZ61/home/packageInit-claude",
+            "exit": 0,
+            "signal": null,
+            "error": null,
+            "log": "packageInit-claude.log"
+          }
+        ],
+        "hostInitControls": [
+          {
+            "origin": "sourceInit",
+            "host": "copilot",
+            "files": 118,
+            "bytesAndModesMatched": true,
+            "pass": true
+          },
+          {
+            "origin": "sourceInit",
+            "host": "claude",
+            "files": 115,
+            "bytesAndModesMatched": true,
+            "pass": true
+          },
+          {
+            "origin": "packageInit",
+            "host": "copilot",
+            "files": 118,
+            "bytesAndModesMatched": true,
+            "pass": true
+          },
+          {
+            "origin": "packageInit",
+            "host": "claude",
+            "files": 115,
+            "bytesAndModesMatched": true,
+            "pass": true
+          }
+        ],
+        "qualificationCredit": 0,
+        "policyApproved": false,
+        "pass": true,
+        "limits": "Independent committed source/archive/real npm and both-host initialization inventory feasibility on Node24 only; no forged human lock, admission, native release Red/Green, fullgate or qualification credit."
+      }
+    ],
+    "qualificationCredit": 0,
+    "policyApproved": false
+  },
+  "limits": [
+    "Data and zero-credit Node24 inventory feasibility only; no new human approval, native release assertion Red/Green, final fullgate/current-head CI, frozen runs or publication.",
+    "Independent inventory reviewer compared118 committed Git digests, not execution logs or raw npm archive; contract reviewer checked bounded spec/data/hash delta only.",
+    "Exact source0664/0775 and normalized npm0644/0755 modes retain inherited strict policy; different checkout modes are not accepted as equivalent."
+  ],
+  "structuralLint": {
+    "baselineCount": 4,
+    "currentCount": 4,
+    "newFindings": 0,
+    "limit": "Four inherited lexical flags concern Node TODO classification/replacement prose, not unfinished new placeholders."
+  }
+}

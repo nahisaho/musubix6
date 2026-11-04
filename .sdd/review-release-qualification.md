@@ -45,3 +45,47 @@ The first spike's dependency setup error is not Red, and neither the fixture
 runs nor the failed 14-cell frozen prefix carry qualification credit.
 No requirement/policy approval, timeout increase, release-readiness finding,
 tag or publication authorization follows from these bounded reviews.
+
+## Prospective0.2.7 preparation, not release approval
+
+Current proposed specification SHA256:
+`5fc637d0dac55de1920533cd7f3a5f7a965eba8046958a0bd29db414f1586de0`.
+The new versioned scope/content contracts are both revision1; historical0.2.6
+revision13/6 files remain unchanged. No new human lock is recorded yet.
+
+| ID | Severity | Evidence | State |
+| --- | --- | --- | --- |
+| V027-APPROVAL-UNIT | S2 | Initial contract review questioned whether retained historical artifacts belong in the current approval unit. | Resolved in design; reviewer verified the actual exact seven-artifact admission shape and accepted current spec plus six current frontmatter artifacts, with history retained separately. |
+| V027-EVIDENCE-PIN | S3 | Prior candidate-identity evidence needed an immutable source binding. | Resolved; main PASS table names committed0ce5485 version-preparation evidence, without transferring release credit. |
+| V027-CUTOVER-BINDINGS | S3 | Current locked-array, scope/content positions and selected stable version must change together. | Explicit in design; production cutover and native assertion Red/Green remain pending genuine preparation approval. |
+| V027-SOURCE-MODES | S3 | Exact0664/0775 source modes are distinct from Git's executable-bit metadata and normalized0644/0755 package modes. | Inherited strict origin policy retained; actual archive/npm/both-host inventories matched. Different checkout permissions must reject or use the canonical permission-preserved archive, never silently redefine the reference. |
+
+Actual external `v027-release-policy-summary.json` asserts unchanged24required
+cells/budgets, exclusions, support/legacy policy, historical mappings,
+13semantic/14placeholder mechanisms and60origin sensitivities. All111old paths
+and modes remain; seven new planning modules/tests make118files and
+1180source/1240vendor/1253total skill cases. Credits remain0 and publication
+flagsfalse. Scope/content digests and lineage/source commit agree.
+
+`v027-release-policy-spike-rKZZ61/report.json` records actual Node24
+committed-source/archive/npm118-file byte/mode equality and both source-init
+and package-init Copilot118/Claude115 complete inventories. The earlier
+archive/npm-only sO7vtt spike remains retained. These are feasibility controls,
+not native adapter tests, a full gate, three-runtime inventory qualification
+or frozen clean-run credit.
+
+Claude Sonnet5.5's contract reviewer read the new Design/top-level data and
+bounded summary, directly checked current/predecessor/content hashes and Git
+tree identity, and reported CLEAN without executing or auditing the spikes.
+The independent inventory reviewer directly compared all118 path/digest rows
+with committed Git blobs, verified111old/sevennew paths and unchanged policy
+rows/counts, and reported CLEAN. It did not inspect the spikes, context file,
+Node20/22 execution or actual npm archive; its package-mode review was limited
+to the declared executable/nonexecutable mapping.
+
+Structural lint retains exactly the four inherited lexical flags about
+Node's TODO classification/replacements; the new literal is code-formatted
+and there are zero new flags. This is not a clean-whole-document claim.
+Commit the proposed contracts before human preparation approval.
+No new human lock, native qualification Red/Green, final full gate/current-head
+CI success, two qualifying runs, merge, tag or publication is claimed here.
