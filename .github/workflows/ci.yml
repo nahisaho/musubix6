@@ -117,15 +117,22 @@ jobs:
           exit "$status"
       - name: Instrument isolated Windows test (not qualification)
         run: node scripts/diagnose-windows-test.mjs
-      - name: Compare original and drained optional imports (not qualification)
+      - name: Compare concurrent original and natural shutdown (not qualification)
         run: |
           set +e
           status=0
-          for variant in baseline drain missing; do
-            timeout --signal=TERM --kill-after=5s 5m env SDD_SCRIPT_UNDER_TEST="$PWD/test-logs/sdd-$variant.mjs" npm test > "test-logs/$variant.log" 2>&1
-            result=$?
-            printf 'diagnostic variant=%s exit=%s\n' "$variant" "$result" | tee -a test-logs/results.log
-            if [ "$result" -ne 0 ]; then status=1; fi
+          for variant in baseline natural; do
+            pids=()
+            for worker in 1 2 3 4; do
+              timeout --signal=TERM --kill-after=5s 5m env SDD_SCRIPT_UNDER_TEST="$PWD/test-logs/sdd-$variant.mjs" npm test > "test-logs/$variant-$worker.log" 2>&1 &
+              pids+=("$!")
+            done
+            for index in 0 1 2 3; do
+              wait "${pids[$index]}"
+              result=$?
+              printf 'diagnostic variant=%s worker=%s exit=%s\n' "$variant" "$((index + 1))" "$result" | tee -a test-logs/results.log
+              if [ "$result" -ne 0 ]; then status=1; fi
+            done
           done
           exit "$status"
       - name: Retain diagnostic logs regardless of outcome
