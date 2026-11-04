@@ -5976,5 +5976,53 @@
       "All24 Linux cells/budgets/exclusions and13semantic/14placeholder/60origin policies are unchanged; require fresh actual discovery including TEST-PLAN-CLI-006.",
       "No required unknown, skipped, timeout or setup-error result is promoted to PASS."
     ]
+  },
+  "referenceRevision2Verification": {
+    "previousCheckpointEvidenceSha256": "cde20367578baad47c1c94527e08c75350443e92321aa756d181dc0c2f30d034",
+    "recordedAt": "2026-11-04T05:09:05.860Z",
+    "approval": {
+      "by": "nahisaho",
+      "at": "2026-11-04T05:05:46.125Z",
+      "review": "Explicit seven-artifact revision-2 approval: verification contract and subsequent validation only; no main merge, tag or npm publication authorization.",
+      "artifacts": {
+        ".sdd/specs/release-qualification.md": "28c74792bafb2830fe046710dcf3e7012cfddf61dbdeeb25a46c31a5cfdc6cbf",
+        ".sdd/release-validation.v0.2.7.json": "f6a2b3b67a771b5085c1474ff5c6a45c5870f0c74db34a315b11f62d28b4736c",
+        ".sdd/release-content-mutations.v0.2.7.json": "e000005cc903200b0cd37c749f3f878bfe8694dace997ea6ee949eb055cbc0fe",
+        ".sdd/specs/claude-code-support.md": "4f61a0a55156505d3658907a5b8dd0c8b8e3eeb316f6723089f6501c16ee5d14",
+        "README.md": "85c8b4a2da1f1b096701fe91e7ac21786ad6eafbfac57a0381e10d9d37b5146a",
+        "README-ja.md": "8c0629712e65236e21e024ac27e2a5531ff8e48c0b75c570e2f7f9e0fb3b3053",
+        "CLANGELOG.md": "4672f8cdbf67d0af126a0113ae57551739441110f693421772bf38124ee6c510"
+      },
+      "scope": "Verification contract and subsequent validation only; no main merge, tag or publication authority."
+    },
+    "controls": {
+      "path": "v027-release-validation-tHib0t/report.json",
+      "sha256": "388419274bf186544cae5c2c4f02d7959374e06fa3a973fd60107f14d5269967",
+      "actualNodeVersions": [
+        "v20.20.2",
+        "v22.23.3",
+        "v24.22.1"
+      ],
+      "requiredTestsPerRuntime": 26,
+      "skippedFailedCancelledTodo": 0,
+      "scopedDiagnostics": "PASS; existing release-helper/test scope only"
+    },
+    "nativeAdmissionAndPreflight": {
+      "path": "qualification-v027-linux-r2-StqR0k/driver-report.json",
+      "sha256": "b48a9cafdbf36d3e3c53907eda0d49e8602da85102cf56cc79132ddf1aa5eea0",
+      "executable": "scripts/release-qualification.mjs",
+      "registeredRegressions": 1180,
+      "requiredNewRegression": "TEST-PLAN-CLI-006 normal dispatch retains decisions without forcing runtime exit",
+      "requiredCells": 24,
+      "blockers": []
+    },
+    "originalFullGateAtCurrentReference": "pending at this checkpoint",
+    "repairCheckpointNormalCI": {
+      "run": 41774256766,
+      "status": "still running; no verdict inferred from watcher"
+    },
+    "finalHeadHostedChecks": "pending; metadata/approval followup not yet pushed",
+    "qualificationCredit": 0,
+    "publishingAuthorized": false
   }
 }
