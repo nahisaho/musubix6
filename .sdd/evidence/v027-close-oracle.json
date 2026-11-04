@@ -2,6 +2,74 @@
   "schemaVersion": 1,
   "recordedAt": "2026-11-04T21:01:57.881Z",
   "purpose": "Bounded test-oracle repair development evidence; no release qualification or publication authorization",
+  "postGateEvidenceRefresh": {
+    "sourceCommit": "af98a40f3ef2952e5ad5082c1f5ee3726f25b07b",
+    "failedFullGate": {
+      "report": "v027-oracle-full-gate-8b9l3N/report.json",
+      "wrapperStatus": "INCOMPLETE",
+      "nativeExit": 1,
+      "logSha256": "808381ca3e758ffff470e699d6c4274b9665ee7e55d579aeb3e5ab098f224854",
+      "projectCheck": "npm test completed successfully in 1859.4 seconds; this does not override the failed native gate",
+      "firstViolatedStage": "evidence history: 15 existing tests retained unchanged assertion bodies but their shared test-file preamble had changed",
+      "otherObservations": "Four human implementation-snapshot drift warnings; all spec/artifact locks remained OK. A generated Python bytecode file also made the external wrapper incomplete."
+    },
+    "metadataDiagnostic": {
+      "path": "v027-postgate-metadata-diagnostic.log",
+      "sha256": "34fe7aeb042099e9ac9cc076a8813522a968507cde83222f2c1ecca17a5d5787",
+      "scope": "gate --no-run --verbose: diagnostic only, project commands explicitly skipped, not a full-gate pass"
+    },
+    "refresh": {
+      "status": "PASS",
+      "report": "v027-postgate-refactor-XKe53M/report.json",
+      "reportSha256": "c66832fa739a6c3b70296587201338322b52e644e9cc88cce9bcbfec0690d115",
+      "driver": "v027-postgate-refactor.mjs",
+      "driverSha256": "69d40369006a0ccb724f6515787c0de76c17d825735ca622d39a134540daee52",
+      "log": "v027-postgate-refactor-XKe53M/refactor.log",
+      "logSha256": "3a3686440c45f25ae021bd09be1073c8e12ee7a7ee35485ed281f31a9ec57b9f",
+      "runtime": "Node 24.22.1",
+      "command": "node .github/skills/lean-sdd-tdd/scripts/sdd.mjs tdd refactor TEST-DIAGCLI-001 TEST-DIAGCLI-002 TEST-DIAGCLI-003 TEST-DIAGESL-001 TEST-DIAGESL-002 TEST-DIAGESL-003 TEST-DIAGESL-004 TEST-DIAGTS-001 TEST-DIAGTS-002 TEST-DIAGTS-003 TEST-DIAGTS-004 TEST-DIAGFLOW-001 TEST-DIAGFLOW-002 TEST-DIAGFLOW-003 TEST-DIAGFLOW-004",
+      "evidence": "15 actual successful native Refactor commands appended 15 events, preserving every prior event; LEDGER OK (1460 entries). The driver independently verified every tracked file: only .sdd/tdd.jsonl changed.",
+      "limits": "These are refreshed passing controls for unchanged assertions, not new assertion Reds. Native shared-preamble warnings remain in the retained log; the earlier owning terminal-state/parser Reds and mutation evidence remain unchanged. No production, test, spec or policy bytes changed."
+    },
+    "contextSetupFailure": {
+      "path": "v027-postgate-refactor-context.txt",
+      "exit": 2,
+      "reason": "TEST-ID selectors were refused as missing files. The corrected feature-selector context completed successfully before Refactor; neither context result is Red or qualification evidence."
+    },
+    "cleanup": {
+      "path": "scripts/__pycache__/cost-log.cpython-314.pyc",
+      "sha256": "70f3a6a54e9602c5e54a46d3f600621bcdaa0f5512a8ee120f7adb7d7235cee9",
+      "action": "After both native commands completed, removed only this identified regular, current-user-owned test-generated file and its then-empty directory. The old failed receipt was not rewritten."
+    },
+    "implementationSnapshotReapproval": {
+      "by": "nahisaho",
+      "response": "承認する（この4仕様・3実装の現状態、公開は含まない）",
+      "scope": "Four exact native prepare manifests and the exact current hashes of bin/musubix6.mjs, diagnostics.test.mjs and sdd.mjs were shown before the question. All seven hashes were rechecked before native approve record.",
+      "nativeCommand": "node .github/skills/lean-sdd-tdd/scripts/sdd.mjs approve record <feature> --by nahisaho --review <explicit validation-only approval summary>",
+      "features": [
+        "claude-code-support",
+        "diagnostics-contract",
+        "rust-stub-confidence",
+        "windows-runner"
+      ],
+      "approvalEventSequences": [1461, 1462, 1463, 1464],
+      "approvalEventHashes": [
+        "55248f394f8c3c98bff67ed21063affc26f1943fba1646fcd8aac6119faacadb",
+        "4e0ff02a25003cb8ded2c48a8e5c01de8ac932ac87cea3cad566474db1e29d05",
+        "220e124b389c413f97e2caa9b76a7a3a902de2601327504a56cf0b837805bda3",
+        "988e784537fc67cc9d73f79c9c8efb0d8cfdb22a7387ec59f8d75fa4b054a588"
+      ],
+      "limits": "Implementation snapshot refresh and validation only; no main integration, tag replacement or npm publication authorization. Specs, implementation and test bytes remain unchanged."
+    },
+    "hostedControls": {
+      "linux": "41917046472: Node 20/22/24 jobs SUCCESS at af98a40",
+      "windows": "41917046592: Node 20/22/24 development-control jobs SUCCESS at af98a40; not Windows release qualification",
+      "authenticatedDryRun": "41917293866: test and publish jobs SUCCESS at af98a40. Actual publish log line2315 executes npm publish --provenance --access public \"$artifact\" --dry-run; line2602 identifies the dry run."
+    },
+    "qualificationCredit": 0,
+    "publishingAuthorized": false,
+    "remaining": "Current full-gate PASS, successor frozen 24-cell matrix with two consecutive complete unchanged clean runs, and separate exact-artifact human approval before tag replacement or npm publication"
+  },
   "requirements": [
     "REQ-DIAGCLI-004",
     "REQ-DIAGCLI-005"

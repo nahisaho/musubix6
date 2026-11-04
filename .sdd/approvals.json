@@ -139,8 +139,8 @@
   "diagnostics-contract": {
     "by": "nahisaho",
     "kind": "human",
-    "review": "Explicit human approval of a003560a9411fc9573eb13947c0218ec0b90d585d657d2f996e35c3ba32e8257: 承認する（この契約に沿った修正・後続検証のみ）. No tag replacement or publication authorization.",
-    "at": "2026-11-04T20:47:38.798Z",
+    "review": "Human explicitly approved four prepared specifications and three exact implementation hashes for snapshot refresh and validation only; no main merge, tag replacement or publication.",
+    "at": "2026-11-04T22:38:56.018Z",
     "artifacts": {
       ".sdd/specs/diagnostics-contract.md": "a003560a9411fc9573eb13947c0218ec0b90d585d657d2f996e35c3ba32e8257"
     },
@@ -150,7 +150,7 @@
       ".github/skills/lean-sdd-tdd/scripts/diagnostics-native.mjs": "286a5d308345e7154e98efad1bedb174c426d455cc95162563897231d1c3d6d4",
       ".github/skills/lean-sdd-tdd/scripts/diagnostics-worker.mjs": "8b734433687a6370d49ef77080a2a93bbf66bec47d2039a5297c3e4118c7c108",
       ".github/skills/lean-sdd-tdd/scripts/diagnostics.mjs": "333180a600d1555c2e8c377cfd256c1c9993c43d474d6f509af8d4385489fc42",
-      ".github/skills/lean-sdd-tdd/scripts/diagnostics.test.mjs": "576b64432e46d179fd8ed1c32b6d0b9de1d340715611f82d49cb1710df17109c"
+      ".github/skills/lean-sdd-tdd/scripts/diagnostics.test.mjs": "ea2f5f38bfdb3ef68cd4845c39bd980f6ff22272244f1abe32b890fe46b8c82d"
     }
   },
   "diagnostics-typescript": {
@@ -229,15 +229,15 @@
   "claude-code-support": {
     "by": "nahisaho",
     "kind": "human",
-    "review": "Explicit ask_user approval of the prepared0.2.7 host requirement SHA2564f61a0a55156505d3658907a5b8dd0c8b8e3eeb316f6723089f6501c16ee5d14 and shown coupled oracle/test paths and hashes; candidate preparation only, no main merge/tag/npm publication authority; version contract and oracle reviewed independently by Claude Sonnet5.5.",
-    "at": "2026-11-03T23:33:16.667Z",
+    "review": "Human explicitly approved four prepared specifications and three exact implementation hashes for snapshot refresh and validation only; no main merge, tag replacement or publication.",
+    "at": "2026-11-04T22:38:55.086Z",
     "artifacts": {
       ".sdd/specs/claude-code-support.md": "4f61a0a55156505d3658907a5b8dd0c8b8e3eeb316f6723089f6501c16ee5d14"
     },
     "tier": "T2",
     "requireHuman": true,
     "code": {
-      "bin/musubix6.mjs": "ade1dfe6866279c2b39a040228bd4226b43bdde9b18c04d0bb4ac15feee524ad"
+      "bin/musubix6.mjs": "4a5c46092f9a5fed601abfbf50e20dd039e47a34702defce0864869f39eb764d"
     }
   },
   "cost-history": {
@@ -278,27 +278,29 @@
   "rust-stub-confidence": {
     "by": "nahisaho",
     "kind": "human",
-    "at": "2026-11-01T00:17:44.107Z",
+    "review": "Human explicitly approved four prepared specifications and three exact implementation hashes for snapshot refresh and validation only; no main merge, tag replacement or publication.",
+    "at": "2026-11-04T22:38:56.956Z",
     "artifacts": {
       ".sdd/specs/rust-stub-confidence.md": "abc368bc69b2fb764009653c11638cd817a6f0f4f0b6e21a004861665e11f1a0"
     },
     "tier": "T2",
     "requireHuman": true,
     "code": {
-      ".github/skills/lean-sdd-tdd/scripts/sdd.mjs": "3358d46324144a95e9c1759b94112c14db4d09aa49caa1a3a1234d5ef2ee62f2"
+      ".github/skills/lean-sdd-tdd/scripts/sdd.mjs": "0f80b4f19b2e7ffe92533f4bb93f8bf6740c9a3dcf8f2a765ce7cb6d4dcdc358"
     }
   },
   "windows-runner": {
     "by": "nahisaho",
     "kind": "human",
-    "at": "2026-11-02T08:19:14.728Z",
+    "review": "Human explicitly approved four prepared specifications and three exact implementation hashes for snapshot refresh and validation only; no main merge, tag replacement or publication.",
+    "at": "2026-11-04T22:38:57.866Z",
     "artifacts": {
       ".sdd/specs/windows-runner.md": "c95ec5e975258ae1e82f13ad70fea56403ebdddc4cad2f2eb28c3b521d06f07c"
     },
     "tier": "T2",
     "requireHuman": true,
     "code": {
-      ".github/skills/lean-sdd-tdd/scripts/sdd.mjs": "1ce7c7ff59214fd60579023d620ec456d866adf08ca2827c481a4661bcf2c62e"
+      ".github/skills/lean-sdd-tdd/scripts/sdd.mjs": "0f80b4f19b2e7ffe92533f4bb93f8bf6740c9a3dcf8f2a765ce7cb6d4dcdc358"
     }
   },
   "implementation-plan-contract": {
