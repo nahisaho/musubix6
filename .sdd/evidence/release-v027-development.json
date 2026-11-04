@@ -5920,5 +5920,61 @@
   "qualificationCredit": 0,
   "cleanFrozenRuns": 0,
   "humanReleaseApproved": false,
-  "publishingAuthorized": false
+  "publishingAuthorized": false,
+  "referenceRevision2Preparation": {
+    "previousCheckpointEvidenceSha256": "0bc2cd83ad80a7afc736c075528489078a6ba3784c909381d47aa3f5914293f1",
+    "sourceCommit": "946647fd6822de63df1a35bfcd09949ad7042230",
+    "sourceSkillTree": "19e6e201d120d4b89c41a185507058848b2bce6b",
+    "scopeRevision": 2,
+    "contentRevision": 2,
+    "scopeSha256": "f6a2b3b67a771b5085c1474ff5c6a45c5870f0c74db34a315b11f62d28b4736c",
+    "contentSha256": "e000005cc903200b0cd37c749f3f878bfe8694dace997ea6ee949eb055cbc0fe",
+    "contractSha256": "28c74792bafb2830fe046710dcf3e7012cfddf61dbdeeb25a46c31a5cfdc6cbf",
+    "inventory": {
+      "path": "v027-release-policy-spike-6AGkYy/report.json",
+      "sha256": "1277b0081cd58b8a28799e2dbddad33e3408fac29e71a3342aa99c613f38166b",
+      "canonicalPathsAndModes": 118,
+      "changedCanonicalFileHashes": 2,
+      "rootPackageInputs": 5,
+      "sourcePackageHostInventories": 4,
+      "normalTerminalControls": 24,
+      "runtimeMajor": 24
+    },
+    "policyComparison": {
+      "path": "v027-shutdown-reference-review.json",
+      "sha256": "966c74ece05e7de797daeae5a117e3c590c4ca215c4b14403bf2e6ea5bf554ec"
+    },
+    "shutdownDevelopment": {
+      "path": ".sdd/evidence/v027-cli-shutdown.json",
+      "sha256": "63dd4efb928e6f7ad7d880b3f6941000bb3912766570c154d5c7f2703758bb74"
+    },
+    "windowsDevelopmentCI": {
+      "path": "v027-946647f-windows-ci-result.json",
+      "sha256": "6aa7ea0db49bb34712d6946a91aaa9d919cf426ceccaa80a05de485ee604c55b",
+      "run": 41774256728,
+      "head": "946647fd6822de63df1a35bfcd09949ad7042230",
+      "status": "success",
+      "nodeMajors": [
+        20,
+        22,
+        24
+      ]
+    },
+    "humanPreparationApprovalAtThisCheckpoint": "pending; old revision1 lock cannot authorize revision2",
+    "originalFullGateAtCurrentReference": "pending",
+    "requiredNormalCIAtThisCheckpoint": {
+      "run": 41774256766,
+      "status": "pending"
+    },
+    "qualificationCredit": 0,
+    "publishingAuthorized": false,
+    "limits": [
+      "The original development evidence above remains an unchanged historical checkpoint.",
+      "Archive/npm/both-host reference feasibility is Node24-only, not frozen qualification or a release artifact authorization.",
+      "The seven human preparation artifacts are unchanged in number; the root wrapper is independently byte-checked and must also remain included in the future full-source/archive/package frozen fingerprints.",
+      "Actual freeze must explicitly confirm the retained source bin/musubix6.mjs fingerprint is 4a5c46092f9a5fed601abfbf50e20dd039e47a34702defce0864869f39eb764d before any credit.",
+      "All24 Linux cells/budgets/exclusions and13semantic/14placeholder/60origin policies are unchanged; require fresh actual discovery including TEST-PLAN-CLI-006.",
+      "No required unknown, skipped, timeout or setup-error result is promoted to PASS."
+    ]
+  }
 }

@@ -60,23 +60,52 @@ and unchanged historical suite bytes. Each REGRESSION20/22/24 catalogue must
 discover every registered new planning regression; no missing-name or `TODO`
 exception is introduced. Existing dynamic catalogue discovery is retained.
 
-The new scope/content revisions are both1 and trace their exact preceding
-0.2.6 revision13/6 paths and hashes. The committed reference is
-`0f055b4e4c07bcaef05ec85b76fa36f01e8e89dd`, skill tree
-`6dbbbd6da9ad3fecf2c486bc17b0db36e44e35b3`.
-Independent `v027-release-policy-spike-rKZZ61/report.json` matched all118
-source/archive/npm file bytes and exact origin-specific modes, retained all111
-old paths and added exactly the three planning modules and their four tests.
+The current scope/content revisions are both2, retaining the exact approved
+revision1 scope SHA256
+`ca1e5ccc404c88dedb6998f1208bcdfe3250aad3ba716525c7e3d8a958320e76`
+and content SHA256
+`195550f984027f5f131115be39de4150e4143bd1e0edd212c9d39e60cdab74d5`
+as their predecessors. Original0.2.6 revision13/6 provenance remains unchanged.
+The committed reference is
+`946647fd6822de63df1a35bfcd09949ad7042230`, skill tree
+`19e6e201d120d4b89c41a185507058848b2bce6b`.
+Independent `v027-release-policy-spike-6AGkYy/report.json` matched all118
+source/archive/npm file bytes and exact origin-specific modes. All118 paths
+and modes remain unchanged; only the normal-shutdown native script and its
+CLI test have new canonical bytes. The separately changed wrapper, package
+metadata and three release documents also matched committed source/archive/npm.
 Actual source-init and package-init on Node24.22.1 each matched Copilot118 and
-Claude115 complete inventories; watchdog's three Copilot-only files remain
-explicitly excluded from Claude, not skipped required cases.
+Claude115 complete inventories, and24 installed/wrapper disabled0,
+missing2 and malformed1 terminal controls passed. Watchdog's three
+Copilot-only files remain explicitly excluded from Claude, not skipped cases.
+The spike's source archive SHA256 is
+`bdd15fdb64663fc7d633fe3b66ec536f7efaf5a469e4b81f938667555830ba4d`;
+its offline tgz SHA256 is
+`c068949417b8ae62b568705fbd219fece25e25690e2054218fca4cacf8363930`.
+These identify development feasibility artifacts, not the future frozen
+candidate or authorization to publish them.
 The finite source product is118files times ten unchanged policies:
 1180source challenges,1240vendor challenges including unchanged60origin
 sensitivities, and1253total skill cases including unchanged13semantic cases.
-All14 placeholder mechanisms remain unchanged. The earlier archive/npm-only
-spike `v027-release-policy-spike-sO7vtt/report.json` is retained too.
-Both are zero-credit feasibility observations, not current adapter tests,
-three-runtime full inventories or frozen qualification runs.
+All14 placeholder mechanisms remain unchanged. Revision1's independently
+verified reference0f055b4 and skill tree6dbbbd6 remain in committed history,
+with `v027-release-policy-spike-rKZZ61/report.json` and the earlier
+archive/npm-only `v027-release-policy-spike-sO7vtt/report.json`.
+Every spike is zero-credit feasibility, not current admission, three-runtime
+full inventories or frozen qualification. The new named TEST-PLAN-CLI-006
+remains required through actual registered discovery, not an omitted case.
+Its reviewed deterministic exit-boundary regression replaces a V8 diagnostic
+timing oracle that also stopped the repaired Node22 natural path. Retain all
+failed stress-oracle matrices, native stack diagnostics and original hosted
+timeout as history, not successful retries. The public0/1/2 contract, every
+state/entry/deadline and all release-cell policies remain unchanged.
+`.sdd/evidence/v027-cli-shutdown.json` records genuine native Red/Green,
+12 isolated dispatcher reversals,20/20 unfiltered targets on each20/22/24,
+36 bounded repeated regressions,111 source-installed lifecycle calls,
+scoped diagnostics and actual current15-task re-adoption with byte-identical
+default-disabled configuration restoration. That checkpoint does not replace
+current human reference approval, original full gate, same-head hosted checks
+or two clean frozen runs. Revision2 starts with zero qualification credit.
 
 Implement only the current version-bound paths, selected stable version and
 exact approved inventory counts; avoid a new multi-version policy abstraction.
@@ -91,9 +120,9 @@ digest. This prospective contract does not itself claim those checks ran.
 
 | REQ | PASS condition | counterexample | TEST/command | observed evidence |
 | --- | --- | --- | --- | --- |
-| `REQ-RELQ-001`, `REQ-RELQ-005` | Only a genuine current seven-artifact stable0.2.7 plan admits; actual execution and installed receipts require stable0.2.7. Every inherited cell/budget remains required. | Prior0.2.6 or prerelease0.2.7-dev.0 targets/receipts, stale seven-artifact locks, substituted archive/hash or omitted cell reject; the approved stable0.2.7 control accepts. | TEST-RELQ-001, TEST-RELQ-005, TEST-RELQ-CONTENT-ADMISSION-001, actual package cells; isolated version/execution/verdict reversals | At preparation, version/host controls have run as recorded above; new policy-admission/adapter controls await human preparation approval. Later observations belong to the exact-digest development report, never fabricated approval/run credit. |
-| `REQ-RELQ-002`, `REQ-RELQ-003` | Every old111 path and each of seven new planning paths has its exact committed source/package bytes/modes and all ten source policies:118files/1180source/1240vendor/1253total skill cases; all60 origin sensitivities remain. | Drop any new helper/test, retain stale111-file counts, omit any byte/mode policy, retain mismatched lineage or alter one frozen byte/mode: reject; the complete independently checked reference and exact restoration accept. | TEST-RELQ-SKILL-001, TEST-RELQ-LINEAGE-001, TEST-RELQ-BASELINE-001; finite seven-file by ten-policy rows and isolated catalogue/inventory reversals | Actual rKZZ61 spike matched118 Git/archive/npm files/modes and full source/package both-host inventories on Node24; earlier sO7vtt spike retained. Old checkpoint CI correctly rejects stale reference/approval fixtures. Current native controls await preparation approval; no qualification credit. |
-| `REQ-RELQ-004` | Two complete clean runs of one unchanged stable0.2.7 candidate/manifest in fresh state yield technical readiness only. | Reuse0.2.6 history, alter source/counts/matrix between runs, skip a required planning regression or publish without exact-artifact human approval: no readiness/publication. | Existing full frozen24-cell launcher and complete streak-transition controls | Current0.2.7 streak0; no full native gate, same-head hosted success, qualifying run or publication is claimed by this amendment. |
+| `REQ-RELQ-001`, `REQ-RELQ-005` | Only a genuine current seven-artifact stable0.2.7 plan admits; actual execution and installed receipts require stable0.2.7. Every inherited cell/budget remains required. | Prior0.2.6 or prerelease0.2.7-dev.0 targets/receipts, stale seven-artifact locks, substituted archive/hash or omitted cell reject; the approved stable0.2.7 control accepts. | TEST-RELQ-001, TEST-RELQ-005, TEST-RELQ-CONTENT-ADMISSION-001, actual package cells; isolated version/execution/verdict reversals | Revision1 adapter development passed26 controls per20/22/24 and11 isolated mechanisms in the retained development report. Revision2 requires a fresh genuine human artifact lock and current admission checks; no prior result grants renewed approval or run credit. |
+| `REQ-RELQ-002`, `REQ-RELQ-003` | Every old111 path and each of seven new planning paths has its exact committed source/package bytes/modes and all ten source policies:118files/1180source/1240vendor/1253total skill cases; all60 origin sensitivities remain. | Drop any new helper/test, retain stale111-file counts, omit any byte/mode policy, retain mismatched lineage or alter one frozen byte/mode: reject; the complete independently checked reference and exact restoration accept. | TEST-RELQ-SKILL-001, TEST-RELQ-LINEAGE-001, TEST-RELQ-BASELINE-001; finite seven-file by ten-policy rows and isolated catalogue/inventory reversals | Current6AGkYy spike matched all118 unchanged paths/modes, both changed canonical hashes, five root package inputs and full source/package both-host inventories;24 terminal controls passed on Node24. Earlier spikes and failures are retained. Current admission and new-regression discovery await preparation approval; no qualification credit. |
+| `REQ-RELQ-004` | Two complete clean runs of one unchanged stable0.2.7 candidate/manifest in fresh state yield technical readiness only. | Reuse0.2.6 history, alter source/counts/matrix between runs, skip a required planning regression or publish without exact-artifact human approval: no readiness/publication. | Existing full frozen24-cell launcher and complete streak-transition controls | The original e6ea683 checkpoint full gate passed but required hosted Node24 CI later timed out; both remain history. Repair946647f has local development evidence and15 current adopted tasks; fresh complete qualification streak is0. Current approved-reference full gate, same-head CI and publication remain pending. |
 
 All six first-failure stages apply: contract -- genuine stable0.2.7
 seven-artifact approval and unchanged support policy; trusted inputs --

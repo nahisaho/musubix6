@@ -143,4 +143,41 @@ The old CODE hashes captured at preparation approval remain honest history;
 they were not rewritten into a fictitious later human implementation approval.
 Full project gate, current-head hosted CI, two identical frozen24-cell clean
 runs and separate exact-artifact human publication approval remain pending.
+
+## Prospective0.2.7 reference revision2
+
+The previous sections remain historical checkpoints. Current proposed spec
+SHA256 is `28c74792bafb2830fe046710dcf3e7012cfddf61dbdeeb25a46c31a5cfdc6cbf`;
+scope/content revisions are2, with their actual revision1 predecessor hashes
+retained. The old human lock is deliberately stale; no new human decision
+or publication authority is recorded by this review.
+
+| ID | Severity | Evidence | State |
+| --- | --- | --- | --- |
+| V027-R2-REFERENCE | S2 | Repair946647f changes the native dispatcher and adds its regression; the old canonical reference must not admit changed bytes. | Prospective revision2 independently rebinds exactly two canonical digests, preserving all118 paths/modes and every cell/count/policy; fresh human approval remains required. |
+| V027-R2-ORACLE | S2 | Synthetic V8 stress also stopped the repaired Node22 natural path. | The separately auto-reviewed CLI contract replaces that unsound timing verdict with actual exit-boundary observation; failed runs remain history and the new006 stays mandatory through discovery. |
+| V027-R2-WRAPPER | S3 | The root wrapper is outside the118 canonical skill rows and the seven-artifact preparation unit. | Its committed/archive/npm bytes were independently checked; existing freeze recursively binds the full source plus archive/package. Explicit retained-wrapper hash confirmation remains required before qualification credit. |
+
+Two retained Sonnet5.5 risk reviews were CLEAN/CLEAN2 on the unchanged
+reference delta. The contract review checked the two manifest/spec diffs,
+hash crosslinks and seven-artifact unit, but not raw spike execution.
+The inventory review independently matched all118 paths/digests to Git,
+all11 intended-delta digests to disk and the unchanged counts/modes.
+It read the compact comparison/spike summaries, not the24 terminal logs
+or archive/npm payloads. Both second rounds reused their earlier reads
+and reported no new execution or independent freeze-coverage verification.
+These limits do not become blanket implementation or readiness approval.
+
+Actual `v027-shutdown-reference-review.json` records unchanged24-cell
+budgets/exclusions/legacy rules/mappings and13semantic/14placeholder/60origin
+policies,118 unchanged paths/modes and correct predecessor/content hashes.
+`v027-release-policy-spike-6AGkYy/report.json` records all118 committed/archive/
+npm bytes/modes, five root package inputs, four full host inventories and
+24 installed/wrapper0/1/2 controls on Node24 only. The development-evidence
+file appends these preparation facts without rewriting its old checkpoint.
+Repair946647f and all15 current task adoptions are committed; its actual
+Windows development jobs20/22/24 passed. Original-test CI remains separately
+observed. Fresh human approval, current-reference native admission/preflight,
+original full gate, final-head hosted checks, two frozen complete clean runs
+and exact-artifact publication approval remain required; qualification credit0.
 Qualification credit is0; there is no merge, tag or publication claim.

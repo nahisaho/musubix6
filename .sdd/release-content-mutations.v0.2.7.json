@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "revision": 1,
+  "revision": 2,
   "targetVersion": "0.2.7",
-  "revisionReason": "Prepare stable0.2.7 with committed Git0f055b4e4c07bcaef05ec85b76fa36f01e8e89dd and its independently matched118-file source/archive/npm inventory, preserving all111 previous paths and adding7 planning helpers/tests. Keep all24Linux cells/budgets/exclusions,13semantic/14placeholder mechanisms, all ten byte/mode policies per file and60origin sensitivities. New named planning regressions remain mandatory through actual registered catalogue discovery. Preserve failed checkpoint CI and all prior frozen evidence, reset credit to zero; prospective contract only, not approval/readiness.",
+  "revisionReason": "Refresh stable0.2.7 reference after the normal-shutdown repair at committed Git946647fd6822de63df1a35bfcd09949ad7042230; independently match all118 unchanged paths/modes against source/archive/npm and both-host initialization. Keep all24Linux cells/budgets/exclusions,13semantic/14placeholder mechanisms, ten byte/mode policies per file and60origin sensitivities. Include the new named terminal-shutdown regression through actual registered catalogue discovery. Retain the failed original CI and unsound V8-stress-oracle history; reset credit to zero. Prospective revision requiring fresh human approval, not readiness or publication authorization.",
   "previousRevision": {
-    "number": 6,
-    "sha256": "0d43b5eec2450e446a47a00b6789c5f2ca93ed7373bfd15d9b1b86ae1be977fb"
+    "number": 1,
+    "sha256": "195550f984027f5f131115be39de4150e4143bd1e0edd212c9d39e60cdab74d5"
   },
   "status": "proposed-normative-contract-not-approval-or-run-evidence",
   "originalExactSemanticsRecovered": false,
@@ -1401,8 +1401,8 @@
     "definition": "existing markerPolicyRows/contextPolicyRows expected-count pairs, not the linter output; same line numbers/snippets/JSON keys checked in source and installed outputs; no replacement by full-suite-only coverage"
   },
   "vendorReference": {
-    "sourceCommit": "0f055b4e4c07bcaef05ec85b76fa36f01e8e89dd",
-    "sourceSkillTree": "6dbbbd6da9ad3fecf2c486bc17b0db36e44e35b3",
+    "sourceCommit": "946647fd6822de63df1a35bfcd09949ad7042230",
+    "sourceSkillTree": "19e6e201d120d4b89c41a185507058848b2bce6b",
     "origin": "Exact committed musubix6 candidate, not an upstream-equivalence claim. All118 files/modes independently matched committed Git archive, real npm payload and actual source/package both-host initialization (Copilot118/Claude115); these prospective digests require genuine human approval.",
     "intendedLocalDeltas": [
       {
@@ -1452,7 +1452,7 @@
       },
       {
         "path": ".sdd/specs/implementation-plan-cli.md",
-        "sha256": "46060ea10432968cc8cadcdbcca8a1f116097823243dba825231ded60b5a5047",
+        "sha256": "8c1e560bc73bdaadb5c02f1355baee7397c06e23bdf2a350da6b1cc53a96ac34",
         "description": "Specification-linked opt-in planning, native evidence, CLI integration and workflow/distribution; default-disabled behavior retained."
       },
       {
@@ -1894,7 +1894,7 @@
       {
         "path": ".github/skills/lean-sdd-tdd/scripts/implementation-plan-cli.test.mjs",
         "mode": 436,
-        "sha256": "8998a19896ec348306b2a19f37506eb40d057747452574f399c6cfbc9b4b1918",
+        "sha256": "2a88c2e3741e132ef2e6963369b42cddcedf5974633ea704d9c07f96edacfc99",
         "packageMode": 420,
         "sourceModeOctal": "0664",
         "packageModeOctal": "0644"
@@ -1942,7 +1942,7 @@
       {
         "path": ".github/skills/lean-sdd-tdd/scripts/sdd.mjs",
         "mode": 436,
-        "sha256": "5e32daa2e0e2e516e203fcc9c4d87a662ac813eb3438009a486e37f68909aa9e",
+        "sha256": "0f80b4f19b2e7ffe92533f4bb93f8bf6740c9a3dcf8f2a765ce7cb6d4dcdc358",
         "packageMode": 420,
         "sourceModeOctal": "0664",
         "packageModeOctal": "0644"
