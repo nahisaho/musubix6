@@ -223,4 +223,46 @@ Fresh genuine human seven-artifact approval is required before the new
 owning assertion regression and implementation. A successor frozen manifest
 must record the failed predecessor digest/reason and reset validation;
 every old required case,24 cells and budget stays mandatory.
+
+## History-restoration implementation checkpoint
+
+The preceding failure/design checkpoint remains intact. Nahisaho explicitly
+approved the displayed seven artifacts with unchanged spec5914e39b digest
+for this correction and subsequent verification only; the native human
+record is genuine, not an AI lock or publication decision.
+
+| ID | Severity | Evidence | State |
+| --- | --- | --- | --- |
+| V027-GIT-EXEC-001 | S2 | Native owning missing-suite-history assertion Red234ms, same-body Green302ms; 27 controls per actual20/22/24 and15 selected real frozen-suite shadow controls passed. | Repaired and development-verified. Successor full gate/hosted checks and two complete frozen runs remain mandatory. |
+| V027-GIT-MODE-002 | S2 | Explicit discovery caller plus mandatory gate/suite descriptor; isolated absence-fallback and caller reversals detected at their owning assertions on all three majors. | Implemented and bounded verification passed; no absence-based execution fallback. |
+| V027-GIT-TEST-003 | S3 | First test review identified stale checkout files, incomplete missing-field rows and a weak digest-error check. | Strengthened fixture/control assertions; genuinely re-recorded Red/Green after isolated original-defect reversal; stale-file and digest mutations detected on all three majors. |
+
+The production delta is confined to the two materialization/discovery
+helpers. Canonical skills/reference inventory,24-cell budgets, defaults
+outside the explicit execution/discovery distinction and publication
+policy remain unchanged. The optional pre-existing full40hex descriptor
+hardening suggestion was not expanded: real descriptors already bind the
+trusted Git-derived candidate commit. This is not a new untrusted CLI input.
+
+Both retained Sonnet5.5 reviewers reported no blocking implementation
+finding and CLEAN2 after the bounded closure review. The contract reviewer
+read the production diffs/callers first, then compact report fields only;
+the adequacy reviewer read the new test and its strengthening, then compact
+fields. Neither executed checks or audited raw mutation ownership/logs.
+Their reports do not independently establish qualification readiness.
+
+Actual final `v027-release-validation-p9Kovz` passed27/27 controls on
+20.20.2/22.23.3/24.22.1 with zero fail/skip/cancel/TODO and scoped ESLint.
+`v027-suite-history-checks-FRDMfo` passed24 isolated mutations at independently
+selected owning assertion lines (eight mechanisms by three majors),27
+valid/restored controls and15 real restored-suite selected tests. Its
+filtered unrelated tests are intentional development selection, not passes
+of mandatory qualification cases. Exact source restoration and owned
+payload cleanup were checked. Fourteen affected native Refactors passed;
+actual trace has0 errors/9 warnings. Executable native preflight registered
+1181 cases including both new required regressions and retained all24 cells.
+The append-only `suiteHistoryRepair` machine evidence independently checked
+the raw mutation/control/shadow logs and current source hashes. Original
+full gate and same-head hosted checks must now run on the committed repaired
+candidate; frozen qualification credit remains0 and publication unauthorized.
 Qualification credit is0; there is no merge, tag or publication claim.

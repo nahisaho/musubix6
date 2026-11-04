@@ -252,10 +252,10 @@
   "release-qualification": {
     "by": "nahisaho",
     "kind": "human",
-    "review": "Explicit seven-artifact revision-2 approval: verification contract and subsequent validation only; no main merge, tag or npm publication authorization.",
-    "at": "2026-11-04T05:05:46.125Z",
+    "review": "User explicitly approved the displayed seven exact artifact paths/hashes for frozen-suite Git-history correction and subsequent verification only; no main merge, tag or npm publication authorization.",
+    "at": "2026-11-04T08:05:56.057Z",
     "artifacts": {
-      ".sdd/specs/release-qualification.md": "28c74792bafb2830fe046710dcf3e7012cfddf61dbdeeb25a46c31a5cfdc6cbf",
+      ".sdd/specs/release-qualification.md": "5914e39b4134afe5c44de97fdd1f576c010afdc0874cde3e725fb4e5c39f6858",
       ".sdd/release-validation.v0.2.7.json": "f6a2b3b67a771b5085c1474ff5c6a45c5870f0c74db34a315b11f62d28b4736c",
       ".sdd/release-content-mutations.v0.2.7.json": "e000005cc903200b0cd37c749f3f878bfe8694dace997ea6ee949eb055cbc0fe",
       ".sdd/specs/claude-code-support.md": "4f61a0a55156505d3658907a5b8dd0c8b8e3eeb316f6723089f6501c16ee5d14",

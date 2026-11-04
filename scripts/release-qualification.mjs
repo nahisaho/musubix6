@@ -548,17 +548,20 @@ export function readHistory(file) {
   return rows;
 }
 
+/** @id CODE-RELQ-GIT-001 @implements REQ-RELQ-002 REQ-RELQ-003 */
 export async function materializeSource(request) {
   ensure(!fs.existsSync(request.destination), 'cell source must be fresh');
-  if (request.cell.kind === 'gate') {
-    ensure(request.gitHistory?.bundle && request.gitHistory?.commit && request.gitHistory?.sha256, 'bound genuine gate Git history required');
+  if (['gate', 'suite'].includes(request.cell.kind)) {
+    ensure(request.gitHistory?.bundle && request.gitHistory?.commit && request.gitHistory?.sha256, 'bound genuine cell Git history required');
     equal(fileSha(request.gitHistory.bundle), request.gitHistory.sha256);
+    ensure(fs.lstatSync(path.join(request.sourceRoot, '.git'), { throwIfNoEntry: false }) === undefined,
+      'frozen source contains Git metadata');
     const result = await execute({ command: ['git', 'clone', '--no-checkout', request.gitHistory.bundle, request.destination],
       cwd: path.dirname(request.destination), env: cleanEnvironment(request.environment || {}, request.runtime.canonicalPath) });
-    ensure(result.exit === 0 && !result.error && !result.signal, 'gate history clone failed');
+    ensure(result.exit === 0 && !result.error && !result.signal, 'cell history clone failed');
     const checkout = await execute({ command: ['git', '-C', request.destination, 'checkout', '--detach', request.gitHistory.commit],
       cwd: request.destination, env: cleanEnvironment(request.environment || {}, request.runtime.canonicalPath) });
-    ensure(checkout.exit === 0 && !checkout.error && !checkout.signal, 'gate history checkout failed');
+    ensure(checkout.exit === 0 && !checkout.error && !checkout.signal, 'cell history checkout failed');
     const git = path.join(request.destination, '.git');
     for (const name of fs.readdirSync(request.destination)) if (name !== '.git') fs.rmSync(path.join(request.destination, name), { recursive: true, force: true });
     fs.cpSync(request.sourceRoot, request.destination, { recursive: true, dereference: false });

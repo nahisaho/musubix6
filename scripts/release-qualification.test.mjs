@@ -17,7 +17,7 @@ import { parseContentPython } from './release-qualification-evidence.mjs';
 import {
   admitPlan, freezeCandidate, checkFrozenCandidate, validateCellEvidence,
   evaluateReadiness as evaluateReadinessApi, recordRun, runQualificationCell, prepareReleaseReport,
-  verifyPackageEntrypoints,
+  verifyPackageEntrypoints, materializeSource,
 } from './release-qualification.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -39,6 +39,101 @@ const write = (file, value) => {
   fs.writeFileSync(file, typeof value === 'string' ? value : JSON.stringify(value, null, 2));
   return file;
 };
+
+/** @id TEST-RELQ-GIT-001 @verifies REQ-RELQ-002 REQ-RELQ-003 */
+test('TEST-RELQ-GIT-001 restores bound suite history without conflating discovery or accepting invalid inputs', async t => {
+  const directory = workspace(t), repository = path.join(directory, 'repository');
+  const sourceRoot = path.join(directory, 'frozen'), bundle = path.join(directory, 'history.bundle');
+  fs.mkdirSync(repository);
+  const git = (cwd, ...args) => execFileSync('git', [
+    '-c', 'user.name=Release fixture', '-c', 'user.email=fixture@example.invalid', ...args,
+  ], { cwd, encoding: 'utf8', timeout: 30000, stdio: ['ignore', 'pipe', 'pipe'] }).trim();
+  git(repository, 'init', '-q', '--initial-branch=main');
+  write(path.join(repository, 'payload.txt'), 'historical bytes\n');
+  git(repository, 'add', 'payload.txt');
+  git(repository, 'commit', '-qm', 'historical fixture');
+  const ancestor = git(repository, 'rev-parse', 'HEAD');
+  write(path.join(repository, 'payload.txt'), 'candidate bytes\n');
+  write(path.join(repository, 'checkout-only.txt'), 'must not survive the frozen overlay\n');
+  git(repository, 'add', 'checkout-only.txt');
+  git(repository, 'commit', '-qam', 'candidate fixture');
+  const commit = git(repository, 'rev-parse', 'HEAD');
+  git(repository, 'bundle', 'create', bundle, '--all');
+  write(path.join(sourceRoot, 'payload.txt'), 'frozen overlay\n');
+  const gitHistory = { bundle, sha256: fileDigest(bundle), commit };
+  const request = { sourceRoot, gitHistory, environment: process.env,
+    runtime: { canonicalPath: process.env.PATH } };
+  for (const kind of ['gate', 'suite']) {
+    const destination = path.join(directory, kind);
+    await materializeSource({ ...request, cell: { kind }, destination });
+    assert.equal(fs.existsSync(path.join(destination, '.git')), true, `${kind} requires private frozen Git history`);
+    assert.equal(git(destination, 'rev-parse', 'HEAD'), commit);
+    assert.equal(git(destination, 'show', `${ancestor}:payload.txt`), 'historical bytes');
+    git(destination, 'merge-base', '--is-ancestor', ancestor, commit);
+    assert.equal(fs.existsSync(path.join(destination, 'payload.txt')), true, `${kind} requires the frozen overlay`);
+    assert.equal(fs.readFileSync(path.join(destination, 'payload.txt'), 'utf8'), 'frozen overlay\n');
+    assert.equal(fs.existsSync(path.join(destination, 'checkout-only.txt')), false, `${kind} rejects stale checkout files`);
+  }
+  for (const kind of ['discovery', 'watchdog']) {
+    for (const history of [undefined, gitHistory]) {
+      const destination = path.join(directory, `${kind}-${history ? 'supplied' : 'absent'}`);
+      await materializeSource({ ...request, gitHistory: history, cell: { kind }, destination });
+      assert.equal(fs.existsSync(path.join(destination, '.git')), false, `${kind} deliberately stays Git-free`);
+      assert.equal(fs.readFileSync(path.join(destination, 'payload.txt'), 'utf8'), 'frozen overlay\n');
+    }
+  }
+  const { sha256 } = gitHistory;
+  const incomplete = [undefined, null, {}, { bundle }, { commit }, { sha256 },
+    { bundle, commit }, { bundle, sha256 }, { commit, sha256 }];
+  for (const kind of ['gate', 'suite']) {
+    for (const [index, history] of incomplete.entries()) {
+      const destination = path.join(directory, `${kind}-invalid-${index}`);
+      await assert.rejects(materializeSource({ ...request, gitHistory: history, cell: { kind }, destination }),
+        /bound genuine .*Git history required/, `${kind} rejects missing or partial history`);
+      assert.equal(fs.existsSync(destination), false);
+    }
+    const changed = path.join(directory, `${kind}-changed`);
+    await assert.rejects(materializeSource({ ...request, gitHistory: { ...gitHistory, sha256: digest('wrong') },
+      cell: { kind }, destination: changed }),
+    { name: 'AssertionError', actual: sha256, expected: digest('wrong') }, `${kind} rejects changed bundle`);
+    assert.equal(fs.existsSync(changed), false);
+    await assert.rejects(materializeSource({ ...request, gitHistory: { ...gitHistory, commit: '0'.repeat(40) },
+      cell: { kind }, destination: path.join(directory, `${kind}-unknown-commit`) }), /history checkout failed/);
+    const unexpected = path.join(directory, `${kind}-unexpected-source`);
+    write(path.join(unexpected, 'payload.txt'), 'untrusted overlay\n');
+    fs.mkdirSync(path.join(unexpected, '.git'));
+    const destination = path.join(directory, `${kind}-unexpected-git`);
+    await assert.rejects(materializeSource({ ...request, sourceRoot: unexpected, cell: { kind }, destination }),
+      /frozen source contains Git metadata/);
+    assert.equal(fs.existsSync(destination), false);
+  }
+  write(path.join(sourceRoot, 'package.json'), { scripts: { test: 'node --test owned.test.mjs' } });
+  write(path.join(sourceRoot, 'owned.test.mjs'), 'throw new Error("discovery must execute no test body");\n');
+  const modules = path.join(directory, 'dependencies');
+  fs.mkdirSync(modules);
+  const { discoverCurrentCatalogue } = await import('./release-qualification-cells.mjs');
+  let registered;
+  await assert.doesNotReject(async () => {
+    registered = await discoverCurrentCatalogue({
+      source: sourceRoot, node20: process.execPath, output: path.join(directory, 'registration'),
+      environment: {}, nodeModules: modules,
+    }, { execute: async invocation => {
+      assert.equal(fs.existsSync(path.join(invocation.cwd, '.git')), false);
+      assert.equal(fs.realpathSync(path.join(invocation.cwd, 'node_modules')), fs.realpathSync(modules));
+      const counts = { tests: 1, pass: 0, fail: 0, cancelled: 0, skipped: 1, todo: 0 };
+      return { ...invocation, exit: 0, signal: null, timedOut: false, error: null, stderr: '',
+        stdout: [
+          { type: 'test:pass', data: { name: 'discovery fixture', nesting: 0, skip: 'test name does not match pattern' } },
+          { type: 'test:plan', data: { nesting: 0, count: 1 } },
+          ...Object.entries(counts).map(([key, value]) => ({
+            type: 'test:diagnostic', data: { nesting: 0, message: `${key} ${value}` },
+          })),
+        ].map(event => JSON.stringify(event)).join('\n') + '\n' };
+    } });
+  }, 'the registration caller must explicitly select discovery, not an executed suite without history');
+  assert.deepEqual(registered.names, ['discovery fixture']);
+  assert.equal(fs.existsSync(path.join(sourceRoot, 'node_modules')), false);
+});
 
 /** @id TEST-RELQ-PROCESS-001 @verifies REQ-RELQ-003 */
 test('TEST-RELQ-PROCESS-001 rejects observation and cleanup errors and bounds repeated termination', async () => {

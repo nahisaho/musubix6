@@ -6094,5 +6094,91 @@
     },
     "qualificationCredit": 0,
     "publishingAuthorized": false
+  },
+  "suiteHistoryRepair": {
+    "previousCheckpointEvidenceSha256": "b5315980a4a6a363d9d3980311802d0cc2563f0c3f2bdc42c0cbd365257ee325",
+    "recordedAt": "2026-11-04T08:19:23.372Z",
+    "approval": {
+      "by": "nahisaho",
+      "at": "2026-11-04T08:05:56.057Z",
+      "review": "User explicitly approved the displayed seven exact artifact paths/hashes for frozen-suite Git-history correction and subsequent verification only; no main merge, tag or npm publication authorization.",
+      "artifacts": {
+        ".sdd/specs/release-qualification.md": "5914e39b4134afe5c44de97fdd1f576c010afdc0874cde3e725fb4e5c39f6858",
+        ".sdd/release-validation.v0.2.7.json": "f6a2b3b67a771b5085c1474ff5c6a45c5870f0c74db34a315b11f62d28b4736c",
+        ".sdd/release-content-mutations.v0.2.7.json": "e000005cc903200b0cd37c749f3f878bfe8694dace997ea6ee949eb055cbc0fe",
+        ".sdd/specs/claude-code-support.md": "4f61a0a55156505d3658907a5b8dd0c8b8e3eeb316f6723089f6501c16ee5d14",
+        "README.md": "85c8b4a2da1f1b096701fe91e7ac21786ad6eafbfac57a0381e10d9d37b5146a",
+        "README-ja.md": "8c0629712e65236e21e024ac27e2a5531ff8e48c0b75c570e2f7f9e0fb3b3053",
+        "CLANGELOG.md": "4672f8cdbf67d0af126a0113ae57551739441110f693421772bf38124ee6c510"
+      }
+    },
+    "sourceInputs": {
+      "scripts/release-qualification.mjs": "6080a78d25db148b167cc8b0db2efc449b85126576499837a4b43d9d65275634",
+      "scripts/release-qualification-cells.mjs": "b0dea86cf5c47c7bb9cd649a248bddf8bfa8e07243c4e4486c7483466dbd5bd2",
+      "scripts/release-qualification.test.mjs": "41109ea4ec59446a032154a03c611319298416e1b662926ee02b0337b31dd3bb",
+      ".sdd/specs/release-qualification.md": "5914e39b4134afe5c44de97fdd1f576c010afdc0874cde3e725fb4e5c39f6858",
+      ".sdd/approvals.json": "f5c5ad467fb36c5795d1800fd90f018a316b622d44b3d58808b962120d7b81aa"
+    },
+    "native": {
+      "red": {
+        "path": "v027-suite-history-strengthened-red.log",
+        "sha256": "8e0c174ad40e991f8d68624a7587eec70e61bafdd8d07aaba691c3f388bf5e23"
+      },
+      "green": {
+        "path": "v027-suite-history-strengthened-green.log",
+        "sha256": "de9c7296620ef79c7380a10833ca4429cf6a94654bea7734f4217acf14d99fa8"
+      },
+      "sharedRefactors": {
+        "path": "v027-suite-history-native-refactors.log",
+        "sha256": "353e3b969fc14ca049a89ebbbd726073cbf62f47f33911e5d239a9ed17039df3",
+        "passed": 14
+      },
+      "trace": {
+        "path": "v027-suite-history-trace.json",
+        "sha256": "718e42dcebcb30275370a145ac6158917ce8fe759b7797ec2471a76dd834cd93",
+        "format": "plain text despite requested --json",
+        "errors": 0,
+        "warnings": 9
+      }
+    },
+    "controls": {
+      "path": "v027-release-validation-p9Kovz/report.json",
+      "sha256": "2e74dd6afab8df2c274a8d08c5d55ecb6d893ce3b92444dc7b7ce62cd5d4ab9c",
+      "testsPerRuntime": 27,
+      "actualRuntimes": [
+        "v20.20.2",
+        "v22.23.3",
+        "v24.22.1"
+      ],
+      "scopedDiagnostics": "PASS"
+    },
+    "isolatedChecks": {
+      "path": "v027-suite-history-checks-FRDMfo/report.json",
+      "sha256": "5bd4cf9c7f13c7099c5eadb2928a0f81d639acd1f5e5b2671fa0b7118e8a1023",
+      "mechanisms": 8,
+      "assertionOwnedMutations": 24,
+      "controls": 27,
+      "selectedRealSuiteShadowTests": 15,
+      "sourceUnchanged": true,
+      "ownedPayloadRemoved": true,
+      "limits": "Selected shadow cases include the four earlier setup failures; other rows are intentionally filtered development cases, not qualification passes."
+    },
+    "preflight": {
+      "path": "qualification-v027-linux-r2-KUMbhv/driver-report.json",
+      "sha256": "000fee2a562a15e053da01e47ddb95a28995261c7045b3b8643614a2783e791e",
+      "requiredCells": 24,
+      "registeredRegressions": 1181,
+      "newHistoryRegression": "TEST-RELQ-GIT-001 restores bound suite history without conflating discovery or accepting invalid inputs",
+      "newShutdownRegression": "TEST-PLAN-CLI-006 normal dispatch retains decisions without forcing runtime exit"
+    },
+    "pending": [
+      "original full gate on final source",
+      "same-head hosted matrices and authenticated npm dry-run",
+      "successor frozen manifest with failed predecessor digest/reason",
+      "two consecutive complete fresh unchanged24-cell runs",
+      "separate exact-artifact human publication approval"
+    ],
+    "qualificationCredit": 0,
+    "publishingAuthorized": false
   }
 }

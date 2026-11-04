@@ -38,7 +38,7 @@ export async function discoverCurrentCatalogue({ source, node20, output, environ
   if (nodeModules) {
     const { materializeSource } = await import('./release-qualification.mjs');
     const destination = path.join(output, 'source');
-    await materializeSource({ sourceRoot: source, destination, nodeModules, cell: { kind: 'suite' } });
+    await materializeSource({ sourceRoot: source, destination, nodeModules, cell: { kind: 'discovery' } });
     source = destination;
   }
   const reporter = path.join(source, 'scripts/release-host-events.mjs');
