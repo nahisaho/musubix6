@@ -107,6 +107,48 @@ default-disabled configuration restoration. That checkpoint does not replace
 current human reference approval, original full gate, same-head hosted checks
 or two clean frozen runs. Revision2 starts with zero qualification credit.
 
+### Frozen-history execution amendment
+
+The first frozen revision2 run `qualification-v027-linux-r2-frozen-rOukzS/
+runs/run-Kz6a5c` passed20 cells, then failed REGRESSION-20 with four genuine
+setup errors: the package-binding, baseline, skill and placeholder self-tests
+could not archive approved commit946647f because suite materialization omitted
+Git metadata. These are not assertion Red evidence, a runtime deadlock or a
+qualification pass. The run is retained, streak0; the second run did not start.
+
+Executed regression suites must restore the already frozen digest-bound Git
+bundle and exact candidate commit just as the integrated gate does, then
+overlay the exact frozen source bytes without losing that private Git history.
+Registration-only discovery uses an explicit internal `discovery` kind,
+supplies no history and executes no test body; it remains Git-free.
+Like other copy-only kinds, discovery deliberately ignores any supplied
+history descriptor and still cannot obtain Git metadata from it.
+An executed `suite` without history must reject, not become discovery.
+Gate/suite descriptors must reject absent, null or partial values, a changed
+bundle or an unavailable candidate commit. The frozen bundle must also
+retain the historical approved reference as an ancestor of that candidate;
+the actual archive self-tests and independent bundle spike verify this.
+Reject unexpected root Git metadata in the source overlay before cloning.
+Other cell kinds deliberately remain frozen-source copies without consulting
+supplied history; they must not obtain private Git metadata from it.
+Never fall back to live repository history, fake initialization, skips or
+new expected inventory bytes. Preserve the gate's existing bound-input and
+post-cell integrity checks for the bundle and frozen source.
+
+| REQ | PASS condition | counterexample | TEST/command | observed evidence |
+| --- | --- | --- | --- | --- |
+| `REQ-RELQ-002`, `REQ-RELQ-003` | An executed suite and gate can archive ancestor fixture commitA from their private frozen bundle, retain bound candidate HEADB and expose independently specified overlaid source bytes. Explicit discovery and other cell kinds remain Git-free. | Gate/suite valid bundle => archiveA, ancestorA/B, HEADB and overlay bytes; discovery without/with history => deliberate Git-free copy; other kind with history => deliberate Git-free copy; gate/suite absent/null/partial descriptor, changed bundle digest, absent commit or overlay root `.git` => explicit rejection before source substitution. | TEST-RELQ-GIT-001; finite kind/history/error controls, isolated restoration-policy reversal, current26-plus-new controls and final fixed24-cell runs | Frozen REGRESSION-20 failed with four setup errors. Independent `v027-suite-history-spike-P14wwx/report.json` restored the retained bundle, proved approved946647f is ancestor of candidate20aa49b and matched all118 historical canonical bytes/modes. New owning assertion Red/Green and bounded restored mutation remain pending genuine renewed human approval; spike credit0. |
+
+First-failure stages: contract -- no required cell, case or budget changes;
+trusted inputs -- use only the already bound bundle/commit, reject corruption;
+execution -- restore private history for executed suites, not discovery;
+verdict -- require actual historical bytes, HEAD and valid Git-free controls;
+evidence history -- retain the failed run and freeze a new manifest with its
+predecessor hash/reason and zero streak; integration/distribution -- rerun
+unchanged required checks and two identical complete fresh24-cell runs.
+All six stages apply. This amendment grants no merge, tag or publication
+authority and changes neither canonical skill inventory nor accepted modes.
+
 Implement only the current version-bound paths, selected stable version and
 exact approved inventory counts; avoid a new multi-version policy abstraction.
 Cut over the seven-element `locked` array, `scopePaths`, stable `targetVersion`

@@ -180,4 +180,47 @@ Windows development jobs20/22/24 passed. Original-test CI remains separately
 observed. Fresh human approval, current-reference native admission/preflight,
 original full gate, final-head hosted checks, two frozen complete clean runs
 and exact-artifact publication approval remain required; qualification credit0.
+
+## Frozen revision2 failure and history-restoration design
+
+This is a new checkpoint, not a correction of the preceding historical
+preparation record. Original full gate and same-head Linux/Windows matrices
+and authenticated npm dry-run passed on20aa49b. The frozen rOukzS manifest
+SHA256 is `1eac38dcc3696621634cdbdc72c071cdc30f7013b2dceb81534656900b105613`.
+Its source/archive/npm wrapper fingerprints were explicitly checked before
+execution; no real publication was attempted.
+
+Run-Kz6a5c passed20 required cells, then REGRESSION-20 exited1 with four
+archive-fixture setup errors, not an assertion Red or a runtime timeout.
+The failed run and hash-chained history remain intact. Three later cells
+were not run, no second run started, and the streak remains0.
+
+| ID | Severity | First violated stage / evidence | State |
+| --- | --- | --- | --- |
+| V027-GIT-EXEC-001 | S2 | Execution: materializeSource restores frozen Git only for gate, so four executed-suite self-tests cannot archive approved946647f. | Open; blocks readiness. Exact seven-artifact amendment, implementation, owning Red/Green and mutation verification are pending. |
+| V027-GIT-MODE-002 | S2 | Contract: a proposed history-presence mode selector would let executed suites without history silently copy instead of fail. | Design resolved before implementation: explicit discovery kind, mandatory suite/gate history. Does not resolve the execution finding above. |
+
+The amended spec SHA256 is
+`5914e39b4134afe5c44de97fdd1f576c010afdc0874cde3e725fb4e5c39f6858`.
+All six other human artifacts retain their previous exact digests.
+Contract and test-adequacy reviewers each reached CLEAN/CLEAN2 on the
+bounded design delta after the mode-selection finding was corrected.
+They read the amendment, relevant existing materializer/discovery code or
+call sites in the first round, then only closing lines and compact spike
+summary fields in the last round. Neither executed commands or inspected
+the spike's raw bundle/command details; the contract review's last output
+also truncated the evidence cell. These are design reviews, not code,
+native-evidence, approval or qualification verification.
+
+Independent `v027-suite-history-spike-P14wwx/report.json` actually cloned
+only the retained frozen bundle, checked candidate HEAD20aa49b, proved
+approved946647f is its ancestor and archived all118 exact canonical
+bytes/modes. Its owned payload was removed and credit remains0.
+Append-only `frozenRevision2Failure` evidence retains the actual failure,
+four test identities, old manifest/artifact hashes and this zero-credit
+feasibility. No source/test implementation was changed at this checkpoint.
+Fresh genuine human seven-artifact approval is required before the new
+owning assertion regression and implementation. A successor frozen manifest
+must record the failed predecessor digest/reason and reset validation;
+every old required case,24 cells and budget stays mandatory.
 Qualification credit is0; there is no merge, tag or publication claim.

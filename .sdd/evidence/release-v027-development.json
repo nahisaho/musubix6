@@ -6024,5 +6024,75 @@
     "finalHeadHostedChecks": "pending; metadata/approval followup not yet pushed",
     "qualificationCredit": 0,
     "publishingAuthorized": false
+  },
+  "frozenRevision2Failure": {
+    "previousCheckpointEvidenceSha256": "ec5c2708dd4dcd027f68b023b4d8221781570f3e45ef55c9a0c24a8ec1491924",
+    "recordedAt": "2026-11-04T07:37:48.678Z",
+    "candidateCommit": "20aa49b9b7387aa009d8dae68fccf90b88debf84",
+    "manifest": {
+      "manifestPath": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/qualification-v027-linux-r2-frozen-rOukzS/frozen-manifest.json",
+      "manifestSha256": "1eac38dcc3696621634cdbdc72c071cdc30f7013b2dceb81534656900b105613",
+      "candidateSha256": "880384a797a4120d5ff486566137224118f0aacf2177e5f788dcbc3d8de35893",
+      "inputsSha256": "1e6bd6bb3a7366d681e28912ada0f0fd0e92a13b84ae9ad7d8c47efa3598175d",
+      "sourceWrapper": {
+        "path": "musubix6.mjs",
+        "mode": 509,
+        "sha256": "4a5c46092f9a5fed601abfbf50e20dd039e47a34702defce0864869f39eb764d",
+        "bytes": 4479
+      },
+      "artifacts": {
+        "archive": {
+          "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/qualification-v027-linux-r2-frozen-rOukzS/candidate/source.tar",
+          "sha256": "fc3497e2ad8efe3146df9f343ca49d95f2ce6c30b9c0512c9d51c7a06e56e977",
+          "wrapperSha256": "4a5c46092f9a5fed601abfbf50e20dd039e47a34702defce0864869f39eb764d"
+        },
+        "package": {
+          "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/qualification-v027-linux-r2-frozen-rOukzS/candidate/package/musubix6-0.2.7.tgz",
+          "sha256": "c068949417b8ae62b568705fbd219fece25e25690e2054218fca4cacf8363930",
+          "wrapperSha256": "4a5c46092f9a5fed601abfbf50e20dd039e47a34702defce0864869f39eb764d"
+        }
+      }
+    },
+    "supervisor": {
+      "path": "qualification-v027-linux-r2-frozen-rOukzS/driver-report.json",
+      "sha256": "e194d742e8493b22556e9977eb8680f6b18dd8443f05258dad77d5475b6af7d6"
+    },
+    "run": {
+      "path": "qualification-v027-linux-r2-frozen-rOukzS/runs/run-Kz6a5c/run.json",
+      "sha256": "25347ad73ed24941f99def6f5959959a0986f0104ab94fbc22538266eadb4bae",
+      "status": "FAIL",
+      "errors": [
+        "REGRESSION-20: Expected values to be strictly deep-equal:\n\n1 !== 0\n"
+      ],
+      "passedCells": 20,
+      "failedCell": "REGRESSION-20",
+      "otherRequiredCellsNotExecuted": 3,
+      "actualFailedTestIds": [
+        "TEST-RELQ-PACKAGE-BINDING-001",
+        "TEST-RELQ-BASELINE-001",
+        "TEST-RELQ-SKILL-001",
+        "TEST-RELQ-PH-001"
+      ],
+      "failureStage": "execution: four test-fixture git archive setup errors, not assertion Red or runtime timeout"
+    },
+    "secondRunStarted": false,
+    "feasibility": {
+      "path": "v027-suite-history-spike-P14wwx/report.json",
+      "sha256": "7e2245b9ff0ee5e6e4ac5cd0e2c203f8f6d37a80960bf7806866976e5ce140a2",
+      "approvedAncestor": "946647fd6822de63df1a35bfcd09949ad7042230",
+      "candidateCommit": "20aa49b9b7387aa009d8dae68fccf90b88debf84",
+      "canonicalBytesAndModesMatched": 118,
+      "ownedPayloadRemoved": true
+    },
+    "successorContract": {
+      "path": ".sdd/specs/release-qualification.md",
+      "sha256": "5914e39b4134afe5c44de97fdd1f576c010afdc0874cde3e725fb4e5c39f6858",
+      "humanApproval": "pending; old revision2 lock does not authorize the changed contract",
+      "change": "Explicit discovery kind; executed suites/gate require bound frozen Git history, never absence-based fallback.",
+      "owningAssertionRedGreenAndMutations": "pending after genuine renewed human approval",
+      "futureManifest": "must bind failed predecessor digest/reason and reset streak; required24cells/budgets unchanged"
+    },
+    "qualificationCredit": 0,
+    "publishingAuthorized": false
   }
 }
