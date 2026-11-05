@@ -21,6 +21,27 @@
     "observerSha256": "05154f2e49707d295171ac17a402fc09599e6688ba74e2df92a556f7492b9e80",
     "limits": "Instrumentation changes the command shape and can affect timing. This is diagnostic only; one passing reproduction would not resolve the original failure or establish qualification. Captures reflect native buffered output; native spawn errors, timeout and output limits remain explicit."
   },
+  "completedBaselineDiagnostic": {
+    "status": "DIAGNOSTIC_COMPLETED",
+    "completedAt": "2026-11-05T05:43:47.739Z",
+    "report": "v027-r4-full-output-diagnostic-4pXPl4/report.json",
+    "gateExit": 0,
+    "signal": null,
+    "timedOut": false,
+    "outputLimit": false,
+    "runnerError": null,
+    "npmTestAttempts": 1,
+    "npmTestExit": 0,
+    "nativeRetryUsed": false,
+    "reproducedFailedTestCommand": false,
+    "processReceiptSha256": "e1cb6afaa353b668685119786d2c4013944eb2fc1e213631a9d07ec05721fc76",
+    "gateStdoutSha256": "ff6c4c381e0ca7d5674eca357189257f5b3de040c427ac66e0a8bd0fea354d5e",
+    "attemptStdoutSha256": "70614dde37aa08ee732f71e34e5bd595c3f3c806c4d7a5cc7bfa7197e8dca48d",
+    "attemptStderrSha256": "1e90e037ffcba4704e27fdd05e56ec6f23f74e81ee110c354d51040ddf34d597",
+    "underlyingFailureResolved": false,
+    "qualificationCredit": 0,
+    "interpretation": "The original intermittent failure did not recur in this single observational run. Complete captured output was retained, but this does not establish a fix or release qualification. The original failed attempt remains unclassified; misleading failure summaries and missing complete attempt evidence still require deterministic regression tests and a production repair."
+  },
   "collectorSelfTest": {
     "status": "PASS",
     "receipt": "v028-collector-selftest.json",
