@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "status": "VERIFIED_PUBLISHED",
+  "version": "0.2.7",
+  "sourceCommit": "8a47defa7642cf90e22efc5d3278b0c5e6c887ea",
+  "annotatedTagObject": "7bf71cfec270898ca7c6b120158b05a9cada0667",
+  "publishedAt": "2026-11-05T04:59:34.035Z",
+  "verifiedAt": "2026-11-05T05:01:15.912Z",
+  "registry": {
+    "url": "https://registry.npmjs.org/musubix6",
+    "latestAtVerification": "0.2.7",
+    "tarball": "https://registry.npmjs.org/musubix6/-/musubix6-0.2.7.tgz",
+    "sha256": "6e9deb36a74cc06e7ac78473c8b34b782baa24a92006aecbb9e59024a1b1f33d",
+    "sha1": "81bb30349bf3719fefcbd88a869ad5e95e9d3dc5",
+    "integrity": "sha512-lj3OGrEF1xF+BNNZ19nFbKvxK2yiDgfolCfHJd5g5HmBOLk/ZHkrgVMtBePwQvS6VXIjVYl47K3vSb/3n34+IA==",
+    "checks": "Downloaded actual registry archive; SHA-256 equals the exact approved tgz; computed SHA-1 and SHA-512 equal registry metadata.",
+    "provenancePresent": false,
+    "registrySignaturesCryptographicallyVerified": false
+  },
+  "releaseException": {
+    "approvedBy": "nahisaho",
+    "session": "28b37d8f-56f4-4e28-b9c8-71cc59366d60",
+    "proposalSha256": "b41005fee0f6d83f5c59a86b16b850b244799cec20f07a811af8398802f309de",
+    "exactResponse": "承認する（未適格の例外公開・main更新・既存タグ差し替え・npm公開）",
+    "scope": "One unqualified publication of the exact approved v0.2.7 bytes, main fast-forward and public-tag replacement; never a qualification PASS or authorization for v0.2.8.",
+    "manualRouteChosenByOwner": "他のターミナルで、npm login; npm publishします。",
+    "manualProvenanceLimitationDisclosed": true
+  },
+  "actions": {
+    "url": "https://github.com/nahisaho/musubix6/actions/runs/41966836695",
+    "conclusion": "failure",
+    "testJob": "success",
+    "approvedPackageDigestCheck": "success",
+    "publishError": "EOTP",
+    "failedJobRetried": false,
+    "actualPublicationRoute": "Owner manual npm publication after interactive login, using the exact hash-verified approved archive."
+  },
+  "qualification": {
+    "status": "FAIL",
+    "technicalReady": false,
+    "cleanRunStreak": 0,
+    "manifestSha256": "a7abcc4431be64f01245e95d646d25032c7ff8ff67fd2a84a51723739d2ebb09",
+    "firstRun": {
+      "id": "run-QLnEZY",
+      "result": "24/24 PASS",
+      "receiptSha256": "a74cdced05d2c9f26d748ae86b169746fd9dc5c9d82869cb5ed2bc51fc2ef4ad"
+    },
+    "secondRun": {
+      "id": "run-s4awWh",
+      "result": "18 PASS, INTEGRATED-GATE FAIL, 5 required cells unrun",
+      "receiptSha256": "fb7d51abbf4d88dbe4734b80c680f20a98c34dfe8659548fffe08c15b0f03dcd"
+    },
+    "underlyingFailureResolved": false
+  },
+  "residualRisks": [
+    "The original first-attempt failing test, root cause, severity and production impact remain unknown because full output was not retained.",
+    "The owner deferred investigation and repair to v0.2.8, tracked in issue385. The publication exception transfers no qualification credit.",
+    "Bundled READMEs and changelog retain the dated05:50JST checkpoint; current GitHub release notes supersede only that historical release-status text.",
+    "Windows is development-only coverage; macOS, actual WSL containers and live Claude sessions remain unverified.",
+    "The existing public tag was replaced and manual publication has no Actions provenance."
+  ],
+  "followUp": "https://github.com/nahisaho/musubix6/issues/385"
+}

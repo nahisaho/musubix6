@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "issue": "https://github.com/nahisaho/musubix6/issues/385",
+  "branch": "work/v0.2.8-gate-evidence",
+  "checkpoint": "Initial investigation started; this is not an implementation or completion receipt.",
+  "productionFilesChanged": false,
+  "underlyingFailureResolved": false,
+  "qualificationCredit": 0,
+  "baselineDiagnostic": {
+    "sourceCommit": "8a47defa7642cf90e22efc5d3278b0c5e6c887ea",
+    "frozenManifestSha256": "a7abcc4431be64f01245e95d646d25032c7ff8ff67fd2a84a51723739d2ebb09",
+    "report": "v027-r4-full-output-diagnostic-4pXPl4/report.json",
+    "shell": "v028-first-failure-diagnostic",
+    "startedAt": "2026-11-05T05:06:31.812Z",
+    "statusAtCheckpoint": "DIAGNOSTIC_RUNNING",
+    "driverPidAtCheckpoint": 129596,
+    "gatePidAtCheckpoint": 129950,
+    "bothProcessesVerifiedAlive": true,
+    "budgetMs": 6100000,
+    "scope": "One fresh private source/HOME/cache execution of the original frozen gate with an observation-only parent preload retaining complete captured npm-test attempt stdout/stderr. Native automatic retry and fail-closed verdict remain unchanged.",
+    "observerSha256": "05154f2e49707d295171ac17a402fc09599e6688ba74e2df92a556f7492b9e80",
+    "limits": "Instrumentation changes the command shape and can affect timing. This is diagnostic only; one passing reproduction would not resolve the original failure or establish qualification. Captures reflect native buffered output; native spawn errors, timeout and output limits remain explicit."
+  },
+  "collectorSelfTest": {
+    "status": "PASS",
+    "receipt": "v028-collector-selftest.json",
+    "checks": [
+      "Retain complete stdout/stderr with six misleading successful titles, a real failure marker and Unicode",
+      "Return the exact original native result object",
+      "Ignore commands other than npm test",
+      "Capture the Node npm-cli invocation and successful control",
+      "Preserve native spawn-error results",
+      "Propagate the original thrown exception",
+      "Do not persist the environment sentinel",
+      "Create private0600 files"
+    ],
+    "notProductionRedOrQualificationEvidence": true
+  },
+  "preservedEvidence": {
+    "originalFailedRun": "run-s4awWh",
+    "originalFailedRunSha256": "fb7d51abbf4d88dbe4734b80c680f20a98c34dfe8659548fffe08c15b0f03dcd",
+    "originalFailureStillUnclassified": true,
+    "originalEvidenceModified": false,
+    "oldQualificationCreditTransferred": 0
+  },
+  "developmentBoundary": "Before any production fix, update the owning existing feature contract with concrete per-REQ PASS conditions, counterexamples and all six failure stages; obtain required independent review/approval and genuine assertion Red. Collector controls are not substitutes for production regressions. Add isolated mutation proof and complete required validation after the actual fix.",
+  "releaseBoundary": "The owner's unqualified v0.2.7 publication exception does not authorize v0.2.8 publication or waive its two consecutive clean frozen qualification runs."
+}
