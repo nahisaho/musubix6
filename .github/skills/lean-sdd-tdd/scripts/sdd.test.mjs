@@ -2638,6 +2638,7 @@ test('#114/#115/#116 Rust Result + message, Java JDK wildcard/chained args/long,
   assert.match(fs.readFileSync(path.join(j, '.sdd/config.json'), 'utf8'), /"-am"/);
 
   const p = proj('sdd-p115-');
+  w(p, '.sdd/config.json', JSON.stringify({ planning: { required: false } }));
   w(p, '.sdd/plan.md', '| order | feature | depends |\n|---|---|---|\n| 5 | shipping | |\n| 5 | tracking | shipping |\n');
   assert.match(sdd(p, 'plan').out, /same order number/);
 });

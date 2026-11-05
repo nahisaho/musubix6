@@ -92,7 +92,30 @@
     },
     "coverage": "40features,118tasks,193mapped tests; all118 current whole-spec bindings and108 prerequisite values independently match the completed native measurement. Prerequisite values are actual input fingerprints, not definition hashes.",
     "states": { "not-started": 103, "replan-required": 15 },
-    "remaining": "Old verification history/definitions and prerequisite states still require genuine native verification and explicit current receipt adoption. No completion was added, old receipt pointers/history remain intact, and matching authored input bindings is not a consistency or full-gate PASS."
+    "remaining": "Old verification history/definitions and prerequisite states still require genuine native verification and explicit current receipt adoption. No completion was added, old receipt pointers/history remain intact, and matching authored input bindings is not a consistency or full-gate PASS.",
+    "subsequentInvalidation": "The later one-line sdd.test.mjs legacy-fixture correction changes a shared task artifact. This measurement remains historical and must not be used as current verification or frozen qualification."
+  },
+  "completeSuiteCheckpoint": {
+    "sourceCommit": "dbec328107b82e22e0d18dc4315cee0912776209",
+    "command": ["npm", "test"],
+    "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v028-current-full-suite-e5z13R/report.json",
+    "sha256": "505e90516163c146d13e0b95bf7b54f80c217d9d36baed59ebc58ed14641846e",
+    "status": "FAIL",
+    "tests": 1187,
+    "pass": 1174,
+    "fail": 13,
+    "skipped": 0,
+    "cancelled": 0,
+    "retry": false,
+    "classification": "One missed legacy Markdown-plan fixture lacked the explicit planning.required:false required by the approved compatibility contract. Twelve release controls still bind the old genuine artifact lock/version/catalogue. The complete raw first attempt is retained; no failure is waived or counted as PASS.",
+    "originalIssue385": "Not identified: the newly exposed v0.2.8 default-policy fixture defect cannot explain the earlier v0.2.7 intermittent assertion."
+  },
+  "legacyFixtureFollowup": {
+    "change": "Only the legacy same-order Markdown-plan fixture now writes planning.required:false; production defaults and assertions are unchanged.",
+    "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v028-legacy-plan-control-GCLWdz/report.json",
+    "sha256": "a64c41f5ce942f2c32db9c4fad8b2cba9b9fd8e108c83e1e7b38f9978070f120",
+    "status": "PASS",
+    "evidence": "Actual fixed target passed. Correctly relocated baseline/restoration each pass one native case without skips; removing only that config line assertion-fails at the same-order expectation with missing required JSON. The first copied-module protocol failed because import.meta.url resolved outside the repository; v028-legacy-plan-control-whUJFq is retained and receives no mutation/Red credit."
   },
   "remaining": [
     "Original intermittent issue385 assertion remains unidentified and unclassified.",
