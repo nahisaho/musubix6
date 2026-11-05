@@ -1,0 +1,107 @@
+{
+  "schemaVersion": 1,
+  "targetVersion": "0.2.8",
+  "stage": "development and metadata preparation; not release readiness",
+  "status": "BLOCKED",
+  "qualificationCredit": 0,
+  "publishingAuthorized": false,
+  "approval": {
+    "by": "nahisaho",
+    "source": "Explicit ask_user response: approve this one file only",
+    "path": ".sdd/specs/claude-code-support.md",
+    "sha256": "82bb16e36ab143167e445dcb422d49f5c0f9af8ea024bcc51c4e3092cfefee9b",
+    "doesNotAuthorize": ["main integration", "tagging", "npm publication", "scope narrowing", "release-qualification artifact renewal"]
+  },
+  "nativeVersionEvidence": [
+    {
+      "phase": "red before metadata change",
+      "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v028-host-version-native-red.log",
+      "sha256": "b418189832c801ad27a5d2e6f4ddafb78c9234f316c8e9d8b61517dff3bc6102"
+    },
+    {
+      "phase": "exact independently specified assertion: actual 0.2.7 differs from expected 0.2.8",
+      "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v028-host-version-assertion-red.log",
+      "sha256": "569ecddb26bfff2a7c46ada26e7e973895cc552f0b3e8f3f053dac670227efd9"
+    },
+    {
+      "phase": "green after npm version 0.2.8 --no-git-tag-version --ignore-scripts and bilingual current-version edits",
+      "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v028-host-version-native-green.log",
+      "sha256": "2b0fae968def578deb3f4913c7c799d2f2d47524e077ab71d37a4247b2797889"
+    }
+  ],
+  "runtimeControls": {
+    "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v028-version-controls-7nCtSM/report.json",
+    "sha256": "8fd71977642436edbc520f95a19984139ef73730b8c0ce006d0e2d57d2ccfca2",
+    "overallProtocolStatus": "FAIL",
+    "actualRuntimeResults": "Node20/22/24 each passed all 24 selected host, summary/output and planning model/CLI/workflow tests. Node20 additionally reported 1080 name-filtered nonselected tests as skips; Node22/24 reported zero skips. No full-suite or qualification pass is claimed.",
+    "failure": "The Japanese current-tag mutation changed the later pinned command instead of the independently intended current-tag sentence. It survived; this failed protocol is retained, not counted as mutation success."
+  },
+  "correctedMutations": {
+    "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v028-version-controls-6VIRuZ/report.json",
+    "sha256": "29953616a092761964deb2e428c0e9f65f124961c5d6fa77dfcd1fcb225daee3",
+    "status": "PASS",
+    "runtimeControlsRerun": false,
+    "mechanisms": [
+      "old root version",
+      "old lock version",
+      "old root-lock version",
+      "prerelease root version",
+      "stale actual CLI version",
+      "English missing current availability check",
+      "English stale current-tag sentence",
+      "Japanese missing current availability check",
+      "Japanese stale current-tag sentence",
+      "installed host payload drift"
+    ],
+    "controls": "Every isolated mutation assertion-failed with one test, zero skips and no signal/setup error; each exact restoration passed. Real source metadata and CLI were not mutated."
+  },
+  "gateOutputRepair": {
+    "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v028-gate-output-mutations-wQWGxw/report.json",
+    "sha256": "3cbde84328c2e82cc8f3441eabe22aa875c337b886429744cf66cb2c3c6a8ee4",
+    "status": "PASS",
+    "scope": "Three native assertion Reds and restored Greens; five isolated mechanism mutations detected. This fixes deterministic summary and retention defects, not the unidentified original intermittent assertion in issue385."
+  },
+  "installedPackageControls": {
+    "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v028-installed-package-UZlyZG/report.json",
+    "sha256": "8f17559a1d42cae85843f68cab9052cae8e9757722be6e3f1ed9dd19b7dcdfd7",
+    "status": "PASS",
+    "scope": "Actual Node20.20.2/22.23.3/24.22.1, offline npm pack and global install into separate private prefixes, actual installed binary version/list/init/sdd forwarding, and every copied byte/executable bit in10/9 host trees.",
+    "failedSetupRetained": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v028-installed-package-8we7Qn/report.json",
+    "failedSetupReason": "The original driver asked SDD init to scan a nonexistent root. Creating the project root fixes the driver setup; this is not a production fix, native Red or qualification credit."
+  },
+  "independentReview": {
+    "model": "claude-sonnet-5.5",
+    "scope": "Version oracle/metadata and bilingual README delta; no test execution by reviewer.",
+    "decisions": [
+      "Keep the published v0.2.7 statement: a fresh public-registry npm view musubix6@0.2.7 version returned 0.2.7. The following failed workflow/publication paragraph is explicitly dated historical evidence.",
+      "Do not duplicate planning-policy behavior tests as constant README regexes inside the version oracle. Model/CLI tests exercise default/opt-out/errors, workflow tests audit both README command/evidence contracts, and bilingual policy prose was directly reviewed. Arbitrary future prose drift is not mechanically proved impossible."
+    ]
+  },
+  "documentation": {
+    "structuralLint": "Executed separately on both READMEs; 17 flags each, including existing inline-code-link lexical false positives. Not a zero-finding result.",
+    "japaneseProse": "The separate quick prose-only pass on the finalized technical draft completed without rewrites: actual GiNZA96 before/after, four persisting informational findings and zero new findings. Keep repeated historical repair references for precise scope; keep the directory command's standard expression; keep the explicit INCOMPLETE priority; keep the SDK command-target ownership chain for accuracy. No optional synonym edits or necessary grammatical corrections were identified.",
+    "protectedFunctionalDelta": "Comparison with the immutable pre-version draft returns exit2 for deliberate version/command changes. This retained blocked result is not relabeled PASS: functional contract changes are not prose-equivalent rewrites.",
+    "proseOnlyInvariants": "v028-final-draft-prose-invariants.json returns passed against the separately frozen finalized technical draft. The prose pass made zero changes, so no semantic review is required. This says nothing about equivalence to the old0.2.7 functional contract."
+  },
+  "planMigration": {
+    "measurement": {
+      "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v028-plan-bound-consistency.json",
+      "sha256": "c07f69481f32b0712dd7da893f2ecede7cf0df500a0c3109a6f122be31ed4e9a",
+      "status": "FAIL",
+      "exit": 1
+    },
+    "coverage": "40features,118tasks,193mapped tests; all118 current whole-spec bindings and108 prerequisite values independently match the completed native measurement. Prerequisite values are actual input fingerprints, not definition hashes.",
+    "states": { "not-started": 103, "replan-required": 15 },
+    "remaining": "Old verification history/definitions and prerequisite states still require genuine native verification and explicit current receipt adoption. No completion was added, old receipt pointers/history remain intact, and matching authored input bindings is not a consistency or full-gate PASS."
+  },
+  "remaining": [
+    "Original intermittent issue385 assertion remains unidentified and unclassified.",
+    "Full-scope118-task current spec/prerequisite authoring is bound, but native verification and explicit receipt adoption remain incomplete; final native consistency still FAILs.",
+    "Nine earlier release tests correctly refused stale genuine artifact approval; no blanket synthetic production relocking is permitted.",
+    "New versioned0.2.8 release contracts/reference and genuine exact-artifact preparation approval remain required.",
+    "Full suite and full native gate after final candidate edits have not passed.",
+    "Root JavaScript diagnostics remain INCOMPLETE2 because no root ESLint flat configuration exists.",
+    "Two consecutive complete clean runs of one unchanged frozen24-cell matrix/candidate remain required.",
+    "Separate exact-artifact human release approval remains required before integration/tagging/publication."
+  ]
+}

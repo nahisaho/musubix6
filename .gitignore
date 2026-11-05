@@ -1,2 +1,3 @@
 node_modules/
 .sdd/.cost-log.lock
+.sdd/check-output/

@@ -30,7 +30,18 @@ function project() {
 const { NODE_TEST_CONTEXT, ...ENV } = process.env;
 const sddRaw = (d, ...a) => { const r = spawnSync('node', [SDD, '--root', d, ...a], { encoding: 'utf8', env: ENV }); return { code: r.status, out: r.stdout + r.stderr }; };
 // human `approve record` needs a matching prepare (#99); tests that are not about that run prepare first
-const sdd = (d, ...a) => { if (a[0] === 'approve' && a[1] === 'record' && !/^ai\s*:/i.test(String(a[a.indexOf('--by') + 1] ?? ''))) sddRaw(d, 'approve', 'prepare', a[2]); return sddRaw(d, ...a); };
+const sdd = (d, ...a) => {
+  if (a[0] === 'approve' && a[1] === 'record' && !/^ai\s*:/i.test(String(a[a.indexOf('--by') + 1] ?? ''))) sddRaw(d, 'approve', 'prepare', a[2]);
+  const result = sddRaw(d, ...a);
+  if (a[0] === 'init' && result.code === 0) {
+    // These legacy fixtures test native gates, not JSON planning; default-on is covered by CLI-007.
+    const file = path.join(d, '.sdd/config.json');
+    const config = JSON.parse(fs.readFileSync(file, 'utf8'));
+    config.planning = { required: false };
+    fs.writeFileSync(file, JSON.stringify(config, null, 2) + '\n');
+  }
+  return result;
+};
 const impl = (d, body) => fs.writeFileSync(path.join(d, 'add.mjs'), `/** @id CODE-CALC-001 @implements REQ-CALC-001 */\nexport const add = ${body};\n`);
 
 test('#157 pytest descriptive and suffixed names cannot borrow sibling failures', { skip: spawnSync('python3', ['-m', 'pytest', '--version']).status !== 0 }, () => {
@@ -98,11 +109,11 @@ for (const [kind, before, after] of [
     const body = kind === 'import binding' ? before + '\n' + base + target : base + (kind.includes('oracle') ? target + before : before) + '\n';
     fs.writeFileSync(path.join(d, 'test_calc.py'), body);
     sdd(d, 'approve', 'record', 'calc', '--by', 'tester');
-    fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ testCmd: ['node', '-e', 'console.log("AssertionError: target");process.exit(1)'], checks: [] }));
+    fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ planning: { required: false }, testCmd: ['node', '-e', 'console.log("AssertionError: target");process.exit(1)'], checks: [] }));
     const red = sdd(d, 'tdd', 'red', 'TEST-CALC-002');
     assert.equal(red.code, 0, red.out);
     fs.writeFileSync(path.join(d, 'test_calc.py'), body.replace(before, after));
-    fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ testCmd: ['node', '-e', '0'], checks: [] }));
+    fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ planning: { required: false }, testCmd: ['node', '-e', '0'], checks: [] }));
     const green = sdd(d, 'tdd', 'green', 'TEST-CALC-002');
     assert.equal(green.code, 1, green.out);
     assert.match(green.out, /changed since Red/);
@@ -115,10 +126,10 @@ test('#159 Python sibling additions preserve evidence, but shared oracle data ch
   const body = '# @id TEST-CALC-001 @verifies REQ-CALC-001\ndef test_calc_001():\n    assert actual() == EXPECTED\n\nEXPECTED = 2\n';
   fs.writeFileSync(path.join(d, 'test_calc.py'), body);
   sdd(d, 'approve', 'record', 'calc', '--by', 'tester');
-  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ testCmd: ['node', '-e', 'process.exit(1)'], checks: [] }));
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ planning: { required: false }, testCmd: ['node', '-e', 'process.exit(1)'], checks: [] }));
   assert.equal(sdd(d, 'tdd', 'red', 'TEST-CALC-001').code, 0);
   fs.appendFileSync(path.join(d, 'test_calc.py'), '\n@pytest.mark.parametrize("x", [1])\n# @id TEST-CALC-002 @verifies REQ-CALC-001\ndef test_calc_002(x):\n    assert x == 1\n');
-  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ testCmd: ['node', '-e', '0'], checks: [] }));
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ planning: { required: false }, testCmd: ['node', '-e', '0'], checks: [] }));
   const green = sdd(d, 'tdd', 'green', 'TEST-CALC-001');
   assert.equal(green.code, 0, green.out);
   fs.writeFileSync(path.join(d, 'test_calc.py'), fs.readFileSync(path.join(d, 'test_calc.py'), 'utf8').replace('EXPECTED = 2', 'EXPECTED = 1'));
@@ -254,7 +265,7 @@ test('#162 Go annotated subtests cannot borrow failures from siblings or the par
       'go.mod': 'module example.org/subtest\n',
       'probe_test.go': 'package subtest\nimport "testing"\nfunc TestTEST_CALC_001(t *testing.T) {\n t.Run("TEST_CALC_001", func(t *testing.T) {\n // @id TEST-CALC-001 @verifies REQ-CALC-001\n if 1 != 1 { t.Fatal("target assertion") }\n })\n t.Run("unrelated", func(t *testing.T) { t.Fatal("sibling only") })\n t.Fatal("parent only")\n}\n',
     });
-    fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ testCmd: ['go', 'test', './...', ...(json ? ['-json'] : []), '-run', '{IDU}(_|$)'], checks: [] }));
+    fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ planning: { required: false }, testCmd: ['go', 'test', './...', ...(json ? ['-json'] : []), '-run', '{IDU}(_|$)'], checks: [] }));
     sdd(d, 'approve', 'record', 'calc', '--by', 'tester');
     const r = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
     assert.equal(r.code, 1, r.out);
@@ -304,7 +315,7 @@ test('#152 nested --root scopes Git changes to the root and runs project checks'
   fs.mkdirSync(path.join(d, 'src'));
   fs.writeFileSync(path.join(d, 'src/quoted "name".mjs'), 'export const value = 1;\n');
   fs.writeFileSync(path.join(repo, 'outside.mjs'), 'export const unrelated = 1;\n');
-  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ planning: { required: false },
     testCmd: ['node', '--test', '--test-name-pattern', '{id}', '{file}'],
     checks: [{ name: 'nested', cwd: 'src', cmd: ['node', '-e', 'process.exit(1)'] }],
   }));
@@ -313,7 +324,7 @@ test('#152 nested --root scopes Git changes to the root and runs project checks'
   assert.match(gate.out, /0\/1 tests Red→Green/);
   assert.match(gate.out, /no Green recorded/);
   assert.match(gate.out, /✗ cmd nested/);
-  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ planning: { required: false },
     checks: [{ name: 'paths', cmd: ['node', '-e', 'process.exit(1)'], changedCmd: ['node', '-e', 'console.log(process.argv.slice(1).join("|"));process.exit(1)', '{changedFiles}'] }],
   }));
   const paths = sdd(d, 'gate', '--changed');
@@ -393,7 +404,7 @@ test('#1 fixture strings are ignored and scan.exclude works', () => {
   fs.writeFileSync(path.join(d, 'fixtures/a.mjs'), '/** @id CODE-X-001 @implements REQ-CALC-001 */\n');
   fs.writeFileSync(path.join(d, 'fixtures/b.mjs'), '/** @id CODE-X-001 @implements REQ-CALC-001 */\n');
   assert.match(sdd(d, 'trace').out, /duplicate @id CODE-X-001/);
-  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ scan: { exclude: ['fixtures/**'] }, checks: [] }));
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ planning: { required: false }, scan: { exclude: ['fixtures/**'] }, checks: [] }));
   assert.doesNotMatch(sdd(d, 'trace').out, /duplicate/);
 });
 
@@ -424,7 +435,7 @@ test('#5 --missing-module accepts a declared missing import as non-weak Red', ()
 
 test('#3 --changed uses changedCmd with placeholders and reports TIMEOUT', () => {
   const d = project();
-  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ checks: [
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ planning: { required: false }, checks: [
     { name: 'slow', cmd: ['node', '-e', '0'], changedCmd: ['node', '-e', 'setTimeout(()=>{},5000)', '{changedFiles}'], changedTimeoutMs: 300 },
     { name: 'ok', cmd: ['node', '-e', 'process.exit(1)'], changedCmd: ['node', '-e', 'process.exit(0)', '{changedTests}', '{changedScopes}'] },
   ] }));
@@ -435,6 +446,7 @@ test('#3 --changed uses changedCmd with placeholders and reports TIMEOUT', () =>
 
 test('#4 review file: Open findings and missing spec hash are refused', () => {
   const d = project();
+  sdd(d, 'init');
   const rv = path.join(d, '.sdd/review.md');
   const hash = sdd(d, 'approve', 'prepare', 'calc').out.match(/sha256:([0-9a-f]{64})/)[1];
   fs.writeFileSync(rv, `spec ${hash}\nverdict: pass\nopen: 1\nF1|high|add.mjs:1|Open\n`);
@@ -446,7 +458,7 @@ test('#4 review file: Open findings and missing spec hash are refused', () => {
   fs.writeFileSync(rv, `spec ${hash}\nverdict: pass\nopen: 0\nF1|high|add.mjs:1|Closed\n`);
   assert.equal(sdd(d, 'approve', 'record', 'calc', '--by', 'ai:duck', '--review', '.sdd/review.md').code, 0);
   assert.match(sdd(d, 'gate', '--no-run').out, /\[ai, review file\]/);
-  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ requireReviewFile: true, checks: [] }));
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ planning: { required: false }, requireReviewFile: true, checks: [] }));
   assert.equal(sdd(d, 'approve', 'record', 'calc', '--by', 'ai:duck', '--review', 'looks fine').code, 1);
 });
 
@@ -544,7 +556,7 @@ test('#7 hub change uses hubFallbackCmd; leaf change uses changedCmd', () => {
   fs.writeFileSync(path.join(d, 'hub.mjs'), 'export const h = 1;\n');
   for (let i = 0; i < 4; i++) fs.writeFileSync(path.join(d, `t${i}.test.mjs`), "import { h } from './hub.mjs';\nexport { h };\n");
   fs.writeFileSync(path.join(d, 'leaf.mjs'), 'export const l = 1;\n');
-  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ checks: [
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ planning: { required: false }, checks: [
     { name: 'k', cmd: ['node', '-e', '0'], changedCmd: ['node', '-e', 'console.log("RELATED")'], hubFallbackCmd: ['node', '-e', 'console.log("NARROW")'], hubThreshold: 0.5, minHubTests: 1 },
   ] }));
   spawnSync('git', ['add', '-A'], { cwd: d });
@@ -560,7 +572,7 @@ test('#7 oversized hub is skipped as INCOMPLETE, not timed out', () => {
   const d = project();
   fs.writeFileSync(path.join(d, 'hub.mjs'), 'export const h = 1;\n');
   for (let i = 0; i < 4; i++) fs.writeFileSync(path.join(d, `t${i}.test.mjs`), "import { h } from './hub.mjs';\nexport { h };\n");
-  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ checks: [
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ planning: { required: false }, checks: [
     { name: 'k', cmd: ['node', '-e', '0'], changedCmd: ['node', '-e', '0'], hubFallbackCmd: ['node', '-e', '0'], hubThreshold: 0.5, minHubTests: 1, hubMaxTests: 2 },
   ] }));
   spawnSync('git', ['add', '-A'], { cwd: d });
@@ -578,7 +590,7 @@ test('#11 hub detection follows workspace package names and tsconfig paths', () 
   fs.writeFileSync(path.join(d, 'tsconfig.json'), '{ // c\n "compilerOptions": { "baseUrl": ".", "paths": { "@app/*": ["app/*"] } } }');
   fs.writeFileSync(path.join(d, 'app/util.ts'), 'export const u = 1;\n');
   for (let i = 0; i < 3; i++) fs.writeFileSync(path.join(d, `t${i}.test.ts`), "import { h } from '@x/lib';\nimport { u } from '@app/util';\n");
-  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ checks: [
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ planning: { required: false }, checks: [
     { name: 'k', cmd: ['node', '-e', '0'], changedCmd: ['node', '-e', '0'], hubFallbackCmd: ['node', '-e', 'console.log("NARROW")'], hubThreshold: 0.5, minHubTests: 1 },
   ] }));
   spawnSync('git', ['add', '-A'], { cwd: d });
@@ -596,7 +608,7 @@ test('#12 hub change is scoped by changed symbols; comment-only is skipped', () 
   fs.writeFileSync(path.join(d, 'a.test.mjs'), "import { h } from './hub.mjs';\n");
   fs.writeFileSync(path.join(d, 'b.test.mjs'), "import { k } from './hub.mjs';\n");
   fs.writeFileSync(path.join(d, 'c.test.mjs'), "import { k } from './hub.mjs';\n");
-  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ checks: [
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ planning: { required: false }, checks: [
     { name: 'k', cmd: ['node', '-e', '0'], changedCmd: ['node', '-e', '0'], hubFallbackCmd: ['node', '-e', '0', '{directTests}'], hubThreshold: 0.1, minHubTests: 1 },
   ] }));
   spawnSync('git', ['add', '-A'], { cwd: d });
@@ -613,7 +625,7 @@ test('#12 hub change is scoped by changed symbols; comment-only is skipped', () 
 test('#13 prepare runs once, is cached until inputs change, and failure fails the gate', () => {
   const d = project();
   const marker = path.join(d, 'built.txt');
-  const cfg = (cmd) => fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ prepare: { cmd, outputs: ['built.txt'] }, checks: [{ name: 'ok', cmd: ['node', '-e', '0'] }] }));
+  const cfg = (cmd) => fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ planning: { required: false }, prepare: { cmd, outputs: ['built.txt'] }, checks: [{ name: 'ok', cmd: ['node', '-e', '0'] }] }));
   cfg(['node', '-e', "require('fs').appendFileSync('built.txt','x')"]);
   assert.match(sdd(d, 'gate').out, /✓ prepare \(/);
   assert.match(sdd(d, 'gate').out, /prepare: up to date/);
@@ -646,6 +658,7 @@ test('#9 tokenizer: backticks in strings/comments/nested templates do not desync
 test('#10 gate without specs is INCOMPLETE with a hint, not FAIL', () => {
   const d = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-'));
   spawnSync('git', ['init', '-q'], { cwd: d });
+  sdd(d, 'init');
   const g = sdd(d, 'gate', '--no-run');
   assert.match(g.out, /INCOMPLETE/);
   assert.equal(g.code, 2);
@@ -706,6 +719,7 @@ test('#15 go/rust: init picks defaults and {IDU}/{idu} map IDs to test-name patt
 
 test('#15 impl and test in one file (Rust-style): Green is allowed after implementing; editing the test still blocks', () => {
   const d = project();
+  sdd(d, 'init');
   sdd(d, 'approve', 'record', 'calc', '--by', 'tester');
   const w = (body, assertion) => fs.writeFileSync(path.join(d, 'add.test.mjs'), [
     "import { test } from 'node:test';",
@@ -730,7 +744,7 @@ test('#15 go build failure is a load error, not a Red', () => {
   const bin = path.join(d, 'bin');
   fs.mkdirSync(bin);
   fs.writeFileSync(path.join(bin, 'go'), '#!/bin/sh\necho "# calc [calc.test]"\necho "./calc_test.go:7:5: undefined: Plus"\necho "FAIL\tcalc [build failed]"\nexit 1\n', { mode: 0o755 });
-  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ schemaVersion: 1, testCmd: [path.join(bin, 'go'), 'test', '-run', '{IDU}'] }));
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ planning: { required: false }, schemaVersion: 1, testCmd: [path.join(bin, 'go'), 'test', '-run', '{IDU}'] }));
   assert.match(sdd(d, 'tdd', 'red', 'TEST-CALC-001').out, /REJECTED.*load\/compile/);
 });
 
@@ -781,7 +795,7 @@ test('C/C++ sources are scanned; unknown stack warns at init; "FAIL <name>" is s
   fs.writeFileSync(path.join(d, 't.cpp'), '// @id TEST-CALC-001 @verifies REQ-CALC-001\nint main() { return 1; }\n');
   assert.match(sdd(d, 'init').out, /WARNING: stack not recognised/);
   assert.match(sdd(d, 'status').out, /entities 2/);
-  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ schemaVersion: 1, testCmd: ['sh', '-c', 'echo "FAIL test_calc_001"; exit 1', 'x', '{idu}'] }));
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ planning: { required: false }, schemaVersion: 1, testCmd: ['sh', '-c', 'echo "FAIL test_calc_001"; exit 1', 'x', '{idu}'] }));
   sdd(d, 'approve', 'record', 'calc', '--by', 'tester');
   assert.match(sdd(d, 'tdd', 'red', 'TEST-CALC-001').out, /fails with: FAIL test_calc_001/);
 });
@@ -790,7 +804,7 @@ test('gcc/clang/javac compile diagnostics are load errors, not Red', () => {
   for (const diag of ['test.c:7:5: error: implicit declaration of function plus', 'Foo.java:3: error: cannot find symbol', '/usr/bin/ld: x.o: undefined reference to `f`\ncollect2: error: ld returned 1 exit status']) {
     const d = project();
     sdd(d, 'approve', 'record', 'calc', '--by', 'tester');
-    fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ schemaVersion: 1, testCmd: ['sh', '-c', `printf '%s\\n' "$0"; exit 1`, diag] }));
+    fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ planning: { required: false }, schemaVersion: 1, testCmd: ['sh', '-c', `printf '%s\\n' "$0"; exit 1`, diag] }));
     assert.match(sdd(d, 'tdd', 'red', 'TEST-CALC-001').out, /REJECTED.*load\/compile/, diag);
   }
 });
@@ -815,7 +829,7 @@ test('#24 init detects Maven / Gradle / CMake and zero-match is reported before 
   }
   const d = project();
   sdd(d, 'approve', 'record', 'calc', '--by', 'tester');
-  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ schemaVersion: 1, testCmd: ['sh', '-c', 'echo "Tests run: 0, Failures: 0"; exit 0'] }));
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ planning: { required: false }, schemaVersion: 1, testCmd: ['sh', '-c', 'echo "Tests run: 0, Failures: 0"; exit 0'] }));
   assert.match(sdd(d, 'tdd', 'red', 'TEST-CALC-001').out, /no test matched/);
 });
 
@@ -1084,7 +1098,7 @@ test('#32 projects: dependsOn triggers dependents, project changedCmd gets proje
   git('init', '-q');
   for (const f of ['libs/shared/x.txt', 'services/api/a.txt', 'services/web/w.txt', '.sdd/specs/g.md']) { fs.mkdirSync(path.dirname(path.join(d, f)), { recursive: true }); fs.writeFileSync(path.join(d, f), 'x'); }
   git('add', '-A'); git('-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'i');
-  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ schemaVersion: 1, testCmd: ['true'], checks: [], projects: [
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ planning: { required: false }, schemaVersion: 1, testCmd: ['true'], checks: [], projects: [
     { root: 'services/api', testCmd: ['true'], dependsOn: ['libs/shared'], checks: [{ name: 'test', cmd: ['sh', '-c', 'echo full'], changedCmd: ['sh', '-c', 'echo scoped "$@"', 'x', '{changedFiles}'] }] },
     { root: 'services/web', testCmd: ['true'], checks: [{ name: 'test', cmd: ['true'] }] },
   ] }));
@@ -1103,7 +1117,7 @@ test('#27 {idu} falls back to the test method declared below @id (camelCase JUni
   fs.mkdirSync(path.join(d, '.sdd/specs'), { recursive: true });
   fs.writeFileSync(path.join(d, '.sdd/specs/c.md'), '---\nfeature: c\ntier: T1\n---\n| REQ-C-001 | When x, the system shall y. | TEST-C-001 |\n');
   fs.writeFileSync(path.join(d, 'CTest.java'), 'class CTest {\n  // @id TEST-C-001 @verifies REQ-C-001\n  @Test\n  @DisplayName("adds")\n  void addsNumbers() {}\n}\n');
-  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ schemaVersion: 1, testCmd: ['sh', '-c', 'echo "$0" > filter.txt; echo "FAIL x"; exit 1', '{idu}'] }));
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ planning: { required: false }, schemaVersion: 1, testCmd: ['sh', '-c', 'echo "$0" > filter.txt; echo "FAIL x"; exit 1', '{idu}'] }));
   assert.match(sdd(d, 'tdd', 'red', 'TEST-C-001').out, /RED ok/);
   assert.equal(fs.readFileSync(path.join(d, 'filter.txt'), 'utf8').trim(), 'addsNumbers');
 });
@@ -1114,7 +1128,7 @@ test('#26 multi-module output: a zero-test module does not hide a failing one; b
   fs.mkdirSync(path.join(d, '.sdd/specs'), { recursive: true });
   fs.writeFileSync(path.join(d, '.sdd/specs/c.md'), '---\nfeature: c\ntier: T1\n---\n| REQ-C-001 | When x, the system shall y. | TEST-C-001 |\n');
   fs.writeFileSync(path.join(d, 'a_test.py'), '# @id TEST-C-001 @verifies REQ-C-001\ndef test_c_001(): pass\n');
-  const red = (script) => { fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ schemaVersion: 1, testCmd: ['sh', '-c', script] })); return sdd(d, 'tdd', 'red', 'TEST-C-001').out; };
+  const red = (script) => { fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ planning: { required: false }, schemaVersion: 1, testCmd: ['sh', '-c', script] })); return sdd(d, 'tdd', 'red', 'TEST-C-001').out; };
   assert.match(red('echo "Tests run: 0, Failures: 0"; echo "Tests run: 1, Failures: 1"; echo "FAIL x"; exit 1'), /RED ok/);
   assert.match(red('echo "Tests run: 0, Failures: 0"; echo "Tests run: 0, Failures: 0"; exit 1'), /no test matched/);
   assert.match(red('echo "Non-parseable POM /x/pom.xml: Duplicated tag"; exit 1'), /load\/compile error/);
@@ -1136,7 +1150,7 @@ test('#28 init detects Makefile and .NET projects; MSBuild/C# errors are load er
   fs.mkdirSync(path.join(d, '.sdd/specs'), { recursive: true });
   fs.writeFileSync(path.join(d, '.sdd/specs/c.md'), '---\nfeature: c\ntier: T1\n---\n| REQ-C-001 | When x, the system shall y. | TEST-C-001 |\n');
   fs.writeFileSync(path.join(d, 'CTest.cs'), '// @id TEST-C-001 @verifies REQ-C-001\npublic void Adds() {}\n');
-  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ schemaVersion: 1, testCmd: ['sh', '-c', 'echo "CTest.cs(3,5): error CS0103: The name Calc does not exist"; exit 1'] }));
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ planning: { required: false }, schemaVersion: 1, testCmd: ['sh', '-c', 'echo "CTest.cs(3,5): error CS0103: The name Calc does not exist"; exit 1'] }));
   assert.match(sdd(d, 'tdd', 'red', 'TEST-C-001').out, /load\/compile error/);
 });
 
@@ -1176,7 +1190,7 @@ test('#37 a check whose runner reports "no tests ran" is INCOMPLETE, a real fail
   const d = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-'));
   spawnSync('git', ['init', '-q'], { cwd: d });
   fs.mkdirSync(path.join(d, '.sdd/specs'), { recursive: true });
-  const cfg = (cmd) => fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ checks: [{ name: 'py', cmd }] }));
+  const cfg = (cmd) => fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ planning: { required: false }, checks: [{ name: 'py', cmd }] }));
   cfg(['node', '-e', "console.log('no tests ran in 0.01s'); process.exit(5)"]);
   const r = sdd(d, 'gate');
   assert.match(r.out, /no tests exist yet/);
@@ -1394,7 +1408,7 @@ test('#46 gate --changed: a scoped run that matched no tests falls back to the f
   git('init', '-q');
   fs.mkdirSync(path.join(d, '.sdd/specs'), { recursive: true });
   fs.writeFileSync(path.join(d, 'data.json'), '[1]\n');
-  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ checks: [{ name: 'test', cmd: ['node', '-e', 'console.log("1 failed"); process.exit(1)'], changedCmd: ['node', '-e', 'console.log("No test files found, exiting with code 0")', '{changedFiles}'] }] }));
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ planning: { required: false }, checks: [{ name: 'test', cmd: ['node', '-e', 'console.log("1 failed"); process.exit(1)'], changedCmd: ['node', '-e', 'console.log("No test files found, exiting with code 0")', '{changedFiles}'] }] }));
   git('add', '-A'); git('commit', '-qm', 'base');
   fs.writeFileSync(path.join(d, 'data.json'), '[2]\n');
   const r = sdd(d, 'gate', '--changed').out;
@@ -1490,6 +1504,7 @@ test('#52 framework build output (.mastra, .next, …) is not scanned for @id (n
 
 test('T2 spec without a ## Design section cannot be locked and fails guard/gate', () => {
   const d = project();
+  sdd(d, 'init');
   const sp = path.join(d, '.sdd/specs/calc.md');
   fs.writeFileSync(sp, fs.readFileSync(sp, 'utf8').replace(/## Design[\s\S]*?\n\n/, ''));
   const a = sdd(d, 'approve', 'record', 'calc', '--by', 'nahisaho');
@@ -1503,6 +1518,7 @@ test('plan: orders features, flags bad dependencies, and names the next feature'
   const d = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-plan-'));
   spawnSync('git', ['init', '-q'], { cwd: d });
   fs.mkdirSync(path.join(d, '.sdd/specs'), { recursive: true });
+  sdd(d, 'init');
   fs.writeFileSync(path.join(d, '.sdd/specs/a.md'), '---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | f shall return 1. | TEST-A-001 |\n');
   const plan = (rows) => fs.writeFileSync(path.join(d, '.sdd/plan.md'), `| order | feature | depends | note |\n|---|---|---|---|\n${rows}\n`);
   plan('| 1 | a | - | core |\n| 2 | b | a | later |');
@@ -1626,7 +1642,7 @@ test('TEST-NODE-SUMMARY-001 executed Node failures are not no-test incompletenes
       ].join('\n'),
     });
     const cmd = ['node', '--test', `--test-reporter=${reporter}`];
-    fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({
+    fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ planning: { required: false },
       testCmd: [...cmd, '--test-name-pattern', '{id}', '{file}'],
       checks: [{ name: 'test', cmd: [...cmd, 'a.test.mjs'] }],
     }));
@@ -1647,6 +1663,163 @@ test('TEST-NODE-SUMMARY-001 executed Node failures are not no-test incompletenes
         assert.doesNotMatch(text, /no tests exist yet/);
       } else assert.match(text, /INCOMPLETE/);
     }
+  }
+});
+
+function gateOutputFixture() {
+  const d = mini('---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | answer shall be one. | TEST-A-001 |\n', {
+    'answer.mjs': '/** @id CODE-A-001 @implements REQ-A-001 */\nexport const answer = () => 0;\n',
+    'a.test.mjs': "import { test } from 'node:test';\nimport assert from 'node:assert/strict';\nimport { answer } from './answer.mjs';\n/** @id TEST-A-001 @verifies REQ-A-001 */\ntest('TEST-A-001 answer', () => assert.equal(answer(), 1));\n",
+    'check.mjs': [
+      "import fs from 'node:fs';",
+      "const counter = '.sdd/output-counter';",
+      "const attempt = fs.existsSync(counter) ? Number(fs.readFileSync(counter, 'utf8')) + 1 : 1;",
+      "fs.writeFileSync(counter, String(attempt));",
+      "const mode = fs.readFileSync('.sdd/output-mode', 'utf8');",
+      "process.stdout.write(Buffer.from([111, 117, 116, 255, 0, 10]));",
+      "process.stderr.write(Buffer.from([101, 114, 114, 254, 0, 10]));",
+      "if (mode === 'timeout') setInterval(() => {}, 1000);",
+      "else if (mode === 'limit') { for (let i = 0; i < 80; i++) process.stdout.write(Buffer.alloc(1024 * 1024, 120)); }",
+      "else if (mode === 'signal') process.kill(process.pid, 'SIGKILL');",
+      "else if (mode === 'retention-error') fs.chmodSync('.sdd/check-output', 0o755);",
+      "else process.exit(mode === 'fail-once' && attempt === 1 ? 1 : 0);",
+      '',
+    ].join('\n'),
+  });
+  assert.equal(sdd(d, 'tdd', 'red', 'TEST-A-001').code, 0);
+  fs.writeFileSync(path.join(d, 'answer.mjs'), '/** @id CODE-A-001 @implements REQ-A-001 */\nexport const answer = () => 1;\n');
+  assert.equal(sdd(d, 'tdd', 'green', 'TEST-A-001').code, 0);
+  const file = path.join(d, '.sdd/config.json');
+  const config = JSON.parse(fs.readFileSync(file, 'utf8'));
+  config.checks = [{ name: 'test', cmd: ['node', 'check.mjs'], timeoutMs: 10000 }];
+  fs.writeFileSync(file, JSON.stringify(config));
+  fs.writeFileSync(path.join(d, '.sdd/output-mode'), 'pass');
+  const refreshed = sdd(d, 'tdd', 'refactor', 'TEST-A-001');
+  assert.equal(refreshed.code, 0, refreshed.out);
+  return { d, file, config, output: path.join(d, '.sdd/check-output') };
+}
+
+/** @id TEST-NODE-SUMMARY-002 @verifies REQ-NODE-SUMMARY-002 */
+test('TEST-NODE-SUMMARY-002 passing failure-word titles cannot hide actual failed assertions', () => {
+  for (const reporter of ['spec', 'tap']) {
+    const { d, file, config } = gateOutputFixture();
+    fs.writeFileSync(path.join(d, 'summary.test.mjs'), [
+      "import { test } from 'node:test';",
+      "import assert from 'node:assert/strict';",
+      ...['FAIL', 'assert', 'error', 'panic', 'FAILED', 'assertion'].map(word =>
+        `test('${word} passing control', () => assert.ok(true));`),
+      "test('actual failure witness', () => assert.equal('actual', 'expected', 'AssertionError: ' + 'x'.repeat(4096)));",
+      '',
+    ].join('\n'));
+    config.flaky = { retries: 0 };
+    config.checks = [{ name: 'test', cmd: ['node', '--test', `--test-reporter=${reporter}`, 'summary.test.mjs'] }];
+    fs.writeFileSync(file, JSON.stringify(config));
+    const refreshed = sdd(d, 'tdd', 'refactor', 'TEST-A-001');
+    assert.equal(refreshed.code, 0, refreshed.out);
+    const result = sdd(d, 'gate');
+    assert.equal(result.code, 1, result.out);
+    assert.match(result.out, /actual failure witness/, reporter + ': real failure was hidden:\n' + result.out);
+    assert.doesNotMatch(result.out, /(?:✔|ok \d+ -).*passing control/, result.out);
+    const lines = result.out.split('\n');
+    const diagnostic = lines.slice(lines.findIndex(line => /^✗ cmd test/.test(line)) + 1)
+      .filter(line => /^ {4}/.test(line)).map(line => line.slice(4));
+    assert.ok(diagnostic.length <= 8, 'bounded failure diagnostic line count');
+    assert.ok(diagnostic.every(line => line.length <= 1024), 'bounded failure diagnostic line length');
+  }
+});
+
+/** @id TEST-NODE-SUMMARY-003 @verifies REQ-NODE-SUMMARY-003 */
+test('TEST-NODE-SUMMARY-003 every check attempt keeps exact private output and fail-closed retry history', () => {
+  const { d, output } = gateOutputFixture();
+  fs.writeFileSync(path.join(d, '.gitignore'), '');
+  fs.writeFileSync(path.join(d, '.git/info/exclude'), '');
+  fs.writeFileSync(path.join(d, '.sdd/output-mode'), 'fail-once');
+  const run = spawnSync('node', [SDD, '--root', d, 'gate'], {
+    encoding: 'utf8', env: { ...ENV, SDD_OUTPUT_ENV_SENTINEL: 'private-environment-sentinel' },
+  });
+  const text = run.stdout + run.stderr;
+  assert.equal(run.status, 1, text);
+  assert.match(text, /FLAKY suspected/, text);
+  assert.ok(fs.existsSync(output), 'captured attempt output must be retained');
+  const attempts = () => fs.readdirSync(output, { withFileTypes: true })
+    .filter(entry => entry.isDirectory()).map(entry => path.join(output, entry.name));
+  const first = attempts();
+  assert.equal(first.length, 2, 'retain failed first attempt and passing retry separately');
+  const receipts = first.map(directory => {
+    const receipt = JSON.parse(fs.readFileSync(path.join(directory, 'receipt.json'), 'utf8'));
+    assert.ok(text.includes(path.relative(d, path.join(directory, 'receipt.json')).split(path.sep).join('/')));
+    for (const [stream, expected] of [['stdout', [111, 117, 116, 255, 0, 10]], ['stderr', [101, 114, 114, 254, 0, 10]]]) {
+      const file = path.join(directory, receipt[stream].path);
+      const bytes = fs.readFileSync(file);
+      assert.deepEqual(bytes, Buffer.from(expected), 'original bytes, not a decoded/recombined transcript');
+      assert.equal(receipt[stream].sha256, createHash('sha256').update(bytes).digest('hex'));
+      assert.equal(receipt[stream].bytes, expected.length);
+      assert.equal(spawnSync('git', ['-c', `core.excludesFile=${process.platform === 'win32' ? 'NUL' : '/dev/null'}`,
+        'check-ignore', '-q', file], { cwd: d }).status, 0);
+      if (process.platform !== 'win32') assert.equal(fs.statSync(file).mode & 0o777, 0o600);
+    }
+    if (process.platform !== 'win32') assert.equal(fs.statSync(directory).mode & 0o777, 0o700);
+    assert.doesNotMatch(JSON.stringify(receipt), /private-environment-sentinel|SDD_OUTPUT_ENV_SENTINEL/);
+    assert.equal(receipt.signal, null);
+    assert.equal(receipt.timedOut, false);
+    assert.equal(receipt.outputLimit, false);
+    assert.equal(receipt.error, null);
+    return receipt;
+  }).sort((a, b) => a.attempt - b.attempt);
+  assert.deepEqual(receipts.map(receipt => [receipt.attempt, receipt.exit]), [[1, 1], [2, 0]]);
+  const previous = first.map(directory => fs.readFileSync(path.join(directory, 'receipt.json')));
+  const control = sdd(d, 'gate');
+  assert.equal(control.code, 0, 'valid passing gate must remain accepted:\n' + control.out);
+  assert.equal(attempts().length, 3);
+  first.forEach((directory, i) => assert.deepEqual(fs.readFileSync(path.join(directory, 'receipt.json')), previous[i]));
+  assert.equal(fs.readFileSync(path.join(output, '.gitignore'), 'utf8'), '*\n');
+  if (process.platform !== 'win32') {
+    fs.writeFileSync(path.join(d, '.sdd/output-mode'), 'retention-error');
+    const refused = sdd(d, 'gate');
+    assert.equal(refused.code, 1, refused.out);
+    assert.match(refused.out, /check output retention failed/i);
+    assert.doesNotMatch(refused.out, /FLAKY suspected/);
+    fs.chmodSync(output, 0o700);
+    first.forEach((directory, i) => assert.deepEqual(fs.readFileSync(path.join(directory, 'receipt.json')), previous[i]));
+  }
+});
+
+/** @id TEST-NODE-SUMMARY-004 @verifies REQ-NODE-SUMMARY-003 */
+test('TEST-NODE-SUMMARY-004 retention rejects unsafe storage and records bounded process failures', () => {
+  for (const problem of ['file', 'symlink', ...(process.platform === 'win32' ? [] : ['permissions'])]) {
+    const { d, output } = gateOutputFixture();
+    const outside = fs.mkdtempSync(path.join(work, 'output-outside-'));
+    if (problem === 'file') fs.writeFileSync(output, 'not a directory');
+    else if (problem === 'symlink') fs.symlinkSync(outside, output, process.platform === 'win32' ? 'junction' : 'dir');
+    else fs.mkdirSync(output, { mode: 0o755 });
+    const result = sdd(d, 'gate');
+    assert.equal(result.code, 1, problem + ' must not be successful:\n' + result.out);
+    assert.match(result.out, /check output retention failed/i, result.out);
+    assert.doesNotMatch(result.out, /FLAKY suspected/);
+    assert.equal(fs.readFileSync(path.join(d, '.sdd/output-counter'), 'utf8'), '1',
+      'retention failure after execution must not retry the check');
+    assert.deepEqual(fs.readdirSync(outside), []);
+  }
+  for (const mode of ['timeout', 'limit', 'signal', 'missing']) {
+    const { d, output, file, config } = gateOutputFixture();
+    fs.writeFileSync(path.join(d, '.sdd/output-mode'), mode);
+    config.flaky = { retries: 0 };
+    if (mode === 'timeout') config.checks[0].timeoutMs = 1000;
+    if (mode === 'missing') config.checks[0].cmd = ['sdd-output-intentionally-missing-executable'];
+    fs.writeFileSync(file, JSON.stringify(config));
+    const refreshed = sdd(d, 'tdd', 'refactor', 'TEST-A-001');
+    assert.equal(refreshed.code, 0, refreshed.out);
+    const result = sdd(d, 'gate');
+    assert.equal(result.code, 1, result.out);
+    const directory = fs.readdirSync(output, { withFileTypes: true }).find(entry => entry.isDirectory());
+    assert.ok(directory, 'failed process still needs its captured output receipt');
+    const receipt = JSON.parse(fs.readFileSync(path.join(output, directory.name, 'receipt.json'), 'utf8'));
+    assert.equal(receipt.timedOut, mode === 'timeout');
+    assert.equal(receipt.outputLimit, mode === 'limit');
+    assert.ok(receipt.exit !== 0 || receipt.signal !== null);
+    if (mode === 'missing') assert.equal(typeof receipt.error, 'string');
+    if (mode === 'signal' && process.platform !== 'win32') assert.equal(receipt.signal, 'SIGKILL');
+    assert.ok(result.out.length < 20000, 'captured long lines must not overflow the diagnostic');
   }
 });
 
@@ -1766,7 +1939,7 @@ test('#66 preamble edits are detected even when a comment mentions @implements; 
 test('#67 polyglot: dependsOn may be a file; root-owned change hint shows without root checks', () => {
   const d = mini('---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | x shall hold. | TEST-A-001 |\n', { 'svc/x.txt': 'x', 'contract/schema.json': '{}', 'README.md': 'r' });
   const cp = path.join(d, '.sdd/config.json');
-  fs.writeFileSync(cp, JSON.stringify({ testCmd: PASS, checks: [], projects: [{ root: 'svc', testCmd: PASS, dependsOn: ['contract/schema.json'], checks: [{ name: 'ok', cmd: ['node', '-e', '0'] }] }] }));
+  fs.writeFileSync(cp, JSON.stringify({ testCmd: PASS, checks: [], projects: [{ root: 'svc', testCmd: PASS, dependsOn: ['contract/schema.json'], checks: [{ name: 'ok', cmd: ['node', '-e', '0'] }] }] , planning: { required: false } }));
   spawnSync('git', ['add', '-A'], { cwd: d });
   spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'i'], { cwd: d });
   fs.writeFileSync(path.join(d, 'contract/schema.json'), '{"a":1}');
@@ -1963,7 +2136,7 @@ test('#84 skipped Go/JUnit test is not a Red; #86 gate shows the failing line', 
   const d = mini(T1SPEC, { 'a.test.mjs': jsTest() }, ['node', '-e', 'console.log("--- SKIP: TestX (0.00s)\\nok  \\tm\\t0.00s");process.exit(0)']);
   assert.match(sdd(d, 'tdd', 'red', 'TEST-A-001').out, /REJECTED.*skipped/);
   const lines = Array.from({ length: 20 }, (_, i) => `ok line ${i}`).join('\\n');
-  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ checks: [{ name: 'c', cmd: ['node', '-e', `console.log("FAIL arena_reset expected 0");console.log("${lines}");process.exit(1)`] }] }));
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ planning: { required: false }, checks: [{ name: 'c', cmd: ['node', '-e', `console.log("FAIL arena_reset expected 0");console.log("${lines}");process.exit(1)`] }] }));
   assert.match(sdd(d, 'gate').out, /FAIL arena_reset expected 0/);
 });
 
@@ -2744,7 +2917,7 @@ test('#134 tdd red --retest records a weak Red after the test changed', () => {
   assert.equal(sdd(d, 'tdd', 'green', 'TEST-A-001').code, 0);
 });
 
-const fakeRun = (d, shellScript) => fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ schemaVersion: 1, testCmd: ['sh', '-c', shellScript, 'x'] }));
+const fakeRun = (d, shellScript) => fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ planning: { required: false }, schemaVersion: 1, testCmd: ['sh', '-c', shellScript, 'x'] }));
 const testFile = (d, body) => fs.writeFileSync(path.join(d, 'add.test.mjs'), [
   "import { test } from 'node:test';",
   "import assert from 'node:assert/strict';",
@@ -2820,7 +2993,7 @@ test('#132 .slnx is detected as .NET; test-less csproj libraries do not become p
   const d = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-'));
   spawnSync('git', ['init', '-q'], { cwd: d });
   fs.writeFileSync(path.join(d, 'R.slnx'), '<Solution />');
-  const r = sddRaw(d, 'init');
+  const r = sdd(d, 'init');
   assert.doesNotMatch(r.out, /WARNING: stack not recognised/);
   assert.deepEqual(JSON.parse(fs.readFileSync(path.join(d, '.sdd/config.json'), 'utf8')).testCmd.slice(0, 2), ['dotnet', 'test']);
 
@@ -2830,7 +3003,7 @@ test('#132 .slnx is detected as .NET; test-less csproj libraries do not become p
   fs.mkdirSync(path.join(m, 'tests/T'), { recursive: true });
   fs.writeFileSync(path.join(m, 'src/Lib/Lib.csproj'), '<Project Sdk="Microsoft.NET.Sdk"></Project>');
   fs.writeFileSync(path.join(m, 'tests/T/T.csproj'), '<Project Sdk="Microsoft.NET.Sdk"><ItemGroup><PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.0.0" /></ItemGroup></Project>');
-  const o = sddRaw(m, 'init');
+  const o = sdd(m, 'init');
   const cfg = JSON.parse(fs.readFileSync(path.join(m, '.sdd/config.json'), 'utf8'));
   assert.deepEqual((cfg.projects ?? []).map((p) => p.root), ['tests/T']);
   assert.doesNotMatch(o.out, /testCmd: node/);
@@ -2842,7 +3015,7 @@ test('#132 Julia default check falls back to test/runtests.jl with an INFRA mess
   fs.writeFileSync(path.join(d, 'Project.toml'), 'name = "X"\n');
   fs.mkdirSync(path.join(d, 'test'));
   fs.writeFileSync(path.join(d, 'test/runtests.jl'), '');
-  sddRaw(d, 'init');
+  sdd(d, 'init');
   const check = JSON.parse(fs.readFileSync(path.join(d, '.sdd/config.json'), 'utf8')).checks[0].cmd;
   const bin = path.join(d, 'bin');
   fs.mkdirSync(bin);
@@ -2909,7 +3082,7 @@ test('#127 C# using/namespace and Julia include/using build an import graph', ()
 
 test('#133 gate --changed scopes Go packages in a repo without commits', () => {
   const d = tree({ 'go.mod': 'module example.com/b\n\ngo 1.20\n', 'q/q.go': 'package q\n\nfunc Q() int { return 1 }\n', 'q/q_test.go': 'package q\n\nimport "testing"\n\nfunc TestQ(t *testing.T) { _ = Q() }\n' });
-  sddRaw(d, 'init');
+  sdd(d, 'init');
   const g = sddRaw(d, 'gate', '--changed').out;
   assert.match(g, /scoped → go test example\.com\/b\/q/, g);
   assert.doesNotMatch(g, /cannot scope changes/);
@@ -2923,10 +3096,10 @@ test('#133 Maven scope includes dependents and their upstream modules (diamond),
     'journal/pom.xml': pom('journal', ['money', 'accounts', 'audit']),
     'accounts/src/main/java/A.java': 'class A {}\n',
   });
-  sddRaw(d, 'init');
+  sdd(d, 'init');
   const cfg = JSON.parse(fs.readFileSync(path.join(d, '.sdd/config.json'), 'utf8'));
   assert.ok(!cfg.checks[0].changedCmd.includes('-amd'));
-  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ ...cfg, checks: [{ name: 'test', cmd: ['sh', '-c', 'echo full'], changedCmd: ['echo', 'SCOPE', '{changedModulesCsv}'] }] }));
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ ...cfg, planning: { required: false }, checks: [{ name: 'test', cmd: ['sh', '-c', 'echo full'], changedCmd: ['echo', 'SCOPE', '{changedModulesCsv}'] }] }));
   const g = sddRaw(d, 'gate', '--changed').out;
   assert.match(g, /SCOPE accounts,audit,journal,money/, g);
 });
@@ -3216,13 +3389,13 @@ test('#135 default .NET changedCmd runs only changed test projects and test proj
     'tests/B/B.csproj': testProj(XUNIT, ['../../src/Solo/Solo.csproj']), 'tests/B/B.cs': 'public class B { }\n',
     'README.md': 'x\n',
   });
-  sddRaw(d, 'init');
+  sdd(d, 'init');
   const cp = path.join(d, '.sdd/config.json');
   const cfg = JSON.parse(fs.readFileSync(cp, 'utf8'));
   const chk = cfg.checks.find((c) => c.name === 'test');
   assert.ok(chk.changedCmd.includes('{changedTestProjects}'), JSON.stringify(chk));
   assert.match(chk.changedCmd.join(' '), /dotnet test/);
-  fs.writeFileSync(cp, JSON.stringify({ ...cfg, projects: undefined, checks: [{ name: 'test', cmd: ['echo', 'FULL'], changedCmd: ['echo', 'SCOPE', '{changedTestProjects}'] }] }));
+  fs.writeFileSync(cp, JSON.stringify({ ...cfg, projects: undefined, checks: [{ name: 'test', cmd: ['echo', 'FULL'], changedCmd: ['echo', 'SCOPE', '{changedTestProjects}'] }] , planning: { required: false } }));
   gitCommit(d);
   fs.appendFileSync(path.join(d, 'src/Lib/Calc.cs'), '// edit\n');
   let g = sddRaw(d, 'gate', '--changed').out;
@@ -3246,7 +3419,7 @@ test('#135 nested .NET test projects depend on the projects they reference (tran
     'src/Lib/Lib.csproj': libProj(), 'src/Core/Core.csproj': libProj(['../Lib/Lib.csproj']),
     'tests/A/A.csproj': testProj(XUNIT, ['../../src/Core/Core.csproj']),
   });
-  sddRaw(d, 'init');
+  sdd(d, 'init');
   const cfg = JSON.parse(fs.readFileSync(path.join(d, '.sdd/config.json'), 'utf8'));
   const p = cfg.projects.find((x) => x.root === 'tests/A');
   assert.deepEqual([...p.dependsOn].sort(), ['src/Core', 'src/Lib']);
@@ -3389,7 +3562,7 @@ test('#140 skipped runs (node:test ℹ skipped, PHPUnit skipped/no assertions) a
   for (const o of ['ℹ tests 1\nℹ pass 0\nℹ fail 0\nℹ cancelled 0\nℹ skipped 1\nTEST-CALC-001', 'OK, but some tests were skipped!\nTests: 1, Assertions: 0, Skipped: 1.\ntest_calc_001']) {
     const d = project();
     sdd(d, 'approve', 'record', 'calc', '--by', 'tester');
-    fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ schemaVersion: 1, testCmd: ['sh', '-c', 'printf "%s\\n" "$0"; exit 0', o] }));
+    fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ planning: { required: false }, schemaVersion: 1, testCmd: ['sh', '-c', 'printf "%s\\n" "$0"; exit 0', o] }));
     const r = sdd(d, 'tdd', 'red', 'TEST-CALC-001', '--characterization', 'x');
     assert.equal(r.code, 1, r.out);
     assert.match(r.out, /skipped/);
@@ -3408,7 +3581,7 @@ test('#141 default node pattern is token-anchored; {idu} keeps the case used in 
   fs.writeFileSync(path.join(e, 'T.cs'), '// @id TEST-CALC-001 @verifies REQ-CALC-001\n[Test] public void TEST_CALC_001_Adds() {}\n');
   fs.writeFileSync(path.join(e, 'x.csproj'), '<Project/>');
   sdd(e, 'approve', 'record', 'calc', '--by', 'tester');
-  fs.writeFileSync(path.join(e, '.sdd/config.json'), JSON.stringify({ schemaVersion: 1, testCmd: ['sh', '-c', 'echo "FAIL $0"; exit 1', '{idu}'] }));
+  fs.writeFileSync(path.join(e, '.sdd/config.json'), JSON.stringify({ planning: { required: false }, schemaVersion: 1, testCmd: ['sh', '-c', 'echo "FAIL $0"; exit 1', '{idu}'] }));
   fs.rmSync(path.join(e, 'T.cs'));
   fs.writeFileSync(path.join(e, 'add.test.mjs'), '// @id TEST-CALC-001 @verifies REQ-CALC-001\n// TEST_CALC_001 Adds\n');
   assert.match(sdd(e, 'tdd', 'red', 'TEST-CALC-001').out, /fails with: FAIL TEST_CALC_001/);
@@ -3563,7 +3736,7 @@ test('#146 spec Test column, pytest autodetect, unknown flags, batch tdd ID vali
   const g = sdd(d, 'gate', '--changd');
   assert.equal(g.code, 2);
   assert.match(g.out, /unknown flag.*--changd/);
-  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ schemaVersion: 1, testCmd: ['true'], projects: [{ root: 'api', testCmd: ['true'], dependsOn: ['./contrct'] }] }));
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ planning: { required: false }, schemaVersion: 1, testCmd: ['true'], projects: [{ root: 'api', testCmd: ['true'], dependsOn: ['./contrct'] }] }));
   assert.match(sdd(d, 'gate', '--no-run').out, /dependsOn "\.\/contrct" does not exist/);
   sdd(d, 'approve', 'record', 'calc', '--by', 'tester');
   const r = sdd(d, 'tdd', 'refactor', 'TEST-CALC-001', 'TEST-NOPE-9');
@@ -3574,7 +3747,7 @@ test('#146 spec Test column, pytest autodetect, unknown flags, batch tdd ID vali
 // ---- #142 / #143 (dogfood-6): runner verdicts and weak-Red heuristic ----
 const fakeOut = (d, text, exit = 1, extra = {}) => {
   fs.writeFileSync(path.join(d, 'out.txt'), text);
-  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ schemaVersion: 1, testCmd: ['sh', '-c', `cat out.txt; exit ${exit}`, 'x'], ...extra }));
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ planning: { required: false }, schemaVersion: 1, testCmd: ['sh', '-c', `cat out.txt; exit ${exit}`, 'x'], ...extra }));
 };
 const approved = () => { const d = project(); sdd(d, 'approve', 'record', 'calc', '--by', 'tester'); return d; };
 
@@ -3589,7 +3762,7 @@ const batch2Run = (d, runner, body, cmd, ...args) => {
   const bin = path.join(d, 'tools');
   fs.mkdirSync(bin, { recursive: true });
   fs.writeFileSync(path.join(bin, runner), '#!/bin/sh\n' + body, { mode: 0o755 });
-  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ testCmd: cmd, checks: [] }));
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ planning: { required: false }, testCmd: cmd, checks: [] }));
   const r = spawnSync('node', [SDD, '--root', d, ...args], { encoding: 'utf8', env: { ...ENV, PATH: `${bin}:${ENV.PATH}` } });
   return { code: r.status, out: r.stdout + r.stderr };
 };
@@ -3731,7 +3904,7 @@ test('#217 Rust impact honors #[path] modules for crate:: importers', () => {
 test('#207 Rust raw identifier modules retain exact scopes and ordinary module filenames', { skip: !has130('cargo') }, () => {
   const d = batch2Source('src/type.rs', '// @id TEST-CALC-001 @verifies REQ-CALC-001\n#[test]\nfn test_calc_001() { assert_eq!(crate::answer(), 7); }\n');
   writeAll(d, { 'Cargo.toml': '[package]\nname="raw-probe"\nversion="0.1.0"\nedition="2021"\n', 'src/lib.rs': '// @id CODE-CALC-001 @implements REQ-CALC-001\npub fn answer() -> i32 { 0 }\n#[cfg(test)] mod r#type;\n' });
-  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ testCmd: ['cargo', 'test', '{idu}'], checks: [] }));
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ planning: { required: false }, testCmd: ['cargo', 'test', '{idu}'], checks: [] }));
   const red = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
   assert.equal(red.code, 0, red.out);
   fs.writeFileSync(path.join(d, 'src/lib.rs'), rd130(d, 'src/lib.rs').replace('{ 0 }', '{ 7 }'));
@@ -3741,7 +3914,7 @@ test('#207 Rust raw identifier modules retain exact scopes and ordinary module f
 test('#207 cfg-exclusive identical Rust module owner tuples deduplicate', { skip: !has130('cargo') }, () => {
   const d = batch2Source('src/cases.rs', '// @id TEST-CALC-001 @verifies REQ-CALC-001\n#[test]\nfn test_calc_001() { assert_eq!(crate::answer(), 7); }\n');
   writeAll(d, { 'Cargo.toml': '[package]\nname="cfg-probe"\nversion="0.1.0"\nedition="2021"\n', 'src/lib.rs': '// @id CODE-CALC-001 @implements REQ-CALC-001\npub fn answer() -> i32 { 0 }\n#[cfg(all(test,unix))]\n#[path="cases.rs"] mod platform;\n#[cfg(all(test,windows))]\n#[path="cases.rs"] mod platform;\n' });
-  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ testCmd: ['cargo', 'test', '--lib', '{idu}'], checks: [] }));
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ planning: { required: false }, testCmd: ['cargo', 'test', '--lib', '{idu}'], checks: [] }));
   const red = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
   assert.equal(red.code, 0, red.out);
   fs.writeFileSync(path.join(d, 'src/lib.rs'), rd130(d, 'src/lib.rs').replace('{ 0 }', '{ 7 }'));
@@ -3883,7 +4056,7 @@ test('#200 Rust include-owned tests retain lexical modules and reject ambiguous 
     'Cargo.toml': '[package]\nname="include-probe"\nversion="0.1.0"\nedition="2021"\n',
     'src/lib.rs': '// @id CODE-CALC-001 @implements REQ-CALC-001\npub fn answer() -> i32 { 0 }\n#[cfg(test)] mod embedded { include!("../support/cases.rs"); }\n',
   });
-  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ testCmd: ['cargo', 'test', '{idu}'], checks: [] }));
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ planning: { required: false }, testCmd: ['cargo', 'test', '{idu}'], checks: [] }));
   const red = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
   assert.equal(red.code, 0, red.out);
   const entry = testEvidence(d)[0];
@@ -3892,7 +4065,7 @@ test('#200 Rust include-owned tests retain lexical modules and reject ambiguous 
   const ambiguous = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
   assert.equal(ambiguous.code, 1, ambiguous.out);
   assert.match(ambiguous.out, /ownership is ambiguous/);
-  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ testCmd: ['cargo', 'test', '--lib', '{idu}'], checks: [] }));
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ planning: { required: false }, testCmd: ['cargo', 'test', '--lib', '{idu}'], checks: [] }));
   assert.equal(sdd(d, 'tdd', 'red', 'TEST-CALC-001').code, 0);
   fs.writeFileSync(path.join(d, 'src/lib.rs'), rd130(d, 'src/lib.rs').replace('{ 0 }', '{ 7 }'));
   const green = sdd(d, 'tdd', 'green', 'TEST-CALC-001');
@@ -3925,15 +4098,15 @@ test('#200 workspace-root included annotations resolve through package and targe
     'one/src/lib.rs': '// @id CODE-CALC-001 @implements REQ-CALC-001\npub fn answer() -> i32 { 7 }\n#[cfg(test)] mod embedded { include!("../../support/cases.rs"); }\n',
     'two/src/lib.rs': 'pub fn answer() -> i32 { 0 }\n#[cfg(test)] mod embedded { include!("../../support/cases.rs"); }\n',
   });
-  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ testCmd: ['cargo', 'test', '{idu}'], checks: [] }));
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ planning: { required: false }, testCmd: ['cargo', 'test', '{idu}'], checks: [] }));
   const ambiguous = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
   assert.equal(ambiguous.code, 1, ambiguous.out);
   assert.match(ambiguous.out, /ownership is ambiguous/);
-  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ testCmd: ['cargo', 'test', '-p', 'one', '--lib', '{idu}'], checks: [] }));
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ planning: { required: false }, testCmd: ['cargo', 'test', '-p', 'one', '--lib', '{idu}'], checks: [] }));
   const passing = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
   assert.equal(passing.code, 1, passing.out);
   assert.match(passing.out, /test passed/);
-  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ testCmd: ['cargo', 'test', '-p', 'two', '--lib', '{idu}'], checks: [] }));
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ planning: { required: false }, testCmd: ['cargo', 'test', '-p', 'two', '--lib', '{idu}'], checks: [] }));
   const failing = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
   assert.equal(failing.code, 0, failing.out);
 });
@@ -3954,7 +4127,7 @@ for (const [version, option] of [['12.5.38', '--do-not-cache-result'], ['13.3.9'
 test('#204 aliased standard Julia nested testsets expose passing and failing targets', { skip: !has130('julia') }, () => {
   const body = 'import Test as JT\nJT.@testset "outer" begin\n# @id TEST-CALC-001 @verifies REQ-CALC-001\nJT.@testset "TEST-CALC-001" begin\nJT.@test 1 == 2\nend\nend\n';
   const d = batch2Source('t.jl', body);
-  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ testCmd: ['julia', '--compile=min', '--project=.', '{file}'], checks: [] }));
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ planning: { required: false }, testCmd: ['julia', '--compile=min', '--project=.', '{file}'], checks: [] }));
   const red = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
   assert.equal(red.code, 0, red.out);
   // Characterization proves passing nested visibility independently of assertion-body changes.
@@ -4257,7 +4430,7 @@ test('#197 real NUnit constructed fixtures and SetName rows retain runtime metho
   writeAll(d, { 'T.csproj': '<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><TargetFramework>net8.0</TargetFramework><RollForward>Major</RollForward><IsTestProject>true</IsTestProject></PropertyGroup><ItemGroup><PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1"/><PackageReference Include="NUnit" Version="4.3.2"/><PackageReference Include="NUnit3TestAdapter" Version="5.0.0"/></ItemGroup></Project>',
     'Actual.cs': 'namespace Probe;\n// @id CODE-CALC-001 @implements REQ-CALC-001\npublic static class Actual { public static int Value() => 0; }\n' });
   if (!restores(d, 'T.csproj')) return t.skip('NUnit packages cannot be restored');
-  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ testCmd: ['dotnet', 'test', '--filter', 'FullyQualifiedName~{idu}'], checks: [] }));
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ planning: { required: false }, testCmd: ['dotnet', 'test', '--filter', 'FullyQualifiedName~{idu}'], checks: [] }));
   for (const id of ['TEST-CALC-001', 'TEST-SOURCE-001']) {
     const red = sdd(d, 'tdd', 'red', id);
     assert.equal(red.code, 0, red.out + '\n' + rd130(d, '.sdd/results/sdd-target.trx'));
@@ -4272,7 +4445,7 @@ test('#197 real NUnit constructed fixtures and SetName rows retain runtime metho
 test('#198 direct Julia runner exposes qualified standard macro/type nested summaries', { skip: !has130('julia') }, () => {
   for (const enclosing of ['Test.@testset "outer"', '@testset Test.DefaultTestSet "outer"']) {
     const d = batch2Source('test.jl', 'using Test\n' + enclosing + ' begin\n# @id TEST-CALC-001 @verifies REQ-CALC-001\n@testset "TEST-CALC-001" begin\n@test true\nend\nend\n');
-    fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ testCmd: ['julia', '--compile=min', '--project=.', '{file}'], checks: [] }));
+    fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ planning: { required: false }, testCmd: ['julia', '--compile=min', '--project=.', '{file}'], checks: [] }));
     const r = sdd(d, 'tdd', 'red', 'TEST-CALC-001', '--characterization', 'visibility');
     assert.equal(r.code, 0, r.out);
   }
@@ -5284,7 +5457,7 @@ test('#170 single-line C test excludes uncalled trailing functions but tracks ca
 
 test('#143 a timed-out run is neither Red nor Green', () => {
   const d = approved();
-  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ schemaVersion: 1, testCmd: ['sh', '-c', 'sleep 5', 'x'], timeoutMs: 300 }));
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ planning: { required: false }, schemaVersion: 1, testCmd: ['sh', '-c', 'sleep 5', 'x'], timeoutMs: 300 }));
   const r = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
   assert.equal(r.code, 1, r.out);
   assert.match(r.out, /REJECTED.*timed out/, r.out);
@@ -5577,7 +5750,7 @@ test('#216 message-less Java exceptions show the exception class in "fails with"
 
 test('#226 a timed-out run kills the whole process group, not only the launcher', () => {
   const d = approved();
-  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ schemaVersion: 1, testCmd: ['sh', '-c', 'sleep 47 & echo $! > child.pid; wait', 'x'], timeoutMs: 600 }));
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ planning: { required: false }, schemaVersion: 1, testCmd: ['sh', '-c', 'sleep 47 & echo $! > child.pid; wait', 'x'], timeoutMs: 600 }));
   const r = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
   assert.equal(r.code, 1, r.out);
   assert.match(r.out, /timed out after 600 ms \(hung test/, r.out);
@@ -5601,7 +5774,7 @@ test('#228 tdd red survives a tracked Java file deleted without git rm', () => {
 const goProject = (file, body, extra = {}) => {
   const d = batch2Source(file, body);
   writeAll(d, { 'go.mod': 'module example.org/m\n\ngo 1.21\n', 'calc.go': 'package m\n\nfunc Calc() int { return 2 }\n', ...extra });
-  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ testCmd: ['go', 'test', './...', '-run', '{IDU}(_|$)'], checks: [] }));
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ planning: { required: false }, testCmd: ['go', 'test', './...', '-run', '{IDU}(_|$)'], checks: [] }));
   return d;
 };
 
@@ -5908,6 +6081,7 @@ test('#240 Julia stub resolves include(joinpath(@__DIR__, ...)); plan depends ac
 
 test('#236 #239 stale/refused messages name the changed oracle dependency; --retest hint; gate --verbose accepted', () => {
   const d = project();
+  sdd(d, 'init');
   fs.writeFileSync(path.join(d, '.sdd/specs/calc.md'), fs.readFileSync(path.join(d, '.sdd/specs/calc.md'), 'utf8').replace('tier: T2', 'tier: T1'));
   fs.writeFileSync(path.join(d, 'helper.mjs'), 'export const one = 1;\n');
   fs.writeFileSync(path.join(d, 'add.test.mjs'), fs.readFileSync(path.join(d, 'add.test.mjs'), 'utf8').replace("import { add }", "import { one } from './helper.mjs';\nimport { add }").replace('add(1, 2)', 'add(one, 2)'));
@@ -5930,7 +6104,7 @@ test('#238 Java @CsvFileSource(files=) resolves against the owning module even w
   writeAll(d, { 'java/pom.xml': '<project/>', 'java/m1/pom.xml': '<project/>', 'data/x.csv': '7,7\n' });
   const cmd = ['sh', '-c', `cat ${d}/out.txt; exit $(cat ${d}/code.txt)`, 'x'];
   const setup = (text, code) => { fs.writeFileSync(path.join(d, 'out.txt'), text); fs.writeFileSync(path.join(d, 'code.txt'), String(code)); };
-  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ schemaVersion: 1, testCmd: cmd, projects: [{ root: 'java', testCmd: cmd, checks: [] }] }));
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ planning: { required: false }, schemaVersion: 1, testCmd: cmd, projects: [{ root: 'java', testCmd: cmd, checks: [] }] }));
   setup('AssertionError: oracle', 1);
   const red = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
   assert.equal(red.code, 0, red.out);
@@ -5973,6 +6147,7 @@ test('#225 node:test module-level throw from a stub is a weak Red (no test execu
 });
 test('#230 review template names a per-feature file; #231 stale-test message shows the retest path', () => {
   const d = project();
+  sdd(d, 'init');
   assert.match(sdd(d, 'review', 'template', 'calc').out, /\.sdd\/review-calc\.md/);
   const t = sdd(d, 'review', 'template', 'calc').out.replace('verdict: pending', 'verdict: pass');
   fs.writeFileSync(path.join(d, '.sdd/review-calc.md'), t);
@@ -6133,7 +6308,7 @@ test('#238 `@data <path>` and config `oracleData` hash runtime data files (and d
 
 test('#237 a PHPUnit run does not outlive a killed sdd (watchdog kills its process group)', { skip: process.platform === 'win32' }, async () => {
   const d = batch2Source('T.php', '<?php\nclass Target {\n// @id TEST-CALC-001 @verifies REQ-CALC-001\npublic function test_calc_001(): void { }\n}\n');
-  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ schemaVersion: 1, testCmd: ['sh', '-c', 'echo $$ > pid.txt; exec sleep 60', 'phpunit'], timeoutMs: 120000 }));
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ planning: { required: false }, schemaVersion: 1, testCmd: ['sh', '-c', 'echo $$ > pid.txt; exec sleep 60', 'phpunit'], timeoutMs: 120000 }));
   const child = spawn('node', [SDD, '--root', d, 'tdd', 'red', 'TEST-CALC-001'], { stdio: 'ignore' });
   const pidFile = path.join(d, 'pid.txt');
   for (let i = 0; i < 50 && !fs.existsSync(pidFile); i++) await new Promise((r) => setTimeout(r, 100));
@@ -6943,7 +7118,7 @@ test('#278 Rust include!(concat!(env!("OUT_DIR"), ..)) is a build artifact: red/
     'build.rs': 'fn main() { let o = std::env::var("OUT_DIR").unwrap(); std::fs::write(format!("{}/gen.rs", o), "pub const G: i32 = 1;").unwrap(); }\n',
     'src/lib.rs': '// @id CODE-CALC-001 @implements REQ-CALC-001\ninclude!(concat!(env!("OUT_DIR"), "/gen.rs"));\npub fn answer() -> i32 { G - 1 }\n#[cfg(test)] mod cases;\n',
   });
-  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ testCmd: ['cargo', 'test', '--lib', '{idu}'], checks: [] }));
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ planning: { required: false }, testCmd: ['cargo', 'test', '--lib', '{idu}'], checks: [] }));
   const red = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
   assert.equal(red.code, 0, red.out);
   assert.doesNotMatch(red.out, /\n\s+at /);
@@ -6956,7 +7131,7 @@ test('#278 Rust include!(concat!(env!("OUT_DIR"), ..)) is a build artifact: red/
 test('#278 an unresolvable Rust include prints a clean REFUSED without a stack', { skip: !has130('cargo') }, () => {
   const d = batch2Source('src/cases.rs', '// @id TEST-CALC-001 @verifies REQ-CALC-001\n#[test]\nfn test_calc_001() { assert_eq!(crate::answer(), 7); }\n');
   writeAll(d, { 'Cargo.toml': '[package]\nname="inc-probe"\nversion="0.1.0"\nedition="2021"\n', 'src/lib.rs': '// @id CODE-CALC-001 @implements REQ-CALC-001\ninclude!(concat!(env!("SOME_DIR"), "/gen.rs"));\npub fn answer() -> i32 { 0 }\n#[cfg(test)] mod cases;\n' });
-  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ testCmd: ['cargo', 'test', '--lib', '{idu}'], checks: [] }));
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ planning: { required: false }, testCmd: ['cargo', 'test', '--lib', '{idu}'], checks: [] }));
   const red = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
   assert.equal(red.code, 1, red.out);
   assert.match(red.out, /REFUSED: unresolved Rust include ownership/);
@@ -7182,13 +7357,14 @@ test('#286 tdd red refuses a duplicate @id up front', () => {
 
 test('#286 gate does not pass a node:test run with zero tests', () => {
   const d = t1project();
-  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ checks: [{ name: 'unit', cmd: ['node', '-e', "console.log('ℹ tests 0\\nℹ pass 0\\nℹ fail 0\\nℹ skipped 0')"] }] }));
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ planning: { required: false }, checks: [{ name: 'unit', cmd: ['node', '-e', "console.log('ℹ tests 0\\nℹ pass 0\\nℹ fail 0\\nℹ skipped 0')"] }] }));
   const g = sdd(d, 'gate');
   assert.match(g.out, /INCOMPLETE/, g.out);
 });
 
 test('#286 plan explains [no-spec] when the name differs from the spec feature', () => {
   const d = t1project();
+  sdd(d, 'init');
   fs.writeFileSync(path.join(d, '.sdd/plan.md'), '| order | feature | depends | note |\n|---|---|---|---|\n| 1 | calculator | - | x |\n');
   const r = sdd(d, 'plan');
   assert.match(r.out, /no spec has feature: calculator.*calc/, r.out);
@@ -7255,7 +7431,7 @@ test('#287 impact: dependsOnMode "referenced" drops a cross-language dependsOn e
 test('#287 a Rust doc test marked `/// @id TEST-.. @verifies REQ-..` gets Red/Green evidence via cargo test --doc', { skip: !has130('cargo') }, () => {
   const d = batch2Source('src/lib.rs', '// @id CODE-CALC-001 @implements REQ-CALC-001\n/// Answer.\n///\n/// @id TEST-CALC-001 @verifies REQ-CALC-001\n/// ```\n/// assert_eq!(docprobe::answer(), 7);\n/// ```\npub fn answer() -> i32 { 0 }\n');
   writeAll(d, { 'Cargo.toml': '[package]\nname="docprobe"\nversion="0.1.0"\nedition="2021"\n' });
-  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ testCmd: ['cargo', 'test', '--lib', '{idu}'], checks: [] }));
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ planning: { required: false }, testCmd: ['cargo', 'test', '--lib', '{idu}'], checks: [] }));
   const red = sdd(d, 'tdd', 'red', 'TEST-CALC-001');
   assert.equal(red.code, 0, red.out);
   fs.writeFileSync(path.join(d, 'src/lib.rs'), rd130(d, 'src/lib.rs').replace('{ 0 }', '{ 7 }'));
@@ -7724,7 +7900,7 @@ function flakyProject(flaky, cmdBody) {
   const d = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-flaky-'));
   spawnSync('git', ['init', '-q'], { cwd: d });
   fs.mkdirSync(path.join(d, '.sdd/specs'), { recursive: true });
-  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ checks: [{ name: 'test', cmd: ['node', '-e', cmdBody] }], ...(flaky ? { flaky } : {}) }));
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ planning: { required: false }, checks: [{ name: 'test', cmd: ['node', '-e', cmdBody] }], ...(flaky ? { flaky } : {}) }));
   return d;
 }
 const FLAKY_ONCE = "const f=require('fs');if(f.existsSync('m'))process.exit(0);f.writeFileSync('m','1');console.log('AssertionError: flaky');process.exit(1)";
@@ -7996,7 +8172,7 @@ test('#307 T2 Design: a one-line multi-sentence paragraph satisfies the Design c
 
 test('#308 gate --changed: a changed `artifacts` file scopes in the project holding its consumer', () => {
   const d = mini('---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | x shall hold. | TEST-A-001 |\n', { 'svc/x.txt': 'x', 'data/cases.json': '{}' });
-  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ testCmd: PASS, checks: [], artifacts: { 'data/cases.json': ['svc/x.txt'] }, projects: [{ root: 'svc', testCmd: PASS, checks: [{ name: 'ok', cmd: ['node', '-e', '0'] }] }] }));
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ planning: { required: false }, testCmd: PASS, checks: [], artifacts: { 'data/cases.json': ['svc/x.txt'] }, projects: [{ root: 'svc', testCmd: PASS, checks: [{ name: 'ok', cmd: ['node', '-e', '0'] }] }] }));
   spawnSync('git', ['add', '-A'], { cwd: d });
   spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'i'], { cwd: d });
   fs.writeFileSync(path.join(d, 'data/cases.json'), '{"a":1}');
@@ -8027,7 +8203,7 @@ test('#306 r18c Rust: default trait method delegating to a stubbed required meth
     'src/lib.rs': 'pub trait Mk: Sized {\n    fn update(v: i64) -> Self;\n    fn of(v: i64) -> Self {\n        Self::update(v)\n    }\n}\n#[derive(Debug, PartialEq)]\npub struct P(pub i64);\nimpl Mk for P {\n    fn update(_v: i64) -> Self {\n        unimplemented!("update")\n    }\n}\n',
     'tests/m.rs': 'use hist::{Mk, P};\n\n// @id TEST-H-001 @verifies REQ-H-001\n#[test]\nfn test_h_001() {\n    let p = P::of(3);\n    assert_eq!(p, P(3));\n}\n',
   });
-  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ testCmd: ['cargo', 'test', '--test', 'm', '{idu}'], checks: [] }));
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ planning: { required: false }, testCmd: ['cargo', 'test', '--test', 'm', '{idu}'], checks: [] }));
   sdd(d, 'approve', 'record', 'h', '--by', 'tester');
   const w = sdd(d, 'tdd', 'red', 'TEST-H-001');
   assert.equal(w.code, 0, w.out);
@@ -8134,7 +8310,7 @@ test('#309 a comment-only edit to a nested @implements annotation does not stale
 
 test('#308 gate --changed: a root Cargo workspace manifest belongs to the project holding its members', () => {
   const d = mini('---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | x shall hold. | TEST-A-001 |\n', { 'Cargo.toml': '[workspace]\nmembers = ["rs/crates/a"]\n', 'rs/crates/a/Cargo.toml': '[package]\nname = "a"\n' });
-  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ testCmd: PASS, checks: [], projects: [{ root: 'rs', testCmd: PASS, checks: [{ name: 'ok', cmd: ['node', '-e', '0'] }] }] }));
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ planning: { required: false }, testCmd: PASS, checks: [], projects: [{ root: 'rs', testCmd: PASS, checks: [{ name: 'ok', cmd: ['node', '-e', '0'] }] }] }));
   spawnSync('git', ['add', '-A'], { cwd: d });
   spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'i'], { cwd: d });
   fs.appendFileSync(path.join(d, 'Cargo.toml'), '# c\n');
@@ -8175,9 +8351,9 @@ test('#309 stubThrowingConstructors (opt-in) makes JS/TS and Java class construc
   const tsFiles = { 'sdk.test.ts': "import { Widget } from './sdk';\n\n// @id TEST-S-001\n// @verifies REQ-S-001\ntest('s', () => {\n  const w = new Widget(1);\n});\n" };
   const off = stub10(tsFiles, 'TEST-S-001');
   assert.match(fs.readFileSync(path.join(off, 'sdk.ts'), 'utf8'), /constructor\(\.\.\._args: any\[\]\) \{\}/);
-  const on = stub10({ ...tsFiles, '.sdd/config.json': JSON.stringify({ stubThrowingConstructors: true }) }, 'TEST-S-001');
+  const on = stub10({ ...tsFiles, '.sdd/config.json': JSON.stringify({ planning: { required: false }, stubThrowingConstructors: true }) }, 'TEST-S-001');
   assert.match(fs.readFileSync(path.join(on, 'sdk.ts'), 'utf8'), /constructor\(\.\.\._args: any\[\]\) \{\n    throw new Error\('not implemented: Widget'\)/);
-  const j = mk130({ '.sdd/config.json': JSON.stringify({ stubThrowingConstructors: true }), 'src/test/java/CalcTest.java': 'public class CalcTest {\n  // @id TEST-A-001 @verifies REQ-A-001\n  static void t() { Calc c = new Calc(1); }\n}\n' });
+  const j = mk130({ '.sdd/config.json': JSON.stringify({ planning: { required: false }, stubThrowingConstructors: true }), 'src/test/java/CalcTest.java': 'public class CalcTest {\n  // @id TEST-A-001 @verifies REQ-A-001\n  static void t() { Calc c = new Calc(1); }\n}\n' });
   sdd(j, 'tdd', 'stub', 'TEST-A-001');
   assert.match(rd130(j, 'src/main/java/Calc.java'), /public Calc\(int a0\) \{\n\s+throw new UnsupportedOperationException\("not implemented: Calc"\)/);
 });
@@ -8224,6 +8400,7 @@ const r22aHeader = (d, h) => fs.writeFileSync(path.join(d, 'add.test.mjs'), fs.r
 
 test('#309 r22a: T1 stale hint for a header-only edit after Green names --wording (a bare refactor would be REFUSED)', () => {
   const d = r22aProject('// a');
+  sdd(d, 'init');
   impl(d, '(a, b) => a + b');
   assert.equal(sdd(d, 'tdd', 'red', 'TEST-CALC-001', '--characterization', 'pins').code, 0);
   assert.equal(sdd(d, 'tdd', 'green', 'TEST-CALC-001').code, 0);
@@ -8275,7 +8452,7 @@ test('#309 specEditPolicy reapprove: T1 refactor after a row edit needs --wordin
     impl(d, '(a, b) => a + b');
     assert.equal(sdd(d, 'tdd', 'red', 'TEST-CALC-001', '--characterization', 'pins current').code, 0);
     assert.equal(sdd(d, 'tdd', 'green', 'TEST-CALC-001').code, 0);
-    if (cfg) fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ testCmd: ['node', '-e', '0'], checks: [], ...cfg }));
+    if (cfg) fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ planning: { required: false }, testCmd: ['node', '-e', '0'], checks: [], ...cfg }));
     fs.writeFileSync(path.join(d, '.sdd/specs/calc.md'), '---\nfeature: calc\ntier: T1\n---\n| REQ-CALC-001 | When add is called, the system shall subtract. | TEST-CALC-001 |\n');
     return d;
   };
@@ -8464,7 +8641,7 @@ test('#312 artifactGranularity "test": only the test that names the artifact goe
 
 test('#312 gate --changed: a Cargo workspace manifest with a member glob belongs to the project at a member crate', () => {
   const d = mini('---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | x shall hold. | TEST-A-001 |\n', { 'rs/Cargo.toml': '[workspace]\nmembers = ["crates/*"]\n', 'rs/crates/a/Cargo.toml': '[package]\nname = "a"\n' });
-  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ testCmd: PASS, checks: [], projects: [{ root: 'rs/crates/a', testCmd: PASS, checks: [{ name: 'ok', cmd: ['node', '-e', '0'] }] }] }));
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ planning: { required: false }, testCmd: PASS, checks: [], projects: [{ root: 'rs/crates/a', testCmd: PASS, checks: [{ name: 'ok', cmd: ['node', '-e', '0'] }] }] }));
   spawnSync('git', ['add', '-A'], { cwd: d });
   spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'i'], { cwd: d });
   fs.appendFileSync(path.join(d, 'rs/Cargo.toml'), '# c\n');
@@ -8545,7 +8722,7 @@ test('#314 a flaky gate pass says the ledger was appended', () => {
 // ---- r24a (design 3.1 scope confidence) ----
 function scopeProj(extra = {}, files = {}) {
   const d = mini('---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | x shall hold. | TEST-A-001 |\n', { 'app/package.json': '{}', 'app/x.mjs': 'export {};\n', ...files });
-  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ testCmd: PASS, checks: [], projects: [{ root: 'app', testCmd: PASS, checks: [{ name: 'ok', cmd: ['node', '-e', '0'] }] }], ...extra }));
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ planning: { required: false }, testCmd: PASS, checks: [], projects: [{ root: 'app', testCmd: PASS, checks: [{ name: 'ok', cmd: ['node', '-e', '0'] }] }], ...extra }));
   spawnSync('git', ['add', '-A'], { cwd: d });
   spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'i'], { cwd: d });
   return d;
@@ -8565,13 +8742,13 @@ test('r24a an unclaimed changed file warns by default and fails under scopePolic
   assert.doesNotMatch(w.out, /✗ scope/, w.out);
   const cp = path.join(d, '.sdd/config.json');
   const c = JSON.parse(fs.readFileSync(cp, 'utf8'));
-  fs.writeFileSync(cp, JSON.stringify({ ...c, scopePolicy: 'strict' }));
+  fs.writeFileSync(cp, JSON.stringify({ ...c, scopePolicy: 'strict' , planning: { required: false } }));
   const s = sdd(d, 'gate', '--changed');
   assert.equal(s.code, 1, s.out);
   assert.match(s.out, /✗ scope:.*misc\/data\.bin/, s.out);
   assert.doesNotMatch(sdd(d, "gate", "--changed", "--allow-unscoped", "misc/**").out, /✗ scope/);
   assert.match(fs.readFileSync(path.join(d, '.sdd/tdd.jsonl'), 'utf8'), /scope-waiver/);
-  fs.writeFileSync(cp, JSON.stringify({ ...c, scopePolicy: 'strict', unscoped: ['misc/**'] }));
+  fs.writeFileSync(cp, JSON.stringify({ ...c, scopePolicy: 'strict', unscoped: ['misc/**'] , planning: { required: false } }));
   const u = sdd(d, 'gate', '--changed');
   assert.doesNotMatch(u.out, /✗ scope/, u.out);
   assert.match(u.out, /unscoped by config/, u.out);
@@ -8644,6 +8821,7 @@ test('#r24b tdd red names the SDD-TODO(stub) element instead of accepting a comp
 
 test('r24c suspect Red: heuristic setup-call Red is recorded as suspect, accepted, hinted and listed in the gate; load-time stub stays plain weak', () => {
   const d = project();
+  sdd(d, 'init');
   sdd(d, 'approve', 'record', 'calc', '--by', 'tester');
   fs.writeFileSync(path.join(d, 'add.test.mjs'), [
     "import { test } from 'node:test';",
@@ -8709,7 +8887,7 @@ function r24dWorkspace({ files, projects, rootInputs }) {
   const closure = (p, seen = new Set()) => { for (const x of [p.root, ...(p.dependsOn ?? [])]) if (!seen.has(x)) { seen.add(x); const q = projects.find((y) => y.root === x); if (q && q !== p) closure(q, seen); } return [...seen]; };
   const inputsOf = (p) => [...closure(p), ...rootInputs].map((x) => path.join(d, x));
   const cmdOf = (p) => ['node', '-e', R24D_HASH, ...inputsOf(p)];
-  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ testCmd: PASS, checks: [], projects: projects.map((p) => ({ root: p.root, dependsOn: p.dependsOn, testCmd: PASS, checks: [{ name: 'ok', cmd: cmdOf(p) }] })) }));
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ planning: { required: false }, testCmd: PASS, checks: [], projects: projects.map((p) => ({ root: p.root, dependsOn: p.dependsOn, testCmd: PASS, checks: [{ name: 'ok', cmd: cmdOf(p) }] })) }));
   r24dGit(d, 'add', '-A');
   r24dGit(d, 'commit', '-qm', 'i');
   const result = (p) => spawnSync(cmdOf(p)[0], cmdOf(p).slice(1), { cwd: path.join(d, p.root), encoding: 'utf8' }).stdout;
@@ -8721,7 +8899,7 @@ function r24dDifferential(ws, projects, mutate, { policy } = {}) {
   mutate(d);
   const relevant = projects.filter((p) => result(p) !== base[p.root]).map((p) => p.root);
   const cp = path.join(d, '.sdd/config.json');
-  if (policy) fs.writeFileSync(cp, JSON.stringify({ ...JSON.parse(fs.readFileSync(cp, 'utf8')), scopePolicy: policy }));
+  if (policy) fs.writeFileSync(cp, JSON.stringify({ ...JSON.parse(fs.readFileSync(cp, 'utf8')), scopePolicy: policy , planning: { required: false } }));
   const g = sdd(d, 'gate', '--changed');
   const ran = projects.filter((p) => new RegExp(`✓ cmd ${p.root.replace(/[/.]/g, '\\$&')}:ok`).test(g.out)).map((p) => p.root);
   r24dGit(d, 'checkout', '-q', '--', '.');
@@ -9195,7 +9373,7 @@ test('#r25a Rust: a const typed in the test is shown; an unsupported fn is marke
 // ---- r25b (gate fail-open audit) ----
 function failOpenProj(cfg, files = {}) {
   const d = mini('---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | x shall hold. | TEST-A-001 |\n', { 'app/package.json': '{}', 'app/x.mjs': 'export {};\n', 'lib.mjs': 'export {};\n', ...files });
-  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ testCmd: PASS, ...cfg }));
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ planning: { required: false }, testCmd: PASS, ...cfg }));
   spawnSync('git', ['add', '-A'], { cwd: d });
   spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'i'], { cwd: d });
   return d;
@@ -9214,7 +9392,7 @@ test('r25b a root test check skipped for a nested project without checks fails u
   fs.appendFileSync(path.join(d, 'app/x.mjs'), '// c\n');
   const w = sdd(d, 'gate', '--changed');
   assert.match(w.out, /! .*app\/ has no check of its own/, w.out);
-  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ testCmd: PASS, ...cfg, scopePolicy: 'strict' }));
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ planning: { required: false }, testCmd: PASS, ...cfg, scopePolicy: 'strict' }));
   const s = sdd(d, 'gate', '--changed');
   assert.equal(s.code, 1, s.out);
   assert.match(s.out, /✗ .*no check of its own/, s.out);
@@ -9269,7 +9447,7 @@ test('r26a a new unmapped .sh file is unclaimed like .txt: warn, fail under stri
   fs.appendFileSync(path.join(d, 'tools/x.sh'), 'echo b\n');
   const w = sdd(d, 'gate', '--changed');
   assert.match(w.out, /! scope: 1 changed file\(s\) not claimed.*tools\/x\.sh/, w.out);
-  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ ...JSON.parse(fs.readFileSync(path.join(d, '.sdd/config.json'), 'utf8')), scopePolicy: 'strict' }));
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ planning: { required: false }, ...JSON.parse(fs.readFileSync(path.join(d, '.sdd/config.json'), 'utf8')), scopePolicy: 'strict' }));
   const s = sdd(d, 'gate', '--changed');
   assert.equal(s.code, 1, s.out);
   assert.match(s.out, /✗ scope:.*tools\/x\.sh/, s.out);
@@ -9283,7 +9461,7 @@ test('r26a a new unannotated source file under a project warns, fails under stri
   fs.writeFileSync(path.join(d, 'app/stray.mjs'), '// @id CODE-A-001 @implements REQ-A-001\nexport const z = 1;\n');
   assert.doesNotMatch(sdd(d, 'gate', '--changed').out, /new source file/);
   fs.writeFileSync(path.join(d, 'app/stray.mjs'), 'export const z = 1;\n');
-  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ ...JSON.parse(fs.readFileSync(path.join(d, '.sdd/config.json'), 'utf8')), scopePolicy: 'strict' }));
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ planning: { required: false }, ...JSON.parse(fs.readFileSync(path.join(d, '.sdd/config.json'), 'utf8')), scopePolicy: 'strict' }));
   const s = sdd(d, 'gate', '--changed');
   assert.equal(s.code, 1, s.out);
   assert.match(s.out, /✗ scope: 1 new source file/, s.out);
@@ -9460,7 +9638,7 @@ test('r27a a declared artifact that never existed also fails; a present one pass
 // ---- r27c (#322 root Cargo.toml widens to projects that dependsOn a rebuilt package) ----
 const r27c = (pyChecks) => {
   const d = mini('---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | x shall hold. | TEST-A-001 |\n', { 'Cargo.toml': '[workspace]\nmembers = ["crates/a"]\n', 'crates/a/Cargo.toml': '[package]\nname = "a"\n', 'py/p/pyproject.toml': '[project]\nname = "p"\n' });
-  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ testCmd: PASS, checks: [], projects: [{ root: 'crates/a', testCmd: PASS, checks: [{ name: 'ok', cmd: ['node', '-e', '0'] }] }, { root: 'py/p', dependsOn: ['crates/a'], testCmd: PASS, checks: pyChecks }] }));
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ planning: { required: false }, testCmd: PASS, checks: [], projects: [{ root: 'crates/a', testCmd: PASS, checks: [{ name: 'ok', cmd: ['node', '-e', '0'] }] }, { root: 'py/p', dependsOn: ['crates/a'], testCmd: PASS, checks: pyChecks }] }));
   spawnSync('git', ['add', '-A'], { cwd: d });
   spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'i'], { cwd: d });
   fs.appendFileSync(path.join(d, 'Cargo.toml'), '# c\n');
@@ -9493,7 +9671,7 @@ test('r27d tdd refactor --wording is refused when the test body changed since Gr
 
 test('r27d a new test file carrying @id TEST-/@verifies is not an unannotated source under strict', () => {
   const d = scopeProj();
-  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ ...JSON.parse(fs.readFileSync(path.join(d, '.sdd/config.json'), 'utf8')), scopePolicy: 'strict' }));
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ planning: { required: false }, ...JSON.parse(fs.readFileSync(path.join(d, '.sdd/config.json'), 'utf8')), scopePolicy: 'strict' }));
   fs.writeFileSync(path.join(d, 'app/check.mjs'), '// @id TEST-A-009 @verifies REQ-A-001\nexport const t = 1;\n');
   assert.doesNotMatch(sdd(d, 'gate', '--changed').out, /new source file/);
 });
@@ -9501,7 +9679,7 @@ test('r27d a new test file carrying @id TEST-/@verifies is not an unannotated so
 // ---- r27e (#324 manifest defining a check command) ----
 const r27eProj = (manifest, name, body, cmd, extra = {}) => {
   const d = mini('---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | x shall hold. | TEST-A-001 |\n', { [name]: body });
-  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ testCmd: PASS, checks: [{ name: 'test', cmd }], ...extra }));
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ planning: { required: false }, testCmd: PASS, checks: [{ name: 'test', cmd }], ...extra }));
   spawnSync('git', ['add', '-A'], { cwd: d });
   spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'i'], { cwd: d });
   fs.writeFileSync(path.join(d, name), manifest);
@@ -9513,7 +9691,7 @@ test('r27e changed package.json script behind `npm run test` warns, fails under 
   const w = sdd(d, 'gate', '--changed');
   assert.match(w.out, /! scope: .*check test runs package\.json script "test"/, w.out);
   const cp = path.join(d, '.sdd/config.json');
-  fs.writeFileSync(cp, JSON.stringify({ ...JSON.parse(fs.readFileSync(cp, 'utf8')), scopePolicy: 'strict' }));
+  fs.writeFileSync(cp, JSON.stringify({ ...JSON.parse(fs.readFileSync(cp, 'utf8')), scopePolicy: 'strict' , planning: { required: false } }));
   const s = sdd(d, 'gate', '--changed');
   assert.equal(s.code, 1, s.out);
   assert.match(s.out, /✗ scope:.*script "test"/, s.out);
@@ -9568,7 +9746,7 @@ test('r27b artifactStaleness: `artifacts` given as an array is explained and not
 const r28a = (name, orig, cmd, extra = {}) => {
   const d = mini(SPEC2, { 'a.test.mjs': "// @id TEST-A-001 @verifies REQ-A-001\n", [name]: orig }, FAIL);
   const cp = path.join(d, '.sdd/config.json');
-  fs.writeFileSync(cp, JSON.stringify({ ...JSON.parse(fs.readFileSync(cp, 'utf8')), checks: [{ name: 'test', cmd }], scopePolicy: 'warn', ...extra }));
+  fs.writeFileSync(cp, JSON.stringify({ ...JSON.parse(fs.readFileSync(cp, 'utf8')), checks: [{ name: 'test', cmd }], scopePolicy: 'warn', ...extra , planning: { required: false } }));
   assert.equal(sdd(d, 'tdd', 'red', 'TEST-A-001').code, 0);
   setCmd(d, PASS);
   assert.equal(sdd(d, 'tdd', 'green', 'TEST-A-001').code, 0);
@@ -9581,7 +9759,7 @@ test('r28a full gate warns when the package.json script changed after Green, fai
   const w = sdd(d, 'gate');
   assert.match(w.out, /! scope: .*differs from the last Green record — check test \(package\.json changed\)/, w.out);
   const cp = path.join(d, '.sdd/config.json');
-  fs.writeFileSync(cp, JSON.stringify({ ...JSON.parse(fs.readFileSync(cp, 'utf8')), scopePolicy: 'strict' }));
+  fs.writeFileSync(cp, JSON.stringify({ ...JSON.parse(fs.readFileSync(cp, 'utf8')), scopePolicy: 'strict' , planning: { required: false } }));
   const s = sdd(d, 'gate');
   assert.equal(s.code, 1, s.out);
   assert.match(s.out, /✗ scope:.*package\.json changed/, s.out);
@@ -9596,7 +9774,7 @@ test('r28a full gate warns when pytest testpaths in pyproject.toml changed after
 test('r28a no recorded check-def hash (old ledger) means no warning', () => {
   const d = mini(SPEC2, { 'package.json': '{"scripts":{"test":"a"}}' });
   const cp = path.join(d, '.sdd/config.json');
-  fs.writeFileSync(cp, JSON.stringify({ ...JSON.parse(fs.readFileSync(cp, 'utf8')), checks: [{ name: 'test', cmd: ['sh', '-c', 'true # npm run test'] }] }));
+  fs.writeFileSync(cp, JSON.stringify({ ...JSON.parse(fs.readFileSync(cp, 'utf8')), checks: [{ name: 'test', cmd: ['sh', '-c', 'true # npm run test'] }] , planning: { required: false } }));
   fs.writeFileSync(path.join(d, 'package.json'), '{"scripts":{"test":"b"}}');
   assert.doesNotMatch(sdd(d, 'gate').out, /differs from the last Green/);
 });
@@ -9605,10 +9783,10 @@ test('r28a no recorded check-def hash (old ledger) means no warning', () => {
 const r28b = (base, patch) => {
   const d = mini('---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | x shall hold. | TEST-A-001 |\n', {}, PASS);
   const cp = path.join(d, '.sdd/config.json');
-  fs.writeFileSync(cp, JSON.stringify({ ...JSON.parse(fs.readFileSync(cp, 'utf8')), ...base }));
+  fs.writeFileSync(cp, JSON.stringify({ ...JSON.parse(fs.readFileSync(cp, 'utf8')), ...base , planning: { required: false } }));
   const git = (...a) => spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', ...a], { cwd: d });
   git('add', '-A'); git('commit', '-qm', 'i');
-  fs.writeFileSync(cp, JSON.stringify({ ...JSON.parse(fs.readFileSync(cp, 'utf8')), ...patch }));
+  fs.writeFileSync(cp, JSON.stringify({ ...JSON.parse(fs.readFileSync(cp, 'utf8')), ...patch , planning: { required: false } }));
   return d;
 };
 
@@ -9638,7 +9816,7 @@ test('r28b a config change that does not weaken stays silent', () => {
 const r29a = (files, lock, firstCmd) => {
   const d = mini('---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | x shall hold. | TEST-A-001 |\n', { ...files, [lock]: 'v1\n' });
   const roots = Object.keys(files).filter((f) => /\/(package|Cargo)\.(json|toml)$/.test(f) && f.split('/').length > 2).map((f) => path.posix.dirname(f));
-  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ testCmd: PASS, checks: [], projects: roots.map((r, i) => ({ root: r, testCmd: PASS, checks: [{ name: 'ok', cmd: i === 0 ? firstCmd : ['node', '-e', '0'] }] })) }));
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ planning: { required: false }, testCmd: PASS, checks: [], projects: roots.map((r, i) => ({ root: r, testCmd: PASS, checks: [{ name: 'ok', cmd: i === 0 ? firstCmd : ['node', '-e', '0'] }] })) }));
   spawnSync('git', ['add', '-A'], { cwd: d });
   spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'i'], { cwd: d });
   fs.appendFileSync(path.join(d, lock), 'v2\n');
@@ -9699,12 +9877,12 @@ const r29c = () => {
 test('r29c a REQ with Green evidence deleted from the spec warns, fails under strict, and approve retire clears it (#329)', () => {
   const d = r29c();
   const cp = path.join(d, '.sdd/config.json');
-  fs.writeFileSync(cp, JSON.stringify({ ...JSON.parse(fs.readFileSync(cp, 'utf8')), scopePolicy: 'warn' }));
+  fs.writeFileSync(cp, JSON.stringify({ ...JSON.parse(fs.readFileSync(cp, 'utf8')), scopePolicy: 'warn' , planning: { required: false } }));
   for (const a of [['gate'], ['gate', '--changed']]) {
     const w = sdd(d, ...a);
     assert.match(w.out, /! req REQ-A-002: has Green evidence.*approve retire REQ-A-002/, w.out);
   }
-  fs.writeFileSync(cp, JSON.stringify({ ...JSON.parse(fs.readFileSync(cp, 'utf8')), scopePolicy: 'strict' }));
+  fs.writeFileSync(cp, JSON.stringify({ ...JSON.parse(fs.readFileSync(cp, 'utf8')), scopePolicy: 'strict' , planning: { required: false } }));
   for (const a of [['gate'], ['gate', '--changed']]) {
     const s = sdd(d, ...a);
     assert.equal(s.code, 1, s.out);
@@ -9751,10 +9929,10 @@ test('#330 gate warns (strict: fails) on leftover stub markers in a Green REQ fi
   const d = r29d();
   fs.appendFileSync(path.join(d, 'lib.mjs'), "export function left() { throw new Error('not implemented: left'); }\n");
   const cp = path.join(d, '.sdd/config.json');
-  fs.writeFileSync(cp, JSON.stringify({ ...JSON.parse(fs.readFileSync(cp, 'utf8')), scopePolicy: 'warn' }));
+  fs.writeFileSync(cp, JSON.stringify({ ...JSON.parse(fs.readFileSync(cp, 'utf8')), scopePolicy: 'warn' , planning: { required: false } }));
   const g = sdd(d, 'gate');
   assert.match(g.out, /! stub: 1 source file\(s\) of Green REQs still hold/, g.out);
-  fs.writeFileSync(cp, JSON.stringify({ ...JSON.parse(fs.readFileSync(cp, 'utf8')), scopePolicy: 'strict' }));
+  fs.writeFileSync(cp, JSON.stringify({ ...JSON.parse(fs.readFileSync(cp, 'utf8')), scopePolicy: 'strict' , planning: { required: false } }));
   const s = sdd(d, 'gate');
   assert.match(s.out, /✗ stub: 1 source file/, s.out);
   assert.equal(s.code, 1, s.out);
@@ -9842,7 +10020,7 @@ test('#332 narrowed Node runner cannot silently hide an independently failing te
   assert.equal(spawnSync(before[0], before.slice(1), { cwd: d, env: ENV }).status, 1);
   assert.equal(spawnSync(after[0], after.slice(1), { cwd: d, env: ENV }).status, 0);
   const cp = path.join(d, '.sdd/config.json');
-  fs.writeFileSync(cp, JSON.stringify({ ...JSON.parse(fs.readFileSync(cp, 'utf8')), checks: [{ name: 'test', cmd: after }] }));
+  fs.writeFileSync(cp, JSON.stringify({ ...JSON.parse(fs.readFileSync(cp, 'utf8')), checks: [{ name: 'test', cmd: after }] , planning: { required: false } }));
   for (const args of [[], ['--changed', '--baseline', 'HEAD']]) {
     const bad = sdd(d, 'gate', ...args);
     assert.equal(bad.code, 1, bad.out);
@@ -9900,11 +10078,11 @@ test('r30b #333 full gate detects newly introduced check definitions and refresh
       'python/.gitkeep': '',
     }, FAIL);
     const cp = path.join(d, '.sdd/config.json');
-    fs.writeFileSync(cp, JSON.stringify({ ...JSON.parse(fs.readFileSync(cp, 'utf8')), checks: [{ name: 'test', cmd }], scopePolicy: 'warn', ...extra }));
+    fs.writeFileSync(cp, JSON.stringify({ ...JSON.parse(fs.readFileSync(cp, 'utf8')), checks: [{ name: 'test', cmd }], scopePolicy: 'warn', ...extra , planning: { required: false } }));
     assert.equal(sdd(d, 'tdd', 'red', 'TEST-A-001').code, 0);
     setCmd(d, PASS);
     assert.equal(sdd(d, 'tdd', 'green', 'TEST-A-001').code, 0);
-    const policy = (scopePolicy) => fs.writeFileSync(cp, JSON.stringify({ ...JSON.parse(fs.readFileSync(cp, 'utf8')), scopePolicy }));
+    const policy = (scopePolicy) => fs.writeFileSync(cp, JSON.stringify({ ...JSON.parse(fs.readFileSync(cp, 'utf8')), scopePolicy , planning: { required: false } }));
     assert.equal(sdd(d, 'gate').code, 0);
     fs.mkdirSync(path.dirname(path.join(d, file)), { recursive: true });
     fs.writeFileSync(path.join(d, file), text);
@@ -9936,7 +10114,7 @@ function testEvidence(d) {
 test('TEST-R30C-001 r30c #334 hand-rehashed approval and review cannot bless an unreviewed Design edit', async () => {
   const { createHash } = await import('node:crypto');
   const d = mini('---\nfeature: a\ntier: T2\n---\n## Design\nPure calculation.\nNo state.\n\n| REQ-A-001 | one shall hold. | TEST-A-001 |\n', { 'a.test.mjs': jsTest() }, PASS);
-  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ testCmd: PASS, checks: [{ name: 'ok', cmd: PASS }] }));
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ planning: { required: false }, testCmd: PASS, checks: [{ name: 'ok', cmd: PASS }] }));
   const review = '.sdd/review-a.md';
   const refreshReview = () => {
     const hash = sdd(d, 'approve', 'prepare', 'a').out.match(/sha256:([0-9a-f]{64})/)[1];
@@ -10031,7 +10209,7 @@ test('#335 a skipped Node retry cannot recover a failed test check', () => {
     "  assert.fail('first attempt fails');",
     "});",
   ].join('\n'));
-  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ planning: { required: false },
     checks: [{ name: 'test', cmd: ['node', '--test', '--test-name-pattern=retry target', 'retry.test.mjs'] }],
     flaky: { retries: 1, policy: 'warn' },
   }));
@@ -10123,7 +10301,7 @@ test('r30e #336 strict gate keeps vanished Green REQs failing after bot retireme
   const extra = "// @id TEST-A-002 @verifies REQ-A-002\ntest('TEST-A-002 y', () => assert.ok(1));\n";
   const d = mini(T1SPEC + '| REQ-A-002 | two shall hold. | TEST-A-002 |\n', { 'a.test.mjs': imports + jsTest(extra) }, ['node', '--test', '--test-name-pattern={id}', 'a.test.mjs']);
   const cp = path.join(d, '.sdd/config.json');
-  fs.writeFileSync(cp, JSON.stringify({ ...JSON.parse(fs.readFileSync(cp, 'utf8')), scopePolicy: 'strict', checks: [{ name: 'test', cmd: ['node', '--test', 'a.test.mjs'] }] }));
+  fs.writeFileSync(cp, JSON.stringify({ ...JSON.parse(fs.readFileSync(cp, 'utf8')), scopePolicy: 'strict', checks: [{ name: 'test', cmd: ['node', '--test', 'a.test.mjs'] }] , planning: { required: false } }));
   for (const id of ['TEST-A-001', 'TEST-A-002']) {
     const red = sdd(d, 'tdd', 'red', id, '--characterization', 'retirement guard fixture');
     assert.equal(red.code, 0, red.out);
@@ -10164,7 +10342,7 @@ test('TEST-GATESNAPSHOT-001 #337 prepare lockfile rewrites preserve workspace an
     assert.equal(sdd(d, 'tdd', 'red', 'TEST-A-001').code, 0);
     setCmd(d, PASS);
     assert.equal(sdd(d, 'tdd', 'green', 'TEST-A-001').code, 0);
-    fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({
+    fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ planning: { required: false },
       testCmd: PASS,
       checks: [],
       prepare: { cmd: ['git', 'checkout', '--', 'rust/Cargo.lock'] },
@@ -10218,7 +10396,7 @@ test('#338 vanished secondary REQs in grouped Green evidence warn, fail strict g
   assert.equal(sdd(d, 'tdd', 'green', 'TEST-A-002').code, 0);
 
   for (const policy of ['warn', 'strict']) {
-    fs.writeFileSync(cp, JSON.stringify({ ...config, scopePolicy: policy }));
+    fs.writeFileSync(cp, JSON.stringify({ ...config, scopePolicy: policy , planning: { required: false } }));
     for (const args of [['gate'], ['gate', '--changed']]) {
       const result = sdd(d, ...args);
       assert.equal(result.code, policy === 'strict' ? 1 : 0, result.out);
@@ -10349,7 +10527,7 @@ function r31aFixture(files, checks, projects = []) {
     ...JSON.parse(fs.readFileSync(cp, 'utf8')),
     scan: { include: ['a.test.mjs'] },
     scopePolicy: 'warn', unscoped: ['**'], checks, projects,
-  }));
+   planning: { required: false } }));
   assert.equal(sdd(d, 'tdd', 'red', 'TEST-A-001').code, 0);
   setCmd(d, PASS);
   const green = sdd(d, 'tdd', 'green', 'TEST-A-001');
@@ -10362,7 +10540,7 @@ function r31aFixture(files, checks, projects = []) {
 function r31aDrift(d, file) {
   const cp = path.join(d, '.sdd/config.json');
   for (const policy of ['warn', 'strict']) {
-    fs.writeFileSync(cp, JSON.stringify({ ...JSON.parse(fs.readFileSync(cp, 'utf8')), scopePolicy: policy }));
+    fs.writeFileSync(cp, JSON.stringify({ ...JSON.parse(fs.readFileSync(cp, 'utf8')), scopePolicy: policy , planning: { required: false } }));
     for (const args of [['gate'], ['gate', '--changed', '--baseline', 'HEAD']]) {
       const g = sdd(d, ...args);
       assert.equal(g.code, policy === 'strict' ? 1 : 0, g.out);
@@ -10559,7 +10737,7 @@ assert.equal(process.env.HOME, ${JSON.stringify(ENV.HOME)});
     prepare: { cmd: ['node', 'probe.mjs'] },
     checks: [{ name: 'probe', cmd: ['node', 'probe.mjs'], changedCmd: ['node', 'probe.mjs'] }],
     projects: [{ root: 'p', checks: [{ name: 'probe', cmd: ['node', '../probe.mjs'], changedCmd: ['node', '../probe.mjs'] }] }],
-  }));
+   planning: { required: false } }));
   const green = r31bRun(d, r31bPoison, 'tdd', 'green', 'TEST-A-001');
   assert.equal(green.code, 0, green.out);
   const entry = fs.readFileSync(path.join(d, '.sdd/tdd.jsonl'), 'utf8').trim().split('\n').map(JSON.parse).at(-1);
@@ -10596,7 +10774,7 @@ def test_regression():
   fs.writeFileSync(cp, JSON.stringify({
     ...JSON.parse(fs.readFileSync(cp, 'utf8')), flaky: { retries: 0 },
     checks: [{ name: 'test', cmd: ['python3', '-m', 'pytest', '-q', 'test_a.py'] }],
-  }));
+   planning: { required: false } }));
   const red = sdd(d, 'tdd', 'red', 'TEST-A-001', '--characterization', 'environment fixture');
   assert.equal(red.code, 0, red.out);
   const green = sdd(d, 'tdd', 'green', 'TEST-A-001');
@@ -10689,7 +10867,7 @@ def test_regression():
   fs.writeFileSync(path.join(d, '.sdd/regression'), 'fail\n');
   fs.writeFileSync(cp, JSON.stringify({
     ...config, checks: [{ name: 'test', cmd: ['env', 'PYTEST_ADDOPTS=-k test_a_001_passing', ...before.slice(2)] }],
-  }));
+   planning: { required: false } }));
   for (const args of [[], ['--changed', '--baseline', 'HEAD']]) {
     const result = sdd(d, 'gate', ...args);
     assert.equal(result.code, 1, result.out);
@@ -10705,7 +10883,7 @@ function r31cVerifiedProject(extra = {}) {
     'value.mjs': '// @id CODE-A-001 @implements REQ-A-001\nexport const value = 0;\n',
     'a.test.mjs': "import { test } from 'node:test';\nimport assert from 'node:assert/strict';\nimport { value } from './value.mjs';\n// @id TEST-A-001 @verifies REQ-A-001\ntest('TEST-A-001 value', () => assert.equal(value, 1));\n",
   });
-  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({
+  fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ planning: { required: false },
     testCmd: ['node', '--test', '--test-name-pattern={id}', '{file}'],
     checks: [{ name: 'test', cmd: ['node', '--test', 'a.test.mjs'] }],
     flaky: { retries: 0 },
@@ -11238,7 +11416,7 @@ function r32bRustFixture({ nested = false, build = false, manifest = '', attr = 
   fs.writeFileSync(cp, JSON.stringify({
     ...JSON.parse(fs.readFileSync(cp, 'utf8')), scopePolicy: 'warn',
     checks: [{ name: 'test', cmd: ['cargo', 'test', '--offline'] }],
-  }));
+   planning: { required: false } }));
   const red = sdd(d, 'tdd', 'red', 'TEST-A-001');
   assert.equal(red.code, 0, red.out);
   fs.writeFileSync(path.join(d, `${prefix}src/lib.rs`), '// @id CODE-A-001 @implements REQ-A-001\npub fn answer() -> i32 { 1 }\n');
@@ -11279,7 +11457,7 @@ for (const admission of ['features', 'required-features', 'test=false', 'autotes
 
 test('r32b #348 zero-execution Cargo gate fails even with scopePolicy warn', { skip: !has130('cargo') }, () => {
   const { d, cp } = r32bRustFixture();
-  fs.writeFileSync(cp, JSON.stringify({ ...JSON.parse(fs.readFileSync(cp, 'utf8')), checks: [{ name: 'test', cmd: ['cargo', 'test', 'absent_name', '--offline'] }] }));
+  fs.writeFileSync(cp, JSON.stringify({ ...JSON.parse(fs.readFileSync(cp, 'utf8')), checks: [{ name: 'test', cmd: ['cargo', 'test', 'absent_name', '--offline'] }] , planning: { required: false } }));
   const result = sdd(d, 'gate');
   assert.equal(result.code, 1, result.out);
   assert.match(result.out, /TEST-A-001.*not executed/, result.out);
@@ -11306,7 +11484,7 @@ for (const wrapper of [false, true]) {
     if (wrapper) fs.writeFileSync(cp, JSON.stringify({
       ...JSON.parse(fs.readFileSync(cp, 'utf8')),
       checks: [{ name: 'test', cmd: ['sh', '-c', 'cargo test --offline --message-format=json'] }],
-    }));
+     planning: { required: false } }));
     const clean = sdd(d, 'gate');
     assert.equal(clean.code, 0, clean.out);
     const mp = path.join(d, 'Cargo.toml');
@@ -11326,7 +11504,7 @@ test('r32b #352 unchanged ignored package configs stay silent, but their selecti
   };
   const d = r31aFixture(files, [{ name: 'typecheck', cmd: ['sh', '-c', 'true # tsc --noEmit'] }]);
   const cp = path.join(d, '.sdd/config.json');
-  fs.writeFileSync(cp, JSON.stringify({ ...JSON.parse(fs.readFileSync(cp, 'utf8')), scopePolicy: 'strict' }));
+  fs.writeFileSync(cp, JSON.stringify({ ...JSON.parse(fs.readFileSync(cp, 'utf8')), scopePolicy: 'strict' , planning: { required: false } }));
   for (const args of [['gate'], ['gate', '--changed']]) {
     const clean = sdd(d, ...args);
     assert.equal(clean.code, 0, clean.out);
@@ -11351,7 +11529,7 @@ test('r32b #348 explicit library ownership survives a shared bin route but canno
   fs.writeFileSync(cp, JSON.stringify({
     ...JSON.parse(fs.readFileSync(cp, 'utf8')), testCmd: ['cargo', 'test', '--lib', '{idu}'],
     checks: [{ name: 'test', cmd: ['cargo', 'test', '--lib', '--offline'] }],
-  }));
+   planning: { required: false } }));
   const red = sdd(d, 'tdd', 'red', 'TEST-A-001', '--retest', 'move test into explicitly selected library');
   assert.equal(red.code, 0, red.out);
   assert.equal(sdd(d, 'tdd', 'green', 'TEST-A-001').code, 0);
@@ -11387,7 +11565,7 @@ test('r32c #349 unchanged ignored executable does not drift against the Git base
   fs.chmodSync(path.join(d, 'launcher'), 0o755);
   assert.equal(sdd(d, 'tdd', 'refactor', 'TEST-A-001').code, 0);
   const cp = path.join(d, '.sdd/config.json');
-  fs.writeFileSync(cp, JSON.stringify({ ...JSON.parse(fs.readFileSync(cp)), scopePolicy: 'strict' }));
+  fs.writeFileSync(cp, JSON.stringify({ ...JSON.parse(fs.readFileSync(cp)), scopePolicy: 'strict' , planning: { required: false } }));
   const unchanged = sdd(d, 'gate', '--changed');
   assert.equal(unchanged.code, 0, unchanged.out);
   fs.appendFileSync(path.join(d, 'launcher'), '# selection changed\n');
@@ -11453,7 +11631,7 @@ test('r32c #351 collected but removed annotated pytest ids cannot pass a gate', 
     'conftest.py': 'def pytest_collection_modifyitems(items):\n    items[:] = [item for item in items if item.name != "test_a_001"]\n',
   }, FAIL);
   const cp = path.join(d, '.sdd/config.json');
-  fs.writeFileSync(cp, JSON.stringify({ ...JSON.parse(fs.readFileSync(cp)), scan: { include: ['test_a.py'] }, checks: [{ name: 'test', cmd: ['python3', '-m', 'pytest', '-q'] }] }));
+  fs.writeFileSync(cp, JSON.stringify({ ...JSON.parse(fs.readFileSync(cp)), scan: { include: ['test_a.py'] }, checks: [{ name: 'test', cmd: ['python3', '-m', 'pytest', '-q'] }] , planning: { required: false } }));
   assert.equal(sdd(d, 'tdd', 'red', 'TEST-A-001').code, 0);
   setCmd(d, PASS);
   assert.equal(sdd(d, 'tdd', 'green', 'TEST-A-001').code, 0);
@@ -11490,7 +11668,7 @@ test('r32c #351 pytest execution outcomes cannot be replaced by a plugin exit-co
     'conftest.py': 'def pytest_sessionfinish(session):\n    session.exitstatus = 0\n',
   }, ['python3', '-m', 'pytest', '-q', 'test_a.py', '-k', '{idu}']);
   const cp = path.join(d, '.sdd/config.json');
-  fs.writeFileSync(cp, JSON.stringify({ ...JSON.parse(fs.readFileSync(cp)), checks: [{ name: 'test', cmd: ['python3', '-m', 'pytest', '-q'] }] }));
+  fs.writeFileSync(cp, JSON.stringify({ ...JSON.parse(fs.readFileSync(cp)), checks: [{ name: 'test', cmd: ['python3', '-m', 'pytest', '-q'] }] , planning: { required: false } }));
   assert.equal(sdd(d, 'tdd', 'red', 'TEST-A-001', '--characterization', 'runner-integrity fixture').code, 0);
   assert.equal(sdd(d, 'tdd', 'green', 'TEST-A-001').code, 0);
   fs.writeFileSync(path.join(d, '.sdd/regression'), 'fail\n');
@@ -11533,7 +11711,7 @@ for (const kind of ['config', 'environment', 'inline', 'config-env', 'cli-config
       fs.writeFileSync(cp, JSON.stringify({
         ...JSON.parse(fs.readFileSync(cp)), scan: { include: ['a.test.mjs'] },
         scopePolicy: 'warn', unscoped: ['**'], checks: [{ name: 'test', cmd: ['sh', '-c', command] }],
-      }));
+       planning: { required: false } }));
       assert.equal(sdd(d, 'tdd', 'red', 'TEST-A-001').code, 0);
       setCmd(d, PASS);
       const green = sdd(d, 'tdd', 'green', 'TEST-A-001');
@@ -11599,7 +11777,7 @@ test('r33a S3 changed Cargo downstream checks do not demand skipped sibling proj
       testCmd: ['cargo', 'test', '-p', `surface_${root}`, '{idu}', '--offline'],
       checks: [{ name: 'test', cmd: ['cargo', 'test', '-p', `surface_${root}`, '--offline'] }],
     })),
-  }));
+   planning: { required: false } }));
   for (const root of ['a', 'b']) {
     const id = `TEST-${root.toUpperCase()}-001`;
     const red = sdd(d, 'tdd', 'red', id);
@@ -11638,7 +11816,7 @@ test('r33a #353 a real compiled Cargo adapter remains stale after executable rep
   fs.writeFileSync(cp, JSON.stringify({
     ...JSON.parse(fs.readFileSync(cp)), scan: { include: ['a.test.mjs'] }, scopePolicy: 'strict',
     checks: [{ name: 'test', cmd: ['sh', '-c', 'true # cargo test'] }],
-  }));
+   planning: { required: false } }));
   assert.equal(sdd(d, 'tdd', 'red', 'TEST-A-001').code, 0);
   setCmd(d, PASS);
   const green = sdd(d, 'tdd', 'green', 'TEST-A-001');
@@ -11658,7 +11836,7 @@ test('r33a #353 rejects annotated compiler substitution between Red and Green', 
   fs.writeFileSync(cp, JSON.stringify({
     ...JSON.parse(fs.readFileSync(cp)), scan: { include: ['a.test.mjs'] },
     checks: [{ name: 'test', cmd: ['sh', '-c', 'true # cargo test'] }],
-  }));
+   planning: { required: false } }));
   const red = sdd(d, 'tdd', 'red', 'TEST-A-001');
   assert.equal(red.code, 0, red.out);
   setCmd(d, PASS);
@@ -11682,7 +11860,7 @@ function r33bNodeFixture(reporter = 'spec', nested = false) {
   fs.writeFileSync(cp, JSON.stringify({
     ...JSON.parse(fs.readFileSync(cp)), scan: { include: [`${prefix}*.mjs`] }, scopePolicy: 'warn',
     ...(nested ? { checks: [], projects: [{ root: 'packages/core', testCmd, checks: [check] }] } : { testCmd, checks: [check] }),
-  }));
+   planning: { required: false } }));
   const red = sdd(d, 'tdd', 'red', 'TEST-A-001');
   assert.equal(red.code, 0, red.out);
   fs.writeFileSync(path.join(d, `${prefix}answer.mjs`), '// @id CODE-A-001 @implements REQ-A-001\nexport const answer = () => 1;\n');
@@ -11787,7 +11965,7 @@ test('TEST-R33-PYTEST-002 r33b #356 computed plugin refuses real pytest executio
     'src/subject.py': '# @id CODE-A-001 @implements REQ-A-001\ndef answer():\n    return 0\n',
   }, ['python3', '-m', 'pytest', '-q', 'test_a.py', '-k', '{idu}']);
   const cp = path.join(d, '.sdd/config.json');
-  fs.writeFileSync(cp, JSON.stringify({ ...JSON.parse(fs.readFileSync(cp)), scan: { include: ['test_a.py', 'src/subject.py'] }, checks: [{ name: 'test', cmd: ['python3', '-m', 'pytest', '-q'] }] }));
+  fs.writeFileSync(cp, JSON.stringify({ ...JSON.parse(fs.readFileSync(cp)), scan: { include: ['test_a.py', 'src/subject.py'] }, checks: [{ name: 'test', cmd: ['python3', '-m', 'pytest', '-q'] }] , planning: { required: false } }));
   const red = sdd(d, 'tdd', 'red', 'TEST-A-001');
   assert.equal(red.code, 1, red.out);
   assert.match(red.out, /REFUSED: unresolved pytest_plugins/);
@@ -11852,7 +12030,7 @@ function r34aWrapperFixture(selection) {
   fs.writeFileSync(cp, JSON.stringify({
     ...JSON.parse(fs.readFileSync(cp)), scan: { include: ['a.test.mjs'] }, scopePolicy: 'strict',
     checks: [{ name: 'test', cmd: ['sh', '-c', 'true # cargo test'] }],
-  }));
+   planning: { required: false } }));
   return d;
 }
 
@@ -11941,7 +12119,7 @@ test('r34a #357 real Cargo selects escaped and multiline compiled adapters', { s
   fs.writeFileSync(cp, JSON.stringify({
     ...JSON.parse(fs.readFileSync(cp)), scan: { include: ['src/**/*.rs'] }, scopePolicy: 'strict',
     checks: [{ name: 'test', cmd: ['cargo', 'test', '--offline'] }],
-  }));
+   planning: { required: false } }));
   for (const value of ['"tools/compil\\u0065r"', "'''tools/compiler'''", '"""\ntools/\\\n compiler"""']) {
     writeAll(d, { '.cargo/config.toml': `[build]\nrustc-wrapper = ${value}\n` });
     const source = path.join(d, 'src/lib.rs');
@@ -12113,7 +12291,7 @@ function r34bConditionFixture({ target = { node: './oracle/node.mjs', default: '
   files['oracle/fallback.mjs'] = 'export const expected = () => 2;\n';
   const d = mini(T1SPEC, files, ['node', ...flags, '--test', '--test-reporter=spec', '--test-name-pattern={id}', '{file}']);
   const cp = path.join(d, '.sdd/config.json');
-  fs.writeFileSync(cp, JSON.stringify({ ...JSON.parse(fs.readFileSync(cp)), scopePolicy: 'strict', checks: [{ name: 'test', cmd: ['node', ...flags, '--test', '--test-reporter=spec', testFile] }] }));
+  fs.writeFileSync(cp, JSON.stringify({ ...JSON.parse(fs.readFileSync(cp)), scopePolicy: 'strict', checks: [{ name: 'test', cmd: ['node', ...flags, '--test', '--test-reporter=spec', testFile] }] , planning: { required: false } }));
   return { d, testFile };
 }
 
@@ -12375,7 +12553,7 @@ test('TEST-R34-PYREL-005 r34c #359 real relative-plugin oracle rejects wrong Gre
   fs.writeFileSync(cp, JSON.stringify({
     ...JSON.parse(fs.readFileSync(cp)), scan: { include: ['test_a.py', 'src/subject.py'] },
     scopePolicy: 'strict', checks: [{ name: 'test', cmd: ['python3', '-m', 'pytest', '-q'] }],
-  }));
+   planning: { required: false } }));
   const red = sdd(d, 'tdd', 'red', 'TEST-A-001');
   assert.equal(red.code, 0, red.out);
   assert.match(red.out, /assert 1 == 2/);
@@ -12500,7 +12678,7 @@ function r34dPytestFixture(declaration = "pytest_plugins = ('qa_hooks',)") {
   fs.writeFileSync(cp, JSON.stringify({
     ...JSON.parse(fs.readFileSync(cp)), scan: { include: ['test_a.py', 'src/subject.py'] },
     checks: [{ name: 'test', cmd: ['python3', '-m', 'pytest', '-q'] }],
-  }));
+   planning: { required: false } }));
   return d;
 }
 
@@ -12538,7 +12716,7 @@ for (const declaration of [
     const ledger = path.join(d, '.sdd/tdd.jsonl'), before = fs.readFileSync(ledger, 'utf8');
     const cp = path.join(d, '.sdd/config.json'), cfg = JSON.parse(fs.readFileSync(cp));
     for (const scopePolicy of ['warn', 'strict']) {
-      fs.writeFileSync(cp, JSON.stringify({ ...cfg, scopePolicy }));
+      fs.writeFileSync(cp, JSON.stringify({ ...cfg, scopePolicy , planning: { required: false } }));
       for (const args of [
         ['tdd', 'red', 'TEST-A-001'], ['tdd', 'green', 'TEST-A-001'], ['tdd', 'refactor', 'TEST-A-001'],
         ['gate'], ['gate', '--changed', '--baseline', 'HEAD'],

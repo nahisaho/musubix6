@@ -846,7 +846,17 @@ const shaMatchesRaw = (recorded, p, id) => [true, false].some((cut) => [true, fa
 const out = (s = '') => process.stdout.write(s + '\n');
 // npm's trailing `npm error …` / `npm notice …` boilerplate would push the real failure out of the window (#75)
 // failure lines first (FAIL/assert/error/panic), then the last lines — the failing test is rarely in the last few lines of make/cargo output (#86)
-const failTail = (s, n = 8) => { const ls = s.trimEnd().split('\n'); const hit = ls.filter((l) => /\bFAIL(ED)?\b|assert|\berror\b|panic|not ok|✗|✖/i.test(l)).slice(0, 6); const last = ls.slice(-Math.max(2, n - hit.length)); return [...new Set([...hit, ...last])].join('\n'); };
+/** @id CODE-NODE-SUMMARY-DIAGNOSTIC @implements REQ-NODE-SUMMARY-002 */
+const failTail = (s, n = 8) => {
+  const ls = s.replace(/\x1b\[[0-9;]*m/g, '').trimEnd().split('\n')
+    .filter(line => !/^\s*(?:#\s*)?(?:[✔✓]|ok\s+\d+\b)/.test(line));
+  const failures = ls.filter(line => /^\s*(?:#\s*)?(?:[✗✖]|not ok\b|--- FAIL:|FAIL(?:ED)?\b|[A-Za-z]*Error\b|panic:)/i.test(line));
+  const hints = ls.filter(line => /\bFAIL(ED)?\b|assert|\berror\b|panic|not ok|✗|✖/i.test(line));
+  const hit = [...new Set([...failures, ...hints])].slice(0, Math.min(6, n));
+  const suffix = '... [line truncated; see complete check output]';
+  return [...new Set([...hit, ...ls.slice(-Math.max(2, n - hit.length))])].slice(0, n)
+    .map(line => line.length <= 1024 ? line : line.slice(0, 1024 - suffix.length) + suffix).join('\n');
+};
 // the assertion itself for C/ctest (`CHECK failed`), xUnit (`Assert.X() Failure`, `Exception : msg`), JUnit/Maven (`expected: <a> but was: <b>`) and Julia (`Test Failed` + `Expression:`) (#125)
 const REASON_KEY = /\bCHECK\w* failed|\bASSERT\w* failed|[Aa]ssertion\b.*\bfailed|Assert\.\w+\(\) Failure|^\s*Expected:|^\s*Expected is\b|expected: ?<.*but was|\b[A-Z]\w*Exception\s+:\s*\S|^Expression:/;
 const specificReason = (rl) => {
@@ -1603,14 +1613,51 @@ function run1(cmd, timeoutMs, cwd = '.', maxBuffer = 64e6) {
   try { launch = runnerCommand(argv, path.resolve(ROOT, cwd)); }
   catch (error) { return { exit: 127, signal: null, text: `runner setup error: ${error.message}`, ms: Date.now() - t0, timedOut: false, pytestResults: null, error: error.message }; }
   const r = spawnSync(launch.file, launch.args, { cwd: path.resolve(ROOT, cwd), env: runnerEnv(cmd, cwd),
-    shell: false, windowsVerbatimArguments: false, encoding: 'utf8', timeout: timeoutMs, maxBuffer, detached: true });
+    shell: false, windowsVerbatimArguments: false, timeout: timeoutMs, maxBuffer, detached: true });
   const timedOut = r.error?.code === 'ETIMEDOUT';
   // spawnSync's timeout signals only the launcher (cargo, npm, mvn); the detached group also holds the hung test binary (#225)
   if ((timedOut || r.error?.code === 'ENOBUFS') && r.pid) { try { process.kill(-r.pid, 'SIGKILL'); } catch { /* group already gone */ } }
-  const text = (r.stdout ?? '') + (r.stderr ?? '') + (timedOut ? `test timed out after ${timeoutMs} ms (hung test? the whole process group was killed)` : r.error ? String(r.error.message) : '');
+  const text = (r.stdout?.toString('utf8') ?? '') + (r.stderr?.toString('utf8') ?? '') + (timedOut ? `test timed out after ${timeoutMs} ms (hung test? the whole process group was killed)` : r.error ? String(r.error.message) : '');
   const pytestResults = pytest ? [...text.matchAll(/^SDD-PYTEST (\{[^\n]+\})$/gm)].flatMap((m) => { try { const r = JSON.parse(m[1]); return typeof r.nodeid === 'string' && /^(passed|failed|skipped)$/.test(r.outcome) ? [r] : []; } catch { return []; } }) : null;
   return { exit: r.status ?? (r.error ? 127 : 1), signal: r.signal, text, ms: Date.now() - t0, timedOut, pytestResults,
-    error: r.error?.message ?? null };
+    error: r.error?.message ?? null, stdout: r.stdout ?? Buffer.alloc(0), stderr: r.stderr ?? Buffer.alloc(0),
+    outputLimit: r.error?.code === 'ENOBUFS' };
+}
+
+/** @id CODE-NODE-SUMMARY-OUTPUT @implements REQ-NODE-SUMMARY-003 */
+function retainCheckOutput(result, check, attempt) {
+  const parent = path.join(SDD, 'check-output');
+  for (const directory of [SDD, parent]) {
+    try { fs.mkdirSync(directory, { mode: 0o700 }); }
+    catch (error) { if (error.code !== 'EEXIST') throw error; }
+    const stat = fs.lstatSync(directory);
+    if (!stat.isDirectory() || stat.isSymbolicLink()) throw new Error(`unsafe output directory: ${directory}`);
+    if (directory === parent && process.platform !== 'win32' && (stat.mode & 0o077)) {
+      throw new Error(`output directory must be private (0700): ${directory}`);
+    }
+  }
+  const ignore = path.join(parent, '.gitignore');
+  try { fs.writeFileSync(ignore, '*\n', { flag: 'wx', mode: 0o600 }); }
+  catch (error) {
+    if (error.code !== 'EEXIST') throw error;
+    const stat = fs.lstatSync(ignore);
+    if (!stat.isFile() || stat.isSymbolicLink() || fs.readFileSync(ignore, 'utf8') !== '*\n') {
+      throw new Error('unsafe or changed output ignore policy');
+    }
+  }
+  const directory = fs.mkdtempSync(path.join(parent, 'attempt-'));
+  const receipt = { schemaVersion: 1, check, attempt, exit: result.exit, signal: result.signal,
+    timedOut: result.timedOut, outputLimit: result.outputLimit ?? false, error: result.error };
+  for (const stream of ['stdout', 'stderr']) {
+    const bytes = result[stream] ?? Buffer.alloc(0);
+    const file = `${stream}.log`;
+    fs.writeFileSync(path.join(directory, file), bytes, { flag: 'wx', mode: 0o600 });
+    receipt[stream] = { path: file, bytes: bytes.length, sha256: sha(bytes) };
+  }
+  const bytes = JSON.stringify(receipt, null, 2) + '\n';
+  const file = path.join(directory, 'receipt.json');
+  fs.writeFileSync(file, bytes, { flag: 'wx', mode: 0o600 });
+  return { path: rel(file), sha256: sha(bytes) };
 }
 function pytestArgs(cmd) {
   const exe = path.basename(cmd[0] ?? '');
@@ -1981,13 +2028,14 @@ function nodeFailureContext(text, id, testPath, cwd = '.') {
 }
 
 // ---------- commands ----------
+/** @id CODE-PLAN-DEFAULTS-001 @implements REQ-PLAN-MODEL-005 */
 function cmdInit() {
   const cfg = detectConfig();
   const rootManifests = fs.readdirSync(ROOT).filter((f) => MANIFESTS.test(f));
   const projects = detectProjects(new Set(rootManifests.map(ecoOf)));
   if (projects.length) { cfg.projects = projects; if (!rootManifests.length) cfg.checks = []; }
   const kept = fs.existsSync(CONFIG);
-  if (!kept) writeJson(CONFIG, { ...cfg, scopePolicy: 'strict' });
+  if (!kept) writeJson(CONFIG, { ...cfg, scopePolicy: 'strict', planning: { required: true } });
   const shown = kept ? { ...cfg, ...readJson(CONFIG, {}) } : cfg;
   fs.mkdirSync(SPECS, { recursive: true });
   if (cfg.projects?.length) out(`${rootManifests.length ? 'root + ' : ''}projects: ${cfg.projects.map((p) => `${p.root} (${p.testCmd.slice(0, 2).join(' ')})`).join(', ')} — each test runs in its project directory`);
@@ -6901,10 +6949,18 @@ function standalonePlanningRefusal() {
   } finally { if (fd !== undefined) fs.closeSync(fd); }
   if (!record(config)) return refuse(1, 'Project configuration must be a JSON object');
   if (Object.hasOwn(config, 'planning')
-    && (!record(config.planning) || typeof config.planning.required !== 'boolean')) {
-    return refuse(1, 'planning.required must be a boolean');
+    && (!record(config.planning) || Object.hasOwn(config.planning, 'required')
+      && typeof config.planning.required !== 'boolean')) {
+    return refuse(1, 'planning.required must be a boolean when present');
   }
-  if (config.planning?.required !== true && (pos[0] === 'gate' || pos[0] === 'plan' && pos.length === 1)) return null;
+  if (config.planning?.required === false && (pos[0] === 'gate' || pos[0] === 'plan' && pos.length === 1)) return null;
+  if (config.planning?.required !== false && config.planning) {
+    const policy = config.planning;
+    if (Object.keys(policy).some(key => !['required', 'features'].includes(key))) return refuse(1, 'Unknown planning policy field');
+    if (Object.hasOwn(policy, 'features') && (!Array.isArray(policy.features) || !policy.features.length
+      || !policy.features.every(id => typeof id === 'string' && /^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$/.test(id))
+      || new Set(policy.features).size !== policy.features.length)) return refuse(1, 'Invalid planning features');
+  }
   return refuse(2, 'Planning modules unavailable; install the complete lean-sdd-tdd skill');
 }
 
@@ -6913,7 +6969,7 @@ function planningSession(specs, scanned) {
   if (!planningModules.length) return { enabled: false, stage: 'structure', status: 'DISABLED', exit: 0, errors: [] };
   try {
     const config = readPlanningConfiguration(ROOT, loadConfig);
-    if (config.planning?.required !== true) return loadImplementationPlan({ root: ROOT, config, specs: [] });
+    if (config.planning?.required === false) return loadImplementationPlan({ root: ROOT, config, specs: [] });
     specs ??= loadSpecs();
     scanned ??= scanEntities(listFiles());
     const metadata = specs.map(spec => ({ ...spec, reqs: spec.reqs.map(req => ({ ...req,
@@ -7290,7 +7346,23 @@ function cmdGate() {
       const at = args.indexOf('--');
       return [...args.slice(0, at < 0 ? args.length : at), '--message-format=json', ...(at < 0 ? [] : args.slice(at))];
     };
-    let r = run(cargoOutputCmd(cmd), scoped ? (c.changedTimeoutMs ?? cfg.changedTimeoutMs ?? 60000) : (c.timeoutMs ?? cfg.timeoutMs ?? 120000), c.cwd);
+    const captured = [];
+    let retentionFailed = false;
+    const runCheck = (argv, timeoutMs) => {
+      const result = run(argv, timeoutMs, c.cwd);
+      try {
+        const receipt = retainCheckOutput(result, c.name, captured.length + 1);
+        captured.push(receipt);
+        lines.push(`! check output ${c.name} attempt ${captured.length}: ${receipt.path} (sha256 ${receipt.sha256})`);
+        return result;
+      } catch (error) {
+        retentionFailed = true;
+        add(false, `cmd ${c.name}: check output retention failed: ${error.message}`);
+        return null;
+      }
+    };
+    let r = runCheck(cargoOutputCmd(cmd), scoped ? (c.changedTimeoutMs ?? cfg.changedTimeoutMs ?? 60000) : (c.timeoutMs ?? cfg.timeoutMs ?? 120000));
+    if (!r) break;
     if (!checkInputs(`check ${c.name}`)) break;
     // a scoped run that executed no tests (e.g. `vitest related data.json`) proves nothing: run the full check instead
     if (scoped && r.exit === 0 && !r.timedOut && ((ZERO_TESTS.test(r.text) && !RAN_TESTS.test(r.text)) || NO_PASSED.test(r.text) || pytestNoExecution(r.text) || noExecution(r.text))) {
@@ -7298,7 +7370,8 @@ function cmdGate() {
       scoped = false;
       widened = true;
       cmd = c.cmd;
-      r = run(cargoOutputCmd(cmd), c.timeoutMs ?? cfg.timeoutMs ?? 120000, c.cwd);
+      r = runCheck(cargoOutputCmd(cmd), c.timeoutMs ?? cfg.timeoutMs ?? 120000);
+      if (!r) break;
       if (!checkInputs(`check ${c.name} full fallback`)) break;
     }
     const cargoTest = /(?:^|\s)cargo(?:\s+\+\S+)?\s+test(?:\s|$)/.test(cmd.join(' ')) || /(^|:)test$/.test(c.name) || /test result: \w+\.\s*\d+ passed;/.test(r.text);
@@ -7318,18 +7391,19 @@ function cmdGate() {
       const retries = Math.max(0, Number.isInteger(cfg.flaky?.retries) ? cfg.flaky.retries : 1);
       const warnOnly = cfg.flaky?.policy === 'warn';
       for (let i = 0; i < retries; i++) {
-        const r2 = run(cargoOutputCmd(cmd), scoped ? (c.changedTimeoutMs ?? cfg.changedTimeoutMs ?? 60000) : (c.timeoutMs ?? cfg.timeoutMs ?? 120000), c.cwd);
+        const r2 = runCheck(cargoOutputCmd(cmd), scoped ? (c.changedTimeoutMs ?? cfg.changedTimeoutMs ?? 60000) : (c.timeoutMs ?? cfg.timeoutMs ?? 120000));
+        if (!r2) break;
         if (!checkInputs(`check ${c.name} retry ${i + 1}`)) break;
         if (rustRuns.some((x) => x.c === c)) rustRuns.push({ c, cmd, scoped, r: r2 });
         if (r2.exit === 0 && !r2.timedOut && !NO_PASSED.test(r2.text) && !pytestNoExecution(r2.text) && !noExecution(r2.text) && (!r2.pytestResults || (r2.pytestResults.some((x) => x.outcome === 'passed') && !r2.pytestResults.some((x) => x.outcome === 'failed'))) && !missingPytestIds(r2, cmd, c.cwd, ents).length && !missingNodeIds(r2, cmd, c.cwd, ents).length) {
           add(warnOnly, `cmd ${c.name} FLAKY suspected: failed on the first run, passed on re-run ${i + 1}/${retries} (${(r2.ms / 1000).toFixed(1)}s) — a flaky entry was appended to .sdd/tdd.jsonl (commit it)${warnOnly ? ' — accepted by flaky.policy "warn"' : ' — set flaky.policy "warn" in .sdd/config.json to accept, or fix the test (no sleep, injected clock, port 0, generous timeouts)'}`, failTail(r.text, 8).split('\n'));
-          appendLedger({ type: 'flaky', check: c.name, retry: i + 1, retries, policy: warnOnly ? 'warn' : 'fail', outcome: warnOnly ? 'accepted' : 'fail' });
+          appendLedger({ type: 'flaky', check: c.name, retry: i + 1, retries, policy: warnOnly ? 'warn' : 'fail', outcome: warnOnly ? 'accepted' : 'fail', attempts: captured });
           inputSnapshot.set(rel(LEDGER), gatePathSha(rel(LEDGER)));
           r = null;
           break;
         }
       }
-      if (!inputsStable) break;
+      if (!inputsStable || retentionFailed) break;
       if (!r) continue;
     }
     add(r.exit === 0, `cmd ${c.name} (${(r.ms / 1000).toFixed(1)}s)`, r.exit === 0 ? [] : failTail(r.text, 8).split('\n'));

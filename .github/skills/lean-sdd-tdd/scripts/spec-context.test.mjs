@@ -27,6 +27,7 @@ function fixture() {
   spec(root, 'calc');
   spec(root, 'consumer');
   spec(root, 'unrelated');
+  write(root, '.sdd/config.json', '{"planning":{"required":false}}\n');
   write(root, 'calc.mjs', '/** @id CODE-CALC-001 @implements REQ-CALC-001 */\nexport const calc = () => 1;\n');
   write(root, 'consumer.mjs', "import { calc } from './calc.mjs';\n/** @id CODE-CONSUMER-001 @implements REQ-CONSUMER-001 */\nexport const consumer = () => calc();\n");
   return root;

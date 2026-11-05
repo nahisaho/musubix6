@@ -45,11 +45,16 @@ Unsure → higher tier. Escalate on discovery; never downgrade silently.
 
 ## Specification-linked implementation planning (v0.2.7)
 
-Opt in by merging `planning.required:true` into `.sdd/config.json`; the JSON form is
-`"planning":{"required":true}`. Absent/false policy retains the legacy workflow
-without reading JSON. Enabled mode makes `.sdd/implementation-plan.json` the sole
+Starting with v0.2.8, planning defaults to `planning.required:true`; new `sdd init`
+writes `"planning":{"required":true}` into `.sdd/config.json`. Existing omitted
+configuration, planning or required fields also enable it without rewriting files.
+Only explicit `"planning":{"required":false}` retains the legacy workflow
+without reading JSON. A present nonboolean required value is an error.
+Enabled mode makes `.sdd/implementation-plan.json` the sole
 plan authority and ignores Markdown. This applies to both hosts; resolve `$S`
 from this skill's actual installed directory, never another checkout.
+Existing projects must author a current full-scope plan or explicitly opt out;
+missing plans refuse with exit2 rather than generating placeholder tasks.
 
 1. Read current approved specifications; define PASS conditions and counterexamples in those same specs.
 2. Author/update the JSON feature/task graph and trusted scope before production implementation; cover every active REQ and explicit artifact owner.

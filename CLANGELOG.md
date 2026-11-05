@@ -3,6 +3,39 @@
 User-facing changes to musubix6, with upgrade guidance and known release limitations.
 Release dates use Japan Standard Time (UTC+09:00).
 
+## [0.2.8] - Candidate prepared 2026-11-05
+
+Development preparation only: metadata cutover, full-project checks, frozen
+qualification and separate publication approval remain outstanding.
+
+### Breaking changes and upgrade
+
+- Require JSON implementation planning by default, including existing projects
+  with omitted configuration/planning/required fields. Provide a current
+  full-scope `.sdd/implementation-plan.json`, or explicitly set
+  `"planning":{"required":false}` to retain the legacy workflow. New initialization
+  writes true; existing configuration bytes and runner/check settings are preserved.
+
+### Fixed
+
+- Prioritize real failed-check records over passing test titles containing failure
+  words, and bound diagnostic line lengths.
+- Retain separate captured stdout/stderr and outcome/hash receipts for every gate
+  check attempt, including fallback and retry. Local logs are ignored by Git;
+  storage errors fail explicitly and a successful retry does not erase the failure.
+  Existing capture limits apply; Windows inherits directory ACLs.
+
+### Validation and limitations
+
+- New observability regressions have native assertion Red/Green evidence and five
+  isolated fault detections with restored controls. Planning-default checks and
+  isolated default-policy mutations also pass.
+- The original intermittent assertion in #385 remains unidentified. Observability
+  repair is not proof of its resolution; no old v0.2.7 exception or qualification
+  credit transfers to this candidate.
+- Current full-scope task verification, exact-artifact preparation approval, full
+  native gate, hosted checks and two identical clean 24-cell Linux runs remain required.
+
 ## [0.2.7] - Candidate prepared 2026-11-04
 
 Status checked **2026-11-05 at 05:50 JST**: npm does not yet list 0.2.7.

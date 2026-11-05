@@ -91,7 +91,7 @@ test('TEST-PLAN-MODEL-001 authoritative JSON, opt-in and explicit bounded input 
   fs.unlinkSync(path.join(f.root, modelPath));
   expectResult(loadImplementationPlan({ root: f.root, config: f.config, specs: f.specs }),
     'INCOMPLETE', 2, 'Enabled mode must refuse a missing JSON plan.');
-  for (const config of [{}, { planning: { required: false } }]) {
+  for (const config of [{ planning: { required: false } }]) {
     expectResult(loadImplementationPlan({ root: f.root, config, specs: f.specs }), 'DISABLED', 0);
     assert.equal(fs.existsSync(path.join(f.root, modelPath)), false);
   }
@@ -147,6 +147,34 @@ test('TEST-PLAN-MODEL-001 authoritative JSON, opt-in and explicit bounded input 
   fs.unlinkSync(path.join(f.root, modelPath));
   fs.mkdirSync(path.join(f.root, modelPath));
   expectResult(loadImplementationPlan({ root: f.root, config: f.config, specs: f.specs }), 'FAIL', 1);
+});
+
+/** @id TEST-PLAN-MODEL-005 @verifies REQ-PLAN-MODEL-005 */
+test('TEST-PLAN-MODEL-005 planning defaults on and only explicit false opts out', t => {
+  const f = fixture(t);
+  for (const policy of [{}, { planning: {} }, { planning: { features: ['a'] } },
+    { planning: { required: true } }, { planning: { required: true, features: ['a'] } }]) {
+    const before = JSON.stringify(policy);
+    const accepted = expectResult(f.run(f.document, policy), 'PASS', 0);
+    assert.equal(accepted.enabled, true, 'An omitted policy or required field must enable planning.');
+    assert.equal(JSON.stringify(policy), before, 'Policy reads must not mutate the caller configuration.');
+    fs.unlinkSync(path.join(f.root, modelPath));
+    expectResult(loadImplementationPlan({ root: f.root, config: policy, specs: f.specs }), 'INCOMPLETE', 2);
+    assert.equal(fs.existsSync(path.join(f.root, modelPath)), false);
+    fs.writeFileSync(path.join(f.root, modelPath), '{');
+    expectResult(loadImplementationPlan({ root: f.root, config: policy, specs: f.specs }), 'FAIL', 1);
+    assert.equal(fs.readFileSync(path.join(f.root, modelPath), 'utf8'), '{');
+  }
+  for (const policy of [{ planning: { required: false } },
+    { planning: { required: false, features: null, extra: true } }]) {
+    expectResult(loadImplementationPlan({ root: f.root, config: policy, specs: f.specs }), 'DISABLED', 0);
+    assert.equal(fs.readFileSync(path.join(f.root, modelPath), 'utf8'), '{');
+  }
+  for (const policy of [null, [], { planning: null }, { planning: [] }, { planning: false },
+    ...['false', 'true', 0, 1, null].map(required => ({ planning: { required } })),
+    { planning: { extra: true } }, { planning: { features: [] } }]) {
+    expectResult(loadImplementationPlan({ root: f.root, config: policy, specs: f.specs }), 'FAIL', 1);
+  }
 });
 
 /** @id TEST-PLAN-MODEL-002 @verifies REQ-PLAN-MODEL-002 */

@@ -127,11 +127,10 @@
   "node-summary-verdict": {
     "by": "ai:claude-sonnet-5.5",
     "kind": "ai",
-    "review": ".sdd/review-node-summary-verdict.md",
-    "reviewSha": "3f8b4c5f0b5a49ee1df2789218a94d0e0548ccf5fbfdaeabd504836766e66e51",
-    "at": "2026-10-18T13:54:13.896Z",
+    "review": "Independent bounded implementation review found no significant issue; final evidence delta reviewed against three native Reds/Greens and five mutation detections, with unknown original assertion and zero qualification credit retained.",
+    "at": "2026-11-05T08:14:14.997Z",
     "artifacts": {
-      ".sdd/specs/node-summary-verdict.md": "667669a29cb38ba615836a7449b56d03311a2dff8b4517be7ab878c2ecfffc7a"
+      ".sdd/specs/node-summary-verdict.md": "cb9980cc832bce43322f52b98bd899ce1e9bfc53bf995676df6c7008e7528a7f"
     },
     "tier": "T2",
     "requireHuman": false
@@ -229,10 +228,9 @@
   "claude-code-support": {
     "by": "nahisaho",
     "kind": "human",
-    "review": "Human explicitly approved four prepared specifications and three exact implementation hashes for snapshot refresh and validation only; no main merge, tag replacement or publication.",
-    "at": "2026-11-04T22:38:55.086Z",
+    "at": "2026-11-05T08:25:30.108Z",
     "artifacts": {
-      ".sdd/specs/claude-code-support.md": "4f61a0a55156505d3658907a5b8dd0c8b8e3eeb316f6723089f6501c16ee5d14"
+      ".sdd/specs/claude-code-support.md": "82bb16e36ab143167e445dcb422d49f5c0f9af8ea024bcc51c4e3092cfefee9b"
     },
     "tier": "T2",
     "requireHuman": true,
@@ -306,11 +304,10 @@
   "implementation-plan-contract": {
     "by": "ai:claude-sonnet-5.5",
     "kind": "ai",
-    "review": ".sdd/review-implementation-plan-contract.md",
-    "reviewSha": "baed28ee599524b200d9b1fb28ad753dd9d9c3ac035367f4e2594bca78f94b8d",
-    "at": "2026-11-03T22:07:33.605Z",
+    "review": "Independent final migration/evidence delta review: seven isolated default faults and restored controls agree with retained report; failed full run and nine approval refusals remain explicitly non-passes.",
+    "at": "2026-11-05T08:14:14.156Z",
     "artifacts": {
-      ".sdd/specs/implementation-plan-contract.md": "672c1806bf05e18d983c85062981aa65d31db8a9f4a64b85114d49bc1de74999"
+      ".sdd/specs/implementation-plan-contract.md": "6c9453c76f9c681299b1d61ac5b92e66867e2caa672d7bf18c544a9212e8595c"
     },
     "tier": "T2",
     "requireHuman": false
@@ -330,10 +327,10 @@
   "implementation-plan-cli": {
     "by": "ai:claude-sonnet-5.5",
     "kind": "ai",
-    "review": "Both retained independent reviewers CLEAN2 on actual unchanged production/test hashes, corrected observer wording and bounded report spot-checks; native/mutations/target/stability/installed-host evidence recorded with read limits; fullgate/canonical reapproval/CI/qualification/publishing remain pending",
-    "at": "2026-11-04T04:26:32.046Z",
+    "review": "Independent T2 specification review: all-unset migration and direct/wrapper/standalone fail-closed boundaries; no scope narrowing or release authorization.",
+    "at": "2026-11-05T06:16:50.274Z",
     "artifacts": {
-      ".sdd/specs/implementation-plan-cli.md": "8c1e560bc73bdaadb5c02f1355baee7397c06e23bdf2a350da6b1cc53a96ac34"
+      ".sdd/specs/implementation-plan-cli.md": "b11456fe2fa58e4c722f92a9a735049c19dc357bfecf8108e274dcd7ada23f16"
     },
     "tier": "T2",
     "requireHuman": false

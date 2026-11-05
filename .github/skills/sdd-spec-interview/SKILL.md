@@ -47,6 +47,8 @@ Follow the user's language. Output of this skill = `.sdd/specs/<feature>.md` in 
 ## Specification-linked implementation planning (v0.2.7)
 
 After current requirements and their required approvals exist, before implementation, author/update `.sdd/implementation-plan.json` when `planning.required:true`.
+Starting with v0.2.8 this is the default even for existing unset projects;
+only explicit `planning.required:false` disables planning.
 Delegate schema, scope, fingerprints and the seven-step execution sequence to
 sibling `lean-sdd-tdd`; requirements/design remain in the existing specs.
 Cover every active REQ, task owner and prerequisite, then run `plan check`.

@@ -140,12 +140,13 @@ export function taskDefinitionSha256(task) {
   }));
 }
 
+/** @id CODE-PLAN-MODEL-005 @implements REQ-PLAN-MODEL-005 */
 function policyScope(config) {
   requirePlan(record(config), 'planning', 'Project configuration must be an object');
-  if (!Object.hasOwn(config, 'planning')) return null;
-  const policy = config.planning;
-  requirePlan(record(policy) && typeof policy.required === 'boolean', 'planning', 'planning.required must be a boolean');
-  if (!policy.required) return null;
+  const policy = Object.hasOwn(config, 'planning') ? config.planning : {};
+  requirePlan(record(policy) && (!Object.hasOwn(policy, 'required') || typeof policy.required === 'boolean'),
+    'planning', 'planning.required must be a boolean when present');
+  if (policy.required === false) return null;
   requirePlan(Object.keys(policy).every(key => ['required', 'features'].includes(key)), 'planning', 'Unknown planning policy field');
   if (Object.hasOwn(policy, 'features')) strings(policy.features, 'planning', 'features', { empty: false, pattern: ID });
   return policy.features ?? undefined;

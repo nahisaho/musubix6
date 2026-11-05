@@ -6,8 +6,13 @@ Agent skills for **lean, spec-driven and test-driven development** and for
 
 For this source checkout, a version string does not establish publication or release qualification.
 
-The source checkout targets **0.2.7**, but npm does not yet list it as checked on
-**2026-11-05 at 05:50 JST**. The
+This source candidate is **0.2.8**, with JSON planning enabled by default.
+The published v0.2.7 package retains its opt-in behavior. Candidate metadata
+does not establish publication or qualification. The dated release-status
+paragraphs below are historical, not the current publication status.
+
+Historical status: the source checkout targeted **0.2.7**, and npm did not
+list it when checked on **2026-11-05 at 05:50 JST**. The
 [npm publication workflow](https://github.com/nahisaho/musubix6/actions/runs/41898861716)
 failed `TEST-DIAGCLI-CLOSE-001` in its test job; publication was skipped.
 The candidate tagged `v0.2.7` ([`7b18615`](https://github.com/nahisaho/musubix6/commit/7b18615577e74d785241e668cbb0b407c239d06e))
@@ -79,9 +84,9 @@ Without a global install, run `npx --yes musubix6@latest init .` instead.
 `init` copies the bundled skills into the target's `.github/skills/`.
 
 For reproducible validation, record and use an exact version rather than
-`@latest`. To use this source candidate, **0.2.7**, first check
-`npm view musubix6@0.2.7 version`, then install with
-`npm install -g musubix6@0.2.7` only if available. Otherwise, use the source checkout.
+`@latest`. To use this source candidate, **0.2.8**, first check
+`npm view musubix6@0.2.8 version`, then install with
+`npm install -g musubix6@0.2.8` only if available. Otherwise, use the source checkout.
 
 `init` accepts a relative or absolute destination; omitting it uses the current
 directory. `--force` and `--only a,b` can appear before or after the destination.
@@ -157,22 +162,42 @@ lint of `tech-writer` still works without `uv`:
 `python3 .github/skills/tech-writer/scripts/lint.py path/to/document.md`.
 GiNZA dependency and license details: [`NOTICE.md`](.github/skills/japanese-prose/NOTICE.md).
 
-## Keep implementation plans aligned with specifications (v0.2.7 candidate)
+## Inspect gate-check output (v0.2.8 development)
+
+Each executed gate check, including fallbacks and retries, retains captured stdout
+and stderr separately under `.sdd/check-output/`. The gate prints each receipt path
+and SHA-256; receipts record byte hashes, exit status, signal, timeout and capture-limit
+errors. Existing capture limits still apply. A passing retry does not erase the first
+failure or bypass the default fail-closed flaky policy.
+
+Logs are locally Git-ignored, use private POSIX permissions, and are not uploaded.
+Windows inherits directory ACLs. Check output may contain sensitive information;
+inspect it before sharing and do not force-add logs to Git. Storage errors fail the
+gate explicitly. This observability fix does not identify the original intermittent
+failure tracked in [#385](https://github.com/nahisaho/musubix6/issues/385).
+
+## Keep implementation plans aligned with specifications (v0.2.8 development)
 
 <!-- implementation-planning:v0.2.7 -->
 
 For multi-feature work, an agent can maintain one specification-linked JSON
-plan instead of a separate Markdown task list. This describes the v0.2.7
-candidate, not an assertion that it is already published.
+plan instead of a separate Markdown task list. This section describes the
+v0.2.8 development behavior, not a published v0.2.8 release.
 
-**Prerequisites:** use the CLI and skills from this candidate, current approved
+**Prerequisites:** use the CLI and skills from this development version, current approved
 `.sdd/specs/*.md`, and an agent-authored `.sdd/implementation-plan.json`.
-Merge `"planning":{"required":true}` into the existing `.sdd/config.json`
-(`planning.required:true`); do not replace its test runners or checks.
+New `sdd init` writes `"planning":{"required":true}` into `.sdd/config.json`
+(`planning.required:true`). Existing omitted config/planning/required fields also
+enable planning without rewriting configuration; do not replace test runners or checks.
 Optional `planning.features` selects trusted scope; otherwise all current spec
 features and prerequisites are required. Plan JSON cannot narrow that scope.
-Absent/false policy preserves existing Markdown planning without reading JSON;
-enabled mode uses only JSON and ignores Markdown.
+Only explicit `"planning":{"required":false}` preserves Markdown planning
+without reading JSON. Enabled mode uses only JSON and ignores Markdown.
+Malformed planning policy or a nonboolean `required` value exits1 instead of
+opting out; the string `"false"` is not the boolean `false`.
+Existing projects need a current full-scope plan or an explicit opt-out;
+missing plans refuse with exit2. No placeholder plan is created automatically.
+In v0.2.7, an omitted planning policy still disables JSON planning.
 
 The installed `lean-sdd-tdd` skill owns the complete schema and workflow.
 There is no automatic natural-language task decomposition or status editing.
@@ -404,9 +429,9 @@ approval or release readiness. Keep targeted tests and the final full `gate`.
 Only Linux/Node 24 has been exercised locally; macOS/Windows remain unverified.
 No measured time or AI-cost reduction is claimed.
 
-### Claude Code and dual-host installation (v0.2.7)
+### Claude Code and dual-host installation (v0.2.8)
 
-These examples target the 0.2.7 CLI. Check npm availability in
+These examples target the 0.2.8 CLI. Check npm availability in
 [Installation](#installation) before installing, or use the
 [source checkout](#install-from-source-git-clone).
 The published 0.2.2 CLI also supports `--host`; the 0.1.x npm versions do not.
@@ -472,7 +497,7 @@ that npm's `latest` tag contains the fixes.
 Updating musubix6 has **two separate parts**: update the CLI, then refresh the
 skills copied into each project. `npm install -g` alone does not update an
 existing project's `.github/skills/` or `.claude/skills/`.
-The steps below use the default Copilot host. For the v0.2.7 CLI,
+The steps below use the default Copilot host. For the v0.2.8 CLI,
 back up/review `.claude/skills/` and add `--host claude` to refresh Claude copies,
 or use `--host both` and back up/review both directories.
 
@@ -506,9 +531,9 @@ or use `--host both` and back up/review both directories.
    ```
 
    To install a specific version instead, use a version such as
-   `npm install -g musubix6@0.2.7`, after checking
-   `npm view musubix6@0.2.7 version`. `@latest` follows the current npm tag
-   and may differ from this 0.2.7 source candidate.
+   `npm install -g musubix6@0.2.8`, after checking
+   `npm view musubix6@0.2.8 version`. `@latest` follows the current npm tag
+   and may differ from this 0.2.8 source candidate.
    Updating the CLI does not overwrite project
    files at this stage.
 
@@ -543,9 +568,9 @@ or use `--host both` and back up/review both directories.
 
 ### Update without a global install (npx)
 
-Before using this candidate, check `npm view musubix6@0.2.7 version`.
+Before using this candidate, check `npm view musubix6@0.2.8 version`.
 `@latest` follows npm's current tag and may differ from this checkout's
-0.2.7. Use the source checkout if registry access is unavailable.
+0.2.8. Use the source checkout if registry access is unavailable.
 
 Back up the target project's skills as above, then run these commands in its
 root:
@@ -559,7 +584,7 @@ Review the changes as in step 5. This refreshes the copied skills but does not
 update any separately installed global `musubix6` command. For the SDD gate
 check, use `npx --yes musubix6@latest sdd gate` so that the selected version runs
 instead of an older global CLI. To pin a version, replace `@latest` with
-`@0.2.7` in every npx command, including the gate check.
+`@0.2.8` in every npx command, including the gate check.
 
 ### Update a source checkout
 

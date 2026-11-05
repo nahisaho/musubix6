@@ -32,7 +32,9 @@ A reverse spec records **current behaviour**, not intent. Every row is labelled 
 ## Specification-linked implementation planning (v0.2.7)
 
 After characterization pins observed requirements, prepare the planning handoff without changing behavior or bypassing required approval.
-With `planning.required:true`, author/update `.sdd/implementation-plan.json`
+Starting with v0.2.8, `planning.required:true` is the default, including existing
+unset projects; only explicit `planning.required:false` disables it.
+Author/update `.sdd/implementation-plan.json`
 from those current specs; delegate the schema and seven-step workflow to
 sibling `lean-sdd-tdd`. Record existing characterization honestly rather than
 relabelling it a new failing regression. Run `plan check` and report unknown

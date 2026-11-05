@@ -78,6 +78,94 @@ function fixture(t, { implementation = false } = {}) {
 const plan = f => json(call(f.root, ['plan', 'check', '--json']));
 const taskState = (result, id) => result.tasks.find(task => task.id === id).state;
 
+/** @id TEST-PLAN-CLI-007 @verifies REQ-PLAN-MODEL-005 REQ-PLAN-CLI-001 */
+test('TEST-PLAN-CLI-007 init and existing unset projects require plans across entry points', t => {
+  for (const entry of [script, wrapper]) {
+    const fresh = fs.mkdtempSync(path.join(os.tmpdir(), 'musubix-plan-init-'));
+    t.after(() => fs.rmSync(fresh, { recursive: true, force: true }));
+    const initialized = call(fresh, ['init'], entry);
+    assert.equal(initialized.exit, 0, initialized.text + initialized.error);
+    const configPath = path.join(fresh, '.sdd/config.json');
+    assert.deepEqual(JSON.parse(fs.readFileSync(configPath, 'utf8')).planning, { required: true },
+      'New initialization must persist the required-planning default.');
+    assert.equal(fs.existsSync(path.join(fresh, '.sdd/implementation-plan.json')), false,
+      'Initialization must not fabricate a task list.');
+    for (const config of [{}, { planning: {} }, { planning: { required: false } },
+      { planning: { required: true }, checks: [] }]) {
+      const original = JSON.stringify(config, null, 3) + '\n\n';
+      fs.writeFileSync(configPath, original);
+      assert.equal(call(fresh, ['init'], entry).exit, 0);
+      assert.equal(fs.readFileSync(configPath, 'utf8'), original, 'Existing config bytes must survive init.');
+    }
+
+    const f = fixture(t);
+    f.native();
+    const configuration = path.join(f.root, '.sdd/config.json');
+    const planFile = path.join(f.root, '.sdd/implementation-plan.json');
+    const commands = [['plan'], ['plan', 'check'], ['context', 'a'], ['gate', '--no-run']];
+    for (const policy of [undefined, {}, { planning: {} }, { planning: { features: ['a'] } },
+      { planning: { required: true } }]) {
+      if (policy === undefined) fs.unlinkSync(configuration);
+      else write(f.root, '.sdd/config.json', { ...f.config, ...policy });
+      const before = fs.existsSync(configuration) ? fs.readFileSync(configuration, 'utf8') : null;
+      f.save();
+      assert.equal(json(call(f.root, ['plan', 'check', '--json'], entry)).enabled, true,
+        'Absent config/planning/required must use JSON planning.');
+      assert.equal(json(call(f.root, ['context', 'a', '--json'], entry)).planning.enabled, true);
+      const pendingGate = json(call(f.root, ['gate', '--no-run', '--json'], entry), 2);
+      assert.equal(pendingGate.planning.enabled, true);
+      fs.unlinkSync(planFile);
+      for (const command of commands) {
+        const missing = json(call(f.root, [...command, '--json'], entry), 2);
+        assert.equal(missing.enabled, true);
+        assert.match(JSON.stringify(missing.errors), /implementation-plan\.json/);
+        assert.equal(fs.existsSync(planFile), false);
+      }
+      write(f.root, '.sdd/implementation-plan.json', '{');
+      for (const command of commands) assert.equal(json(call(f.root, [...command, '--json'], entry), 1).status, 'FAIL');
+      assert.equal(fs.existsSync(configuration) ? fs.readFileSync(configuration, 'utf8') : null, before,
+        'Planning reads must not rewrite or create configuration.');
+    }
+    write(f.root, '.sdd/config.json', { ...f.config, planning: { required: false } });
+    assert.equal(json(call(f.root, ['plan', 'check', '--json'], entry)).status, 'DISABLED');
+    assert.equal(Object.hasOwn(json(call(f.root, ['context', 'a', '--json'], entry)), 'planning'), false);
+    for (const invalid of ['{', 'null', '[]', '{"planning":null}',
+      '{"planning":{"required":"false"}}', '{"planning":{"required":null}}']) {
+      fs.writeFileSync(configuration, invalid);
+      for (const command of commands) {
+        const refused = json(call(f.root, [...command, '--json'], entry), 1);
+        assert.equal(refused.status, 'FAIL');
+        assert.equal(fs.readFileSync(configuration, 'utf8'), invalid);
+        assert.equal(fs.readFileSync(planFile, 'utf8'), '{');
+      }
+    }
+  }
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'musubix-default-standalone-'));
+  t.after(() => fs.rmSync(directory, { recursive: true, force: true }));
+  const standalone = path.join(directory, 'sdd.mjs');
+  fs.copyFileSync(script, standalone);
+  const f = fixture(t);
+  for (const partial of [false, true]) {
+    if (partial) fs.copyFileSync(path.join(path.dirname(script), 'implementation-plan.mjs'),
+      path.join(directory, 'implementation-plan.mjs'));
+    for (const config of [undefined, {}, { planning: {} }]) {
+      if (config === undefined) fs.rmSync(path.join(f.root, '.sdd/config.json'), { force: true });
+      else write(f.root, '.sdd/config.json', config);
+      for (const command of [['plan'], ['gate', '--no-run'], ['context', 'a']]) {
+        const refused = json(call(f.root, [...command, '--json'], standalone), 2);
+        assert.match(JSON.stringify(refused.errors), /planning modules unavailable/i);
+      }
+    }
+    for (const policy of [{ required: 'false' }, { extra: true }, { features: [] },
+      { features: ['a', 'a'] }, { features: ['../outside'] }]) {
+      write(f.root, '.sdd/config.json', { planning: policy });
+      for (const command of [['plan'], ['gate', '--no-run'], ['context', 'a']]) {
+        assert.equal(json(call(f.root, [...command, '--json'], standalone), 1).status, 'FAIL');
+      }
+    }
+  }
+});
+
 /** @id TEST-PLAN-CLI-006 @verifies REQ-PLAN-CLI-004 */
 test('TEST-PLAN-CLI-006 normal dispatch retains decisions without forcing runtime exit', t => {
   const f = fixture(t);
@@ -112,7 +200,8 @@ for (const method of ['exit', 'reallyExit']) {
   }
   const forced = [];
   const states = [
-    { name: 'disabled', exit: 0, status: 'DISABLED', prepare: () => {} },
+    { name: 'disabled', exit: 0, status: 'DISABLED',
+      prepare: () => { f.config.planning = { required: false }; f.configure(); } },
     { name: 'pending', exit: 0, status: 'PASS', prepare: () => f.enable() },
     { name: 'malformed', exit: 1, status: 'FAIL',
       prepare: () => write(f.root, '.sdd/implementation-plan.json', '{') },
@@ -153,6 +242,7 @@ for (const method of ['exit', 'reallyExit']) {
 /** @id TEST-PLAN-CLI-001 @verifies REQ-PLAN-CLI-001 */
 test('TEST-PLAN-CLI-001 opt-in authority, strict config and unchanged disabled commands', t => {
   const f = fixture(t);
+  assert.equal(plan(f).enabled, true, 'An existing unset project must use the authoritative JSON plan by default.');
   f.native();
   f.enable();
   const result = plan(f);
@@ -180,6 +270,7 @@ test('TEST-PLAN-CLI-001 opt-in authority, strict config and unchanged disabled c
   }
   f.configure();
   const legacy = fixture(t);
+  legacy.config.planning = { required: false }; legacy.configure();
   legacy.native();
   write(legacy.root, '.sdd/plan.md', '| order | feature | depends | note |\n| 1 | a | - | |\n| 2 | b | - | |\n');
   const commands = [['plan'], ['context', 'a', '--json'], ['gate', '--no-run', '--json']];
@@ -397,6 +488,7 @@ test('TEST-PLAN-CLI-005 standalone legacy commands survive absent optional plann
   const standalone = path.join(directory, 'sdd.mjs');
   fs.copyFileSync(script, standalone);
   const f = fixture(t);
+  f.config.planning = { required: false }; f.configure();
   f.native();
   write(f.root, '.sdd/plan.md', '| order | feature | depends | note |\n| 1 | a | - | |\n| 2 | b | - | |\n');
   for (const args of [['plan'], ['gate', '--no-run', '--json']]) {
@@ -408,9 +500,10 @@ test('TEST-PLAN-CLI-005 standalone legacy commands survive absent optional plann
     assert.match(JSON.stringify(refused.errors), /planning modules unavailable/i);
   }
   fs.unlinkSync(path.join(f.root, '.sdd/config.json'));
-  const missingConfig = call(f.root, ['plan']);
-  assert.equal(missingConfig.exit, 0, 'An absent configuration retains disabled legacy planning.');
-  assert.deepEqual(call(f.root, ['plan'], standalone), missingConfig);
+  const missingConfig = call(f.root, ['plan', 'check', '--json']);
+  assert.equal(json(missingConfig).enabled, true, 'Absent configuration now requires JSON planning.');
+  assert.match(JSON.stringify(json(call(f.root, ['plan', '--json'], standalone), 2).errors),
+    /planning modules unavailable/i);
   f.enable();
   for (const args of [['plan'], ['gate', '--no-run'], ['context', 'a']]) {
     const refused = json(call(f.root, [...args, '--json'], standalone), 2);
@@ -418,7 +511,8 @@ test('TEST-PLAN-CLI-005 standalone legacy commands survive absent optional plann
   }
   const disabled = JSON.stringify({ ...f.config, planning: { required: false } });
   const shapes = [
-    [JSON.stringify({ ...f.config, planning: undefined }), 0],
+    [JSON.stringify({ ...f.config, planning: undefined }), 0, 2],
+    [JSON.stringify({ ...f.config, planning: {} }), 0, 2],
     [disabled, 0],
     [JSON.stringify({ ...f.config, planning: { required: false, features: null, extra: true } }), 0],
     ...[null, [], false, { required: 'false' }, { required: 0 }, { features: null }]
@@ -431,13 +525,16 @@ test('TEST-PLAN-CLI-005 standalone legacy commands survive absent optional plann
   for (const partial of [false, true]) {
     if (partial) fs.copyFileSync(path.join(path.dirname(script), 'implementation-plan.mjs'),
       path.join(directory, 'implementation-plan.mjs'));
-    for (const [configuration, expected] of shapes) {
+    for (const [configuration, expected, standaloneExit = expected] of shapes) {
       fs.writeFileSync(path.join(f.root, '.sdd/config.json'), configuration);
       const full = call(f.root, ['plan', '--json']);
       const lone = call(f.root, ['plan', '--json'], standalone);
       assert.equal(full.exit, expected);
-      assert.equal(lone.exit, expected, `partial=${partial}: standalone policy agrees with contract table`);
-      if (expected === 0) assert.deepEqual(lone, full, 'A proven disabled policy retains exact legacy behavior.');
+      assert.equal(lone.exit, standaloneExit, `partial=${partial}: standalone policy agrees with contract table`);
+      if (standaloneExit === 2) {
+        assert.equal(json(full).enabled, true);
+        assert.match(JSON.stringify(json(lone, 2).errors), /planning modules unavailable/i);
+      } else if (expected === 0) assert.deepEqual(lone, full, 'A proven disabled policy retains exact legacy behavior.');
       else {
         assert.equal(json(full, 1).enabled, true);
         assert.equal(json(lone, 1).enabled, true);
@@ -448,6 +545,10 @@ test('TEST-PLAN-CLI-005 standalone legacy commands survive absent optional plann
         if (expected === 1) {
           assert.equal(json(bundled, 1).enabled, true);
           assert.equal(json(copied, 1).enabled, true);
+        } else if (standaloneExit === 2) {
+          const decision = json(bundled, args[0] === 'gate' ? 2 : 0);
+          assert.equal(decision.planning.enabled, true);
+          assert.match(JSON.stringify(json(copied, 2).errors), /planning modules unavailable/i);
         } else if (args[0] === 'gate') {
           assert.equal(json(bundled, 2).verdict, 'INCOMPLETE');
           assert.deepEqual(copied, bundled);

@@ -167,7 +167,7 @@ test('TEST-WINRUN-003 adapter and SDK drift invalidate real Red Green command pr
   fs.mkdirSync(path.join(root, '.sdd/specs'), { recursive: true });
   fs.writeFileSync(path.join(root, '.sdd/specs/a.md'),
     '---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | The system shall return one. | TEST-A-001 |\n');
-  fs.writeFileSync(path.join(root, '.sdd/config.json'), JSON.stringify({
+  fs.writeFileSync(path.join(root, '.sdd/config.json'), JSON.stringify({ planning: { required: false },
     schemaVersion: 1,
     scopePolicy: 'strict',
     testCmd: [testNode, '--test', '--test-name-pattern', '{id}', '{file}'],

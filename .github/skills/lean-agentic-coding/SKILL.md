@@ -47,7 +47,8 @@ Keep one file per feature (`docs/contract/<feature>.md` or the repo's existing e
 
 ## Specification-linked implementation planning (v0.2.7)
 
-With `planning.required:true`, create/update `.sdd/implementation-plan.json`
+Planning defaults to `planning.required:true` starting with v0.2.8, including
+existing unset projects. Create/update `.sdd/implementation-plan.json`
 from current specifications before production implementation. Delegate the
 complete schema and seven-step workflow to sibling `lean-sdd-tdd`; do not
 create a second contract or invent a parallel evidence format.
@@ -58,7 +59,7 @@ After specification changes, replan affected/transitive bindings and obtain
 fresh verification; status claims and views do not establish completion.
 Retain failures and distinguish consistency, task verification, full-project
 gate, frozen qualification and explicit human publication approval.
-When planning is absent/disabled, retain the existing workflow.
+Only explicit `planning.required:false` retains the existing workflow.
 
 ## 3. T1 loop
 0. **PASS conditions and counterexamples first**: use the host's development model (see Host defaults) to define observable success conditions and concrete violations in the existing contract (`REQ | PASS condition | counterexample | TEST/command | evidence`). Check contract, inputs, execution, verdict, history and integration risks; explain non-applicable stages. Derive expectations from the contract or an independent reference, never the implementation's output.

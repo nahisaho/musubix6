@@ -134,7 +134,8 @@ import assert from 'node:assert/strict';import {value} from './example.mjs';
 /** @id TEST-EXAMPLE-001 @verifies REQ-EXAMPLE-001 */
 test('TEST-EXAMPLE-001',()=>assert.equal(value(),1));\n`);
   const write = (file, value) => fs.writeFileSync(path.join(root, file), JSON.stringify(value, null, 2) + '\n');
-  const config = { testCmd: [process.execPath, '--test', '--test-name-pattern', '{id}', '{file}'],
+  const config = { planning: { required: false },
+    testCmd: [process.execPath, '--test', '--test-name-pattern', '{id}', '{file}'],
     checks: [{ name: 'test', cmd: [process.execPath, '--test', 'example.test.mjs'], timeoutMs: 20000 }] };
   write('.sdd/config.json', config);
   assert.match(invoke(['tdd', 'red', 'TEST-EXAMPLE-001']), /RED ok/);
@@ -146,7 +147,7 @@ test('TEST-EXAMPLE-001',()=>assert.equal(value(),1));\n`);
   assert.equal(invoke(['plan']), disabled);
   fs.writeFileSync(path.join(root, '.sdd/implementation-plan.json'), '{ignored while disabled');
   assert.equal(invoke(['plan']), disabled);
-  config.planning = { required: true };
+  delete config.planning;
   write('.sdd/config.json', config);
   const task = { id: 'EXAMPLE', feature: 'example', kind: 'implementation', reqs: ['REQ-EXAMPLE-001'],
     dependsOn: [], artifacts: ['example.mjs', 'example.test.mjs'], condition: 'The selected test returns one.',
