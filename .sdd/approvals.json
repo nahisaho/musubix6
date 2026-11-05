@@ -252,16 +252,15 @@
   "release-qualification": {
     "by": "nahisaho",
     "kind": "human",
-    "review": "Explicit renewed approval: 承認する（この7成果物で準備・後続検証のみ）. Corrected exact seven artifacts including restored existing early README disclaimers and retained actual failed controls were shown with full SHA256 and residual risks. Preparation/validation only, no main merge/tag replacement/publication.",
-    "at": "2026-11-04T21:29:16.053Z",
+    "at": "2026-11-05T12:10:47.945Z",
     "artifacts": {
-      ".sdd/specs/release-qualification.md": "fca2fe1b7a5bf39ef562be5440c68f13311490a46bdaab70ba2e065866279144",
-      ".sdd/release-validation.v0.2.7.json": "82c22aa74f8005ff320b6e244c6a873d65ef9070546e9021c35a034e2ccfe450",
-      ".sdd/release-content-mutations.v0.2.7.json": "f32b962801d0df1b794dd15f57f7624396edf3e9285bf077ff5cb5f5f5dd7421",
-      ".sdd/specs/claude-code-support.md": "4f61a0a55156505d3658907a5b8dd0c8b8e3eeb316f6723089f6501c16ee5d14",
-      "README.md": "811baf471a7b9397ee69a9e7b7f756df5fd3805b46d97323433d830d3cdbcaea",
-      "README-ja.md": "a381b0b1a2d09e2c5df1c9c64a4291db0ccbe29ef8c8c8e02f5766d2af36f855",
-      "CLANGELOG.md": "e99697bb4316f29589f8dced2a9d0033c7c77b3ef20e634c16d064284c549a8a"
+      ".sdd/specs/release-qualification.md": "67f1fcae289b63d1657f705480b95ffeb5eccfbaa66131bb69837219afe5fcb5",
+      ".sdd/release-validation.v0.2.8.json": "2d493a6c27b15c26dbf53dad1d5bc8853cdfffa759cbbb90856baea1d80728ca",
+      ".sdd/release-content-mutations.v0.2.8.json": "74098927b5ea6ee09b753e8ea358eeccc0289207ba576e310ebd1cb46e681b0d",
+      ".sdd/specs/claude-code-support.md": "82bb16e36ab143167e445dcb422d49f5c0f9af8ea024bcc51c4e3092cfefee9b",
+      "README.md": "bf778bde30d77e538a850e342ac5b518354179b205706827e1480294addb95c7",
+      "README-ja.md": "efb7a08fdd02fa0719f5ac31f819ac7d5c061cefe87b97d3ab60309efbcf748c",
+      "CLANGELOG.md": "d1c7e13ac5d29dafc6dc876a8ee52025cab8edce77e05a16f222e534cfb26c7d"
     },
     "tier": "T2",
     "requireHuman": true,

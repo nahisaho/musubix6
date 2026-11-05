@@ -2,17 +2,17 @@
 feature: release-qualification
 tier: T2
 approval: human
-artifacts: .sdd/release-validation.v0.2.7.json, .sdd/release-content-mutations.v0.2.7.json, .sdd/specs/claude-code-support.md, README.md, README-ja.md, CLANGELOG.md
+artifacts: .sdd/release-validation.v0.2.8.json, .sdd/release-content-mutations.v0.2.8.json, .sdd/specs/claude-code-support.md, README.md, README-ja.md, CLANGELOG.md
 ---
 # Reproducible Linux-only release qualification
-Goal: retain durable qualification tooling and establish technical readiness for the exact stable0.2.7 candidate, including its specification-linked implementation planning, without authorizing publication. Preserve the approved Linux-only scope, all24 required cells and budgets, every historical replacement and zero transferred credit. Status: prospective0.2.7 contract with independent committed-source/archive/npm/both-host inventory feasibility observed; exact-artifact human preparation approval and current qualification controls remain required. Earlier dated version-specific planning below remains historical.
+Goal: retain durable qualification tooling and establish technical readiness for the exact stable0.2.8 candidate, including default-enabled specification-linked planning and check-output retention, without authorizing publication. Preserve the approved Linux-only scope, all24 required cells and budgets, every historical replacement and zero transferred credit. Status: prospective0.2.8 contract with independent committed-source/archive/npm/both-host inventory feasibility observed; exact-artifact human preparation approval, current task verification and qualification controls remain required. Earlier version-specific planning below remains historical, not current approval or readiness.
 | ID | EARS requirement | Test |
 | --- | --- | --- |
 | REQ-RELQ-001 | When a Linux-only qualification plan is admitted, the validator shall require all 24 inherited non-WSL cells with unchanged budgets and an explicit excluded NATIVE-WSLC cell, bind the scope and explicit committed historical test lineage to the approved plan, and reject missing, duplicate or weakened required cases and invalid lineage. | TEST-RELQ-001, TEST-RELQ-LINEAGE-001 |
 | REQ-RELQ-002 | When a candidate is frozen or checked, the launcher shall bind source/archive/package, current named catalogues and approved historical replacements, helpers, dependencies, configuration and real Node 20/22/24 and native tool inputs by digest, reject unavailable or changed inputs or missing replacements, and preserve failed revisions without transferring credit. | TEST-RELQ-002, TEST-RELQ-LINEAGE-001, TEST-RELQ-LINEAGE-002 |
 | REQ-RELQ-003 | When any required cell finishes, the validator shall require its exact named cases and valid controls, including required active replacements for resolved historical TODOs, actual command/exit and retained parseable evidence; missing, skipped, timed-out, unknown or setup-error outcomes shall never count as a pass. | TEST-RELQ-003, TEST-RELQ-LINEAGE-002 |
 | REQ-RELQ-004 | When technical readiness is evaluated, the launcher shall require two consecutive complete clean runs of the identical frozen matrix and candidate in fresh isolated state, reset the streak on failure or relevant change, and never authorize tagging or publishing. | TEST-RELQ-004 |
-| REQ-RELQ-005 | When a stable 0.2.7 qualification package is prepared, it shall retain executable, reviewable helpers and self-tests in the repository, verify the exact tgz through the actual package entry point on Node 20/22/24, report exact artifact paths/hashes, exclusions and residual risks separately from human release approval, and require the publishing workflow to verify the packed tgz against the approved digest before publishing that same file. | TEST-RELQ-005, TEST-HOST-005, TEST-RELQ-PUBLISH-001 |
+| REQ-RELQ-005 | When a stable 0.2.8 qualification package is prepared, it shall retain executable, reviewable helpers and self-tests in the repository, verify the exact tgz through the actual package entry point on Node 20/22/24, report exact artifact paths/hashes, exclusions and residual risks separately from human release approval, and require the publishing workflow to verify the packed tgz against the approved digest before publishing that same file. | TEST-RELQ-005, TEST-HOST-005, TEST-RELQ-PUBLISH-001 |
 ## PASS conditions and counterexamples
 | REQ | PASS condition | Concrete counterexample / expected | TEST/command | Observed evidence |
 | `REQ-RELQ-001` | Exactly the old 25 cells minus NATIVE-WSLC are required; NATIVE-WSLC is explicitly excluded, never reported as passed. | Delete PACKAGE-22, duplicate REGRESSION-24, shorten MUTATION's 3600-second budget, or silently count WSL as passed: reject; complete approved Linux plan: accept. | TEST-RELQ-001, complete finite cell-policy rows | Pending |
@@ -22,7 +22,7 @@ Goal: retain durable qualification tooling and establish technical readiness for
 | `REQ-RELQ-003` | Setup-error text quoted inside the message of an exact owned native assertion is data, not a loader verdict; all actual execution and native ownership checks still apply. | The `owned-assertion-type` mutant produces an owned `ERR_ASSERTION` whose message quotes `Cannot find module child` and ends `false !== true`: accept only with passing baseline/restored controls. The same text from a loader error, foreign frame, malformed event, skip, timeout or unknown exit: reject. | TEST-RELQ-003; bounded setup-text sensitivity | Zero-credit spike `qualification-legacy-reason-spike-R81d6Q` passed publish-restore with its provisional exact prefix, then exposed raw-text setup rejection of this owned assertion. No complete 49-case pass or qualification credit is claimed. |
 | `REQ-RELQ-003` | The two explicitly named scanner cases require their independently specified exact TRACE header prefixes at their frozen owned assertions, with passing baseline/restored controls. | `scanner-complete-sources`: cutting both padded annotated sources yields `TRACE FAIL: 1 REQ, 0 annotated entities, 1 errors, 2 warnings` plus newline. `scanner-limit-validation`: ignoring invalid configuration yields `TRACE OK: 1 REQ, 2 annotated entities, 0 errors, 0 warnings` plus newline. A different count/header, another case or frame, or missing restoration must reject. | TEST-RELQ-003; targeted diagnostic regression; bounded prefix sensitivity | Split zero-credit prototypes reached all 49 inherited cases and exposed these two false rejections. Expected counts follow the independent TEST-SCAN fixtures/trace policy, not mutant output. Neither a complete current-adapter cell nor two clean qualification runs has passed. |
 | `REQ-RELQ-004` | Same candidate A and manifest M, fresh run1 PASS then fresh run2 PASS => technical-ready only. | PASS then FAIL then PASS => streak1; A/M changes or reused run state => no ready; exclusion alone is never PASS. | TEST-RELQ-004, every streak-transition row | Pending |
-| `REQ-RELQ-005` | Stable0.2.7 archive installs offline and copied host assets/CLI work on Node20/22/24; all release paths/hashes are retained. | A0.2.6 or0.2.7-dev.0 archive, stale packed CLI, absent helper or publication-authorized development report: reject; exact stable0.2.7 package: accept. | TEST-RELQ-005, TEST-HOST-005, actual package cells | Genuine host-identity Red/Green, actual three-runtime package/host controls and restored version mutations are retained in `.sdd/evidence/v027-version-preparation.json` at commit `0ce54856223b140fafc0d2a1c8db3547b24b10af`; current release-adapter Red/Green and frozen qualification remain pending. |
+| `REQ-RELQ-005` | Stable0.2.8 archive installs offline and copied host assets/CLI work on Node20/22/24; all release paths/hashes are retained. | A0.2.7 or0.2.8-dev.0 archive, stale packed CLI, absent helper or publication-authorized development report: reject; exact stable0.2.8 package: accept. | TEST-RELQ-005, TEST-HOST-005, actual package cells | `.sdd/evidence/v028-preparation.json` retains genuine host-version assertion Red/Green, three-runtime actual npm installation/entry-point/both-host controls and ten restored version/distribution mutations. The complete1187-test attempt failed13 with0skips; the missed legacy opt-out is fixed with an isolated assertion reversal, but12 release controls remain stale. Current release-adapter Red/Green, task verification, full gate and frozen qualification remain pending. |
 | `REQ-RELQ-003` | Legacy generated-regex and scanner-prefix rules apply only to the 49 legacy MUTATION cases. All 57 DIAGNOSTIC-MUTATION cases retain exact named selection, owned native ERR_ASSERTION, baseline/restoration, receipt and source-restoration requirements, without an invented message prefix. | The cumulative-bytes diagnostic mutant produces native `The "string" argument must be of type string. Received type object (null)` at its independently owned assertion: accept with complete controls. A loader error, foreign assertion, surviving mutant or missing control still rejects. The same argument-type message does not satisfy a legacy case's required regex prefix. | TEST-RELQ-003; diagnostic-cell boundary regression; bounded restored policy mutation | Frozen 0.2.3 run `qualification-v023-linux-r3-qvwOlK/runs/run-jNc1aX` retained 19 passing cells including INTEGRATED-GATE, then failed this over-restrictive diagnostic policy. Streak0; no credit transfers to 0.2.4. |
 | `REQ-RELQ-002` | Every explicitly configured executable/helper/dependency input used by execution is contained in a frozen fingerprint; a matching complete closure passes. | Configure `/private/node_modules`, a Gradle JAR or a prose interpreter outside every frozen tree: freeze fails; bind each actual dependency tree, freeze, then change one dependency byte: check fails; restoring its exact bytes passes. | TEST-RELQ-CLOSURE-001; isolated closure sensitivity | Pending; previously confirmed missing-closure finding remains blocking. |
 | `REQ-RELQ-002` | Every public frozen-input check requires the caller's exact retained manifest SHA-256 and verifies structural/policy bindings, including the complete approved matrix and command catalogue. | Omit the expected hash, supply an empty hash, or edit the manifest to zero required cells/commands and supply its new hash: reject; the unchanged genuinely frozen manifest with its original expected hash passes. | TEST-RELQ-CLOSURE-001 | Pending; previously confirmed optional-digest finding remains blocking. |
@@ -33,14 +33,14 @@ Goal: retain durable qualification tooling and establish technical readiness for
 | `REQ-RELQ-003` | All13 declared skill mechanisms,1180 source vendor challenges and60 origin sensitivities (1253 total named skill cases) have passing baseline/restored controls and exact owned assertion detections; valid names, questions, obligations and matching reviews remain accepted. | Disable duplicate detection: the fixed duplicated-particle input must assertion-fail; change one of118 reference file bytes or XOR any one permission bit: the exact inventory assertion must fail, including source-init/package/package-init representatives. Unchanged inventories and exact restoration must pass. | TEST-RELQ-SKILL-001; SKILL-MUTATION | The current independent118-file source/archive/npm/both-host inventory spike passed as recorded below. Current catalogue/native verdict controls and complete skill-cell execution await preparation approval; no qualification credit. |
 | `REQ-RELQ-003` | All 14 placeholder mechanisms are assertion-detected; source, source-init, extracted-package and package-init obey the fixed 2184 marker and 994 context rows, exit/status and JSON policy. | `todo : pending` => one placeholder, `TODO-cli` => zero, nonempty annotation => zero; findings exit 0, missing input exits 1 with empty stdout and explicit stderr. Accepting any assertion or suppressing all findings must fail the validator regression. | TEST-RELQ-PH-001; PLACEHOLDER-MUTATION | Independent existing golden policy read; replacement execution pending. |
 ## Design
-Use new versioned0.2.7 scope/content files without rewriting historical0.2.6,
+Use new versioned0.2.8 scope/content files without rewriting historical0.2.7,0.2.6,
 0.2.5,0.2.4 or0.2.0 contracts or failed evidence. The new files require a genuine
 seven-artifact human preparation approval; do not relock production as a unit
 fixture or infer renewed authorization from the user's release request.
 The approval unit is this specification plus exactly its six current
-frontmatter artifacts. Historical0.2.6 files remain unchanged provenance,
+frontmatter artifacts. Historical0.2.7 and earlier files remain unchanged provenance,
 not extra current approval artifacts or current execution credit.
-Do not prepare or record approval until both prospective0.2.7 files exist
+Do not prepare or record approval until both prospective0.2.8 files exist
 and their exact reviewed bytes and independent inventory are available.
 The old production lock becoming stale after approved README/host/planning
 changes is correct rejection, not permission to repair approval hashes.
@@ -56,11 +56,61 @@ every current canonical path/hash and origin-specific mode. Require every old
 counts only from this independent, reviewed inventory; no discovery result,
 mutant outcome or failed comparator may silently repair an accepted reference.
 The lineage commit and vendor-reference commit must identify the same source
-and unchanged historical suite bytes. Each REGRESSION20/22/24 catalogue must
+and exact current suite bytes; older suite identities remain historical. Each REGRESSION20/22/24 catalogue must
 discover every registered new planning regression; no missing-name or `TODO`
 exception is introduced. Existing dynamic catalogue discovery is retained.
 
-The current scope/content revisions are both2, retaining the exact approved
+### Stable0.2.8 preparation
+
+The current scope/content revisions are1/1. Their explicit previous-version
+references retain the exact0.2.7 revision3 files and failed history with zero
+transferred credit. The committed reference is
+`a22618df676d9766acc05cff6e3128882053fb74`, skill tree
+`59ab6c23bd11fb185cb1f3b312154c17b30f796b`.
+Independent `v028-release-reference-xfxNfy/report.json`, SHA256
+`a807ffed2a5c3e5cee19315ed1c488573944ab1ccd4452e02b1e534f211fa41f`,
+matched every118 retained path/full source mode against Git blobs and a
+permission-preserving archive, exact normalized npm modes, and actual
+source/package initialization on both hosts (Copilot118/Claude115).
+This Node24 feasibility grants no qualification credit or artifact approval.
+Independent review also exposed a carried historical #233 witness digest and
+old opt-in descriptions. The proposal now binds the same unchanged current
+#233 assertions at6173-6182/current suite SHA, retains the old witness separately
+as historical evidence, and describes the approved default-enabled policy.
+The executed TEST-KOTO-SYNC-003 oracle, its ownership/assertions, all mutation
+anchors and finite case counts are unchanged.
+Earlier independent reference `dbec328` remains historical after the one-line
+legacy Markdown-plan fixture correction. No historical file is overwritten.
+
+The118-path inventory,13semantic/1180source/60origin skill cases (1253 total),
+14placeholder mechanisms,24required Linux cells, budgets and exclusions are
+unchanged. Actual registered regression discovery must include the default
+MODEL005/CLI007 and NODE-SUMMARY002/003/004 controls on every required runtime.
+Do not replace an unknown case with a passing name-filtered run.
+
+| REQ | PASS condition | counterexample | TEST/command | observed evidence |
+| --- | --- | --- | --- | --- |
+| `REQ-RELQ-001`, `REQ-RELQ-002` | Genuine current seven-artifact approval admits the complete028 scope/reference; unchanged old approval never admits changed bytes | Old027 lock, mismatched lineage/reference commit, omitted file, altered mode, missing cell or shorter budget rejects; exact approved028 control accepts | TEST-RELQ-001, TEST-RELQ-CONTENT-ADMISSION-001, TEST-RELQ-BASELINE-001 and lineage controls | Committed118-file/full-mode feasibility passed; new human approval and adapter controls pending |
+| `REQ-RELQ-003`, `REQ-RELQ-005` | Stable028 entry point and every unchanged required case/control execute with parseable complete evidence; malformed/old input is rejected without suppressing valid controls | Old027 target/archive/catalogue anchor,028-dev.0, missing default/output regression, setup-error mutant or skipped required case rejects; consistent028 and genuine assertion detections with restored controls accept | TEST-RELQ-005, TEST-RELQ-HOST-001, package/skill/native catalogue controls; isolated target/path/version mutations | Actual host controls passed on20/22/24; release-adapter assertion Red must precede production helper cutover after genuine approval |
+| `REQ-RELQ-004` | Full native gate and two consecutive complete clean runs of one unchanged frozen028 candidate/matrix yield technical readiness only | Reusing027 passes/manual-publication exception,1174/1187 partial success, stale task receipts, unknown original in-scope S1/S2, or any relevant change resets/refuses readiness | Native gate, frozen check/run/status, current-head CI and unchanged state-table controls | Qualification streak0; original issue385 assertion remains unidentified, current task verification and full gate unfinished |
+
+First violated stages: contract = exact stable028 and genuine seven-artifact
+approval; trusted inputs = committed118-file/full-mode inventory, current
+metadata/lineage and frozen tool/configuration digests; execution = every
+named required case and actual package entry point in fresh state; verdict =
+invalid evidence rejects and valid controls accept, with no skip/unknown or
+setup failure counted as PASS; evidence history = retain all failed full and
+mutation/setup attempts, current task receipts and zero inherited credit;
+integration/distribution = two identical complete runs and separate exact
+artifact/path/hash/residual-risk human release approval. No stage is waived.
+The observability fix does not identify/classify the original issue385
+assertion, close that issue, downgrade any S1/S2 or authorize a publication
+exception. Only the exact prepared files may be approved; subsequent relevant
+changes invalidate approval/validation as required.
+
+### Historical0.2.7 revision2 preparation
+
+The historical scope/content revisions were both2, retaining the exact approved
 revision1 scope SHA256
 `ca1e5ccc404c88dedb6998f1208bcdfe3250aad3ba716525c7e3d8a958320e76`
 and content SHA256

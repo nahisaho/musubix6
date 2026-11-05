@@ -1,0 +1,313 @@
+{
+  "schemaVersion": 1,
+  "targetVersion": "0.2.8",
+  "status": "scope-contract-not-run-evidence",
+  "revision": 1,
+  "policy": "docs/design-sdd-hardening.md section 3.5",
+  "inheritedManifest": {
+    "path": ".sdd/release-validation.v0.2.0.json",
+    "sha256": "e2f221e308e2fb4389f044e12c42cb2083e314b97305ae1701f65cd399c37de6"
+  },
+  "revisionReason": "Prepare stable0.2.8 at committed Gita22618df676d9766acc05cff6e3128882053fb74: default-enabled planning, deterministic failure-first summaries and private per-attempt raw-output receipts. Independently compare every118 retained canonical path against Git blobs, permission-preserving archive, offline npm package and actual source/package both-host initialization. Keep all24Linux cells, budgets, exclusions, inherited replacement mappings,13semantic/14placeholder mechanisms,1180byte/mode and60origin challenges unchanged. Preserve all0.2.7 failures and manual-publication history with zero transferred credit. New original in-scope S1/S2, unknown or skipped required results remain blocking. This proposal requires genuine seven-artifact human preparation approval and does not authorize release/publication.",
+  "historicalTestLineage": {
+    "version": 1,
+    "sourceCommit": "a22618df676d9766acc05cff6e3128882053fb74",
+    "suite": ".github/skills/lean-sdd-tdd/scripts/sdd.test.mjs",
+    "suiteSha256": "a7148f0d77458fa702c41ba8c9b2305ee7a93dd908b65ec41f25cf8da7a1b2a5",
+    "mappings": [
+      {
+        "from": "#r25a Rust: a const typed in the test is reported shown; a fn with no return evidence is guessed (report-only, code unchanged)",
+        "kind": "rename",
+        "to": [
+          "#r25a Rust: a const typed in the test is shown; an unsupported fn is marked and guessed"
+        ],
+        "reason": "Retain the required typed-constant and unsupported-function control under its corrected #381 description."
+      },
+      {
+        "from": "r24d TODO stub: a call with no return-type evidence is emitted as a concrete i64 without an SDD-TODO(stub) marker",
+        "kind": "todo-promoted",
+        "to": [
+          "#381 TEST-RSTUB-001 unsupported function returns carry named markers and guessed rows"
+        ],
+        "reason": "Require unsupported mystery/parse_flag calls to carry named manual-repair markers and guessed report rows, not silently inferred i64."
+      },
+      {
+        "from": "r24d TODO stub: a loop-bound const gets guessed i64 element types reported as inferred",
+        "kind": "todo-promoted",
+        "to": [
+          "#381 TEST-RSTUB-003 unsupported loop element types remain explicitly guessed"
+        ],
+        "reason": "Require TABLE/SWITCHES/ITEMS without sufficient element evidence to remain named, marked and guessed."
+      },
+      {
+        "from": "r24d TODO stub: a method compared with a float literal is stubbed -> i64",
+        "kind": "todo-promoted",
+        "to": [
+          "#381 TEST-RSTUB-002 methods report owner-specific evidence or marked unknown returns"
+        ],
+        "reason": "Require Ratio/Gauge float evidence to produce f64 with owner-specific report rows and preserve marked unknown-method controls."
+      },
+      {
+        "from": "r24d TODO stub: free functions are generated but not listed by --report",
+        "kind": "todo-promoted",
+        "to": [
+          "#381 TEST-RSTUB-001 unsupported function returns carry named markers and guessed rows",
+          "#381 TEST-RSTUB-CONTROL-001 evidenced functions and typed constants preserve native compilation"
+        ],
+        "reason": "Require both unsupported and evidenced generated free functions to have report rows, with native compilation for the evidenced control."
+      }
+    ]
+  },
+  "legacyMutationDiagnosticPolicy": {
+    "version": 1,
+    "assertMatch": "exact-native-message-prefix-from-the-frozen-regular-expression-literal-at-the-owned-assertion-frame",
+    "customMessageAssertions": "inherited-expected-reason",
+    "customMessageOverrides": [
+      {
+        "id": "scanner-complete-sources",
+        "suite": ".github/skills/lean-sdd-tdd/scripts/source-discovery.test.mjs",
+        "expectedAssertion": "assert.equal(valid.code, 0,",
+        "messagePrefix": "TRACE FAIL: 1 REQ, 0 annotated entities, 1 errors, 2 warnings\n",
+        "independentReference": "TEST-SCAN-001 fixture has one requirement; cutting both padded source files before their annotations leaves zero entities, one missing-test error and two missing-test/implementation warnings"
+      },
+      {
+        "id": "scanner-limit-validation",
+        "suite": ".github/skills/lean-sdd-tdd/scripts/source-discovery.test.mjs",
+        "expectedAssertion": "assert.equal(r.code, 1, r.out)",
+        "messagePrefix": "TRACE OK: 1 REQ, 2 annotated entities, 0 errors, 0 warnings\n",
+        "independentReference": "TEST-SCAN-003 uses the complete one-requirement/two-entity fixture; ignoring its invalid scan configuration incorrectly runs a clean trace instead of returning the required refusal"
+      }
+    ],
+    "otherAssertions": "inherited-expected-reason",
+    "quotedSetupText": "accept-only-an-exact-owned-native-assertion-with-complete-valid-controls",
+    "requiredControls": [
+      "baseline",
+      "mutant",
+      "restored"
+    ],
+    "historicalCatalogue": "unchanged-provenance-not-the-current-assert-match-message-oracle"
+  },
+  "contentMutationContract": {
+    "path": ".sdd/release-content-mutations.v0.2.8.json",
+    "sha256": "74098927b5ea6ee09b753e8ea358eeccc0289207ba576e310ebd1cb46e681b0d",
+    "approvalRequired": true,
+    "status": "proposed-not-approved-or-executed"
+  },
+  "scopeApproval": {
+    "feature": "release-qualification",
+    "required": true,
+    "verification": "Current human artifact lock in .sdd/approvals.json; a proposal or this field alone is not approval"
+  },
+  "frozenManifest": "Generated separately after preflight; binds this approved plan's SHA256, exact candidate inputs, commands and named catalogues before any qualifying run",
+  "requiredCleanRuns": 2,
+  "consecutiveCompleteCleanRuns": 0,
+  "priorQualificationCredit": 0,
+  "requiredMissingOrSkippedIsNotPass": true,
+  "requiredCells": [
+    {
+      "id": "PACKAGE-20",
+      "runtime": "20",
+      "kind": "extra",
+      "mode": "package",
+      "timeoutSeconds": 300
+    },
+    {
+      "id": "WATCHDOG-20",
+      "runtime": "20",
+      "kind": "watchdog",
+      "timeoutSeconds": 300
+    },
+    {
+      "id": "NO-CHANGE-20",
+      "runtime": "20",
+      "kind": "extra",
+      "mode": "no-change",
+      "timeoutSeconds": 300
+    },
+    {
+      "id": "PACKAGE-22",
+      "runtime": "22",
+      "kind": "extra",
+      "mode": "package",
+      "timeoutSeconds": 300
+    },
+    {
+      "id": "WATCHDOG-22",
+      "runtime": "22",
+      "kind": "watchdog",
+      "timeoutSeconds": 300
+    },
+    {
+      "id": "NO-CHANGE-22",
+      "runtime": "22",
+      "kind": "extra",
+      "mode": "no-change",
+      "timeoutSeconds": 300
+    },
+    {
+      "id": "PACKAGE-24",
+      "runtime": "24",
+      "kind": "extra",
+      "mode": "package",
+      "timeoutSeconds": 300
+    },
+    {
+      "id": "WATCHDOG-24",
+      "runtime": "24",
+      "kind": "watchdog",
+      "timeoutSeconds": 300
+    },
+    {
+      "id": "NO-CHANGE-24",
+      "runtime": "24",
+      "kind": "extra",
+      "mode": "no-change",
+      "timeoutSeconds": 300
+    },
+    {
+      "id": "MUTATION",
+      "runtime": "20",
+      "kind": "mutation",
+      "timeoutSeconds": 3600
+    },
+    {
+      "id": "SCOPE-DIFFERENTIAL",
+      "runtime": "24",
+      "kind": "scope",
+      "timeoutSeconds": 600
+    },
+    {
+      "id": "NATIVE-R",
+      "runtime": "24",
+      "kind": "extra",
+      "mode": "r",
+      "timeoutSeconds": 600
+    },
+    {
+      "id": "NATIVE-GRADLE",
+      "runtime": "24",
+      "kind": "extra",
+      "mode": "gradle",
+      "timeoutSeconds": 600
+    },
+    {
+      "id": "NATIVE-PROSE",
+      "runtime": "24",
+      "kind": "extra",
+      "mode": "prose",
+      "timeoutSeconds": 600
+    },
+    {
+      "id": "ORACLE-SELFTEST",
+      "runtime": "24",
+      "kind": "oracle",
+      "timeoutSeconds": 600
+    },
+    {
+      "id": "PROCESS-SELFTEST",
+      "runtime": "24",
+      "kind": "process",
+      "timeoutSeconds": 120
+    },
+    {
+      "id": "SKILL-MUTATION",
+      "runtime": "24",
+      "kind": "skill-mutation",
+      "timeoutSeconds": 3600
+    },
+    {
+      "id": "PLACEHOLDER-MUTATION",
+      "runtime": "24",
+      "kind": "placeholder-mutation",
+      "timeoutSeconds": 3600
+    },
+    {
+      "id": "INTEGRATED-GATE",
+      "runtime": "24",
+      "kind": "gate",
+      "timeoutSeconds": 12000
+    },
+    {
+      "id": "DIAGNOSTIC-MUTATION",
+      "runtime": "24",
+      "kind": "diagnostic-mutation",
+      "timeoutSeconds": 3600
+    },
+    {
+      "id": "REGRESSION-20",
+      "runtime": "20",
+      "kind": "suite",
+      "timeoutSeconds": 12000
+    },
+    {
+      "id": "REGRESSION-22",
+      "runtime": "22",
+      "kind": "suite",
+      "timeoutSeconds": 12000
+    },
+    {
+      "id": "REGRESSION-24",
+      "runtime": "24",
+      "kind": "suite",
+      "timeoutSeconds": 12000
+    },
+    {
+      "id": "HOST-MUTATION",
+      "runtime": "24",
+      "kind": "host-mutation",
+      "timeoutSeconds": 3600
+    }
+  ],
+  "excludedCells": [
+    {
+      "id": "NATIVE-WSLC",
+      "runtime": "24",
+      "kind": "extra",
+      "mode": "wslc",
+      "timeoutSeconds": 600,
+      "status": "excluded-unvalidated",
+      "reason": "User selected Linux-only verification; actual Windows/WSL container execution is outside this qualification scope",
+      "approvalRequired": true
+    }
+  ],
+  "supportContract": {
+    "status": "Linux-only-scope-contract",
+    "qualificationPlatform": "Linux x86_64",
+    "unverifiedPlatforms": [
+      "Windows",
+      "WSL container execution",
+      "macOS"
+    ],
+    "additionalCandidateChanges": [
+      "GiNZA 5.3 installed runtime regression",
+      "Cumulative repository cost-history regression",
+      "#381 Rust stub confidence and scoped inference",
+      "#382 host-aware development instructions",
+      "#383 Windows native npm/npm.cmd launch and executable provenance",
+      "#384 MSVC INCLUDE/LIB/LIBPATH inheritance and SDK provenance",
+      "Explicit uv provisioning before required publish-CI GiNZA integration tests",
+      "ESRCH-only owned-descendant test cleanup repair, with unchanged provider behavior and close-time assertions"
+    ],
+    "currentNamedCatalogue": "pending reconstruction and freeze; no historical count assumed"
+  },
+  "historicalMissingLaunchers": [
+    {
+      "stage": "trusted inputs",
+      "path": "/home/nahisaho/.copilot/session-state/a55408e9-74fb-4add-9bc2-4540d1509ca5/files/qualification-v020/two-runs-v020.mjs",
+      "status": "missing"
+    },
+    {
+      "stage": "trusted inputs",
+      "path": "/home/nahisaho/.copilot/session-state/a55408e9-74fb-4add-9bc2-4540d1509ca5/files/qualification-v020/freeze-v020.mjs",
+      "status": "missing"
+    }
+  ],
+  "recovery": "Restore and verify qualification helpers or reconstruct reviewed equivalents, with a retained mapping for all 34 unavailable historical helper inputs. After human approval of the Linux-only scope, freeze the 24-required-cell matrix with exact current digests and named cases, then run it twice unchanged. No further removal or weakened oracle is authorized.",
+  "humanReleaseApproved": false,
+  "publishingAuthorized": false,
+  "previousVersion": {
+    "version": "0.2.7",
+    "path": ".sdd/release-validation.v0.2.7.json",
+    "sha256": "82c22aa74f8005ff320b6e244c6a873d65ef9070546e9021c35a034e2ccfe450"
+  }
+}

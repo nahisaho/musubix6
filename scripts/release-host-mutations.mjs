@@ -126,7 +126,7 @@ export function hostMutations(version) {
     ['packed-cli-version', '005', cli,
       replace("else if (cmd === '-v' || cmd === '--version') console.log(pkg.version);",
         `else if (cmd === '-v' || cmd === '--version') console.log('${version}-dev.0');`),
-      "assert.equal(wrapper('--version').stdout.trim(),"],
+      ["assert.equal(sourceVersion.stdout.trim(),", "assert.equal(wrapper('--version').stdout.trim(),"]],
     ['changelog-version', '005', 'CLANGELOG.md', replace(`## [${version}] - `, `## [${version}-dev.1] - `),
       "assert.match(fs.readFileSync(path.join(root, 'CLANGELOG.md'),"],
     ...['README.md', 'README-ja.md'].flatMap(file => [
@@ -150,7 +150,7 @@ export function hostMutations(version) {
     }, "assert.ok(fs.existsSync(path.join(packed, 'scripts/host-compatibility.test.mjs')));"],
   ];
   return rows.map(([name, id, file, mutate, needle]) => ({
-    name, test: `TEST-HOST-${id}`, file, mutate, expectedAssertionNeedles: [needle],
+    name, test: `TEST-HOST-${id}`, file, mutate, expectedAssertionNeedles: [needle].flat(),
   }));
 }
 

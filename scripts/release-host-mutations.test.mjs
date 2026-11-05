@@ -14,7 +14,7 @@ const digest = file => crypto.createHash('sha256').update(fs.readFileSync(file))
 
 /** @id TEST-RELQ-HOST-001 @verifies REQ-RELQ-003 REQ-RELQ-005 */
 test('TEST-RELQ-HOST-001 retains every inherited host mechanism and detects current version mutants with owned restored controls', t => {
-  const cases = hostMutations('0.2.7');
+  const cases = hostMutations('0.2.8');
   assert.deepEqual(cases.map(item => item.name), inherited.hostMutationCatalogue,
     'all28 inherited host mechanisms must remain executable on the current candidate');
   assert.equal(replace('alpha', 'beta')('alpha'), 'beta');
