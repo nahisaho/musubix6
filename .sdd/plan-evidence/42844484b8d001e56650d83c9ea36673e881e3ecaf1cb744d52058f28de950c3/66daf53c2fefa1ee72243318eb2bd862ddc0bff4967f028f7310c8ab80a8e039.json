@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "task": "TASK-R36D-TS-001",
+  "sequence": 1,
+  "previous": "",
+  "definitionSha256": "e236781054e6ecc4dbdce4884e875834b8b33a3fddf9d75f746c8e98e88ebcef",
+  "inputSha256": "d2407b4a961cc15d577e0b29b42b18d0a18495c90da6e769e97759489a054bfb",
+  "status": "PASS",
+  "exit": 0,
+  "checks": [
+    {
+      "name": "regression-1",
+      "argv": [
+        "node",
+        "--test",
+        "--test-name-pattern",
+        "^(?:.*\\b(?:TEST-R36D-TS-001))(?![0-9A-Za-z])",
+        ".github/skills/lean-sdd-tdd/scripts/sdd.test.mjs"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/42844484b8d001e56650d83c9ea36673e881e3ecaf1cb744d52058f28de950c3/attempt-367dd856-3928-43f8-a88d-3de46e15c780/0.log",
+        "sha256": "dcb09160095db604fb4f9ef57cce2e800f029d22b7f2c3c2965ed35e3b925f2d",
+        "bytes": 3995
+      }
+    },
+    {
+      "name": "native-TEST-R36D-TS-001",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-R36D-TS-001",
+        "--root",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/42844484b8d001e56650d83c9ea36673e881e3ecaf1cb744d52058f28de950c3/attempt-367dd856-3928-43f8-a88d-3de46e15c780/1.log",
+        "sha256": "be29c79ad49f591f52894544f7bdf2733db83f8c103393b54e022bb31a9588f3",
+        "bytes": 54
+      }
+    }
+  ],
+  "ledgerEvents": [
+    {
+      "test": "TEST-R36D-TS-001",
+      "hashes": [
+        "66cb686443ce7c7ded852c25cacbd3de6fb17f079e0d143d94f46583701d083c",
+        "b48f313601437e08b7d91adaff0011361783c60d61b7812e81723f6597378c0d",
+        "c838f34252385990d0f586c6cc29be7a0aa0f3e472aeab71daaf7bca9b66981e",
+        "ef0dcd7f69456bf8af53c83d61619fe0f596fc957f034d16c701520307ff1133"
+      ]
+    }
+  ],
+  "errors": []
+}

@@ -1,0 +1,76 @@
+{
+  "schemaVersion": 1,
+  "task": "TASK-NODE-SUMMARY-001",
+  "sequence": 1,
+  "previous": "",
+  "definitionSha256": "10445f71efa5c633d40172ab86e542c5538dcca80173b51418a0ef0cdc133158",
+  "inputSha256": "3cab60a9d0c6e987cc191c37a59661cd8bd552a40781ed86eb793b196a9a586f",
+  "status": "PASS",
+  "exit": 0,
+  "checks": [
+    {
+      "name": "regression-1",
+      "argv": [
+        "node",
+        "--test",
+        "--test-name-pattern",
+        "^(?:.*\\b(?:TEST-NODE-SUMMARY-001))(?![0-9A-Za-z])",
+        ".github/skills/lean-sdd-tdd/scripts/sdd.test.mjs"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/69fda522686c070b6f200b55b8c684f22ffad476f9fe001e203d42c90af8d2f1/attempt-5c708844-e0f6-497b-8f69-5d71ec268273/0.log",
+        "sha256": "9c45c733638e85c3920ff01a4c5283c1f59a7b0161afb02e4d3e17fd4e5804d4",
+        "bytes": 212
+      }
+    },
+    {
+      "name": "native-TEST-NODE-SUMMARY-001",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-NODE-SUMMARY-001",
+        "--root",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/69fda522686c070b6f200b55b8c684f22ffad476f9fe001e203d42c90af8d2f1/attempt-5c708844-e0f6-497b-8f69-5d71ec268273/1.log",
+        "sha256": "6db4854e65033faf46514a5e807f157e9c77e79261533f613037966e97135072",
+        "bytes": 64
+      }
+    }
+  ],
+  "ledgerEvents": [
+    {
+      "test": "TEST-NODE-SUMMARY-001",
+      "hashes": [
+        "2156766f27f2c186e8f2cf42980235a690873999bb43d267ba4287f672ba2c55",
+        "24c6daa4df372206880a4fd5e7cbce7f9597f1270f22c2bc5a6fb69c5b889e39",
+        "2a4a7a940dfeccf81772a9edb7ef6657644fa12a317844b4c783e1bec1341d43",
+        "2e443c94225a4a7f09f171e63c6049f8887bfdc54a76c24044846f76d3579a2a",
+        "3a5671401e411f380624a7aa0d1e026dce4ddab0f91bd2d4126e0ed33059b2f3",
+        "51125e88e9e77333992ec8556eb7c14e47b2191e8dd8b0e9e726805299ad7cad",
+        "836020765ffde8268f3e86fd48705a45a2ad42eda9e8a635ad05c3d067d17564",
+        "8c37b8583bff65a8e1d91cd41e9e2095cfe10ae5228a092cd4c9ad9c439478c4",
+        "988aedce086c84f2797c49836f8a35e1b1644de24e71707c258d1f7e611321f6",
+        "989ce33a6ba4d0f94881ad00c0efe6a756ad5b18cf78769854c91a81011f2b5d",
+        "9e0a4dfae68643220f8ac1815f00ab81e310b03b9c4b64a5616df5eddb306a35",
+        "bd51181559f237cb8e1ec7271bef657848dc3f0e9102756f0b0e48bbb6b04442",
+        "e1b05411127f19adf6342aac001d900501272e11f58f226b577bdddaadd432b9",
+        "eea31152ed56e8f82a7f6ce7cba56d5a9296fccbd1f5b99ddf0ac3f0ba7ecc0a"
+      ]
+    }
+  ],
+  "errors": []
+}

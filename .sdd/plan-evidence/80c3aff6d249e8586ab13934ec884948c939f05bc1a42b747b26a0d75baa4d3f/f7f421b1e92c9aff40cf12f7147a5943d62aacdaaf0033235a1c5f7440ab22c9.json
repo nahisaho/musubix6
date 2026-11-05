@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "task": "TASK-RSTUB-004",
+  "sequence": 1,
+  "previous": "",
+  "definitionSha256": "f06cc78f7a77de07a61edb17e4774d5c9f771a8aff743058e7297f6102f9085c",
+  "inputSha256": "9401e6752e88a9a9adb33ecf7721d942c51ec7d0d454d49ec18290e1221946f4",
+  "status": "PASS",
+  "exit": 0,
+  "checks": [
+    {
+      "name": "regression-1",
+      "argv": [
+        "node",
+        "--test",
+        "--test-name-pattern",
+        "^(?:.*\\b(?:TEST-RSTUB-CONTROL-001|TEST-RSTUB-004))(?![0-9A-Za-z])",
+        ".github/skills/lean-sdd-tdd/scripts/sdd.test.mjs"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/80c3aff6d249e8586ab13934ec884948c939f05bc1a42b747b26a0d75baa4d3f/attempt-b80699f4-c6b2-476e-b02c-42bd5e6ad5aa/0.log",
+        "sha256": "f0157f5e7cd00594d9dd9aa9a616ea9b205268e08135ca7698e170b04b0dd299",
+        "bytes": 340
+      }
+    },
+    {
+      "name": "native-TEST-RSTUB-004",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-RSTUB-004",
+        "--root",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/80c3aff6d249e8586ab13934ec884948c939f05bc1a42b747b26a0d75baa4d3f/attempt-b80699f4-c6b2-476e-b02c-42bd5e6ad5aa/1.log",
+        "sha256": "8da5df4357d018b45c96708f949ce2d0645e37b94cf14038bd95e6ea4b9be5f7",
+        "bytes": 50
+      }
+    },
+    {
+      "name": "native-TEST-RSTUB-CONTROL-001",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-RSTUB-CONTROL-001",
+        "--root",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/80c3aff6d249e8586ab13934ec884948c939f05bc1a42b747b26a0d75baa4d3f/attempt-b80699f4-c6b2-476e-b02c-42bd5e6ad5aa/2.log",
+        "sha256": "ec12e5c92f3b2d43b337450ce7a55cfe8749ee7b4e21c5021a8d56d5ac7ab5d4",
+        "bytes": 58
+      }
+    }
+  ],
+  "ledgerEvents": [
+    {
+      "test": "TEST-RSTUB-004",
+      "hashes": [
+        "4533d0e2d004e765930308c6a7d2640d09ce7a59d4c0dcf0de27717ac595f298",
+        "46a075388dd7f220a53e6531deca6c4230a4921baef9bb8aa825fcf02e97cffa",
+        "8c823560cd7f2fad44b0af91f3949cc2ad8aa6090bfdf451ff03ad04f75bc8b7",
+        "9b60c85344e95f2d9b9dc3ecea369078e2105401366f5227025801141bf476d2",
+        "c2fe51157022d9d9c2c57b4e11cb2316d5564c9f05c8c89cd4bcf5a808627055"
+      ]
+    },
+    {
+      "test": "TEST-RSTUB-CONTROL-001",
+      "hashes": [
+        "090814ef197e19417eb8c94f8327f976f6bddc7058922c3605172aaec873fb30",
+        "34cccc47a3fdcc751a8a238ea640b324a7c21ee3104a7555d1133b72f9aeb98a",
+        "4e01e14c9d0266ab248805505dd23ade1eb5818afa87a912b8078dfe4da663f7",
+        "79778a16fa77007755faaea249610cef54793f9d1c86db1365601422cbb68188",
+        "7ed36c9c2bdf5e07004fdf07ef4faf0a0f5340721e993fd5291b13c04498ecd5"
+      ]
+    }
+  ],
+  "errors": []
+}

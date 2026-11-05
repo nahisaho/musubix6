@@ -1,0 +1,218 @@
+{
+  "schemaVersion": 1,
+  "task": "TASK-DIAGCLI-004",
+  "sequence": 1,
+  "previous": "",
+  "definitionSha256": "b969346e27d42667a09cd812b545f4b9a2e12503fc44b7f8288bc002425a4ce1",
+  "inputSha256": "d1883c5df7885578e864406e55e68e59dc3b0380bb62b9aa7442340b49226d26",
+  "status": "PASS",
+  "exit": 0,
+  "checks": [
+    {
+      "name": "regression-1",
+      "argv": [
+        "node",
+        "--test",
+        "--test-name-pattern",
+        "^(?:.*\\b(?:TEST-DIAGCLI-007|TEST-DIAGCLI-008))(?![0-9A-Za-z])",
+        ".github/skills/lean-sdd-tdd/scripts/diagnostics-profiles.test.mjs"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/08337c90e2fd128005146d7a2d947897dab20761afb5f7efa09758b59cde6f52/attempt-5854b236-4244-45b5-8144-69a15dc90c91/0.log",
+        "sha256": "835f479624adf1e790c993a09ca8206b65888123b66d0360cac185d36c42d217",
+        "bytes": 304
+      }
+    },
+    {
+      "name": "regression-2",
+      "argv": [
+        "node",
+        "--test",
+        "--test-name-pattern",
+        "^(?:.*\\b(?:TEST-DIAGCLI-004|TEST-DIAGCLI-PROCSTATE-001|TEST-DIAGCLI-CLOSE-001))(?![0-9A-Za-z])",
+        ".github/skills/lean-sdd-tdd/scripts/diagnostics.test.mjs"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/08337c90e2fd128005146d7a2d947897dab20761afb5f7efa09758b59cde6f52/attempt-5854b236-4244-45b5-8144-69a15dc90c91/1.log",
+        "sha256": "ce53170aa8b00ca85a0ed9fbdcaab8e8b111f2ae966148a980d8804bcb890c18",
+        "bytes": 459
+      }
+    },
+    {
+      "name": "native-TEST-DIAGCLI-004",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-DIAGCLI-004",
+        "--root",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/08337c90e2fd128005146d7a2d947897dab20761afb5f7efa09758b59cde6f52/attempt-5854b236-4244-45b5-8144-69a15dc90c91/2.log",
+        "sha256": "82023cf3b0307f3fc71bc3888f66743d884d5f311830a5d3af4dcbf01d0fe81f",
+        "bytes": 54
+      }
+    },
+    {
+      "name": "native-TEST-DIAGCLI-007",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-DIAGCLI-007",
+        "--root",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/08337c90e2fd128005146d7a2d947897dab20761afb5f7efa09758b59cde6f52/attempt-5854b236-4244-45b5-8144-69a15dc90c91/3.log",
+        "sha256": "a766373298c18400171d74dbeebc9b3b8ba6c3a6a0dc1c5b00400e6b0291511a",
+        "bytes": 53
+      }
+    },
+    {
+      "name": "native-TEST-DIAGCLI-008",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-DIAGCLI-008",
+        "--root",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/08337c90e2fd128005146d7a2d947897dab20761afb5f7efa09758b59cde6f52/attempt-5854b236-4244-45b5-8144-69a15dc90c91/4.log",
+        "sha256": "693cd02589276ca09355400bccca57a99f2f8a9f7b47a8b991ee60ded88a7871",
+        "bytes": 54
+      }
+    },
+    {
+      "name": "native-TEST-DIAGCLI-CLOSE-001",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-DIAGCLI-CLOSE-001",
+        "--root",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/08337c90e2fd128005146d7a2d947897dab20761afb5f7efa09758b59cde6f52/attempt-5854b236-4244-45b5-8144-69a15dc90c91/5.log",
+        "sha256": "e85724d5a2c0d250a73783174f97134e90779e00be206b6daef64f1b12fe8917",
+        "bytes": 59
+      }
+    },
+    {
+      "name": "native-TEST-DIAGCLI-PROCSTATE-001",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-DIAGCLI-PROCSTATE-001",
+        "--root",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/08337c90e2fd128005146d7a2d947897dab20761afb5f7efa09758b59cde6f52/attempt-5854b236-4244-45b5-8144-69a15dc90c91/6.log",
+        "sha256": "2f1a80beffef86e3728479b94f30e09e503d5cd057680ac82e9421fad54a46cd",
+        "bytes": 63
+      }
+    }
+  ],
+  "ledgerEvents": [
+    {
+      "test": "TEST-DIAGCLI-004",
+      "hashes": [
+        "2f219995393210d5224c1bf311b6cee869b769cfb5145d5e9c1393ce4fb4220b",
+        "2fc58876e56e0697795c4fef955964572b5ab4e8878b0c2745f4a60764e063c0",
+        "5957e7891ca00eff5b1c7fe6fae4541e5580f0cf762c1474d0708f3690d3d70c",
+        "c154ac760a79acd04a6bdaae1967713e114d38838d5c1756bddfce0f5fb341e6",
+        "cafe9fdb6d9fb66bbc8795a6cb661ba90976c8393f01f036b1ce9af34cc40a65",
+        "ea616bd1a17558af1faed0a5a618e9922d8ae944ff9155019b6617fdd6ae4399"
+      ]
+    },
+    {
+      "test": "TEST-DIAGCLI-007",
+      "hashes": [
+        "014a72db908dd856d6697022c0143634eb28d0286bc71dbde0b911819312d05c",
+        "1ec7ea68760b4365c294ffe351b6d7dba9886588fc1dac876a14a06f9623d136",
+        "7288a8abe41c5b6370936b3471fe8b996d4a6bb89915aeb33449f4295217a965",
+        "811abbb4e8de940d2d1d9f44183dfde9efd4f40c175d9b384ecd3cac514a4d76",
+        "889d8ce6cb15321c51d0bd49f6e32b0fe922a59366726e9d7500d2108f8740ce",
+        "f4405746cc58cf000876ffe688cab30840e8f186e8841d7fd38d479fe8b08455"
+      ]
+    },
+    {
+      "test": "TEST-DIAGCLI-008",
+      "hashes": [
+        "0ffdbf5142507a28b1e1edfe996db6867dfe6367cfa68ed537579d775351b08c",
+        "5e5e959197e997b49f0e754f38dbb522bf898b65f660f7de55973891fe7c3266",
+        "c19288565f96f7e61b03447a64e013226600244ee49a9b0e4b37d30f9614c62c",
+        "ce79345788d84bd8fc28642f354df238cf1694a3310c4cd375f03ba9b1bf1596",
+        "e2b114afbf8227c611526210f653757a3702a1a4525e2f76d65fb9701140dac1",
+        "fc4ceb7adae6ec01cdce5d1bb35d9bf2b1d53982cdc44c253df03cdd350ebc67"
+      ]
+    },
+    {
+      "test": "TEST-DIAGCLI-CLOSE-001",
+      "hashes": [
+        "1ccc7f6e2ffc51fefb0d052a72a0ec84ac8a4c7b879c8a72d4c0859caacb322b",
+        "307bce5d37444e9616df2cf392c3e60e304c8c98e1ae8eb7699edb89c5c0e65b",
+        "3c0510c142d02bc256a2d3b7e6c82dcc595d76e8f4012cfc34cbbc87d44c2951",
+        "40fd6e97b286524e916ecd9c753800e088fa1d3ac6c6c26946acfd4a9dd63fb8",
+        "a87c0b46e2fec02deef23ea059b52be68ba7102bb4cd448a23575e4a091a3ad2",
+        "cc13a2fd9085f499a887e2eadd0241c153a31c05bf7560726ed8b7dbaf0bc8b6"
+      ]
+    },
+    {
+      "test": "TEST-DIAGCLI-PROCSTATE-001",
+      "hashes": [
+        "0f9c4e32c63b28736b236e13781f2390a261fec20de63afbcb5a60e00ecca01e",
+        "28becab04de1a4b1c621cd27b0fe3fbf2168d50176c0784a196bc3ab90271457",
+        "9784b070386936c5f813d151e5aabb135b1ae85fb09724e9d60c0b0be6d8924e",
+        "a6d3c3ea39b1c06a9ea03ed4a9c8693f326cae8523e32b9afa5c4345799e8d0d"
+      ]
+    }
+  ],
+  "errors": []
+}

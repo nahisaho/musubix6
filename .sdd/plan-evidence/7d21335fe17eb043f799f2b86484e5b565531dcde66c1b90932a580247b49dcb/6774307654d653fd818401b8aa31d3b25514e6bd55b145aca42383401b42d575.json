@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "task": "TASK-HOST-002",
+  "sequence": 1,
+  "previous": "",
+  "definitionSha256": "4fc73063bda4ced01ba4c708c7cf6675ed3354f3faec6b5282f34040d180c05f",
+  "inputSha256": "e7661b8ce0dc01536d17bc52d1acea938745f181c815180f35f40ef8c19dd5ee",
+  "status": "PASS",
+  "exit": 0,
+  "checks": [
+    {
+      "name": "regression-1",
+      "argv": [
+        "node",
+        "--test",
+        "--test-name-pattern",
+        "^(?:.*\\b(?:TEST-HOST-002))(?![0-9A-Za-z])",
+        "scripts/host-compatibility.test.mjs"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/7d21335fe17eb043f799f2b86484e5b565531dcde66c1b90932a580247b49dcb/attempt-5221479c-f745-4d86-aa22-5b649132fce5/0.log",
+        "sha256": "85b7c675e9ad12c451d07b7eadee8a7e05ba50f7037cb5e6b6dacb2c922f2b78",
+        "bytes": 222
+      }
+    },
+    {
+      "name": "native-TEST-HOST-002",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-HOST-002",
+        "--root",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/7d21335fe17eb043f799f2b86484e5b565531dcde66c1b90932a580247b49dcb/attempt-5221479c-f745-4d86-aa22-5b649132fce5/1.log",
+        "sha256": "d7400e076d9f5b7ab9b9f079c0d08dc0c68e32048a6b27e41ece496566c03b4e",
+        "bytes": 48
+      }
+    }
+  ],
+  "ledgerEvents": [
+    {
+      "test": "TEST-HOST-002",
+      "hashes": [
+        "105b18ee15c5bef440c6cd955ce935724c40ea5f9816ba3f9088272890ce10c5",
+        "4435471939ff48c2680cd67d4ee025989d1f8f8b4c1f0e29d5e6c3f21dce6682",
+        "7bce6990ffcee987af13b2fba595bcd1150481a67a85e54b7a3054ada5fc2849",
+        "9a4a2b19bb167a2e1d4192d553ba398b3f9c8c34ba1f1a4a137ac64c79ed0371",
+        "fe09bfe6a6693dbe7c6bb1903129d602e50c1d27f19e0c49e04f0c36c8c018bc"
+      ]
+    }
+  ],
+  "errors": []
+}

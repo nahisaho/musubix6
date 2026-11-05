@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "task": "TASK-SPECCTX-001",
+  "sequence": 1,
+  "previous": "",
+  "definitionSha256": "a4b1806ccc70e411a4a47d68955d87da6f4f12dbd8fe8480bb436c7054b29458",
+  "inputSha256": "ee3c326060241bcbbe2d8f2830752acc7bba64891b1233fd0a313fa5d1161204",
+  "status": "PASS",
+  "exit": 0,
+  "checks": [
+    {
+      "name": "regression-1",
+      "argv": [
+        "node",
+        "--test",
+        "--test-name-pattern",
+        "^(?:.*\\b(?:TEST-SPECCTX-001))(?![0-9A-Za-z])",
+        ".github/skills/lean-sdd-tdd/scripts/spec-context.test.mjs"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/57b582030db3a4c58f7e7b61bf96cc499e75687e375a40f87f404ddb0809632a/attempt-80c9a5a9-a8bb-4cfd-bfbc-1b4b02d6021c/0.log",
+        "sha256": "e7db652af527fbdd09dd76fdbf09428492b942f51ce735e19face5ba7339e16e",
+        "bytes": 212
+      }
+    },
+    {
+      "name": "native-TEST-SPECCTX-001",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-SPECCTX-001",
+        "--root",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/57b582030db3a4c58f7e7b61bf96cc499e75687e375a40f87f404ddb0809632a/attempt-80c9a5a9-a8bb-4cfd-bfbc-1b4b02d6021c/1.log",
+        "sha256": "9f0fa87ab3ba3b2c94cac36a96571b0178fdf75ae83f59eb591a740700661325",
+        "bytes": 54
+      }
+    }
+  ],
+  "ledgerEvents": [
+    {
+      "test": "TEST-SPECCTX-001",
+      "hashes": [
+        "06b52784382556c24d17a8d24034c22cf3817141b1fcbed1eac6361ed4162c00",
+        "8b89ccb99d7aa35ecc3cf22766f3a351489a1e2948a400da0d5745c3b3971718",
+        "c47ee21ed42929685e950ee197d1d461bc5a590893a911d93d319168294a85d1",
+        "fc70007cf129a7204da40874c68e5f73d27c191b2c0432e52722ef7500c3b810"
+      ]
+    }
+  ],
+  "errors": []
+}

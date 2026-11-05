@@ -1,0 +1,497 @@
+{
+  "schemaVersion": 1,
+  "task": "TASK-CHECK-CLOSURE-001",
+  "sequence": 1,
+  "previous": "",
+  "definitionSha256": "3ea97ad97eb47d0b110b5595be7565cffd4280ddba69f2318b8e7b13853be2ff",
+  "inputSha256": "a17053ea5d1c5351c80c959435983dfb7721110fee8feb53e1c87d5235d4848c",
+  "status": "PASS",
+  "exit": 0,
+  "checks": [
+    {
+      "name": "regression-1",
+      "argv": [
+        "node",
+        "--test",
+        "--test-name-pattern",
+        "^(?:.*\\b(?:TEST-CHECK-CLOSURE-001|TEST-CHECK-CLOSURE-002|TEST-CHECK-CLOSURE-005|TEST-R34-PYREL-001|TEST-R34-PYREL-002|TEST-R34-PYREL-003|TEST-R34-PYREL-004|TEST-R34-PYREL-005|TEST-R34-PYREL-006|TEST-R34-PYREL-007|TEST-R34-PYREL-008|TEST-R34-PYREL-009|TEST-R34-PYREL-010|TEST-R34-INTEGRATION-002))(?![0-9A-Za-z])",
+        ".github/skills/lean-sdd-tdd/scripts/sdd.test.mjs"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/171caf2d9cb6691a5bf343f8c8071741a570013b0b3eafe7652a64b3a67068a6/attempt-21418e1f-8d17-46f8-b5ed-1b99bdcace38/0.log",
+        "sha256": "a019aa200a7fe7844a8cdd5f03ae116443cd0523ace51cf5d528ed6d311ca21b",
+        "bytes": 1825
+      }
+    },
+    {
+      "name": "native-TEST-CHECK-CLOSURE-001",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-CHECK-CLOSURE-001",
+        "--root",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/171caf2d9cb6691a5bf343f8c8071741a570013b0b3eafe7652a64b3a67068a6/attempt-21418e1f-8d17-46f8-b5ed-1b99bdcace38/1.log",
+        "sha256": "59f2f47d764a22992828632f82172bbec7e2f920b07689c6eda1276d6947b2aa",
+        "bytes": 67
+      }
+    },
+    {
+      "name": "native-TEST-CHECK-CLOSURE-002",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-CHECK-CLOSURE-002",
+        "--root",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/171caf2d9cb6691a5bf343f8c8071741a570013b0b3eafe7652a64b3a67068a6/attempt-21418e1f-8d17-46f8-b5ed-1b99bdcace38/2.log",
+        "sha256": "6a14ac01da98662efa900ad28e3c27dd4c4dda139581196c13897bc7a80d6622",
+        "bytes": 66
+      }
+    },
+    {
+      "name": "native-TEST-CHECK-CLOSURE-005",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-CHECK-CLOSURE-005",
+        "--root",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/171caf2d9cb6691a5bf343f8c8071741a570013b0b3eafe7652a64b3a67068a6/attempt-21418e1f-8d17-46f8-b5ed-1b99bdcace38/3.log",
+        "sha256": "1b2554a34d7286d7b281a85aab5ada8420c8e4ff39f1b6000993ae68d27f0c55",
+        "bytes": 66
+      }
+    },
+    {
+      "name": "native-TEST-R34-INTEGRATION-002",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-R34-INTEGRATION-002",
+        "--root",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/171caf2d9cb6691a5bf343f8c8071741a570013b0b3eafe7652a64b3a67068a6/attempt-21418e1f-8d17-46f8-b5ed-1b99bdcace38/4.log",
+        "sha256": "273d85f2712b93203d7e36f8595627d8bb7a9e4fe2cd91b8b8b7d3cb788e470b",
+        "bytes": 68
+      }
+    },
+    {
+      "name": "native-TEST-R34-PYREL-001",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-R34-PYREL-001",
+        "--root",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/171caf2d9cb6691a5bf343f8c8071741a570013b0b3eafe7652a64b3a67068a6/attempt-21418e1f-8d17-46f8-b5ed-1b99bdcace38/5.log",
+        "sha256": "73a71b58f118d3a86b2669a9f3067f56c173894d25cd1a5b6de809e52adfb140",
+        "bytes": 63
+      }
+    },
+    {
+      "name": "native-TEST-R34-PYREL-002",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-R34-PYREL-002",
+        "--root",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/171caf2d9cb6691a5bf343f8c8071741a570013b0b3eafe7652a64b3a67068a6/attempt-21418e1f-8d17-46f8-b5ed-1b99bdcace38/6.log",
+        "sha256": "e13acbf3d2e4a10ccc52a09b4f234df95d79955763d230d7d691f261dcfcd889",
+        "bytes": 62
+      }
+    },
+    {
+      "name": "native-TEST-R34-PYREL-003",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-R34-PYREL-003",
+        "--root",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/171caf2d9cb6691a5bf343f8c8071741a570013b0b3eafe7652a64b3a67068a6/attempt-21418e1f-8d17-46f8-b5ed-1b99bdcace38/7.log",
+        "sha256": "c5b5adcc126fa8c4c80472196b7718accd8df7b22f059c890853d55de49d8ec0",
+        "bytes": 62
+      }
+    },
+    {
+      "name": "native-TEST-R34-PYREL-004",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-R34-PYREL-004",
+        "--root",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/171caf2d9cb6691a5bf343f8c8071741a570013b0b3eafe7652a64b3a67068a6/attempt-21418e1f-8d17-46f8-b5ed-1b99bdcace38/8.log",
+        "sha256": "417639ea42443c2912dafb5c70ce5349bc38baa551fcfd8d5b633081b2b5138e",
+        "bytes": 62
+      }
+    },
+    {
+      "name": "native-TEST-R34-PYREL-005",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-R34-PYREL-005",
+        "--root",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/171caf2d9cb6691a5bf343f8c8071741a570013b0b3eafe7652a64b3a67068a6/attempt-21418e1f-8d17-46f8-b5ed-1b99bdcace38/9.log",
+        "sha256": "0e763ba55b9043b34aa8bd3dbd7457cc643157457b64cadcaf22e4ac9b3d30ca",
+        "bytes": 62
+      }
+    },
+    {
+      "name": "native-TEST-R34-PYREL-006",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-R34-PYREL-006",
+        "--root",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/171caf2d9cb6691a5bf343f8c8071741a570013b0b3eafe7652a64b3a67068a6/attempt-21418e1f-8d17-46f8-b5ed-1b99bdcace38/10.log",
+        "sha256": "d6a94b9a8c04a50bfb31f06ffed65b2e843e9deef9b97fb916da84e784d1e843",
+        "bytes": 62
+      }
+    },
+    {
+      "name": "native-TEST-R34-PYREL-007",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-R34-PYREL-007",
+        "--root",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/171caf2d9cb6691a5bf343f8c8071741a570013b0b3eafe7652a64b3a67068a6/attempt-21418e1f-8d17-46f8-b5ed-1b99bdcace38/11.log",
+        "sha256": "715e005e8dfccbb7999992cd4735b7a233810c23b382171ac6ffb25062c11c52",
+        "bytes": 62
+      }
+    },
+    {
+      "name": "native-TEST-R34-PYREL-008",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-R34-PYREL-008",
+        "--root",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/171caf2d9cb6691a5bf343f8c8071741a570013b0b3eafe7652a64b3a67068a6/attempt-21418e1f-8d17-46f8-b5ed-1b99bdcace38/12.log",
+        "sha256": "370d32c1bce64e93fa502bcb1d4ed031359c71522a978b9c5a9786ef38d6a16e",
+        "bytes": 62
+      }
+    },
+    {
+      "name": "native-TEST-R34-PYREL-009",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-R34-PYREL-009",
+        "--root",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/171caf2d9cb6691a5bf343f8c8071741a570013b0b3eafe7652a64b3a67068a6/attempt-21418e1f-8d17-46f8-b5ed-1b99bdcace38/13.log",
+        "sha256": "ce520775939493f68acef9b55741cef8b48d8a6f50a01756646c33399f5c1e08",
+        "bytes": 62
+      }
+    },
+    {
+      "name": "native-TEST-R34-PYREL-010",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-R34-PYREL-010",
+        "--root",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/171caf2d9cb6691a5bf343f8c8071741a570013b0b3eafe7652a64b3a67068a6/attempt-21418e1f-8d17-46f8-b5ed-1b99bdcace38/14.log",
+        "sha256": "71ef179f9d08e67b75e0080482516cc6a7b4103da2eb5cc612e9052b46ff0263",
+        "bytes": 62
+      }
+    }
+  ],
+  "ledgerEvents": [
+    {
+      "test": "TEST-CHECK-CLOSURE-001",
+      "hashes": [
+        "68ab3d513e886eb32144b4b2ae1e5f1e10e2af785669ff83d0147dbc15cb88dc",
+        "6aef499bb0ea36f813f840922275f7844a6bfb0cdedbe275b9935a5b477ab6dd",
+        "82247d7b4a74ccb3c86f1f05b2a48926e606f51763516dfad568956e37fa4f3c",
+        "9f01f982f9c67d703cd6f3c7b58e6a4be955d43e1eab38f068e93e49effc9ead",
+        "a4e7bcd8f3649acb5da50ebbd92355da1f7492c1562a6ff32be7d0e150067710",
+        "c9c4fd13045147a4f57993502be672e325dbd7796ff6ad1b19953b945a4e03b2"
+      ]
+    },
+    {
+      "test": "TEST-CHECK-CLOSURE-002",
+      "hashes": [
+        "46cc3b2cc061485721e856938261b91de2a89cd9bda0074e6d7764a9e1b8e996",
+        "692edfdff1ec70844bd141ce21d388d0351b884ece336ec776cf401743b3e56b",
+        "76f48d2ff521049bd9ade20a5eb6fff028199d37d312f858e589a9d1dd335778",
+        "a0a860e7f82216b823daa86e1b6283675d21b9436961791e7f6a07d9b1fa4289",
+        "c663be75b6ac9af40876707831b35a546466623838f5959a004405ecff0f431e",
+        "e0b2ccadf961b8e4adf36bc7244992c6f942ce70f1f05294bd04fe808775ab67"
+      ]
+    },
+    {
+      "test": "TEST-CHECK-CLOSURE-005",
+      "hashes": [
+        "12a96a86b69d0c0fe4e40d2af25cd6b6e6bdfccf3060d3da3750616800e06b4d",
+        "1b7d3ddf10fe7900a458e1e83d709e50ed97c1d7b589dbc5595d23dfcb635007",
+        "637dc63f9291d727ae4581813dee3839e6d7d53ec5991dce84259d1f623f9470",
+        "6fd525b426dc153332a908a25c411db0132dc4c7dd408e7347b24d8c34c4c0fc",
+        "7bd7fba073ac2ca63a86ee13f956e113ec5db9eae53f274e4416aab0aab369fb",
+        "ad99dce5bfeca9a9c126169ba8044382d3a67b1e64db5ca744528395b3a0a068"
+      ]
+    },
+    {
+      "test": "TEST-R34-INTEGRATION-002",
+      "hashes": [
+        "04b90dc5b4d24368726bfb7e311a9d74a902efddb7edfc04bdcbfa75c2a8d46c",
+        "1d5a5842000e497234a339dc1c96499ab7f47e8918672f319bab5bf65cd40740",
+        "203be8547cbbde0aa8205aae5c97af4d7f82690ceb9e059d8801059904a7cb90",
+        "4964a234dbfc6fbf2bbcd627bb7db6489caf192d07a27f87e729af602bd5e475",
+        "89e463386cdc01c38535b5cdfb2a1fa376f34daf88a03fa57247665f5a77d302",
+        "c178db5cceba0cf703b717cb7097b38171418e75e4773bcf07330b4a6892da36"
+      ]
+    },
+    {
+      "test": "TEST-R34-PYREL-001",
+      "hashes": [
+        "02c02ab1e034a9b30931b19e3abf6f78919dc28cd4e738fbfed9721cb6861ab3",
+        "1668c3bd0f90ef6a82eac262a6ec326296717434d837c527a9d4ffe36c0ebd73",
+        "5680516c210c9ae31cac8c91f06197cfa1b5d8325d7b2f70a666793c45b10f23",
+        "7f3621c802c1a6353f28ef9638f6a524af684681f34926cc1fb68bbdf95911b3",
+        "e8a40101800740e7974493c32c1bd864f7b6e3b0894eea4880a4fac25fe3984a",
+        "edd99046009bf45eb7a30b40a1d30dc0518c1b483ff98c424f9106a457c159a0"
+      ]
+    },
+    {
+      "test": "TEST-R34-PYREL-002",
+      "hashes": [
+        "11216c5ed653bcce8f9e69807073c20bf9359aa912f54017dd4c61499a5c022e",
+        "39073679b42c90e9438fa3e4adce407a6869638053fa18963907b676140c78e5",
+        "4dfeb218f5ec9a04fe90988e2897bc892492123b41d659a35219daaababdc580",
+        "788b550a3e2ae7a2df5b25527b54d813cdb8170df520c84039be48f51306b90a",
+        "8fb8187308f6f4ea2f9862cc2ae7d7373e6c25fa56f85b54d1dc879a65a18422",
+        "a3a9c2aaf8477c5fa7f6d7d3cfb4feac8f1bdb064d4f760940b7ae2147b7e924"
+      ]
+    },
+    {
+      "test": "TEST-R34-PYREL-003",
+      "hashes": [
+        "0a48f60e8e0e548cef98d6b014ac6c59b868cb9beceaec9d2ad62e0ac7ebc4ac",
+        "1d37dd44e964f0db06ab0d74a7df30754dac16b3762cfa141435cd9db84d8ebe",
+        "22689303b9569d2c3e0fdcf1db110815649f492f9633ab08c748bfb3c769ee2a",
+        "2a01514d3ed676fd74a1a4d2955b056db9b1d14b19e148ff766d98449e003b35",
+        "384b49e2dcdb7e7830225d5c542adda55cb6b02c3ccabb8b8bc14668ffa4332b",
+        "fdf5d612aebe8564464a0e9d56695f8c2096b3e7108f43e909d5ad38325c4b3f"
+      ]
+    },
+    {
+      "test": "TEST-R34-PYREL-004",
+      "hashes": [
+        "065dc301caa0be9a61a65b77e487872c0bd7de47da45f5799c38110ea359f530",
+        "1cdfefd8c62a9cc25d533725121c0e9f6d908d73fad6454227daad56b9b7d604",
+        "48cb592a73e37ade358193a17852e7797aef54ab6d67408a4a75a20fb3ea41e0",
+        "66c68c7503b9709e086705a65be2f20599f2bbf2ddb56f83410a15ca06cf4784",
+        "995ff6dc0193293a02539c8a8711ceaa5e267b3a9c1674661ca7afe0cd4c376f",
+        "c4f267ba7117609783000d465dec875b455a84e66558f65fed0129457a813942"
+      ]
+    },
+    {
+      "test": "TEST-R34-PYREL-005",
+      "hashes": [
+        "23fad9c4b00f6767a5dcdefa62ccab829b4ad0a7c4fcb0cffb3d7307a2e42804",
+        "31e60dbf3d12081c2e9dea503f57551e5522406a5788369a3c2daafbb95986d8",
+        "609fbab27fbbf454524c82251aee12c1b209368fdd6ad46302bf54df5323e999",
+        "8614dec204d7083b96e3932fbabcefab5a3bc3ba6f9e84473cd3a28e644cc9c3",
+        "9d95ba0f573ab71ec9d7b23d986bb0e8d230b81369d3a85646253a2de286bf71",
+        "b17f51fa8a53d202e04e84d4c1e8b71038fa364d6301c8f703cf15756f5e894f"
+      ]
+    },
+    {
+      "test": "TEST-R34-PYREL-006",
+      "hashes": [
+        "0d4120af050ca0f7d24ef8ac49e687e99296d8881ebc31cb9c2b4540de981846",
+        "2b496ceb7f35cf189d268507ea27c12e3f167edf63e7ee0e339e187e80e42fa3",
+        "9245eee4c01049693005e812ba44b54cbd983db2040627647e734cb3486c17b0",
+        "aa759653a3e0736d0c49ffe996aab0bf85583734812860831bf4296797bb9214",
+        "aac4e4c928c99ecc922b70b2d94437b179572eb108055647c2dfa80d0de78c65",
+        "e8de4836412d0135e57b4eb85c7ddd15882dec12cd8d5aca97248f361f1e9390"
+      ]
+    },
+    {
+      "test": "TEST-R34-PYREL-007",
+      "hashes": [
+        "08a2f94c9af70b97e6657d62bd238785ea48a833ffbdd37be05cd15e5a9814b0",
+        "68b11d78cd42033bf88180cf0f38f08ec251950b598efd100c00b477e6f00451",
+        "76ad1b37815253b4ce720b3ed7d3bea201c168600f34255f0ed529ba18efab6e",
+        "b2f19e8e050c4c69d82b173d5c1df6f14e1b58a07f3414a97a2d6a0d5e8af986",
+        "c5e52d7a2c2553062a3d3de97dd20e1dada586d4e83f70bb3cbb4af99a0dca45",
+        "eef2da86d72bb3ad5cb8af14079f7e0742b75486980a1eafd8ef6445b1a53763"
+      ]
+    },
+    {
+      "test": "TEST-R34-PYREL-008",
+      "hashes": [
+        "25272c3c568db6d06191d4735185618a88bf9445923170ae425de22d7d5cdc98",
+        "4cde312bde959f6f39a6b25e8c86080c36e4f623af91866da69c9245a1de6886",
+        "87b6766bf76782cf7b4a48d4ae6bddfa92356b5b0f6277b1fb09a9b6dbd279f3",
+        "c7b30a0b202211ae7f78ddde79b6141758cf903d588f1f33cec8c017807ce7a8",
+        "d1cd95a9a60827504a8fd936aa706f803b65e2270debaff7274610ef56093522",
+        "e47670b3762fb338da3de76eb65fcc37f564cba52c79d5396f0fe675af2af7d6"
+      ]
+    },
+    {
+      "test": "TEST-R34-PYREL-009",
+      "hashes": [
+        "0cc04043dab18b832a4abe1f4bde4d1ebd8b7431385a570c637187e787e3321d",
+        "5afe223d755f2aec7193204c2b719559f2cf97619ba4030599bf88516bc7db6a",
+        "7cac5c9c90eba5bb0f8213c2f99a0e4840d3d387ef255238a0789bedbc9fe789",
+        "8076fe165ad872b4ec7714cf165d586864bb07c3b788524d37a0c7e9ef071d7b",
+        "dd228d07982d82016d485c639c5b3d2f3156a521ea36b26e5d5d1514fe4ea1ed",
+        "e313e504fcff1488c8ad67c717a03601b404599d91c51657bfacad69b82332e3"
+      ]
+    },
+    {
+      "test": "TEST-R34-PYREL-010",
+      "hashes": [
+        "2759fe5fc889e4155a5857a5d741e2fef063f25e795ac34e4c24d3d8274b4691",
+        "38093430fdf03c03c0fecda257a0ee8ff553308b247d636a12c3e574b446a231",
+        "51eb9e6e3c58be8007e74cac5bb3e3cd680cd34740ac964fa7db86fc95c00452",
+        "bf396888bad13acb73ad59452119300f82e2c74eb5bc442b49d71f53778d50a9",
+        "f2875bfc2d3fbfe0c8bf63b9d0041ef9baec9d05bb6aecd17b4fbbb28ed3f0c0",
+        "f9717fabe56346e70cbfbceb42055b480ba2642b59e90a5457a3501d34735958"
+      ]
+    }
+  ],
+  "errors": []
+}

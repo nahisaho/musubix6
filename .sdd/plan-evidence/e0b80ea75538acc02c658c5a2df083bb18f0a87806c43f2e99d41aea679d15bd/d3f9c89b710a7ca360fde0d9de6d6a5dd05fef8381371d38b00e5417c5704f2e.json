@@ -1,0 +1,97 @@
+{
+  "schemaVersion": 1,
+  "task": "TASK-NODE-SUMMARY-003",
+  "sequence": 1,
+  "previous": "",
+  "definitionSha256": "967acee7720c90ed8f29952a1a7a7652bfffca7bdeacba1c86221bcb0093341f",
+  "inputSha256": "c6206a10c48064f88432cea949f625242dacf01dc82a03781910827bb9efe169",
+  "status": "PASS",
+  "exit": 0,
+  "checks": [
+    {
+      "name": "regression-1",
+      "argv": [
+        "node",
+        "--test",
+        "--test-name-pattern",
+        "^(?:.*\\b(?:TEST-NODE-SUMMARY-003|TEST-NODE-SUMMARY-004))(?![0-9A-Za-z])",
+        ".github/skills/lean-sdd-tdd/scripts/sdd.test.mjs"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/e0b80ea75538acc02c658c5a2df083bb18f0a87806c43f2e99d41aea679d15bd/attempt-9cba8b49-d379-428c-8e4a-89a26a8785ab/0.log",
+        "sha256": "c284a19c914fc9bd3b710b9d841f8fb77b008b21bfde3ea257d2123312e70e18",
+        "bytes": 348
+      }
+    },
+    {
+      "name": "native-TEST-NODE-SUMMARY-003",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-NODE-SUMMARY-003",
+        "--root",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/e0b80ea75538acc02c658c5a2df083bb18f0a87806c43f2e99d41aea679d15bd/attempt-9cba8b49-d379-428c-8e4a-89a26a8785ab/1.log",
+        "sha256": "9eb2b22589db92d51d998a3f68c9376f18eb58508089c32ac39526002d09674f",
+        "bytes": 64
+      }
+    },
+    {
+      "name": "native-TEST-NODE-SUMMARY-004",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-NODE-SUMMARY-004",
+        "--root",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/e0b80ea75538acc02c658c5a2df083bb18f0a87806c43f2e99d41aea679d15bd/attempt-9cba8b49-d379-428c-8e4a-89a26a8785ab/2.log",
+        "sha256": "11b1621d277fe32d4b31166032becc904cc9e82a2a86c55a61031b488f842966",
+        "bytes": 65
+      }
+    }
+  ],
+  "ledgerEvents": [
+    {
+      "test": "TEST-NODE-SUMMARY-003",
+      "hashes": [
+        "036f5f929f3dbb8dbb951b2ada0ad3fbbaf72deef1445dee26570f69edb8fc92",
+        "1b275fce4721bc092138138eb36b01a35d6f92f621c1bd097e0be87f1981aba8",
+        "5ef29665ae293e089dd105aae20b63f75813006e0e609e6ca3e3fb55c73dd736",
+        "cfe7d317ac0a82a975c7040bd4b18aa8aa4fb3f299965deb80cb48bfa6b25c57"
+      ]
+    },
+    {
+      "test": "TEST-NODE-SUMMARY-004",
+      "hashes": [
+        "0cd585bfbc5d1b6d6976e8ccef0f4251c80910df75f537371cf4cbd9e4d32faa",
+        "31d635aefb41d59a02eb3eb0bfbd2f500ffd978ee08257bef8933a3a58cd599b",
+        "369d0f72dbc9dade16f08fd24e1f4a189b84089321b2037cd02d90d4b7934760",
+        "a3fa8d9060abdcf40b4fa3fb0c3b54de79b55d5cf9a070d5c9cde1ee2f42c471"
+      ]
+    }
+  ],
+  "errors": []
+}

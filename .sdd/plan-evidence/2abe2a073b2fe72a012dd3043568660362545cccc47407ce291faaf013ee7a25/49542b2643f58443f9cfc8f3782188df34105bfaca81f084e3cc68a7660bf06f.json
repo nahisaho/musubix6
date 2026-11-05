@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 1,
+  "task": "TASK-TW-PH-003",
+  "sequence": 1,
+  "previous": "",
+  "definitionSha256": "c00ebbc0abf1677a6c60555d01fdaf076dd4d5ba97014dc40c6eb42a58faf0f2",
+  "inputSha256": "a694616bcf313f58aa9006b7f3a29e6dbd45f264a04be8a94d119be09ff06312",
+  "status": "PASS",
+  "exit": 0,
+  "checks": [
+    {
+      "name": "regression-1",
+      "argv": [
+        "node",
+        "--test",
+        "--test-name-pattern",
+        "^(?:.*\\b(?:TEST-TW-PH-003))(?![0-9A-Za-z])",
+        "scripts/kotonoha-skills.test.mjs"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/2abe2a073b2fe72a012dd3043568660362545cccc47407ce291faaf013ee7a25/attempt-5797af7a-d769-4149-ac5c-27c20823074c/0.log",
+        "sha256": "6389e1ebcc9fd4d4a5dfd3681091b86a9199ba620aea8cd7dd84ac585448c8ff",
+        "bytes": 207
+      }
+    },
+    {
+      "name": "native-TEST-TW-PH-003",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-TW-PH-003",
+        "--root",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/2abe2a073b2fe72a012dd3043568660362545cccc47407ce291faaf013ee7a25/attempt-5797af7a-d769-4149-ac5c-27c20823074c/1.log",
+        "sha256": "52e909c3cabf9db21cc539002fef94cf352bf69092271349742a473cbc4ca11e",
+        "bytes": 49
+      }
+    }
+  ],
+  "ledgerEvents": [
+    {
+      "test": "TEST-TW-PH-003",
+      "hashes": [
+        "3b1ef18a19823958e5d2e31923af60a7eb4e54c6548cd7d004a883ee52348a94",
+        "4c2325f5ffd8f2b5cf1b32ec96ae04dcbbe5d7751fc75ad4250e726121a426f1",
+        "7488ec728292df8f75a9cb061cbe8d7c3899438114f8beca5f8cb97ec4064671",
+        "80f4019adc24bacb6679e4dd75d3eaec4757e24e018ecb3bd4064f284164278a",
+        "a7d4cac269e62e16f584ba6c52b2c5f8aabd19b53da87b9da3eac84f36b57898",
+        "bcfbaf20998f95b1d30c40b451e7ff3f4dbab8345faa58fc3cb90affcceae917"
+      ]
+    }
+  ],
+  "errors": []
+}

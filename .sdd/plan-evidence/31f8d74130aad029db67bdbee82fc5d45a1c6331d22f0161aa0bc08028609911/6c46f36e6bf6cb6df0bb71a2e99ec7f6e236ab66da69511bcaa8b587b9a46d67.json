@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "task": "TASK-PLAN-MODEL-004",
+  "sequence": 3,
+  "previous": "3cfaa8fdea7b1502a4d66cd264b6f97914b773b88fac4f5f111f27cd07c03c7f",
+  "definitionSha256": "ee3bcf76f1f6e7b96c50e16fbec9d63accc47d416bda0e02efd0b4099daa412e",
+  "inputSha256": "301a2ddf3153c76bd114d224884c32c0bdcf2aba0841f26e7a302a8effaae16a",
+  "status": "PASS",
+  "exit": 0,
+  "checks": [
+    {
+      "name": "regression-1",
+      "argv": [
+        "node",
+        "--test",
+        "--test-name-pattern",
+        "^(?:.*\\b(?:TEST-PLAN-MODEL-004))(?![0-9A-Za-z])",
+        ".github/skills/lean-sdd-tdd/scripts/implementation-plan.test.mjs"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/31f8d74130aad029db67bdbee82fc5d45a1c6331d22f0161aa0bc08028609911/attempt-f6af5e2b-5fbb-4b9b-b075-0773f649a848/0.log",
+        "sha256": "88b0ced88345704b51819be21dd9c6de9bce532d4708c2e02961fce7af3f2c6e",
+        "bytes": 215
+      }
+    },
+    {
+      "name": "native-TEST-PLAN-MODEL-004",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-PLAN-MODEL-004",
+        "--root",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/31f8d74130aad029db67bdbee82fc5d45a1c6331d22f0161aa0bc08028609911/attempt-f6af5e2b-5fbb-4b9b-b075-0773f649a848/1.log",
+        "sha256": "de5bbbda2aea09e62c835dfdef6c3f90fe40e5ad956fc5eb27f61f265ca31059",
+        "bytes": 59
+      }
+    }
+  ],
+  "ledgerEvents": [
+    {
+      "test": "TEST-PLAN-MODEL-004",
+      "hashes": [
+        "0a01a8a324e0ae6816b57c34057c306241acb4e69b22800b63792510b3602afb",
+        "0e2fd8738089bf0a0da303414fb4a164855562d73b080ec42d783cd7d007dff6",
+        "0f09dc61ab0766bfd534cda003cf1c55143aa964e7d313e4a0ae32ce308dc247",
+        "4379af9a5a224937b7fad5dd8a96bfcda273c6d13f76d18f559a0578794c9820",
+        "63650711f47c8cb877f7057177cf4a393dbf4efb7e6abadedf0ef9adb0eaa01c",
+        "db28244f99b321a136cb983a0e297ad5dc3d9c2a6c16af93d0936624c8d9e085",
+        "f0bf6d639d017d0b5629f0adcef2ef82d548169ef076baf0b5c305595fa2342c",
+        "f9c67c48b9651899baed16244cf34328893d9197e167541315fcf204c7dcf580"
+      ]
+    }
+  ],
+  "errors": []
+}

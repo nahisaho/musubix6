@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "task": "TASK-DIAGPY-003",
+  "sequence": 1,
+  "previous": "",
+  "definitionSha256": "a5e53a88bf2c6e6e97b0ab4c808bd494cfbc128db507895d8960dfd6bac77c1f",
+  "inputSha256": "3e720035770393adacb497f3f2f3c0951a6a85e6762629f0cd510a118cbe752c",
+  "status": "PASS",
+  "exit": 0,
+  "checks": [
+    {
+      "name": "regression-1",
+      "argv": [
+        "node",
+        "--test",
+        "--test-name-pattern",
+        "^(?:.*\\b(?:TEST-DIAGPY-003))(?![0-9A-Za-z])",
+        ".github/skills/lean-sdd-tdd/scripts/diagnostics-profiles.test.mjs"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/ae32be3ddb5ce231ac15239c00782fee193ceb57322900758d2e4228932df02e/attempt-5e0d825b-da30-402e-a93f-7d1389c9df05/0.log",
+        "sha256": "c67d71b82b81707ba04d2372e1ff0a1f1c7e446af50d92da892723ae52ed9db9",
+        "bytes": 200
+      }
+    },
+    {
+      "name": "native-TEST-DIAGPY-003",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-DIAGPY-003",
+        "--root",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/ae32be3ddb5ce231ac15239c00782fee193ceb57322900758d2e4228932df02e/attempt-5e0d825b-da30-402e-a93f-7d1389c9df05/1.log",
+        "sha256": "a062a9a0ce509c15728f988cb157c28195f8247f1fcfb676d15e5f71b1d890eb",
+        "bytes": 52
+      }
+    }
+  ],
+  "ledgerEvents": [
+    {
+      "test": "TEST-DIAGPY-003",
+      "hashes": [
+        "1cd0a5501c2056adaf8d9c3fe78302207b9a90363403b0ef7002936c416cf5c9",
+        "1d9f27443bd080c7504aa3da11572f3d9bd674fa730803765199cf9a68ad0a29",
+        "4be08808665f6d160f2a8d8eb1ba170e9c6b370c1a593fe3bf3ca2d1c36c8abe",
+        "5bfb53269a3d29291aca6eb3db29297b01751f7c13a0bcd3611a6c9e335122e8"
+      ]
+    }
+  ],
+  "errors": []
+}

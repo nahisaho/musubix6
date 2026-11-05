@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 1,
+  "task": "TASK-HOST-001",
+  "sequence": 1,
+  "previous": "",
+  "definitionSha256": "4fa8610bc23bbe8d1f6c70df78736f7169c21b3aea03bfae01c771bfe9f41c09",
+  "inputSha256": "b728fe5d8346538dbd6f013995b8b5ab15ceee1b5345300475d0df53a107fd9d",
+  "status": "PASS",
+  "exit": 0,
+  "checks": [
+    {
+      "name": "regression-1",
+      "argv": [
+        "node",
+        "--test",
+        "--test-name-pattern",
+        "^(?:.*\\b(?:TEST-HOST-001))(?![0-9A-Za-z])",
+        "scripts/host-compatibility.test.mjs"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/157009ff6c2ab93372586a4c23092cef65738f5841092c02ffd98a5f7244adbe/attempt-4d832ba2-734f-484c-bca3-d87337e9df91/0.log",
+        "sha256": "301a50f85a6225575d14f47ef9a65224c678041f3f9a616a55cbbb1debdba8a6",
+        "bytes": 224
+      }
+    },
+    {
+      "name": "native-TEST-HOST-001",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-HOST-001",
+        "--root",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/157009ff6c2ab93372586a4c23092cef65738f5841092c02ffd98a5f7244adbe/attempt-4d832ba2-734f-484c-bca3-d87337e9df91/1.log",
+        "sha256": "ecf894f89e1da594ad9662af0a02b01dd22862a5ac0e4b6adcb7ef33539b85d6",
+        "bytes": 47
+      }
+    }
+  ],
+  "ledgerEvents": [
+    {
+      "test": "TEST-HOST-001",
+      "hashes": [
+        "5e49beb4db78073c357b861bcf65547e8e9dfaa3e519d491ece729ce7b42685b",
+        "772370898d8b63feaa82f8e1b0b8f3822a19e99283a4c860a6fb264546255715",
+        "90a0d20e66f1593220454557369cbd4e9551d19ee78807729f80bd189cbee2b8",
+        "b1bd48d693beb6f1cbd216af611ff8372f3f38b39c1bafc0a2b2ee8891504aa0",
+        "c9e434f84052848a66c372016da01bcad1a9c34051674dcea22e8c95504ba551",
+        "edec120c02970cd81deeef40bd6f90d4c92fc2dfa6685f8c87557387b77b0b42"
+      ]
+    }
+  ],
+  "errors": []
+}

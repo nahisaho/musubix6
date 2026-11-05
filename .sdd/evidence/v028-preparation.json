@@ -84,6 +84,7 @@
     "proseOnlyInvariants": "v028-final-draft-prose-invariants.json returns passed against the separately frozen finalized technical draft. The prose pass made zero changes, so no semantic review is required. This says nothing about equivalence to the old0.2.7 functional contract."
   },
   "planMigration": {
+    "observation": "Historical pre-verification measurement; current native task status and proof are recorded in nativePlanVerification.",
     "measurement": {
       "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v028-plan-bound-consistency.json",
       "sha256": "c07f69481f32b0712dd7da893f2ecede7cf0df500a0c3109a6f122be31ed4e9a",
@@ -134,11 +135,93 @@
     "frozen028Candidate": false,
     "publishingAuthorized": false
   },
+  "currentUnfilteredFullSuite": {
+    "sourceCommit": "eef8503bb1d34585671e49dcb4f07319fb774fce",
+    "command": ["npm", "test"],
+    "status": "PASS",
+    "tests": 1187,
+    "pass": 1187,
+    "fail": 0,
+    "skipped": 0,
+    "cancelled": 0,
+    "todo": 0,
+    "durationMs": 1981608.51418,
+    "retry": false,
+    "sourceUnchangedAndCleanAfterRun": true,
+    "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v028-current-full-suite-final-ssgmQD/summary-recovery.json",
+    "sha256": "3dfd745499c132a6b8a9286edccbe8f298b35a097e8830f160cbb9a0e5169909",
+    "parsingHistory": "The original driver report refused counts and remains FAIL: five intentionally nested child summaries defeated its unique-anywhere parser even though npm exited0. The unchanged first raw logs were then hash-verified and parsed using the complete terminal native spec-reporter block, with valid, nested-child, six nonclean and seven malformed/trailing-input controls. No test rerun or old-report overwrite occurred.",
+    "qualificationCredit": 0,
+    "fullGateCredit": false
+  },
+  "planAuthoringCutover": {
+    "proposal": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v028-plan-cutover-proposal-ikMwml/audit.json",
+    "appliedPlanSha256BeforePrerequisiteRebinding": "243f518d4f2a94df45a2ba87a9356dc89ff2e87423dafaaa83d9772a5c173d03",
+    "changes": "After the full first suite completed on clean eef8503, applied exactly five approved release-spec hashes, ten current0.2.8 contract paths and one approved REQ-RELQ-005 condition; exact proposal bytes verified.",
+    "preserved": "All40features,118tasks,193unique tests,212mapped test references,15authored receipts,108prerequisite bindings and every status were retained. No completion or history reset was added.",
+    "postDefinitionMeasurement": {
+      "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v028-native-plan-check-zWTlwB/stdout.json",
+      "sha256": "6df8baac994aa5bd123947c71e469a2da52650f6d9a5bbbf194bee84150cc4c3",
+      "status": "FAIL",
+      "states": {"not-started": 103, "replan-required": 15},
+      "prerequisiteBindingChanges": 0,
+      "bindingAudit": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v028-plan-binding-2HQa2E/audit.json"
+    },
+    "remaining": "Post-definition native measurement and all108 actual prerequisite bindings are now confirmed. Genuine current task verification and explicit passing receipt adoption remain in progress.",
+    "verificationCredit": 0
+  },
+  "nativePlanVerification": {
+    "status": "PASS",
+    "firstAttempt": "MODEL001 initially refused before checks; its failed receipt82f45a6b1364c9cb7fab2b3100b8d7880bc10408ba8da1c0607a34a94438b8b4 and all earlier history remain intact.",
+    "pilot": {
+      "task": "TASK-PLAN-MODEL-001",
+      "status": "PASS",
+      "exit": 0,
+      "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v028-native-plan-verify-YLzvs4/stdout.json",
+      "sha256": "c876448dc93a8204ad1810460dc2dba18bc68597e02f507324f81d6ebd17a71e",
+      "receipt": ".sdd/plan-evidence/5bb895fc635250882642e331a617c139f57cf2fa7b8b5dfc719a409e293390ba/3b8666465e6217d3d573ff1dd3e85103a697d617d2b26d504483dc0208fd9125.json",
+      "adopted": true,
+      "note": "The actual current TEST-PLAN-MODEL-001 Refactor passed before this genuine verification. Its test-body/preamble migration warning is retained, not relabeled a new assertion Red."
+    },
+    "activeDriver": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v028-verify-project-plan.mjs",
+    "activeReport": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v028-project-plan-native-gBdZ67/report.json",
+    "protocol": "Run193 actual native Refactors, then117 remaining genuine native task verifications in explicit and feature-prerequisite order. Adopt only actual current PASS receipts whose fingerprints match the authoritative native measurement; retain every old/failed receipt. Stop on failure or concurrent authoring changes.",
+    "checkpointAfterHostedCi": {"refactorsPassed": 193, "nativeTaskPassesIncludingPilot": 63, "totalTasks": 118, "status": "RUNNING"},
+    "completedAt": "2026-11-05T15:49:09.262Z",
+    "refactorsPassed": 193,
+    "nativeTaskPassesIncludingPilot": 118,
+    "reportSha256": "c8f711b7fb88d9060140ed77af30bfc5377ce1983483141c4138599c04d05bab",
+    "finalPlanSha256": "deb6e1434985bcd13326cdc120e15d083d2aba276efd5da80a7f2dfabae204bd",
+    "finalCheck": {
+      "command": ["node", ".github/skills/lean-sdd-tdd/scripts/sdd.mjs", "plan", "check", "--json"],
+      "status": "PASS",
+      "exit": 0,
+      "completeTasks": 118,
+      "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v028-project-plan-native-gBdZ67/final-native-check.stdout",
+      "sha256": "ca7507acb2e8da6e50d45a2073629f31ce86718242a617b9a567d1e96d1f914e"
+    },
+    "qualificationCredit": 0,
+    "fullGateCredit": false
+  },
+  "hostedCi": {
+    "sourceCommit": "eef8503bb1d34585671e49dcb4f07319fb774fce",
+    "runId": 42041173918,
+    "url": "https://github.com/nahisaho/musubix6/actions/runs/42041173918",
+    "status": "completed",
+    "conclusion": "success",
+    "jobs": [
+      {"name": "test (20)", "conclusion": "success", "completedAt": "2026-11-05T15:07:10Z"},
+      {"name": "test (22)", "conclusion": "success", "completedAt": "2026-11-05T14:33:28Z"},
+      {"name": "test (24)", "conclusion": "success", "completedAt": "2026-11-05T14:27:10Z"}
+    ],
+    "scope": "Authoritative final gh run view for this exact pushed head; does not validate later uncommitted task/evidence adoption or count as frozen release qualification.",
+    "qualificationCredit": 0
+  },
   "remaining": [
     "Original intermittent issue385 assertion remains unidentified and unclassified.",
-    "Full-scope118-task existing spec/prerequisite bindings require current remeasurement, genuine native verification and explicit receipt adoption after the shared fixture and release-contract changes; no completion or history reset is claimed.",
-    "Current-head CLI-wide preparation and hosted CI have not completed.",
-    "Full suite and full native gate after final candidate edits have not passed.",
+    "All118 tasks now have genuine current native PASS receipts and the final native consistency check passed; the final full gate is still required. Old and failed receipt history remains intact.",
+    "Hosted Node20/22/24 CI passed on eef8503; final task/evidence adoption still requires persistence and same-head validation.",
+    "First complete unfiltered suite passed on clean eef8503, but current plan verification and the full native gate after final preparation have not passed.",
     "Root JavaScript diagnostics remain INCOMPLETE2 because no root ESLint flat configuration exists.",
     "Two consecutive complete clean runs of one unchanged frozen24-cell matrix/candidate remain required.",
     "Separate exact-artifact human release approval remains required before integration/tagging/publication."

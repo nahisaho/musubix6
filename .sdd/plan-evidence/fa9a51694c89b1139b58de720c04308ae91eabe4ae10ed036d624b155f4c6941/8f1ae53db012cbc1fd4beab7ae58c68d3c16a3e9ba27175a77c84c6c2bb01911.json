@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "task": "TASK-WINRUN-003",
+  "sequence": 1,
+  "previous": "",
+  "definitionSha256": "df7e0a8069d122a38bc659eef0d4ee10fe98baa902c51682fe624d34188e9b9c",
+  "inputSha256": "5fddaffb546098f2a5c6444463aa797ba67b6585d3104ec3efe86b8901c0341e",
+  "status": "PASS",
+  "exit": 0,
+  "checks": [
+    {
+      "name": "regression-1",
+      "argv": [
+        "node",
+        "--test",
+        "--test-name-pattern",
+        "^(?:.*\\b(?:TEST-WINRUN-003))(?![0-9A-Za-z])",
+        ".github/skills/lean-sdd-tdd/scripts/windows-runner.test.mjs"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/fa9a51694c89b1139b58de720c04308ae91eabe4ae10ed036d624b155f4c6941/attempt-22c35a30-e41a-4967-b3fd-88cd8ee31136/0.log",
+        "sha256": "ce7acd41c10a0e05be5a2feec1785d465c78a063dcd2d7f38b735f6e98a07a4b",
+        "bytes": 221
+      }
+    },
+    {
+      "name": "native-TEST-WINRUN-003",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-WINRUN-003",
+        "--root",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/fa9a51694c89b1139b58de720c04308ae91eabe4ae10ed036d624b155f4c6941/attempt-22c35a30-e41a-4967-b3fd-88cd8ee31136/1.log",
+        "sha256": "782168e20df8a5249ff83bdd5fe2be6e622a01b482c6817091a643b1caec1081",
+        "bytes": 53
+      }
+    }
+  ],
+  "ledgerEvents": [
+    {
+      "test": "TEST-WINRUN-003",
+      "hashes": [
+        "1813f2bb39396b19eba406a3e8721174d5dc9ef444b662bd9ce1fe946071499c",
+        "21fe73c4893cadeac779041557b849777a580119618ecda46252ab08609098ea",
+        "8de41a99e06a314d560766ac7052cbbde5ef8109f09329c9d79c8404cece1526",
+        "b45aef7e74699390ff4cba63ca3e9788e012cb794c67796ee9ffbf9ddd99382a"
+      ]
+    }
+  ],
+  "errors": []
+}

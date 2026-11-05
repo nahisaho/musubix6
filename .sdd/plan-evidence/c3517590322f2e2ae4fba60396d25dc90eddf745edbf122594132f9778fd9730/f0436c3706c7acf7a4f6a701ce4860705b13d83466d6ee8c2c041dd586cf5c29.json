@@ -1,0 +1,159 @@
+{
+  "schemaVersion": 1,
+  "task": "TASK-R36I-001",
+  "sequence": 1,
+  "previous": "",
+  "definitionSha256": "bb44ac23651d24c4e0607e1bb3c8fea6d03bd874b3bdfdc93dc378f5c77044d3",
+  "inputSha256": "15bd608db733c2d972be9849569c9299bc2736816da7d040d1eac495db2cf0fa",
+  "status": "PASS",
+  "exit": 0,
+  "checks": [
+    {
+      "name": "regression-1",
+      "argv": [
+        "node",
+        "--test",
+        "--test-name-pattern",
+        "^(?:.*\\b(?:TEST-R36I-EXIT-001|TEST-R36I-INVALID-001|TEST-R36I-BOUNDARY-001|TEST-R36I-REASON-001))(?![0-9A-Za-z])",
+        ".github/skills/lean-sdd-tdd/scripts/sdd.test.mjs"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/c3517590322f2e2ae4fba60396d25dc90eddf745edbf122594132f9778fd9730/attempt-d5ebae74-419e-4e77-abc8-29443cf73af1/0.log",
+        "sha256": "8b3500dc806a6547696cfdbc7278f735a75196096b1a3d69de65b59046691d50",
+        "bytes": 566
+      }
+    },
+    {
+      "name": "native-TEST-R36I-BOUNDARY-001",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-R36I-BOUNDARY-001",
+        "--root",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/c3517590322f2e2ae4fba60396d25dc90eddf745edbf122594132f9778fd9730/attempt-d5ebae74-419e-4e77-abc8-29443cf73af1/1.log",
+        "sha256": "9501d361ef34bf081b0a69cbc31d04528a10042cb6b77b20f881474d1cd9e05e",
+        "bytes": 57
+      }
+    },
+    {
+      "name": "native-TEST-R36I-EXIT-001",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-R36I-EXIT-001",
+        "--root",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/c3517590322f2e2ae4fba60396d25dc90eddf745edbf122594132f9778fd9730/attempt-d5ebae74-419e-4e77-abc8-29443cf73af1/2.log",
+        "sha256": "718db4cd835933c0abf1290714ceed7c8eeffce14b9374a951b6d2b075abaeb7",
+        "bytes": 53
+      }
+    },
+    {
+      "name": "native-TEST-R36I-INVALID-001",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-R36I-INVALID-001",
+        "--root",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/c3517590322f2e2ae4fba60396d25dc90eddf745edbf122594132f9778fd9730/attempt-d5ebae74-419e-4e77-abc8-29443cf73af1/3.log",
+        "sha256": "6624b1be53f3a62cc130ac136d4fadd1633e6ecab37b45d7e5bf32c30cfc0cf4",
+        "bytes": 56
+      }
+    },
+    {
+      "name": "native-TEST-R36I-REASON-001",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-R36I-REASON-001",
+        "--root",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/c3517590322f2e2ae4fba60396d25dc90eddf745edbf122594132f9778fd9730/attempt-d5ebae74-419e-4e77-abc8-29443cf73af1/4.log",
+        "sha256": "03f19726d98dcf601ff6f2d4a4493b05bc7cff8a8f0818f34080b64ef9166f4c",
+        "bytes": 55
+      }
+    }
+  ],
+  "ledgerEvents": [
+    {
+      "test": "TEST-R36I-BOUNDARY-001",
+      "hashes": [
+        "365b3a487762af8871fd7eeebe9011504b051b7510242d60744eca1bbe6c4538",
+        "4acc6d9ab2941f9f50cb65f6dc7d870506eac69f4ea367cbb02bc4c546a0fb1e",
+        "838188b42118a4f55ee29cd7f198f38be840b6c0f08fe984c65e5d70cc21ed08",
+        "e87dd01e3626c3697c05229a4d2f5977fda728243a0b6b4e03e37b244a7558cc"
+      ]
+    },
+    {
+      "test": "TEST-R36I-EXIT-001",
+      "hashes": [
+        "95b32c4d591d30f2ffbcf9eba3e84507909ef7314972830fcaa35ccebf787674",
+        "ae59e181b4e4a72344e59d384b8ae7dce9d7ef8fb267c786262e52cb6755a364",
+        "d81a10b84fac3a9f39e48281463c9f13a321daad835e59d8272e9a6a77255bae",
+        "f547e15762b4eecb8017f508fd2e13e94f8b2d0374c0f298012911014bec5182"
+      ]
+    },
+    {
+      "test": "TEST-R36I-INVALID-001",
+      "hashes": [
+        "209a5c0d07708bd1e8290728e531cbbfc616088b1edcbb7fc550f4415f0f250b",
+        "5e1630e957907be38de6fb0caf56e7377ab963a8c7f05459342e839ff0437215",
+        "7e11a64b89923ba3f8e9718a196b24e37e88c7309b59fc2856686122237347f4",
+        "c67f77325039c6e264e8f1c1bd57b02776dfffab96bebf9b15fede67097d3862"
+      ]
+    },
+    {
+      "test": "TEST-R36I-REASON-001",
+      "hashes": [
+        "459dae00f8ee912c294dfe997fc0fdddbe124983127ec9d4b11385cb70dbaed5",
+        "745788f3e2cb85a997f07cae5fd69046b1fc94fc898c704f99a82f8d746539b8",
+        "757292acbe160b31440a07ed89700611eaf75dc10d64a5d0d42ee192b70224ef",
+        "9b9ec27d147011cef23edee92ed8dcde21fc79aba15c7e86bfc95032d52e2c58"
+      ]
+    }
+  ],
+  "errors": []
+}

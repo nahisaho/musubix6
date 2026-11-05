@@ -204,8 +204,8 @@
         ".sdd/specs/claude-code-support.md": "82bb16e36ab143167e445dcb422d49f5c0f9af8ea024bcc51c4e3092cfefee9b"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/157009ff6c2ab93372586a4c23092cef65738f5841092c02ffd98a5f7244adbe/9dfb5a76ae7c3ac601e818083c1b7c24b573d4842f3c2f875a58829295796da0.json"
     },
     {
       "id": "TASK-HOST-002",
@@ -241,8 +241,8 @@
         ".sdd/specs/claude-code-support.md": "82bb16e36ab143167e445dcb422d49f5c0f9af8ea024bcc51c4e3092cfefee9b"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/7d21335fe17eb043f799f2b86484e5b565531dcde66c1b90932a580247b49dcb/6774307654d653fd818401b8aa31d3b25514e6bd55b145aca42383401b42d575.json"
     },
     {
       "id": "TASK-HOST-003",
@@ -278,8 +278,8 @@
         ".sdd/specs/claude-code-support.md": "82bb16e36ab143167e445dcb422d49f5c0f9af8ea024bcc51c4e3092cfefee9b"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/8c7cdd53ad1743b348e8341be1f23183d44565a81ec9fbf824a38b4712ce6baf/24b156cba4e1dfcc9834691b44f5d7b42557459de7e15c0c8d945234a065aaa9.json"
     },
     {
       "id": "TASK-HOST-004",
@@ -315,8 +315,8 @@
         ".sdd/specs/claude-code-support.md": "82bb16e36ab143167e445dcb422d49f5c0f9af8ea024bcc51c4e3092cfefee9b"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/791aad174ebe53b3a0b62d7e3c41dfc435f15888dfb19cedf355d379bdb56726/ceb28ed769f990424d43dac6382eb36fb30b4b8a8eaa6d36e5272f7c85d1c949.json"
     },
     {
       "id": "TASK-HOST-005",
@@ -352,8 +352,8 @@
         ".sdd/specs/claude-code-support.md": "82bb16e36ab143167e445dcb422d49f5c0f9af8ea024bcc51c4e3092cfefee9b"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/c25eab68e833d4748861ecdf64ee398ce88be1acd60cbfd07b37f5d5da928589/c54aa2ed9610d47cbed8827148d44340ce5408931c2f5d513dea2b8f2d59176f.json"
     },
     {
       "id": "TASK-COST-HISTORY-001",
@@ -389,8 +389,8 @@
         ".sdd/specs/cost-history.md": "614b11955afcc86e4ffca2bcc612bae28be167d4e7ed2e09bf4e41ff1014cc63"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/1517e548507a2deebb202a54350fbfecb559bf735331f257f090736fcc8681b3/d3175aaa8ee8d7a5e1ea90b8ec2039571c546ca40f372499d61960e157fe584d.json"
     },
     {
       "id": "TASK-COST-HISTORY-002",
@@ -426,8 +426,8 @@
         ".sdd/specs/cost-history.md": "614b11955afcc86e4ffca2bcc612bae28be167d4e7ed2e09bf4e41ff1014cc63"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/db45ca0244d8f0421a909af8a8dba45c430c6f6e5f46719b2db62f0fcde44be0/5ad91bca349020f14d97960b20e642f726a2b3371e09e67b4e3c91b5f8d017cf.json"
     },
     {
       "id": "TASK-DIAGCLI-001",
@@ -476,8 +476,8 @@
         ".sdd/specs/diagnostics-contract.md": "a003560a9411fc9573eb13947c0218ec0b90d585d657d2f996e35c3ba32e8257"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/6a5ae2dedfc0f6ceed4275295631a967d9d33c9e05806fafd2887731bf1b5b59/49081e5607c80c94452575cc536bd6970359114a38e3b65ef775c567097c9c53.json"
     },
     {
       "id": "TASK-DIAGCLI-002",
@@ -513,8 +513,8 @@
         ".sdd/specs/diagnostics-contract.md": "a003560a9411fc9573eb13947c0218ec0b90d585d657d2f996e35c3ba32e8257"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/9cb95278e8837537396dfb3a61ddbd34d34898ce13ce7a632448638962f563f3/7803ee508bd621b969dc6c3a37a986f0980ad4c3e955d4112c63d5d355a600c7.json"
     },
     {
       "id": "TASK-DIAGCLI-003",
@@ -563,8 +563,8 @@
         ".sdd/specs/diagnostics-contract.md": "a003560a9411fc9573eb13947c0218ec0b90d585d657d2f996e35c3ba32e8257"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/f2a864d8ee75335fae758a28a5158374a22b074a824e5911463a80fc774c9a61/ee077be0b80fdc7ed749cd6f145813218edcc52ec422663e6d6d66ded9e64e9a.json"
     },
     {
       "id": "TASK-DIAGCLI-004",
@@ -618,8 +618,8 @@
         ".sdd/specs/diagnostics-contract.md": "a003560a9411fc9573eb13947c0218ec0b90d585d657d2f996e35c3ba32e8257"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/08337c90e2fd128005146d7a2d947897dab20761afb5f7efa09758b59cde6f52/2b9463b4ff48823467832664305bd258a2672128e8b3e43d2c4f5192301a75c1.json"
     },
     {
       "id": "TASK-DIAGCLI-005",
@@ -671,8 +671,8 @@
         ".sdd/specs/diagnostics-contract.md": "a003560a9411fc9573eb13947c0218ec0b90d585d657d2f996e35c3ba32e8257"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/38df6fe7a36f4341eeea29dee3001a5d8b9b04395a5955cf61b85b361f65c523/1eff2d14f65b9752790687e6f59e473c1fe1b651ff856c163a9a240bb50e9e09.json"
     },
     {
       "id": "TASK-DIAGESL-001",
@@ -708,8 +708,8 @@
         ".sdd/specs/diagnostics-eslint.md": "8f7edd077294bedc3c2a3cc58fae94234b775e82e234e7b44217c26444fef301"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/d52e307938fccf3eb0dd42b808c3424e1defcc1fe0e1b4761c5679f8c3f82a7e/48365c9df09304baf39c71e2140372cac97089821ef16026c022d325ee559e2b.json"
     },
     {
       "id": "TASK-DIAGESL-002",
@@ -745,8 +745,8 @@
         ".sdd/specs/diagnostics-eslint.md": "8f7edd077294bedc3c2a3cc58fae94234b775e82e234e7b44217c26444fef301"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/6e65259041def0b4ddcc04b2b47702002943ad5b1206c53c7f161d44fc0b7d8e/35eca7f9455fb7c0ad4d885837fa12497d187ebf1f48e49a47d5b54cb20e00e6.json"
     },
     {
       "id": "TASK-DIAGESL-003",
@@ -782,8 +782,8 @@
         ".sdd/specs/diagnostics-eslint.md": "8f7edd077294bedc3c2a3cc58fae94234b775e82e234e7b44217c26444fef301"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/b4d66677a4101a1615e49540f466016484cd9e61ed9b05d934ee3800e65e9982/5748420ba129d730db6e358cc784cfd53987df8d79bec9105802c332b2d2c057.json"
     },
     {
       "id": "TASK-DIAGESL-004",
@@ -819,8 +819,8 @@
         ".sdd/specs/diagnostics-eslint.md": "8f7edd077294bedc3c2a3cc58fae94234b775e82e234e7b44217c26444fef301"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/3b09f84b52ad63d38a8880b611b37273222be9a470ddb7dc6e798771e3b39bf5/df241f1197780e2394e03e14259138056727f30809b92b1d6437ac75117dbed0.json"
     },
     {
       "id": "TASK-DIAGJS-001",
@@ -856,8 +856,8 @@
         ".sdd/specs/diagnostics-javascript.md": "5c52b5aee421ded8b8bd0beddc87f7322d322f082385359f51dd758e04a36be4"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/c857dc95e3f681181452f9e0802fe8a6a80ee7a2096c977e8fef385bfc301a04/0867004b62e85c2d5b67ba7e0debc97e9408bb80b782e7b4c7aca6ce8317b589.json"
     },
     {
       "id": "TASK-DIAGJS-002",
@@ -893,8 +893,8 @@
         ".sdd/specs/diagnostics-javascript.md": "5c52b5aee421ded8b8bd0beddc87f7322d322f082385359f51dd758e04a36be4"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/c5a298190217cce97bb2e14dd20f12039278c72ff1f9b21c0f53dbcbba07a4e1/1fdc16b90f2ed9cdd727d407d52eaaa500434e3f5cdb068402d651a3b03bf293.json"
     },
     {
       "id": "TASK-DIAGJS-003",
@@ -930,8 +930,8 @@
         ".sdd/specs/diagnostics-javascript.md": "5c52b5aee421ded8b8bd0beddc87f7322d322f082385359f51dd758e04a36be4"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/6c43b2f651b78289d8e9c4e0135453b90da033413b60b05513de23b214a85126/1d748fcd40ad3cc3417a4bd3b9f5d1e722ed58af3a09bd89ffa030fd452bb60f.json"
     },
     {
       "id": "TASK-DIAGPY-001",
@@ -968,8 +968,8 @@
         ".sdd/specs/diagnostics-python.md": "ca4d600e46374ded18a0acc73e7d90321d1a0606a3f2e89d08eb4bb8b307608a"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/e68259217ec51c28379a1924b0952c0bafcb7f8b7ebf2e99f29e8e4c9ffa1130/07d20189f952645d4d8231902b89cf8721777981045ee25a5fb47f53d5a422a1.json"
     },
     {
       "id": "TASK-DIAGPY-002",
@@ -1006,8 +1006,8 @@
         ".sdd/specs/diagnostics-python.md": "ca4d600e46374ded18a0acc73e7d90321d1a0606a3f2e89d08eb4bb8b307608a"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/0612480671cca4cea5f1bfcad0cb6dff875106bdb2a3e22eea5cb04ea2e2aaa0/7c65857c2f765099ad394d6e43c6df6c4d675d383851304409e8dccc0cd71c79.json"
     },
     {
       "id": "TASK-DIAGPY-003",
@@ -1043,8 +1043,8 @@
         ".sdd/specs/diagnostics-python.md": "ca4d600e46374ded18a0acc73e7d90321d1a0606a3f2e89d08eb4bb8b307608a"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/ae32be3ddb5ce231ac15239c00782fee193ceb57322900758d2e4228932df02e/fb11c0d2f3b75f868417d3dbf494ee422f9ef6aa7517dd23ac28481ad990cf75.json"
     },
     {
       "id": "TASK-DIAGPY-004",
@@ -1081,8 +1081,8 @@
         ".sdd/specs/diagnostics-python.md": "ca4d600e46374ded18a0acc73e7d90321d1a0606a3f2e89d08eb4bb8b307608a"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/88821559c45723df3ae4cdd9df76e482959ac916a4d9b93458eeecdbad00d9f7/c58d9ca90d708a719591bdfd0abcb1aca303b1ec206b002663cc4934bdc2a2bc.json"
     },
     {
       "id": "TASK-DIAGPY-005",
@@ -1119,8 +1119,8 @@
         ".sdd/specs/diagnostics-python.md": "ca4d600e46374ded18a0acc73e7d90321d1a0606a3f2e89d08eb4bb8b307608a"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/38f72a48d6307d1e983ac60da3f06bffeab35bc840ee5c5fb2dd0ab4dd15eab8/4bcbaaa551f5ecd6ca6a6876218f83a61f25febc4751b1d3d9f48001fb371f27.json"
     },
     {
       "id": "TASK-DIAGRUST-001",
@@ -1156,8 +1156,8 @@
         ".sdd/specs/diagnostics-rust.md": "22403034ee9681e0aa55f1587f5a34ca21520e6330b35a7f14886358573411c8"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/11a3b8647a2e9fb3b71a28b06aa3f073402e7d8ef633a844378c2a1fa05ade4d/e243cc874e9581fc901972856f9925968d5e8ecc72c18354a6b550a65bdb5c0f.json"
     },
     {
       "id": "TASK-DIAGRUST-002",
@@ -1193,8 +1193,8 @@
         ".sdd/specs/diagnostics-rust.md": "22403034ee9681e0aa55f1587f5a34ca21520e6330b35a7f14886358573411c8"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/6f776cfd11c90378e53283857112d855263408998602f6c992c2f3138ed781ac/28c0279c552e251cae06d9d1ca66006af241d0b4dbd9948d49f551a0a08c10a8.json"
     },
     {
       "id": "TASK-DIAGRUST-003",
@@ -1230,8 +1230,8 @@
         ".sdd/specs/diagnostics-rust.md": "22403034ee9681e0aa55f1587f5a34ca21520e6330b35a7f14886358573411c8"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/c65cb42dab3a0f9319f70ae604e497f9baa442765560b84f2c78c9947b87ceb3/39efaac06d79567b7cf311461721a10fadd5f11a2b3a4f432e10a91929c14073.json"
     },
     {
       "id": "TASK-DIAGRUST-004",
@@ -1267,8 +1267,8 @@
         ".sdd/specs/diagnostics-rust.md": "22403034ee9681e0aa55f1587f5a34ca21520e6330b35a7f14886358573411c8"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/62f6094e87778399e752b0ca5007a9982e27a916aea5a2a363c42639cd57cc7d/26f616077ce1a2974e4b36b5c3e6b2e78ec6345097e960b852dea4c560e7593e.json"
     },
     {
       "id": "TASK-DIAGRUST-005",
@@ -1304,8 +1304,8 @@
         ".sdd/specs/diagnostics-rust.md": "22403034ee9681e0aa55f1587f5a34ca21520e6330b35a7f14886358573411c8"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/9b0af6fa9b525fc6e4cd7a2b2afb9c95702fd3d43dd6412ed2a0f6377357f38e/0d7fb4a42a094d37edff2561909d7f15b67f91dd4dcc86b9172801f029491632.json"
     },
     {
       "id": "TASK-DIAGTS-001",
@@ -1341,8 +1341,8 @@
         ".sdd/specs/diagnostics-typescript.md": "0e0a343d36378c2bb211bbd1e9af20969892ed79a0b5b240e248585fd5d3678a"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/be37842ee0156832816396f110c147dabf4236836f294d2bd016b7bd8989deb3/37afe49b5c124d23d034277b065bae4b73006cb8be6f72babaadf7d1d4d7cfef.json"
     },
     {
       "id": "TASK-DIAGTS-002",
@@ -1378,8 +1378,8 @@
         ".sdd/specs/diagnostics-typescript.md": "0e0a343d36378c2bb211bbd1e9af20969892ed79a0b5b240e248585fd5d3678a"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/913b8538dbfd4c3866078d59b21d2175988e9e0965c2a12c77fcdfb373c13c13/bdc68b12128baff2df5658f1f632db4171c018b1253eccf0c9aa33d3aefd8be6.json"
     },
     {
       "id": "TASK-DIAGTS-003",
@@ -1415,8 +1415,8 @@
         ".sdd/specs/diagnostics-typescript.md": "0e0a343d36378c2bb211bbd1e9af20969892ed79a0b5b240e248585fd5d3678a"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/e0af8bdae43dd61e3bc5c065a0b7e30a71ea11b12cc531c4fc28693aeae55753/19df9b86c0382a07391369b83cc02b189d704d6671da8407232c605c36ebf4cf.json"
     },
     {
       "id": "TASK-DIAGTS-004",
@@ -1452,8 +1452,8 @@
         ".sdd/specs/diagnostics-typescript.md": "0e0a343d36378c2bb211bbd1e9af20969892ed79a0b5b240e248585fd5d3678a"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/bff5fe3645cf1bf5fc6ffbc5a56ee27c5869d4ee3fa54388fcb4549d026869a2/8082e742920df219718fb62fb671de52702430f36ea77eb9c5f47c6db5e2df4f.json"
     },
     {
       "id": "TASK-DIAGFLOW-001",
@@ -1502,8 +1502,8 @@
         ".sdd/specs/diagnostics-workflow.md": "24b39b56654fc275727b039dcdb955bf2103e5bce70e778bfd7a037b4ba742a6"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/3f49dd2bbf987b8bc4243f47d2a0e31c69559264a7f49728901716fdbabc197b/aea3ebd9d2a41072332ef08f5b9880d2e058a96fb9a43c74ae64536e44c00a8a.json"
     },
     {
       "id": "TASK-DIAGFLOW-002",
@@ -1551,8 +1551,8 @@
         ".sdd/specs/diagnostics-workflow.md": "24b39b56654fc275727b039dcdb955bf2103e5bce70e778bfd7a037b4ba742a6"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/36bb8ffe12fed23754723604ee528c1846cd1bbdbfa24d0b2d8e4ad3e5a20ac2/71ff180c52780be470b6d7efbf2a623f7c9d82762ae2b5aa2f9988675de27cc0.json"
     },
     {
       "id": "TASK-DIAGFLOW-003",
@@ -1588,8 +1588,8 @@
         ".sdd/specs/diagnostics-workflow.md": "24b39b56654fc275727b039dcdb955bf2103e5bce70e778bfd7a037b4ba742a6"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/e3524335f7f75454d5f006754437cf2a6c647e4729efb3daeaae46cd7758589c/84213f7b11692b984a6adcceadedda2127cb95598c7d838113573509d35d25e0.json"
     },
     {
       "id": "TASK-DIAGFLOW-004",
@@ -1637,8 +1637,8 @@
         ".sdd/specs/diagnostics-workflow.md": "24b39b56654fc275727b039dcdb955bf2103e5bce70e778bfd7a037b4ba742a6"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/c6fc13301863f3afbf5cee6dfb68817c4dd4df59f6b49cae7fa0d25008949361/761b6e62d07a22a281440dd83512d269f8c781df995beea5283c40785a6a3205.json"
     },
     {
       "id": "TASK-GATESNAPSHOT-001",
@@ -1674,8 +1674,8 @@
         ".sdd/specs/gate-prepare-snapshot.md": "daf25d90e3584c08d837127b11143efa304b9174b062d05fb147c01fb762a030"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/aabf880d3a6060968b8cd2018cabe544e0c87d59880908e15c4bdc63768837e3/c4d970d3f2dd0273dff39b11a44e1368b13aeb927e29a6853743130375253bb8.json"
     },
     {
       "id": "TASK-GINZA-001",
@@ -1712,8 +1712,8 @@
         ".sdd/specs/ginza-53.md": "5e3aaace051b4c882764d3880db10c8d9e40775dc17d891ad17fe14be8695215"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/372abcb556a8167198c29d1199db8409722eac4e26fab74dd26b8b908c08cac7/37204bbd5e5a478f530f3a51bc35d92aadafe2f8f9790f1c5119830c8a4dc72f.json"
     },
     {
       "id": "TASK-PLAN-CLI-001",
@@ -1762,8 +1762,8 @@
         "TASK-PLAN-STATE-003": "8142bb25ea53d1e7ff0ba3ee835c4c65b9a0c11914b200fdd88f62500213a302",
         "TASK-PLAN-STATE-004": "829da7b2438afced74532703b681b25d76f829cce880966e38f60fac390b2ffe"
       },
-      "status": "in-progress",
-      "receipt": ".sdd/plan-evidence/256a181d4c0753c902199673f74e08bb04b435a58c31693eafee2f2bb8b6ccab/7fe458487bdc6b51bf9cb54a87f69e5bd01c3e99b68c48bf690ded9c1681cb23.json"
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/256a181d4c0753c902199673f74e08bb04b435a58c31693eafee2f2bb8b6ccab/cd96f2988d7ceddaf55859f65b4c2857f69b0d0c8e624ceeb5ff38828f1547bf.json"
     },
     {
       "id": "TASK-PLAN-CLI-002",
@@ -1813,8 +1813,8 @@
         "TASK-PLAN-STATE-003": "8142bb25ea53d1e7ff0ba3ee835c4c65b9a0c11914b200fdd88f62500213a302",
         "TASK-PLAN-STATE-004": "829da7b2438afced74532703b681b25d76f829cce880966e38f60fac390b2ffe"
       },
-      "status": "in-progress",
-      "receipt": ".sdd/plan-evidence/5092368831f2d83ae3331ce5c69a1c2b9c8879f1074caf820fd21c877454eddd/2107235ffb8926e7db4ab67b7233cd57da4270c97b96717b8230e17488c03ec1.json"
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/5092368831f2d83ae3331ce5c69a1c2b9c8879f1074caf820fd21c877454eddd/c7e27cac44de6f87e5ec7e048ff29822a2184a5872a026c75eabf1f548a16bf4.json"
     },
     {
       "id": "TASK-PLAN-CLI-003",
@@ -1863,8 +1863,8 @@
         "TASK-PLAN-STATE-003": "8142bb25ea53d1e7ff0ba3ee835c4c65b9a0c11914b200fdd88f62500213a302",
         "TASK-PLAN-STATE-004": "829da7b2438afced74532703b681b25d76f829cce880966e38f60fac390b2ffe"
       },
-      "status": "in-progress",
-      "receipt": ".sdd/plan-evidence/0933b8144dedd499966ddd3d0249d18e3aa611afb1c1a1a6232c124eab111581/1a81a807186af91155bdd0a895760834e0ff894066fd1d54b1e5df5faa19e596.json"
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/0933b8144dedd499966ddd3d0249d18e3aa611afb1c1a1a6232c124eab111581/f7b4b74f91c831e54dc5fd47671db663aa29a0b1fe3f1034635ba6dda6c67650.json"
     },
     {
       "id": "TASK-PLAN-CLI-004",
@@ -1919,8 +1919,8 @@
         "TASK-PLAN-STATE-003": "8142bb25ea53d1e7ff0ba3ee835c4c65b9a0c11914b200fdd88f62500213a302",
         "TASK-PLAN-STATE-004": "829da7b2438afced74532703b681b25d76f829cce880966e38f60fac390b2ffe"
       },
-      "status": "in-progress",
-      "receipt": ".sdd/plan-evidence/c5e2bb96aa6502ec882e91732fafe2cc2be9b16d3a6332d7c38f50f8130b33ee/041df2746733d9065a632ed1587ed99172d14fae70dd3a856a57b5a094d8f024.json"
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/c5e2bb96aa6502ec882e91732fafe2cc2be9b16d3a6332d7c38f50f8130b33ee/b73c2d403ae002a045cddbe897f742b9c95b64a112de17cb81058417512753a5.json"
     },
     {
       "id": "TASK-PLAN-MODEL-001",
@@ -1956,8 +1956,8 @@
         ".sdd/specs/implementation-plan-contract.md": "6c9453c76f9c681299b1d61ac5b92e66867e2caa672d7bf18c544a9212e8595c"
       },
       "dependencies": {},
-      "status": "in-progress",
-      "receipt": ".sdd/plan-evidence/5bb895fc635250882642e331a617c139f57cf2fa7b8b5dfc719a409e293390ba/07bc2cd9facea0590bfb16107864eb93579886b82ed0b12cd8a8e9b88371db5e.json"
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/5bb895fc635250882642e331a617c139f57cf2fa7b8b5dfc719a409e293390ba/3b8666465e6217d3d573ff1dd3e85103a697d617d2b26d504483dc0208fd9125.json"
     },
     {
       "id": "TASK-PLAN-MODEL-002",
@@ -1997,8 +1997,8 @@
       "dependencies": {
         "TASK-PLAN-MODEL-001": "2bb1cfe84bb10312a455b415c44271e472805965d33437487373464b2b05776a"
       },
-      "status": "in-progress",
-      "receipt": ".sdd/plan-evidence/ca882bb902a446db78353bf3a3c192858924c61f3765809995eef533fe1a170b/c8473523707aaba6973cbe637181893570fc6e0dd38f766ebc88efe04dc3a624.json"
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/ca882bb902a446db78353bf3a3c192858924c61f3765809995eef533fe1a170b/7c6fe593f0c3440d52f662f18a4188c5f6d3e2c472479506f5825a486efeab92.json"
     },
     {
       "id": "TASK-PLAN-MODEL-003",
@@ -2038,8 +2038,8 @@
       "dependencies": {
         "TASK-PLAN-MODEL-002": "1f7f0975b74fa0736e8df8c833fd21f927025ff6cf0d943f47230084032b63b3"
       },
-      "status": "in-progress",
-      "receipt": ".sdd/plan-evidence/0e883e4d2b488339dc10c021a5ba985524ce6c10473ed043cc6b0231d7c744f7/99eb6497b512ecbb0845aef1dfc0ae4d1dfec47aaaf371bba67978d5d01c4156.json"
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/0e883e4d2b488339dc10c021a5ba985524ce6c10473ed043cc6b0231d7c744f7/0624811c760b2ff59b96a486cc66aab46a498ba368d023eff109c61da3613395.json"
     },
     {
       "id": "TASK-PLAN-MODEL-004",
@@ -2079,8 +2079,8 @@
       "dependencies": {
         "TASK-PLAN-MODEL-001": "2bb1cfe84bb10312a455b415c44271e472805965d33437487373464b2b05776a"
       },
-      "status": "in-progress",
-      "receipt": ".sdd/plan-evidence/31f8d74130aad029db67bdbee82fc5d45a1c6331d22f0161aa0bc08028609911/3cfaa8fdea7b1502a4d66cd264b6f97914b773b88fac4f5f111f27cd07c03c7f.json"
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/31f8d74130aad029db67bdbee82fc5d45a1c6331d22f0161aa0bc08028609911/6c46f36e6bf6cb6df0bb71a2e99ec7f6e236ab66da69511bcaa8b587b9a46d67.json"
     },
     {
       "id": "TASK-PLAN-MODEL-005",
@@ -2130,8 +2130,8 @@
         ".sdd/specs/implementation-plan-contract.md": "6c9453c76f9c681299b1d61ac5b92e66867e2caa672d7bf18c544a9212e8595c"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/3c0ada06e9af11ac5ab511164c79d40e5db7640808fc34c50351c87d265681fb/808848606d4c7e6d6f37950d7ddf5cd7ff7e634941a42574c4e6f3f82c0e6ae7.json"
     },
     {
       "id": "TASK-PLAN-STATE-001",
@@ -2173,8 +2173,8 @@
         "TASK-PLAN-MODEL-004": "301a2ddf3153c76bd114d224884c32c0bdcf2aba0841f26e7a302a8effaae16a",
         "TASK-PLAN-MODEL-005": "0ca6ad990aa9f157e3ae11c1d361a2ac8e3983f5158d2f61304ffc4b1db470a4"
       },
-      "status": "in-progress",
-      "receipt": ".sdd/plan-evidence/816423d456b92312c84d754641f8104d7a9d9ac0f65e1af5d09609feed7a4704/7dda645679902e6e4cdb11da3560090783073d9096e2743c0632c1c653e06eec.json"
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/816423d456b92312c84d754641f8104d7a9d9ac0f65e1af5d09609feed7a4704/21b8fd9bd69872c47d6e36807183aea5179a9afa0eadd465326be5da5916ef21.json"
     },
     {
       "id": "TASK-PLAN-STATE-002",
@@ -2219,8 +2219,8 @@
         "TASK-PLAN-MODEL-005": "0ca6ad990aa9f157e3ae11c1d361a2ac8e3983f5158d2f61304ffc4b1db470a4",
         "TASK-PLAN-STATE-001": "297213fc388ebdda28db5b82d1098c5169f543b9a6a6f10b2a53694f86f4e1fc"
       },
-      "status": "in-progress",
-      "receipt": ".sdd/plan-evidence/583e47f19cc1f90e108abc8a186c54d2de0fc7edd7628b4a59c50e1972c1391b/e3b5eae1591cd2340f6a8fbf21eeb5bebb606c364e887f7204bf095e47f52b48.json"
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/583e47f19cc1f90e108abc8a186c54d2de0fc7edd7628b4a59c50e1972c1391b/3071f0192a745d11c81d8671fb21fcbadaf1ca81c5fbcafd3653665e7c751f60.json"
     },
     {
       "id": "TASK-PLAN-STATE-003",
@@ -2265,8 +2265,8 @@
         "TASK-PLAN-MODEL-005": "0ca6ad990aa9f157e3ae11c1d361a2ac8e3983f5158d2f61304ffc4b1db470a4",
         "TASK-PLAN-STATE-001": "297213fc388ebdda28db5b82d1098c5169f543b9a6a6f10b2a53694f86f4e1fc"
       },
-      "status": "in-progress",
-      "receipt": ".sdd/plan-evidence/ddc995e0dc6ebf069112d57ae3920288e086e797fced8776168efe2ece621ab2/05d4371580dcf8c3243bbffdecd44fab5172e28645bd0e378a9450d0c52f8de6.json"
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/ddc995e0dc6ebf069112d57ae3920288e086e797fced8776168efe2ece621ab2/3d04bb3388e32d3baae58bdafc422e2133c0e85cf24cc33f6e79766d16655e1f.json"
     },
     {
       "id": "TASK-PLAN-STATE-004",
@@ -2313,8 +2313,8 @@
         "TASK-PLAN-STATE-002": "a2d85ae2bf95789339c7ae675671d099926bed6cd87c4c19d5647289656611ae",
         "TASK-PLAN-STATE-003": "8142bb25ea53d1e7ff0ba3ee835c4c65b9a0c11914b200fdd88f62500213a302"
       },
-      "status": "in-progress",
-      "receipt": ".sdd/plan-evidence/596cd5c6d7c56f3d70d95a4d4df5d3b5037737e72b89b2ce618875bc425e6a6c/4040a1bacb65f4b3de9a9293b89ee838ebeb07d6948a9f141854ce0ec25420dc.json"
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/596cd5c6d7c56f3d70d95a4d4df5d3b5037737e72b89b2ce618875bc425e6a6c/9673704da4659d5cf755e663d3ad0891b7ffb289ed5288ac1e4198d9a482a01f.json"
     },
     {
       "id": "TASK-PLAN-FLOW-001",
@@ -2363,8 +2363,8 @@
         "TASK-PLAN-STATE-003": "8142bb25ea53d1e7ff0ba3ee835c4c65b9a0c11914b200fdd88f62500213a302",
         "TASK-PLAN-STATE-004": "829da7b2438afced74532703b681b25d76f829cce880966e38f60fac390b2ffe"
       },
-      "status": "in-progress",
-      "receipt": ".sdd/plan-evidence/d7ae83bf392014eb6b622062a89ada2908e5e9eb9d34af2411e48470c4312fa2/ca8f077fd5d7281c77e448c40dbf603bb5db24e518fadcee6a64c7096fb8692f.json"
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/d7ae83bf392014eb6b622062a89ada2908e5e9eb9d34af2411e48470c4312fa2/90ad847ee45eda1685d60c05a3b3b0de5ad62495c2131a835461c9c1961e96d4.json"
     },
     {
       "id": "TASK-PLAN-FLOW-002",
@@ -2416,8 +2416,8 @@
         "TASK-PLAN-STATE-003": "8142bb25ea53d1e7ff0ba3ee835c4c65b9a0c11914b200fdd88f62500213a302",
         "TASK-PLAN-STATE-004": "829da7b2438afced74532703b681b25d76f829cce880966e38f60fac390b2ffe"
       },
-      "status": "in-progress",
-      "receipt": ".sdd/plan-evidence/f2011d695b0132d2d487c2156117d0df66c9839a1c093b3b22f324ab03e9d1ae/312fc97576300ecd602859028cb491842d9f3d47cbf27e7b2e4cc07ed0f55f2f.json"
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/f2011d695b0132d2d487c2156117d0df66c9839a1c093b3b22f324ab03e9d1ae/1c7c595b44825ed502657d6f60b1177da4a6c4def2a202e537f80855a4937385.json"
     },
     {
       "id": "TASK-PLAN-FLOW-003",
@@ -2469,8 +2469,8 @@
         "TASK-PLAN-STATE-003": "8142bb25ea53d1e7ff0ba3ee835c4c65b9a0c11914b200fdd88f62500213a302",
         "TASK-PLAN-STATE-004": "829da7b2438afced74532703b681b25d76f829cce880966e38f60fac390b2ffe"
       },
-      "status": "in-progress",
-      "receipt": ".sdd/plan-evidence/f5b650634f2a6cae8fec7e885e6b5ba92b11cef6e7a5edfdfe74f985be094215/b95b80129a2bd8425feacd5708fd95f13f2f17fb9c6330168888adec569e1a6d.json"
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/f5b650634f2a6cae8fec7e885e6b5ba92b11cef6e7a5edfdfe74f985be094215/1c934f6761c62c58a7ec6e998fcccc7dced3c7557bed386bc836b0709af2598c.json"
     },
     {
       "id": "TASK-KOTO-SYNC-001",
@@ -2505,8 +2505,8 @@
         ".sdd/specs/kotonoha-skill-sync.md": "6d590df7a69fca0955c0be93101329cc168b434316c655ab06b74f2ab893380a"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/6642985a45e935803fdd6759fa7672b3eb1807a8aee91a4cbe4e06cb2b581af7/cb57dd51306a1c4cffe7ae8856aa726216d83fd0377b33cefe9c317946a6c02e.json"
     },
     {
       "id": "TASK-KOTO-SYNC-002",
@@ -2541,8 +2541,8 @@
         ".sdd/specs/kotonoha-skill-sync.md": "6d590df7a69fca0955c0be93101329cc168b434316c655ab06b74f2ab893380a"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/ad533c506c49d243ef4d070a0611b4392118ee67c6db72f9615a1e39a384c4d8/50b52b8e52acee6ca6f3160322da11dba22c25248dfe849519ce19c8bf8f132b.json"
     },
     {
       "id": "TASK-KOTO-SYNC-003",
@@ -2577,8 +2577,8 @@
         ".sdd/specs/kotonoha-skill-sync.md": "6d590df7a69fca0955c0be93101329cc168b434316c655ab06b74f2ab893380a"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/69e4afcdddac4bbc89fe4fa77187b9fc3404b05bb44d56d73d77046a9a2c912e/be72326364b067a0d4e24c08123d94b7308824166b0c0938476d279fb8e491a1.json"
     },
     {
       "id": "TASK-R30C-001",
@@ -2614,8 +2614,8 @@
         ".sdd/specs/legacy-approval-provenance.md": "750219ae4c881fc8a27002e02562d070c71e421ebdc563858d22e7c7395a2fde"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/3b49ac15fffb42a59de2da4cd3805f12f07f96f42487890c7f5a479e55ac3ca5/f6f4e95a83d3a7f2dd727862951ffad0b98d9a9e1f59e81fe3a6c724b6ab21e8.json"
     },
     {
       "id": "TASK-CHECK-CLOSURE-001",
@@ -2664,8 +2664,8 @@
         ".sdd/specs/legacy-command-closure.md": "4b30d8ee6758c82c571d3394fbb9fdc7e05ef8bd9ac26d37aea5f2f0801840c1"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/171caf2d9cb6691a5bf343f8c8071741a570013b0b3eafe7652a64b3a67068a6/cd87e8a5d0a8055ec4364caa3a2f71d54ecc117f612af0d597d6f6fe4961af45.json"
     },
     {
       "id": "TASK-CHECK-CLOSURE-002",
@@ -2701,8 +2701,8 @@
         ".sdd/specs/legacy-command-closure.md": "4b30d8ee6758c82c571d3394fbb9fdc7e05ef8bd9ac26d37aea5f2f0801840c1"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/e242f473829f28690e64662ac48e4bf6d9ad58645a79c0de80538d9e8978ec20/736815de334a248a7a0183fe55177d7a33cf46a4e3d0ba19843772601bfd27dd.json"
     },
     {
       "id": "TASK-CHECK-CLOSURE-003",
@@ -2738,8 +2738,8 @@
         ".sdd/specs/legacy-command-closure.md": "4b30d8ee6758c82c571d3394fbb9fdc7e05ef8bd9ac26d37aea5f2f0801840c1"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/afae9e6ca56f90275bc18bf9df55025ab58c8afe56427f9b02b66a9d302b4c64/14510b9ded34b147442b477746746c10ac7470c8cec54911f2e95eb3b042a0fe.json"
     },
     {
       "id": "TASK-R34-CLOSURE-001",
@@ -2779,8 +2779,8 @@
         ".sdd/specs/legacy-command-closure.md": "4b30d8ee6758c82c571d3394fbb9fdc7e05ef8bd9ac26d37aea5f2f0801840c1"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/0b42073a24ceced3e7b5f3db0006b89bf92375e6f06f624bbd9fe0268c9bf3f5/95869adbafcc89ba988425c8893f6ef0c60293b474a5b1f4cda3a151de317acc.json"
     },
     {
       "id": "TASK-R33-NODE-001",
@@ -2818,8 +2818,8 @@
         ".sdd/specs/legacy-native-verdicts.md": "c409e8f49e694b35c1be97fbd696b63353436cdd04046e55c3d631e45cf40983"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/070b66186eb1cdb66a59345ab7f4a39cd5f52cc8ca8c99faef2f579e98a7d49a/3a53c5d011aa36fb27a3b14424c88ee3ab377f17c907dfe77653801ff01e8547.json"
     },
     {
       "id": "TASK-R33-PYTEST-001",
@@ -2862,8 +2862,8 @@
         ".sdd/specs/legacy-native-verdicts.md": "c409e8f49e694b35c1be97fbd696b63353436cdd04046e55c3d631e45cf40983"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/2d20a4d6fe524fa4161ffeec2e2851f1466b5b393efe81aa61d980156a6f55bb/a6253255f0c8e120c5fbc56bedc62750b3efacf84d29d9d58e9dcab04eba2600.json"
     },
     {
       "id": "TASK-R34-NODE-001",
@@ -2903,8 +2903,8 @@
         ".sdd/specs/legacy-native-verdicts.md": "c409e8f49e694b35c1be97fbd696b63353436cdd04046e55c3d631e45cf40983"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/b918cacff3380e1a76e5967edd8a636cb4b5b599cb322a8211a12f187572e244/2d12551d17df981f3f2dc648bf13d9a616d434b9f03eba539b904001da9dff6a.json"
     },
     {
       "id": "TASK-NODE-SUMMARY-001",
@@ -2940,8 +2940,8 @@
         ".sdd/specs/node-summary-verdict.md": "cb9980cc832bce43322f52b98bd899ce1e9bfc53bf995676df6c7008e7528a7f"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/69fda522686c070b6f200b55b8c684f22ffad476f9fe001e203d42c90af8d2f1/b33af5573fc0a0615a457f3d08af1428aa883ee0bf37b1614920b193a25a31c0.json"
     },
     {
       "id": "TASK-NODE-SUMMARY-002",
@@ -2976,8 +2976,8 @@
         ".sdd/specs/node-summary-verdict.md": "cb9980cc832bce43322f52b98bd899ce1e9bfc53bf995676df6c7008e7528a7f"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/df0a429f237e2ae776f600553dae8881c238aad6875acaaf6bc8dc86ecc05a71/e788ab6f6728a1e34d313710c052c607fd416c67a1a9b6bbfe8b494fa1c6bae0.json"
     },
     {
       "id": "TASK-NODE-SUMMARY-003",
@@ -3013,8 +3013,8 @@
         ".sdd/specs/node-summary-verdict.md": "cb9980cc832bce43322f52b98bd899ce1e9bfc53bf995676df6c7008e7528a7f"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/e0b80ea75538acc02c658c5a2df083bb18f0a87806c43f2e99d41aea679d15bd/d3f9c89b710a7ca360fde0d9de6d6a5dd05fef8381371d38b00e5417c5704f2e.json"
     },
     {
       "id": "TASK-NODE20-001",
@@ -3050,8 +3050,8 @@
         ".sdd/specs/node20-iterator-compatibility.md": "3c5b24d33c90681bc7321ad98e1caefdcb6e9b85963de7cde1e64ff099d8debf"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/878be7307af77ae1c747b200a28121d116e4af346d28e1360e24d264b814d543/b0b209aacaa3e78db0706107adaddfbf6cbe920829f5a29eafcf91477dce4006.json"
     },
     {
       "id": "TASK-HOST-NPX-001",
@@ -3086,8 +3086,8 @@
         ".sdd/specs/npx-update-notice.md": "699c5bc00695ee6e8edff7d6fd9572a6e909ffbfdad1795b8ba5cbfa9b680310"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/578b4f841530e02dd61dfed8b72479e9304d11114b4c07894379124e722ae39f/021be5783d42625b947ac20196c5082a4651eab72b10e375c686f03bc6b50894.json"
     },
     {
       "id": "TASK-R36B-LOAD-001",
@@ -3123,8 +3123,8 @@
         ".sdd/specs/r36b-node-red.md": "1123ffcb2483fde4a819c5097face30334aeb754dba804936d1799821a564ad2"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/223fb543e153eb1dcec8063d6c7b1b2a5402f9ed672a3c0cc5de2d8a5fee2c9e/5cb687aee4c86af1dde54d7c05b82e00f5d0251cbac4d137de3a918ccee62995.json"
     },
     {
       "id": "TASK-R36B-SYNTAX-001",
@@ -3160,8 +3160,8 @@
         ".sdd/specs/r36b-node-red.md": "1123ffcb2483fde4a819c5097face30334aeb754dba804936d1799821a564ad2"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/bda383a33ccb65893451fa16541ba0e7c11653fb2e4c8873c8b136577e964cce/77d7e0f2532066d3edfc15496a6cf767fd47dee04b375b4c1483393bd68ba4ef.json"
     },
     {
       "id": "TASK-R36B-ASSERT-001",
@@ -3197,8 +3197,8 @@
         ".sdd/specs/r36b-node-red.md": "1123ffcb2483fde4a819c5097face30334aeb754dba804936d1799821a564ad2"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/4136a5a34f21b9c9dab5a846070c3a6cee9e4809b54770e41f0c47f5aab002ed/80605bc56ea0767b3f2169cf993f1740cbeaff22bef24447a2644eb1347d8f30.json"
     },
     {
       "id": "TASK-R36C-CLOSURE-001",
@@ -3235,8 +3235,8 @@
         ".sdd/specs/r36c-compiler-feasibility.md": "338d9412262746b632d01889e86216b0aed46c98e6373e1779762855b8b818c8"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/6038f34eff071aed79c00c1f8399d02151e311734572470efefc1b9e6a51ba7d/bc90cfbe4b953186e81e4ec9a8cdefc433a95b49f36f0db2fe0673c4c94f2745.json"
     },
     {
       "id": "TASK-R36D-OWN-001",
@@ -3272,8 +3272,8 @@
         ".sdd/specs/r36d-fixture-portability.md": "2fd701e75b3768f847e0f6f4b6ca6089db75408f1fe652129beb54a05297c0eb"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/55064a7f3e11f94083726a1cfff7d1269e5c97535a75c74a117f9a5298bcab91/d1b238f4cd8b3dc2bdc3fbce5d59a1e7fcedd9ecdd533e399a361556dcb51d4c.json"
     },
     {
       "id": "TASK-R36D-TS-001",
@@ -3308,8 +3308,8 @@
         ".sdd/specs/r36d-fixture-portability.md": "2fd701e75b3768f847e0f6f4b6ca6089db75408f1fe652129beb54a05297c0eb"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/42844484b8d001e56650d83c9ea36673e881e3ecaf1cb744d52058f28de950c3/66daf53c2fefa1ee72243318eb2bd862ddc0bff4967f028f7310c8ab80a8e039.json"
     },
     {
       "id": "TASK-R36E-LOAD-001",
@@ -3349,8 +3349,8 @@
         ".sdd/specs/r36e-native-loader.md": "95f667d0af5ee46ab8e72cd80035a4295901c8b0a81019db220d4c5b4e1c85d1"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/a0308c14e791e653a392bfad32c5ba570f23ded2a88fc698260e24c064903935/e266173f80c081a4346b9e82382c629903b4b0e532db8d4d7926a38760cd38e7.json"
     },
     {
       "id": "TASK-R36F-LAYOUT-001",
@@ -3385,8 +3385,8 @@
         ".sdd/specs/r36f-fixture-layout.md": "3ef48cb91d5052370ada085fbfa3543c2210ac72476add210ff10364e67b48d0"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/1aaec494b3833d83473eb5fd87b103f34bc8956baaeb0cb32e50c28cd795c4ab/35014025262cc46f4e588f8fff6b6302fc4e48687d96e47b2bb2986cf8fcac16.json"
     },
     {
       "id": "TASK-R36G-001",
@@ -3422,8 +3422,8 @@
         ".sdd/specs/r36g-rust-ci.md": "f27328fd81a5c5a3a3ed6e4deb98304f97306ccea99973a86586682d0b9d301b"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/18b33c75f5cc1432e30a3cf80d01fbc13f44320763acdd4e72483be098731cdf/91494d39b7085c3e013486aad1524005939782ce7451c1057261a9bff4dc6f0f.json"
     },
     {
       "id": "TASK-R36G-002",
@@ -3459,8 +3459,8 @@
         ".sdd/specs/r36g-rust-ci.md": "f27328fd81a5c5a3a3ed6e4deb98304f97306ccea99973a86586682d0b9d301b"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/28059b6f89c887907eb9d73098d0ea6461a3700ffe0119544f1014a5dc16f084/fdc014815740ba6ea643a674be734ed44439b51c5eeab1fed1f0ed7e48c27df0.json"
     },
     {
       "id": "TASK-R36H-PYTEST-001",
@@ -3495,8 +3495,8 @@
         ".sdd/specs/r36h-pytest-ci.md": "a4e742b30fe87c94add6a6af48c3393706d18d1eba684314d51dd96600d8ed74"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/a13f8522f6b086e198c05bcf96fbe7b9a8569f715fd80d27225cabfafeedc9a1/b8a1d712b5c3fba9ed4c67372523db12e86c2001f7dc09751a44439c14ab46b9.json"
     },
     {
       "id": "TASK-R36H2-CWD-001",
@@ -3531,8 +3531,8 @@
         ".sdd/specs/r36h2-pytest-cwd.md": "a2fba1e51d86ba80c275bbe698801e84b3c1cd1024b164f658d362e24dd44f43"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/28646a9a85911175c0f729d0cbe5563b41098357e796e7e438b3085b011f4079/e3f906aef1f1ed1d3c6556fd395495a3d1eff84076efd1c63bd89618de4a8aba.json"
     },
     {
       "id": "TASK-R36I-001",
@@ -3571,8 +3571,8 @@
         ".sdd/specs/r36i-c-compiler.md": "d94ea3d59dc48f5202d747e97e78344d85c3a457099d09add9054fd80cafd822"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/c3517590322f2e2ae4fba60396d25dc90eddf745edbf122594132f9778fd9730/f0436c3706c7acf7a4f6a701ce4860705b13d83466d6ee8c2c041dd586cf5c29.json"
     },
     {
       "id": "TASK-R36I-002",
@@ -3609,8 +3609,8 @@
         ".sdd/specs/r36i-c-compiler.md": "d94ea3d59dc48f5202d747e97e78344d85c3a457099d09add9054fd80cafd822"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/c7b736481f260907c28dc292e501b3a984f75bf6cc23c6c50b5c62a373cbd439/188a5a27039db60c53550547aae0bae24c9c5e40a7cf9b18815fe5708388f774.json"
     },
     {
       "id": "TASK-R36I-003",
@@ -3647,8 +3647,8 @@
         ".sdd/specs/r36i-c-compiler.md": "d94ea3d59dc48f5202d747e97e78344d85c3a457099d09add9054fd80cafd822"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/601557ca80feef7ab0fac6937a5a2f6e7788c1278858253795d632ca63bc2322/fb2a0b6b7846425855a313a5330d58342524771a2646b6059f51e2407146ca34.json"
     },
     {
       "id": "TASK-R36J-001",
@@ -3688,8 +3688,8 @@
         ".sdd/specs/r36j-go-compiler.md": "fd8a8ddce14da4710a3bea0fdda711d0bfb45848427ec52bcdd94cb1f6547fe6"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/1225a2dedd2729a36cd44d913a5d0a9bb896afc999cec67777a65e0661f4420f/194b566049912ed2ea1a0afdbab66b9ae5a3a61819b9fb69fca8f9e0223aaeb0.json"
     },
     {
       "id": "TASK-R36J-002",
@@ -3726,8 +3726,8 @@
         ".sdd/specs/r36j-go-compiler.md": "fd8a8ddce14da4710a3bea0fdda711d0bfb45848427ec52bcdd94cb1f6547fe6"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/8a87d34223263bfb9df4509ed980a93541d6c3f2b080d03676dad69f3d50c759/537385a8fc4bb16468c04d6f9360be1f771d3964c05b354343218de24ed439d3.json"
     },
     {
       "id": "TASK-R36J-003",
@@ -3763,8 +3763,8 @@
         ".sdd/specs/r36j-go-compiler.md": "fd8a8ddce14da4710a3bea0fdda711d0bfb45848427ec52bcdd94cb1f6547fe6"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/71e5621506a28084d051f8f1bd16faae700ca4a26d73c3121cf31512f7c68374/94aef92ad529655be55e547af5a4a70e921ae904c4d423402dc16d4e51f942e0.json"
     },
     {
       "id": "TASK-R36K-001",
@@ -3799,8 +3799,8 @@
         ".sdd/specs/r36k-c-fixture-portability.md": "b8e8ee53cd889b9c23c543ebe4e61b9f6598282dec6c5395bd27b65103194b29"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/070b025792bae976a701a1237aea57a60633929feda24e443b6755a444701201/37b9d4b282045fc6c516b8d6c5abbd139e8504b4c63339690c55eb0412b633cb.json"
     },
     {
       "id": "TASK-RELQ-001",
@@ -3811,8 +3811,8 @@
       ],
       "dependsOn": [],
       "artifacts": [
-        ".sdd/release-content-mutations.v0.2.7.json",
-        ".sdd/release-validation.v0.2.7.json",
+        ".sdd/release-content-mutations.v0.2.8.json",
+        ".sdd/release-validation.v0.2.8.json",
         ".sdd/specs/claude-code-support.md",
         ".sdd/specs/release-qualification.md",
         "CLANGELOG.md",
@@ -3842,11 +3842,11 @@
         }
       ],
       "specs": {
-        ".sdd/specs/release-qualification.md": "fca2fe1b7a5bf39ef562be5440c68f13311490a46bdaab70ba2e065866279144"
+        ".sdd/specs/release-qualification.md": "67f1fcae289b63d1657f705480b95ffeb5eccfbaa66131bb69837219afe5fcb5"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/73f0cbb6742cc4492aeeadca22db81f5f31db4650b1951f0febd38355f8df151/52922ee5b1405afed81c67a83a5e7c393078ffbe94ed07e75199acea0793cd63.json"
     },
     {
       "id": "TASK-RELQ-002",
@@ -3857,8 +3857,8 @@
       ],
       "dependsOn": [],
       "artifacts": [
-        ".sdd/release-content-mutations.v0.2.7.json",
-        ".sdd/release-validation.v0.2.7.json",
+        ".sdd/release-content-mutations.v0.2.8.json",
+        ".sdd/release-validation.v0.2.8.json",
         ".sdd/specs/claude-code-support.md",
         ".sdd/specs/release-qualification.md",
         "CLANGELOG.md",
@@ -3890,11 +3890,11 @@
         }
       ],
       "specs": {
-        ".sdd/specs/release-qualification.md": "fca2fe1b7a5bf39ef562be5440c68f13311490a46bdaab70ba2e065866279144"
+        ".sdd/specs/release-qualification.md": "67f1fcae289b63d1657f705480b95ffeb5eccfbaa66131bb69837219afe5fcb5"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/dd865d9c8b78a2d77814f6c74fb5613d75c1f641a17ccffea1a8e080c0bc0a07/f56b3f360c47c4492dc988d07c348c34b6b67ac3a597d280bb97742f5fb0bd7f.json"
     },
     {
       "id": "TASK-RELQ-003",
@@ -3905,8 +3905,8 @@
       ],
       "dependsOn": [],
       "artifacts": [
-        ".sdd/release-content-mutations.v0.2.7.json",
-        ".sdd/release-validation.v0.2.7.json",
+        ".sdd/release-content-mutations.v0.2.8.json",
+        ".sdd/release-validation.v0.2.8.json",
         ".sdd/specs/claude-code-support.md",
         ".sdd/specs/release-qualification.md",
         "CLANGELOG.md",
@@ -3959,11 +3959,11 @@
         }
       ],
       "specs": {
-        ".sdd/specs/release-qualification.md": "fca2fe1b7a5bf39ef562be5440c68f13311490a46bdaab70ba2e065866279144"
+        ".sdd/specs/release-qualification.md": "67f1fcae289b63d1657f705480b95ffeb5eccfbaa66131bb69837219afe5fcb5"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/89f75a0ef83095915c1bfb35bc420da94e27f50547ef905b5527a6c34744793b/8f7065978b9ca42d72721c8709144617f99230c5e818cec197ac5f127f01a992.json"
     },
     {
       "id": "TASK-RELQ-004",
@@ -3974,8 +3974,8 @@
       ],
       "dependsOn": [],
       "artifacts": [
-        ".sdd/release-content-mutations.v0.2.7.json",
-        ".sdd/release-validation.v0.2.7.json",
+        ".sdd/release-content-mutations.v0.2.8.json",
+        ".sdd/release-validation.v0.2.8.json",
         ".sdd/specs/claude-code-support.md",
         ".sdd/specs/release-qualification.md",
         "CLANGELOG.md",
@@ -4004,11 +4004,11 @@
         }
       ],
       "specs": {
-        ".sdd/specs/release-qualification.md": "fca2fe1b7a5bf39ef562be5440c68f13311490a46bdaab70ba2e065866279144"
+        ".sdd/specs/release-qualification.md": "67f1fcae289b63d1657f705480b95ffeb5eccfbaa66131bb69837219afe5fcb5"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/ea566fd8dcc45f090bbb58cbb164569368264ed6a6f464c72ed20485084892c2/5da8576c7e1ce29449cd21eee636720485733c72866786c784617e6bedc58304.json"
     },
     {
       "id": "TASK-RELQ-005",
@@ -4019,8 +4019,8 @@
       ],
       "dependsOn": [],
       "artifacts": [
-        ".sdd/release-content-mutations.v0.2.7.json",
-        ".sdd/release-validation.v0.2.7.json",
+        ".sdd/release-content-mutations.v0.2.8.json",
+        ".sdd/release-validation.v0.2.8.json",
         ".sdd/specs/claude-code-support.md",
         ".sdd/specs/release-qualification.md",
         "CLANGELOG.md",
@@ -4033,7 +4033,7 @@
         "scripts/release-qualification.mjs",
         "scripts/release-qualification.test.mjs"
       ],
-      "condition": "Revalidate REQ-RELQ-005: | REQ-RELQ-005 | When a stable 0.2.7 qualification package is prepared, it shall retain executable, reviewable helpers and self-tests in the repository, verify the exact tgz through the actual package entry point on Node 20/22/24, report exact artifact paths/hashes, exclusions and residual risks separately from human release approval, and require the publishing workflow to verify the packed tgz against the approved digest before publishing that same file. | TEST-RELQ-005, TEST-HOST-005, TEST-RELQ-PUBLISH-001 | All mapped native tests (TEST-HOST-005, TEST-RELQ-005, TEST-RELQ-HOST-001, TEST-RELQ-PACKAGE-BINDING-001, TEST-RELQ-PH-001, TEST-RELQ-PUBLISH-001, TEST-RELQ-SKILL-001) must pass on current inputs; setup errors or skips do not complete this task.",
+      "condition": "Revalidate REQ-RELQ-005: | REQ-RELQ-005 | When a stable 0.2.8 qualification package is prepared, it shall retain executable, reviewable helpers and self-tests in the repository, verify the exact tgz through the actual package entry point on Node 20/22/24, report exact artifact paths/hashes, exclusions and residual risks separately from human release approval, and require the publishing workflow to verify the packed tgz against the approved digest before publishing that same file. | TEST-RELQ-005, TEST-HOST-005, TEST-RELQ-PUBLISH-001 | All mapped native tests (TEST-HOST-005, TEST-RELQ-005, TEST-RELQ-HOST-001, TEST-RELQ-PACKAGE-BINDING-001, TEST-RELQ-PH-001, TEST-RELQ-PUBLISH-001, TEST-RELQ-SKILL-001) must pass on current inputs; setup errors or skips do not complete this task.",
       "tests": [
         "TEST-HOST-005",
         "TEST-RELQ-005",
@@ -4079,11 +4079,11 @@
         }
       ],
       "specs": {
-        ".sdd/specs/release-qualification.md": "fca2fe1b7a5bf39ef562be5440c68f13311490a46bdaab70ba2e065866279144"
+        ".sdd/specs/release-qualification.md": "67f1fcae289b63d1657f705480b95ffeb5eccfbaa66131bb69837219afe5fcb5"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/8a500e1cd57c470ca565540630853ab2031d74efe95b650b3b5670f6edf9e10d/26f295fc4247ca692fa0c02f95d6b049ed1e8ef53d442a76128fdef8788cba65.json"
     },
     {
       "id": "TASK-RUNNER-SELECTION-001",
@@ -4119,8 +4119,8 @@
         ".sdd/specs/runner-selection.md": "88c38a8a303ce7d2fe604767daa57022e9a911597a9c9f4f360f18aa2547102c"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/8438639458fa2753f2d2245bbc6dcc38ad9271bbe37acd914ac63974e0ce4235/8fcf8a219f0f7ae673c1657f4ea5bcc4ccdf627cdb3f74450198bf817c3c2c4b.json"
     },
     {
       "id": "TASK-RSTUB-001",
@@ -4156,8 +4156,8 @@
         ".sdd/specs/rust-stub-confidence.md": "abc368bc69b2fb764009653c11638cd817a6f0f4f0b6e21a004861665e11f1a0"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/fb3855e3c8b2ac5835bfbaefee818e98ba1802271ec6da8225f638251792aa52/0c1d943269412359716d10d3f78e603d81173cf3f0855f4e8937c733288ebf82.json"
     },
     {
       "id": "TASK-RSTUB-002",
@@ -4193,8 +4193,8 @@
         ".sdd/specs/rust-stub-confidence.md": "abc368bc69b2fb764009653c11638cd817a6f0f4f0b6e21a004861665e11f1a0"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/a4067a62c2bad203cb54f447a4a35fa79ddfb06aca05dbf76c4719fb1682721b/e9eef96903de92812726dd2202dbb7b9d3f46034864b3c5adeef155c0e2b8993.json"
     },
     {
       "id": "TASK-RSTUB-003",
@@ -4230,8 +4230,8 @@
         ".sdd/specs/rust-stub-confidence.md": "abc368bc69b2fb764009653c11638cd817a6f0f4f0b6e21a004861665e11f1a0"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/e12e0232a2cebc0188037590ea7fca4f21b9509da195fc707cc355358696feef/71ace0fa97e2926f4adee183fc6367863197bd3426912eafef2e2f1be231c7a7.json"
     },
     {
       "id": "TASK-RSTUB-004",
@@ -4268,8 +4268,8 @@
         ".sdd/specs/rust-stub-confidence.md": "abc368bc69b2fb764009653c11638cd817a6f0f4f0b6e21a004861665e11f1a0"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/80c3aff6d249e8586ab13934ec884948c939f05bc1a42b747b26a0d75baa4d3f/f7f421b1e92c9aff40cf12f7147a5943d62aacdaaf0033235a1c5f7440ab22c9.json"
     },
     {
       "id": "TASK-RSTUB-005",
@@ -4305,8 +4305,8 @@
         ".sdd/specs/rust-stub-confidence.md": "abc368bc69b2fb764009653c11638cd817a6f0f4f0b6e21a004861665e11f1a0"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/df4b1001551f82e77350c2a827a3f728a18bcddf6f03d1604ee839672b117f88/13f2f3b75dfe1642d53aa804659a0e76d23c0a1f97664ff8298b0e7538d2ac7b.json"
     },
     {
       "id": "TASK-RSTUB-006",
@@ -4342,8 +4342,8 @@
         ".sdd/specs/rust-stub-confidence.md": "abc368bc69b2fb764009653c11638cd817a6f0f4f0b6e21a004861665e11f1a0"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/09c7e2e369889863a66da10e05115c0a7706da4b4a3787cc866e4c432958a5f1/a91f526fc19932ce677614115691d9e810d46bb3b232cc100912e393c7d9c80e.json"
     },
     {
       "id": "TASK-RSTUB-007",
@@ -4379,8 +4379,8 @@
         ".sdd/specs/rust-stub-confidence.md": "abc368bc69b2fb764009653c11638cd817a6f0f4f0b6e21a004861665e11f1a0"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/5a70d78a141cc32d24176ccb9bcbac2c7b4188fa1456fe8cc404391dbbbb443c/f3060486bd25d47a152738e3c4141943758816b0e7ccccc1307e3b67e2c038a8.json"
     },
     {
       "id": "TASK-SCAN-001",
@@ -4416,8 +4416,8 @@
         ".sdd/specs/source-discovery.md": "976e93a8165dd304b0dbd885e42fc81bd7b847491e5fcc2c6b8887a8d7fe362b"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/c9e974d0205fa132727131a772ccd7f61e68a78a2f317261b0aeeb2eef410158/550832186dfbcb1eedacc8eb70b3cd4ad6502d5667123448c7e1db122fee6543.json"
     },
     {
       "id": "TASK-SCAN-002",
@@ -4453,8 +4453,8 @@
         ".sdd/specs/source-discovery.md": "976e93a8165dd304b0dbd885e42fc81bd7b847491e5fcc2c6b8887a8d7fe362b"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/1e44e05a86469465e639f5a40b2939367eba5a3c7e024ce88afb801beb64ce66/323cd511d24a5063954d3a2cc16f6eaddaca183ed601796d5ea1f93d035ca4fa.json"
     },
     {
       "id": "TASK-SCAN-003",
@@ -4490,8 +4490,8 @@
         ".sdd/specs/source-discovery.md": "976e93a8165dd304b0dbd885e42fc81bd7b847491e5fcc2c6b8887a8d7fe362b"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/ca9a7b34bf56f1786a5a7c59910482c33bd10f71de1bc9cc5ce40da47d9db058/7fa5772c102a0c1d98a9bf8014c22bfca21aef48d6d6d3639c35ff6a579fdb5c.json"
     },
     {
       "id": "TASK-SPECCTX-001",
@@ -4527,8 +4527,8 @@
         ".sdd/specs/spec-context.md": "4e3c6001d3a5adc713e07b1a2be9a8a982f0be1c49096b3c0b1f700c0731066f"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/57b582030db3a4c58f7e7b61bf96cc499e75687e375a40f87f404ddb0809632a/357d9f7d34cf4043656ff29b4c12e0c15ed763512f1eb2cfb85573c70bce1f7a.json"
     },
     {
       "id": "TASK-SPECCTX-002",
@@ -4564,8 +4564,8 @@
         ".sdd/specs/spec-context.md": "4e3c6001d3a5adc713e07b1a2be9a8a982f0be1c49096b3c0b1f700c0731066f"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/eba4e41d7ae8d1125d0fde268fe51f3f3c752b4f2ec16f578b1720c5c441538b/47140d35931dbe23d5bd7d76599b4b9c0850999f6b050f0dd68b626a3a5dd55c.json"
     },
     {
       "id": "TASK-SPECCTX-003",
@@ -4601,8 +4601,8 @@
         ".sdd/specs/spec-context.md": "4e3c6001d3a5adc713e07b1a2be9a8a982f0be1c49096b3c0b1f700c0731066f"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/98f1922416c01a27faa9cfb4e8fc53ace41df0bbaf33675b9fb1d6fd940a7487/bf7b69705da08934000c5a8050806a946581d1b726bb96e8f82c31658dfd5579.json"
     },
     {
       "id": "TASK-SPECCTX-004",
@@ -4638,8 +4638,8 @@
         ".sdd/specs/spec-context.md": "4e3c6001d3a5adc713e07b1a2be9a8a982f0be1c49096b3c0b1f700c0731066f"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/1eba207ffa8d5a7f852af4486b5473d6b024fce9cd0be0e04acd72724c5bf062/39f6a63d6cfd438fb3622b2d27d6fae635c33831aaa950ea823717721ab600c0.json"
     },
     {
       "id": "TASK-SPECCTX-005",
@@ -4675,8 +4675,8 @@
         ".sdd/specs/spec-context.md": "4e3c6001d3a5adc713e07b1a2be9a8a982f0be1c49096b3c0b1f700c0731066f"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/5c40669597c74260c690da058e41daf57ba092396cfe28896b4ed4c49a760fc7/2675cf3f7f8abcfc9f9cb10083a0c52a4a5e4f365251d57ccaeadd7d53baa854.json"
     },
     {
       "id": "TASK-TW-PH-001",
@@ -4712,8 +4712,8 @@
         ".sdd/specs/tech-writer-placeholders.md": "1e16d3035b14b8102f19c750d5e036c9cfa182458c2b1af309e20be03b7a176e"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/94a9138d588f938ec75604874788014a7b80530bb7c133a0efd967c8ef5b694b/d8caad30e9bee5ff8d21b4a68837934d03b8c541c8451fd62a6f7b7a90d05209.json"
     },
     {
       "id": "TASK-TW-PH-002",
@@ -4749,8 +4749,8 @@
         ".sdd/specs/tech-writer-placeholders.md": "1e16d3035b14b8102f19c750d5e036c9cfa182458c2b1af309e20be03b7a176e"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/6c8a25cc0e8befb7eac703f6bc653255538f451b9c7f455d69e427ad30641b5d/8f4b17352fc0a649ec8e2c9d9236e0dbeb8ea94fb753a550608c6de9d1fa5282.json"
     },
     {
       "id": "TASK-TW-PH-003",
@@ -4786,8 +4786,8 @@
         ".sdd/specs/tech-writer-placeholders.md": "1e16d3035b14b8102f19c750d5e036c9cfa182458c2b1af309e20be03b7a176e"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/2abe2a073b2fe72a012dd3043568660362545cccc47407ce291faaf013ee7a25/49542b2643f58443f9cfc8f3782188df34105bfaca81f084e3cc68a7660bf06f.json"
     },
     {
       "id": "TASK-WINRUN-001",
@@ -4823,8 +4823,8 @@
         ".sdd/specs/windows-runner.md": "c95ec5e975258ae1e82f13ad70fea56403ebdddc4cad2f2eb28c3b521d06f07c"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/15991723cec14800f6eba7abfb6d1b40cdaecc61ed3dabb4712367ae97a57273/865898724659c5f23899c908c6b990e5492479a8e8c89fb9e9618e7705069d52.json"
     },
     {
       "id": "TASK-WINRUN-002",
@@ -4860,8 +4860,8 @@
         ".sdd/specs/windows-runner.md": "c95ec5e975258ae1e82f13ad70fea56403ebdddc4cad2f2eb28c3b521d06f07c"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/e9e6a4da0e67bc4de0a9f98d3b6c62a0137c8fb57469492adf549922eff0d8de/0fb07db0b790ea0acacaf14943de67b4c42d91275c78b759ce78b65ed89cabb3.json"
     },
     {
       "id": "TASK-WINRUN-003",
@@ -4897,8 +4897,8 @@
         ".sdd/specs/windows-runner.md": "c95ec5e975258ae1e82f13ad70fea56403ebdddc4cad2f2eb28c3b521d06f07c"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/fa9a51694c89b1139b58de720c04308ae91eabe4ae10ed036d624b155f4c6941/8f1ae53db012cbc1fd4beab7ae58c68d3c16a3e9ba27175a77c84c6c2bb01911.json"
     },
     {
       "id": "TASK-WINRUN-004",
@@ -4934,8 +4934,8 @@
         ".sdd/specs/windows-runner.md": "c95ec5e975258ae1e82f13ad70fea56403ebdddc4cad2f2eb28c3b521d06f07c"
       },
       "dependencies": {},
-      "status": "not-started",
-      "receipt": null
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/fd68574acff7c2e03b913de3c1be26e3614981c0dd585aab5ce46f7fe1147745/ffb0f38912f8e978e3a3da62a16e0810aafb23ddaebe8d04b6bb93de8d896b79.json"
     }
   ]
 }

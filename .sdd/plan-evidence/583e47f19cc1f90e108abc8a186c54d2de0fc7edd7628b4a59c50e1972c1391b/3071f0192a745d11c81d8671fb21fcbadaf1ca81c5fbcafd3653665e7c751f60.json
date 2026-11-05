@@ -1,0 +1,73 @@
+{
+  "schemaVersion": 1,
+  "task": "TASK-PLAN-STATE-002",
+  "sequence": 3,
+  "previous": "e3b5eae1591cd2340f6a8fbf21eeb5bebb606c364e887f7204bf095e47f52b48",
+  "definitionSha256": "127454e0e61fd014d2d30a659a4989e413db7c111ecaa83be449a8c89aa50fdf",
+  "inputSha256": "a2d85ae2bf95789339c7ae675671d099926bed6cd87c4c19d5647289656611ae",
+  "status": "PASS",
+  "exit": 0,
+  "checks": [
+    {
+      "name": "regression-1",
+      "argv": [
+        "node",
+        "--test",
+        "--test-name-pattern",
+        "^(?:.*\\b(?:TEST-PLAN-STATE-002))(?![0-9A-Za-z])",
+        ".github/skills/lean-sdd-tdd/scripts/implementation-plan-evidence.test.mjs"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/583e47f19cc1f90e108abc8a186c54d2de0fc7edd7628b4a59c50e1972c1391b/attempt-ebe3cb76-cb73-465b-98f6-7d89365fc22e/0.log",
+        "sha256": "2274ee5403a5f9c9bdfb0b6e185272798ba489d6056249b47bee506da6d85476",
+        "bytes": 211
+      }
+    },
+    {
+      "name": "native-TEST-PLAN-STATE-002",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-PLAN-STATE-002",
+        "--root",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/583e47f19cc1f90e108abc8a186c54d2de0fc7edd7628b4a59c50e1972c1391b/attempt-ebe3cb76-cb73-465b-98f6-7d89365fc22e/1.log",
+        "sha256": "cda95198949309470650395f1f113d755d55912d9ba409d84c50f728c624dd76",
+        "bytes": 60
+      }
+    }
+  ],
+  "ledgerEvents": [
+    {
+      "test": "TEST-PLAN-STATE-002",
+      "hashes": [
+        "2cfe9ec034a5b184217329495676e4805ce6859072f049ce573dbb4a050898af",
+        "3b28eb952d5b726af2b626eac88c72a6e5f58724d0ab2ac3233c1bde362bf259",
+        "4dd2173d62c83f4aa40491b322a5629361fe1712997a0a837baa6b0e9ba48f03",
+        "5e7e6c0b6af813beb28965ca47f49b8e0113fab6a9c6793089de6c4ac005751f",
+        "721bd7bf7749afef07567cb2cfc95d511de612e5ba074a799902d23192e6b93e",
+        "77f2ffad2343600f8e646280490337a587089677df4ec3a30a076cf1d14f81a5",
+        "78a1ee04fb12faec5c7be959749fa8191cddc7924e4e9f7db1c2f9e5a2f05fe1",
+        "bb7e8890ab2421c2dfa8d8e7eb9c34943244feeed0b0f42a8e9a7be90263e149",
+        "c560d7efa91aa473fc90eaf60d0396a5081dd41fff90ed6e0e81989c950e622f",
+        "dae158dd0db62603fc882c04e6161618f51fa46ae032e3d5d83b03afef82b26c",
+        "ec6f94cd956aa6843dec4e932d93e791cd8a2d69f4018362d818fbc840bac08f"
+      ]
+    }
+  ],
+  "errors": []
+}

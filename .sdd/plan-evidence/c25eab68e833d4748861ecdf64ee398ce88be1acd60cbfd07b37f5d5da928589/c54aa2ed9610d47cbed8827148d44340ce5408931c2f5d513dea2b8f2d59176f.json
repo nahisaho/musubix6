@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 1,
+  "task": "TASK-HOST-005",
+  "sequence": 1,
+  "previous": "",
+  "definitionSha256": "c8d037dbedf7049ac1c7efae7bfa969902783f6ac3339829b5ea913a1107bcc1",
+  "inputSha256": "f9a5527ac7467a1df786e4bdce368e9e877475136942a4c6ea8f17342361cecf",
+  "status": "PASS",
+  "exit": 0,
+  "checks": [
+    {
+      "name": "regression-1",
+      "argv": [
+        "node",
+        "--test",
+        "--test-name-pattern",
+        "^(?:.*\\b(?:TEST-HOST-005))(?![0-9A-Za-z])",
+        "scripts/host-compatibility.test.mjs"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/c25eab68e833d4748861ecdf64ee398ce88be1acd60cbfd07b37f5d5da928589/attempt-8761d163-9157-4607-a95d-e571fe176975/0.log",
+        "sha256": "cf64172ba96c6de71e44dcd43c85d28299d5ef70926c009cf9cd59c75939f6a7",
+        "bytes": 221
+      }
+    },
+    {
+      "name": "native-TEST-HOST-005",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-HOST-005",
+        "--root",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/c25eab68e833d4748861ecdf64ee398ce88be1acd60cbfd07b37f5d5da928589/attempt-8761d163-9157-4607-a95d-e571fe176975/1.log",
+        "sha256": "c372982907396b5cd4cf3f141c7c3fd6b04100739537a19a90145f1846e54448",
+        "bytes": 48
+      }
+    }
+  ],
+  "ledgerEvents": [
+    {
+      "test": "TEST-HOST-005",
+      "hashes": [
+        "034ac0bbf0330a57666035ac27a3fb93d5b050bb8790c657c455bb787177dfeb",
+        "0a3b90116f0c60e5609547762ad6311139d23e2b637dc1d29d665e6c48b93bdd",
+        "30800de2febb9cd8dc37312ceb62adf8b2e92a2aa0658a45a40e19065218c743",
+        "705c26c301d3aa795885c442c22776599fe61e7f7f61f8bf6630a13de3190404",
+        "a0876ea292d83c4a83e57ab4fd8dbf940db277f9be78756dad6fb24596cfdeba",
+        "c9ea388489ab0fb12f8fc2349987d2db2fc7aea6e7a89e6fd84e96bd528c0f0d"
+      ]
+    }
+  ],
+  "errors": []
+}

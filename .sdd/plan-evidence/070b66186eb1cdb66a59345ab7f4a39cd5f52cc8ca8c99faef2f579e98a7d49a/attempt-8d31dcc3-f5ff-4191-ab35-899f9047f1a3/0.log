@@ -1,0 +1,11 @@
+✔ TEST-R33-NODE-001 r33b #355 mixed skip/todo annotated targets fail full and changed gates (8514.954986ms)
+✔ TEST-R33-NODE-002 r33b #355 Node execution verification respects project and selected file ownership (2266.147062ms)
+✔ TEST-R33-NODE-003 r33b #355 skipped annotated Node target cannot recover a flaky check under warn policy (1778.650208ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 15064.241035

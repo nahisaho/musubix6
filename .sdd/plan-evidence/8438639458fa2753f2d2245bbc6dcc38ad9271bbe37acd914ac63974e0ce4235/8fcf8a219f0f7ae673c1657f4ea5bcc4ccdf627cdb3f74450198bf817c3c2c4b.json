@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "task": "TASK-RUNNER-SELECTION-001",
+  "sequence": 1,
+  "previous": "",
+  "definitionSha256": "be5cbf491a55040ae1e0c04a284c545c29238f029636b56c27177a9533906803",
+  "inputSha256": "5f6b284bf57242f192697ddff9c2859d95105a5f8a6ec3d4cbf04992bf2720c0",
+  "status": "PASS",
+  "exit": 0,
+  "checks": [
+    {
+      "name": "regression-1",
+      "argv": [
+        "node",
+        "--test",
+        "--test-name-pattern",
+        "^(?:.*\\b(?:TEST-RUNNER-SELECTION-001))(?![0-9A-Za-z])",
+        ".github/skills/lean-sdd-tdd/scripts/sdd.test.mjs"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/8438639458fa2753f2d2245bbc6dcc38ad9271bbe37acd914ac63974e0ce4235/attempt-cb348af0-3318-43b2-8f42-70e470dd7bc7/0.log",
+        "sha256": "1ae4760e442e40c7c80a157c0aa6af972730a56a775029f1984e53700d24effb",
+        "bytes": 237
+      }
+    },
+    {
+      "name": "native-TEST-RUNNER-SELECTION-001",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-RUNNER-SELECTION-001",
+        "--root",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/8438639458fa2753f2d2245bbc6dcc38ad9271bbe37acd914ac63974e0ce4235/attempt-cb348af0-3318-43b2-8f42-70e470dd7bc7/1.log",
+        "sha256": "7e535b5fc65cde9b2d6386297fc571ed896f4aa31ea4147e8a5f0e96b2ff84a1",
+        "bytes": 73
+      }
+    }
+  ],
+  "ledgerEvents": [
+    {
+      "test": "TEST-RUNNER-SELECTION-001",
+      "hashes": [
+        "1cc3d815a03e2514784798c516eb0fd0714da290735d2442cfb2410336a0bec6",
+        "2f6da8dc4d9b585b7b6f627f153718b7e48f964f7962e5b9926823d1cc572444",
+        "45d703b8d511a688fed1f95c66695367fd9bac3455b9b25426161b53ccebb375",
+        "99343901acac958a90f0f1e06eb49c1f830cf05180d078d8e3144089fb54ed65"
+      ]
+    }
+  ],
+  "errors": []
+}

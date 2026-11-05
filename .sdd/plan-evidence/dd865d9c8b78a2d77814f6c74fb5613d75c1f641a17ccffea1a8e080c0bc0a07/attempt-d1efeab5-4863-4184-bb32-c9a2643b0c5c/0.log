@@ -1,0 +1,14 @@
+✔ TEST-RELQ-GIT-001 restores bound suite history without conflating discovery or accepting invalid inputs (170.337647ms)
+✔ TEST-RELQ-CLOSURE-001 rejects unbound execution inputs and manifest policy rewrites (977.299546ms)
+✔ TEST-RELQ-BASELINE-001 validates the historical approved source inventory before tool preparation (226.335696ms)
+✔ TEST-RELQ-LINEAGE-001 admits committed lineage and rejects every invalid mapping shape (344.570583ms)
+✔ TEST-RELQ-LINEAGE-002 freezes required replacements and never excludes promoted TODOs (1931.205985ms)
+✔ TEST-RELQ-002 freezes external current inputs and detects bounded byte, probe and catalogue drift (2104.519469ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 5872.310984

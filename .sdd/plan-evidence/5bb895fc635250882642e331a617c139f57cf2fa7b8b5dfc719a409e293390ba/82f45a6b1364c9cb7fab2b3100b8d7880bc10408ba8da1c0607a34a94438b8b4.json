@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "task": "TASK-PLAN-MODEL-001",
+  "sequence": 4,
+  "previous": "07bc2cd9facea0590bfb16107864eb93579886b82ed0b12cd8a8e9b88371db5e",
+  "definitionSha256": "aee3a396aad814ac157199d89525489c5e1ed2dc65873183b649f60173c090fe",
+  "inputSha256": "2bb1cfe84bb10312a455b415c44271e472805965d33437487373464b2b05776a",
+  "status": "FAIL",
+  "exit": 1,
+  "checks": [],
+  "ledgerEvents": [],
+  "errors": [
+    {
+      "id": "TASK-PLAN-MODEL-001",
+      "exit": 1,
+      "reason": "specification, definition or prerequisite binding needs replanning; verification inputs changed"
+    }
+  ]
+}

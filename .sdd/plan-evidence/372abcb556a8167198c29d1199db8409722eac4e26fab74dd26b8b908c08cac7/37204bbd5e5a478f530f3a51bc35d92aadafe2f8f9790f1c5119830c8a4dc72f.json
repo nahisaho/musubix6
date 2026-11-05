@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "task": "TASK-GINZA-001",
+  "sequence": 1,
+  "previous": "",
+  "definitionSha256": "06380824864f02a36896f2f47ca6fd509c7a007f136eaa74138b21c6b68f1ca0",
+  "inputSha256": "c6308c82ed7fa35cf0cf72ce2bc81e4ec2df6bb485519279b6637f57b510cebd",
+  "status": "PASS",
+  "exit": 0,
+  "checks": [
+    {
+      "name": "regression-1",
+      "argv": [
+        "node",
+        "--test",
+        "--test-name-pattern",
+        "^(?:.*\\b(?:TEST-GINZA-001))(?![0-9A-Za-z])",
+        "scripts/kotonoha-skills.test.mjs"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/372abcb556a8167198c29d1199db8409722eac4e26fab74dd26b8b908c08cac7/attempt-fade30aa-6b4c-4ad7-a7fc-f13c87a4c759/0.log",
+        "sha256": "823e9f1cccedf78e85014c5f200c826a4813235d93cc6c3faa0f40d919317392",
+        "bytes": 218
+      }
+    },
+    {
+      "name": "native-TEST-GINZA-001",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-GINZA-001",
+        "--root",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/372abcb556a8167198c29d1199db8409722eac4e26fab74dd26b8b908c08cac7/attempt-fade30aa-6b4c-4ad7-a7fc-f13c87a4c759/1.log",
+        "sha256": "774b4d8c6549701706a18f5f9673e39b70ebec7d7269e3342fc4467bbab562bf",
+        "bytes": 51
+      }
+    }
+  ],
+  "ledgerEvents": [
+    {
+      "test": "TEST-GINZA-001",
+      "hashes": [
+        "b2e837e7482c14133a25f341f1a54e3313fe61a5b93d31ee01fd10da45996bb8",
+        "c4b1dea6513fd05c3ad1abd2a871d4ae2469652125bcaac6c3eec2d578bcaf5d",
+        "f0d7eecbfd012ebefb7e162f0460bb8e6cd476216da3ec832dfd676b4c31741b",
+        "fd0a4c803a055d482454b73101f88b7b04f079b7df5663fddec2d8106e311736"
+      ]
+    }
+  ],
+  "errors": []
+}

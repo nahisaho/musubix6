@@ -1,0 +1,283 @@
+{
+  "schemaVersion": 1,
+  "task": "TASK-R33-PYTEST-001",
+  "sequence": 1,
+  "previous": "",
+  "definitionSha256": "ad5117f45297246297bb58a23dd8dd15193d7a4494a26f49bae8136baf95a462",
+  "inputSha256": "123f684d17cf362631b9a0ae1aa67e6208756facd4eee03206d31be7f35c1137",
+  "status": "PASS",
+  "exit": 0,
+  "checks": [
+    {
+      "name": "regression-1",
+      "argv": [
+        "node",
+        "--test",
+        "--test-name-pattern",
+        "^(?:.*\\b(?:TEST-R33-PYTEST-001|TEST-R33-PYTEST-002|TEST-R33-PYTEST-003|TEST-R34-PYTEST-001|TEST-R34-PYTEST-002|TEST-R34-PYTEST-003|TEST-R34-PYTEST-004|TEST-R34-INTEGRATION-001))(?![0-9A-Za-z])",
+        ".github/skills/lean-sdd-tdd/scripts/sdd.test.mjs"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/2d20a4d6fe524fa4161ffeec2e2851f1466b5b393efe81aa61d980156a6f55bb/attempt-df27513e-7655-4e78-9107-7862e8c11274/0.log",
+        "sha256": "bc1422f020f905f94fc034d1e714fef205cce58368fa247257a79cd4a7a76207",
+        "bytes": 1089
+      }
+    },
+    {
+      "name": "native-TEST-R33-PYTEST-001",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-R33-PYTEST-001",
+        "--root",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/2d20a4d6fe524fa4161ffeec2e2851f1466b5b393efe81aa61d980156a6f55bb/attempt-df27513e-7655-4e78-9107-7862e8c11274/1.log",
+        "sha256": "363cd425e675d22fe464948224c0b720a63953d7cabdb19a0e943e500c1a28cd",
+        "bytes": 61
+      }
+    },
+    {
+      "name": "native-TEST-R33-PYTEST-002",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-R33-PYTEST-002",
+        "--root",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/2d20a4d6fe524fa4161ffeec2e2851f1466b5b393efe81aa61d980156a6f55bb/attempt-df27513e-7655-4e78-9107-7862e8c11274/2.log",
+        "sha256": "e41b815dd6c66226dd82e34e37cbdbd7da32cf857d856a4b60825161accf1e6e",
+        "bytes": 60
+      }
+    },
+    {
+      "name": "native-TEST-R33-PYTEST-003",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-R33-PYTEST-003",
+        "--root",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/2d20a4d6fe524fa4161ffeec2e2851f1466b5b393efe81aa61d980156a6f55bb/attempt-df27513e-7655-4e78-9107-7862e8c11274/3.log",
+        "sha256": "63ebdf2f209fea8e22a2bdb5632e0d13a8dd1681bf3dadcd209b06400c68e6d5",
+        "bytes": 60
+      }
+    },
+    {
+      "name": "native-TEST-R34-INTEGRATION-001",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-R34-INTEGRATION-001",
+        "--root",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/2d20a4d6fe524fa4161ffeec2e2851f1466b5b393efe81aa61d980156a6f55bb/attempt-df27513e-7655-4e78-9107-7862e8c11274/4.log",
+        "sha256": "0c03e5e35822572892dfb317843c4d1045d7c7ab4bda0214c90a0abfac1f1380",
+        "bytes": 65
+      }
+    },
+    {
+      "name": "native-TEST-R34-PYTEST-001",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-R34-PYTEST-001",
+        "--root",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/2d20a4d6fe524fa4161ffeec2e2851f1466b5b393efe81aa61d980156a6f55bb/attempt-df27513e-7655-4e78-9107-7862e8c11274/5.log",
+        "sha256": "cd9c71ea5d721e83663fc75833ad4bf5aecb7e118c352b0dd9e116bbff5281e6",
+        "bytes": 60
+      }
+    },
+    {
+      "name": "native-TEST-R34-PYTEST-002",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-R34-PYTEST-002",
+        "--root",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/2d20a4d6fe524fa4161ffeec2e2851f1466b5b393efe81aa61d980156a6f55bb/attempt-df27513e-7655-4e78-9107-7862e8c11274/6.log",
+        "sha256": "52fe970d52bafdee47c5216f452c5cad064703d6b9d28f660137e56230cdb075",
+        "bytes": 61
+      }
+    },
+    {
+      "name": "native-TEST-R34-PYTEST-003",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-R34-PYTEST-003",
+        "--root",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/2d20a4d6fe524fa4161ffeec2e2851f1466b5b393efe81aa61d980156a6f55bb/attempt-df27513e-7655-4e78-9107-7862e8c11274/7.log",
+        "sha256": "c1ad75aa4f93e07ac1bcb56111994722d07c1d25f5fb26bd4c3864e093aeab5f",
+        "bytes": 61
+      }
+    },
+    {
+      "name": "native-TEST-R34-PYTEST-004",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-R34-PYTEST-004",
+        "--root",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/2d20a4d6fe524fa4161ffeec2e2851f1466b5b393efe81aa61d980156a6f55bb/attempt-df27513e-7655-4e78-9107-7862e8c11274/8.log",
+        "sha256": "f88781477731d1d72eda3a1c99dbb3b879528481ec8ef08f955b98edb316fbc9",
+        "bytes": 60
+      }
+    }
+  ],
+  "ledgerEvents": [
+    {
+      "test": "TEST-R33-PYTEST-001",
+      "hashes": [
+        "8bee5f8385ce8c1f469f424db07d7ba5ca7b7c0f9d7aa6639e73b0f27d331c03",
+        "a2e630a02827d6e305675768b93ef44f55f8e5a25ffd8da79e681b7344abbe9a",
+        "e0ab17b2a67deb5dfbb047e176428f2c2301acd5678b62521d36f5673f8bc5e0",
+        "e3d74842d1c348c9a29864c46ac2e405be6f1d600a841bd1c00962519af6480e"
+      ]
+    },
+    {
+      "test": "TEST-R33-PYTEST-002",
+      "hashes": [
+        "27a91df54cef772becd0bda4b5edc808d0ca56e652cf46e3d4a4b923ae4a0e66",
+        "42f0fd2f20f80165ed1c1bb54f309d8f72f68f75bfb23ed08ca78d09218d9959",
+        "c4b68ecadd4bab90089ec67ba0108737a755f945a1381f846bcdb082904ecb6d",
+        "e06c867b56e2e299bff19e40f8c80b49847df12c7405a0ed9406a99483fb738a"
+      ]
+    },
+    {
+      "test": "TEST-R33-PYTEST-003",
+      "hashes": [
+        "023eb324779d776bb17b4ed3a00fee0ec99763c20c3f5410a9112500746fdcf2",
+        "6314b9024d47afe877aa17089671b8715118088124a312b090074d3739b64904",
+        "a9137713f75a61bd05252d88a84939cae3390e55a7e02a6fad9cce778b657f49",
+        "f781b13a6f60bd6e10e39ccadf211ae9c09af9d04728a522fb585c093a5f97f6"
+      ]
+    },
+    {
+      "test": "TEST-R34-INTEGRATION-001",
+      "hashes": [
+        "0549f17a6feb135c31815a0c2f5912af3a745f8d0dbed4c45e936b4cb20481c6",
+        "0d75214a436620183361462fab27a37634ce9e55ee09abe18c85498e0babaac1",
+        "0f0fffff6e5c21b8ed0118f4ca0d0aaa4c243e58f30bb330f5fd5accd809896f",
+        "7c550fce36b0b534def8bc5f2051373d3c8fb7d12b2e0fec0d880fa5797eab28"
+      ]
+    },
+    {
+      "test": "TEST-R34-PYTEST-001",
+      "hashes": [
+        "67cae30e064fcc8e09dba0e2845ca2914670770c709f3efbdba518ffe4857e1c",
+        "6b8c8d2e35f2a4925380ee9adb42310a06ed10cba6642522da68c79a16fda31f",
+        "cb250073b5eefe4b32c4ee8494ee447a2882a13626a960cc6a51694b06f0a265",
+        "fd7db60f87b94ea70008e015c05ee3ecc9efacbf2c5f740afc90c307346d854a"
+      ]
+    },
+    {
+      "test": "TEST-R34-PYTEST-002",
+      "hashes": [
+        "35fe4d04d4dab4fdd1a6161da5dda082f1fba58b7a59a06add2a1321a9079ed5",
+        "38b606ccf9057974938dce944cf45f3fcd644e53f98b7ad2b99b3f09b6b47c62",
+        "674831d391b6b2cd0ecc56bebc4225a836a75f68b2ebf3ccb3e11fbf99f538a9",
+        "e6700cb292ebe585e0e12094a54f6390207faae9fdbadb018eb88244df006313"
+      ]
+    },
+    {
+      "test": "TEST-R34-PYTEST-003",
+      "hashes": [
+        "448bd13df8bc0c83625d785e2894768e3592082824fd380a5404732118524c68",
+        "89e6e8132fcc2fe56c548151b6b92d020997096e5a0fc3154af261ff607f0cd9",
+        "8bf75b192743c815d112adb03ea67dc77987cd674ca80b3cbc28e53e803ff14a",
+        "ed5cc785c66dd5ee6cf62ab0b9d75ac5ea5b2c25055a6550965b647f1f0244ab"
+      ]
+    },
+    {
+      "test": "TEST-R34-PYTEST-004",
+      "hashes": [
+        "1f080d628b3989cb4e82652faed6cf4104cf3ea698c302ff070b093293d8a013",
+        "4238a0df30cd67cd294fd50864931613723f0bd9dde589a2ec448338e42f0b77",
+        "4d69011db4353db0a2207792dec33aa8acd5be7544236581e29d53946cce45e7",
+        "cfb5b856e3997c948c1a7f4586216265344fcdb7cb364668b6bfb15dbc440228"
+      ]
+    }
+  ],
+  "errors": []
+}
