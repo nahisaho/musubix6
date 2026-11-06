@@ -22,7 +22,8 @@ function fixture(t, checks) {
   assert.equal(run('git', ['init', '-q'], root).status, 0);
   fs.mkdirSync(path.join(root, '.sdd'));
   fs.writeFileSync(path.join(root, '.sdd/config.json'), JSON.stringify({
-    schemaVersion: 1, checks, testCmd: [process.execPath, '--test', '{file}'], timeoutMs: 30000,
+    schemaVersion: 1, planning: { required: false }, checks,
+    testCmd: [process.execPath, '--test', '{file}'], timeoutMs: 30000,
   }));
   return root;
 }

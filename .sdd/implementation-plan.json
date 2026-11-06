@@ -392,7 +392,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/1517e548507a2deebb202a54350fbfecb559bf735331f257f090736fcc8681b3/103b35ac9265c1b265817172b90c6072ad6ff5704ca57da14d2f643255ce5c67.json"
+      "receipt": ".sdd/plan-evidence/1517e548507a2deebb202a54350fbfecb559bf735331f257f090736fcc8681b3/b8a6de69d8db4f5201e0499f723382ee1fc654284c2437a3c41da1999c76ff3d.json"
     },
     {
       "id": "TASK-COST-HISTORY-002",
@@ -431,7 +431,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/db45ca0244d8f0421a909af8a8dba45c430c6f6e5f46719b2db62f0fcde44be0/d5dbca4ae874d9224ea8cbc251657b3ebc68213f383b2a89bdb8a5da6a25d7fb.json"
+      "receipt": ".sdd/plan-evidence/db45ca0244d8f0421a909af8a8dba45c430c6f6e5f46719b2db62f0fcde44be0/c0ff34d583d8ecc72607d65e6bd20ef0c9ba6739d7ef8370cfff98ea99955ed4.json"
     },
     {
       "id": "TASK-DIAGCLI-001",
@@ -4853,6 +4853,7 @@
       "dependsOn": [],
       "artifacts": [
         ".github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        ".github/skills/lean-sdd-tdd/scripts/windows-native.test.mjs",
         ".github/skills/lean-sdd-tdd/scripts/windows-runner.test.mjs",
         ".sdd/specs/windows-runner.md"
       ],
@@ -4878,7 +4879,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/e9e6a4da0e67bc4de0a9f98d3b6c62a0137c8fb57469492adf549922eff0d8de/0fb07db0b790ea0acacaf14943de67b4c42d91275c78b759ce78b65ed89cabb3.json"
+      "receipt": ".sdd/plan-evidence/e9e6a4da0e67bc4de0a9f98d3b6c62a0137c8fb57469492adf549922eff0d8de/87c68317eab94cb3c202582891bfafb2f6df55730241b440c1bd14c2c615f538.json"
     },
     {
       "id": "TASK-WINRUN-003",
@@ -4927,6 +4928,7 @@
       "dependsOn": [],
       "artifacts": [
         ".github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        ".github/skills/lean-sdd-tdd/scripts/windows-native.test.mjs",
         ".github/skills/lean-sdd-tdd/scripts/windows-runner.test.mjs",
         ".sdd/specs/windows-runner.md"
       ],
@@ -4952,7 +4954,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/fd68574acff7c2e03b913de3c1be26e3614981c0dd585aab5ce46f7fe1147745/ffb0f38912f8e978e3a3da62a16e0810aafb23ddaebe8d04b6bb93de8d896b79.json"
+      "receipt": ".sdd/plan-evidence/fd68574acff7c2e03b913de3c1be26e3614981c0dd585aab5ce46f7fe1147745/9da8788424bc8f159048d835a7e6b79c83cd44f1d9d22c8b26f753d26ffe0081.json"
     }
   ]
 }
