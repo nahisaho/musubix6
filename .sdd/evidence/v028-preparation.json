@@ -1,10 +1,119 @@
 {
   "schemaVersion": 1,
   "targetVersion": "0.2.8",
-  "stage": "Source95a890a and its Windows fixture correction are committed/pushed; actual Linux/Windows CI passed Node20/22/24. Renewed committed/archive/npm/both-host reference matches118/118. Nahisaho explicitly approved the exact seven-artifact scope3/content2 preparation unit, recorded by native approve. Current affected proofs, full118-task fresh-root capacity and frozen qualification remain required; publication is not authorized.",
+  "stage": "Committed0b2077d passed actual Linux/Windows CI20/22/24 and real isolated118-task preparation/full gate in8684785ms within12000000ms, with1189/1189 first-attempt project tests and0skips. Two separate fresh original8a47def npm suites also passed1182/1182 each, without reproducing385; its cause/severity remain unclassified and blocking. No fixed24-cell qualification credit or publication authorization exists. This extended evidence artifact requires fresh native owner verification before adoption.",
   "status": "BLOCKED",
   "qualificationCredit": 0,
   "publishingAuthorized": false,
+  "currentCommittedSourceValidation": {
+    "sourceCommit": "0b2077da1f16365592b9d22bacfda7114159d815",
+    "status": "DEVELOPMENT_AND_CAPACITY_PASS_NOT_FROZEN_QUALIFICATION",
+    "actualCurrentCi": {
+      "runtimeMajors": [20, 22, 24],
+      "windows": {
+        "run": 42208943856,
+        "status": "PASS",
+        "rawArchive": {
+          "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v028-source-0b2077d-windows-ci-passed.zip",
+          "sha256": "114c31c4328787287771a67c27bd6d3a80118222a6e2c25b696d8861f8406d66"
+        }
+      },
+      "linux": {
+        "run": 42208943880,
+        "status": "PASS",
+        "rawArchive": {
+          "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v028-source-0b2077d-linux-ci-passed.zip",
+          "sha256": "ed6623a9118e8bfd0c8ed4a1b82cfdf1184fdaf38f0e3729733a01d6be62c65b"
+        }
+      },
+      "observation": "Actual gh run watch --exit-status and gh run view confirmed the exact0b2077d head, completed success and all three successful runtime jobs on each OS. Direct API log archives were retained and checked as nonempty valid ZIPs; the run-view log command returned empty files and was not counted as retained output."
+    },
+    "freshFullPlanCapacity": {
+      "status": "PASS",
+      "report": {
+        "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v028-fresh-full-plan-spike-W7CTmG/report.json",
+        "sha256": "9cb24781cb2c4cdd32eeaa267a73a40b088e79e7c99d40e6e77f0c3202834da9"
+      },
+      "postRunNativeAdapterValidation": {
+        "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v028-fresh-full-plan-spike-W7CTmG/validation.json",
+        "sha256": "7c7d6e0c0cbaef05ce48705abbac8d93fff8acb6031c283b5b8fbf78e8714e1b",
+        "status": "PASS"
+      },
+      "verifiedAndAdoptedNativeTasks": 118,
+      "elapsedAdapterMs": 8684785.142517,
+      "unchangedSharedBudgetMs": 12000000,
+      "isolation": "New genuine Git clone of the clean0b2077d snapshot and new private source/HOME/cache. Every task's native verify ran there; only actual resulting dependency fingerprints and immutable receipts were adopted there, never normalized or copied into the development root.",
+      "historyAndState": "Actual adapter validation checked task definitions, native argv/exits, all118 genuine receipt/log/hash/sequence/ledger bindings, unchanged old/failed history and ledger prefix, final current all118-task admission and equal before/after full-gate state. Original materialized inputs were retained.",
+      "fullGate": {
+        "exit": 0,
+        "signal": null,
+        "timedOut": false,
+        "outputLimit": false,
+        "error": null,
+        "projectTestAttempt": 1,
+        "tests": 1189,
+        "pass": 1189,
+        "fail": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "todo": 0,
+        "retainedProjectStdoutSha256": "828ac4c0e45914d4573d14264e8ad12fcd3c9ec0ede14810a38758027f6aec0f",
+        "observation": "Actual SDK gate PASS, not a preparation-only or filtered run. Independently reopened the attempt1 receipt and raw132788-byte stdout, verified byte length/hash and native spec terminal1189/1189 with all failure/skip/cancellation/TODO counts0.",
+        "advisories": "Two current human implementation-snapshot warnings (rust-stub-confidence/windows-runner), three historical weak-retest advisories and the two previously classified stub-text warnings remain disclosed; none is silently upgraded into strong Red or waived."
+      },
+      "qualificationCredit": 0
+    },
+    "original385Diagnosis": {
+      "status": "NOT_REPRODUCED_IN_TWO_FRESH_RUNS_CAUSE_STILL_UNKNOWN",
+      "originalCandidate": "8a47defa7642cf90e22efc5d3278b0c5e6c887ea",
+      "originalFrozenManifestSha256": "a7abcc4431be64f01245e95d646d25032c7ff8ff67fd2a84a51723739d2ebb09",
+      "originalExpectedSuiteCases": 1182,
+      "reportPath": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v028-issue385-cold-suite-9lvvfE/report.json",
+      "reportSha256": "6eefdac965d0836e24ee17c800b70a54ed6e08b56c641ddbe06c79a04b09c5b4",
+      "attempts": [
+        {
+          "attempt": 1,
+          "tests": 1182,
+          "pass": 1182,
+          "fail": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "todo": 0,
+          "stdoutBytes": 132198,
+          "stdoutSha256": "3f043260959b9aa185c996a35e55f872685a911505a29e47f77873fe66a57e39"
+        },
+        {
+          "attempt": 2,
+          "tests": 1182,
+          "pass": 1182,
+          "fail": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "todo": 0,
+          "stdoutBytes": 132192,
+          "stdoutSha256": "8e28b05decb8ffbe9d4a0538a99ebfe60aa8037b42c336c386741d9b5070c4be"
+        }
+      ],
+      "bothStderr": {
+        "bytes": 209,
+        "sha256": "1e90e037ffcba4704e27fdd05e56ec6f23f74e81ee110c354d51040ddf34d597",
+        "content": "Only npm's11.19.1-to12.2.2 update notice; not a native test failure."
+      },
+      "observation": "Both real processes exited0 without signal/error/timeout/output limit; all original source bytes/full modes remained unchanged. Independently re-read both terminal1182/1182 summaries and every incremental raw stdout/stderr byte count/hash. Original failed evidence was not modified.",
+      "scope": "Two bounded serial fresh original8a47def direct npm test attempts on actual Node24 with original argv and6000000ms per-attempt limit, private Git/source/HOME/cache and incremental complete raw stdout/stderr. This is not the former full-gate prelude or24-cell qualification, and whole former-environment equivalence is not claimed. No failed assertion was observed; do not infer a cause, a repair, lower severity, or transfer the old publication exception."
+    },
+    "qualificationBlockers": [
+      {
+        "id": "GH-385",
+        "scope": "in-scope",
+        "severity": "unclassified",
+        "state": "open",
+        "reason": "The original first-attempt failure remains unidentified. Two bounded direct-suite non-reproductions do not classify or resolve it; retain this exact unknown finding in every future readiness input so native readiness remains blocked even if two full fixed-matrix runs are clean."
+      }
+    ],
+    "qualificationCredit": 0,
+    "publishingAuthorized": false
+  },
   "currentReferenceRenewal": {
     "status": "GENUINE_HUMAN_PREPARATION_APPROVAL_RECORDED",
     "sourceCommit": "95a890a5e7f61cb54976d0f9ffb3133be4d8f6e4",

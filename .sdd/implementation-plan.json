@@ -392,7 +392,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/1517e548507a2deebb202a54350fbfecb559bf735331f257f090736fcc8681b3/6b748c5be6febe838d66b201beda0508f11408e27a09f5de300bc329f2b2a00d.json"
+      "receipt": ".sdd/plan-evidence/1517e548507a2deebb202a54350fbfecb559bf735331f257f090736fcc8681b3/6a88b222ac7ebcb29e0c409ee10a9ac694451a09980173f8b7cca842a23ac80d.json"
     },
     {
       "id": "TASK-COST-HISTORY-002",
@@ -431,7 +431,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/db45ca0244d8f0421a909af8a8dba45c430c6f6e5f46719b2db62f0fcde44be0/098c54ddff05053ee59dc10a1fc00e3ae889dcd52200c91795f6e3c7283a2e2b.json"
+      "receipt": ".sdd/plan-evidence/db45ca0244d8f0421a909af8a8dba45c430c6f6e5f46719b2db62f0fcde44be0/0d50dbd6332bb1f9e952e76a299de61c58eb96d3a2aa9126ec5068a2fc67dbc2.json"
     },
     {
       "id": "TASK-DIAGCLI-001",
@@ -4025,7 +4025,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/ea566fd8dcc45f090bbb58cbb164569368264ed6a6f464c72ed20485084892c2/19698f00211b83d3a1658e99e6a7ea5613a53c2499ad08174264226b188fb1e6.json"
+      "receipt": ".sdd/plan-evidence/ea566fd8dcc45f090bbb58cbb164569368264ed6a6f464c72ed20485084892c2/6264f54e65d97475824d5390818f52e11c50be5c4aa8bf523f8bc842309924f9.json"
     },
     {
       "id": "TASK-RELQ-005",

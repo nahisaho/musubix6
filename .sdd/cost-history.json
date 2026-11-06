@@ -284,10 +284,10 @@
           "outputTokens": 314508
         },
         "gpt-6.1-sol": {
-          "calls": 2497,
-          "inputTokens": 342451529,
-          "nanoAiu": 9722673160000,
-          "outputTokens": 3006238
+          "calls": 2541,
+          "inputTokens": 347952753,
+          "nanoAiu": 10010717280000,
+          "outputTokens": 3079820
         }
       },
       "summary": "Install musubix6 and Verify README"
