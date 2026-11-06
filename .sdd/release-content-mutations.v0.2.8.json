@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "revision": 1,
+  "revision": 2,
   "targetVersion": "0.2.8",
-  "revisionReason": "Prepare stable0.2.8 at committed Gita22618df676d9766acc05cff6e3128882053fb74: default-enabled planning, deterministic failure-first summaries and private per-attempt raw-output receipts. Independently compare every118 retained canonical path against Git blobs, permission-preserving archive, offline npm package and actual source/package both-host initialization. Keep all24Linux cells, budgets, exclusions, inherited replacement mappings,13semantic/14placeholder mechanisms,1180byte/mode and60origin challenges unchanged. Preserve all0.2.7 failures and manual-publication history with zero transferred credit. New original in-scope S1/S2, unknown or skipped required results remain blocking. This proposal requires genuine seven-artifact human preparation approval and does not authorize release/publication.",
+  "revisionReason": "Renew stable0.2.8 reference at committed Git95a890a5e7f61cb54976d0f9ffb3133be4d8f6e4: requirements ownership handoff and genuine fresh-root planning/lifecycle preparation. Independently compare every118 retained canonical path/full mode against Git blobs, permission-preserving archive, offline npm package and actual source/package both-host initialization. Keep all24Linux cells, budgets, exclusions, inherited replacement mappings,13semantic/14placeholder mechanisms,1180byte/mode and60origin challenges unchanged. Preserve prior revisions and failures with zero transferred credit; original issue385 assertion remains unknown. This proposal requires genuine seven-artifact human preparation approval and does not authorize release/publication.",
   "status": "proposed-normative-contract-not-approval-or-run-evidence",
   "originalExactSemanticsRecovered": false,
   "originalSevenVendorPathsRecovered": false,
@@ -1407,9 +1407,9 @@
     "definition": "existing markerPolicyRows/contextPolicyRows expected-count pairs, not the linter output; same line numbers/snippets/JSON keys checked in source and installed outputs; no replacement by full-suite-only coverage"
   },
   "vendorReference": {
-    "sourceCommit": "a22618df676d9766acc05cff6e3128882053fb74",
-    "sourceSkillTree": "59ab6c23bd11fb185cb1f3b312154c17b30f796b",
-    "origin": "Exact committed musubix6 a22618df676d9766acc05cff6e3128882053fb74; all118 paths/full modes independently matched Git blobs/archive/offline npm and source/package both-host initialization (Copilot118/Claude115). Proposed current digests require genuine human approval; not an upstream-equivalence or qualification claim.",
+    "sourceCommit": "95a890a5e7f61cb54976d0f9ffb3133be4d8f6e4",
+    "sourceSkillTree": "11374f48ed8d9564661d9a94a9bce2433353d7d4",
+    "origin": "Exact committed musubix6 95a890a5e7f61cb54976d0f9ffb3133be4d8f6e4; all118 paths/full modes independently matched Git blobs/archive/offline npm and source/package both-host initialization (Copilot118/Claude115). Proposed current digests require genuine human approval; not an upstream-equivalence or qualification claim.",
     "intendedLocalDeltas": [
       {
         "path": ".sdd/specs/kotonoha-skill-sync.md",
@@ -1463,8 +1463,8 @@
       },
       {
         "path": ".sdd/specs/implementation-plan-workflow.md",
-        "sha256": "97fabda265361a78dd07854d76e38880fd40483009ef6be65310ac44ce4aac56",
-        "description": "Default-enabled specification-linked planning, explicit boolean-false opt-out, current native evidence, CLI integration and workflow/distribution; historical opt-in behavior remains version-scoped."
+        "sha256": "a31ea9c1fe79f018e6361c0a3244d1969a87ee0a9342bd689eef0e31e0c64fba",
+        "description": "Retain default-enabled planning and add canonical requirements ownership handoff: writer delegates implementation/observed-code contracts to SDD siblings; preserve IDs, acceptance conditions and genuine approval under .sdd/specs."
       },
       {
         "path": ".sdd/specs/diagnostics-contract.md",
@@ -1934,7 +1934,7 @@
       {
         "path": ".github/skills/lean-sdd-tdd/scripts/implementation-plan-workflow.test.mjs",
         "mode": 436,
-        "sha256": "2db857031dbc8afd37c8b9b9d69aebb2f2737ce8d4df405a58905b832744c811",
+        "sha256": "499b7f1de9c8abb9ddf6c7a25787cd990c04ebbdae36272a58ea65205eb77685",
         "packageMode": 420,
         "sourceModeOctal": "0664",
         "packageModeOctal": "0644"
@@ -1998,7 +1998,7 @@
       {
         "path": ".github/skills/lean-sdd-tdd/scripts/windows-native.test.mjs",
         "mode": 436,
-        "sha256": "a683b0ab1dfebf8d468dbe13837e97ae75159cdfd176ae1688dd164d642e5bfa",
+        "sha256": "340b1a532916a07921a97af980a8b867002b7a5fd99e0ee3c27163201cc4009b",
         "packageMode": 420,
         "sourceModeOctal": "0664",
         "packageModeOctal": "0644"
@@ -2110,7 +2110,7 @@
       {
         "path": ".github/skills/sdd-reverse-spec/SKILL.md",
         "mode": 436,
-        "sha256": "a99053fd92bdf371145fb282805d43957fd0be5e353e30db8849261ad2422c69",
+        "sha256": "3e8a2f230e27f22e954d15c4498c9ac0b3366827f81dc1d76ff93947aa4597e4",
         "packageMode": 420,
         "sourceModeOctal": "0664",
         "packageModeOctal": "0644"
@@ -2118,7 +2118,7 @@
       {
         "path": ".github/skills/sdd-spec-interview/SKILL.md",
         "mode": 436,
-        "sha256": "0e0d6d8ed14275a078b9ce3adb0e9e031b80ce3e8e0f2c9a917d20a0b5445209",
+        "sha256": "f2cd7054dc0d014d90c52a357e563475dbec81eef0e27a1338f72b2a9d69d246",
         "packageMode": 420,
         "sourceModeOctal": "0664",
         "packageModeOctal": "0644"
@@ -2126,7 +2126,7 @@
       {
         "path": ".github/skills/tech-writer/SKILL.md",
         "mode": 436,
-        "sha256": "5233769eaa56f447fefa826dfa2d22d192546c69f585aef7739d7573ffd9b962",
+        "sha256": "5e06ebf5105abf35dc17d9b87ff46fff6cbd7091089145e39abe0aff92178fc3",
         "packageMode": 420,
         "sourceModeOctal": "0664",
         "packageModeOctal": "0644"
@@ -2358,7 +2358,7 @@
       {
         "path": ".github/skills/tech-writer/references/doctypes/requirements-definition.md",
         "mode": 436,
-        "sha256": "d22e29542a76412c8b35bcb4bf36c7b0813eb3eb366c902cb0d10339a651958f",
+        "sha256": "3f3de8e0fdbfed3a74bcc894834b470e9a0b41bbe6c3a65ead4b76abdad88b45",
         "packageMode": 420,
         "sourceModeOctal": "0664",
         "packageModeOctal": "0644"
@@ -3144,5 +3144,10 @@
     "version": "0.2.7",
     "path": ".sdd/release-content-mutations.v0.2.7.json",
     "sha256": "f32b962801d0df1b794dd15f57f7624396edf3e9285bf077ff5cb5f5f5dd7421"
+  },
+  "previousRevision": {
+    "number": 1,
+    "sha256": "74098927b5ea6ee09b753e8ea358eeccc0289207ba576e310ebd1cb46e681b0d",
+    "sourceCommit": "95a890a5e7f61cb54976d0f9ffb3133be4d8f6e4"
   }
 }

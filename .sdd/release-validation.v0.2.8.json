@@ -2,16 +2,16 @@
   "schemaVersion": 1,
   "targetVersion": "0.2.8",
   "status": "scope-contract-not-run-evidence",
-  "revision": 2,
+  "revision": 3,
   "policy": "docs/design-sdd-hardening.md section 3.5",
   "inheritedManifest": {
     "path": ".sdd/release-validation.v0.2.0.json",
     "sha256": "e2f221e308e2fb4389f044e12c42cb2083e314b97305ae1701f65cd399c37de6"
   },
-  "revisionReason": "Prepare stable0.2.8 at committed Gita22618df676d9766acc05cff6e3128882053fb74: default-enabled planning, deterministic failure-first summaries and private per-attempt raw-output receipts. Independently compare every118 retained canonical path against Git blobs, permission-preserving archive, offline npm package and actual source/package both-host initialization. Keep all24Linux cells, budgets, exclusions, inherited replacement mappings,13semantic/14placeholder mechanisms,1180byte/mode and60origin challenges unchanged. Preserve all0.2.7 failures and manual-publication history with zero transferred credit. New original in-scope S1/S2, unknown or skipped required results remain blocking. This proposal requires genuine seven-artifact human preparation approval and does not authorize release/publication.",
+  "revisionReason": "Renew stable0.2.8 reference at committed Git95a890a5e7f61cb54976d0f9ffb3133be4d8f6e4: requirements ownership handoff and genuine fresh-root planning/lifecycle preparation. Independently compare every118 retained canonical path/full mode against Git blobs, permission-preserving archive, offline npm package and actual source/package both-host initialization. Keep all24Linux cells, budgets, exclusions, inherited replacement mappings,13semantic/14placeholder mechanisms,1180byte/mode and60origin challenges unchanged. Preserve prior revisions and failures with zero transferred credit; original issue385 assertion remains unknown. This proposal requires genuine seven-artifact human preparation approval and does not authorize release/publication.",
   "historicalTestLineage": {
     "version": 1,
-    "sourceCommit": "a22618df676d9766acc05cff6e3128882053fb74",
+    "sourceCommit": "95a890a5e7f61cb54976d0f9ffb3133be4d8f6e4",
     "suite": ".github/skills/lean-sdd-tdd/scripts/sdd.test.mjs",
     "suiteSha256": "a7148f0d77458fa702c41ba8c9b2305ee7a93dd908b65ec41f25cf8da7a1b2a5",
     "mappings": [
@@ -89,7 +89,7 @@
   },
   "contentMutationContract": {
     "path": ".sdd/release-content-mutations.v0.2.8.json",
-    "sha256": "74098927b5ea6ee09b753e8ea358eeccc0289207ba576e310ebd1cb46e681b0d",
+    "sha256": "07f7567b66498bb10ee1da8a9bc367db1f891982353fb2f17a45a23376c2fd01",
     "approvalRequired": true,
     "status": "proposed-not-approved-or-executed"
   },
@@ -309,5 +309,12 @@
     "version": "0.2.7",
     "path": ".sdd/release-validation.v0.2.7.json",
     "sha256": "82c22aa74f8005ff320b6e244c6a873d65ef9070546e9021c35a034e2ccfe450"
+  },
+  "previousRevision": {
+    "number": 2,
+    "sha256": "f50c7ed6e8dcf84f1afa92ff3aad2602dd3860e8741eba16fa4e1d7cc57afd25",
+    "sourceCommit": "95a890a5e7f61cb54976d0f9ffb3133be4d8f6e4",
+    "qualificationCreditBefore": 0,
+    "qualificationCreditAfter": 0
   }
 }

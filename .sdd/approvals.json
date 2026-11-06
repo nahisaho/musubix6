@@ -252,12 +252,12 @@
   "release-qualification": {
     "by": "nahisaho",
     "kind": "human",
-    "review": "Explicit exact-seven-artifact verification-preparation approval; no integration, publication or risk downgrade.",
-    "at": "2026-11-05T23:13:12.996Z",
+    "review": "Explicit human approval of the seven exact paths and SHA256s shown by native prepare, for verification preparation only; unchanged required scope/budgets, retained risks, no publication/main/tag authorization.",
+    "at": "2026-11-06T10:55:28.959Z",
     "artifacts": {
-      ".sdd/specs/release-qualification.md": "2208d104124140791cbb884308ffa81118f7c53da41ce6bbd8488c8ff8497941",
-      ".sdd/release-validation.v0.2.8.json": "f50c7ed6e8dcf84f1afa92ff3aad2602dd3860e8741eba16fa4e1d7cc57afd25",
-      ".sdd/release-content-mutations.v0.2.8.json": "74098927b5ea6ee09b753e8ea358eeccc0289207ba576e310ebd1cb46e681b0d",
+      ".sdd/specs/release-qualification.md": "839364e29effeb5d5af35d11d8c8b52649453d2b6d26c14058cd6eda96d1c209",
+      ".sdd/release-validation.v0.2.8.json": "683269310de4498ee64f33cfe2b4e30e742a33fbf616da3577770198bb6bb280",
+      ".sdd/release-content-mutations.v0.2.8.json": "07f7567b66498bb10ee1da8a9bc367db1f891982353fb2f17a45a23376c2fd01",
       ".sdd/specs/claude-code-support.md": "82bb16e36ab143167e445dcb422d49f5c0f9af8ea024bcc51c4e3092cfefee9b",
       "README.md": "bf778bde30d77e538a850e342ac5b518354179b205706827e1480294addb95c7",
       "README-ja.md": "efb7a08fdd02fa0719f5ac31f819ac7d5c061cefe87b97d3ab60309efbcf748c",
@@ -268,10 +268,10 @@
     "code": {
       "scripts/release-host-mutations.mjs": "6921bf50d7f7df70ce2e3a3e23b0acbf67def78f0e4d358b1d7a5adcb091b618",
       "scripts/release-qualification-cells.mjs": "6c8c5094872abdc5e89d0cb702b52a528956b83d7393f1f02735490980d0e450",
-      "scripts/release-qualification-cli.mjs": "77f7d0755ad920a5777e34845475ae6edbeb0d37b32d0d59a133b545ae39c35f",
+      "scripts/release-qualification-cli.mjs": "865e7ddb1aa399e5cc845b15754e9c616eef7cf1add92ccf349b455afb6ffcca",
       "scripts/release-qualification-content-mutations.mjs": "dcd56b74b62917a321bcf8a1df55da521a9be27b29e16c73f1868a1fd6395b6e",
       "scripts/release-qualification-evidence.mjs": "65bb176846b259cea684ba2bdb5dc53f6394cf1224fc2424455c0c32d48ca1a0",
-      "scripts/release-qualification-io.mjs": "851c6cda3bb0f1be005d29459d69d0f466c428a5c915904afec712b3a89e03e7",
+      "scripts/release-qualification-io.mjs": "56da8043e445f7f636388fb00e8cad1cfa9b5e56c6f1a2f787f270acd8184fb0",
       "scripts/release-qualification.mjs": "56a74b69cd3624921e869065b76ac27ea4051b514eefad6fdaf640be450de9e3"
     }
   },

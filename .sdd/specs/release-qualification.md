@@ -60,9 +60,55 @@ and exact current suite bytes; older suite identities remain historical. Each RE
 discover every registered new planning regression; no missing-name or `TODO`
 exception is introduced. Existing dynamic catalogue discovery is retained.
 
-### Stable0.2.8 preparation
+### Current committed-source renewal (scope3/content2)
 
-The current scope/content revisions are2/1. Scope revision1 at committed
+The proposed source reference is committed
+`95a890a5e7f61cb54976d0f9ffb3133be4d8f6e4`, skill tree
+`11374f48ed8d9564661d9a94a9bce2433353d7d4`.
+Independent `v028-release-reference-EI5ZGU/report.json`, SHA256
+`7891194a3173d9f26e343e2a177b54cebee14a0543ec9c3ed28055b520335111`,
+matched all118 committed blobs, archive/full permission modes, actual
+offline npm bytes/modes and source/package initialization on both hosts
+(Copilot118/Claude115). The developmental tgz SHA256 is
+`f302dfba24fe1d56f41e91ee85564c8663e5befad76bc1d5ff2208cd017810ef`,
+not an approved publication artifact.
+
+Exactly six canonical byte digests change: the planning-workflow test,
+both SDD requirements siblings, tech-writer, its requirements doctype and
+the native Windows fixture. The latter explicitly opts execution-only
+npm/MSVC fixtures out of planning without changing product defaults,
+commands, assertions or expected native outcomes. Real Windows run
+42180223149 failed on20/22/24 because those old fixtures lacked a JSON plan;
+retain it as a fixture setup failure, not assertion-Red evidence.
+Four current Windows/cost owner tasks passed genuine native verification;
+new actual Windows CI remains required before claiming native success.
+The already human-approved workflow contract digest is renewed as a
+declared local delta. No canonical path, full mode, policy, inherited
+mapping, assertion oracle or required case is removed or weakened.
+Scope/content revisions3/2 retain the exact2/1 predecessor digests and their
+committed source identity. Credit and the clean-run streak remain0.
+The existing seven-artifact human approval is stale for these proposed
+bytes and must be renewed explicitly before admission or qualification.
+
+| REQ | PASS condition | counterexample | TEST/command | observed evidence |
+| --- | --- | --- | --- | --- |
+| `REQ-RELQ-001`, `REQ-RELQ-002` | Genuine new seven-artifact approval admits the same24-cell scope and independently committed118-file reference | Old approval, old six digests, missing path/mode, mismatched lineage or weaker budget must reject; exact new approved reference must accept | Native approve prepare/admit/preflight; TEST-RELQ-001, TEST-RELQ-BASELINE-001 and TEST-RELQ-CONTENT-ADMISSION-001 | Previous actual preflight rejected the stale bytes; current committed/archive/npm/both-host inventory matches118/118. Renewed approval and current adapter controls are pending |
+| `REQ-RELQ-003` | Every required runtime discovers and executes all1189 currently registered names, including the new ownership and process controls, while preserving historical replacements | A name-filtered partial run, missing new name, required skip or old catalogue cannot establish a full regression-cell PASS | Actual Node20 registration discovery; REGRESSION-20/22/24 | Current registered catalogue has1189 names; selected ownership/readiness controls passed4/4 on each real20/22/24. This is not three complete regression cells |
+| `REQ-RELQ-004`, `REQ-RELQ-005` | Current native proof, original-budget fresh preparation, two unchanged complete fresh runs and separate exact-artifact human release approval establish releasability | Retained developer gate, old CI, a small two-task fixture, unknown issue385 cause, stale receipts or changed candidate/matrix never transfer qualification or release authorization | Native task verification, full gate, current CI, fixed freeze/run/status | Retained developer gate passed1189/1189 and all118 current source tasks passed consistency. Current source CI, full-scale fresh-root deadline/capacity, original385 classification and frozen runs remain required |
+
+First violated stages remain explicit: contract = genuine renewed approval;
+trusted inputs = exact committed reference and frozen tools; execution =
+all required named cases and full118-task fresh native proof within the
+unchanged12000 seconds; verdict = invalid evidence rejects and valid controls
+accept; history = retain predecessors/failures and reset validation without
+credit; integration/distribution = both hosts, current CI, two identical
+complete clean runs and separate human release approval. No stage is waived.
+Neither current inventory success nor approval to prepare resolves issue385
+or authorizes tagging, publishing, scope narrowing or S1/S2 downgrades.
+
+### Historical stable0.2.8 preparation (scope2/content1)
+
+The historical scope/content revisions are2/1. Scope revision1 at committed
 `b43d9830c92092384bea0e00a8d33db4dc16e9c1`, SHA256
 `2d493a6c27b15c26dbf53dad1d5bc8853cdfffa759cbbb90856baea1d80728ca`,
 remains historical preparation evidence with zero qualification credit.

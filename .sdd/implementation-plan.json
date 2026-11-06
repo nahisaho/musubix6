@@ -392,7 +392,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/1517e548507a2deebb202a54350fbfecb559bf735331f257f090736fcc8681b3/b8a6de69d8db4f5201e0499f723382ee1fc654284c2437a3c41da1999c76ff3d.json"
+      "receipt": ".sdd/plan-evidence/1517e548507a2deebb202a54350fbfecb559bf735331f257f090736fcc8681b3/6b748c5be6febe838d66b201beda0508f11408e27a09f5de300bc329f2b2a00d.json"
     },
     {
       "id": "TASK-COST-HISTORY-002",
@@ -431,7 +431,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/db45ca0244d8f0421a909af8a8dba45c430c6f6e5f46719b2db62f0fcde44be0/c0ff34d583d8ecc72607d65e6bd20ef0c9ba6739d7ef8370cfff98ea99955ed4.json"
+      "receipt": ".sdd/plan-evidence/db45ca0244d8f0421a909af8a8dba45c430c6f6e5f46719b2db62f0fcde44be0/098c54ddff05053ee59dc10a1fc00e3ae889dcd52200c91795f6e3c7283a2e2b.json"
     },
     {
       "id": "TASK-DIAGCLI-001",
@@ -3852,11 +3852,11 @@
         }
       ],
       "specs": {
-        ".sdd/specs/release-qualification.md": "2208d104124140791cbb884308ffa81118f7c53da41ce6bbd8488c8ff8497941"
+        ".sdd/specs/release-qualification.md": "839364e29effeb5d5af35d11d8c8b52649453d2b6d26c14058cd6eda96d1c209"
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/73f0cbb6742cc4492aeeadca22db81f5f31db4650b1951f0febd38355f8df151/ef26747a2d0739c5ae58f36161adcf55c7b2661d24e841601adac8d0d4bab6c1.json"
+      "receipt": ".sdd/plan-evidence/73f0cbb6742cc4492aeeadca22db81f5f31db4650b1951f0febd38355f8df151/489ec181af89ff22565863bdbe2eb473ff369d3197ffcaed4cb1ba6d41d81549.json"
     },
     {
       "id": "TASK-RELQ-002",
@@ -3903,11 +3903,11 @@
         }
       ],
       "specs": {
-        ".sdd/specs/release-qualification.md": "2208d104124140791cbb884308ffa81118f7c53da41ce6bbd8488c8ff8497941"
+        ".sdd/specs/release-qualification.md": "839364e29effeb5d5af35d11d8c8b52649453d2b6d26c14058cd6eda96d1c209"
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/dd865d9c8b78a2d77814f6c74fb5613d75c1f641a17ccffea1a8e080c0bc0a07/30c5fd63fe89e46e4800d569eda14485189679e3ad97a72e65ebf5a3d5267590.json"
+      "receipt": ".sdd/plan-evidence/dd865d9c8b78a2d77814f6c74fb5613d75c1f641a17ccffea1a8e080c0bc0a07/fa2eaa6629cc67e9d6de2deca2c0085a0eacf2275a20d894de6748b8ace1cff8.json"
     },
     {
       "id": "TASK-RELQ-003",
@@ -3975,11 +3975,11 @@
         }
       ],
       "specs": {
-        ".sdd/specs/release-qualification.md": "2208d104124140791cbb884308ffa81118f7c53da41ce6bbd8488c8ff8497941"
+        ".sdd/specs/release-qualification.md": "839364e29effeb5d5af35d11d8c8b52649453d2b6d26c14058cd6eda96d1c209"
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/89f75a0ef83095915c1bfb35bc420da94e27f50547ef905b5527a6c34744793b/e4582b17ba4a2601f070da6a150e1c41d1ceaf1a8d6ac7c415fc069fcd40572d.json"
+      "receipt": ".sdd/plan-evidence/89f75a0ef83095915c1bfb35bc420da94e27f50547ef905b5527a6c34744793b/20d3d5fa6a31e023c010d1412a7568bd5d8439dcad704fb3e7504f8762c6f307.json"
     },
     {
       "id": "TASK-RELQ-004",
@@ -4021,11 +4021,11 @@
         }
       ],
       "specs": {
-        ".sdd/specs/release-qualification.md": "2208d104124140791cbb884308ffa81118f7c53da41ce6bbd8488c8ff8497941"
+        ".sdd/specs/release-qualification.md": "839364e29effeb5d5af35d11d8c8b52649453d2b6d26c14058cd6eda96d1c209"
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/ea566fd8dcc45f090bbb58cbb164569368264ed6a6f464c72ed20485084892c2/c159c75200a5999dfab7ee0287a0607686b924457b04d47df5f7c688fc4c8d91.json"
+      "receipt": ".sdd/plan-evidence/ea566fd8dcc45f090bbb58cbb164569368264ed6a6f464c72ed20485084892c2/19698f00211b83d3a1658e99e6a7ea5613a53c2499ad08174264226b188fb1e6.json"
     },
     {
       "id": "TASK-RELQ-005",
@@ -4096,11 +4096,11 @@
         }
       ],
       "specs": {
-        ".sdd/specs/release-qualification.md": "2208d104124140791cbb884308ffa81118f7c53da41ce6bbd8488c8ff8497941"
+        ".sdd/specs/release-qualification.md": "839364e29effeb5d5af35d11d8c8b52649453d2b6d26c14058cd6eda96d1c209"
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/8a500e1cd57c470ca565540630853ab2031d74efe95b650b3b5670f6edf9e10d/99ec573c05f210ef14e2d4ee06c415ef7351325bbbcede8d22529d1410e9d522.json"
+      "receipt": ".sdd/plan-evidence/8a500e1cd57c470ca565540630853ab2031d74efe95b650b3b5670f6edf9e10d/7e57eaff6162fd5ab31fff704e64ac49896aef92ffbfd560ef7512f32c40dda3.json"
     },
     {
       "id": "TASK-RUNNER-SELECTION-001",

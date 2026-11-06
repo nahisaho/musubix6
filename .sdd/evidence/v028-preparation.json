@@ -1,10 +1,72 @@
 {
   "schemaVersion": 1,
   "targetVersion": "0.2.8",
-  "stage": "Retained developer full gate passed1189/1189; latest Node20/22/24 readiness/ownership controls and four isolated readiness mutations passed. Actual release preflight rejects five stale reference hashes; committed reference renewal and frozen qualification remain blocked.",
+  "stage": "Source95a890a and its Windows fixture correction are committed/pushed; actual Linux/Windows CI passed Node20/22/24. Renewed committed/archive/npm/both-host reference matches118/118. Nahisaho explicitly approved the exact seven-artifact scope3/content2 preparation unit, recorded by native approve. Current affected proofs, full118-task fresh-root capacity and frozen qualification remain required; publication is not authorized.",
   "status": "BLOCKED",
   "qualificationCredit": 0,
   "publishingAuthorized": false,
+  "currentReferenceRenewal": {
+    "status": "GENUINE_HUMAN_PREPARATION_APPROVAL_RECORDED",
+    "sourceCommit": "95a890a5e7f61cb54976d0f9ffb3133be4d8f6e4",
+    "sourceSkillTree": "11374f48ed8d9564661d9a94a9bce2433353d7d4",
+    "scopeRevision": 3,
+    "contentRevision": 2,
+    "preparationApproval": {
+      "by": "nahisaho",
+      "decision": "承認する（検証準備のみ）",
+      "specSha256": "839364e29effeb5d5af35d11d8c8b52649453d2b6d26c14058cd6eda96d1c209",
+      "artifactPaths": [".sdd/specs/release-qualification.md", ".sdd/release-validation.v0.2.8.json", ".sdd/release-content-mutations.v0.2.8.json", ".sdd/specs/claude-code-support.md", "README.md", "README-ja.md", "CLANGELOG.md"],
+      "recording": "Actual native approve prepare output matched all seven individually presented SHA256s; host ask_user obtained explicit approval after residual-risk disclosure; actual native approve record --by nahisaho then locked the exact seven paths.",
+      "limits": "Verification preparation only; no main integration, tag, publication, policy weakening or issue385 exception."
+    },
+    "independentInventory": {
+      "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v028-release-reference-EI5ZGU/report.json",
+      "sha256": "7891194a3173d9f26e343e2a177b54cebee14a0543ec9c3ed28055b520335111",
+      "status": "PASS",
+      "canonicalFiles": 118,
+      "sourceAndPackageHostCounts": {
+        "copilot": 118,
+        "claude": 115
+      },
+      "scope": "Actual committed blobs, clean detached source, permission-preserving archive, offline npm package and actual source/package initialization on both hosts agree byte-for-byte with exact origin modes. Six canonical byte digests change; no paths, modes, case counts, cells, budgets or policies change. Proposed JSONs were checked byte-for-byte against the generated outputs, not silently accepted as approved."
+    },
+    "nativeWindowsFixtureCorrection": {
+      "failedSourceCommit": "8c974a7f7f416ed4a80f18f142f9d1ea81eae34c",
+      "failedRun": 42180223149,
+      "failedLog": {
+        "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v028-source-windows-ci-failed.log",
+        "sha256": "25085b2fb2f50f21240030dd672b0527cb332c6f7d61aa866914b8820ba4e1df"
+      },
+      "firstViolatedStage": "trusted inputs: execution-only fixture inherited required planning without a plan",
+      "correction": "The shared npm/MSVC test fixture explicitly sets planning.required:false. Product defaults, commands, environment exclusions, assertions and expected native outcomes remain unchanged.",
+      "redLimit": "The failed native CI is retained as fixture setup failure, not claimed as original assertion-Red evidence or the original issue385 failure.",
+      "nativeOwnerProof": {
+        "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v028-validation-owner-proof-tAdbqb/report.json",
+        "sha256": "70fe13c00528895a4a5970d08576db057460278324019300aa13e6638f49962b",
+        "status": "PASS",
+        "tasks": ["TASK-WINRUN-002", "TASK-WINRUN-004", "TASK-COST-HISTORY-001", "TASK-COST-HISTORY-002"],
+        "limits": "Actual local native CLI verifications and immutable receipts were checked/adopted. The two Windows requirement regressions use injected Windows behavior on Linux; this report alone is not native Windows success."
+      },
+      "actualWindowsRun": 42181255338,
+      "lastObservedNativeResults": "Completed success on actual Windows Node20/22/24 at exact source95a890a5e7f61cb54976d0f9ffb3133be4d8f6e4, observed with gh run watch --exit-status and gh run view. This is native source CI, not frozen24-cell qualification credit.",
+      "linuxRun": 42181255333,
+      "linuxStatusAtCheckpoint": "Completed success on actual Linux Node20/22/24 at exact source95a890a5e7f61cb54976d0f9ffb3133be4d8f6e4, observed with gh run view. This is native source CI, not frozen24-cell qualification credit."
+    },
+    "independentReview": {
+      "model": "claude-sonnet-5.5",
+      "status": "NO_OPEN_BLOCKERS",
+      "scope": "Initial three-file reference/spec delta, then bounded Windows fixture/ownership correction and renewed provenance delta. Reviewed generated-proposal identity, committed predecessor hashes/tree/workflow approval and non-authorization statements.",
+      "limits": "Reviewer ran no tests and did not independently recompute all118 hashes or open every command/native receipt. Complete inventory/unchanged policy checks and actual native CLI results are retained separately; CI and full qualification remain independent requirements."
+    },
+    "supersededUnapprovedProposal": {
+      "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v028-reference-proposal-8c974a7-unapproved.patch",
+      "sha256": "8c73e5c33a40a272277be92d9f72decc36efdcc4bfc1a8ea73936f397fc25dab",
+      "qualificationCredit": 0
+    },
+    "remaining": "The exact seven-artifact preparation approval is genuinely recorded; native source CI is green on both OSes and all three runtimes. Refresh affected native TDD/task proofs, prove full118-task fresh-root preparation/full gate within12000 seconds, and require two identical complete24-cell runs plus separate human release approval. Original385 assertion remains unknown and cannot be downgraded or transferred into a release exception.",
+    "qualificationCredit": 0,
+    "publishingAuthorized": false
+  },
   "latestValidation": {
     "finishedAt": "2026-11-06T06:51:45.079Z",
     "status": "BLOCKED",
