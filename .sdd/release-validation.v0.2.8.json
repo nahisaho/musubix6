@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "targetVersion": "0.2.8",
   "status": "scope-contract-not-run-evidence",
-  "revision": 1,
+  "revision": 2,
   "policy": "docs/design-sdd-hardening.md section 3.5",
   "inheritedManifest": {
     "path": ".sdd/release-validation.v0.2.0.json",

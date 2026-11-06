@@ -2,9 +2,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
-import { ensure, equal, fileSha, json, mkdir, save, execute, retainProcess, readRef, waitForProcessExit, externalOutput } from './release-qualification-io.mjs';
-import { parseEvents, namedControl, processControl, ownedAssertion, assertionReason } from './release-qualification-evidence.mjs';
+import { ensure, equal, sha, fileSha, json, mkdir, save, execute, retainProcess, readRef, waitForProcessExit, externalOutput } from './release-qualification-io.mjs';
+import { parseEvents, namedControl, processControl, ownedAssertion, assertionReason, validateNativeGate } from './release-qualification-evidence.mjs';
 import { contentCaseCatalogue, runContentCell, validateContentRun } from './release-qualification-content-mutations.mjs';
+import { taskDefinitionSha256, containedPlanningPath } from '../.github/skills/lean-sdd-tdd/scripts/implementation-plan.mjs';
 
 const skillScripts = '.github/skills/lean-sdd-tdd/scripts';
 export const unresolvedMechanisms = Object.freeze({});
@@ -114,6 +115,7 @@ export function assertionCatalogue(source, suite, title, expectedNeedle, nodeMod
 }
 
 export function cellCatalogue(manifest, cell, source) {
+  if (cell.kind === 'gate') return gateCatalogue(cell, source);
   if (['skill-mutation', 'placeholder-mutation'].includes(cell.kind)) {
     return contentCaseCatalogue(json(path.join(source, '.sdd/release-content-mutations.v0.2.8.json')), cell.id);
   }
@@ -180,8 +182,264 @@ export function commandForCell(cell, files) {
   if (cell.kind === 'process') return ['{node}', '--test', '--test-reporter={source}/scripts/release-host-events.mjs',
     '{source}/scripts/release-qualification-process.test.mjs'];
   if (cell.kind === 'host-mutation') return ['{node}', '{source}/scripts/release-host-mutations.mjs'];
-  if (cell.kind === 'gate') return ['{node}', `{source}/${skillScripts}/sdd.mjs`, 'gate'];
   return ['{node}', '{source}/scripts/release-qualification-cells.mjs', '--cell', cell.id, '--context', '{context}'];
+}
+
+function planningProjection(document) {
+  return { ...document, tasks: document.tasks.map(({ status, receipt, dependencies, ...task }) =>
+    ({ ...task, dependencies: Object.fromEntries(Object.keys(dependencies).sort().map(id => [id, null])) })) };
+}
+
+function regularFiles(source, directory) {
+  const file = path.join(source, directory);
+  if (!fs.existsSync(file)) return [];
+  ensure(!fs.lstatSync(file).isSymbolicLink(), `planning evidence symlink: ${directory}`);
+  if (fs.statSync(file).isFile()) return [directory];
+  return fs.readdirSync(file).sort().flatMap(name => regularFiles(source, `${directory}/${name}`));
+}
+
+function gateCatalogue(cell, source) {
+  ensure(cell.id === 'INTEGRATED-GATE', 'unexpected mandatory gate identity');
+  const plan = json(containedPlanningPath(source, '.sdd/implementation-plan.json'));
+  ensure(Array.isArray(plan.tasks) && plan.tasks.length > 0, 'nonempty frozen planning catalogue required');
+  const files = [...new Set(['.sdd/config.json', ...regularFiles(source, skillScripts), ...regularFiles(source, 'scripts'),
+    ...plan.tasks.flatMap(task => [...task.artifacts, ...Object.keys(task.specs)])])].sort();
+  return [{ name: cell.id, source: path.resolve(source), plan: planningProjection(plan),
+    files: files.map(relative => ({ relative, sha256: fileSha(containedPlanningPath(source, relative)) })),
+    heads: plan.tasks.map(task => ({ id: task.id, ...historyHead(source, task) })),
+    history: regularFiles(source, '.sdd/plan-evidence').map(relative =>
+      ({ relative, sha256: fileSha(containedPlanningPath(source, relative)) })),
+    ledger: { bytes: fs.statSync(containedPlanningPath(source, '.sdd/tdd.jsonl')).size,
+      sha256: fileSha(containedPlanningPath(source, '.sdd/tdd.jsonl')) } }];
+}
+
+function gateState(source, tasks) {
+  const files = [...new Set(['.sdd/implementation-plan.json', '.sdd/config.json', '.sdd/tdd.jsonl',
+    ...regularFiles(source, '.sdd/plan-evidence'),
+    ...tasks.flatMap(task => [...task.artifacts, ...Object.keys(task.specs)])])].sort();
+  return files.map(relative => ({ relative, sha256: fileSha(containedPlanningPath(source, relative)),
+    bytes: fs.statSync(containedPlanningPath(source, relative)).size }));
+}
+
+function historyHead(source, task) {
+  const directory = `.sdd/plan-evidence/${sha(task.id)}`;
+  const receipts = regularFiles(source, directory).filter(file => /^[a-f0-9]{64}\.json$/.test(path.basename(file)))
+    .map(relative => ({ relative, data: json(containedPlanningPath(source, relative)) }))
+    .sort((a, b) => a.data.sequence - b.data.sequence);
+  return receipts.length ? { sequence: receipts.at(-1).data.sequence,
+    sha256: fileSha(containedPlanningPath(source, receipts.at(-1).relative)) } : { sequence: 0, sha256: '' };
+}
+
+function adoptGatePlan(source, document, previousBytes) {
+  const file = containedPlanningPath(source, '.sdd/implementation-plan.json');
+  equal(fs.readFileSync(file), previousBytes);
+  const temporary = file + '.gate-adoption.tmp', mode = fs.statSync(file).mode & 0o777;
+  fs.writeFileSync(temporary, JSON.stringify(document, null, 2) + '\n', { flag: 'wx', mode });
+  fs.chmodSync(temporary, mode);
+  equal(fs.readFileSync(file), previousBytes);
+  fs.renameSync(temporary, file);
+}
+
+function gateRef(ref) {
+  ensure(ref && path.isAbsolute(ref.path) && fs.statSync(ref.path).size <= 8 * 1024 * 1024,
+    'bounded absolute gate evidence required');
+  return readRef(ref);
+}
+
+function gateProcess(evidence, exit = 0) {
+  gateRef(evidence.stdout); gateRef(evidence.stderr);
+  ensure(fs.statSync(evidence.stdout.path).size + fs.statSync(evidence.stderr.path).size <= 8 * 1024 * 1024,
+    'cumulative gate process output budget exceeded');
+  return processControl(evidence, exit);
+}
+
+function validateGateReceipt(source, task, row, node) {
+  const { text } = gateProcess(row.native);
+  const native = JSON.parse(text);
+  ensure(native.enabled && native.stage === 'verify' && native.task === task.id &&
+    native.status === 'PASS' && native.exit === 0 && native.errors.length === 0, 'genuine native task PASS required');
+  equal(native.fingerprint, row.fingerprint);
+  ensure(/^[a-f0-9]{64}$/.test(row.fingerprint), 'current native fingerprint required');
+  equal(row.native.command, [node, path.join(source, skillScripts, 'sdd.mjs'),
+    'plan', 'verify', task.id, '--json']);
+  equal(row.native.cwd, source);
+  const relative = native.receipt, file = containedPlanningPath(source, relative);
+  ensure(relative.startsWith(`.sdd/plan-evidence/${sha(task.id)}/`) &&
+    path.basename(relative) === row.receipt.sha256 + '.json', 'task-owned digest receipt required');
+  equal(row.receipt.path, file);
+  const receipt = JSON.parse(gateRef(row.receipt));
+  ensure(receipt.task === task.id && receipt.status === 'PASS' && receipt.exit === 0 &&
+    receipt.errors.length === 0, 'native receipt verdict mismatch');
+  equal(receipt.definitionSha256, taskDefinitionSha256(task));
+  equal(receipt.inputSha256, row.fingerprint);
+  equal(receipt.previous, row.previous.sha256);
+  equal(receipt.sequence, row.previous.sequence + 1);
+  equal(receipt.checks.length, task.checks.length + task.tests.length);
+  for (const [index, check] of receipt.checks.entries()) {
+    ensure(check.exit === 0 && check.signal === null && check.timedOut === false && check.error === null,
+      'native receipt includes unsuccessful command');
+    if (index < task.checks.length) equal(check.argv, task.checks[index].argv);
+    else equal(check.argv, [node, path.join(source, skillScripts, 'sdd.mjs'),
+      'tdd', 'refactor', task.tests[index - task.checks.length], '--root', source]);
+    if (index < task.checks.length) {
+      equal(check.name, task.checks[index].name); equal(check.timeoutMs, task.checks[index].timeoutMs);
+    }
+    ensure(check.log.path.startsWith(`.sdd/plan-evidence/${sha(task.id)}/`), 'foreign native command log');
+    ensure(Number.isSafeInteger(check.log.bytes) && check.log.bytes <= 8 * 1024 * 1024, 'native log budget exceeded');
+    const log = containedPlanningPath(source, check.log.path);
+    equal(fs.statSync(log).size, check.log.bytes);
+    equal(fileSha(log), check.log.sha256);
+  }
+  equal(receipt.ledgerEvents.map(event => event.test).sort(), [...task.tests].sort());
+  const ledgerHashes = new Set(fs.readFileSync(containedPlanningPath(source, '.sdd/tdd.jsonl'), 'utf8')
+    .trim().split('\n').filter(Boolean).map(line => JSON.parse(line).hash));
+  for (const event of receipt.ledgerEvents) {
+    ensure(event.hashes.length > 0 && event.hashes.every(hash => /^[a-f0-9]{64}$/.test(hash) && ledgerHashes.has(hash)),
+      'native receipt lacks actual ledger history');
+  }
+  return relative;
+}
+
+/** @id CODE-RELQ-PLANNING-001 @implements REQ-RELQ-002 REQ-RELQ-003 */
+async function planningGate(context) {
+  const started = process.hrtime.bigint(), budget = context.cell.timeoutSeconds * 1000;
+  ensure(Number.isSafeInteger(budget) && budget > 5000, 'gate budget must exceed cleanup reserve');
+  const ownDeadline = started + BigInt(budget) * 1000000n;
+  ensure(context.deadlineNs === undefined || /^[0-9]+$/.test(context.deadlineNs), 'invalid shared gate deadline');
+  const outerDeadline = context.deadlineNs === undefined ? ownDeadline : BigInt(context.deadlineNs);
+  const deadline = (outerDeadline < ownDeadline ? outerDeadline : ownDeadline) - 5000000000n;
+  externalOutput(context.source, context.output);
+  mkdir(context.output);
+  const source = fs.realpathSync(context.source), expected = context.catalogue;
+  equal(expected, gateCatalogue(context.cell, source));
+  const controller = new AbortController();
+  const terminate = () => controller.abort();
+  process.on('SIGTERM', terminate); process.on('SIGINT', terminate);
+  const progress = path.join(context.output, 'planning-progress.json');
+  const run = async (name, args, exits = [0]) => {
+    const remaining = Number((deadline - process.hrtime.bigint()) / 1000000n);
+    ensure(remaining > 0 && !controller.signal.aborted, `shared gate deadline exhausted before ${name}`);
+    save(progress, { phase: name, source, remainingMs: remaining }, false);
+    const result = await execute({ command: [context.node, path.join(source, skillScripts, 'sdd.mjs'), ...args],
+      cwd: source, env: context.environment, timeoutMs: remaining, maxBytes: 8 * 1024 * 1024,
+      signal: controller.signal, trackDescendants: true });
+    const evidence = retainProcess(path.join(context.output, name), result);
+    ensure(exits.includes(result.exit), `${name}: native exit ${result.exit}; retained ${evidence.receipt.path}`);
+    gateProcess(evidence, result.exit);
+    return evidence;
+  };
+  try {
+    const initial = await run('initial-admission', ['plan', 'check', '--json'], [0, 1]);
+    const measured = JSON.parse(readRef(initial.stdout));
+    const file = containedPlanningPath(source, '.sdd/implementation-plan.json'), plan = json(file);
+    ensure(measured.enabled && measured.stage === 'consistency', 'enabled native planning measurement required');
+    equal(measured.tasks.map(row => row.id).sort(), plan.tasks.map(task => task.id).sort());
+    const fingerprints = new Map(measured.tasks.map(row => [row.id, row.fingerprint]));
+    ensure([...fingerprints.values()].every(value => /^[a-f0-9]{64}$/.test(value)), 'complete actual current inputs required');
+    const oldState = gateState(source, plan.tasks);
+    const oldLedger = fs.readFileSync(containedPlanningPath(source, '.sdd/tdd.jsonl'));
+    const verified = new Map(), verifications = [];
+    while (verified.size < plan.tasks.length) {
+      const previousBytes = fs.readFileSync(file);
+      equal(planningProjection(json(file)), expected[0].plan);
+      const task = plan.tasks.find(task => !verified.has(task.id) &&
+        Object.keys(task.dependencies).every(id => verified.has(id)));
+      ensure(task, 'no freshly verified prerequisite-ready task');
+      for (const id of Object.keys(task.dependencies)) task.dependencies[id] = verified.get(id);
+      equal(planningProjection(plan), expected[0].plan);
+      adoptGatePlan(source, plan, previousBytes);
+      const beforeVerify = fs.readFileSync(file), previous = historyHead(source, task);
+      equal(previous, Object.fromEntries(Object.entries(expected[0].heads.find(row => row.id === task.id))
+        .filter(([key]) => key !== 'id')));
+      const native = await run('verify-' + task.id, ['plan', 'verify', task.id, '--json']);
+      const data = JSON.parse(readRef(native.stdout));
+      const row = { id: task.id, fingerprint: data.fingerprint, previous, native,
+        receipt: { path: containedPlanningPath(source, data.receipt),
+          sha256: fileSha(containedPlanningPath(source, data.receipt)) } };
+      equal(row.fingerprint, fingerprints.get(task.id));
+      const relative = validateGateReceipt(source, task, row, context.node);
+      task.status = 'complete'; task.receipt = relative;
+      adoptGatePlan(source, plan, beforeVerify);
+      verified.set(task.id, row.fingerprint); verifications.push(row);
+    }
+    for (const row of oldState.filter(row => !['.sdd/implementation-plan.json', '.sdd/tdd.jsonl'].includes(row.relative))) {
+      equal(fileSha(containedPlanningPath(source, row.relative)), row.sha256);
+    }
+    const ledger = fs.readFileSync(containedPlanningPath(source, '.sdd/tdd.jsonl'));
+    equal(ledger.subarray(0, oldLedger.length), oldLedger);
+    const admission = await run('final-admission', ['plan', 'check', '--json']);
+    const current = JSON.parse(readRef(admission.stdout));
+    ensure(current.status === 'PASS' && current.exit === 0 &&
+      current.tasks.length === plan.tasks.length && current.tasks.every(task => task.state === 'complete' && task.exit === 0),
+    'complete current native admission required');
+    const stateBefore = save(path.join(context.output, 'before-gate-state.json'), gateState(source, plan.tasks));
+    const gate = await run('full-gate', ['gate']);
+    validateNativeGate(gate);
+    const stateAfter = save(path.join(context.output, 'after-gate-state.json'), gateState(source, plan.tasks));
+    equal(JSON.parse(gateRef(stateBefore)), JSON.parse(gateRef(stateAfter)));
+    ensure(process.hrtime.bigint() < deadline && !controller.signal.aborted, 'shared gate deadline exhausted');
+    const original = save(path.join(context.output, 'original-state.json'), oldState);
+    const data = { status: 'PASS', source, planning: { initial, verifications, original,
+      oldLedgerBytes: oldLedger.length, oldLedgerSha256: sha(oldLedger) }, admission, gate, stateBefore, stateAfter,
+      deadline: { budgetMs: budget, reserveMs: 5000, startedNs: String(started),
+        expiresNs: String(deadline), completedNs: String(process.hrtime.bigint()) } };
+    ensure(Buffer.byteLength(JSON.stringify(data)) <= 8 * 1024 * 1024, 'gate result JSON budget exceeded');
+    save(progress, { phase: 'complete', source, verifiedTasks: verifications.length }, false);
+    return data;
+  } finally { process.removeListener('SIGTERM', terminate); process.removeListener('SIGINT', terminate); }
+}
+
+function validatePlanningGate({ cell, catalogue, evidence }, data) {
+  ensure(catalogue?.length === 1 && catalogue[0].name === 'INTEGRATED-GATE', 'frozen gate catalogue required');
+  const source = catalogue[0].source, plan = json(containedPlanningPath(source, '.sdd/implementation-plan.json'));
+  equal(data.source, source); equal(evidence.cwd, source);
+  equal(planningProjection(plan), catalogue[0].plan);
+  for (const file of catalogue[0].files) equal(fileSha(containedPlanningPath(source, file.relative)), file.sha256);
+  for (const file of catalogue[0].history) equal(fileSha(containedPlanningPath(source, file.relative)), file.sha256);
+  equal(data.planning.verifications.map(row => row.id).sort(), plan.tasks.map(task => task.id).sort());
+  const verified = new Map();
+  for (const row of data.planning.verifications) {
+    const task = plan.tasks.find(task => task.id === row.id);
+    const copiedHead = catalogue[0].heads.find(head => head.id === task.id);
+    equal(row.previous, { sequence: copiedHead.sequence, sha256: copiedHead.sha256 });
+    ensure(!verified.has(task.id) && Object.keys(task.dependencies).every(id => verified.has(id)),
+      'current native prerequisite order required');
+    for (const id of Object.keys(task.dependencies)) equal(task.dependencies[id], verified.get(id));
+    equal(task.receipt, validateGateReceipt(source, task, row, evidence.command[0]));
+    ensure(task.status === 'complete', 'current native receipt adoption required');
+    verified.set(task.id, row.fingerprint);
+  }
+  gateProcess(data.admission);
+  equal(data.admission.command, [evidence.command[0], path.join(source, skillScripts, 'sdd.mjs'),
+    'plan', 'check', '--json']);
+  const admission = JSON.parse(gateRef(data.admission.stdout));
+  ensure(admission.enabled && admission.status === 'PASS' && admission.exit === 0 &&
+    admission.tasks.length === verified.size && admission.tasks.every(row =>
+      row.state === 'complete' && row.exit === 0 && row.fingerprint === verified.get(row.id)), 'current full task admission missing');
+  equal(data.gate.command, [evidence.command[0], path.join(source, skillScripts, 'sdd.mjs'), 'gate']);
+  equal(data.gate.cwd, source);
+  validateNativeGate(data.gate);
+  const before = JSON.parse(gateRef(data.stateBefore)), after = JSON.parse(gateRef(data.stateAfter));
+  equal(before, after); equal(after, gateState(source, plan.tasks));
+  const old = JSON.parse(gateRef(data.planning.original));
+  for (const row of old.filter(row => !['.sdd/implementation-plan.json', '.sdd/tdd.jsonl'].includes(row.relative))) {
+    equal(fileSha(containedPlanningPath(source, row.relative)), row.sha256);
+  }
+  const ledger = fs.readFileSync(containedPlanningPath(source, '.sdd/tdd.jsonl'));
+  ensure(Number.isSafeInteger(data.planning.oldLedgerBytes) && data.planning.oldLedgerBytes > 0,
+    'copied ledger prefix required');
+  equal(sha(ledger.subarray(0, data.planning.oldLedgerBytes)), data.planning.oldLedgerSha256);
+  equal(data.planning.oldLedgerBytes, catalogue[0].ledger.bytes);
+  equal(data.planning.oldLedgerSha256, catalogue[0].ledger.sha256);
+  equal(data.deadline.budgetMs, cell.timeoutSeconds * 1000);
+  equal(data.deadline.reserveMs, 5000);
+  for (const key of ['startedNs', 'expiresNs', 'completedNs']) {
+    ensure(/^[0-9]+$/.test(data.deadline[key]), 'complete monotonic gate deadline evidence required');
+  }
+  ensure(BigInt(data.deadline.completedNs) < BigInt(data.deadline.expiresNs) &&
+    BigInt(data.deadline.expiresNs) <= BigInt(data.deadline.startedNs) + BigInt(data.deadline.budgetMs - 5000) * 1000000n,
+  'gate work exceeded or widened the shared budget');
+  return data;
 }
 
 async function runRecorded(context, name, command, expectedExit = 0, cwd = context.source, assertionTarget) {
@@ -362,6 +620,7 @@ async function processSelftest(context) {
 }
 
 export async function runAdapter(context) {
+  if (context.cell.kind === 'gate') return planningGate(context);
   if (['skill-mutation', 'placeholder-mutation'].includes(context.cell.kind)) return runContentCell(context);
   if (unresolvedMechanisms[context.cell.id]) return { status: 'INCOMPLETE', blockers: [unresolvedMechanisms[context.cell.id]] };
   if (['mutation', 'diagnostic-mutation'].includes(context.cell.kind)) return mutations(context);
@@ -382,9 +641,10 @@ export async function runAdapter(context) {
 }
 
 export function validateAdapter({ cell, catalogue, evidence }) {
-  const { text } = processControl(evidence);
+  const { text } = cell.kind === 'gate' ? gateProcess(evidence) : processControl(evidence);
   const data = JSON.parse(text);
   ensure(data.status === 'PASS', `${cell.id}: ${(data.blockers || []).join('; ') || 'adapter incomplete'}`);
+  if (cell.kind === 'gate') return validatePlanningGate({ cell, catalogue, evidence }, data);
   if (['skill-mutation', 'placeholder-mutation'].includes(cell.kind)) return validateContentRun({ cell, catalogue, evidence, data });
   if (cell.mode === 'r' || cell.mode === 'gradle') {
     equal(data.controls.map(row => row.phase), ['baseline', 'mutant', 'restored']);

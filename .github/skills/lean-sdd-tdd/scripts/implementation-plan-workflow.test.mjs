@@ -306,3 +306,74 @@ test('TEST-PLAN-FLOW-003 normative evidence stages and bilingual examples cannot
     assert.match(noRun, /2/);
   }
 });
+
+/** @id TEST-PLAN-FLOW-004 @verifies REQ-PLAN-FLOW-004 */
+test('TEST-PLAN-FLOW-004 requirements ownership and canonical handoffs survive both installed hosts', t => {
+  const expected = [
+    ['Implementation requirements', 'sdd-spec-interview', '.sdd/specs/<feature>.md'],
+    ['Current-code requirements', 'sdd-reverse-spec', '.sdd/specs/<feature>.md'],
+    ['SDD explanation', 'tech-writer', 'canonical specification references'],
+    ['Explicit non-SDD documentation', 'tech-writer', 'user-selected document path'],
+  ];
+  const verify = directory => {
+    const writer = fs.readFileSync(path.join(directory, 'tech-writer/SKILL.md'), 'utf8');
+    const ownership = section(writer, '## Requirements ownership and SDD handoff');
+    const table = ownership.split('\n').filter(line => line.startsWith('| '));
+    assert.equal(table[0], '| Request | Owner | Canonical artifact |');
+    assert.equal(table[1], '| --- | --- | --- |');
+    const rows = table.slice(2).map(line => line.split('|').slice(1, -1)
+      .map(cell => cell.trim().replaceAll('`', '')));
+    assert.deepEqual(rows, expected, 'Every intent must have its independent canonical owner and output.');
+    const description = /^---\n([\s\S]*?)\n---/.exec(writer)?.[1];
+    assert.ok(description?.includes('Implementation contracts belong to sdd-spec-interview or sdd-reverse-spec, not tech-writer.'),
+      'The selector description must not offer independent implementation-contract authoring.');
+    assert.doesNotMatch(description, /\brequirements(?: definitions?)?\s*[,;]/i,
+      'The selector must qualify reader-facing requirements instead of listing an unqualified authoring trigger.');
+    const boundaries = [
+      'Resolve unclear implementation intent with one question before writing.',
+      'If the required SDD sibling is unavailable, stop and report the blocker; do not create an alternative canonical document.',
+      "For explicitly non-SDD documentation, use the user's document path; do not create an SDD spec.",
+      'Use existing approved requirements as inputs; preserve identifiers and acceptance conditions, and do not overwrite original documents.',
+      '`docs/requirements` documents are not automatically read by `sdd gate`.',
+      'Respect existing spec hashes and approval; do not invent approval or modify canonical requirements while making explanations.',
+      'Explanatory documents link to the canonical specification; do not create a competing source of requirements.',
+    ];
+    for (const sentence of boundaries) {
+      assert.ok(ownership.split('\n').includes(sentence), `Missing closed requirements boundary: ${sentence}`);
+    }
+    for (const line of ownership.split('\n').filter(line => line.trim() && !line.startsWith('| '))) {
+      assert.ok(line === '## Requirements ownership and SDD handoff' || boundaries.includes(line),
+        `Unapproved or contradictory routing instruction: ${line}`);
+    }
+    for (const name of ['sdd-spec-interview', 'sdd-reverse-spec']) {
+      const body = fs.readFileSync(path.join(directory, name, 'SKILL.md'), 'utf8');
+      const handoff = section(body, '## Canonical requirements and document handoff');
+      assert.ok(handoff.split('\n').includes('Keep `.sdd/specs/<feature>.md` as the canonical implementation contract.'),
+        `${name}: missing canonical implementation location`);
+      assert.ok(handoff.split('\n').includes('Treat existing `docs/requirements` documents as inputs; preserve identifiers and acceptance conditions, and do not overwrite them.'),
+        `${name}: missing original-document preservation`);
+      assert.ok(handoff.split('\n').includes('Hand explanatory documents to tech-writer with canonical specification references; preserve approval and do not create a competing contract.'),
+        `${name}: missing noncompeting writer handoff`);
+      assert.ok(handoff.split('\n').includes('If implementation intent is unclear, ask one question before writing the contract.'),
+        `${name}: missing ambiguous-intent decision`);
+      assert.ok(handoff.split('\n').includes('For explicitly non-SDD reader documentation, hand off to tech-writer without creating an SDD spec.'),
+        `${name}: missing reader-only handoff`);
+    }
+    const reference = fs.readFileSync(path.join(directory,
+      'tech-writer/references/doctypes/requirements-definition.md'), 'utf8');
+    assert.ok(reference.split('\n').includes('Before using this template, apply SKILL.md section "Requirements ownership and SDD handoff".'));
+    assert.ok(reference.split('\n').includes('Implementation contracts must be authored by sdd-spec-interview or sdd-reverse-spec in `.sdd/specs`; this template does not replace that handoff.'));
+  };
+  verify(path.join(source, '.github/skills'));
+  const work = temporary(t), environment = isolatedEnvironment(work);
+  const names = ['lean-sdd-tdd', 'tech-writer', 'sdd-spec-interview', 'sdd-reverse-spec'];
+  run(work, process.execPath, [path.join(source, 'bin/musubix6.mjs'), 'init', work,
+    '--host', 'both', '--only', names.join(',')], 0, environment);
+  for (const host of ['.github', '.claude']) {
+    const installed = path.join(work, host, 'skills');
+    verify(installed);
+    for (const name of names) {
+      assert.deepEqual(inventory(path.join(installed, name)), inventory(path.join(source, '.github/skills', name)));
+    }
+  }
+});

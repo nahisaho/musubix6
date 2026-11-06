@@ -8,11 +8,19 @@ Follow the user's language. Output = `.sdd/specs/<feature>.md` in the `lean-sdd-
 
 A reverse spec records **current behaviour**, not intent. Every row is labelled so a reader never mistakes "what the code does" for "what it should do".
 
+## Canonical requirements and document handoff
+
+Keep `.sdd/specs/<feature>.md` as the canonical implementation contract.
+Treat existing `docs/requirements` documents as inputs; preserve identifiers and acceptance conditions, and do not overwrite them.
+Hand explanatory documents to tech-writer with canonical specification references; preserve approval and do not create a competing contract.
+If implementation intent is unclear, ask one question before writing the contract.
+For explicitly non-SDD reader documentation, hand off to tech-writer without creating an SDD spec.
+
 ## Rules
 1. **Read first, ask later.** Inspect the target (entry points, public API, tests, README, git log) before any question. Read existing `.sdd/specs/` through the bundled `lean-sdd-tdd/scripts/sdd.mjs context <feature|REQ|file>...` (complete feature specs and declared prerequisites; default 16384 UTF-8 bytes, explicit `--max-bytes N` override). Resolve errors/overflow with narrower or explicit selectors, never a bulk read; a new/unannotated target may have no spec yet. Static impact cannot infer undeclared relationships. This reading context does not narrow full validation or replace the full gate. Never ask what the code answers.
 2. **Scope it.** One feature = one cohesive module or entry point. More than ~30 spec lines, or several modules → propose a split (see `sdd-spec-interview` rule 11); use `.sdd/plan.md` only with planning disabled, otherwise the JSON handoff below. Do one feature at a time.
 3. **Evidence per row.** Each REQ cites `path:line` and a confidence: `high` (covered by tests or unambiguous code), `medium` (code only, no test), `low` (inferred, dead or odd code). Put them in a trailing `[src: path:line, conf: medium]`; `path` is **repo-relative** (`py/pkg/mod.py:4`, not `mod.py:4`), otherwise the gate warns the file does not exist.
-4. **Observe, don't assume.** Run the code/tests to confirm a behaviour. A row whose behaviour was not observed is `low`.
+4. **Observe, don't assume.** Run the code/tests to confirm a behaviour. A row whose behaviour was not observed is `low`. Existing requirement documents describe intended constraints, not proof of observed code behavior; preserve their IDs and source links, and ask about discrepancies instead of relabeling intent as observation.
 5. **Ask only about intent**, one question at a time via Copilot CLI `ask_user` or Claude Code `AskUserQuestion` (2–4 options, recommended default, free text allowed). If unavailable, ask in conversation and stop for an explicit response; never fabricate answers or approval. Triggers: behaviour looks like a bug; two code paths disagree; dead branch; undocumented magic value. Options: keep as is (spec it) / treat as bug (`(deferred)` row + assumption entry) / remove. Hard cap 10 questions, then take "keep as is" and log an assumption.
 6. **Never silently fix.** A suspected bug becomes a row describing the current behaviour plus a `## Assumptions / risks` entry; the fix is a later `lean-sdd-tdd` cycle.
 

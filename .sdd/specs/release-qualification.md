@@ -9,8 +9,8 @@ Goal: retain durable qualification tooling and establish technical readiness for
 | ID | EARS requirement | Test |
 | --- | --- | --- |
 | REQ-RELQ-001 | When a Linux-only qualification plan is admitted, the validator shall require all 24 inherited non-WSL cells with unchanged budgets and an explicit excluded NATIVE-WSLC cell, bind the scope and explicit committed historical test lineage to the approved plan, and reject missing, duplicate or weakened required cases and invalid lineage. | TEST-RELQ-001, TEST-RELQ-LINEAGE-001 |
-| REQ-RELQ-002 | When a candidate is frozen or checked, the launcher shall bind source/archive/package, current named catalogues and approved historical replacements, helpers, dependencies, configuration and real Node 20/22/24 and native tool inputs by digest, reject unavailable or changed inputs or missing replacements, and preserve failed revisions without transferring credit. | TEST-RELQ-002, TEST-RELQ-LINEAGE-001, TEST-RELQ-LINEAGE-002 |
-| REQ-RELQ-003 | When any required cell finishes, the validator shall require its exact named cases and valid controls, including required active replacements for resolved historical TODOs, actual command/exit and retained parseable evidence; missing, skipped, timed-out, unknown or setup-error outcomes shall never count as a pass. | TEST-RELQ-003, TEST-RELQ-LINEAGE-002 |
+| REQ-RELQ-002 | When a candidate is frozen, checked or prepared for its fresh required gate, the launcher shall bind source/archive/package, exact authored planning definitions, current named catalogues and approved historical replacements, helpers, dependencies, configuration and real Node 20/22/24 and native tool inputs by digest, establish genuine current native task verification and receipt adoption in that gate's own source root before the full gate, reject unavailable or changed inputs or missing replacements, and preserve old/failed history and revisions without transferring credit. | TEST-RELQ-002, TEST-RELQ-LINEAGE-001, TEST-RELQ-LINEAGE-002, TEST-RELQ-PLANNING-001 |
+| REQ-RELQ-003 | When any required cell finishes, the validator shall require its exact named cases and valid controls, including required active replacements for resolved historical TODOs, actual command/exit and retained parseable evidence; INTEGRATED-GATE shall additionally require every frozen planning task's genuine current native proof and the actual unfiltered full gate within its unchanged shared deadline, rejecting unprepared raw-gate or preparation-only claims; missing, skipped, timed-out, unknown or setup-error outcomes shall never count as a pass. | TEST-RELQ-003, TEST-RELQ-LINEAGE-002, TEST-RELQ-PLANNING-001 |
 | REQ-RELQ-004 | When technical readiness is evaluated, the launcher shall require two consecutive complete clean runs of the identical frozen matrix and candidate in fresh isolated state, reset the streak on failure or relevant change, and never authorize tagging or publishing. | TEST-RELQ-004 |
 | REQ-RELQ-005 | When a stable 0.2.8 qualification package is prepared, it shall retain executable, reviewable helpers and self-tests in the repository, verify the exact tgz through the actual package entry point on Node 20/22/24, report exact artifact paths/hashes, exclusions and residual risks separately from human release approval, and require the publishing workflow to verify the packed tgz against the approved digest before publishing that same file. | TEST-RELQ-005, TEST-HOST-005, TEST-RELQ-PUBLISH-001 |
 ## PASS conditions and counterexamples
@@ -62,7 +62,11 @@ exception is introduced. Existing dynamic catalogue discovery is retained.
 
 ### Stable0.2.8 preparation
 
-The current scope/content revisions are1/1. Their explicit previous-version
+The current scope/content revisions are2/1. Scope revision1 at committed
+`b43d9830c92092384bea0e00a8d33db4dc16e9c1`, SHA256
+`2d493a6c27b15c26dbf53dad1d5bc8853cdfffa759cbbb90856baea1d80728ca`,
+remains historical preparation evidence with zero qualification credit.
+The unchanged explicit previous-version
 references retain the exact0.2.7 revision3 files and failed history with zero
 transferred credit. The committed reference is
 `a22618df676d9766acc05cff6e3128882053fb74`, skill tree
@@ -107,6 +111,82 @@ The observability fix does not identify/classify the original issue385
 assertion, close that issue, downgrade any S1/S2 or authorize a publication
 exception. Only the exact prepared files may be approved; subsequent relevant
 changes invalidate approval/validation as required.
+
+### Stable0.2.8 revision2 fresh-gate proof preparation
+
+The original-root `b43d983` full native gate and Node20/22/24 CI passed;
+its actual first gate check ran1187 tests with1187pass and0skip, without retry.
+Retain its warnings and the earlier prospective observations above as
+revision1 history, not proof that a fresh required cell passes.
+The unchanged content reference remains revision1, with all118 skill
+paths/full modes,1253 skill cases,24 required cells and budgets preserved.
+Only this specification and scope revision change in the seven-artifact
+approval unit; no other current artifact is added or silently relocked.
+
+| REQ | PASS condition | counterexample | TEST/command | observed evidence |
+| --- | --- | --- | --- | --- |
+| `REQ-RELQ-002`, `REQ-RELQ-003` | A fresh gate source retains exactly the frozen authored tasks/tests/dependency keys, obtains genuine current native receipts in verified-parent order and passes current native admission before its actual full gate. SDK fingerprint and history rules remain unchanged. | Actual `materializeSource` of the complete `b43d983` plan SHA`deb6e1434985bcd13326cdc120e15d083d2aba276efd5da80a7f2dfabae204bd` into `v028-gate-clone-spike-jZQkzm/cell/source`, on the same Node24, yields104 revalidation-required and14 replan-required: old absolute script/root proof must not be admitted. After repair every expected task must genuinely verify in that root; disabling planning, omitting tasks or reusing old-root receipts rejects. | TEST-RELQ-PLANNING-001; actual native plan check/verify and full gate | Scratch classification recovery SHA`f325b008ba9f8199a3660e66cb738360fc049bb66362f3f893cce305fbe0bb86` preserves native FAIL1/raw bytes and the original over-specific driver refusal. It reruns no tests and is not a formal assertion Red. |
+| `REQ-RELQ-002`, `REQ-RELQ-003` | Only author-owned existing dependency fingerprint values and current receipt/status pointers may change; the independent validator re-derives the unchanged definition projection from frozen source, and every SDK-owned receipt/head/ledger remains intact except genuine native appends. | Bind a dependency to a definition hash, change a check/spec/condition/dependency key, forge or adopt a stale receipt, remove an old head, or edit the plan during verification: explicit failure, no gate or completion claim. A real current-root parent/child control with matching native command/log/receipt fields must accept. | TEST-RELQ-PLANNING-001; isolated binding/adoption/history reversals | Actual new-root MODEL001 verification exited0 and wrote input`26cf152073bd60503ae2cbcfb4d1385b155ac7d35712b0c3d4028e9518d4b2db`, previous`3b8666465e6217d3d573ff1dd3e85103a697d617d2b26d504483dc0208fd9125`, sequence6; original plan/receipt bytes and full old ledger prefix remained unchanged. One-task report SHA`039c37f07c476fb779f3ab22a6fcc5c3028edb76876ba84e5e065b466e315c59` remains historical. The later actual reversed-order two-task native preparation/adoption control passed; full118-task preparation remains untested. |
+| `REQ-RELQ-003` | The required gate uses the frozen adapter command/format, a complete current planning proof and the existing actual full-gate process/verdict rule; plan/adopted receipt/head/ledger state is byte-identical between final native admission and full gate completion. | A raw `format:gate` PASS for INTEGRATED-GATE, nested exit1 with PASS text, INCOMPLETE/SKIPPED, zero/omitted tasks, missing native logs, intervening state edit or preparation-only success rejects. Valid complete planning proof plus an actual full gate accepts. | TEST-RELQ-PLANNING-001; process/verdict/format reversals | Genuine native assertion Red preceded the small adapter implementation; `v028-gate-planning-native-green-attempt1.stdout` records actual Green, and the entire release-control file passed on Node20 at that snapshot. Eight isolated mechanisms were assertion-detected/restored in report SHA`47598e988d3744204b684c13fdc6fcbc4880b28322a1e7c5c579931fbbc0fb4c`. Later lifecycle counterexamples fail; all affected current controls/mutations and the full project gate must be refreshed. No qualifying cell or streak credit is claimed. |
+| `REQ-RELQ-003` | All preparation and full-gate work fits the same12000-second INTEGRATED-GATE process budget, with one monotonic inner deadline,5000ms cleanup/serialization reserve, bounded referenced logs and owned nested-process cleanup. | Reset the clock per task, allow a native command beyond remaining time, exceed the existing8-MiB process/final-JSON budget, lose owned descendants or execute the gate after exhaustion: fail with retained phase/command evidence, never widen the budget or report PASS. | TEST-RELQ-PLANNING-001; deadline/output/cleanup controls and a full-scale scratch run | Basic one-task history append took3.9s; complete118-task preparation, dependency ordering, cleanup margin and receipt capacity remain unmeasured. Measure full preparation plus full gate before freezing; insufficient budget remains a blocking finding. |
+| `REQ-RELQ-003` | SIGTERM/SIGINT received by the parent CLI during required-gate execution aborts its owned invocation; ordinary observed children stop, and the retained process result explicitly reports cancellation rather than PASS. | After a real detached child prints its readiness PID, separately signal only its parent with SIGTERM and SIGINT. The child must cease execution within bounded cleanup, and the parent must return a failed process verdict. Outer-test descendant tracking is disabled so it cannot hide the leak. | TEST-RELQ-PLANNING-001; isolated signal-propagation reversal | `v028-gate-parent-cancel-native-red-final.stdout` records the genuine expected SIGTERM assertion failure before implementation: the child remains executable. The final regression enumerates both signals; renewed native Red/Green and restored mutation remain pending. |
+| `REQ-RELQ-003` | One termination ceiling covers timeout and parent-triggered abort when inherited pipes prevent native close. Nested and outer cutoff ordering leaves time for inner evidence before outer escalation, and finishes bounded cleanup inside the unchanged shared deadline. | For both a25ms timeout and an immediate abort of a600000ms command, a controlled process emits no close after TERM/KILL. Advancing the injected clock to3025ms must produce explicit incomplete cleanup/may-still-be-alive error, unknown exit and destroyed retained pipes, not a hanging promise, cleaned claim or invented exit0. Late close/data/error cannot revise the verdict or repeat cleanup. A normal observed close still accepts. | TEST-RELQ-PROCESS-001; isolated close-ceiling reversal | `v028-gate-close-ceiling-assertion-red.log` and `v028-gate-close-ceiling-final-assertion-red.log` retain expected assertion failures with1test/1failure/0skips. Native `tdd red` correctly refused the stale human lock in `v028-gate-close-ceiling-native-red.stdout`; repeat the final timeout/abort regression only after renewed approval, before implementation. Ceiling and cleanup still require implementation and validation. This controlled scheduler covers close loss, not a native self-detach cleanup guarantee. |
+| `REQ-RELQ-003` | For global shared deadline D, outer work stops at D−4000ms, nested SDK work stops at D−9000ms, and the intervening5000ms preserves inner cleanup/serialization before the outer3000ms completion ceiling plus1000ms observed-child cleanup. | With D=now+12000seconds, require outer timeout11996000ms, outer cutoff D−4000ms, inner cutoff D−9000ms; remaining8999/9000ms rejects and9001ms leaves1ms inner work. Equal inner/outer cutoffs can kill the adapter before it retains timeout evidence; an outer cutoff D overruns the final deadline. | TEST-RELQ-PLANNING-001; isolated deadline-order reversal | The original unsafe deadline calculation is extracted unchanged into the actual CLI's shared `gateDeadlinePlan` call sites. `v028-gate-deadline-order-assertion-red.log` retains1test/1expected assertion failure/0skips: actual outer cutoff13000000000000ns differs from independent expected12996000000000ns. Claude Sonnet5.5 design review closed the cutoff collision finding. Renewed native Red, implementation and restored mutation remain pending; no additional budget or passing overrun is authorized. |
+
+Parent signal propagation covers the active required-gate invocation, not
+earlier source materialization or Git/probe calls. Unobservable self-detached
+workers, parent SIGKILL and power loss remain outside the cleanup guarantee.
+Any incomplete cleanup is an explicit failure, never evidence that every
+process stopped. These limits do not permit a passing over-budget gate or
+change the12000-second matrix budget. The outer command must reserve4000ms
+for its own termination/cleanup and pass its earlier work cutoff to the
+adapter; the adapter then reserves its existing5000ms before that cutoff.
+Do not make inner and outer cutoffs equal or schedule outer termination
+only at the final shared deadline.
+
+Route only INTEGRATED-GATE through the existing cell adapter, inside its
+unchanged outer deadline. Freeze its exact task/test/definition catalogue
+and cell source path. Native plan check supplies actual current fingerprints;
+rebind only existing author dependency values, never definition hashes.
+Verify every task once using a freshly verified parent set, not copied
+complete statuses. Require matching current input/definition, actual
+cell-root/native-script argv and native log/hash-chain fields before atomic
+mode-preserving adoption. Tie each new receipt to the actual owned,
+successful native verification response/file hash; its native `tdd refactor`
+argv binds the cell root and SDK script, and its `previous`/`sequence`
+continues the copied namespace head. The SDK receipt schema gains no synthetic root
+field: its actual native argv and current input bind the root.
+SDK-owned history/receipt/ledger files are never rewritten by the harness.
+Receipt-capacity exhaustion is a blocking failure, not a retry, a raised
+SDK limit or permission to prune copied history.
+
+Key old-raw-claim rejection off the required cell identity, not its
+self-reported format. Reuse one shared native-gate rule:
+`processControl(nestedEvidence, 0)`, exact `SDD GATE PASS` line, and no
+`INCOMPLETE`, cross-mark failure or `SKIPPED` token. Do not lose these checks
+when the outer result becomes adapter JSON. Retain stdout/stderr/native logs
+as bounded hash-checked file references, never embedded unbounded output.
+Cap each nested invocation by the remaining shared time without changing
+SDK configuration or fingerprint semantics; keep incremental progress for
+outer-timeout diagnosis and test cleanup of every owned nested group.
+
+All six failure stages apply: contract = revised genuine seven-artifact
+human preparation approval and unchanged matrix; trusted inputs = frozen
+definitions/current native root-bound proof, not copied old receipts;
+execution = genuine parent-first verification/adoption and full gate inside
+one existing deadline; verdict = valid controls accept while stale,
+missing, forged, unprepared, skipped, timed-out or partial evidence rejects;
+history = preserve all old/failed receipts, original refused probe and
+classification correction, reset relevant validation without credit;
+integration/distribution = full current gate/CI, one frozen candidate,
+two consecutive complete fresh runs and separate exact-artifact human
+release approval. No stage is waived.
+The current SDK correctly rejects stale inputs; do not normalize away that
+protection or introduce a planning opt-out. This new in-scope S2 remains
+blocking until the regression, restored mutations and real integration
+pass. The original unidentified issue385 assertion stays separately open
+and unclassified. Neither this preparation approval nor clean source-root
+tests authorize main integration, tagging, publication or finding downgrade.
 
 ### Historical0.2.7 revision2 preparation
 

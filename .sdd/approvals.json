@@ -252,10 +252,11 @@
   "release-qualification": {
     "by": "nahisaho",
     "kind": "human",
-    "at": "2026-11-05T12:10:47.945Z",
+    "review": "Explicit exact-seven-artifact verification-preparation approval; no integration, publication or risk downgrade.",
+    "at": "2026-11-05T23:13:12.996Z",
     "artifacts": {
-      ".sdd/specs/release-qualification.md": "67f1fcae289b63d1657f705480b95ffeb5eccfbaa66131bb69837219afe5fcb5",
-      ".sdd/release-validation.v0.2.8.json": "2d493a6c27b15c26dbf53dad1d5bc8853cdfffa759cbbb90856baea1d80728ca",
+      ".sdd/specs/release-qualification.md": "2208d104124140791cbb884308ffa81118f7c53da41ce6bbd8488c8ff8497941",
+      ".sdd/release-validation.v0.2.8.json": "f50c7ed6e8dcf84f1afa92ff3aad2602dd3860e8741eba16fa4e1d7cc57afd25",
       ".sdd/release-content-mutations.v0.2.8.json": "74098927b5ea6ee09b753e8ea358eeccc0289207ba576e310ebd1cb46e681b0d",
       ".sdd/specs/claude-code-support.md": "82bb16e36ab143167e445dcb422d49f5c0f9af8ea024bcc51c4e3092cfefee9b",
       "README.md": "bf778bde30d77e538a850e342ac5b518354179b205706827e1480294addb95c7",
@@ -265,11 +266,13 @@
     "tier": "T2",
     "requireHuman": true,
     "code": {
-      "scripts/release-host-mutations.mjs": "12aa3cc0de5f75da022c17aef7f1ee543fe2008a135312e685848a311f014f68",
-      "scripts/release-qualification-content-mutations.mjs": "d41906fd4327dd5971c7cc438a906791bdcf4c967609131dbcada55d73e5d20f",
-      "scripts/release-qualification-evidence.mjs": "88d48acfd61964b5c73e99e90249c6d5cd7427c4a7cc9e2e7b87b90501aa85e0",
-      "scripts/release-qualification-io.mjs": "c3a5b80da7a4c1ced23f92d73553745ea3bf50d1d8856434c33a427f30ec7feb",
-      "scripts/release-qualification.mjs": "6080a78d25db148b167cc8b0db2efc449b85126576499837a4b43d9d65275634"
+      "scripts/release-host-mutations.mjs": "6921bf50d7f7df70ce2e3a3e23b0acbf67def78f0e4d358b1d7a5adcb091b618",
+      "scripts/release-qualification-cells.mjs": "6c8c5094872abdc5e89d0cb702b52a528956b83d7393f1f02735490980d0e450",
+      "scripts/release-qualification-cli.mjs": "77f7d0755ad920a5777e34845475ae6edbeb0d37b32d0d59a133b545ae39c35f",
+      "scripts/release-qualification-content-mutations.mjs": "dcd56b74b62917a321bcf8a1df55da521a9be27b29e16c73f1868a1fd6395b6e",
+      "scripts/release-qualification-evidence.mjs": "65bb176846b259cea684ba2bdb5dc53f6394cf1224fc2424455c0c32d48ca1a0",
+      "scripts/release-qualification-io.mjs": "851c6cda3bb0f1be005d29459d69d0f466c428a5c915904afec712b3a89e03e7",
+      "scripts/release-qualification.mjs": "56a74b69cd3624921e869065b76ac27ea4051b514eefad6fdaf640be450de9e3"
     }
   },
   "rust-stub-confidence": {
@@ -335,14 +338,15 @@
     "requireHuman": false
   },
   "implementation-plan-workflow": {
-    "by": "ai:claude-sonnet-5.5",
-    "kind": "ai",
-    "review": "Independent bounded contract/distribution reviews clean; earlier-binding, same-head CI and root-specific execution limits explicit; actual current revalidation required.",
-    "at": "2026-11-04T00:08:05.324Z",
+    "by": "nahisaho",
+    "kind": "human",
+    "review": "Explicit canonical requirements ownership approval; keep tech-writer, preserve existing docs, no release authorization.",
+    "at": "2026-11-05T23:30:26.406Z",
     "artifacts": {
-      ".sdd/specs/implementation-plan-workflow.md": "97fabda265361a78dd07854d76e38880fd40483009ef6be65310ac44ce4aac56"
+      ".sdd/specs/implementation-plan-workflow.md": "a31ea9c1fe79f018e6361c0a3244d1969a87ee0a9342bd689eef0e31e0c64fba"
     },
     "tier": "T2",
-    "requireHuman": false
+    "requireHuman": true,
+    "code": {}
   }
 }

@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "task": "TASK-RELQ-001",
+  "sequence": 2,
+  "previous": "52922ee5b1405afed81c67a83a5e7c393078ffbe94ed07e75199acea0793cd63",
+  "definitionSha256": "1048ef12342a34f92a3d6c1f56b378c8a5496f6baeb10c61021a5eb6b2ad3a63",
+  "inputSha256": "45f0e59160472f8db1a7599b5dbbbaa9b933810eae8941c699b38d7cd7bc0c06",
+  "status": "FAIL",
+  "exit": 1,
+  "checks": [],
+  "ledgerEvents": [],
+  "errors": [
+    {
+      "id": "TASK-RELQ-001",
+      "exit": 1,
+      "reason": "specification, definition or prerequisite binding needs replanning; verification inputs changed"
+    }
+  ]
+}

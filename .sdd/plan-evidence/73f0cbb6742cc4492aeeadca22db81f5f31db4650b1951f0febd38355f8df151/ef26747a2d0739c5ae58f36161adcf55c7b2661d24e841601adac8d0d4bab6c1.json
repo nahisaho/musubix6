@@ -1,0 +1,159 @@
+{
+  "schemaVersion": 1,
+  "task": "TASK-RELQ-001",
+  "sequence": 3,
+  "previous": "b69c3c955d51968be9240dcf85eeb1b6dfb3200213be51ce5626813bc2ea8978",
+  "definitionSha256": "1048ef12342a34f92a3d6c1f56b378c8a5496f6baeb10c61021a5eb6b2ad3a63",
+  "inputSha256": "45f0e59160472f8db1a7599b5dbbbaa9b933810eae8941c699b38d7cd7bc0c06",
+  "status": "PASS",
+  "exit": 0,
+  "checks": [
+    {
+      "name": "regression-1",
+      "argv": [
+        "node",
+        "--test",
+        "--test-name-pattern",
+        "^(?:.*\\b(?:TEST-RELQ-CONTENT-ADMISSION-001|TEST-RELQ-BASELINE-001|TEST-RELQ-001|TEST-RELQ-LINEAGE-001))(?![0-9A-Za-z])",
+        "scripts/release-qualification.test.mjs"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/73f0cbb6742cc4492aeeadca22db81f5f31db4650b1951f0febd38355f8df151/attempt-28242155-e97d-4b36-9b03-c88e7b4648cc/0.log",
+        "sha256": "73bdbfbe7357edc5b5ec92c2d9d9202f4e0bb699a12e6183296abc7ed197990f",
+        "bytes": 572
+      }
+    },
+    {
+      "name": "native-TEST-RELQ-001",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-RELQ-001",
+        "--root",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/73f0cbb6742cc4492aeeadca22db81f5f31db4650b1951f0febd38355f8df151/attempt-28242155-e97d-4b36-9b03-c88e7b4648cc/1.log",
+        "sha256": "5a4d78c02014d770031f19e519a37dd2259ba27e678b9316537337bbc57fd1da",
+        "bytes": 47
+      }
+    },
+    {
+      "name": "native-TEST-RELQ-BASELINE-001",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-RELQ-BASELINE-001",
+        "--root",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/73f0cbb6742cc4492aeeadca22db81f5f31db4650b1951f0febd38355f8df151/attempt-28242155-e97d-4b36-9b03-c88e7b4648cc/2.log",
+        "sha256": "422b251e2c2f3b783668b772d519d289a96286fbdf4735612d8d1afe65c083af",
+        "bytes": 56
+      }
+    },
+    {
+      "name": "native-TEST-RELQ-CONTENT-ADMISSION-001",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-RELQ-CONTENT-ADMISSION-001",
+        "--root",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/73f0cbb6742cc4492aeeadca22db81f5f31db4650b1951f0febd38355f8df151/attempt-28242155-e97d-4b36-9b03-c88e7b4648cc/3.log",
+        "sha256": "e992061608d5f3ebae5dccbcc3bbce8d5f493d498673b4847021386887ead1ed",
+        "bytes": 65
+      }
+    },
+    {
+      "name": "native-TEST-RELQ-LINEAGE-001",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-RELQ-LINEAGE-001",
+        "--root",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/73f0cbb6742cc4492aeeadca22db81f5f31db4650b1951f0febd38355f8df151/attempt-28242155-e97d-4b36-9b03-c88e7b4648cc/4.log",
+        "sha256": "5e158be2b316f21ca90a59c39c2ecce2e07f129d1bfc6ffc3e3311aba4ded4dd",
+        "bytes": 55
+      }
+    }
+  ],
+  "ledgerEvents": [
+    {
+      "test": "TEST-RELQ-001",
+      "hashes": [
+        "53313944a4cc46c0b5796ccbb4a1856f3375a91509878b72799e6285673411b7",
+        "67adb3b9841859d5177ca2954cbd9fe5e480776af42139728e93fbf712baa4cd",
+        "9b7eae496944a2cfd3bf0c56fcd6a83c9705c6e91464cb72c848f868d8d10afd",
+        "f480f890749824be69c537bc112fd894eb5bc066d2f75a293e5455e120aa4862"
+      ]
+    },
+    {
+      "test": "TEST-RELQ-BASELINE-001",
+      "hashes": [
+        "344434b7d5ee1ee21755d89b33986193de5e7f82dc9bc005dfdb38ec779be1e7",
+        "a975b2a9a047b1d81568f49583fcfdccfae7aa7a4521ac0d89e611dbbfb11b53",
+        "ca343d0b95fe0dcffb9e5550c1c0e50563162e9e12fffb82da01507c5d949e38",
+        "ff6a1f29550b65d24c524d1041013029be4752583863791d46614c0b478a76ad"
+      ]
+    },
+    {
+      "test": "TEST-RELQ-CONTENT-ADMISSION-001",
+      "hashes": [
+        "25a31131f0066e07e7b15d1808351e60f96ed7ee8319aabf8b801cbe62b4663f",
+        "547c3119dbb3808f85b45f2260406ab23da9c7c7aaf12df904edda2e3862463c",
+        "8ce5a3164e1ca9805f552d5dee04b0da990c22e5ac2805594442e166cb63f658",
+        "d8b25f0f8c0ae5819b586f5d24ed8165e18a2633bb90f75b587ce443bf95ca98"
+      ]
+    },
+    {
+      "test": "TEST-RELQ-LINEAGE-001",
+      "hashes": [
+        "06423e0b49288cd59af0834072e5e756bf4cb3eefb9fd6b6f5ca2d3131f0d266",
+        "c93f9908c3f04088135cc0abeb0fef5804a5d066053eb458fc85d641035c83d0",
+        "d70e29404de5c067d5e9af50957b28009d01c2333148fdf2be93c395e92fbf16",
+        "dc46c6449e5fa26e5d099431a30cf8b80f22b7c057a7ea2284a1486a3063f3cd"
+      ]
+    }
+  ],
+  "errors": []
+}

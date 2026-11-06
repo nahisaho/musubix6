@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 1,
+  "task": "TASK-COST-HISTORY-001",
+  "sequence": 3,
+  "previous": "5660269e4ca31a8690cad76fbdbd104686ec071fe66095c1c16977e0a56f9256",
+  "definitionSha256": "b4180c22fadc560aa9189b6c1ee8dc92936edf13b4cfc5774b9b2eb1f4d65b4b",
+  "inputSha256": "7e59fc1b707d33fa54c922b793247c974ce8e549d4f63ba41481aa161b8cb156",
+  "status": "PASS",
+  "exit": 0,
+  "checks": [
+    {
+      "name": "regression-1",
+      "argv": [
+        "node",
+        "--test",
+        "--test-name-pattern",
+        "^(?:.*\\b(?:TEST-COST-HISTORY-001))(?![0-9A-Za-z])",
+        "scripts/cost-log.test.mjs"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/1517e548507a2deebb202a54350fbfecb559bf735331f257f090736fcc8681b3/attempt-b3c1fe12-79b0-4f17-ac64-94a9869a0fb8/0.log",
+        "sha256": "a6580dcf2c1ff0d95a1f784ea948251a2b6fcf78189743c29265696cb752df7c",
+        "bytes": 236
+      }
+    },
+    {
+      "name": "native-TEST-COST-HISTORY-001",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-COST-HISTORY-001",
+        "--root",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/1517e548507a2deebb202a54350fbfecb559bf735331f257f090736fcc8681b3/attempt-b3c1fe12-79b0-4f17-ac64-94a9869a0fb8/1.log",
+        "sha256": "827b83b36cb6e8381d2525271b4e7135402353ff3836e4b4db5df4512c672ca6",
+        "bytes": 64
+      }
+    }
+  ],
+  "ledgerEvents": [
+    {
+      "test": "TEST-COST-HISTORY-001",
+      "hashes": [
+        "258bd4c9e3b14ffcfb58e3f31ddd33462df033acd28ffd55b0a021372d577802",
+        "61739b09e0789776354fdedf2999d43b3eae4c09cdd0783de9638e9405a21099",
+        "6567fe1850c1580861232fceb1bf1ef1bba4df888ed1352354413bb715527b75",
+        "713aad59e439a4535db9def951976c31a742e92a1554ed8d60a3d920f4945288",
+        "bb6d8d0837627a91592ec92fcc67320503a3d100b6f9116de595315c805b9b12",
+        "cbd9755d133493ef0ca6990d682003277c67601185fc6e12cb218969b9c442d2"
+      ]
+    }
+  ],
+  "errors": []
+}

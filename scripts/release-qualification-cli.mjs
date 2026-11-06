@@ -14,6 +14,7 @@ import {
 import {
   fileSha, json, equal, ensure, inside, mkdir, save,
   execute, cleanEnvironment, executionEnvironment, retainProcess, verdict, EXECUTION_ENV_KEYS, mapStrings, externalOutput,
+  withTerminationSignal,
 } from './release-qualification-io.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -262,6 +263,16 @@ function testFilesFromPackage(source) {
   return json(path.join(source, 'package.json')).scripts.test.split(/\s+/).filter(arg => arg.endsWith('.test.mjs'));
 }
 
+/** @id CODE-RELQ-DEADLINE-001 @implements REQ-RELQ-003 */
+export function gateDeadlinePlan(deadlineNs, nowNs = process.hrtime.bigint()) {
+  const outerDeadlineNs = deadlineNs - 4000000000n;
+  const nestedWorkDeadlineNs = outerDeadlineNs - 5000000000n;
+  ensure(nestedWorkDeadlineNs > nowNs, 'gate work and cleanup reserve budget exhausted');
+  return { outerDeadlineNs, nestedWorkDeadlineNs,
+    timeoutMs: Number((outerDeadlineNs - nowNs) / 1000000n) };
+}
+
+/** @id CODE-RELQ-PLANNING-RUN @implements REQ-RELQ-002 REQ-RELQ-003 */
 export async function runManifest(input) {
   return verdict(async () => {
     ensure(input.manifestPath && input.manifestSha256 && input.historyPath && input.outputRoot,
@@ -299,10 +310,14 @@ export async function runManifest(input) {
         await materializeSource({ cell, sourceRoot: configuration.sourceRoot, destination: source,
           gitHistory: configuration.gitHistory, environment: env, nodeModules: configuration.nodeModules,
           runtime: { ...runtime, canonicalPath: environment.canonicalPath } });
+        const deadlineNs = cell.kind === 'gate'
+          ? process.hrtime.bigint() + BigInt(cell.timeoutSeconds * 1000) * 1000000n : null;
         const catalogue = cellCatalogue(manifest, cell, source);
+        const timing = deadlineNs === null ? null : gateDeadlinePlan(deadlineNs);
         const context = save(path.join(cellRoot, 'context.json'), {
           cell, source, output: adapterOutput, node: runtime.executable, environment: env, catalogue,
           configuration, tools: Object.fromEntries(manifest.tools.map(tool => [tool.id, tool.executable])),
+          ...(timing === null ? {} : { deadlineNs: String(timing.outerDeadlineNs) }),
         });
         env.QUALIFY_SOURCE = source; env.QUALIFY_MUTATION_OUTPUT = adapterOutput;
         env.QUALIFY_DEVELOPMENT_DIR = path.join(cellRoot, 'unit-fixtures');
@@ -310,10 +325,17 @@ export async function runManifest(input) {
         const substitutions = { '{node}': runtime.executable, '{source}': source, '{context}': context.path };
         const argv = manifest.commands.find(row => row.cellId === cell.id).argv.map(arg =>
           Object.entries(substitutions).reduce((text, [from, to]) => text.replaceAll(from, to), arg));
-        const result = await execute({ command: argv, cwd: source, env, timeoutMs: cell.timeoutSeconds * 1000 });
+        const invocationNowNs = process.hrtime.bigint();
+        if (timing) ensure(timing.nestedWorkDeadlineNs > invocationNowNs, 'gate work reserve exhausted during context preparation');
+        const timeoutMs = timing === null ? cell.timeoutSeconds * 1000 :
+          Number((timing.outerDeadlineNs - invocationNowNs) / 1000000n);
+        ensure(timeoutMs > 0, 'gate deadline exhausted during context preparation');
+        const invoke = signal => execute({ command: argv, cwd: source, env, timeoutMs, signal,
+          ...(cell.kind === 'gate' ? { maxBytes: 8 * 1024 * 1024, trackDescendants: true } : {}) });
+        const result = cell.kind === 'gate' ? await withTerminationSignal(invoke) : await invoke();
         const format = ['suite', 'watchdog', 'scope', 'oracle', 'process'].includes(cell.kind) ? 'events' :
           cell.kind === 'host-mutation' ? 'host-mutation' : ['mutation', 'diagnostic-mutation'].includes(cell.kind) ? 'mutation' :
-            cell.kind === 'gate' ? 'gate' : 'adapter';
+            'adapter';
         const evidence = { ...retainProcess(path.join(cellRoot, 'process'), result), format };
         const row = { id: cell.id, cell, catalogue, evidence, adapterOutput,
           excludedTodos: cell.kind === 'suite' ? manifest.catalogues.excludedTodos : [] };

@@ -1,6 +1,16 @@
+import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ensure, equal, readRef } from './release-qualification-io.mjs';
+
+export function validateNativeGate(evidence) {
+  ensure(evidence.stdout && evidence.stderr &&
+    fs.statSync(evidence.stdout.path).size + fs.statSync(evidence.stderr.path).size <= 8 * 1024 * 1024,
+  'native gate retained output budget exceeded');
+  const { text } = processControl(evidence);
+  ensure(/^SDD GATE PASS$/m.test(text) && !/\bINCOMPLETE\b|✗|SKIPPED/.test(text), 'integrated full gate did not pass');
+  return { gate: 'PASS' };
+}
 
 function unique(values, label) {
   ensure(new Set(values).size === values.length, `duplicate ${label}`);

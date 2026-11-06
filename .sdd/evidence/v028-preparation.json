@@ -1,10 +1,248 @@
 {
   "schemaVersion": 1,
   "targetVersion": "0.2.8",
-  "stage": "approved metadata/release-contract preparation and bounded development controls; not release readiness",
+  "stage": "Retained developer full gate passed1189/1189; latest Node20/22/24 readiness/ownership controls and four isolated readiness mutations passed. Actual release preflight rejects five stale reference hashes; committed reference renewal and frozen qualification remain blocked.",
   "status": "BLOCKED",
   "qualificationCredit": 0,
   "publishingAuthorized": false,
+  "latestValidation": {
+    "finishedAt": "2026-11-06T06:51:45.079Z",
+    "status": "BLOCKED",
+    "firstViolatedStage": "trusted inputs",
+    "sourceHead": "b43d9830c92092384bea0e00a8d33db4dc16e9c1",
+    "scope": "Current development-worktree validation, not a frozen committed candidate. All five runs verified unchanged tracked source bytes and full modes before/after. Evidence metadata below was recorded afterward and does not inherit the earlier full-gate verdict.",
+    "preflight": {
+      "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v028-release-audit-zz1hsL/report.json",
+      "sha256": "79603a21697501c4343565ba8c79e05a19df9c40a46d91cc160c8990651bb2d5",
+      "actualVerdict": "FAIL",
+      "referenceFiles": 118,
+      "actualFiles": 118,
+      "matchingFiles": 113,
+      "extraFiles": 0,
+      "mismatchedBytes": [
+        ".github/skills/lean-sdd-tdd/scripts/implementation-plan-workflow.test.mjs",
+        ".github/skills/sdd-reverse-spec/SKILL.md",
+        ".github/skills/sdd-spec-interview/SKILL.md",
+        ".github/skills/tech-writer/SKILL.md",
+        ".github/skills/tech-writer/references/doctypes/requirements-definition.md"
+      ],
+      "registeredNames": 1189,
+      "action": "Renew the reference from actual committed blobs/archive/offline package/both-host inventories, retain every old path/case, revise manifests and obtain genuine exact-artifact preparation approval. Do not copy observed mismatching hashes into an accepted reference or bypass admission."
+    },
+    "runtimeControls": [
+      {
+        "node": 20,
+        "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v028-release-control-20-dLtMCu/report.json",
+        "sha256": "8b9b8193702c5b52fe90ae25dd3939be762b04bdd5914df809664ca56b89d020",
+        "selectedPassed": 4,
+        "selectedSkipped": 0,
+        "nonselectedNameFiltered": 1102
+      },
+      {
+        "node": 22,
+        "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v028-release-control-22-njg2eC/report.json",
+        "sha256": "16ae436f4c6ff9470c8e0470f377840a613f9a08c308c0ec61e39f9d98e0d62d",
+        "selectedPassed": 4,
+        "selectedSkipped": 0,
+        "nonselectedNameFiltered": 0
+      },
+      {
+        "node": 24,
+        "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v028-release-control-24-OpKaF4/report.json",
+        "sha256": "dec4a62bd9971ca8361529f4e9d38e35c64c1988eaa08d129fad2e78725bc8d1",
+        "selectedPassed": 4,
+        "selectedSkipped": 0,
+        "nonselectedNameFiltered": 0
+      }
+    ],
+    "runtimeScope": "TEST-R36D-OWN-001/002 and TEST-RELQ-READINESS-001/004. Native named-control validation requires every selected case to execute, excludes only explicitly name-filtered nonselected events, rejects extra/failed/skipped required cases and verifies terminal native counts. The existing readiness test enumerates all27 streak/outcome rows and24 severity/scope/state/workaround rows, malformed inputs and retained-history controls.",
+    "readinessMutations": {
+      "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v028-release-mutations-aEXkzt/report.json",
+      "sha256": "826b80955ba9f0d73beeed59d9f88d3e4846d4f7ebb725a86e43323f89a8f79a",
+      "status": "PASS",
+      "mechanisms": [
+        "synthetic inline empty-run PASS",
+        "one clean run incorrectly establishes readiness",
+        "failure does not reset the streak",
+        "state reused across runs is accepted"
+      ],
+      "controls": "Each isolated production mutation failed the independently named regression with an owned native ERR_ASSERTION, not a setup failure. Exact source bytes/full mode were restored and both valid/invalid-input regressions passed after every mutation.",
+      "limits": "Four current post-fix sensitivities, not original preimplementation Reds or exhaustive mutation coverage. The historical weak-retest ledger warnings are preserved, not silently replaced or claimed cleared."
+    },
+    "advisoryAssessment": {
+      "stubText": "sdd.mjs:1843 is a comment explaining rejection of generated SDD-TODO(stub) compilation errors. sdd.test.mjs:693 intentionally creates a throwing reset fixture for the weak-Red classifier. Neither finding demonstrates an unfinished production stub.",
+      "historicalPrivateNpmrc": "The retained full-gate private-HOME npmrc is empty, with the SHA256 of empty bytes. Path relocation remains recorded; no narrowing configuration was found.",
+      "unresolved": "Three human implementation-snapshot drift advisories and three historical weak-retest warnings remain. Current positive/negative controls and four mutations do not invent retrospective Red evidence or grant human approval."
+    },
+    "qualificationCredit": 0,
+    "requiredMatrixRunsAttempted": 0,
+    "publishingAuthorized": false
+  },
+  "retainedDeveloperFullGate": {
+    "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v028-current-full-gate-PtBJGX/report.json",
+    "startedAt": "2026-11-06T04:19:55.419Z",
+    "finishedAt": "2026-11-06T05:16:04.011Z",
+    "status": "PASS",
+    "exit": 0,
+    "stdoutSha256": "96c25267a2dc5f2d9ba638e760bf2b52e11151f85f7bc256d94c2a79d021121b",
+    "planning": "PASS",
+    "nativeEvidence": "195/195",
+    "ledgerEntries": 2026,
+    "inputsUnchanged": true,
+    "projectTest": {
+      "receipt": ".sdd/check-output/attempt-AxwTjJ/receipt.json",
+      "receiptSha256": "e63909435ebc0c4bd40d4f0f0b19d97ad993a9152db7b976228e9cba7d9355d3",
+      "stdoutSha256": "244c930013de3e359c62d4b3faa5dad41a62f46ac5da2e658a520db12eb578de",
+      "stderrSha256": "1e90e037ffcba4704e27fdd05e56ec6f23f74e81ee110c354d51040ddf34d597",
+      "attempt": 1,
+      "tests": 1189,
+      "passed": 1189,
+      "failed": 0,
+      "skipped": 0,
+      "cancelled": 0,
+      "todo": 0
+    },
+    "scope": "Historical developer snapshot, not committed-candidate qualification. Later evidence/cost/plan metadata changes require current native task validation; no full-gate verdict is transferred to changed inputs.",
+    "qualificationCredit": 0
+  },
+  "currentLifecycleRepair": {
+    "status": "IMPLEMENTED_FULL_FEATURE_RUNTIME_AND_MUTATION_CONTROLS_PASS",
+    "approvedSpec": {
+      "path": ".sdd/specs/release-qualification.md",
+      "sha256": "2208d104124140791cbb884308ffa81118f7c53da41ce6bbd8488c8ff8497941"
+    },
+    "humanApproval": {
+      "by": "nahisaho",
+      "scope": "Exact seven-artifact manifest, verification preparation only",
+      "record": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v028-gate-lifecycle-human-approval.stdout",
+      "sha256": "334f9567fe18218f58236c7aaee8729993eda23fe4c6bfd163d1b77e03177653"
+    },
+    "behavior": "Real required-gate parent SIGTERM/SIGINT propagates through AbortController. Lost-close execution has one 3000ms completion ceiling, bounded observed cleanup, destroyed pipes and explicit unknown exit/incomplete cleanup. Nested work ends at D-9000ms and outer work at D-4000ms; the original final deadline and matrix budgets are unchanged.",
+    "planningNativeRefactor": {
+      "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v028-gate-lifecycle-final-native-refactor.stdout",
+      "sha256": "243b0767d9b2edc9dc3057c2279620cb5bdb18121f2f93b58140eae37c99b743"
+    },
+    "finalizedCloseFixture": {
+      "scope": "The first native Green was rejected because the mock drained too few microtasks. The finalized fixture uses setImmediate, not a fixed sleep. Its subsequent native Red was an isolated post-fix 600000ms-ceiling mutation; it is not relabeled original preimplementation evidence.",
+      "mutationRed": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v028-gate-close-final-fixture-native-mutation-red.stdout",
+      "mutationRedSha256": "e747f7f8407ae83d919b1e708787165b803a58abe1eae2a350c6cd42d5fb8d19",
+      "restoredGreen": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v028-gate-close-final-fixture-native-green.stdout",
+      "restoredGreenSha256": "20714456ddf7bccae9eb999a5b456bb73a016f8dcd5c0fd03d423d2d72ec7a53"
+    },
+    "independentReview": "Claude Sonnet5.5 lifecycle implementation follow-up found no blockers; reviewer ran no tests.",
+    "currentMutations": {
+      "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v028-gate-planning-mutations-fMditj/report.json",
+      "sha256": "976057833945099e4c2abbe6a3a1b4f14afa13c31921ffa9b4f7fc9305a93330",
+      "status": "PASS",
+      "cases": 17,
+      "scope": "Historical8 mechanisms rerun on current bytes plus real parent TERM/INT, outer/nested cutoff arithmetic, missing-close ceiling, unknown exit, explicit incomplete cleanup, pipe destruction and late-close idempotence. Every isolated mutant assertion-failed and every exact restoration passed. Selected regressions ran on Node24; no full-matrix qualification credit."
+    },
+    "fullFeatureRuntimeControls": [
+      {
+        "node": "v20.20.2",
+        "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v028-lifecycle-full-node20.log",
+        "sha256": "d5e42ae8d254a97b2b0a9f94a719db355c1821859f7bdd061d6ff4e991284f2f",
+        "passed": 22,
+        "skipped": 0
+      },
+      {
+        "node": "v22.23.3",
+        "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v028-lifecycle-full-node22.log",
+        "sha256": "4df0cc1ace530dd1ecc1303567a563b14f175cbdb5e52f2199bbb1c0ceabcd90",
+        "passed": 22,
+        "skipped": 0
+      },
+      {
+        "node": "v24.22.1",
+        "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v028-lifecycle-full-node24.log",
+        "sha256": "38cca647aacc1a7926d69d11dc973d23c48b4f6eedffce62df62f42657b48ae1",
+        "passed": 22,
+        "skipped": 0
+      }
+    ],
+    "remaining": "The eight changed task proofs were subsequently refreshed and the retained full project gate passed. Current canonical reference/inventory renewal and full118-task fresh-root deadline/capacity proof remain incomplete. Later metadata changes require current owner-task validation; neither feature controls nor historical proofs transfer qualification credit.",
+    "qualificationCredit": 0
+  },
+  "requirementsOwnershipHandoff": {
+    "status": "IMPLEMENTED_TARGETED_VALIDATION_PASS",
+    "requirement": "REQ-PLAN-FLOW-004",
+    "test": "TEST-PLAN-FLOW-004",
+    "approvedSpec": {
+      "path": ".sdd/specs/implementation-plan-workflow.md",
+      "sha256": "a31ea9c1fe79f018e6361c0a3244d1969a87ee0a9342bd689eef0e31e0c64fba",
+      "by": "nahisaho",
+      "scope": "Genuine explicit approval of this one canonical workflow specification; not release authorization"
+    },
+    "behavior": "Keep tech-writer for reader documents. Delegate implementation contracts to sdd-spec-interview and observed-code contracts to sdd-reverse-spec under .sdd/specs. Explanations reference the canonical contract. Preserve supplied IDs, acceptance conditions, original documents and real approval; clarify intent one question at a time and block unavailable required siblings rather than inventing a competing canonical source.",
+    "nativeEvidence": [
+      {
+        "phase": "expected-assertion Red before the four production Markdown edits",
+        "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v028-requirements-handoff-native-red.stdout",
+        "sha256": "85faae0cce41c2a525e394a1d4b10446c81adbe09ee9c06c5983358c0c2a61e1"
+      },
+      {
+        "phase": "genuine native Green",
+        "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v028-requirements-handoff-native-green.stdout",
+        "sha256": "c98870dc5f6ecd199cc3cddd8ead037646bd0287e45ca8e2ea480633ee0bdb77"
+      },
+      {
+        "phase": "genuine native Refactor after exact mutation restoration and plan authoring",
+        "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v028-requirements-handoff-native-refactor.stdout",
+        "sha256": "12f59802730e580b0a021e2831faba437bc76049e1eafd5097ef173ea8c61350"
+      }
+    ],
+    "runtimeControls": [
+      {
+        "node": "v20.20.2",
+        "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v028-requirements-handoff-node20.log",
+        "sha256": "1e29050835a736bf7d46a755ea5430f86d4664068581f78ebfc22e47cc404eba",
+        "passed": 4,
+        "skipped": 0
+      },
+      {
+        "node": "v22.23.3",
+        "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v028-requirements-handoff-node22.log",
+        "sha256": "3e8bd4ffe15d7715be0ebb6d5f1265f5c2e93bfd67626458f0968395f0f1db2d",
+        "passed": 4,
+        "skipped": 0
+      },
+      {
+        "node": "v24.22.1",
+        "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v028-requirements-handoff-node24.log",
+        "sha256": "4465a803b0ab4e7ff1d403ccff6917eb4c33fa7926dcdd47d3d92816995b7c07",
+        "passed": 4,
+        "skipped": 0
+      }
+    ],
+    "runtimeScope": "Complete four-test workflow file on each actual runtime: source policy, actual tarball and both-host planning lifecycle, normative evidence-stage controls, and byte/mode identity of initialized host instructions. This is not the full project suite.",
+    "runtimeTarballSha256": "4dd125c1c13f370f2e4be8fbb2c6df843482b555c4e4cb48a1b127767d298526",
+    "setupHistory": "The first Node22 command exited127 because its executable path was misspelled. The corrected actual runtime passed; the initial log was overwritten and is not claimed retained Red or PASS evidence.",
+    "mutations": {
+      "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v028-requirements-handoff-mutations-metGR0/report.json",
+      "sha256": "536aa4e85c3064d1006771b8064f31414dbbd6168c13e887f24375c4e7969fe2",
+      "status": "PASS",
+      "cases": 29,
+      "scope": "All four ownership/output rows, table header/order, metadata trigger/delegation, extra contradictory writer policy, missing heading, both doctype obligations, all seven writer boundaries and all five handoff obligations in each sibling. Every mutation had an assertion failure; all isolated byte/mode restorations and valid controls passed."
+    },
+    "independentReview": {
+      "model": "claude-sonnet-5.5",
+      "agent": "65c6780d-85d4-49ac-8564-da6aa038f98a",
+      "status": "NO_OPEN_IMPLEMENTATION_BLOCKERS",
+      "scope": "Four production Markdown deltas and TEST004, then a bounded follow-up checking the initially omitted FLOW001 authoring and all three actual current spec bindings. Reviewer ran no tests."
+    },
+    "planState": "FLOW001 now owns REQ/TEST004 with all four production artifacts and both test selectors. All three whole-spec bindings use the genuinely approved current hash. Raw completed statuses, old receipts and dependent fingerprints remain historical; no current task verification or qualification credit was fabricated.",
+    "changedGate": {
+      "command": "node .github/skills/lean-sdd-tdd/scripts/sdd.mjs gate --changed",
+      "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v028-requirements-handoff-changed-gate.stdout",
+      "sha256": "55bb87cd285503ca257ec08408809a358dba4a0a626fbb572637cf13094c62dd",
+      "exitCode": 2,
+      "status": "INCOMPLETE",
+      "reason": ".sdd/cost-history.json: planning ownership is unresolved",
+      "scope": "Actual required changed gate stopped at native planning preflight. This is not a full project test run or PASS. Cost-history generation was retained; no file, planning requirement or configured check was hidden or weakened to bypass this blocker."
+    },
+    "limits": "Bounded shipped-text and installation checks do not prove arbitrary live-agent obedience or all natural-language triggers. Sibling sections are positive-line assertions rather than a closed extra-line whitelist. No Windows aira-nexus document was read, moved, deleted or rewritten. Native Green's no-CODE warning is preserved; no artificial code annotation was added.",
+    "qualificationCredit": 0
+  },
   "approval": {
     "by": "nahisaho",
     "source": "Explicit ask_user response: approve this one file only",
@@ -217,11 +455,95 @@
     "scope": "Authoritative final gh run view for this exact pushed head; does not validate later uncommitted task/evidence adoption or count as frozen release qualification.",
     "qualificationCredit": 0
   },
+  "currentFullNativeGate": {
+    "sourceCommit": "b43d9830c92092384bea0e00a8d33db4dc16e9c1",
+    "command": ["node", ".github/skills/lean-sdd-tdd/scripts/sdd.mjs", "gate"],
+    "status": "PASS",
+    "exit": 0,
+    "retry": false,
+    "trackedInputsUnchanged": true,
+    "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v028-current-full-gate-KCYUcJ/report.json",
+    "sha256": "10d14a990b569003c966014eeeec8145edf62445e2b73aa9fc53dc1486ebdd05",
+    "nativeTestSummary": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v028-current-full-gate-KCYUcJ/native-test-summary.json",
+    "nativeTestSummarySha256": "581d6b33b3011595f57e6ccbd76dd46f1b60503f0d4662267ece06cd23d5f907",
+    "nativeTests": {"tests": 1187, "pass": 1187, "fail": 0, "cancelled": 0, "skipped": 0, "todo": 0},
+    "warnings": "Retained original gate warnings: three human-approved implementation drifts, nine trace warnings, existing one weak Red/79 characterizations/one retest, two declared stub markers and changed private-home npm admission paths. No claim of warning-free or universally strong Red evidence; these are not new clone-defect proof.",
+    "cleanup": "Removed only the exact generated cost-log.cpython-314.pyc and its empty cache directory after the completed run. Native check-output receipt/stdout/stderr were hash-verified and copied to immutable external evidence before future work.",
+    "qualificationCredit": 0
+  },
+  "currentHostedCi": {
+    "sourceCommit": "b43d9830c92092384bea0e00a8d33db4dc16e9c1",
+    "runId": 42059359888,
+    "url": "https://github.com/nahisaho/musubix6/actions/runs/42059359888",
+    "status": "completed",
+    "conclusion": "success",
+    "runtimes": [20, 22, 24],
+    "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v028-ci-b43d983.json",
+    "sha256": "405976a1774580a63dd51b4cce95df3f51b454d4bb296d8bdef7e31c4edbac5e",
+    "qualificationCredit": 0
+  },
+  "freshGateProofBlocker": {
+    "id": "v028-fresh-gate-receipts",
+    "severity": "S2",
+    "scope": "in-scope",
+    "state": "open",
+    "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v028-gate-clone-spike-jZQkzm/classification-recovery.json",
+    "sha256": "f325b008ba9f8199a3660e66cb738360fc049bb66362f3f893cce305fbe0bb86",
+    "observed": "Actual fresh Git-backed qualifying gate materialization on the same Node24 and identical authored plan bytes returns native FAIL1:104 revalidation-required and14 replan-required. Current source-root control passed all118 tasks. Absolute native script/root commands change input fingerprints; correct SDK admission rejects copied stale proof.",
+    "driverHistory": "The first probe returned UNEXPECTED_RESULT because its classifier wrongly demanded replan-required for MODEL001. Actual native verdict was already FAIL1, without setup/signal/parse errors. A separate hash-verified classification recovery accepts the correct revalidation-required state, preserves the original refused report/raw bytes, reruns no checks and claims no formal assertion Red.",
+    "proposal": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v028-gate-planning-proposal.json",
+    "nativeHistoryFeasibility": {
+      "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v028-gate-clone-native-refresh-Qehd6M/report.json",
+      "sha256": "039c37f07c476fb779f3ab22a6fcc5c3028edb76876ba84e5e065b466e315c59",
+      "status": "PASS",
+      "scope": "One actual new-root MODEL001 native verification appended sequence6/previous3b866646 without author-plan edits or old receipt/ledger prefix changes. No full118-task, dependency-order, cleanup-margin, capacity, formal Red or qualification claim."
+    },
+    "designReview": {
+      "model": "claude-sonnet-5.5",
+      "agent": "7b26db6b-0b62-457f-b8a2-107b92a9b176",
+      "status": "NO_OPEN_DESIGN_FINDINGS",
+      "scope": "Resolved proposal, exact specification/scope diff, then literal closure of two non-blocking receipt-chain/capacity wording points. Design-only; not production or regression validation.",
+      "preparedOutput": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v028-gate-planning-approval-prepared.stdout",
+      "proposedSpecSha256": "f68e0ead30415e5fbd0a9cdbed8b6da88fc680e08b8023a6d4224d4714a58708",
+      "proposedScopeSha256": "f50c7ed6e8dcf84f1afa92ff3aad2602dd3860e8741eba16fa4e1d7cc57afd25",
+      "humanApprovalRecorded": true,
+      "currentApprovalStatus": "Historical f68e0ead preparation approval was genuinely recorded after nahisaho explicitly approved verification preparation only. The later lifecycle counterexample clarification changes the specification bytes; this approval is now stale and must not be transferred."
+    },
+    "developmentEvidence": {
+      "nativeGreen": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v028-gate-planning-native-green-attempt1.stdout",
+      "scope": "Before lifecycle regression additions, genuine reversed-order two-task fresh-root native preparation, receipt adoption, old-history preservation and actual unfiltered fixture gate passed. This is a small development control, not the current full118-task gate or qualification.",
+      "mutations": {
+        "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v028-gate-planning-mutations-VLTKYI/report.json",
+        "sha256": "47598e988d3744204b684c13fdc6fcbc4880b28322a1e7c5c579931fbbc0fb4c",
+        "status": "PASS",
+        "mechanisms": 8,
+        "currentCredit": "Historical implementation snapshot only. All8 isolated assertion detections/restorations passed; later lifecycle/code/test changes require affected reruns, not transferred qualification credit."
+      },
+      "node20": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v028-gate-planning-node20-release-controls.log",
+      "node22InitialFailure": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v028-gate-planning-node22-release-controls.log",
+      "node22RetainedCause": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v028-node22-gate-native-diagnostics.log",
+      "node22Correction": "The fixture copied ignored prior .sdd/check-output with nonprivate directory permissions; the native nested gate correctly rejected it. The fixture now excludes exactly this Git-ignored capture tree, matching frozen source. v028-node22-copy-corrected-parent-red.log reaches and fails the genuine parent-only SIGTERM assertion after actual native gate acceptance. This is not an entire-file Node22 PASS or the original issue385 cause.",
+      "lifecycleReview": {
+        "model": "claude-sonnet-5.5",
+        "agent": "c310a220-ce4f-4e1c-9d37-6d4711e95cd9",
+        "designStatus": "Historical preimplementation snapshot: NO_OPEN_DESIGN_BLOCKERS after explicit inner/outer cutoff ordering; behavioral implementation was then pending. Current repair evidence is recorded in currentLifecycleRepair.",
+        "parentRed": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v028-gate-parent-cancel-native-red-final.stdout",
+        "closeRed": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v028-gate-close-ceiling-final-assertion-red.log",
+        "deadlineRed": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v028-gate-deadline-order-assertion-red.log",
+        "nativeRefusal": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v028-gate-close-ceiling-native-red.stdout",
+        "historicalOpen": "At this retained preimplementation snapshot, parent signal propagation was a failing stub, lost-close completion was unbounded and the extracted actual CLI deadline calculation was unsafe. CurrentLifecycleRepair records the subsequent genuine approval, fixes and narrow native evidence."
+      }
+    },
+    "repairPolicy": "The small genuine fresh-proof implementation,8 historical restored mutations and later narrowly validated lifecycle repair do not establish full-scale current verification or release readiness. Preserve unchanged12000-second budget,24cells and all history. Historical f68 preparation approval was superseded by the genuine2208 exact-seven-artifact preparation approval recorded in currentLifecycleRepair. Canonical inventory/reference renewal still requires relevant validation and exact-artifact renewed approval when approved bytes change. Do not normalize SDK fingerprints, disable planning, fabricate completion, erase history, reuse old-root credit or treat partial positive controls as qualification. Nested work ends D-9000ms, outer work D-4000ms and bounded completion/cleanup by D.",
+    "qualificationCredit": 0,
+    "identifiedOriginalIssue385Assertion": false
+  },
   "remaining": [
+    "Historical changed-gate INCOMPLETE2 and110-complete/8-replan snapshot are retained, not current results. Subsequent genuine task-proof refresh and the retained full gate passed1189/1189. This evidence edit and generated costs require fresh owner-task receipts in implementation-plan.json; no SDK exemption or weaker planning policy is introduced.",
     "Original intermittent issue385 assertion remains unidentified and unclassified.",
-    "All118 tasks now have genuine current native PASS receipts and the final native consistency check passed; the final full gate is still required. Old and failed receipt history remains intact.",
-    "Hosted Node20/22/24 CI passed on eef8503; final task/evidence adoption still requires persistence and same-head validation.",
-    "First complete unfiltered suite passed on clean eef8503, but current plan verification and the full native gate after final preparation have not passed.",
+    "All118 source-root tasks, final native consistency, full unfiltered native gate and Node20/22/24 CI passed on b43d983. New repair changes will require relevant current verification again; old and failed receipt history remains intact.",
+    "New in-scope S2 fresh-gate receipt preparation blocker prevents freezing/readiness; genuine per-cell current proof is required before the fixed integrated gate can pass.",
+    "Actual current release preflight rejects five changed canonical skill-file hashes against the old118-file reference. Renew the committed origin/reference/catalogues and genuine exact-artifact approval before qualification;113 matching files and1189 discovered names are not a pass.",
     "Root JavaScript diagnostics remain INCOMPLETE2 because no root ESLint flat configuration exists.",
     "Two consecutive complete clean runs of one unchanged frozen24-cell matrix/candidate remain required.",
     "Separate exact-artifact human release approval remains required before integration/tagging/publication."

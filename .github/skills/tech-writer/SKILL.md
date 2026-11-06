@@ -2,7 +2,8 @@
 name: tech-writer
 description: >-
   Structures, writes, reviews, and scores technical documents: README,
-  design docs/ADRs, API references, requirements, system designs, test plans,
+  design docs/ADRs, API references, reader-facing requirements summaries,
+  system designs, test plans,
   operations runbooks, migration plans, security designs/threat models,
   technical proposals, Blueprints, White Papers, RFI/RFP, PR descriptions,
   commit messages, issue reports, release notes/CHANGELOG, manuals/how-to
@@ -12,6 +13,7 @@ description: >-
   Asks one question at a time before writing. Owns structure, completeness,
   traceability, and reader fit; delegates sentence-level Japanese wording
   to kotonoha's original bundled japanese-prose skill with GiNZA diagnostics.
+  Implementation contracts belong to sdd-spec-interview or sdd-reverse-spec, not tech-writer.
 license: MIT
 argument-hint: "[write|review|score] [doctype] <target file or request>"
 ---
@@ -21,7 +23,7 @@ argument-hint: "[write|review|score] [doctype] <target file or request>"
 Structures technical documents so readers reach the information they need
 with the shortest path. Covers README, design docs/ADRs, API reference, PR
 descriptions/commit messages/issue reports, release notes/CHANGELOG, user
-manuals/how-to guides, code comments/docstrings, requirements definitions,
+manuals/how-to guides, code comments/docstrings, reader-facing requirements summaries,
 system designs, test plans, operations runbooks, migration plans, security
 designs/threat models, technical proposals, Blueprints, White Papers,
 RFI/RFP procurement documents, Obsidian notes and templates, and Qiita/Zenn
@@ -49,6 +51,23 @@ storage; retain Vault scope checks and separate consent for any auxiliary copies
 Route standalone `.base` configuration to `obsidian-bases`, not the Markdown
 template or Vault Markdown writer; its host workflow validates without evaluating
 formulas and never mutates source-note properties.
+
+## Requirements ownership and SDD handoff
+
+| Request | Owner | Canonical artifact |
+| --- | --- | --- |
+| Implementation requirements | `sdd-spec-interview` | `.sdd/specs/<feature>.md` |
+| Current-code requirements | `sdd-reverse-spec` | `.sdd/specs/<feature>.md` |
+| SDD explanation | `tech-writer` | canonical specification references |
+| Explicit non-SDD documentation | `tech-writer` | user-selected document path |
+
+Resolve unclear implementation intent with one question before writing.
+If the required SDD sibling is unavailable, stop and report the blocker; do not create an alternative canonical document.
+For explicitly non-SDD documentation, use the user's document path; do not create an SDD spec.
+Use existing approved requirements as inputs; preserve identifiers and acceptance conditions, and do not overwrite original documents.
+`docs/requirements` documents are not automatically read by `sdd gate`.
+Respect existing spec hashes and approval; do not invent approval or modify canonical requirements while making explanations.
+Explanatory documents link to the canonical specification; do not create a competing source of requirements.
 
 ## Division of labor
 
@@ -105,6 +124,12 @@ If no mode is given, interpret "write/create" requests as `write`,
 requests as `score`.
 
 ## 1. Gather context — one question at a time, then act
+
+Apply the requirements ownership handoff before choosing a document template
+or starting prose edits. A request to build or change a feature uses the SDD
+owner even if it asks for a requirements document. Existing documents are
+input to that owner, not permission to author a parallel implementation
+contract. EARS wording or a directory name alone does not establish intent.
 
 Requests are often bare goals ("I want to write a README", "○○を書きたい")
 without enough context to start. Do not front-load a long questionnaire or
@@ -179,7 +204,7 @@ hand the user a checklist to fill in. Instead:
 | Release notes / CHANGELOG | release-notes | `references/doctypes/release-notes.md` |
 | User manual / how-to guide / tutorial | user-manual | `references/doctypes/user-manual.md` |
 | Code comments / docstrings | code-comments | `references/doctypes/code-comments.md` |
-| Requirements definition / 要件定義書 | requirements-definition | `references/doctypes/requirements-definition.md` |
+| Requirements definition / 要件定義書 (reader-facing; apply SDD handoff first) | requirements-definition | `references/doctypes/requirements-definition.md` |
 | System design / システム設計書 | system-design | `references/doctypes/system-design.md` |
 | Test plan / テスト計画書 | test-plan | `references/doctypes/test-plan.md` |
 | Operations design / Runbook / 運用設計書 | operations-runbook | `references/doctypes/operations-runbook.md` |

@@ -365,6 +365,8 @@
       "dependsOn": [],
       "artifacts": [
         ".sdd/specs/cost-history.md",
+        ".sdd/cost-history.json",
+        ".sdd/cost-log.md",
         "scripts/cost-log.py",
         "scripts/cost-log.test.mjs"
       ],
@@ -390,7 +392,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/1517e548507a2deebb202a54350fbfecb559bf735331f257f090736fcc8681b3/d3175aaa8ee8d7a5e1ea90b8ec2039571c546ca40f372499d61960e157fe584d.json"
+      "receipt": ".sdd/plan-evidence/1517e548507a2deebb202a54350fbfecb559bf735331f257f090736fcc8681b3/103b35ac9265c1b265817172b90c6072ad6ff5704ca57da14d2f643255ce5c67.json"
     },
     {
       "id": "TASK-COST-HISTORY-002",
@@ -402,6 +404,8 @@
       "dependsOn": [],
       "artifacts": [
         ".sdd/specs/cost-history.md",
+        ".sdd/cost-history.json",
+        ".sdd/cost-log.md",
         "scripts/cost-log.py",
         "scripts/cost-log.test.mjs"
       ],
@@ -427,7 +431,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/db45ca0244d8f0421a909af8a8dba45c430c6f6e5f46719b2db62f0fcde44be0/5ad91bca349020f14d97960b20e642f726a2b3371e09e67b4e3c91b5f8d017cf.json"
+      "receipt": ".sdd/plan-evidence/db45ca0244d8f0421a909af8a8dba45c430c6f6e5f46719b2db62f0fcde44be0/d5dbca4ae874d9224ea8cbc251657b3ebc68213f383b2a89bdb8a5da6a25d7fb.json"
     },
     {
       "id": "TASK-DIAGCLI-001",
@@ -2321,16 +2325,22 @@
       "feature": "implementation-plan-workflow",
       "kind": "implementation",
       "reqs": [
-        "REQ-PLAN-FLOW-001"
+        "REQ-PLAN-FLOW-001",
+        "REQ-PLAN-FLOW-004"
       ],
       "dependsOn": [],
       "artifacts": [
         ".github/skills/lean-sdd-tdd/scripts/implementation-plan-workflow.test.mjs",
+        ".github/skills/tech-writer/SKILL.md",
+        ".github/skills/tech-writer/references/doctypes/requirements-definition.md",
+        ".github/skills/sdd-spec-interview/SKILL.md",
+        ".github/skills/sdd-reverse-spec/SKILL.md",
         ".sdd/specs/implementation-plan-workflow.md"
       ],
-      "condition": "Both hosts require current spec to plan, dependency-ordered implementation, verification then task update, and spec-change replanning.",
+      "condition": "Both hosts require current spec to plan, dependency-ordered implementation, verification then task update and spec-change replanning; implementation requirements have canonical SDD owners and noncompeting reader-document handoffs.",
       "tests": [
-        "TEST-PLAN-FLOW-001"
+        "TEST-PLAN-FLOW-001",
+        "TEST-PLAN-FLOW-004"
       ],
       "checks": [
         {
@@ -2339,14 +2349,14 @@
             "node",
             "--test",
             "--test-name-pattern",
-            "^(?:.*\\b(?:TEST-PLAN-FLOW-001))(?![0-9A-Za-z])",
+            "^(?:.*\\b(?:TEST-PLAN-FLOW-001|TEST-PLAN-FLOW-004))(?![0-9A-Za-z])",
             ".github/skills/lean-sdd-tdd/scripts/implementation-plan-workflow.test.mjs"
           ],
           "timeoutMs": 600000
         }
       ],
       "specs": {
-        ".sdd/specs/implementation-plan-workflow.md": "97fabda265361a78dd07854d76e38880fd40483009ef6be65310ac44ce4aac56"
+        ".sdd/specs/implementation-plan-workflow.md": "a31ea9c1fe79f018e6361c0a3244d1969a87ee0a9342bd689eef0e31e0c64fba"
       },
       "dependencies": {
         "TASK-PLAN-CLI-001": "f8c832aca50f320141b4682ad68f63f330b3d39337d3aca365256ec5cb7bf170",
@@ -2364,7 +2374,7 @@
         "TASK-PLAN-STATE-004": "829da7b2438afced74532703b681b25d76f829cce880966e38f60fac390b2ffe"
       },
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/d7ae83bf392014eb6b622062a89ada2908e5e9eb9d34af2411e48470c4312fa2/90ad847ee45eda1685d60c05a3b3b0de5ad62495c2131a835461c9c1961e96d4.json"
+      "receipt": ".sdd/plan-evidence/d7ae83bf392014eb6b622062a89ada2908e5e9eb9d34af2411e48470c4312fa2/7723d32ee19b837273592991d92a83bc8974762a9e0836399959e0b58710bf63.json"
     },
     {
       "id": "TASK-PLAN-FLOW-002",
@@ -2398,14 +2408,14 @@
         }
       ],
       "specs": {
-        ".sdd/specs/implementation-plan-workflow.md": "97fabda265361a78dd07854d76e38880fd40483009ef6be65310ac44ce4aac56"
+        ".sdd/specs/implementation-plan-workflow.md": "a31ea9c1fe79f018e6361c0a3244d1969a87ee0a9342bd689eef0e31e0c64fba"
       },
       "dependencies": {
         "TASK-PLAN-CLI-001": "f8c832aca50f320141b4682ad68f63f330b3d39337d3aca365256ec5cb7bf170",
         "TASK-PLAN-CLI-002": "593a60c56c8a7c9651dcb24082450643618f50ea8334dd25e8ded03e99b9f9de",
         "TASK-PLAN-CLI-003": "279e6dfc4ba00a16d0a2e4cd7dfdbc1912fbcd59841d674558b2fc62f6055b79",
         "TASK-PLAN-CLI-004": "17ab9699af0082f6492b692369e233e89c1b9f81ba46a61c9b5eef13d4aaf64c",
-        "TASK-PLAN-FLOW-001": "519b834098fbffd875ce5ae4aff780bc78e76568f1d4c8413f0cedf4cedb8725",
+        "TASK-PLAN-FLOW-001": "af19b0f969e05f5187edc43c7b0266a25bdbede2f59b50d260113698b8b4965d",
         "TASK-PLAN-MODEL-001": "2bb1cfe84bb10312a455b415c44271e472805965d33437487373464b2b05776a",
         "TASK-PLAN-MODEL-002": "1f7f0975b74fa0736e8df8c833fd21f927025ff6cf0d943f47230084032b63b3",
         "TASK-PLAN-MODEL-003": "3d60e8a0509b84c22c756393177c5a1fd95b5100da6890d733db7dfbe289bccf",
@@ -2417,7 +2427,7 @@
         "TASK-PLAN-STATE-004": "829da7b2438afced74532703b681b25d76f829cce880966e38f60fac390b2ffe"
       },
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/f2011d695b0132d2d487c2156117d0df66c9839a1c093b3b22f324ab03e9d1ae/1c7c595b44825ed502657d6f60b1177da4a6c4def2a202e537f80855a4937385.json"
+      "receipt": ".sdd/plan-evidence/f2011d695b0132d2d487c2156117d0df66c9839a1c093b3b22f324ab03e9d1ae/52a92931c9bfaaf5df1a2c89512b0fd03ba16a6d442bf6af91067696b73c9d48.json"
     },
     {
       "id": "TASK-PLAN-FLOW-003",
@@ -2451,14 +2461,14 @@
         }
       ],
       "specs": {
-        ".sdd/specs/implementation-plan-workflow.md": "97fabda265361a78dd07854d76e38880fd40483009ef6be65310ac44ce4aac56"
+        ".sdd/specs/implementation-plan-workflow.md": "a31ea9c1fe79f018e6361c0a3244d1969a87ee0a9342bd689eef0e31e0c64fba"
       },
       "dependencies": {
         "TASK-PLAN-CLI-001": "f8c832aca50f320141b4682ad68f63f330b3d39337d3aca365256ec5cb7bf170",
         "TASK-PLAN-CLI-002": "593a60c56c8a7c9651dcb24082450643618f50ea8334dd25e8ded03e99b9f9de",
         "TASK-PLAN-CLI-003": "279e6dfc4ba00a16d0a2e4cd7dfdbc1912fbcd59841d674558b2fc62f6055b79",
         "TASK-PLAN-CLI-004": "17ab9699af0082f6492b692369e233e89c1b9f81ba46a61c9b5eef13d4aaf64c",
-        "TASK-PLAN-FLOW-001": "519b834098fbffd875ce5ae4aff780bc78e76568f1d4c8413f0cedf4cedb8725",
+        "TASK-PLAN-FLOW-001": "af19b0f969e05f5187edc43c7b0266a25bdbede2f59b50d260113698b8b4965d",
         "TASK-PLAN-MODEL-001": "2bb1cfe84bb10312a455b415c44271e472805965d33437487373464b2b05776a",
         "TASK-PLAN-MODEL-002": "1f7f0975b74fa0736e8df8c833fd21f927025ff6cf0d943f47230084032b63b3",
         "TASK-PLAN-MODEL-003": "3d60e8a0509b84c22c756393177c5a1fd95b5100da6890d733db7dfbe289bccf",
@@ -2470,7 +2480,7 @@
         "TASK-PLAN-STATE-004": "829da7b2438afced74532703b681b25d76f829cce880966e38f60fac390b2ffe"
       },
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/f5b650634f2a6cae8fec7e885e6b5ba92b11cef6e7a5edfdfe74f985be094215/1c934f6761c62c58a7ec6e998fcccc7dced3c7557bed386bc836b0709af2598c.json"
+      "receipt": ".sdd/plan-evidence/f5b650634f2a6cae8fec7e885e6b5ba92b11cef6e7a5edfdfe74f985be094215/cbcfe00704cf98486aa2cc368ea2ecbbdcc1a3aeeac0d4a584b05418f9b04ece.json"
     },
     {
       "id": "TASK-KOTO-SYNC-001",
@@ -3842,11 +3852,11 @@
         }
       ],
       "specs": {
-        ".sdd/specs/release-qualification.md": "67f1fcae289b63d1657f705480b95ffeb5eccfbaa66131bb69837219afe5fcb5"
+        ".sdd/specs/release-qualification.md": "2208d104124140791cbb884308ffa81118f7c53da41ce6bbd8488c8ff8497941"
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/73f0cbb6742cc4492aeeadca22db81f5f31db4650b1951f0febd38355f8df151/52922ee5b1405afed81c67a83a5e7c393078ffbe94ed07e75199acea0793cd63.json"
+      "receipt": ".sdd/plan-evidence/73f0cbb6742cc4492aeeadca22db81f5f31db4650b1951f0febd38355f8df151/ef26747a2d0739c5ae58f36161adcf55c7b2661d24e841601adac8d0d4bab6c1.json"
     },
     {
       "id": "TASK-RELQ-002",
@@ -3864,17 +3874,20 @@
         "CLANGELOG.md",
         "README-ja.md",
         "README.md",
+        "scripts/release-qualification-cells.mjs",
+        "scripts/release-qualification-cli.mjs",
         "scripts/release-qualification.mjs",
         "scripts/release-qualification.test.mjs"
       ],
-      "condition": "Revalidate REQ-RELQ-002: | REQ-RELQ-002 | When a candidate is frozen or checked, the launcher shall bind source/archive/package, current named catalogues and approved historical replacements, helpers, dependencies, configuration and real Node 20/22/24 and native tool inputs by digest, reject unavailable or changed inputs or missing replacements, and preserve failed revisions without transferring credit. | TEST-RELQ-002, TEST-RELQ-LINEAGE-001, TEST-RELQ-LINEAGE-002 | All mapped native tests (TEST-RELQ-002, TEST-RELQ-BASELINE-001, TEST-RELQ-CLOSURE-001, TEST-RELQ-GIT-001, TEST-RELQ-LINEAGE-001, TEST-RELQ-LINEAGE-002) must pass on current inputs; setup errors or skips do not complete this task.",
+      "condition": "Revalidate approved REQ-RELQ-002 on current frozen definitions and actual gate-root native proof. All mapped native tests (TEST-RELQ-002, TEST-RELQ-BASELINE-001, TEST-RELQ-CLOSURE-001, TEST-RELQ-GIT-001, TEST-RELQ-LINEAGE-001, TEST-RELQ-LINEAGE-002, TEST-RELQ-PLANNING-001) must pass; setup errors, skips, forged or stale receipts do not complete this task.",
       "tests": [
         "TEST-RELQ-002",
         "TEST-RELQ-BASELINE-001",
         "TEST-RELQ-CLOSURE-001",
         "TEST-RELQ-GIT-001",
         "TEST-RELQ-LINEAGE-001",
-        "TEST-RELQ-LINEAGE-002"
+        "TEST-RELQ-LINEAGE-002",
+        "TEST-RELQ-PLANNING-001"
       ],
       "checks": [
         {
@@ -3883,18 +3896,18 @@
             "node",
             "--test",
             "--test-name-pattern",
-            "^(?:.*\\b(?:TEST-RELQ-GIT-001|TEST-RELQ-CLOSURE-001|TEST-RELQ-BASELINE-001|TEST-RELQ-LINEAGE-001|TEST-RELQ-LINEAGE-002|TEST-RELQ-002))(?![0-9A-Za-z])",
+            "^(?:.*\\b(?:TEST-RELQ-GIT-001|TEST-RELQ-CLOSURE-001|TEST-RELQ-BASELINE-001|TEST-RELQ-LINEAGE-001|TEST-RELQ-LINEAGE-002|TEST-RELQ-PLANNING-001|TEST-RELQ-002))(?![0-9A-Za-z])",
             "scripts/release-qualification.test.mjs"
           ],
           "timeoutMs": 600000
         }
       ],
       "specs": {
-        ".sdd/specs/release-qualification.md": "67f1fcae289b63d1657f705480b95ffeb5eccfbaa66131bb69837219afe5fcb5"
+        ".sdd/specs/release-qualification.md": "2208d104124140791cbb884308ffa81118f7c53da41ce6bbd8488c8ff8497941"
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/dd865d9c8b78a2d77814f6c74fb5613d75c1f641a17ccffea1a8e080c0bc0a07/f56b3f360c47c4492dc988d07c348c34b6b67ac3a597d280bb97742f5fb0bd7f.json"
+      "receipt": ".sdd/plan-evidence/dd865d9c8b78a2d77814f6c74fb5613d75c1f641a17ccffea1a8e080c0bc0a07/30c5fd63fe89e46e4800d569eda14485189679e3ad97a72e65ebf5a3d5267590.json"
     },
     {
       "id": "TASK-RELQ-003",
@@ -3914,13 +3927,15 @@
         "README.md",
         "scripts/release-host-mutations.mjs",
         "scripts/release-host-mutations.test.mjs",
+        "scripts/release-qualification-cells.mjs",
+        "scripts/release-qualification-cli.mjs",
         "scripts/release-qualification-content-mutations.mjs",
         "scripts/release-qualification-evidence.mjs",
         "scripts/release-qualification-io.mjs",
         "scripts/release-qualification.mjs",
         "scripts/release-qualification.test.mjs"
       ],
-      "condition": "Revalidate REQ-RELQ-003: | REQ-RELQ-003 | When any required cell finishes, the validator shall require its exact named cases and valid controls, including required active replacements for resolved historical TODOs, actual command/exit and retained parseable evidence; missing, skipped, timed-out, unknown or setup-error outcomes shall never count as a pass. | TEST-RELQ-003, TEST-RELQ-LINEAGE-002 | All mapped native tests (TEST-RELQ-003, TEST-RELQ-DIAGBOUNDARY-001, TEST-RELQ-DIAGNOSTIC-001, TEST-RELQ-GIT-001, TEST-RELQ-HOST-001, TEST-RELQ-LINEAGE-002, TEST-RELQ-PH-001, TEST-RELQ-PROCESS-001, TEST-RELQ-QUOTED-001, TEST-RELQ-SCANNER-001, TEST-RELQ-SKILL-001) must pass on current inputs; setup errors or skips do not complete this task.",
+      "condition": "Revalidate approved REQ-RELQ-003 with complete genuine current planning proof and the actual unfiltered gate under one unchanged deadline. All mapped native tests (TEST-RELQ-003, TEST-RELQ-DIAGBOUNDARY-001, TEST-RELQ-DIAGNOSTIC-001, TEST-RELQ-GIT-001, TEST-RELQ-HOST-001, TEST-RELQ-LINEAGE-002, TEST-RELQ-PH-001, TEST-RELQ-PLANNING-001, TEST-RELQ-PROCESS-001, TEST-RELQ-QUOTED-001, TEST-RELQ-SCANNER-001, TEST-RELQ-SKILL-001) must pass; setup errors, skips, unprepared raw-gate or preparation-only claims do not complete this task.",
       "tests": [
         "TEST-RELQ-003",
         "TEST-RELQ-DIAGBOUNDARY-001",
@@ -3929,6 +3944,7 @@
         "TEST-RELQ-HOST-001",
         "TEST-RELQ-LINEAGE-002",
         "TEST-RELQ-PH-001",
+        "TEST-RELQ-PLANNING-001",
         "TEST-RELQ-PROCESS-001",
         "TEST-RELQ-QUOTED-001",
         "TEST-RELQ-SCANNER-001",
@@ -3952,18 +3968,18 @@
             "node",
             "--test",
             "--test-name-pattern",
-            "^(?:.*\\b(?:TEST-RELQ-GIT-001|TEST-RELQ-PROCESS-001|TEST-RELQ-SKILL-001|TEST-RELQ-PH-001|TEST-RELQ-LINEAGE-002|TEST-RELQ-DIAGNOSTIC-001|TEST-RELQ-DIAGBOUNDARY-001|TEST-RELQ-SCANNER-001|TEST-RELQ-QUOTED-001|TEST-RELQ-003))(?![0-9A-Za-z])",
+            "^(?:.*\\b(?:TEST-RELQ-GIT-001|TEST-RELQ-PROCESS-001|TEST-RELQ-SKILL-001|TEST-RELQ-PH-001|TEST-RELQ-PLANNING-001|TEST-RELQ-LINEAGE-002|TEST-RELQ-DIAGNOSTIC-001|TEST-RELQ-DIAGBOUNDARY-001|TEST-RELQ-SCANNER-001|TEST-RELQ-QUOTED-001|TEST-RELQ-003))(?![0-9A-Za-z])",
             "scripts/release-qualification.test.mjs"
           ],
           "timeoutMs": 600000
         }
       ],
       "specs": {
-        ".sdd/specs/release-qualification.md": "67f1fcae289b63d1657f705480b95ffeb5eccfbaa66131bb69837219afe5fcb5"
+        ".sdd/specs/release-qualification.md": "2208d104124140791cbb884308ffa81118f7c53da41ce6bbd8488c8ff8497941"
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/89f75a0ef83095915c1bfb35bc420da94e27f50547ef905b5527a6c34744793b/8f7065978b9ca42d72721c8709144617f99230c5e818cec197ac5f127f01a992.json"
+      "receipt": ".sdd/plan-evidence/89f75a0ef83095915c1bfb35bc420da94e27f50547ef905b5527a6c34744793b/e4582b17ba4a2601f070da6a150e1c41d1ceaf1a8d6ac7c415fc069fcd40572d.json"
     },
     {
       "id": "TASK-RELQ-004",
@@ -3974,6 +3990,7 @@
       ],
       "dependsOn": [],
       "artifacts": [
+        ".sdd/evidence/v028-preparation.json",
         ".sdd/release-content-mutations.v0.2.8.json",
         ".sdd/release-validation.v0.2.8.json",
         ".sdd/specs/claude-code-support.md",
@@ -4004,11 +4021,11 @@
         }
       ],
       "specs": {
-        ".sdd/specs/release-qualification.md": "67f1fcae289b63d1657f705480b95ffeb5eccfbaa66131bb69837219afe5fcb5"
+        ".sdd/specs/release-qualification.md": "2208d104124140791cbb884308ffa81118f7c53da41ce6bbd8488c8ff8497941"
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/ea566fd8dcc45f090bbb58cbb164569368264ed6a6f464c72ed20485084892c2/5da8576c7e1ce29449cd21eee636720485733c72866786c784617e6bedc58304.json"
+      "receipt": ".sdd/plan-evidence/ea566fd8dcc45f090bbb58cbb164569368264ed6a6f464c72ed20485084892c2/c159c75200a5999dfab7ee0287a0607686b924457b04d47df5f7c688fc4c8d91.json"
     },
     {
       "id": "TASK-RELQ-005",
@@ -4079,11 +4096,11 @@
         }
       ],
       "specs": {
-        ".sdd/specs/release-qualification.md": "67f1fcae289b63d1657f705480b95ffeb5eccfbaa66131bb69837219afe5fcb5"
+        ".sdd/specs/release-qualification.md": "2208d104124140791cbb884308ffa81118f7c53da41ce6bbd8488c8ff8497941"
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/8a500e1cd57c470ca565540630853ab2031d74efe95b650b3b5670f6edf9e10d/26f295fc4247ca692fa0c02f95d6b049ed1e8ef53d442a76128fdef8788cba65.json"
+      "receipt": ".sdd/plan-evidence/8a500e1cd57c470ca565540630853ab2031d74efe95b650b3b5670f6edf9e10d/99ec573c05f210ef14e2d4ee06c415ef7351325bbbcede8d22529d1410e9d522.json"
     },
     {
       "id": "TASK-RUNNER-SELECTION-001",

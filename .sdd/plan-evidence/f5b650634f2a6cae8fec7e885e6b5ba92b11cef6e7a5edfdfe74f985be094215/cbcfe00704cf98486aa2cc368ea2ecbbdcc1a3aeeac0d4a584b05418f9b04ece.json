@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 1,
+  "task": "TASK-PLAN-FLOW-003",
+  "sequence": 5,
+  "previous": "1c934f6761c62c58a7ec6e998fcccc7dced3c7557bed386bc836b0709af2598c",
+  "definitionSha256": "73491952c7084a241e040a6b7ed587917b6ebf66dbbaa3437fd1ea06e6048013",
+  "inputSha256": "d089ac1096ecddc916d516c8a04a9154016461f514f1e21395e6211843d0527b",
+  "status": "PASS",
+  "exit": 0,
+  "checks": [
+    {
+      "name": "regression-1",
+      "argv": [
+        "node",
+        "--test",
+        "--test-name-pattern",
+        "^(?:.*\\b(?:TEST-PLAN-FLOW-003))(?![0-9A-Za-z])",
+        ".github/skills/lean-sdd-tdd/scripts/implementation-plan-workflow.test.mjs"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/f5b650634f2a6cae8fec7e885e6b5ba92b11cef6e7a5edfdfe74f985be094215/attempt-5be63fd4-b1fb-4cfe-9d56-af1910bd7d7d/0.log",
+        "sha256": "0af36022ec229c563edd37f2cb95b4cd4dcdd8a451103aa95dbed2fc9cf8fca8",
+        "bytes": 232
+      }
+    },
+    {
+      "name": "native-TEST-PLAN-FLOW-003",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-PLAN-FLOW-003",
+        "--root",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/f5b650634f2a6cae8fec7e885e6b5ba92b11cef6e7a5edfdfe74f985be094215/attempt-5be63fd4-b1fb-4cfe-9d56-af1910bd7d7d/1.log",
+        "sha256": "029dad8585b093114dde25f8bcef554ff96412afd1b6a7718149a9e6fdcdcb73",
+        "bytes": 57
+      }
+    }
+  ],
+  "ledgerEvents": [
+    {
+      "test": "TEST-PLAN-FLOW-003",
+      "hashes": [
+        "013fb2b88f613e9ab73a81197a5cdeb188297fd98f378a66f0791dbb65da919e",
+        "137168c35b898a8359a5c2db1a52e8efcf57291cd3ef68158e7f6646056fcd72",
+        "1cfeb12f8950cd90670a4dbe7319fb8f6103f518d0b70abdad7f15445d9e05ae",
+        "28db83f819cdfdd80e0892b6d482fae753b5ebc962b3a3eb75d610a1a3e60417",
+        "35b39e4a7c7656f936a64791544df601e0a88e4672b3872b59da8f847c0def8c",
+        "59a62492ca5fe7f38a1a25e160e844bfdbfb7d03fe6526d8f21a4b60d0420b0d",
+        "6701effaf97c4239ff37eda497ed4b4760dbb524f7db793dbb7e8e99828470d6",
+        "777099365e7dd1673cb3358d8a003d34768cc04babdc5679b8964264291c2fa6",
+        "8bab8bcf647b0cf9617e0aec30893163cca8cb30855ba1207319158421fb0b34",
+        "8d0c02e3a2352789ad964d1d5c9eb51deedf1d625b76e86c60ac593524224f02",
+        "91100e96ca18fc72fe0e24c34743c598eff8eea1a10f848c83e793596d9d8b09",
+        "9a4ecdb5b6e4ba4f381f363d002dc903787aa95bdc5c5d39d8bdea63f3f75022",
+        "f9848e76b6a6ba0cabd2b6ac9813e10b529401d972e9c2ada22977b7a44d2366"
+      ]
+    }
+  ],
+  "errors": []
+}

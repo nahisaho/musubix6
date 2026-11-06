@@ -1,6 +1,6 @@
 ---
 name: sdd-spec-interview
-description: "Use when the user says what they want to build (a feature, API, app, bug fix) and the requirements are not yet written: interview the user one question at a time until nothing material is missing, then write the SDD spec (.sdd/specs/<feature>.md with REQ IDs, EARS wording, TEST IDs, tier, approval) for lean-sdd-tdd. 「〜を作りたい」という依頼から、足りない要件を1問1答で確認し、要件定義書(SDD spec)を作成するときに使用。"
+description: "Use when the user wants to build a feature, API, app or bug fix and the canonical implementation requirements are missing from .sdd/specs, including requirements supplied in docs/requirements. Read existing requirements, interview only missing material one question at a time, then write .sdd/specs/<feature>.md with preserved REQ IDs, EARS wording, TEST IDs, tier and approval for lean-sdd-tdd. 「〜を作りたい」という依頼から、足りない要件を1問1答で確認し、要件定義書(SDD spec)を作成するときに使用。"
 ---
 # SDD spec interview / 要件ヒアリングから spec 作成
 
@@ -12,8 +12,16 @@ response; never fabricate user answers or human approval.
 
 Follow the user's language. Output of this skill = `.sdd/specs/<feature>.md` in the `lean-sdd-tdd` format (see `../lean-sdd-tdd/references/spec-template.md`). Implementation is **not** started here; hand over to `lean-sdd-tdd`.
 
+## Canonical requirements and document handoff
+
+Keep `.sdd/specs/<feature>.md` as the canonical implementation contract.
+Treat existing `docs/requirements` documents as inputs; preserve identifiers and acceptance conditions, and do not overwrite them.
+Hand explanatory documents to tech-writer with canonical specification references; preserve approval and do not create a competing contract.
+If implementation intent is unclear, ask one question before writing the contract.
+For explicitly non-SDD reader documentation, hand off to tech-writer without creating an SDD spec.
+
 ## Rules
-1. **Read first, ask later.** Before the first question, inspect the repo (stack, similar code, README) and the user's prompt. For existing `.sdd/specs/`, use the bundled `lean-sdd-tdd/scripts/sdd.mjs context <feature|REQ|file>...` to read only relevant complete specs and declared prerequisites (default 16384 UTF-8 bytes; explicit `--max-bytes N` override). Locate candidate filenames first if the feature is new; resolve errors/overflow with narrower or explicit selectors, never a bulk read. Static impact cannot infer undeclared relationships. This reading context never narrows full validation or replaces the full gate. Never ask what you can find out.
+1. **Read first, ask later.** Before the first question, inspect the repo (stack, similar code, README), supplied requirement documents and the user's prompt. Carry approved scope, IDs and acceptance conditions into the canonical spec with source links; ask about conflicting or missing intent rather than silently changing it. Existing document approval is input evidence, not automatically a valid hash lock for a new canonical spec. For existing `.sdd/specs/`, use the bundled `lean-sdd-tdd/scripts/sdd.mjs context <feature|REQ|file>...` to read only relevant complete specs and declared prerequisites (default 16384 UTF-8 bytes; explicit `--max-bytes N` override). Locate candidate filenames first if the feature is new; resolve errors/overflow with narrower or explicit selectors, never a bulk read. Static impact cannot infer undeclared relationships. This reading context never narrows full validation or replaces the full gate. Never ask what you can find out.
 2. **One question at a time** via the host's native question tool, one field per form; use the conversational fallback only when that tool is unavailable. Each question gives 2–4 concrete options, a recommended default (pre-selected) and allows free text. No question lists.
 3. **Ask only what changes the spec.** Skip a topic when the answer is obvious from the prompt/repo; state it as an assumption instead. Stop asking as soon as the checklist below is covered or defaulted. Typical total: 3–8 questions; hard cap 10, then proceed with defaults.
 4. **Echo before writing:** after the last answer, show a ≤10-line summary (goal, scope, key behaviours, assumptions) and write the spec unless the user objects.

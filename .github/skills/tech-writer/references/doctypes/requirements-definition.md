@@ -1,5 +1,14 @@
 # Requirements definition type
 
+Before using this template, apply SKILL.md section "Requirements ownership and SDD handoff".
+Implementation contracts must be authored by sdd-spec-interview or sdd-reverse-spec in `.sdd/specs`; this template does not replace that handoff.
+
+Use this type for reader-facing explanations of approved canonical
+requirements, or explicitly non-SDD documents. Link explanations to their
+canonical requirement IDs and source specifications; do not independently
+change scope, acceptance conditions or approval. Existing documents remain
+inputs to a later SDD handoff, not a second implementation contract.
+
 A requirements definition establishes agreement on what outcomes, scope,
 capabilities, quality levels, and acceptance conditions a system must
 satisfy. It describes the required behavior and measurable constraints

@@ -6,7 +6,8 @@ import os from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { test } from 'node:test';
 import { EventEmitter } from 'node:events';
-import { execFileSync } from 'node:child_process';
+import { PassThrough } from 'node:stream';
+import { execFileSync, spawn } from 'node:child_process';
 import * as processIo from './release-qualification-io.mjs';
 import {
   contentCaseCatalogue, buildContentCasePlan, runContentCase, validateContentCase,
@@ -39,6 +40,252 @@ const write = (file, value) => {
   fs.writeFileSync(file, typeof value === 'string' ? value : JSON.stringify(value, null, 2));
   return file;
 };
+
+function gateFailureDetails(output) {
+  const receipt = path.join(output, 'full-gate/command.json');
+  if (!fs.existsSync(receipt)) return '';
+  const native = read(receipt);
+  return '\nActual nested gate stdout/stderr:\n' +
+    processIo.readRef(native.stdout) + processIo.readRef(native.stderr);
+}
+
+function copyPlanningSource(source, destination) {
+  // Match the frozen Git source: prior gate captures are ignored, not candidate inputs.
+  fs.cpSync(source, destination, { recursive: true, filter: file => {
+    const relative = path.relative(source, file).split(path.sep).join('/');
+    return relative !== '.sdd/check-output' && !relative.startsWith('.sdd/check-output/');
+  } });
+}
+
+async function planningGateFixture(t) {
+  const directory = workspace(t), source = path.join(directory, 'original');
+  const sdk = '.github/skills/lean-sdd-tdd/scripts';
+  fs.mkdirSync(source);
+  fs.cpSync(path.join(root, sdk), path.join(source, sdk), { recursive: true,
+    filter: file => !file.endsWith('.test.mjs') });
+  fs.cpSync(path.join(root, 'scripts'), path.join(source, 'scripts'), { recursive: true,
+    filter: file => !file.endsWith('.test.mjs') && !file.endsWith('.py') });
+  const environment = { ...process.env,
+    PATH: path.dirname(process.execPath) + path.delimiter + process.env.PATH };
+  for (const key of Object.keys(environment)) {
+    if (key.startsWith('QUALIFY_') || ['NODE_TEST_CONTEXT', 'NODE_OPTIONS', 'NODE_PATH'].includes(key)) delete environment[key];
+  }
+  const invoke = async (args, cwd = source) => {
+    const result = await processIo.execute({ command: [process.execPath, path.join(cwd, sdk, 'sdd.mjs'), ...args],
+      cwd, env: environment, timeoutMs: 120000, maxBytes: 8 * 1024 * 1024 });
+    assert.equal(result.error, null, result.stderr);
+    assert.equal(result.signal, null, result.stderr);
+    assert.equal(result.timedOut, false);
+    assert.equal(result.outputLimit, false);
+    return result;
+  };
+  const ids = ['PARENT', 'CHILD'].map(name => ({
+    task: name, req: 'REQ-' + 'FIX-' + name, test: 'TEST-' + 'FIX-' + name, code: 'CODE-' + 'FIX-' + name,
+    file: name.toLowerCase(), value: name === 'PARENT' ? 2 : 3,
+  }));
+  const annotation = (kind, id, binding, req) => ['/**', '@' + kind, id, '@' + binding, req, '*/'].join(' ');
+  const spec = '.sdd/specs/fixture.md';
+  write(path.join(source, spec), '---\nfeature: fixture\ntier: T1\n---\n' +
+    ids.map(row => `${row.req}: When called, ${row.file} shall return ${row.value}.`).join('\n') + '\n');
+  write(path.join(source, 'package.json'), { type: 'module', scripts: { test: 'node --test parent.test.mjs child.test.mjs' } });
+  const configuration = { planning: { required: false }, scan: { exclude: ['.github/**', 'scripts/**'] },
+    testCmd: [process.execPath, '--test', '--test-name-pattern', '{id}', '{file}'],
+    checks: [{ name: 'test', cmd: [process.execPath, '--test', 'parent.test.mjs', 'child.test.mjs'], timeoutMs: 20000 }] };
+  write(path.join(source, '.sdd/config.json'), configuration);
+  for (const row of ids) {
+    const implementation = value => annotation('id', row.code, 'implements', row.req) +
+      `\nexport const value = () => ${value};\n`;
+    write(path.join(source, row.file + '.mjs'), implementation(0));
+    write(path.join(source, row.file + '.test.mjs'),
+      `import { test } from 'node:test';\nimport assert from 'node:assert/strict';\n` +
+      `import { value } from './${row.file}.mjs';\n` + annotation('id', row.test, 'verifies', row.req) +
+      `\ntest('${row.test}', () => assert.equal(value(), ${row.value}));\n`);
+    const red = await invoke(['tdd', 'red', row.test]);
+    assert.equal(red.exit, 0, red.stdout + red.stderr);
+    assert.match(red.stdout, /RED ok/);
+    write(path.join(source, row.file + '.mjs'), implementation(row.value));
+    const green = await invoke(['tdd', 'green', row.test]);
+    assert.equal(green.exit, 0, green.stdout + green.stderr);
+    assert.match(green.stdout, /GREEN ok/);
+  }
+  configuration.planning.required = true;
+  write(path.join(source, '.sdd/config.json'), configuration);
+  const plan = { schemaVersion: 1, features: [{ id: 'fixture', dependsOn: [] }],
+    tasks: ids.map(row => ({ id: row.task, feature: 'fixture', kind: 'implementation', reqs: [row.req],
+      dependsOn: row.task === 'CHILD' ? ['PARENT'] : [], artifacts: [row.file + '.mjs', row.file + '.test.mjs'],
+      condition: `${row.file} returns ${row.value} on valid input.`, tests: [row.test],
+      checks: [{ name: 'valid-control', argv: [process.execPath, '--test', row.file + '.test.mjs'], timeoutMs: 20000 }],
+      specs: { [spec]: fileDigest(path.join(source, spec)) },
+      dependencies: row.task === 'CHILD' ? { PARENT: '0'.repeat(64) } : {},
+      status: 'not-started', receipt: null })) };
+  const savePlan = () => write(path.join(source, '.sdd/implementation-plan.json'), plan);
+  savePlan();
+  for (const task of plan.tasks) {
+    if (task.id === 'CHILD') {
+      const measured = await invoke(['plan', 'check', '--json']);
+      assert.equal(measured.exit, 1, measured.stdout + measured.stderr);
+      task.dependencies.PARENT = JSON.parse(measured.stdout).tasks.find(row => row.id === 'PARENT').fingerprint;
+      savePlan();
+    }
+    const verified = await invoke(['plan', 'verify', task.id, '--json']);
+    assert.equal(verified.exit, 0, verified.stdout + verified.stderr);
+    const data = JSON.parse(verified.stdout);
+    assert.equal(data.status, 'PASS');
+    task.status = 'complete'; task.receipt = data.receipt; savePlan();
+  }
+  plan.tasks.reverse(); savePlan();
+  const valid = await invoke(['gate']);
+  assert.equal(valid.exit, 0, valid.stdout + valid.stderr);
+  assert.match(valid.stdout, /^SDD GATE PASS$/m, 'valid original-root control must genuinely pass');
+  return { directory, source, environment, plan, invoke, sdk };
+}
+
+/** @id TEST-RELQ-PLANNING-001 @verifies REQ-RELQ-002 REQ-RELQ-003 */
+test('TEST-RELQ-PLANNING-001 prepares genuine fresh-root parent/child proof before the actual full gate', async t => {
+  const { gateDeadlinePlan } = await import('./release-qualification-cli.mjs');
+  const nowNs = 1000000000000n, deadlineNs = nowNs + 12000000000000n;
+  const timing = gateDeadlinePlan(deadlineNs, nowNs);
+  assert.equal(timing.outerDeadlineNs, deadlineNs - 4000000000n,
+    'outer deadline must reserve bounded termination without killing nested serialization at its work cutoff');
+  assert.equal(timing.nestedWorkDeadlineNs, deadlineNs - 9000000000n);
+  assert.equal(timing.timeoutMs, 11996000);
+  assert.ok(timing.nestedWorkDeadlineNs < timing.outerDeadlineNs && timing.outerDeadlineNs < deadlineNs);
+  for (const remainingMs of [8999, 9000]) {
+    assert.throws(() => gateDeadlinePlan(nowNs + BigInt(remainingMs) * 1000000n, nowNs),
+      /budget|deadline|reserve/i, 'exhausted work/cleanup reserve cannot launch a gate');
+  }
+  assert.equal(gateDeadlinePlan(nowNs + 9001000000n, nowNs).nestedWorkDeadlineNs, nowNs + 1000000n);
+  const fixture = await planningGateFixture(t);
+  const source = path.join(fixture.directory, 'fresh');
+  copyPlanningSource(fixture.source, source);
+  const before = await fixture.invoke(['plan', 'check', '--json'], source);
+  assert.equal(before.exit, 1, before.stdout + before.stderr);
+  const stale = JSON.parse(before.stdout);
+  assert.deepEqual(stale.tasks.map(row => row.state), ['revalidation-required', 'replan-required']);
+  const { commandForCell, cellCatalogue } = await import('./release-qualification-cells.mjs');
+  const cell = { id: 'INTEGRATED-GATE', kind: 'gate', runtime: String(process.versions.node.split('.')[0]), timeoutSeconds: 12000 };
+  const output = path.join(fixture.directory, 'output');
+  const manifest = { execution: { sourceRoot: fixture.source } };
+  const catalogue = cellCatalogue(manifest, cell, source);
+  const context = write(path.join(fixture.directory, 'context.json'), {
+    cell, source, output, node: process.execPath, environment: fixture.environment, catalogue,
+    configuration: manifest.execution,
+  });
+  const replacements = { '{node}': process.execPath, '{source}': source, '{context}': context };
+  const command = commandForCell(cell, ['parent.test.mjs', 'child.test.mjs']).map(arg =>
+    Object.entries(replacements).reduce((text, [key, value]) => text.replaceAll(key, value), arg));
+  const result = await processIo.execute({ command, cwd: source, env: fixture.environment,
+    timeoutMs: 120000, maxBytes: 8 * 1024 * 1024 });
+  assert.equal(result.error, null, result.stderr);
+  assert.equal(result.signal, null, result.stderr);
+  assert.equal(result.timedOut, false);
+  assert.equal(result.exit, 0,
+    'Fresh-root gate must genuinely prepare both tasks instead of rejecting copied old-root proof:\n' +
+    result.stdout + result.stderr + gateFailureDetails(output));
+  const checked = await fixture.invoke(['plan', 'check', '--json'], source);
+  assert.equal(checked.exit, 0, checked.stdout + checked.stderr);
+  assert.ok(JSON.parse(checked.stdout).tasks.every(row => row.state === 'complete'));
+  for (const task of fixture.plan.tasks) {
+    assert.equal(fileDigest(path.join(source, task.receipt)), fileDigest(path.join(fixture.source, task.receipt)),
+      'the old native receipt must remain byte-identical');
+  }
+  const evidence = { ...processIo.retainProcess(path.join(output, 'outer'), result), format: 'adapter' };
+  assert.equal((await validateCellEvidence({ cell, catalogue, evidence })).status, 'PASS',
+    'the independent validator must accept actual current proof plus full gate, not reject everything');
+  const data = JSON.parse(result.stdout);
+  assert.deepEqual(data.planning.verifications.map(row => row.id), ['PARENT', 'CHILD'],
+    'copied complete statuses and reversed author order cannot substitute for newly verified parents');
+  let index = 0;
+  const reject = async (change, reason) => {
+    const invalid = structuredClone(data); change(invalid);
+    const record = processIo.retainProcess(path.join(output, 'invalid-' + index++),
+      { ...result, stdout: JSON.stringify(invalid) });
+    assert.equal((await validateCellEvidence({ cell, catalogue, evidence: { ...record, format: 'adapter' } })).status,
+      'FAIL', reason);
+  };
+  for (const field of ['exit', 'signal', 'timedOut', 'outputLimit', 'error']) {
+    await reject(row => { row.gate[field] = field === 'exit' ? 1 : field === 'signal' ? 'SIGTERM' :
+      field === 'error' ? 'native error' : true; }, `native gate ${field} cannot be hidden by PASS text`);
+  }
+  await reject(row => { row.planning.verifications = []; }, 'zero-task preparation cannot pass');
+  await reject(row => { row.planning.verifications.pop(); }, 'omitted prerequisite/task proof cannot pass');
+  await reject(row => { row.planning.verifications[0].fingerprint = '0'.repeat(64); }, 'unbound current receipt cannot pass');
+  await reject(row => { delete row.planning.verifications[0].native; }, 'native producer response cannot be omitted');
+  await reject(row => { row.gate.stdout.path += '.missing'; }, 'missing full gate bytes cannot pass');
+  assert.equal((await validateCellEvidence({ cell, catalogue,
+    evidence: { ...data.gate, format: 'gate' } })).status, 'FAIL',
+  'the required cell identity rejects legacy raw-gate claims despite real PASS text');
+  const planFile = path.join(source, '.sdd/implementation-plan.json'), currentBytes = fs.readFileSync(planFile);
+  try {
+    const changed = JSON.parse(currentBytes);
+    changed.tasks[0].condition += ' unauthorized change';
+    write(planFile, changed);
+    assert.equal((await validateCellEvidence({ cell, catalogue, evidence })).status, 'FAIL',
+      'a changed authored definition cannot inherit a current full-gate result');
+  } finally { fs.writeFileSync(planFile, currentBytes); }
+  assert.equal((await validateCellEvidence({ cell, catalogue, evidence })).status, 'PASS');
+
+  const exhaustedContext = write(path.join(fixture.directory, 'exhausted-context.json'),
+    { cell: { ...cell, timeoutSeconds: 1 }, source, output: path.join(fixture.directory, 'exhausted'),
+      node: process.execPath, environment: fixture.environment, catalogue, configuration: manifest.execution });
+  const exhausted = await processIo.execute({
+    command: [process.execPath, path.join(source, 'scripts/release-qualification-cells.mjs'),
+      '--cell', cell.id, '--context', exhaustedContext],
+    cwd: source, env: fixture.environment, timeoutMs: 10000, maxBytes: 8 * 1024 * 1024,
+  });
+  assert.equal(exhausted.exit, 1, 'less than cleanup reserve cannot start or claim gate success');
+  assert.match(exhausted.stdout, /deadline|budget|reserve/i);
+  assert.deepEqual(fs.readFileSync(planFile), currentBytes, 'exhaustion cannot rewrite or prune source proof');
+
+  const descendant = await processIo.execute({
+    command: [process.execPath, '-e',
+      "const {spawn}=require('node:child_process');const c=spawn(process.execPath,['-e','setInterval(()=>{},1000)'],{detached:true,stdio:'ignore'});console.log(c.pid);setInterval(()=>{},1000);"],
+    cwd: source, env: fixture.environment, timeoutMs: 1000, maxBytes: 8 * 1024 * 1024, trackDescendants: true,
+  });
+  assert.equal(descendant.timedOut, true);
+  const pid = Number(descendant.stdout.trim());
+  assert.ok(Number.isSafeInteger(pid) && pid > 1, 'actual owned descendant PID is required');
+  try {
+    await assert.doesNotReject(processIo.waitForProcessExit(pid, 1000),
+      'the timed-out native command must reap even its detached ordinary descendant');
+  } finally {
+    try { process.kill(pid, 'SIGKILL'); }
+    catch (error) { if (error.code !== 'ESRCH') throw error; }
+  }
+  for (const parentSignal of ['SIGTERM', 'SIGINT']) {
+    let gateChild;
+    const parent = await processIo.execute({
+      command: [process.execPath, '--input-type=module', '-e',
+        `import { execute, withTerminationSignal } from ${JSON.stringify(path.join(root, 'scripts/release-qualification-io.mjs'))};
+import { spawn } from 'node:child_process';
+try { const result = await withTerminationSignal(signal => execute({
+  command: [process.execPath, '-e', 'console.log("ready");setInterval(()=>{},1000)'],
+  cwd: process.cwd(), env: process.env, timeoutMs: 600000, trackDescendants: true, signal
+}, { spawn: (...args) => { const child = spawn(...args);
+  child.stdout.once('data', () => console.log(child.pid)); return child; } }));
+  console.log(JSON.stringify(result)); process.exitCode = result.error || result.exit !== 0 ? 1 : 0;
+} catch (error) { console.log(error.message); process.exitCode = 1; }`],
+      cwd: source, env: fixture.environment, timeoutMs: 10000, maxBytes: 8 * 1024 * 1024,
+    }, { spawn: (...args) => {
+      const child = spawn(...args);
+      child.stdout.once('data', chunk => {
+        gateChild = Number(chunk.toString().trim().split('\n')[0]);
+        if (Number.isSafeInteger(gateChild) && gateChild > 1) process.kill(child.pid, parentSignal);
+      });
+      return child;
+    } });
+    assert.ok(Number.isSafeInteger(gateChild) && gateChild > 1, 'actual parent/child readiness handshake required');
+    try {
+      await assert.doesNotReject(processIo.waitForProcessExit(gateChild, 1000),
+        `outer termination must stop the running gate child (${parentSignal}), not abandon its timer`);
+      assert.equal(parent.timedOut, false);
+      assert.equal(parent.exit, 1, parent.stdout + parent.stderr);
+    } finally {
+      try { process.kill(gateChild, 'SIGKILL'); }
+      catch (error) { if (error.code !== 'ESRCH') throw error; }
+    }
+  }
+});
 
 /** @id TEST-RELQ-GIT-001 @verifies REQ-RELQ-002 REQ-RELQ-003 */
 test('TEST-RELQ-GIT-001 restores bound suite history without conflating discovery or accepting invalid inputs', async t => {
@@ -193,6 +440,47 @@ test('TEST-RELQ-PROCESS-001 rejects observation and cleanup errors and bounds re
   assert.equal(over.timers.filter(timer => timer.delay === 1000).length, 1, 'one escalation for repeated overflow');
   assert.equal(over.kills.filter(([, signal]) => signal === 'SIGTERM').length, 1);
   assert.ok(over.timers.every(timer => timer.cleared), 'no delayed signals survive process completion');
+
+  for (const termination of ['timeout', 'abort']) {
+    const stalled = new EventEmitter(), controller = new AbortController();
+    stalled.pid = process.pid;
+    stalled.stdout = new PassThrough(); stalled.stderr = new PassThrough();
+    let now = 0, completed, kills = 0;
+    const scheduled = new Set();
+    const pending = processIo.execute({ command: ['unit-only-command'], cwd: root, env: {},
+      timeoutMs: termination === 'timeout' ? 25 : 600000, signal: controller.signal, maxBytes: 1 }, {
+      spawn: () => stalled, kill: () => { kills++; },
+      setTimeout: (callback, delay) => {
+        const timer = { callback, at: now + delay };
+        scheduled.add(timer); return timer;
+      },
+      clearTimeout: timer => scheduled.delete(timer),
+    }).then(result => { completed = result; });
+    if (termination === 'abort') controller.abort();
+    while (scheduled.size) {
+      const next = [...scheduled].sort((left, right) => left.at - right.at)[0];
+      if (next.at > 3025) break;
+      scheduled.delete(next); now = next.at; next.callback();
+    }
+    await new Promise(resolve => setImmediate(resolve));
+    assert.ok(completed, 'execution must settle with explicit failure when close never arrives after bounded termination');
+    await pending;
+    assert.equal(completed.timedOut, termination === 'timeout');
+    assert.equal(completed.exit, null, 'an unobserved exit is unknown, not an invented successful native result');
+    assert.match(completed.error, /cleanup incomplete|may remain/i);
+    if (termination === 'abort') assert.match(completed.error, /cancelled/);
+    assert.equal(stalled.stdout.destroyed, true);
+    assert.equal(stalled.stderr.destroyed, true);
+    assert.equal(scheduled.size, 0);
+    const snapshot = structuredClone(completed), stoppedKills = kills;
+    stalled.emit('close', 0, null);
+    stalled.stdout.emit('data', Buffer.from('late'));
+    stalled.emit('error', new Error('late native error'));
+    await new Promise(resolve => setImmediate(resolve));
+    assert.deepEqual(completed, snapshot, 'late events cannot revise the retained incomplete native verdict');
+    assert.equal(kills, stoppedKills, 'late close cannot repeat cleanup');
+    assert.equal(scheduled.size, 0);
+  }
 });
 
 /** @id TEST-RELQ-CLOSURE-001 @verifies REQ-RELQ-002 */
@@ -313,7 +601,7 @@ test('TEST-RELQ-READINESS-001 refuses synthetic inline empty-run readiness witho
     state: { sourceRoots: [], homeRoots: [], cacheRoots: [] },
   }));
   await reject(evaluateReadinessApi({ manifest, history }), 'two empty synthetic passes must never mean technical-ready');
-  await initializeReadiness(directory);
+  await initializeReadiness(directory, t);
   const valid = readinessFixture(directory, [runFixture(directory, 1), runFixture(directory, 2)]);
   await pass(evaluateReadiness(valid), 'two complete fresh bound fixture runs remain accepted through the same public API');
   const unbound = { ...valid }; delete unbound.manifestSha256;
@@ -891,6 +1179,7 @@ function runFixture(directory, index, status = 'PASS', manifestSha256 = digest('
   const binding = readinessBindings.get(directory);
   if (binding && manifestSha256 === digest('manifest-A')) manifestSha256 = binding.manifestSha256;
   const cells = required.map(cell => {
+    if (cell.id === 'INTEGRATED-GATE') return structuredClone(binding.gates.get(index));
     const evidence = cellFixture(path.join(directory, `run-${index}`, cell.id));
     evidence.cell = cell;
     return { id: cell.id, ...evidence };
@@ -909,12 +1198,36 @@ function runFixture(directory, index, status = 'PASS', manifestSha256 = digest('
 }
 
 const readinessBindings = new Map();
-async function initializeReadiness(directory) {
+async function initializeReadiness(directory, t) {
   const fixture = freezeFixture(path.join(directory, 'readiness-lock'));
   fixture.request.cellCatalogues = Object.fromEntries(required.map(cell =>
     [cell.id, [{ name: 'TEST-RELQ-FIXTURE named target' }]]));
+  const seed = await planningGateFixture(t);
+  const { cellCatalogue } = await import('./release-qualification-cells.mjs');
+  const cell = required.find(cell => cell.id === 'INTEGRATED-GATE'), gates = new Map();
+  fixture.request.cellCatalogues[cell.id] = processIo.mapStrings(cellCatalogue({}, cell, seed.source),
+    value => value.replaceAll(seed.source, '{source}'));
+  for (const index of [1, 2, 3]) {
+    const cellRoot = path.join(directory, `run-${index}`, cell.id), source = path.join(cellRoot, 'source');
+    copyPlanningSource(seed.source, source);
+    const catalogue = cellCatalogue({}, cell, source);
+    const context = write(path.join(cellRoot, 'context.json'), {
+      cell, source, output: path.join(cellRoot, 'adapter'), node: process.execPath,
+      environment: seed.environment, catalogue,
+    });
+    const result = await processIo.execute({
+      command: [process.execPath, path.join(source, 'scripts/release-qualification-cells.mjs'),
+        '--cell', cell.id, '--context', context],
+      cwd: source, env: seed.environment, timeoutMs: 120000, maxBytes: 8 * 1024 * 1024,
+    });
+    assert.equal(result.exit, 0, result.stdout + result.stderr + gateFailureDetails(path.join(cellRoot, 'adapter')));
+    const evidence = { ...processIo.retainProcess(path.join(cellRoot, 'outer'), result), format: 'adapter' };
+    await pass(validateCellEvidence({ cell, catalogue, evidence }), 'readiness uses genuine fresh-root task proof and full gate');
+    gates.set(index, { id: cell.id, cell, catalogue, evidence });
+  }
   const frozen = await pass(freezeCandidate(fixture.request, fixture.effects), 'frozen readiness fixture');
-  readinessBindings.set(directory, { ...frozen, effects: fixture.effects });
+  readinessBindings.set(directory, { ...frozen, effects: fixture.effects, gates });
+  t.after(() => readinessBindings.delete(directory));
 }
 async function evaluateReadiness(request) {
   const binding = [...readinessBindings.values()].find(row => row.manifestPath === request.manifestPath);
@@ -1592,7 +1905,7 @@ test('TEST-RELQ-003 requires named retained outcomes and all owned host mutation
 /** @id TEST-RELQ-004 @verifies REQ-RELQ-004 */
 test('TEST-RELQ-004 enumerates streak resets, fresh per-cell state and immutable failed history', async t => {
   const directory = workspace(t);
-  await initializeReadiness(directory);
+  await initializeReadiness(directory, t);
   const first = runFixture(directory, 1);
   const second = runFixture(directory, 2);
   const clean = readinessFixture(directory, [first, second]);

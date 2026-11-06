@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "task": "TASK-RELQ-004",
+  "sequence": 3,
+  "previous": "9147e1427523e3c396c91f5ae67fe2396c2a1749ea9f8705a42caf1892d59232",
+  "definitionSha256": "b5b12e1efe662942b05c6a54b73b083f06d92c884c61b34e5cb8684395c702bc",
+  "inputSha256": "0786c2a5890a5c5068f134d02a8f4b0c69871fc12bf37534c9186825baa49140",
+  "status": "PASS",
+  "exit": 0,
+  "checks": [
+    {
+      "name": "regression-1",
+      "argv": [
+        "node",
+        "--test",
+        "--test-name-pattern",
+        "^(?:.*\\b(?:TEST-RELQ-READINESS-001|TEST-RELQ-004))(?![0-9A-Za-z])",
+        "scripts/release-qualification.test.mjs"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/ea566fd8dcc45f090bbb58cbb164569368264ed6a6f464c72ed20485084892c2/attempt-ceb1f097-fe8e-496e-88e6-5455e7fc0852/0.log",
+        "sha256": "d71faf9c4f49c74e17554e5a0cae71b9481258f1ccb9b74624b95edbbe5da1f8",
+        "bytes": 343
+      }
+    },
+    {
+      "name": "native-TEST-RELQ-004",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-RELQ-004",
+        "--root",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/ea566fd8dcc45f090bbb58cbb164569368264ed6a6f464c72ed20485084892c2/attempt-ceb1f097-fe8e-496e-88e6-5455e7fc0852/1.log",
+        "sha256": "0878411c6bedd58a231e0fa0728d3d7f302cb0eb11d1dd3fb8ca98db2227abdd",
+        "bytes": 49
+      }
+    },
+    {
+      "name": "native-TEST-RELQ-READINESS-001",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-RELQ-READINESS-001",
+        "--root",
+        "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v027-requirements-worktree"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/ea566fd8dcc45f090bbb58cbb164569368264ed6a6f464c72ed20485084892c2/attempt-ceb1f097-fe8e-496e-88e6-5455e7fc0852/2.log",
+        "sha256": "6d709a0024cbe54d122fb15014086c836731b8e91206abcd46046dd8204c75b3",
+        "bytes": 59
+      }
+    }
+  ],
+  "ledgerEvents": [
+    {
+      "test": "TEST-RELQ-004",
+      "hashes": [
+        "16deefe2311fa7012337deca534cf598f0295f08d5f750d4b2b8ea9f3fb97fc3",
+        "6582fdc53f7247c21c60ea27dcfa46495b722ffe433a6a3846b15af111ab85ab",
+        "80b9b7eda8565af2c89301919b2dc549201fa0b1ecef4573846080824a3d9020",
+        "8ba9389160795b31e67033f0beaabb3c384730a2267f4498593b77ccf47e7752",
+        "cc15a34686cc21de40a96ee4f4a3aee3d54f41eae7ee51a55514b6ce65f149f1"
+      ]
+    },
+    {
+      "test": "TEST-RELQ-READINESS-001",
+      "hashes": [
+        "8a01eefe21276d0855cdecfdf3bce750143e5759badbe1c47a457f97fbe7be2d",
+        "aabe30d2666890d9592716a6888647d3ccb8486fff43d81a6de2e03da7dd3634",
+        "e027873f1e1a7c3fe8d086009afedde28cc9d2fbb98884411e39f826c53430cc",
+        "f52740ac4bb8bac8ee55de44c9e07796a1bc798495a62eb98bb374bd101bfb0a",
+        "fd090536ee76ec8f53e67b5c04d6c6a7ccca26838da9bfb05346c148992b823e"
+      ]
+    }
+  ],
+  "errors": []
+}

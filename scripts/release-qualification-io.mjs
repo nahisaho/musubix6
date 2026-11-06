@@ -169,30 +169,134 @@ export async function waitForProcessExit(pid, timeoutMs = 3000, effects = {}) {
   throw new Error(`ordinary descendant ${pid} remains executable after bounded cleanup`);
 }
 
-export async function execute({ command, cwd, env, timeoutMs = 120000, maxBytes = 32 * 1024 * 1024 }, effects = {}) {
+/** @id CODE-RELQ-TERMINATION-001 @implements REQ-RELQ-003 */
+export async function withTerminationSignal(action) {
+  const controller = new AbortController();
+  const abort = () => controller.abort();
+  process.on('SIGTERM', abort);
+  process.on('SIGINT', abort);
+  try {
+    return await action(controller.signal);
+  } finally {
+    process.removeListener('SIGTERM', abort);
+    process.removeListener('SIGINT', abort);
+  }
+}
+
+export async function execute({ command, cwd, env, timeoutMs = 120000, maxBytes = 32 * 1024 * 1024,
+  signal, trackDescendants = false }, effects = {}) {
   ensure(Array.isArray(command) && command.length > 0 && command.every(x => typeof x === 'string'), 'argv required');
   ensure(Number.isSafeInteger(timeoutMs) && timeoutMs > 0, 'positive execution budget required');
+  ensure(!signal?.aborted, 'execution cancelled before spawn');
+  ensure(!trackDescendants || process.platform === 'linux', 'owned descendant tracking requires Linux');
+  if (trackDescendants) {
+    fs.readFileSync('/proc/self/stat', 'utf8');
+    fs.readFileSync(`/proc/self/task/${process.pid}/children`, 'utf8');
+  }
   return new Promise(resolve => {
     const startedAt = new Date().toISOString();
     const child = (effects.spawn || spawn)(command[0], command.slice(1), { cwd, env, detached: true, stdio: ['ignore', 'pipe', 'pipe'] });
     const kill = effects.kill || process.kill;
     const schedule = effects.setTimeout || setTimeout, cancel = effects.clearTimeout || clearTimeout;
     let stdout = '', stderr = '', bytes = 0, timedOut = false, outputLimit = false, error = null;
-    let escalation, terminating = false;
+    let escalation, completionTimer, ownershipTimer, terminating = false, settled = false;
+    const owned = new Map();
+    const identity = pid => {
+      try {
+        const stat = fs.readFileSync(`/proc/${pid}/stat`, 'utf8');
+        const fields = stat.slice(stat.lastIndexOf(')') + 2).trim().split(/\s+/);
+        ensure(/^[0-9]+$/.test(fields[19]), 'unparseable owned process identity');
+        return { start: fields[19], state: fields[0] };
+      } catch (failure) { if (failure.code === 'ENOENT' || failure.code === 'ESRCH') return null; throw failure; }
+    };
+    const rootStart = trackDescendants ? identity(child.pid)?.start : null;
+    const capture = pid => {
+      const current = identity(pid);
+      if (!current || current.state === 'Z') return;
+      if (owned.has(pid)) ensure(owned.get(pid) === current.start, 'owned process identity changed');
+      owned.set(pid, current.start);
+      ensure(owned.size <= 4096, 'owned descendant count budget exceeded');
+      let children;
+      try { children = fs.readFileSync(`/proc/${pid}/task/${pid}/children`, 'utf8').trim(); }
+      catch (failure) { if (failure.code === 'ENOENT' || failure.code === 'ESRCH') return; throw failure; }
+      if (children) for (const value of children.split(/\s+/)) {
+        const id = Number(value);
+        ensure(Number.isSafeInteger(id) && id > 1, 'invalid owned descendant PID');
+        capture(id);
+      }
+    };
+    const signalOwned = value => {
+      for (const [pid, start] of [...owned].reverse()) {
+        const current = identity(pid);
+        if (!current || current.start !== start || current.state === 'Z') continue;
+        try { kill(pid, value); }
+        catch (failure) { if (failure.code !== 'ESRCH') throw failure; }
+      }
+    };
+    const ownershipFailure = failure => {
+      error = [error, `owned process cleanup: ${failure.code || failure.message}`].filter(Boolean).join('; ');
+    };
     const signalGroup = signal => {
-      try { kill(-child.pid, signal); }
+      if (!child.pid) return;
+      try {
+        const current = trackDescendants ? identity(child.pid) : null;
+        if (current && current.start !== rootStart) return;
+        kill(-child.pid, signal);
+      }
       catch (failure) {
         if (failure.code !== 'ESRCH') error = [error, `${signal} cleanup: ${failure.code || failure.message}`].filter(Boolean).join('; ');
       }
     };
     const terminate = () => {
-      if (!child.pid || terminating) return;
+      if (terminating || settled) return;
       terminating = true;
+      if (trackDescendants) {
+        try {
+          if (identity(child.pid)?.start === rootStart) capture(child.pid);
+          signalOwned('SIGTERM');
+        } catch (failure) { ownershipFailure(failure); }
+      }
       signalGroup('SIGTERM');
-      escalation = schedule(() => signalGroup('SIGKILL'), 1000);
+      escalation = schedule(() => {
+        if (settled) return;
+        if (trackDescendants) {
+          try { signalOwned('SIGKILL'); } catch (failure) { ownershipFailure(failure); }
+        }
+        signalGroup('SIGKILL');
+      }, 1000);
+      completionTimer = schedule(() => {
+        if (settled) return;
+        error = [error, 'native close completion deadline exceeded; cleanup incomplete; processes may remain alive']
+          .filter(Boolean).join('; ');
+        for (const stream of [child.stdout, child.stderr]) {
+          try { stream.destroy(); }
+          catch (failure) { error += `; pipe cleanup: ${failure.code || failure.message}`; }
+        }
+        void finish(null, null);
+      }, 3000);
     };
+    const abort = () => { error = [error, 'execution cancelled'].filter(Boolean).join('; '); terminate(); };
+    if (signal) {
+      signal.addEventListener('abort', abort, { once: true });
+      if (signal.aborted) abort();
+    }
+    if (trackDescendants) {
+      const observe = () => {
+        if (settled) return;
+        try {
+          for (const [pid, start] of owned) {
+            const current = identity(pid);
+            if (!current || current.start !== start || current.state === 'Z') owned.delete(pid);
+          }
+          if (identity(child.pid)?.start === rootStart) capture(child.pid);
+        } catch (failure) { ownershipFailure(failure); terminate(); }
+        ownershipTimer = schedule(observe, 25);
+      };
+      observe();
+    }
     const timer = schedule(() => { timedOut = true; terminate(); }, timeoutMs);
     const append = (key, chunk) => {
+      if (settled) return;
       bytes += chunk.length;
       if (bytes > maxBytes) { outputLimit = true; terminate(); return; }
       if (key === 'stdout') stdout += chunk.toString('utf8');
@@ -200,15 +304,30 @@ export async function execute({ command, cwd, env, timeoutMs = 120000, maxBytes 
     };
     child.stdout.on('data', chunk => append('stdout', chunk));
     child.stderr.on('data', chunk => append('stderr', chunk));
-    child.on('error', value => { error = value.message; });
-    child.on('close', (exit, signal) => {
+    child.on('error', value => { if (!settled) error = value.message; });
+    async function finish(exit, childSignal) {
+      if (settled) return;
+      settled = true;
       cancel(timer);
       if (escalation) cancel(escalation);
+      if (completionTimer) cancel(completionTimer);
+      if (ownershipTimer) cancel(ownershipTimer);
+      if (signal) signal.removeEventListener('abort', abort);
+      if (trackDescendants) {
+        try {
+          signalOwned('SIGKILL');
+          await Promise.all([...owned].map(async ([pid, start]) => {
+            const current = identity(pid);
+            if (current?.start === start) await waitForProcessExit(pid, 1000);
+          }));
+        } catch (failure) { ownershipFailure(failure); }
+      }
       // Reap ordinary descendants still holding no inherited output handles.
       if (child.pid) signalGroup('SIGKILL');
-      resolve({ command, cwd, startedAt, completedAt: new Date().toISOString(), exit, signal,
+      resolve({ command, cwd, startedAt, completedAt: new Date().toISOString(), exit, signal: childSignal,
         timedOut, outputLimit, error, stdout, stderr });
-    });
+    }
+    child.on('close', finish);
   });
 }
 

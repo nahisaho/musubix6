@@ -6,7 +6,7 @@ import {
   npmAncestors, cleanEnvironment, executionEnvironment, execute, retainProcess, verdict, readRef, EXECUTION_ENV_KEYS, externalOutput, mapStrings,
 } from './release-qualification-io.mjs';
 import {
-  parseNative, processControl, namedControl, validateHost, validateMutationRows,
+  parseNative, processControl, namedControl, validateHost, validateMutationRows, validateNativeGate,
 } from './release-qualification-evidence.mjs';
 
 const inheritedSha256 = 'e2f221e308e2fb4389f044e12c42cb2083e314b97305ae1701f65cd399c37de6';
@@ -339,6 +339,10 @@ export async function checkFrozenCandidate(request, effects = {}) {
 /** @id CODE-RELQ-003 @implements REQ-RELQ-003 */
 export async function validateCellEvidence(request) {
   return verdict(async () => {
+    if (request.cell?.id === 'INTEGRATED-GATE' || request.id === 'INTEGRATED-GATE') {
+      ensure(request.cell?.kind === 'gate' && request.evidence.format === 'adapter',
+        'required integrated gate must retain prepared adapter evidence');
+    }
     if (request.evidence.format === 'host-mutation') return validateHost(request);
     if (request.evidence.format === 'mutation') return validateMutationRows(request);
     if (request.evidence.format === 'adapter') {
@@ -346,9 +350,7 @@ export async function validateCellEvidence(request) {
       return validateAdapter(request);
     }
     if (request.evidence.format === 'gate') {
-      const { text } = processControl(request.evidence);
-      ensure(/^SDD GATE PASS$/m.test(text) && !/\bINCOMPLETE\b|✗|SKIPPED/.test(text), 'integrated full gate did not pass');
-      return { gate: 'PASS' };
+      return validateNativeGate(request.evidence);
     }
     const { text } = processControl(request.evidence);
     const parsed = parseNative(text, request.evidence.format);
