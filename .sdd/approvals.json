@@ -252,10 +252,10 @@
   "release-qualification": {
     "by": "nahisaho",
     "kind": "human",
-    "review": "Explicit human approval of the seven exact paths and SHA256s shown by native prepare, for verification preparation only; unchanged required scope/budgets, retained risks, no publication/main/tag authorization.",
-    "at": "2026-11-06T10:55:28.959Z",
+    "review": "Same explicit90727c0b seven-artifact human approval, which cryptographically binds exact helper28ec18ed/test57c89a75; approved production bytes now verified after native Red/Green/mutation/restoration, refresh current implementation snapshot only; no scope change/main/tag/npm/GH385 exception",
+    "at": "2026-11-07T02:25:23.169Z",
     "artifacts": {
-      ".sdd/specs/release-qualification.md": "839364e29effeb5d5af35d11d8c8b52649453d2b6d26c14058cd6eda96d1c209",
+      ".sdd/specs/release-qualification.md": "90727c0b7a25f3c18a941b24dc1ee09c07bb82357511fa23689c1d02a89dedce",
       ".sdd/release-validation.v0.2.8.json": "683269310de4498ee64f33cfe2b4e30e742a33fbf616da3577770198bb6bb280",
       ".sdd/release-content-mutations.v0.2.8.json": "07f7567b66498bb10ee1da8a9bc367db1f891982353fb2f17a45a23376c2fd01",
       ".sdd/specs/claude-code-support.md": "82bb16e36ab143167e445dcb422d49f5c0f9af8ea024bcc51c4e3092cfefee9b",
@@ -267,7 +267,7 @@
     "requireHuman": true,
     "code": {
       "scripts/release-host-mutations.mjs": "6921bf50d7f7df70ce2e3a3e23b0acbf67def78f0e4d358b1d7a5adcb091b618",
-      "scripts/release-qualification-cells.mjs": "6c8c5094872abdc5e89d0cb702b52a528956b83d7393f1f02735490980d0e450",
+      "scripts/release-qualification-cells.mjs": "28ec18edf72b2387070435eb8e73673d9ff64cf13dc7b592c59f55c07b4f1337",
       "scripts/release-qualification-cli.mjs": "865e7ddb1aa399e5cc845b15754e9c616eef7cf1add92ccf349b455afb6ffcca",
       "scripts/release-qualification-content-mutations.mjs": "dcd56b74b62917a321bcf8a1df55da521a9be27b29e16c73f1868a1fd6395b6e",
       "scripts/release-qualification-evidence.mjs": "65bb176846b259cea684ba2bdb5dc53f6394cf1224fc2424455c0c32d48ca1a0",

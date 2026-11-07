@@ -106,6 +106,54 @@ complete clean runs and separate human release approval. No stage is waived.
 Neither current inventory success nor approval to prepare resolves issue385
 or authorizes tagging, publishing, scope narrowing or S1/S2 downgrades.
 
+### NO-CHANGE fixture admission after frozen7f failure
+
+The frozen candidate7f04e57, manifest SHA256
+`8111fe707b8ecd131637a683a760f5a316b4c5474bfd3e93d02ec4cafcf0f09d`,
+failed run-meHrgq at NO-CHANGE-20. Its retained changed-gate stdout reports
+`SDD PLAN INCOMPLETE stage=gate enabled=true` and a missing
+`.sdd/implementation-plan.json`; the actual inner exit is2. PACKAGE-20 and
+WATCHDOG-20 passed,21cells were unrun, and the streak remains0. This setup
+failure is not assertion Red evidence and is not the unidentified issue385
+failure. The immutable failed manifest, run, commands and logs are retained.
+
+The no-change fixture exercises project-check routing, not application
+planning. Its valid input shall explicitly set `planning.required=false`.
+The product default remains `true`; no required cell, oracle, runtime,
+timeout, history rule or unknown-finding blocker is weakened.
+
+| REQ | PASS condition | counterexample | TEST/command | observed evidence |
+|---|---|---|---|---|
+| `REQ-RELQ-003` | The generated execution-only fixture explicitly opts out of planning; real changed/unchanged commands pass and execute/skip the project check respectively. A fresh product init still requires planning. A changed project check exiting17 fails the gate with exit1. | The fixture omits the planning setting and has no JSON plan, causing exit2 before routing; globally disabling planning, skipping every project check, or swallowing exit17 must not pass. | TEST-RELQ-NOCHANGE-001; actual NO-CHANGE-20/22/24 adapters | Final test on unchanged production fails its own serialized-input assertion (`undefined !== false`): `v028-no-change-red-ySLhQH/report.json`, SHA256728172811654fdfd66f483d61a42584f48da6c72cb8f654acd1ee26695b4bc39. Isolated proposed-code Node20/22/24 controls all pass: `v028-no-change-spike-uR19nL/report.json`, SHA2565f49f291430e89f490bf9cd291dbc1a4b6a2f490139507301149b598c999f9af. Production Green, native ledger Red and post-fix mutation/restoration are still pending; actual subsequent results belong in `.sdd/evidence/v028-preparation.json`. |
+
+These are targeted tests, not the full regression catalogue. Node20/22
+explicitly report22other test names excluded by the selector; none is
+qualification credit. The initial isolated attempt
+`v028-no-change-spike-NRRuIi` failed because the draft test incorrectly
+expected exit17 in the gate summary rather than in its retained check
+receipt. The corrected test independently verifies receipt SHA256, actual
+exit17 and absence of process/setup failure. That initial test failure is
+retained, not used as regression Red or as a product defect.
+
+The proposed helper changes only this execution fixture's planning setting
+and adds its trace annotation. Its isolated complete file,
+`scripts/release-qualification-cells.mjs`, has SHA256
+`28ec18edf72b2387070435eb8e73673d9ff64cf13dc7b592c59f55c07b4f1337`.
+The final regression file has SHA256
+`57c89a75ccc598c15368e1112435d268789910de855f5ecfff90c19956e478a5`.
+These prospective bytes have not yet been applied as production code.
+
+First-violation stages: contract = execution-only routing controls must be
+admissible without weakening the product default; trusted inputs = the first
+observed violation is the fixture's missing explicit planning opt-out;
+execution = require native changed/unchanged/error commands, not simulated
+results; verdict = accept valid controls and reject actual failed checks;
+evidence history = preserve the failed run and reset validation for a changed
+candidate; integration/distribution = reverify affected owners, retain the
+unchanged24-cell matrix, and freeze a new committed candidate. All six stages
+apply. Isolated development/spike results confer zero qualification credit.
+Issue385 remains open, unclassified and independently blocking.
+
 ### Historical stable0.2.8 preparation (scope2/content1)
 
 The historical scope/content revisions are2/1. Scope revision1 at committed

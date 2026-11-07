@@ -1724,6 +1724,82 @@ test('TEST-RELQ-QUOTED-001 accepts owned quoted setup text but rejects actual se
     'a killed mutant without restored controls is not a pass');
 });
 
+/** @id TEST-RELQ-NOCHANGE-001 @verifies REQ-RELQ-003 */
+test('TEST-RELQ-NOCHANGE-001 admits execution-only routing controls without weakening default planning or check errors', async t => {
+  const directory = workspace(t);
+  const environment = { ...process.env,
+    PATH: path.dirname(process.execPath) + path.delimiter + process.env.PATH };
+  for (const key of Object.keys(environment)) {
+    if (key.startsWith('QUALIFY_') || ['NODE_TEST_CONTEXT', 'NODE_OPTIONS', 'NODE_PATH'].includes(key)) delete environment[key];
+  }
+  const context = {
+    source: root, output: path.join(directory, 'adapter'), node: process.execPath, environment,
+    cell: { id: `NO-CHANGE-${process.versions.node.split('.')[0]}`, kind: 'extra', mode: 'no-change',
+      timeoutSeconds: 300 },
+    catalogue: [{ name: 'no-change routing control' }], configuration: {},
+  };
+  const { runAdapter } = await import('./release-qualification-cells.mjs');
+  const [attempt] = await Promise.allSettled([runAdapter(context)]);
+  const fixture = path.join(context.output, 'unchanged');
+  const configPath = path.join(fixture, '.sdd/config.json');
+  const config = read(configPath);
+  assert.equal(config.planning?.required, false,
+    'execution-only no-change fixture must explicitly opt out of planning');
+  assert.equal(attempt.status, 'fulfilled', attempt.reason?.stack);
+  assert.equal(attempt.value.status, 'PASS');
+  const native = async (command, cwd) => {
+    const result = await processIo.execute({ command, cwd, env: environment,
+      timeoutMs: 120000, maxBytes: 8 * 1024 * 1024 });
+    assert.equal(result.error, null, result.stderr);
+    assert.equal(result.signal, null, result.stderr);
+    assert.equal(result.timedOut, false);
+    assert.equal(result.outputLimit, false);
+    return result;
+  };
+  const sdk = path.join(root, '.github/skills/lean-sdd-tdd/scripts/sdd.mjs');
+  const defaultFixture = path.join(directory, 'product-default');
+  fs.mkdirSync(defaultFixture);
+  write(path.join(defaultFixture, 'package.json'), { type: 'module' });
+  const initialized = await native([process.execPath, sdk, 'init'], defaultFixture);
+  assert.equal(initialized.exit, 0, initialized.stdout + initialized.stderr);
+  assert.equal(read(path.join(defaultFixture, '.sdd/config.json')).planning.required, true,
+    'fixture admission must not disable the product default');
+  const receipts = attempt.value.receipts;
+  assert.ok(receipts.some(receipt => /✓ cmd app:test /.test(processIo.readRef(receipt.stdout))),
+    'the changed positive control must actually execute its project check');
+  assert.match(processIo.readRef(receipts.at(-1).stdout), /cmd app:test: no changed files/);
+  config.projects[0].checks[0].cmd = [process.execPath, '-e', 'process.exit(17)'];
+  write(configPath, config);
+  for (const command of [
+    ['git', 'add', '.sdd/config.json'],
+    ['git', '-c', 'user.name=Qualification Fixture', '-c',
+      'user.email=qualification@example.invalid', 'commit', '-qm', 'failing project check control'],
+  ]) {
+    const recorded = await native(command, fixture);
+    assert.equal(recorded.exit, 0, recorded.stdout + recorded.stderr);
+  }
+  const unchanged = await native([process.execPath, sdk, 'gate', '--changed'], fixture);
+  assert.equal(unchanged.exit, 0, unchanged.stdout + unchanged.stderr);
+  assert.match(unchanged.stdout, /cmd app:test: no changed files/,
+    'an unchanged project must skip even a check that would fail if executed');
+  write(path.join(fixture, 'app/data.json'), '{"changed":true}\n');
+  const failed = await native([process.execPath, sdk, 'gate', '--changed'], fixture);
+  assert.equal(failed.exit, 1, failed.stdout + failed.stderr);
+  const attempts = [...failed.stdout.matchAll(/^! check output app:test attempt \d+: (\S+) \(sha256 ([a-f0-9]{64})\)$/gm)];
+  assert.ok(attempts.length > 0, 'a changed failing project must retain its actual check attempts');
+  for (const [, relative, sha256] of attempts) {
+    const receiptPath = path.join(fixture, relative);
+    assert.equal(fileDigest(receiptPath), sha256);
+    const receipt = read(receiptPath);
+    assert.equal(receipt.check, 'app:test');
+    assert.equal(receipt.exit, 17, 'the gate must retain the actual failed check, not accept or skip it');
+    assert.equal(receipt.signal, null);
+    assert.equal(receipt.error, null);
+    assert.equal(receipt.timedOut, false);
+    assert.equal(receipt.outputLimit, false);
+  }
+});
+
 /** @id TEST-RELQ-003 @verifies REQ-RELQ-003 */
 test('TEST-RELQ-003 requires named retained outcomes and all owned host mutation controls', async t => {
   const directory = workspace(t);

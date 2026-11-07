@@ -549,6 +549,7 @@ async function nativeProse(context) {
   return { status: 'PASS', evidence };
 }
 
+/** @id CODE-RELQ-NOCHANGE-001 @implements REQ-RELQ-003 */
 async function noChange(context) {
   const work = path.join(context.output, 'unchanged');
   mkdir(work);
@@ -565,7 +566,7 @@ async function noChange(context) {
   receipts.push(await runRecorded(context, 'fixture-init', command('init'), 0, work));
   save(path.join(work, '.sdd/config.json'), {
     schemaVersion: 1, testCmd: [context.node, '--test', '--test-name-pattern', '{id}', '{file}'],
-    checks: [], scopePolicy: 'strict', projects: [{
+    checks: [], scopePolicy: 'strict', planning: { required: false }, projects: [{
       root: 'app', testCmd: [context.node, '--test', '--test-name-pattern', '{id}', '{file}'],
       checks: [{ name: 'test', cmd: [context.node, '--test', 'a.test.mjs'] }],
     }],

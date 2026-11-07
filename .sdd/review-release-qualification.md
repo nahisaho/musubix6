@@ -1,3 +1,31 @@
+# v0.2.8 NO-CHANGE fixture admission proposal review (2026-11-07)
+
+NC-PREPARATION|CLEAN|.sdd/specs/release-qualification.md:110|closed
+NC-CONTROLS|CLEAN|scripts/release-qualification.test.mjs:1727|closed
+NC-FINAL-DELTA|CLEAN|scripts/release-qualification-cells.mjs:552|closed
+
+The second bounded Claude Sonnet5.5 review covered the actual approved
+two-line helper implementation, five renewed task/spec bindings, new test
+ownership/selector and actual native Red/Green/isolated mutation/restoration
+proof. It returned CLEAN. Production code exactly matches the approved
+28ec18ed SHA; native Red preceded implementation, Green passed, the isolated
+omission was assertion-detected, and exact restoration passed native
+refactor. These two bounded CLEAN reviews are not full-suite or frozen-matrix
+verification and do not resolve GH385.
+
+Claude Sonnet 5.5 independently reviewed the bounded spec/test delta and the
+isolated prospective helper patch. No high-confidence finding was reported.
+The reviewer checked the four cited hashes, explicit fixture opt-out,
+preserved product default, actual changed/unchanged controls and hash-bound
+failed-check receipt assertions. The reviewer did not execute the runtime
+controls or independently check selector exclusion counts. The developer's
+retained final isolated Node20/22/24 controls passed; the unchanged production
+helper still produces the expected independent input-policy assertion Red.
+At that proposal-review stage, native ledger Red, production Green, bounded
+mutation and restoration were still pending human preparation approval.
+The actual subsequent proof is recorded above and in the existing
+v028-preparation evidence registry; no historical failure is erased.
+
 # Stable 0.2.7 revision 3 preparation review (2026-11-05)
 
 Current scope: prospective seven-artifact preparation only, not current

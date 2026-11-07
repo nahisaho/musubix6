@@ -392,7 +392,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/1517e548507a2deebb202a54350fbfecb559bf735331f257f090736fcc8681b3/6a88b222ac7ebcb29e0c409ee10a9ac694451a09980173f8b7cca842a23ac80d.json"
+      "receipt": ".sdd/plan-evidence/1517e548507a2deebb202a54350fbfecb559bf735331f257f090736fcc8681b3/273f66c64ed85db247293de0eb6f3d6fd10c2e848a138cccb5df14db36e76183.json"
     },
     {
       "id": "TASK-COST-HISTORY-002",
@@ -431,7 +431,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/db45ca0244d8f0421a909af8a8dba45c430c6f6e5f46719b2db62f0fcde44be0/0d50dbd6332bb1f9e952e76a299de61c58eb96d3a2aa9126ec5068a2fc67dbc2.json"
+      "receipt": ".sdd/plan-evidence/db45ca0244d8f0421a909af8a8dba45c430c6f6e5f46719b2db62f0fcde44be0/384decefa9002a4f576d1799aa3e19c6aaf866c89307d2a1e9effe80253c559f.json"
     },
     {
       "id": "TASK-DIAGCLI-001",
@@ -3852,11 +3852,11 @@
         }
       ],
       "specs": {
-        ".sdd/specs/release-qualification.md": "839364e29effeb5d5af35d11d8c8b52649453d2b6d26c14058cd6eda96d1c209"
+        ".sdd/specs/release-qualification.md": "90727c0b7a25f3c18a941b24dc1ee09c07bb82357511fa23689c1d02a89dedce"
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/73f0cbb6742cc4492aeeadca22db81f5f31db4650b1951f0febd38355f8df151/489ec181af89ff22565863bdbe2eb473ff369d3197ffcaed4cb1ba6d41d81549.json"
+      "receipt": ".sdd/plan-evidence/73f0cbb6742cc4492aeeadca22db81f5f31db4650b1951f0febd38355f8df151/0d19e1d7755646950b24731210e3d1f4e627cc64f60328be13f797b620684bd8.json"
     },
     {
       "id": "TASK-RELQ-002",
@@ -3903,11 +3903,11 @@
         }
       ],
       "specs": {
-        ".sdd/specs/release-qualification.md": "839364e29effeb5d5af35d11d8c8b52649453d2b6d26c14058cd6eda96d1c209"
+        ".sdd/specs/release-qualification.md": "90727c0b7a25f3c18a941b24dc1ee09c07bb82357511fa23689c1d02a89dedce"
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/dd865d9c8b78a2d77814f6c74fb5613d75c1f641a17ccffea1a8e080c0bc0a07/fa2eaa6629cc67e9d6de2deca2c0085a0eacf2275a20d894de6748b8ace1cff8.json"
+      "receipt": ".sdd/plan-evidence/dd865d9c8b78a2d77814f6c74fb5613d75c1f641a17ccffea1a8e080c0bc0a07/7d8174e5c9d53ea409fbb0b4ec716e47ce031d4f09c54b48d5b3c82d35fcc91f.json"
     },
     {
       "id": "TASK-RELQ-003",
@@ -3935,7 +3935,7 @@
         "scripts/release-qualification.mjs",
         "scripts/release-qualification.test.mjs"
       ],
-      "condition": "Revalidate approved REQ-RELQ-003 with complete genuine current planning proof and the actual unfiltered gate under one unchanged deadline. All mapped native tests (TEST-RELQ-003, TEST-RELQ-DIAGBOUNDARY-001, TEST-RELQ-DIAGNOSTIC-001, TEST-RELQ-GIT-001, TEST-RELQ-HOST-001, TEST-RELQ-LINEAGE-002, TEST-RELQ-PH-001, TEST-RELQ-PLANNING-001, TEST-RELQ-PROCESS-001, TEST-RELQ-QUOTED-001, TEST-RELQ-SCANNER-001, TEST-RELQ-SKILL-001) must pass; setup errors, skips, unprepared raw-gate or preparation-only claims do not complete this task.",
+      "condition": "Revalidate approved REQ-RELQ-003 with complete genuine current planning proof and the actual unfiltered gate under one unchanged deadline. All mapped native tests (TEST-RELQ-003, TEST-RELQ-DIAGBOUNDARY-001, TEST-RELQ-DIAGNOSTIC-001, TEST-RELQ-GIT-001, TEST-RELQ-HOST-001, TEST-RELQ-LINEAGE-002, TEST-RELQ-NOCHANGE-001, TEST-RELQ-PH-001, TEST-RELQ-PLANNING-001, TEST-RELQ-PROCESS-001, TEST-RELQ-QUOTED-001, TEST-RELQ-SCANNER-001, TEST-RELQ-SKILL-001) must pass; setup errors, skips, unprepared raw-gate or preparation-only claims do not complete this task.",
       "tests": [
         "TEST-RELQ-003",
         "TEST-RELQ-DIAGBOUNDARY-001",
@@ -3943,6 +3943,7 @@
         "TEST-RELQ-GIT-001",
         "TEST-RELQ-HOST-001",
         "TEST-RELQ-LINEAGE-002",
+        "TEST-RELQ-NOCHANGE-001",
         "TEST-RELQ-PH-001",
         "TEST-RELQ-PLANNING-001",
         "TEST-RELQ-PROCESS-001",
@@ -3968,18 +3969,18 @@
             "node",
             "--test",
             "--test-name-pattern",
-            "^(?:.*\\b(?:TEST-RELQ-GIT-001|TEST-RELQ-PROCESS-001|TEST-RELQ-SKILL-001|TEST-RELQ-PH-001|TEST-RELQ-PLANNING-001|TEST-RELQ-LINEAGE-002|TEST-RELQ-DIAGNOSTIC-001|TEST-RELQ-DIAGBOUNDARY-001|TEST-RELQ-SCANNER-001|TEST-RELQ-QUOTED-001|TEST-RELQ-003))(?![0-9A-Za-z])",
+            "^(?:.*\\b(?:TEST-RELQ-GIT-001|TEST-RELQ-PROCESS-001|TEST-RELQ-SKILL-001|TEST-RELQ-PH-001|TEST-RELQ-PLANNING-001|TEST-RELQ-LINEAGE-002|TEST-RELQ-DIAGNOSTIC-001|TEST-RELQ-DIAGBOUNDARY-001|TEST-RELQ-SCANNER-001|TEST-RELQ-QUOTED-001|TEST-RELQ-NOCHANGE-001|TEST-RELQ-003))(?![0-9A-Za-z])",
             "scripts/release-qualification.test.mjs"
           ],
           "timeoutMs": 600000
         }
       ],
       "specs": {
-        ".sdd/specs/release-qualification.md": "839364e29effeb5d5af35d11d8c8b52649453d2b6d26c14058cd6eda96d1c209"
+        ".sdd/specs/release-qualification.md": "90727c0b7a25f3c18a941b24dc1ee09c07bb82357511fa23689c1d02a89dedce"
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/89f75a0ef83095915c1bfb35bc420da94e27f50547ef905b5527a6c34744793b/20d3d5fa6a31e023c010d1412a7568bd5d8439dcad704fb3e7504f8762c6f307.json"
+      "receipt": ".sdd/plan-evidence/89f75a0ef83095915c1bfb35bc420da94e27f50547ef905b5527a6c34744793b/b6b85dc35b661dd34a2a65630120cb083ee0e5dd161cdfcbc63ea1cee4086322.json"
     },
     {
       "id": "TASK-RELQ-004",
@@ -4021,11 +4022,11 @@
         }
       ],
       "specs": {
-        ".sdd/specs/release-qualification.md": "839364e29effeb5d5af35d11d8c8b52649453d2b6d26c14058cd6eda96d1c209"
+        ".sdd/specs/release-qualification.md": "90727c0b7a25f3c18a941b24dc1ee09c07bb82357511fa23689c1d02a89dedce"
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/ea566fd8dcc45f090bbb58cbb164569368264ed6a6f464c72ed20485084892c2/6264f54e65d97475824d5390818f52e11c50be5c4aa8bf523f8bc842309924f9.json"
+      "receipt": ".sdd/plan-evidence/ea566fd8dcc45f090bbb58cbb164569368264ed6a6f464c72ed20485084892c2/9416525502307b1ccd8d2c5933c9a82d420b212b35e4cc8ea74cdb895ee813cb.json"
     },
     {
       "id": "TASK-RELQ-005",
@@ -4096,11 +4097,11 @@
         }
       ],
       "specs": {
-        ".sdd/specs/release-qualification.md": "839364e29effeb5d5af35d11d8c8b52649453d2b6d26c14058cd6eda96d1c209"
+        ".sdd/specs/release-qualification.md": "90727c0b7a25f3c18a941b24dc1ee09c07bb82357511fa23689c1d02a89dedce"
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/8a500e1cd57c470ca565540630853ab2031d74efe95b650b3b5670f6edf9e10d/7e57eaff6162fd5ab31fff704e64ac49896aef92ffbfd560ef7512f32c40dda3.json"
+      "receipt": ".sdd/plan-evidence/8a500e1cd57c470ca565540630853ab2031d74efe95b650b3b5670f6edf9e10d/5bf2ef5d09fb488a8281999c655dc2fd96e5b338e7ec7bc640bded7e50cae9ac.json"
     },
     {
       "id": "TASK-RUNNER-SELECTION-001",

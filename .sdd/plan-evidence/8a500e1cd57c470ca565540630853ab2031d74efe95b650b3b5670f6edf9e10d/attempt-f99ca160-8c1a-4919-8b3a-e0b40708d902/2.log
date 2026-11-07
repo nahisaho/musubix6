@@ -1,0 +1,13 @@
+✔ TEST-RELQ-PACKAGE-BINDING-001 uses the exact frozen tgz and rejects mismatched packaged origins (1818.878541ms)
+✔ TEST-RELQ-SKILL-001 preserves 1253 exact cases and owned native inventory controls (1776.008304ms)
+✔ TEST-RELQ-PH-001 binds all 14 cases to exact native assertions and policy witnesses (980.823281ms)
+✔ TEST-RELQ-PUBLISH-001 publishes only the exact remotely approved archive and preserves dry runs (3290.048685ms)
+✔ TEST-RELQ-005 binds durable helpers and exact package-entry receipts without release authorization (75.041457ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 8030.27386

@@ -1,10 +1,122 @@
 {
   "schemaVersion": 1,
   "targetVersion": "0.2.8",
-  "stage": "Committed0b2077d passed actual Linux/Windows CI20/22/24 and real isolated118-task preparation/full gate in8684785ms within12000000ms, with1189/1189 first-attempt project tests and0skips. Two separate fresh original8a47def npm suites also passed1182/1182 each, without reproducing385; its cause/severity remain unclassified and blocking. No fixed24-cell qualification credit or publication authorization exists. This extended evidence artifact requires fresh native owner verification before adoption.",
+  "stage": "Frozen7f04e57 passed Linux/Windows CI20/22/24 but its first unchanged24-cell run failed NO-CHANGE-20 after2passes, leaving21cells unrun and streak0. The retained native changed-gate exit2 identified missing planning opt-out in an execution-only fixture, not issue385's cause or regression Red. Human approved the exact renewed seven-artifact90727c0b unit and exact28ec18ed helper/57c89a75 test. Genuine native owned-assertion Red preceded the fix; Green, isolated omission-mutation detection and exact restoration/refactor passed. Owner proofs, a new committed candidate and two identical complete clean matrix runs are still pending at this evidence revision. Historical0b118-task/full-gate capacity and two bounded original1182-test non-reproductions remain retained. Issue385 remains open/unclassified/blocking. No qualification credit or publication authorization exists.",
   "status": "BLOCKED",
   "qualificationCredit": 0,
   "publishingAuthorized": false,
+  "frozenQualificationFailure": {
+    "sourceCommit": "7f04e57ab3893335d9aea3fea9c19187f24f3b30",
+    "manifest": {
+      "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/qualification-v028-linux-r3-frozen-zJq57d/frozen-manifest.json",
+      "sha256": "8111fe707b8ecd131637a683a760f5a316b4c5474bfd3e93d02ec4cafcf0f09d"
+    },
+    "run": {
+      "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/qualification-v028-linux-r3-frozen-zJq57d/runs/run-meHrgq/run.json",
+      "sha256": "645313a7f5f2bb739c04938f7cbcfdecf6bd28d0443157fba4cca351fa10d759"
+    },
+    "status": "FAIL",
+    "passedCells": ["PACKAGE-20", "WATCHDOG-20"],
+    "failedCell": "NO-CHANGE-20",
+    "remainingUnrunCells": 21,
+    "consecutiveCleanRuns": 0,
+    "technicalReady": false,
+    "firstViolation": "trusted-inputs",
+    "actualInnerExit": 2,
+    "actualInnerStdout": {
+      "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/qualification-v028-linux-r3-frozen-zJq57d/runs/run-meHrgq/NO-CHANGE-20/adapter/changed-gate/stdout.log",
+      "sha256": "e6a471ca3b51a4b3957daa0f3b8f11403b7bb7ae587f5328661f410fc5fa8915"
+    },
+    "observation": "The real native command reports SDD PLAN INCOMPLETE stage=gate enabled=true and missing .sdd/implementation-plan.json. This setup failure and the external result-checker assertion are not regression Red. Neither identifies the original GH385 failure. All frozen history remains immutable; the next candidate requires a new manifest linked to this failed predecessor with zero transferred credit."
+  },
+  "noChangeRepair": {
+    "status": "NATIVE_REGRESSION_AND_MUTATION_PASS_NOT_QUALIFIED",
+    "feature": "release-qualification",
+    "req": "REQ-RELQ-003",
+    "test": "TEST-RELQ-NOCHANGE-001",
+    "baseCommit": "7f04e57ab3893335d9aea3fea9c19187f24f3b30",
+    "sourceStateAtProof": "Exact human-approved fix bytes in the development worktree, not a new frozen committed candidate",
+    "approvedSpecSha256": "90727c0b7a25f3c18a941b24dc1ee09c07bb82357511fa23689c1d02a89dedce",
+    "approvedHelperSha256": "28ec18edf72b2387070435eb8e73673d9ff64cf13dc7b592c59f55c07b4f1337",
+    "approvedFullTestFileSha256": "57c89a75ccc598c15368e1112435d268789910de855f5ecfff90c19956e478a5",
+    "humanApprovalScope": "Actual nahisaho response: preparation and the specified fixture SHA only; no main merge, tag, npm publication, scope weakening or GH385 exception",
+    "nativeRed": {
+      "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v028-no-change-tdd-red-XjIsti/report.json",
+      "sha256": "626833cc4a34aac36379d8ccd1d837f7236ad4882dc711986c967efa1e8587f7"
+    },
+    "independentAssertionRed": {
+      "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v028-no-change-red-ySLhQH/report.json",
+      "sha256": "728172811654fdfd66f483d61a42584f48da6c72cb8f654acd1ee26695b4bc39"
+    },
+    "nativeGreen": {
+      "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v028-no-change-tdd-green-wUMgqD/report.json",
+      "sha256": "b3f9d38488c99db4132c89640447c4dfa5ea7091cc6268f1dd7b96c9f9736bf6"
+    },
+    "isolatedPostFixMutation": {
+      "change": "Remove only planning.required=false from the execution-only no-change fixture",
+      "expected": "The unchanged final regression fails its own serialized-input policy assertion, undefined !== false",
+      "actual": "EXPECTED_INPUT_POLICY_ASSERTION_RED",
+      "report": {
+        "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v028-no-change-red-DpnGve/report.json",
+        "sha256": "f5e7b7f8a026022a454fd69e1b892fcc3210ec133797434e7169f237791ef48e"
+      }
+    },
+    "exactRestorationAndNativeRefactor": {
+      "restoredHelperSha256": "28ec18edf72b2387070435eb8e73673d9ff64cf13dc7b592c59f55c07b4f1337",
+      "report": {
+        "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v028-no-change-tdd-refactor-Klj8HO/report.json",
+        "sha256": "fba5b9c1288548d7c80064ff91ab32f5223511e074b892512d951701c9dc193a"
+      }
+    },
+    "nativeLedger": {
+      "path": ".sdd/tdd.jsonl",
+      "redSequence": 2077,
+      "redHash": "ea85cb8acd27aaa47e2f29bef7ead21fc7fcc7affefb6e3e304a8be025a5fad7",
+      "greenSequence": 2078,
+      "greenHash": "8084becddfaf6c1e6259c6670b50990572a9bbae23bc264a4690615cd4b68a71",
+      "restoredRefactorSequence": 2079,
+      "restoredRefactorHash": "f0bd80b24f180fa60ae238fa713f3cd103edde9aadaa7aa881ff47b95d786667",
+      "observation": "Native Red/Green/refactor carry identical logical test-block hash e8b246927fee11be7555d092d9553ee56bc918c2855a81608d6a50177939e14a and requirement hash. Red has no weak/setup/characterization exemption. Green/refactor bind the actual approved helper file hash and CODE-RELQ-NOCHANGE-001 block."
+    },
+    "finiteRoutingControls": [
+      { "input": "Changed app/data.json; valid node test check", "expectedGateExit": 0, "actual": "Project check executed and PASS" },
+      { "input": "Unchanged project; check would exit17 if executed", "expectedGateExit": 0, "actual": "Explicit no changed files disclosure; check skipped" },
+      { "input": "Changed app/data.json; native check exits17", "expectedGateExit": 1, "actual": "FAIL with actual hash-bound check receipt exit17 and no timeout/signal/setup failure" }
+    ],
+    "productDefaultControl": "Fresh real SDK init still writes planning.required=true",
+    "isolatedRuntimeFeasibility": {
+      "runtimeMajors": [20, 22, 24],
+      "report": {
+        "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v028-no-change-spike-uR19nL/report.json",
+        "sha256": "5f49f291430e89f490bf9cd291dbc1a4b6a2f490139507301149b598c999f9af"
+      },
+      "limits": "Targeted selected regression only; Node20/22 exclude22other names. This is not a full suite or any frozen qualification cell."
+    },
+    "independentReview": "Claude Sonnet5.5 proposal review and final actual implementation/owner/mutation delta review both CLEAN; no reviewer runtime execution claimed",
+    "pending": ["Current affected owner proofs", "New clean committed candidate and manifest", "Two unchanged complete clean24-cell runs", "Original GH385 cause/classification", "Separate final human release approval"],
+    "qualificationCredit": 0
+  },
+  "frozenPredecessorCi": {
+    "sourceCommit": "7f04e57ab3893335d9aea3fea9c19187f24f3b30",
+    "runtimeMajors": [20, 22, 24],
+    "windows": {
+      "run": 42240288530,
+      "status": "PASS",
+      "rawArchive": {
+        "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v028-source-7f04e57-windows-ci-passed.zip",
+        "sha256": "dd0b0ff8dba240989df1133b623bef0b873c33f63ee94e27dda392340730d900"
+      }
+    },
+    "linux": {
+      "run": 42240288430,
+      "status": "PASS",
+      "rawArchive": {
+        "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/v028-source-7f04e57-linux-ci-passed.zip",
+        "sha256": "d98b5c9afa3ab08bd56852d78b834a1c2fd367d4541065d7c1e3c491a19e68e9"
+      }
+    },
+    "limits": "Exact completed7f prior-source CI and nonempty CRC-checked raw archives; not CI of the subsequent fixture fix, not frozen24-cell success, and not Windows release qualification."
+  },
   "currentCommittedSourceValidation": {
     "sourceCommit": "0b2077da1f16365592b9d22bacfda7114159d815",
     "status": "DEVELOPMENT_AND_CAPACITY_PASS_NOT_FROZEN_QUALIFICATION",
