@@ -1,10 +1,86 @@
 {
   "schemaVersion": 1,
   "targetVersion": "0.2.8",
-  "stage": "Frozen7f04e57 passed Linux/Windows CI20/22/24 but its first unchanged24-cell run failed NO-CHANGE-20 after2passes, leaving21cells unrun and streak0. The retained native changed-gate exit2 identified missing planning opt-out in an execution-only fixture, not issue385's cause or regression Red. Human approved the exact renewed seven-artifact90727c0b unit and exact28ec18ed helper/57c89a75 test. Genuine native owned-assertion Red preceded the fix; Green, isolated omission-mutation detection and exact restoration/refactor passed. Owner proofs, a new committed candidate and two identical complete clean matrix runs are still pending at this evidence revision. Historical0b118-task/full-gate capacity and two bounded original1182-test non-reproductions remain retained. Issue385 remains open/unclassified/blocking. No qualification credit or publication authorization exists.",
+  "stage": "Exact committed candidate703a4fed16b781a229a9ce85eeb2e83446ba8d8a completed two unchanged fresh24-cell clean runs on manifest96635f2375a66f88802594da7722b4f913139031fee6e09eead9797eb09937f8; independent native status revalidation passed with streak2. Human explicitly closed non-reproducible issue385 and authorized publishing the exact candidate. Remote main and annotatedv0.2.8 point to703; both publication attempts verified packageSHAf302 but stopped on transparency-log HTTP500. Official Sigstore status reports Rekor/CT Log down. npm0.2.8 remains absent. This subsequent cost/evidence maintenance is not the qualified candidate and transfers no qualification credit or publication authority. All historical failures and prior evidence remain retained.",
   "status": "BLOCKED",
   "qualificationCredit": 0,
   "publishingAuthorized": false,
+  "historicalPreparationRevision": {
+    "stage": "Frozen7f04e57 passed Linux/Windows CI20/22/24 but its first unchanged24-cell run failed NO-CHANGE-20 after2passes, leaving21cells unrun and streak0. The retained native changed-gate exit2 identified missing planning opt-out in an execution-only fixture, not issue385's cause or regression Red. Human approved the exact renewed seven-artifact90727c0b unit and exact28ec18ed helper/57c89a75 test. Genuine native owned-assertion Red preceded the fix; Green, isolated omission-mutation detection and exact restoration/refactor passed. Owner proofs, a new committed candidate and two identical complete clean matrix runs are still pending at this evidence revision. Historical0b118-task/full-gate capacity and two bounded original1182-test non-reproductions remain retained. Issue385 remains open/unclassified/blocking. No qualification credit or publication authorization exists.",
+    "status": "BLOCKED",
+    "qualificationCredit": 0,
+    "publishingAuthorized": false
+  },
+  "qualifiedPublicationCandidate": {
+    "sourceCommit": "703a4fed16b781a229a9ce85eeb2e83446ba8d8a",
+    "manifestSha256": "96635f2375a66f88802594da7722b4f913139031fee6e09eead9797eb09937f8",
+    "packageSha256": "f302dfba24fe1d56f41e91ee85564c8663e5befad76bc1d5ff2208cd017810ef",
+    "completeCleanRuns": 2,
+    "requiredCellsPerRun": 24,
+    "technicalReady": true,
+    "proof": {
+      "path": "/home/nahisaho/.copilot/session-state/28b37d8f-56f4-4e28-b9c8-71cc59366d60/files/qualification-v028-linux-r4-frozen-tj8wFa/final-qualification-proof.json",
+      "sha256": "6f773d5d6d37b6ab6ceab8567b13a2e004175004d0b6cbac85826fd30c6cf3c4"
+    },
+    "humanPublicationAuthorization": {
+      "approvedBy": "nahisaho",
+      "actualInstruction": "コミット＆プッシュ。npm publish",
+      "userMessageAt": "2026-11-07T13:55:37.728Z",
+      "presentedApprovalManifestSha256": "76379c6613406b8252c1bb4b163084034e00895de02f12daf9a1372cf0853604",
+      "receiptSha256": "ed8a0174dcbd85f6de4ca2b527af755dbda7cf2669ba76e84145a32aa8ff4b82",
+      "scope": "Exact703 candidate/tag/package only; not this later metadata-maintenance commit."
+    },
+    "tag": {
+      "name": "v0.2.8",
+      "object": "917635b8092a17edcbd98499548ef7a5bca307b1",
+      "actualTargetCommit": "703a4fed16b781a229a9ce85eeb2e83446ba8d8a",
+      "approvedPackageDigestVerified": true,
+      "informationalLineErratum": "A redundant Qualified-Source-Commit line omitted one character. The actual Git tag target and mandatory package digest are correct. No tag replacement or force update was made.",
+      "publicCorrection": "https://github.com/nahisaho/musubix6/commit/703a4fed16b781a229a9ce85eeb2e83446ba8d8a#commitcomment-208627033"
+    },
+    "publication": {
+      "run": 42379568032,
+      "url": "https://github.com/nahisaho/musubix6/actions/runs/42379568032",
+      "status": "BLOCKED_EXTERNAL_TRANSPARENCY_LOG",
+      "attempts": [
+        {
+          "attempt": 1,
+          "packageChecksumCheck": "PASS",
+          "error": "TLOG_CREATE_ENTRY_ERROR HTTP500 unexpected result from transparency log",
+          "rawLogArchiveSha256": "57adb2bcc66d8c250cdd7e74e031a29608042ebc8f61bbce2d5e3d342d1abcef"
+        },
+        {
+          "attempt": 2,
+          "packageChecksumCheck": "PASS",
+          "error": "TLOG_CREATE_ENTRY_ERROR HTTP500 unexpected result from transparency log",
+          "rawLogArchiveSha256": "0b758570a4906b523c2cb2b8597a279ddf9365875a8b3f08edba0500b2589a12"
+        }
+      ],
+      "ciTests": {
+        "tests": 1190,
+        "pass": 1177,
+        "fail": 0,
+        "skipped": 13,
+        "skippedFamilies": ["Julia", "ExUnit"],
+        "qualificationCredit": 0,
+        "note": "CI skips are disclosed, never credited as formal fixed-matrix passes."
+      },
+      "officialServiceStatus": {
+        "url": "https://status.sigstore.dev/",
+        "lastUpdated": "2026-11-07T14:48:00Z",
+        "rekorLog": "down",
+        "ctLog": "down",
+        "interpretation": "Official service degradation corroborates the HTTP500. No successful transparency-log entry is inferred."
+      },
+      "registryLatestObserved": "0.2.7",
+      "version028Exists": false,
+      "automaticRetryStopped": true,
+      "provenanceDisabled": false,
+      "digestCheckWeakened": false,
+      "publicationVerified": false
+    },
+    "maintenanceBoundary": "This record and generated costs are a separate maintenance commit. Qualification remains scoped to703 and its immutable tag/package; do not retag or publish a different candidate using its evidence."
+  },
   "frozenQualificationFailure": {
     "sourceCommit": "7f04e57ab3893335d9aea3fea9c19187f24f3b30",
     "manifest": {
@@ -214,7 +290,17 @@
       "observation": "Both real processes exited0 without signal/error/timeout/output limit; all original source bytes/full modes remained unchanged. Independently re-read both terminal1182/1182 summaries and every incremental raw stdout/stderr byte count/hash. Original failed evidence was not modified.",
       "scope": "Two bounded serial fresh original8a47def direct npm test attempts on actual Node24 with original argv and6000000ms per-attempt limit, private Git/source/HOME/cache and incremental complete raw stdout/stderr. This is not the former full-gate prelude or24-cell qualification, and whole former-environment equivalence is not claimed. No failed assertion was observed; do not infer a cause, a repair, lower severity, or transfer the old publication exception."
     },
-    "qualificationBlockers": [
+    "qualificationBlockers": [],
+    "humanFindingDisposition": {
+      "issue": "GH-385",
+      "approvedBy": "nahisaho",
+      "actualInstruction": "#385は再現しないので、クローズします。リリース阻害要因からも削除。",
+      "closedAt": "2026-11-07T06:46:57Z",
+      "receiptSha256": "3aceab680332143fb5f846c9492a0768b2245260beabd3b170bc5187cd6d83b9",
+      "causeResolved": false,
+      "severityDowngraded": false
+    },
+    "historicalQualificationBlockersBeforeHumanDisposition": [
       {
         "id": "GH-385",
         "scope": "in-scope",
