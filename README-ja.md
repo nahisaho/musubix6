@@ -41,23 +41,36 @@ Claude の実セッションでのスキル検出と対話は、まだ確認し�
 このソース候補とは異なる版になる場合があります。
 Node.js 20 以上と npm を用意し、スキルを導入するプロジェクトで実行します。
 
+以下のシェル例では `mktemp` を使います(Linux、macOS、WSL 向け)。
+レジストリーに接続するコマンドごとに空の一時キャッシュを作り、
+`https://registry.npmjs.org/` から取得します。既存の npm / npx キャッシュは使いません。
+`--prefer-online` でレジストリーへの確認も指定します。
+npm は取得したデータを一時キャッシュに書き込みますが、通常のキャッシュは削除しません。
+
 まず取得可能かを確認してください。確認に失敗した場合は、表示されたレジストリーや
 ネットワークの問題を解消するか、ソースから導入します。未公開とは限りません。
 
 ```sh
-npm view musubix6@latest version &&
-npm install -g musubix6@latest &&
+npm view musubix6@latest version --cache "$(mktemp -d)" --registry=https://registry.npmjs.org/ --prefer-online &&
+npm install -g musubix6@latest --cache "$(mktemp -d)" --registry=https://registry.npmjs.org/ --prefer-online &&
 musubix6 --version &&
 musubix6 init . &&
 musubix6 list
 ```
 
-グローバルにインストールしない場合は、`npx --yes musubix6@latest init .` を使います。
+グローバルにインストールしない場合は、npx の実行先にも新しい一時ディレクトリを指定します。
+プロジェクト内の既存パッケージを使わないための指定です。
+コピー先には絶対パスの `"$PWD"` を渡し、対象プロジェクトにスキルを導入します。
+
+```sh
+npx --yes --prefix "$(mktemp -d)" --cache "$(mktemp -d)" --registry=https://registry.npmjs.org/ --prefer-online --package=musubix6@latest -- musubix6 init "$PWD"
+```
+
 `init` は対象プロジェクトの `.github/skills/` にスキルをコピーします。
 
 検証結果を再現する場合は、`@latest` ではなく、使用する版を記録して固定してください。
-このソース候補の **0.2.6** を使う場合は、まず `npm view musubix6@0.2.6 version` で取得可能かを確認し、
-取得できる場合に限り `npm install -g musubix6@0.2.6` で導入します。取得できない場合はソースから導入してください。
+このソース候補の **0.2.6** を使う場合は、まず `npm view musubix6@0.2.6 version --cache "$(mktemp -d)" --registry=https://registry.npmjs.org/ --prefer-online` で取得可能かを確認し、
+取得できる場合に限り `npm install -g musubix6@0.2.6 --cache "$(mktemp -d)" --registry=https://registry.npmjs.org/ --prefer-online` で導入します。取得できない場合はソースから導入してください。
 
 コピー先には相対パスと絶対パスを指定できます。省略すると作業ディレクトリを使います。
 `--force` と `--only a,b` はコピー先の前後どちらにも指定できます。
@@ -196,7 +209,7 @@ musubix6 sdd context src/example.mjs --max-bytes 32768
 ### 最終 gate の前にプロジェクトを診断する(v0.1.3)
 
 この節では **0.1.3** の診断機能を説明します。0.1.2 には含まれません。
-インストール前に `npm view musubix6@0.1.3 version` で公開状況を確認してください。
+インストール前に `npm view musubix6@0.1.3 version --cache "$(mktemp -d)" --registry=https://registry.npmjs.org/ --prefer-online` で公開状況を確認してください。
 ソースのチェックアウトから CLI を導入することもできます。
 編集済みのスキルをバックアップしてから、`musubix6 init . --force` でコピーを更新してください。
 この操作はコピー済みスキルを上書きします。詳しい手順は後述します。
@@ -365,7 +378,7 @@ gate でのコマンド定義の変化は、既存の `scopePolicy` に従いま
 
    ```sh
    musubix6 --version
-   npm view musubix6 version
+   npm view musubix6 version --cache "$(mktemp -d)" --registry=https://registry.npmjs.org/ --prefer-online
    ```
 
 2. 上書きする前に、対象プロジェクトのルートで `.github/skills/` をバックアップします。
@@ -384,12 +397,12 @@ gate でのコマンド定義の変化は、既存の `scopePolicy` に従いま
 3. グローバルの CLI を最新版に更新します。
 
    ```sh
-   npm install -g musubix6@latest
+   npm install -g musubix6@latest --cache "$(mktemp -d)" --registry=https://registry.npmjs.org/ --prefer-online
    musubix6 --version
    ```
 
-   特定の版にそろえる場合は、`npm view musubix6@0.2.6 version` で取得可能かを確認してから、
-   `npm install -g musubix6@0.2.6` のように指定します。
+   特定の版にそろえる場合は、`npm view musubix6@0.2.6 version --cache "$(mktemp -d)" --registry=https://registry.npmjs.org/ --prefer-online` で取得可能かを確認してから、
+   `npm install -g musubix6@0.2.6 --cache "$(mktemp -d)" --registry=https://registry.npmjs.org/ --prefer-online` のように指定します。
    `@latest` は npm の現在のタグを参照するため、このソース候補の 0.2.6 とは異なる版になる場合があります。
    この段階では、各プロジェクトのファイルは上書きされません。
 
@@ -424,20 +437,20 @@ gate でのコマンド定義の変化は、既存の `scopePolicy` に従いま
 
 ### グローバル導入せずに更新する(npx)
 
-この候補を使う前に、`npm view musubix6@0.2.6 version` で公開状況を確認してください。
+この候補を使う前に、`npm view musubix6@0.2.6 version --cache "$(mktemp -d)" --registry=https://registry.npmjs.org/ --prefer-online` で公開状況を確認してください。
 `@latest` は npm の現在のタグに従うため、このソースの 0.2.6 と異なる版になる場合があります。
 レジストリーへ接続できない場合は、ソースから導入してください。
 
 上記と同じ方法でスキルをバックアップし、対象プロジェクトのルートで実行します。
 
 ```sh
-npx --yes musubix6@latest --version
-npx --yes musubix6@latest init . --force
+npx --yes --prefix "$(mktemp -d)" --cache "$(mktemp -d)" --registry=https://registry.npmjs.org/ --prefer-online --package=musubix6@latest -- musubix6 --version &&
+npx --yes --prefix "$(mktemp -d)" --cache "$(mktemp -d)" --registry=https://registry.npmjs.org/ --prefer-online --package=musubix6@latest -- musubix6 init "$PWD" --force
 ```
 
 コピー後は手順 5 と同じ確認を行ってください。
 この方法では、別途インストールしてあるグローバルの `musubix6` は更新しません。
-SDD のゲート検証にも、`npx --yes musubix6@latest sdd gate` を使ってください。
+SDD のゲート検証にも、`npx --yes --prefix "$(mktemp -d)" --cache "$(mktemp -d)" --registry=https://registry.npmjs.org/ --prefer-online --package=musubix6@latest -- musubix6 sdd --root "$PWD" gate` を使ってください。
 古いグローバル CLI ではなく、指定した版で検証できます。
 特定の版を使う場合は、ゲート検証も含め、各コマンドの `@latest` を `@0.2.6` に置き換えます。
 
@@ -500,7 +513,7 @@ cp -R "$(npm root -g)/musubix6/.github/skills/." "$HOME/.copilot/skills/"
 たとえば、CLI を前の公開版に戻す場合は次のように指定します。
 
 ```sh
-npm install -g musubix6@0.1.1
+npm install -g musubix6@0.1.1 --cache "$(mktemp -d)" --registry=https://registry.npmjs.org/ --prefer-online
 musubix6 --version
 ```
 

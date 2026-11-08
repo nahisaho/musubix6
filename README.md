@@ -41,25 +41,39 @@ For normal installation, use `@latest` to select the version tagged `latest`
 on npm. It may differ from this source candidate. With Node.js ≥ 20 and npm,
 run the following in the project where you want to install the skills:
 
+The shell examples below use `mktemp` (Linux, macOS, or WSL). Each registry
+command uses a new, empty temporary cache and explicitly selects
+`https://registry.npmjs.org/`; existing npm/npx caches are not reused.
+`--prefer-online` requests a registry check. npm still writes downloaded data
+to the temporary cache; this does not disable cache writes or delete your
+normal cache.
+
 Check availability first. If that check fails, resolve the reported registry
 or network error, or use the source checkout; do not assume the version is
 unpublished.
 
 ```sh
-npm view musubix6@latest version &&
-npm install -g musubix6@latest &&
+npm view musubix6@latest version --cache "$(mktemp -d)" --registry=https://registry.npmjs.org/ --prefer-online &&
+npm install -g musubix6@latest --cache "$(mktemp -d)" --registry=https://registry.npmjs.org/ --prefer-online &&
 musubix6 --version &&
 musubix6 init . &&
 musubix6 list
 ```
 
-Without a global install, run `npx --yes musubix6@latest init .` instead.
+Without a global install, use a fresh prefix as well, so npx does not select
+an existing project-local package. The absolute destination keeps `init`
+pointing at your project, not the temporary prefix:
+
+```sh
+npx --yes --prefix "$(mktemp -d)" --cache "$(mktemp -d)" --registry=https://registry.npmjs.org/ --prefer-online --package=musubix6@latest -- musubix6 init "$PWD"
+```
+
 `init` copies the bundled skills into the target's `.github/skills/`.
 
 For reproducible validation, record and use an exact version rather than
 `@latest`. To use this source candidate, **0.2.6**, first check
-`npm view musubix6@0.2.6 version`, then install with
-`npm install -g musubix6@0.2.6` only if available. Otherwise, use the source checkout.
+`npm view musubix6@0.2.6 version --cache "$(mktemp -d)" --registry=https://registry.npmjs.org/ --prefer-online`, then install with
+`npm install -g musubix6@0.2.6 --cache "$(mktemp -d)" --registry=https://registry.npmjs.org/ --prefer-online` only if available. Otherwise, use the source checkout.
 
 `init` accepts a relative or absolute destination; omitting it uses the current
 directory. `--force` and `--only a,b` can appear before or after the destination.
@@ -197,7 +211,7 @@ unchanged, and the full `gate` is still required before merge.
 
 This section describes the **0.1.3** diagnostics contract; version 0.1.2
 does not include this feature. Check availability with
-`npm view musubix6@0.1.3 version` before installing, or use the source checkout.
+`npm view musubix6@0.1.3 version --cache "$(mktemp -d)" --registry=https://registry.npmjs.org/ --prefer-online` before installing, or use the source checkout.
 Back up locally edited skills, then refresh copied skills with
 `musubix6 init . --force`, which overwrites them; see the update steps below.
 
@@ -368,7 +382,7 @@ or use `--host both` and back up/review both directories.
 
    ```sh
    musubix6 --version
-   npm view musubix6 version
+   npm view musubix6 version --cache "$(mktemp -d)" --registry=https://registry.npmjs.org/ --prefer-online
    ```
 
 2. In the target project's root, back up its existing `.github/skills/` before
@@ -387,13 +401,13 @@ or use `--host both` and back up/review both directories.
 3. Update the global CLI to the latest published version:
 
    ```sh
-   npm install -g musubix6@latest
+   npm install -g musubix6@latest --cache "$(mktemp -d)" --registry=https://registry.npmjs.org/ --prefer-online
    musubix6 --version
    ```
 
    To install a specific version instead, use a version such as
-   `npm install -g musubix6@0.2.6`, after checking
-   `npm view musubix6@0.2.6 version`. `@latest` follows the current npm tag
+   `npm install -g musubix6@0.2.6 --cache "$(mktemp -d)" --registry=https://registry.npmjs.org/ --prefer-online`, after checking
+   `npm view musubix6@0.2.6 version --cache "$(mktemp -d)" --registry=https://registry.npmjs.org/ --prefer-online`. `@latest` follows the current npm tag
    and may differ from this 0.2.6 source candidate.
    Updating the CLI does not overwrite project
    files at this stage.
@@ -429,7 +443,7 @@ or use `--host both` and back up/review both directories.
 
 ### Update without a global install (npx)
 
-Before using this candidate, check `npm view musubix6@0.2.6 version`.
+Before using this candidate, check `npm view musubix6@0.2.6 version --cache "$(mktemp -d)" --registry=https://registry.npmjs.org/ --prefer-online`.
 `@latest` follows npm's current tag and may differ from this checkout's
 0.2.6. Use the source checkout if registry access is unavailable.
 
@@ -437,13 +451,13 @@ Back up the target project's skills as above, then run these commands in its
 root:
 
 ```sh
-npx --yes musubix6@latest --version
-npx --yes musubix6@latest init . --force
+npx --yes --prefix "$(mktemp -d)" --cache "$(mktemp -d)" --registry=https://registry.npmjs.org/ --prefer-online --package=musubix6@latest -- musubix6 --version &&
+npx --yes --prefix "$(mktemp -d)" --cache "$(mktemp -d)" --registry=https://registry.npmjs.org/ --prefer-online --package=musubix6@latest -- musubix6 init "$PWD" --force
 ```
 
 Review the changes as in step 5. This refreshes the copied skills but does not
 update any separately installed global `musubix6` command. For the SDD gate
-check, use `npx --yes musubix6@latest sdd gate` so that the selected version runs
+check, use `npx --yes --prefix "$(mktemp -d)" --cache "$(mktemp -d)" --registry=https://registry.npmjs.org/ --prefer-online --package=musubix6@latest -- musubix6 sdd --root "$PWD" gate` so that the selected version runs
 instead of an older global CLI. To pin a version, replace `@latest` with
 `@0.2.6` in every npx command, including the gate check.
 
@@ -503,7 +517,7 @@ Do not use `musubix6 init ~/.copilot/skills` for this purpose: `init` appends
 For example, to select the previous published CLI:
 
 ```sh
-npm install -g musubix6@0.1.1
+npm install -g musubix6@0.1.1 --cache "$(mktemp -d)" --registry=https://registry.npmjs.org/ --prefer-online
 musubix6 --version
 ```
 
