@@ -1,0 +1,299 @@
+{
+  "schemaVersion": 1,
+  "task": "TASK-R33-PYTEST-001",
+  "sequence": 2,
+  "previous": "a6253255f0c8e120c5fbc56bedc62750b3efacf84d29d9d58e9dcab04eba2600",
+  "definitionSha256": "ad5117f45297246297bb58a23dd8dd15193d7a4494a26f49bae8136baf95a462",
+  "inputSha256": "eb857feed831f885b37cf59585ba00a49f7eccad2f3ff0140105e2341d16091c",
+  "status": "PASS",
+  "exit": 0,
+  "checks": [
+    {
+      "name": "regression-1",
+      "argv": [
+        "node",
+        "--test",
+        "--test-name-pattern",
+        "^(?:.*\\b(?:TEST-R33-PYTEST-001|TEST-R33-PYTEST-002|TEST-R33-PYTEST-003|TEST-R34-PYTEST-001|TEST-R34-PYTEST-002|TEST-R34-PYTEST-003|TEST-R34-PYTEST-004|TEST-R34-INTEGRATION-001))(?![0-9A-Za-z])",
+        ".github/skills/lean-sdd-tdd/scripts/sdd.test.mjs"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/2d20a4d6fe524fa4161ffeec2e2851f1466b5b393efe81aa61d980156a6f55bb/attempt-7be6d3ea-7237-4e1b-b606-1f2e45c2a5af/0.log",
+        "sha256": "6358acf5496c0ab1eaa3bf434e3f294b67b17a359f9624dac03ec6a5f0444cf5",
+        "bytes": 1090
+      }
+    },
+    {
+      "name": "native-TEST-R33-PYTEST-001",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/GitHub/musubix6/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-R33-PYTEST-001",
+        "--root",
+        "/home/nahisaho/GitHub/musubix6"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/2d20a4d6fe524fa4161ffeec2e2851f1466b5b393efe81aa61d980156a6f55bb/attempt-7be6d3ea-7237-4e1b-b606-1f2e45c2a5af/1.log",
+        "sha256": "a8d194f585a86ba3ed8452aae9d69c94dc2950fe84d906cd9e49a35d47a8a37d",
+        "bytes": 61
+      }
+    },
+    {
+      "name": "native-TEST-R33-PYTEST-002",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/GitHub/musubix6/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-R33-PYTEST-002",
+        "--root",
+        "/home/nahisaho/GitHub/musubix6"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/2d20a4d6fe524fa4161ffeec2e2851f1466b5b393efe81aa61d980156a6f55bb/attempt-7be6d3ea-7237-4e1b-b606-1f2e45c2a5af/2.log",
+        "sha256": "af8526ce95fe459f989337416b66a4f185bba7e2f565c687d4e3e8bf10f785b2",
+        "bytes": 60
+      }
+    },
+    {
+      "name": "native-TEST-R33-PYTEST-003",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/GitHub/musubix6/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-R33-PYTEST-003",
+        "--root",
+        "/home/nahisaho/GitHub/musubix6"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/2d20a4d6fe524fa4161ffeec2e2851f1466b5b393efe81aa61d980156a6f55bb/attempt-7be6d3ea-7237-4e1b-b606-1f2e45c2a5af/3.log",
+        "sha256": "d42ab6c0893ff0c82cddf11ce5012d1bf6ddc95f7e3190f673f88cc1bca09315",
+        "bytes": 60
+      }
+    },
+    {
+      "name": "native-TEST-R34-INTEGRATION-001",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/GitHub/musubix6/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-R34-INTEGRATION-001",
+        "--root",
+        "/home/nahisaho/GitHub/musubix6"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/2d20a4d6fe524fa4161ffeec2e2851f1466b5b393efe81aa61d980156a6f55bb/attempt-7be6d3ea-7237-4e1b-b606-1f2e45c2a5af/4.log",
+        "sha256": "3e888a37c357fa5113e81911bf70c3bed0b8b37cb0ef25a6e8a748d496bd1e95",
+        "bytes": 65
+      }
+    },
+    {
+      "name": "native-TEST-R34-PYTEST-001",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/GitHub/musubix6/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-R34-PYTEST-001",
+        "--root",
+        "/home/nahisaho/GitHub/musubix6"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/2d20a4d6fe524fa4161ffeec2e2851f1466b5b393efe81aa61d980156a6f55bb/attempt-7be6d3ea-7237-4e1b-b606-1f2e45c2a5af/5.log",
+        "sha256": "344873bf4a0a44d9ca91cb52e31306a4d68c496e77d34e2c0c57ae35ac39e24a",
+        "bytes": 60
+      }
+    },
+    {
+      "name": "native-TEST-R34-PYTEST-002",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/GitHub/musubix6/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-R34-PYTEST-002",
+        "--root",
+        "/home/nahisaho/GitHub/musubix6"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/2d20a4d6fe524fa4161ffeec2e2851f1466b5b393efe81aa61d980156a6f55bb/attempt-7be6d3ea-7237-4e1b-b606-1f2e45c2a5af/6.log",
+        "sha256": "f7b7d5d453d76db537bfd10b1900607a5d988c7ee1c0e1ef4424c629f7be32a2",
+        "bytes": 61
+      }
+    },
+    {
+      "name": "native-TEST-R34-PYTEST-003",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/GitHub/musubix6/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-R34-PYTEST-003",
+        "--root",
+        "/home/nahisaho/GitHub/musubix6"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/2d20a4d6fe524fa4161ffeec2e2851f1466b5b393efe81aa61d980156a6f55bb/attempt-7be6d3ea-7237-4e1b-b606-1f2e45c2a5af/7.log",
+        "sha256": "c8f32b899eddb0d03bfe745743c96308655b28b9f5b855954a9fd7914ad2c58a",
+        "bytes": 61
+      }
+    },
+    {
+      "name": "native-TEST-R34-PYTEST-004",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/GitHub/musubix6/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-R34-PYTEST-004",
+        "--root",
+        "/home/nahisaho/GitHub/musubix6"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/2d20a4d6fe524fa4161ffeec2e2851f1466b5b393efe81aa61d980156a6f55bb/attempt-7be6d3ea-7237-4e1b-b606-1f2e45c2a5af/8.log",
+        "sha256": "c41a87771ea15f2b1193d8369c312a7376cdc5387422a8aee6529d3a1f27e652",
+        "bytes": 60
+      }
+    }
+  ],
+  "ledgerEvents": [
+    {
+      "test": "TEST-R33-PYTEST-001",
+      "hashes": [
+        "466e55c8f9acd0f947d5b7e8096cf5a480219eeb342008a93356b6f3ddb83c06",
+        "51aab04f855e950444a704b0d3c502cb7b9bd294c01161b6283b667b60f6ec66",
+        "8bee5f8385ce8c1f469f424db07d7ba5ca7b7c0f9d7aa6639e73b0f27d331c03",
+        "a2e630a02827d6e305675768b93ef44f55f8e5a25ffd8da79e681b7344abbe9a",
+        "e0ab17b2a67deb5dfbb047e176428f2c2301acd5678b62521d36f5673f8bc5e0",
+        "e3d74842d1c348c9a29864c46ac2e405be6f1d600a841bd1c00962519af6480e"
+      ]
+    },
+    {
+      "test": "TEST-R33-PYTEST-002",
+      "hashes": [
+        "03237bbdc7187f5a998df04d73a35b2ff3c3ddf4e93618093df8f1cca68455d7",
+        "27a91df54cef772becd0bda4b5edc808d0ca56e652cf46e3d4a4b923ae4a0e66",
+        "42f0fd2f20f80165ed1c1bb54f309d8f72f68f75bfb23ed08ca78d09218d9959",
+        "5a095ca6dfc32b9b68b6f2d13f00ff3d923547af8944290b97cfb4804b84a12d",
+        "c4b68ecadd4bab90089ec67ba0108737a755f945a1381f846bcdb082904ecb6d",
+        "e06c867b56e2e299bff19e40f8c80b49847df12c7405a0ed9406a99483fb738a"
+      ]
+    },
+    {
+      "test": "TEST-R33-PYTEST-003",
+      "hashes": [
+        "023eb324779d776bb17b4ed3a00fee0ec99763c20c3f5410a9112500746fdcf2",
+        "6314b9024d47afe877aa17089671b8715118088124a312b090074d3739b64904",
+        "79f90c2538eee8c2a9db32215cea3ad497ab220ac67fbab19fa493cdc5f5d9d4",
+        "a9137713f75a61bd05252d88a84939cae3390e55a7e02a6fad9cce778b657f49",
+        "d5e0d7ea948a312cccd29ff1d1f6fb8686686d77660955e402eddb646a01edc8",
+        "f781b13a6f60bd6e10e39ccadf211ae9c09af9d04728a522fb585c093a5f97f6"
+      ]
+    },
+    {
+      "test": "TEST-R34-INTEGRATION-001",
+      "hashes": [
+        "0549f17a6feb135c31815a0c2f5912af3a745f8d0dbed4c45e936b4cb20481c6",
+        "0d75214a436620183361462fab27a37634ce9e55ee09abe18c85498e0babaac1",
+        "0f0fffff6e5c21b8ed0118f4ca0d0aaa4c243e58f30bb330f5fd5accd809896f",
+        "3a10fb9a6efccca9f306f4ff63363a728cbaa915e4a782abd1c4c3eaff10c319",
+        "7c550fce36b0b534def8bc5f2051373d3c8fb7d12b2e0fec0d880fa5797eab28",
+        "82c1710cb8e419112c31afda81900cbc846ce4f94dfb70cc5ca8a02aa56e0770"
+      ]
+    },
+    {
+      "test": "TEST-R34-PYTEST-001",
+      "hashes": [
+        "390fa6d6b34b5d9b0ad4acfc823f4a4432180294f6c5b37f3d523553d77eaf48",
+        "4e519eae008b954068b65c273ed16533adc476e0fb0ef3e47ea79daa999f6095",
+        "67cae30e064fcc8e09dba0e2845ca2914670770c709f3efbdba518ffe4857e1c",
+        "6b8c8d2e35f2a4925380ee9adb42310a06ed10cba6642522da68c79a16fda31f",
+        "cb250073b5eefe4b32c4ee8494ee447a2882a13626a960cc6a51694b06f0a265",
+        "fd7db60f87b94ea70008e015c05ee3ecc9efacbf2c5f740afc90c307346d854a"
+      ]
+    },
+    {
+      "test": "TEST-R34-PYTEST-002",
+      "hashes": [
+        "35fe4d04d4dab4fdd1a6161da5dda082f1fba58b7a59a06add2a1321a9079ed5",
+        "38b606ccf9057974938dce944cf45f3fcd644e53f98b7ad2b99b3f09b6b47c62",
+        "674831d391b6b2cd0ecc56bebc4225a836a75f68b2ebf3ccb3e11fbf99f538a9",
+        "98dd8255c18b594c91e33134e41f0d6b27e3024ce714018fb3cecc08bf3d343e",
+        "c40deee9f0c6079e74aec2da794da46b69b7df666d2de9f91c9c96f28cf44f5a",
+        "e6700cb292ebe585e0e12094a54f6390207faae9fdbadb018eb88244df006313"
+      ]
+    },
+    {
+      "test": "TEST-R34-PYTEST-003",
+      "hashes": [
+        "448bd13df8bc0c83625d785e2894768e3592082824fd380a5404732118524c68",
+        "5c021b4d66cbe90ab45a9431253fe3a65146c1e48fa1a648e752e05a0bbae1c4",
+        "89e6e8132fcc2fe56c548151b6b92d020997096e5a0fc3154af261ff607f0cd9",
+        "8bf75b192743c815d112adb03ea67dc77987cd674ca80b3cbc28e53e803ff14a",
+        "d18b8f00571df16fab9f514dcb96945ba398a1301e9b83529a2a273fbf043a88",
+        "ed5cc785c66dd5ee6cf62ab0b9d75ac5ea5b2c25055a6550965b647f1f0244ab"
+      ]
+    },
+    {
+      "test": "TEST-R34-PYTEST-004",
+      "hashes": [
+        "17993540d0c2d521a08cee3a9a3d210b932bda6ede42cd86d87aaf6b5b6f8df1",
+        "1f080d628b3989cb4e82652faed6cf4104cf3ea698c302ff070b093293d8a013",
+        "4238a0df30cd67cd294fd50864931613723f0bd9dde589a2ec448338e42f0b77",
+        "4d69011db4353db0a2207792dec33aa8acd5be7544236581e29d53946cce45e7",
+        "cfb5b856e3997c948c1a7f4586216265344fcdb7cb364668b6bfb15dbc440228",
+        "d48637688bfb1496795bca5a663f6e29fdac458605a0884d0feb61240553002f"
+      ]
+    }
+  ],
+  "errors": []
+}

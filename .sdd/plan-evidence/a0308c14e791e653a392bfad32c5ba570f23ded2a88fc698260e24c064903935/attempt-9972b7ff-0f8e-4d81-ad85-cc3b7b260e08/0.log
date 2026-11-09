@@ -1,0 +1,46 @@
+r36e actual child runtime=["v24.22.1","/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",false] flags=["--no-experimental-strip-types"]
+r36e ERR_UNKNOWN_FILE_EXTENSION: absent/existing ledger preserved; explicit --weak accepted
+r36e tap native mjs genuine assertion strong Red
+r36e tap native ts genuine assertion strong Red
+r36e ERR_UNKNOWN_FILE_EXTENSION: absent/existing ledger preserved; explicit --weak accepted
+r36e spec native mjs genuine assertion strong Red
+r36e spec native ts genuine assertion strong Red
+r36e ERR_UNKNOWN_FILE_EXTENSION: absent/existing ledger preserved; explicit --weak accepted
+r36e ERR_UNKNOWN_MODULE_FORMAT: absent/existing ledger preserved; explicit --weak accepted
+r36e ERR_UNSUPPORTED_ESM_URL_SCHEME: absent/existing ledger preserved; explicit --weak accepted
+r36e ERR_UNSUPPORTED_DIR_IMPORT: absent/existing ledger preserved; explicit --weak accepted
+r36e ERR_UNSUPPORTED_RESOLVE_REQUEST: absent/existing ledger preserved; explicit --weak accepted
+r36e ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING: absent/existing ledger preserved; explicit --weak accepted
+r36e ERR_UNSUPPORTED_TYPESCRIPT_SYNTAX: absent/existing ledger preserved; explicit --weak accepted
+r36e ERR_UNKNOWN_FILE_EXTENSION: absent/existing ledger preserved; explicit --weak accepted
+r36e ERR_UNKNOWN_MODULE_FORMAT: absent/existing ledger preserved; explicit --weak accepted
+r36e ERR_UNSUPPORTED_ESM_URL_SCHEME: absent/existing ledger preserved; explicit --weak accepted
+r36e ERR_UNSUPPORTED_DIR_IMPORT: absent/existing ledger preserved; explicit --weak accepted
+r36e ERR_UNSUPPORTED_RESOLVE_REQUEST: absent/existing ledger preserved; explicit --weak accepted
+r36e ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING: absent/existing ledger preserved; explicit --weak accepted
+r36e ERR_UNSUPPORTED_TYPESCRIPT_SYNTAX: absent/existing ledger preserved; explicit --weak accepted
+r36e ERR_UNKNOWN_FILE_EXTENSION: absent/existing ledger preserved; explicit --weak accepted
+r36e ERR_UNKNOWN_MODULE_FORMAT: absent/existing ledger preserved; explicit --weak accepted
+r36e ERR_UNSUPPORTED_ESM_URL_SCHEME: absent/existing ledger preserved; explicit --weak accepted
+r36e ERR_UNSUPPORTED_DIR_IMPORT: absent/existing ledger preserved; explicit --weak accepted
+r36e ERR_UNSUPPORTED_RESOLVE_REQUEST: absent/existing ledger preserved; explicit --weak accepted
+r36e ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING: absent/existing ledger preserved; explicit --weak accepted
+r36e ERR_UNKNOWN_FILE_EXTENSION: absent/existing ledger preserved; explicit --weak accepted
+r36e ERR_UNKNOWN_MODULE_FORMAT: absent/existing ledger preserved; explicit --weak accepted
+r36e ERR_UNSUPPORTED_ESM_URL_SCHEME: absent/existing ledger preserved; explicit --weak accepted
+r36e ERR_UNSUPPORTED_DIR_IMPORT: absent/existing ledger preserved; explicit --weak accepted
+r36e ERR_UNSUPPORTED_RESOLVE_REQUEST: absent/existing ledger preserved; explicit --weak accepted
+r36e ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING: absent/existing ledger preserved; explicit --weak accepted
+✔ #369 TEST-R36E-LOAD-001 real unsupported native TS rejects default Red (6757.092414ms)
+✔ #369 TEST-R36E-FORMAT-001 native loader error family preserves explicit policy (28286.992265ms)
+✔ #369 TEST-R36E-ASSERT-001 owned assertions outrank embedded native-loader stderr (2542.92839ms)
+✔ #369 TEST-R36E-FRAMING-001 ordinary Error and wrapper preserve original Red policy (7457.051922ms)
+✔ #369 TEST-R36E-OWNED-001 owned native loader metadata is not child message text (25815.565178ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 73496.859067

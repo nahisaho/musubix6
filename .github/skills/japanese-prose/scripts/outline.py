@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.10"
+# dependencies = ["markdown-it-py>=3,<5"]
+# ///
 """Extract headings and paragraph openings from a Markdown document."""
 
 from __future__ import annotations

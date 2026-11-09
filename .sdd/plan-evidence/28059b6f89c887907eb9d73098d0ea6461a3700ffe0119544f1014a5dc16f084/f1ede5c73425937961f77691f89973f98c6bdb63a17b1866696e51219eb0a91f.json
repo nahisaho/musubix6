@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 1,
+  "task": "TASK-R36G-002",
+  "sequence": 2,
+  "previous": "fdc014815740ba6ea643a674be734ed44439b51c5eeab1fed1f0ed7e48c27df0",
+  "definitionSha256": "93b4cf90b1eb67adac89630b1cf00ae5a7b9733fc9ec03a0ca24bb7b9e4a4ab6",
+  "inputSha256": "e7e946c7d71e4f4ce06e530d5e6f0dbdbaef96f3b9119a3e66ee6d9fb0ce44a6",
+  "status": "PASS",
+  "exit": 0,
+  "checks": [
+    {
+      "name": "regression-1",
+      "argv": [
+        "node",
+        "--test",
+        "--test-name-pattern",
+        "^(?:.*\\b(?:TEST-R36G-002))(?![0-9A-Za-z])",
+        ".github/skills/lean-sdd-tdd/scripts/sdd.test.mjs"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/28059b6f89c887907eb9d73098d0ea6461a3700ffe0119544f1014a5dc16f084/attempt-6fb2228e-fa48-42e1-b618-443900e23396/0.log",
+        "sha256": "a68ca333be4ff9f16cf64c942f962070fd0aa8f081e2b2c544558002ec8beb9a",
+        "bytes": 220
+      }
+    },
+    {
+      "name": "native-TEST-R36G-002",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/GitHub/musubix6/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-R36G-002",
+        "--root",
+        "/home/nahisaho/GitHub/musubix6"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/28059b6f89c887907eb9d73098d0ea6461a3700ffe0119544f1014a5dc16f084/attempt-6fb2228e-fa48-42e1-b618-443900e23396/1.log",
+        "sha256": "0f84c5d2d8d813b1c9f82dd372c33aae80bc653bdfb4ab872240c08c6963949f",
+        "bytes": 48
+      }
+    }
+  ],
+  "ledgerEvents": [
+    {
+      "test": "TEST-R36G-002",
+      "hashes": [
+        "4a8b858290c98861698aa280f6ccd838f0e03481f66488533494c810077d21fe",
+        "55d5ff5eada72b807ce5185ff08e4f0ef926b282843f92b778dabf4eeab7c1c8",
+        "6f8acd3ab141c09493af5a9cba9395bb0a07e6a2c600198429ab89debf1f3ff4",
+        "a64dfcc3e11b251ee833b8ffae31ed8ebe9a182faa011e70704747aabbb5e34f",
+        "d430cb4aa00410f6339fb841dd8c4975facd9604bfff98d786791b05e426f0fb",
+        "df7c8be51650675db3b975629a0624e11f3a6314db6819943cad3fb06f88f149"
+      ]
+    }
+  ],
+  "errors": []
+}

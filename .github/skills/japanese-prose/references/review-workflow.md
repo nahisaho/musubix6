@@ -12,6 +12,17 @@ For every diagnostic finding, record one decision:
 Do not count a finding as resolved merely because the triggering text
 disappeared. Confirm that the replacement preserves meaning.
 
+For an ambiguous metaphor, use the noun/dependency/verb evidence to locate
+the expression, then read the surrounding passage. Record what the context
+establishes and what remains uncertain. Literal actions, quotations and
+deliberate domain usage can justify `keep`; a plausible interpretation alone
+cannot justify a rewrite. Do not replace objective system actions with
+invented human actors.
+
+For a stock question, check whether the paragraph supplies a proposal or
+requested decision. Preserve legitimate questions and their rhetorical
+purpose. Neither a warning nor an improved score authorizes their deletion.
+
 ## Check sentence structure
 
 - The subject and predicate can be identified without rereading.
@@ -59,10 +70,10 @@ passage, compare the original and edited text, including nearby context:
 - `conditions`: prerequisites, exceptions, acceptance criteria, and approval states are unchanged
 - `modality`: obligations, recommendations, permissions, and uncertainty are unchanged
 - `scope`: limitations such as 「だけ」「すべて」「少なくとも」 are unchanged
-- `causality`: causal and temporal relationships are unchanged
+- `causality`: causal and temporal relationships, including tense, are unchanged
 - `quantity_bindings`: each quantity still refers to the same object or action
-- `terminology`: proper names and domain concepts are unchanged
-- `structure`: section identity, order, quoted meaning, and traceability are unchanged
+- `terminology`: proper names, defined terms and domain concepts are unchanged
+- `structure`: section identity, order, quoted meaning, traceability, register and authorial voice are unchanged
 
 Record the review as JSON. Copy `before_sha256` and `after_sha256` from the
 gate output, identify the actual reviewer, and set a check to `true` only

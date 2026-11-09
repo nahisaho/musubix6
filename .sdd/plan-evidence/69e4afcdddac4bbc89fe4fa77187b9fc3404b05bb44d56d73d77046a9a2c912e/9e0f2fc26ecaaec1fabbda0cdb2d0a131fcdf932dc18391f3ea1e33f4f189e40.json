@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 1,
+  "task": "TASK-KOTO-SYNC-003",
+  "sequence": 2,
+  "previous": "be72326364b067a0d4e24c08123d94b7308824166b0c0938476d279fb8e491a1",
+  "definitionSha256": "feda1ebe9b633d8b951b9d92bc5b26dccb053db28d1206116dc96d3758f6cff0",
+  "inputSha256": "7114b6af20d689a731afef6b2f8100ea11e51096cd6623e86000a2e0bd19fa38",
+  "status": "PASS",
+  "exit": 0,
+  "checks": [
+    {
+      "name": "regression-1",
+      "argv": [
+        "node",
+        "--test",
+        "--test-name-pattern",
+        "^(?:.*\\b(?:TEST-KOTO-SYNC-003))(?![0-9A-Za-z])",
+        "scripts/kotonoha-skills.test.mjs"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/69e4afcdddac4bbc89fe4fa77187b9fc3404b05bb44d56d73d77046a9a2c912e/attempt-3cef2f45-232a-4072-8db2-1f824a8276ae/0.log",
+        "sha256": "80f8dd51c95d64b9b8c93101fa339924138a3e8fe75dfb61703e3837d361b5a2",
+        "bytes": 217
+      }
+    },
+    {
+      "name": "native-TEST-KOTO-SYNC-003",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/GitHub/musubix6/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-KOTO-SYNC-003",
+        "--root",
+        "/home/nahisaho/GitHub/musubix6"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/69e4afcdddac4bbc89fe4fa77187b9fc3404b05bb44d56d73d77046a9a2c912e/attempt-3cef2f45-232a-4072-8db2-1f824a8276ae/1.log",
+        "sha256": "44f1016b50632f0d868a7afbfb7271f947b9fd28bd4da41884799bb5b6ef2c80",
+        "bytes": 57
+      }
+    }
+  ],
+  "ledgerEvents": [
+    {
+      "test": "TEST-KOTO-SYNC-003",
+      "hashes": [
+        "0b4c1358e20aed97c1dddd5a25075f716d80b4c525633399798b878495f3e51b",
+        "0d1b52964cdd5bf30216bd189c381356e174d33e2b7a86593452b579fb7fe15b",
+        "5aec525001560da504f14bdcb88325074121a5ad3a6ee2c87b56e13ab8cf935e",
+        "8f2255f11c6047eeb4c7ccd33555d3efdc9f6b1160dfcc1db5947591eb13c1e6",
+        "8ff6ebdcd8b3f1e2c3328bebbd3a6d0f5e29ad7fea0c0b4d8751e35c9b07eea7",
+        "f2758dde7357b0fad74640fc0c453ea9b2676eeb24301222199657de3f8edd65"
+      ]
+    }
+  ],
+  "errors": []
+}

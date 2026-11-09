@@ -348,5 +348,19 @@
     "tier": "T2",
     "requireHuman": true,
     "code": {}
+  },
+  "japanese-prose-naturalness": {
+    "by": "nahisaho",
+    "kind": "human",
+    "at": "2026-11-08T13:48:27.350Z",
+    "artifacts": {
+      ".sdd/specs/japanese-prose-naturalness.md": "1399674c8e6c68d1ee6b7a8c4860ed00fe1498127dbf3313f2d6f0e9c344e147"
+    },
+    "tier": "T2",
+    "requireHuman": true,
+    "code": {
+      ".github/skills/japanese-prose/scripts/core.py": "3b875d90b556a26002a9ef320c66376cf86b7260e664a80c651d1cdc65d485f3",
+      ".github/skills/japanese-prose/scripts/lint.py": "b45e8591ed8fb423a3ddc4171d42484f06b4ac391056af4ead23c79689a64cde"
+    }
   }
 }

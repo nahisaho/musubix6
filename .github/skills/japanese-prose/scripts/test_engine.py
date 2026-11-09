@@ -22,6 +22,7 @@ import unittest
 from pathlib import Path
 
 from packaging.version import Version
+from markdown_it import MarkdownIt
 
 from core import load_ginza, strip_markdown_inline
 from lint import analyze, compare_baseline
@@ -197,6 +198,153 @@ class DiagnosticTests(unittest.TestCase):
             terms = extract_terms(path)
         values = {item["term"] for item in terms["terms"]}
         self.assertTrue(values.isdisjoint({"npm", "run", "build", "workspace", "core"}))
+
+    def test_japrose_001_contextual_metaphors(self) -> None:
+        controls = (
+            "水で砂糖を溶かします。",
+            "作業員が木を倒します。",
+            "針が指に刺さります。",
+            "画面の解像度を上げます。",
+            "「時間を溶かす」という表現は避けます。",
+            "「方針を共通側に倒します」と引用します。",
+            "『説明が利用者に刺さります』という例を示します。",
+            '"提案が利用者に刺さります"という言い回しを引用します。',
+            "「参考「砂糖」と比べて、見直しで時間を溶かします」と引用します。",
+            '"引用例\n見直しで時間を溶かします"という言い方を引用します。',
+            "'引用例\n説明が利用者に刺さります'という言い方を引用します。",
+            "'It's 見直しで時間を溶かします'という例を引用します。",
+            "“説明が利用者に刺さります”という言い方を引用します。",
+            "「時間」を溶かします。",
+        )
+        for text in controls:
+            with self.subTest(control=text):
+                self.assertNotIn("ambiguous_metaphor", {
+                    item["category"] for item in self.analyze_text(text)["findings"]
+                })
+        rows = (
+            ("見直しで時間を溶かします。", "時間", "obj", "溶かす"),
+            ("方針を共通側に倒します。", "方針", "obj", "倒す"),
+            ("説明が利用者に刺さります。", "説明", "nsubj", "刺さる"),
+            ("提案が利用者に刺さります。", "提案", "nsubj", "刺さる"),
+            ("「砂糖」と比較して、見直しで時間を溶かします。", "時間", "obj", "溶かす"),
+            ("runner's 見直しで時間を溶かします。reader's 文を確認します。", "時間", "obj", "溶かす"),
+        )
+        for text, noun, relation, verb in rows:
+            with self.subTest(text=text):
+                findings = [
+                    item for item in self.analyze_text(text)["findings"]
+                    if item["category"] == "ambiguous_metaphor"
+                ]
+                self.assertEqual(len(findings), 1, text)
+                self.assertEqual(findings[0]["severity"], "info")
+                for key, expected in (("noun", noun), ("relation", relation), ("verb", verb)):
+                    self.assertEqual(findings[0]["evidence"][key], expected)
+
+    def test_japrose_002_targeted_questions(self) -> None:
+        for text in (
+            "明日15時の打合せはいかがでしょうか。",
+            "この案はいかがでしょうか。",
+            "更新方法を提案します。いかがでしょうか。",
+            "「いかがでしょうか」という言い方を説明します。",
+            "明日15時の打合せはいかが\nでしょうか。",
+        ):
+            with self.subTest(request=text):
+                self.assertNotIn("reader_prompt_cliche", {
+                    item["category"] for item in self.analyze_text(text)["findings"]
+                })
+        for text in (
+            "いかがでしょうか。", "いかがでしょうか？", "いかがでしょうか",
+            "以上です。いかがでしょうか。", "さて、いかがでしょうか？",
+            "いかが\nでしょうか。", "以上です。いかが\nでしょうか。",
+            "さて、いかが\nでしょうか？", "いかが、でしょうか。",
+        ):
+            with self.subTest(isolated=text):
+                self.assertIn("reader_prompt_cliche", {
+                    item["category"] for item in self.analyze_text(text)["findings"]
+                })
+
+    def test_japrose_003_commonmark_code_spans(self) -> None:
+        parser = MarkdownIt("commonmark")
+        duplicate = "管理者がが設定をを確認する"
+        for width in range(1, 7):
+            delimiter = "`" * width
+            payloads = [duplicate, f"print(\n{duplicate}\n)"]
+            payloads.extend(
+                f"print({'`' * inner}{duplicate}{'`' * inner})"
+                for inner in range(1, width)
+            )
+            for payload in payloads:
+                text = "実例: " + delimiter + payload + delimiter
+                with self.subTest(width=width, payload=payload):
+                    parsed = parser.parse(text)
+                    self.assertNotIn("fence", [token.type for token in parsed])
+                    children = next(token.children for token in parsed if token.type == "inline")
+                    self.assertEqual([child.type for child in children], ["text", "code_inline"])
+                    self.assertFalse({
+                        item["category"] for item in self.analyze_text(text)["findings"]
+                    } & {"duplicate_particle", "duplicate_word"})
+            escaped = "\\`" * width
+            for text in (
+                "実例: " + escaped + duplicate + escaped,
+                "実例: " + delimiter + duplicate + "`" * (width + 1),
+            ):
+                with self.subTest(visible=text):
+                    parsed = parser.parse(text)
+                    self.assertNotIn("fence", [token.type for token in parsed])
+                    children = next(token.children for token in parsed if token.type == "inline")
+                    self.assertNotIn("code_inline", [child.type for child in children])
+                    self.assertIn("duplicate_particle", {
+                        item["category"] for item in self.analyze_text(text)["findings"]
+                    })
+        with tempfile.TemporaryDirectory() as directory:
+            before, after = (Path(directory) / name for name in ("before.md", "after.md"))
+            sample = Path(directory) / "code-example.md"
+            sample.write_text("実例: ``print(`GitHubをを確認する`)``\n", encoding="utf-8")
+            outline = extract_outline(sample)
+            self.assertNotIn("GitHub", outline["paragraphs"][0]["opening"])
+            self.assertEqual(extract_terms(sample)["terms"], [])
+            before.write_text("``print(`SAFE`)``\n", encoding="utf-8")
+            after.write_text("``print(`CHANGED`)``\n", encoding="utf-8")
+            result = check_invariants(before, after)
+            self.assertEqual(result["status"], "blocked")
+            self.assertIn("inline_code", {
+                item["category"] for item in result["mechanical_violations"]
+            })
+        text = "実例: ``print(\n設定\n)`` 管理者がが確認する。"
+        parsed = parser.parse(text)
+        self.assertNotIn("fence", [token.type for token in parsed])
+        self.assertIn("code_inline", [
+            child.type for token in parsed if token.type == "inline" for child in token.children
+        ])
+        duplicates = [
+            item for item in self.analyze_text(text)["findings"]
+            if item["category"] == "duplicate_particle"
+        ]
+        self.assertEqual(len(duplicates), 1)
+        self.assertEqual(duplicates[0]["line"], 3)
+
+    def test_japrose_004_compatibility(self) -> None:
+        html = self.analyze_text("管理者が<br>が確認する。")
+        self.assertNotIn("duplicate_particle", {
+            item["category"] for item in html["findings"]
+        })
+        for text in ("見直しで時間を溶かします。", "いかがでしょうか。"):
+            result = self.analyze_text(text, True)
+            self.assertEqual(set(result), {
+                "file", "engine", "model", "genre", "mode", "score", "finding_count", "findings",
+            })
+            self.assertEqual(result["mode"], "reading-load")
+            self.assertFalse({
+                item["category"] for item in result["findings"]
+            } & {"ambiguous_metaphor", "reader_prompt_cliche"})
+        natural = FIXTURES / "natural.md"
+        original = natural.read_bytes()
+        self.assertEqual(analyze(natural, "tech", False)["findings"], [])
+        self.assertEqual(natural.read_bytes(), original)
+        self.assertEqual(set(SEMANTIC_CHECKS), {
+            "actors", "negation", "conditions", "modality", "scope", "causality",
+            "quantity_bindings", "terminology", "structure",
+        })
 
 
 class InvariantTests(unittest.TestCase):

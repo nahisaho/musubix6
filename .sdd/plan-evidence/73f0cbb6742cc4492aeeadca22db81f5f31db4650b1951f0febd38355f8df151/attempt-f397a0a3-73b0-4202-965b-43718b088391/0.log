@@ -1,0 +1,12 @@
+✔ TEST-RELQ-CONTENT-ADMISSION-001 accepts seven genuine bindings and rejects absent or changed content catalogue (54.43785ms)
+✔ TEST-RELQ-BASELINE-001 validates the historical approved source inventory before tool preparation (304.009586ms)
+✔ TEST-RELQ-001 admits the locked Linux plan and enumerates every cell-policy violation (747.918048ms)
+✔ TEST-RELQ-LINEAGE-001 admits committed lineage and rejects every invalid mapping shape (327.934377ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1521.995366
