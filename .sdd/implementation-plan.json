@@ -205,11 +205,11 @@
         }
       ],
       "specs": {
-        ".sdd/specs/claude-code-support.md": "82bb16e36ab143167e445dcb422d49f5c0f9af8ea024bcc51c4e3092cfefee9b"
+        ".sdd/specs/claude-code-support.md": "b317d4a1fb2f79550e3f8c407168e7e09fdc22890d6d65111ee13b8eeb71826a"
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/157009ff6c2ab93372586a4c23092cef65738f5841092c02ffd98a5f7244adbe/46dcc9c38e2307697dd2a37b2202cc537a737447352cef95516393942f573560.json"
+      "receipt": ".sdd/plan-evidence/157009ff6c2ab93372586a4c23092cef65738f5841092c02ffd98a5f7244adbe/7d77db40d3f690bea1d31af614d4fb44a313321cf25b5a65ba2c0fefb8a303c3.json"
     },
     {
       "id": "TASK-HOST-002",
@@ -242,11 +242,11 @@
         }
       ],
       "specs": {
-        ".sdd/specs/claude-code-support.md": "82bb16e36ab143167e445dcb422d49f5c0f9af8ea024bcc51c4e3092cfefee9b"
+        ".sdd/specs/claude-code-support.md": "b317d4a1fb2f79550e3f8c407168e7e09fdc22890d6d65111ee13b8eeb71826a"
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/7d21335fe17eb043f799f2b86484e5b565531dcde66c1b90932a580247b49dcb/fa067c99625ff3a14f419266adda53e28854e6b844a114e8d97e47c722225941.json"
+      "receipt": ".sdd/plan-evidence/7d21335fe17eb043f799f2b86484e5b565531dcde66c1b90932a580247b49dcb/b07cc269072e4c2648766e4e82cdca41e20487f703e3784c336131c615feee58.json"
     },
     {
       "id": "TASK-HOST-003",
@@ -279,11 +279,11 @@
         }
       ],
       "specs": {
-        ".sdd/specs/claude-code-support.md": "82bb16e36ab143167e445dcb422d49f5c0f9af8ea024bcc51c4e3092cfefee9b"
+        ".sdd/specs/claude-code-support.md": "b317d4a1fb2f79550e3f8c407168e7e09fdc22890d6d65111ee13b8eeb71826a"
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/8c7cdd53ad1743b348e8341be1f23183d44565a81ec9fbf824a38b4712ce6baf/207a0ef4ad13899ef5b6d3588ccbf90f03ba7cca629dfe079447ac303f0d2d29.json"
+      "receipt": ".sdd/plan-evidence/8c7cdd53ad1743b348e8341be1f23183d44565a81ec9fbf824a38b4712ce6baf/49c5ebb566d64db1f533b9aaf6f45671403294a0c479fe80dd1f3685bfd971b8.json"
     },
     {
       "id": "TASK-HOST-004",
@@ -316,11 +316,11 @@
         }
       ],
       "specs": {
-        ".sdd/specs/claude-code-support.md": "82bb16e36ab143167e445dcb422d49f5c0f9af8ea024bcc51c4e3092cfefee9b"
+        ".sdd/specs/claude-code-support.md": "b317d4a1fb2f79550e3f8c407168e7e09fdc22890d6d65111ee13b8eeb71826a"
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/791aad174ebe53b3a0b62d7e3c41dfc435f15888dfb19cedf355d379bdb56726/e5fe0c8b4645246b520a9cc71d8ddb397f417e65c6b0877bbf1b98b348b010af.json"
+      "receipt": ".sdd/plan-evidence/791aad174ebe53b3a0b62d7e3c41dfc435f15888dfb19cedf355d379bdb56726/0a4ab1d85dc2d34b90e113c106511413ff3685745e9f15f6294e2be7971ad9f6.json"
     },
     {
       "id": "TASK-HOST-005",
@@ -332,10 +332,15 @@
       "dependsOn": [],
       "artifacts": [
         ".sdd/specs/claude-code-support.md",
+        "CLANGELOG.md",
+        "README-ja.md",
+        "README.md",
         "bin/musubix6.mjs",
+        "package-lock.json",
+        "package.json",
         "scripts/host-compatibility.test.mjs"
       ],
-      "condition": "Revalidate REQ-HOST-005: | REQ-HOST-005 | When the release candidate is inspected or packed, package.json/package-lock.json and the packed CLI shall identify as stable version 0.2.8 with a matching dated candidate-preparation changelog entry, include self-contained shared skill assets and host regressions, document both install/update paths and watchdog limits in both READMEs, and preserve list/sdd commands; metadata shall not claim publication or release qualification. | TEST-HOST-005 | All mapped native tests (TEST-HOST-005) must pass on current inputs; setup errors or skips do not complete this task.",
+      "condition": "Revalidate REQ-HOST-005: | REQ-HOST-005 | When the release candidate is inspected or packed, package.json/package-lock.json and the packed CLI shall identify as stable version 0.2.9 with a matching dated candidate-preparation changelog entry, include self-contained shared skill assets and host regressions, document both install/update paths and watchdog limits in both READMEs, and preserve list/sdd commands; metadata shall not claim publication or release qualification. | TEST-HOST-005 | All mapped native tests (TEST-HOST-005) must pass on current inputs; setup errors or skips do not complete this task.",
       "tests": [
         "TEST-HOST-005"
       ],
@@ -353,11 +358,11 @@
         }
       ],
       "specs": {
-        ".sdd/specs/claude-code-support.md": "82bb16e36ab143167e445dcb422d49f5c0f9af8ea024bcc51c4e3092cfefee9b"
+        ".sdd/specs/claude-code-support.md": "b317d4a1fb2f79550e3f8c407168e7e09fdc22890d6d65111ee13b8eeb71826a"
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/c25eab68e833d4748861ecdf64ee398ce88be1acd60cbfd07b37f5d5da928589/ca2c57fab1a575083d2a9c1fef6bf840a54cf0c1ab07122e88d8b420501dfc99.json"
+      "receipt": ".sdd/plan-evidence/c25eab68e833d4748861ecdf64ee398ce88be1acd60cbfd07b37f5d5da928589/df612992864eda1fddf744709b21b1ee699bfa6335d667e27dc5f5f7e1453d47.json"
     },
     {
       "id": "TASK-COST-HISTORY-001",
@@ -396,7 +401,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/1517e548507a2deebb202a54350fbfecb559bf735331f257f090736fcc8681b3/535139457c84527488591626eca2e2b58b17e2048ee8dc81eef578e00dac34c6.json"
+      "receipt": ".sdd/plan-evidence/1517e548507a2deebb202a54350fbfecb559bf735331f257f090736fcc8681b3/05480a5dcdc491e86815cb0853abda4b3b4be7f04b1d6880db76955181b518aa.json"
     },
     {
       "id": "TASK-COST-HISTORY-002",
@@ -435,7 +440,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/db45ca0244d8f0421a909af8a8dba45c430c6f6e5f46719b2db62f0fcde44be0/7a87606335f65a6087574f419403f7de8cfb9dc5a53e0fc7498d8cdc1f61dd96.json"
+      "receipt": ".sdd/plan-evidence/db45ca0244d8f0421a909af8a8dba45c430c6f6e5f46719b2db62f0fcde44be0/54b4425701008cd0ffc68608b08fa0d6d57dd742c977de1d3bd8c1a3ece9b28e.json"
     },
     {
       "id": "TASK-DIAGCLI-001",
@@ -1783,7 +1788,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/ea509afbde8ff438cd6b6e4dc31fa9436b424733518d711be4b61866eb346b9b/1c805686015dea55ba7b543ad3d844e3b024cf40fc3055b7b4e41a61d708acb6.json"
+      "receipt": ".sdd/plan-evidence/ea509afbde8ff438cd6b6e4dc31fa9436b424733518d711be4b61866eb346b9b/7bcc5f723d152972bb71b1f0e2ffbdfac2e8e14bb067d572018257d24400192f.json"
     },
     {
       "id": "TASK-PLAN-CLI-001",
@@ -3163,7 +3168,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/578b4f841530e02dd61dfed8b72479e9304d11114b4c07894379124e722ae39f/f21652a21715b81d5516365c3f6cb36101c81151f0f9da019cec8c296662fb95.json"
+      "receipt": ".sdd/plan-evidence/578b4f841530e02dd61dfed8b72479e9304d11114b4c07894379124e722ae39f/c28ad33c40474fe9168cb36110e7b22360e6410329f652bad438bbfbedba8b6f.json"
     },
     {
       "id": "TASK-R36B-LOAD-001",
@@ -3888,7 +3893,9 @@
       "dependsOn": [],
       "artifacts": [
         ".sdd/release-content-mutations.v0.2.8.json",
+        ".sdd/release-content-mutations.v0.2.9.json",
         ".sdd/release-validation.v0.2.8.json",
+        ".sdd/release-validation.v0.2.9.json",
         ".sdd/specs/claude-code-support.md",
         ".sdd/specs/release-qualification.md",
         "CLANGELOG.md",
@@ -3918,11 +3925,11 @@
         }
       ],
       "specs": {
-        ".sdd/specs/release-qualification.md": "90727c0b7a25f3c18a941b24dc1ee09c07bb82357511fa23689c1d02a89dedce"
+        ".sdd/specs/release-qualification.md": "754fbfbbf7997abd29906da0ba5b2420e6fe5b6391a0a39aad91db186e7896a8"
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/73f0cbb6742cc4492aeeadca22db81f5f31db4650b1951f0febd38355f8df151/99dace85bbbea20bcd97db726d13f54901af8c1f20b4db6c51f195c5dd2ce417.json"
+      "receipt": ".sdd/plan-evidence/73f0cbb6742cc4492aeeadca22db81f5f31db4650b1951f0febd38355f8df151/3fd8ba82af44f5f662434e979a89fd23011449ca93458ca48e47218d37838246.json"
     },
     {
       "id": "TASK-RELQ-002",
@@ -3934,7 +3941,9 @@
       "dependsOn": [],
       "artifacts": [
         ".sdd/release-content-mutations.v0.2.8.json",
+        ".sdd/release-content-mutations.v0.2.9.json",
         ".sdd/release-validation.v0.2.8.json",
+        ".sdd/release-validation.v0.2.9.json",
         ".sdd/specs/claude-code-support.md",
         ".sdd/specs/release-qualification.md",
         "CLANGELOG.md",
@@ -3969,11 +3978,11 @@
         }
       ],
       "specs": {
-        ".sdd/specs/release-qualification.md": "90727c0b7a25f3c18a941b24dc1ee09c07bb82357511fa23689c1d02a89dedce"
+        ".sdd/specs/release-qualification.md": "754fbfbbf7997abd29906da0ba5b2420e6fe5b6391a0a39aad91db186e7896a8"
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/dd865d9c8b78a2d77814f6c74fb5613d75c1f641a17ccffea1a8e080c0bc0a07/c788ebc6d091f143023003eca1e2747ad1a31d700cd57275bea6ff5f2e292f64.json"
+      "receipt": ".sdd/plan-evidence/dd865d9c8b78a2d77814f6c74fb5613d75c1f641a17ccffea1a8e080c0bc0a07/56519bf2e82fdb82fbb00d4c38158afb66eaf311d77236f177bb44cbc115697d.json"
     },
     {
       "id": "TASK-RELQ-003",
@@ -3985,7 +3994,9 @@
       "dependsOn": [],
       "artifacts": [
         ".sdd/release-content-mutations.v0.2.8.json",
+        ".sdd/release-content-mutations.v0.2.9.json",
         ".sdd/release-validation.v0.2.8.json",
+        ".sdd/release-validation.v0.2.9.json",
         ".sdd/specs/claude-code-support.md",
         ".sdd/specs/release-qualification.md",
         "CLANGELOG.md",
@@ -4042,11 +4053,11 @@
         }
       ],
       "specs": {
-        ".sdd/specs/release-qualification.md": "90727c0b7a25f3c18a941b24dc1ee09c07bb82357511fa23689c1d02a89dedce"
+        ".sdd/specs/release-qualification.md": "754fbfbbf7997abd29906da0ba5b2420e6fe5b6391a0a39aad91db186e7896a8"
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/89f75a0ef83095915c1bfb35bc420da94e27f50547ef905b5527a6c34744793b/d91558089d263a2c753d0e5feedadb1a6663d4ae6b85e062a5acfa0f9ae0d7e1.json"
+      "receipt": ".sdd/plan-evidence/89f75a0ef83095915c1bfb35bc420da94e27f50547ef905b5527a6c34744793b/54d55355551075f3ac3f07ca9ea66e59b7e7449db07b156ec94c8e02cfa7b728.json"
     },
     {
       "id": "TASK-RELQ-004",
@@ -4059,7 +4070,9 @@
       "artifacts": [
         ".sdd/evidence/v028-preparation.json",
         ".sdd/release-content-mutations.v0.2.8.json",
+        ".sdd/release-content-mutations.v0.2.9.json",
         ".sdd/release-validation.v0.2.8.json",
+        ".sdd/release-validation.v0.2.9.json",
         ".sdd/specs/claude-code-support.md",
         ".sdd/specs/release-qualification.md",
         "CLANGELOG.md",
@@ -4088,11 +4101,11 @@
         }
       ],
       "specs": {
-        ".sdd/specs/release-qualification.md": "90727c0b7a25f3c18a941b24dc1ee09c07bb82357511fa23689c1d02a89dedce"
+        ".sdd/specs/release-qualification.md": "754fbfbbf7997abd29906da0ba5b2420e6fe5b6391a0a39aad91db186e7896a8"
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/ea566fd8dcc45f090bbb58cbb164569368264ed6a6f464c72ed20485084892c2/96f776d2f8767b3f12b0a7988fd2322af28040bc98b9c040a531cd7e94430e2e.json"
+      "receipt": ".sdd/plan-evidence/ea566fd8dcc45f090bbb58cbb164569368264ed6a6f464c72ed20485084892c2/d3c30e18239d6436aa3f4f8b5e96d6911825df5dcda1a2e7f2d9b6f28c24bfa6.json"
     },
     {
       "id": "TASK-RELQ-005",
@@ -4104,12 +4117,16 @@
       "dependsOn": [],
       "artifacts": [
         ".sdd/release-content-mutations.v0.2.8.json",
+        ".sdd/release-content-mutations.v0.2.9.json",
         ".sdd/release-validation.v0.2.8.json",
+        ".sdd/release-validation.v0.2.9.json",
         ".sdd/specs/claude-code-support.md",
         ".sdd/specs/release-qualification.md",
         "CLANGELOG.md",
         "README-ja.md",
         "README.md",
+        "package-lock.json",
+        "package.json",
         "scripts/host-compatibility.test.mjs",
         "scripts/release-host-mutations.mjs",
         "scripts/release-host-mutations.test.mjs",
@@ -4117,7 +4134,7 @@
         "scripts/release-qualification.mjs",
         "scripts/release-qualification.test.mjs"
       ],
-      "condition": "Revalidate REQ-RELQ-005: | REQ-RELQ-005 | When a stable 0.2.8 qualification package is prepared, it shall retain executable, reviewable helpers and self-tests in the repository, verify the exact tgz through the actual package entry point on Node 20/22/24, report exact artifact paths/hashes, exclusions and residual risks separately from human release approval, and require the publishing workflow to verify the packed tgz against the approved digest before publishing that same file. | TEST-RELQ-005, TEST-HOST-005, TEST-RELQ-PUBLISH-001 | All mapped native tests (TEST-HOST-005, TEST-RELQ-005, TEST-RELQ-HOST-001, TEST-RELQ-PACKAGE-BINDING-001, TEST-RELQ-PH-001, TEST-RELQ-PUBLISH-001, TEST-RELQ-SKILL-001) must pass on current inputs; setup errors or skips do not complete this task.",
+      "condition": "Revalidate REQ-RELQ-005: | REQ-RELQ-005 | When a stable 0.2.9 qualification package is prepared, it shall retain executable, reviewable helpers and self-tests in the repository, verify the exact tgz through the actual package entry point on Node 20/22/24, report exact artifact paths/hashes, exclusions and residual risks separately from human release approval, and require the publishing workflow to verify the packed tgz against the approved digest before publishing that same file. | TEST-RELQ-005, TEST-HOST-005, TEST-RELQ-PUBLISH-001 | All mapped native tests (TEST-HOST-005, TEST-RELQ-005, TEST-RELQ-HOST-001, TEST-RELQ-PACKAGE-BINDING-001, TEST-RELQ-PH-001, TEST-RELQ-PUBLISH-001, TEST-RELQ-SKILL-001) must pass on current inputs; setup errors or skips do not complete this task.",
       "tests": [
         "TEST-HOST-005",
         "TEST-RELQ-005",
@@ -4163,11 +4180,11 @@
         }
       ],
       "specs": {
-        ".sdd/specs/release-qualification.md": "90727c0b7a25f3c18a941b24dc1ee09c07bb82357511fa23689c1d02a89dedce"
+        ".sdd/specs/release-qualification.md": "754fbfbbf7997abd29906da0ba5b2420e6fe5b6391a0a39aad91db186e7896a8"
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/8a500e1cd57c470ca565540630853ab2031d74efe95b650b3b5670f6edf9e10d/e238a8475a6378dd590b6454e35bbf014c57d396f7d61e8379d33a647bf99cb8.json"
+      "receipt": ".sdd/plan-evidence/8a500e1cd57c470ca565540630853ab2031d74efe95b650b3b5670f6edf9e10d/e9ecdfe53a4db12565821d647d5c7a9d33047841036ac451b14852f75002e942.json"
     },
     {
       "id": "TASK-RUNNER-SELECTION-001",

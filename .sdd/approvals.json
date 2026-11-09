@@ -228,9 +228,10 @@
   "claude-code-support": {
     "by": "nahisaho",
     "kind": "human",
-    "at": "2026-11-05T08:25:30.108Z",
+    "review": "Explicit human approval of the exact host specification inside the seven-artifact preparation unit",
+    "at": "2026-11-09T10:18:40.398Z",
     "artifacts": {
-      ".sdd/specs/claude-code-support.md": "82bb16e36ab143167e445dcb422d49f5c0f9af8ea024bcc51c4e3092cfefee9b"
+      ".sdd/specs/claude-code-support.md": "b317d4a1fb2f79550e3f8c407168e7e09fdc22890d6d65111ee13b8eeb71826a"
     },
     "tier": "T2",
     "requireHuman": true,
@@ -252,27 +253,27 @@
   "release-qualification": {
     "by": "nahisaho",
     "kind": "human",
-    "review": "Same explicit90727c0b seven-artifact human approval, which cryptographically binds exact helper28ec18ed/test57c89a75; approved production bytes now verified after native Red/Green/mutation/restoration, refresh current implementation snapshot only; no scope change/main/tag/npm/GH385 exception",
-    "at": "2026-11-07T02:25:23.169Z",
+    "review": "Explicit human reapproval of the exact seven-file revision2 README artifact refresh; both READMEs retain prefer-online/public-registry flags; bounded Sonnet static CLEAN twice; task/gate/qualification renewal pending; no merge/tag/publication approval",
+    "at": "2026-11-09T21:47:40.061Z",
     "artifacts": {
-      ".sdd/specs/release-qualification.md": "90727c0b7a25f3c18a941b24dc1ee09c07bb82357511fa23689c1d02a89dedce",
-      ".sdd/release-validation.v0.2.8.json": "683269310de4498ee64f33cfe2b4e30e742a33fbf616da3577770198bb6bb280",
-      ".sdd/release-content-mutations.v0.2.8.json": "07f7567b66498bb10ee1da8a9bc367db1f891982353fb2f17a45a23376c2fd01",
-      ".sdd/specs/claude-code-support.md": "82bb16e36ab143167e445dcb422d49f5c0f9af8ea024bcc51c4e3092cfefee9b",
-      "README.md": "bf778bde30d77e538a850e342ac5b518354179b205706827e1480294addb95c7",
-      "README-ja.md": "efb7a08fdd02fa0719f5ac31f819ac7d5c061cefe87b97d3ab60309efbcf748c",
-      "CLANGELOG.md": "d1c7e13ac5d29dafc6dc876a8ee52025cab8edce77e05a16f222e534cfb26c7d"
+      ".sdd/specs/release-qualification.md": "754fbfbbf7997abd29906da0ba5b2420e6fe5b6391a0a39aad91db186e7896a8",
+      ".sdd/release-validation.v0.2.9.json": "682528b1b652dbb7ecfbb0d6f4844b7e65f639ce629a314c618ebf3e7f58f270",
+      ".sdd/release-content-mutations.v0.2.9.json": "9917d27f99cb3571b49a54e08a9ac76b8dfa462294b31bc33bc0a6f5a41edf9a",
+      ".sdd/specs/claude-code-support.md": "b317d4a1fb2f79550e3f8c407168e7e09fdc22890d6d65111ee13b8eeb71826a",
+      "README.md": "5c615e94dbd5e168f7a1cf50f6ca53d307df98681b923803a9f6f4a5c49d7e23",
+      "README-ja.md": "02edb2604f15d84d332d4ec1f2e7eb679728e8373b0b60ca972f881c8e9f9fa0",
+      "CLANGELOG.md": "6a9a6058105ac9453b779fe8e9cefd0651b8725ce0e46506e6313af4219e76ee"
     },
     "tier": "T2",
     "requireHuman": true,
     "code": {
       "scripts/release-host-mutations.mjs": "6921bf50d7f7df70ce2e3a3e23b0acbf67def78f0e4d358b1d7a5adcb091b618",
-      "scripts/release-qualification-cells.mjs": "28ec18edf72b2387070435eb8e73673d9ff64cf13dc7b592c59f55c07b4f1337",
-      "scripts/release-qualification-cli.mjs": "865e7ddb1aa399e5cc845b15754e9c616eef7cf1add92ccf349b455afb6ffcca",
-      "scripts/release-qualification-content-mutations.mjs": "dcd56b74b62917a321bcf8a1df55da521a9be27b29e16c73f1868a1fd6395b6e",
-      "scripts/release-qualification-evidence.mjs": "65bb176846b259cea684ba2bdb5dc53f6394cf1224fc2424455c0c32d48ca1a0",
+      "scripts/release-qualification-cells.mjs": "c30850426b5f83a418156c3152253c197cae24e44306e93bd80a09b231a2f3f6",
+      "scripts/release-qualification-cli.mjs": "292f60c729d45b5fe504eeb95a79db13743cc243ad4aaf9f1b6f79005b7d68a9",
+      "scripts/release-qualification-content-mutations.mjs": "460d9de5363dc57aa6f931fbb26d4ebc80284c78a91059daf526b42e933eeaa8",
+      "scripts/release-qualification-evidence.mjs": "53d9bd92330191b6964fd072ea750509c118bd1ebedc761d99b26ffcd25a0462",
       "scripts/release-qualification-io.mjs": "56da8043e445f7f636388fb00e8cad1cfa9b5e56c6f1a2f787f270acd8184fb0",
-      "scripts/release-qualification.mjs": "56a74b69cd3624921e869065b76ac27ea4051b514eefad6fdaf640be450de9e3"
+      "scripts/release-qualification.mjs": "24e10d3af9a56a01b0e52fd9a0f85f06c07734f9c9a993af36bd06d8db56cc82"
     }
   },
   "rust-stub-confidence": {

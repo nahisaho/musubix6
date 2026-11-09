@@ -14,7 +14,7 @@ const digest = file => crypto.createHash('sha256').update(fs.readFileSync(file))
 
 /** @id TEST-RELQ-HOST-001 @verifies REQ-RELQ-003 REQ-RELQ-005 */
 test('TEST-RELQ-HOST-001 retains every inherited host mechanism and detects current version mutants with owned restored controls', t => {
-  const cases = hostMutations('0.2.8');
+  const cases = hostMutations('0.2.9');
   assert.deepEqual(cases.map(item => item.name), inherited.hostMutationCatalogue,
     'all28 inherited host mechanisms must remain executable on the current candidate');
   assert.equal(replace('alpha', 'beta')('alpha'), 'beta');
@@ -36,7 +36,10 @@ test('TEST-RELQ-HOST-001 retains every inherited host mechanism and detects curr
   assert.throws(() => changelog.mutate('## [0.2.6] - One\n## [0.2.6] - Two\n'), /anchor/);
   for (const item of cases) {
     const original = fs.readFileSync(path.join(root, item.file), 'utf8');
-    assert.notEqual(item.mutate(original), original, `${item.name}: current mutation must apply`);
+    let mutated;
+    assert.doesNotThrow(() => { mutated = item.mutate(original); },
+      `${item.name}: the selected stable candidate must retain its concrete mutation anchor`);
+    assert.notEqual(mutated, original, `${item.name}: current mutation must apply`);
   }
   const names = ['001', '002', '003', '004', '005'].map(id => `TEST-HOST-${id} independent case`);
   const options = { test: 'TEST-HOST-005', testNames: names, expectedLines: [12], sourceTest: '/oracle.test.mjs' };

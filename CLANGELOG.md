@@ -3,6 +3,38 @@
 User-facing changes to musubix6, with upgrade guidance and known release limitations.
 Release dates use Japan Standard Time (UTC+09:00).
 
+## [0.2.9] - Candidate prepared 2026-11-09
+
+Development candidate only; this heading does not establish npm publication.
+No new breaking change or minimum-runtime change is introduced beyond0.2.8.
+
+### Added
+
+- Flag four bounded Japanese dependency-pair metaphors as advisory review
+  candidates with noun/verb evidence; preserve literal and quoted uses.
+- Guide contextual Japanese editing without inventing actors, meaning or
+  unstated targets, while retaining the existing semantic-review safeguards.
+
+### Fixed
+
+- Preserve legitimate targeted questions while detecting only bounded standalone
+  stock closings after punctuation and whitespace normalization.
+- Mask CommonMark inline code with matching arbitrary-length backticks, retain
+  source line coordinates and HTML word boundaries, and declare parser
+  dependencies in individually copied PEP723 tools.
+
+### Validation and limitations
+
+- The feature development gate passed1195/1195 tests with no skips, and all119
+  planning tasks have genuine renewed proofs. Fifteen bounded isolated feature
+  mutations were detected with exact restoration; none is release qualification.
+- The new candidate requires renewed preparation approval, current native
+  version/adapter controls, hosted checks and two identical clean24-cell Linux
+  qualification runs before separate exact-artifact publication approval.
+- Metaphor vocabulary and quotation/Markdown controls are bounded; advisory
+  findings are not proof of intended meaning or instructions for automatic
+  rewriting. Existing host and release-support exclusions remain unchanged.
+
 ## [0.2.8] - Candidate prepared 2026-11-05
 
 Development preparation only: metadata cutover, full-project checks, frozen

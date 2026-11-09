@@ -14,7 +14,7 @@ import {
   applyContentEdit,
   assertContentInventory,
 } from './release-qualification-content-mutations.mjs';
-import { parseContentPython } from './release-qualification-evidence.mjs';
+import { parseContentPython, validateContentNative } from './release-qualification-evidence.mjs';
 import {
   admitPlan, freezeCandidate, checkFrozenCandidate, validateCellEvidence,
   evaluateReadiness as evaluateReadinessApi, recordRun, runQualificationCell, prepareReleaseReport,
@@ -22,8 +22,8 @@ import {
 } from './release-qualification.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const planRelative = '.sdd/release-validation.v0.2.8.json';
-const contentRelative = '.sdd/release-content-mutations.v0.2.8.json';
+const planRelative = '.sdd/release-validation.v0.2.9.json';
+const contentRelative = '.sdd/release-content-mutations.v0.2.9.json';
 const inheritedRelative = '.sdd/release-validation.v0.2.0.json';
 const approvalsRelative = '.sdd/approvals.json';
 const read = file => JSON.parse(fs.readFileSync(file, 'utf8'));
@@ -655,9 +655,9 @@ test('TEST-RELQ-PACKAGE-BINDING-001 uses the exact frozen tgz and rejects mismat
       configuration: { ...context.configuration,
         runtimes: [{ major, executable: process.execPath, npm }] },
     });
-  }, 'the actual package adapter must select the approved stable0.2.8 execution target');
+  }, 'the actual package adapter must select the approved stable0.2.9 execution target');
   assert.equal(actualPackage.status, 'PASS');
-  assert.equal(actualPackage.packageReceipt.installedVersion, '0.2.8');
+  assert.equal(actualPackage.packageReceipt.installedVersion, '0.2.9');
   assert.equal(actualPackage.packageReceipt.tgzSha256, fileDigest(tgz));
 });
 
@@ -760,14 +760,14 @@ test('TEST-RELQ-BASELINE-001 validates the historical approved source inventory 
 });
 
 /** @id TEST-RELQ-SKILL-001 @verifies REQ-RELQ-003, REQ-RELQ-005 */
-test('TEST-RELQ-SKILL-001 preserves 1253 exact cases and owned native inventory controls', async t => {
+test('TEST-RELQ-SKILL-001 preserves 1268 exact cases and owned native inventory controls', async t => {
   const directory = workspace(t);
   let catalogue;
   assert.doesNotThrow(() => { catalogue = contentCaseCatalogue(contentReference, 'SKILL-MUTATION'); },
     'the independently approved 118-file catalogue must accept before case execution');
-  assert.equal(catalogue.length, 1253, '13 semantic plus 1240 vendor mechanisms');
-  assert.equal(new Set(catalogue.map(row => row.id)).size, 1253);
-  assert.equal(catalogue.filter(row => row.kind === 'semantic').length, 13);
+  assert.equal(catalogue.length, 1268, '28 semantic plus 1240 vendor mechanisms');
+  assert.equal(new Set(catalogue.map(row => row.id)).size, 1268);
+  assert.equal(catalogue.filter(row => row.kind === 'semantic').length, 28);
   assert.equal(catalogue.filter(row => row.kind === 'vendor').length, 1240);
   for (const file of ['windows-native.test.mjs', 'windows-runner.test.mjs',
     'implementation-plan.mjs', 'implementation-plan.test.mjs',
@@ -781,13 +781,15 @@ test('TEST-RELQ-SKILL-001 preserves 1253 exact cases and owned native inventory 
         .map(bit => `unauthorized-mode-${bit}`),
     ].sort(), `${file}: byte and every independent permission-bit policy are required`);
   }
-  assert.deepEqual(catalogue.slice(0, 13).map(row => row.id), contentReference.skillCatalogue.map(row => row.proposedId));
+  assert.deepEqual(catalogue.slice(0, 28).map(row => row.id), contentReference.skillCatalogue.map(row => row.proposedId));
   assert.deepEqual(catalogue.slice(-60).map(row => row.id), contentReference.vendorReference.originSensitivityCases.map(row => row.id));
   const context = contentContext(directory, 'SKILL-MUTATION');
   const target = catalogue.find(row => row.kind === 'vendor' && row.origin === 'source' && row.policy === 'unauthorized-mode-400');
   const plan = buildContentCasePlan(context, target);
   const row = await runContentCase(context, target);
   assert.equal(row.status, 'PASS');
+  assert.ok(fs.existsSync(path.join(plan.source, 'scripts/japanese-prose-naturalness.test.mjs')),
+    'materialized cases must retain the trusted copied-runtime oracle, not only its planned pathname');
   assert.doesNotThrow(() => validateContentCase({ row, target, plan, reference: contentReference }));
   const inventoryInput = { referencePath: path.join(root, contentRelative),
     referenceSha256: fileDigest(path.join(root, contentRelative)),
@@ -952,6 +954,141 @@ test('TEST-RELQ-SKILL-001 preserves 1253 exact cases and owned native inventory 
     block.replace('  File "/unit-data/oracle.py"', '  File "/unit-data/other.py"') +
       '  File "/unit-data/oracle.py", line 232, in test_protected\nRan 1 test in 0.1s\nFAILED (failures=1)\n',
   ]) assert.throws(() => parseContentPython(invalid, python, true));
+
+  const primary = { ...python, assertionLines: [231, 232], requiredAssertionLines: [232] };
+  const primaryFailure = block + 'Ran 1 test in 0.1s\nFAILED (failures=1)\n';
+  const secondaryFailure = primaryFailure.replace('line 232', 'line 231');
+  assert.doesNotThrow(() => parseContentPython(primaryFailure, primary, true));
+  assert.throws(() => parseContentPython(secondaryFailure, primary, true), /primary assertion/,
+    'an approved collateral assertion cannot replace the mechanism-specific primary witness');
+  for (const requiredAssertionLines of [[], [-1], [0], [232.5], [233], [232, 232],
+    [Number.MAX_SAFE_INTEGER + 1], [NaN], [Infinity]]) {
+    for (const failed of [false, true]) {
+      assert.throws(() => parseContentPython(failed ? primaryFailure : 'Ran 1 test in 0.1s\n\nOK\n',
+        { ...primary, requiredAssertionLines }, failed),
+      /primary assertion/, 'required primary declarations must be valid even for passing controls');
+    }
+  }
+
+  const currentCases = catalogue.filter(row => /^SKILL-REPLACEMENT-(?:1[4-9]|2[0-8])$/.test(row.id));
+  assert.equal(currentCases.length, 15, 'all current proofreading mechanisms remain mandatory');
+  const planningContext = { ...context, configuration: { prosePython: process.execPath } };
+  for (const current of currentCases.filter(row => row.oracle.errorFamily === 'Python AssertionError')) {
+    const currentPlan = buildContentCasePlan(planningContext, current);
+    assert.deepEqual(currentPlan.positive.targetNames,
+      ['DiagnosticTests.test_proofreading_preserves_names_code_and_deliberate_styles']);
+    assert.deepEqual(currentPlan.requiredDiagnosticFragments, current.oracle.requiredDiagnosticFragments);
+    assert.deepEqual(currentPlan.requiredAssertionLines, current.oracle.requiredAssertionLines);
+    const owned = {
+      ...python, assertionSource: currentPlan.assertionSource,
+      assertionLines: currentPlan.assertionLines, targetNames: currentPlan.targetNames,
+      requiredDiagnosticFragments: current.oracle.requiredDiagnosticFragments,
+      requiredAssertionLines: current.oracle.requiredAssertionLines,
+    };
+    const diagnostic = (fragments, lines = owned.requiredAssertionLines ?? [owned.assertionLines[0]]) =>
+      lines.map(line => `FAIL: ${owned.targetNames[0].split('.').at(-1)} (__main__.${owned.targetNames[0]})\n` +
+        `Traceback (most recent call last):\n  File "${owned.assertionSource}", line ${line}, in target\n` +
+        `AssertionError: ${fragments.join('\n')}\n`).join('') +
+      `Ran 1 test in 0.1s\nFAILED (failures=${lines.length})\n`;
+    assert.doesNotThrow(() => parseContentPython(diagnostic(owned.requiredDiagnosticFragments), owned, true), current.id);
+    for (const required of owned.requiredAssertionLines ?? []) {
+      const collateral = owned.assertionLines.filter(line => line !== required);
+      assert.throws(() => parseContentPython(diagnostic(owned.requiredDiagnosticFragments, collateral), owned, true),
+        /primary assertion/, `${current.id}: every required primary line must be observed`);
+    }
+    for (let index = 0; index < owned.requiredDiagnosticFragments.length; index++) {
+      const missing = owned.requiredDiagnosticFragments.filter((_, position) => position !== index);
+      assert.throws(() => parseContentPython(diagnostic(missing), owned, true), /diagnostic/,
+        `${current.id}: every frozen diagnostic fragment is required`);
+      assert.throws(() => parseContentPython(owned.requiredDiagnosticFragments[index] + '\n' + diagnostic(missing),
+        owned, true), /diagnostic/, `${current.id}: unrelated preamble is not an owned diagnostic`);
+    }
+    assert.doesNotThrow(() => parseContentPython('Ran 1 test in 0.1s\n\nOK\n', owned, false));
+  }
+  const copied = currentCases.find(row => row.id === 'SKILL-REPLACEMENT-28');
+  const copiedPlan = buildContentCasePlan(planningContext, copied);
+  assert.equal(copiedPlan.assertionSource, path.join(copiedPlan.source, 'scripts/japanese-prose-naturalness.test.mjs'));
+  assert.match(copiedPlan.targetNames[0], /^TEST-JAPROSE-005 /);
+  assert.deepEqual(copiedPlan.assertionLines, [68]);
+  // Parser unit data below is not a native execution or qualification receipt.
+  const childMessage = 'Traceback (most recent call last):\n  File "/copied/outline.py", line 22, in <module>\n' +
+    "ModuleNotFoundError: No module named 'markdown_it'";
+  const copiedReceipt = (message, { frame = copiedPlan.assertionSource, line = 68,
+    code = 'ERR_ASSERTION', stderr = '', extraEvents = [], wrapDepth = 0, mirror = false, duplicateMirror = false,
+    alterWrapper, alterMirror } = {}) => {
+    const error = { name: 'AssertionError', code, message,
+      stack: `AssertionError [ERR_ASSERTION]: ${message}\n    at TestContext.target (${frame}:${line}:1)` };
+    let wrapped = error;
+    for (let depth = 0; depth < wrapDepth; depth++) wrapped = {
+      name: 'Error', code: 'ERR_TEST_FAILURE', failureType: 'testCodeFailure',
+      message, stack: `Error [ERR_TEST_FAILURE]: ${message}`, cause: wrapped,
+    };
+    if (alterWrapper) alterWrapper(wrapped);
+    const counts = { tests: 1, pass: 0, fail: 1, cancelled: 0, skipped: 0, todo: 0 };
+    const completed = { type: 'test:complete', data: {
+      name: copiedPlan.targetNames[0], nesting: 0, details: { error: clone(wrapped), passed: false },
+    } };
+    if (alterMirror) alterMirror(completed);
+    const events = [
+      ...(mirror ? [completed, ...(duplicateMirror ? [clone(completed)] : [])] : []),
+      { type: 'test:fail', data: { name: copiedPlan.targetNames[0], nesting: 0, details: { error: wrapped } } },
+      { type: 'test:plan', data: { count: 1, nesting: 0 } },
+      ...Object.entries(counts).map(([key, value]) => ({
+        type: 'test:diagnostic', data: { nesting: 0, message: `${key} ${value}` },
+      })), ...extraEvents,
+    ];
+    const receipt = {
+      command: copiedPlan.command, cwd: copiedPlan.source, exit: 1, signal: null,
+      timedOut: false, outputLimit: false,
+      stdout: retained(directory, `copied-${randomUUID()}.events`, events.map(event => JSON.stringify(event)).join('\n') + '\n'),
+      stderr: retained(directory, `copied-${randomUUID()}.stderr`, stderr),
+    };
+    receipt.receipt = retained(directory, `copied-${randomUUID()}.receipt.json`, JSON.stringify(receipt));
+    return receipt;
+  };
+  const validateCopied = (receipt, target = copied) =>
+    validateContentNative({ receipt, target, phase: 'mutant', plan: copiedPlan });
+  assert.doesNotThrow(() => validateCopied(copiedReceipt(childMessage)),
+    'the intentional copied-outline child failure inside its exact owned assertion is a valid mutant');
+  for (let wrapDepth = 0; wrapDepth <= 8; wrapDepth++) {
+    for (const mirror of [false, true]) {
+      assert.doesNotThrow(() => validateCopied(copiedReceipt(childMessage, { wrapDepth, mirror })),
+        `native serialization of the same owned diagnostic: wrappers=${wrapDepth}, completion mirror=${mirror}`);
+    }
+  }
+  for (const [label, message, options] of [
+    ['wrong script', childMessage.replace('outline.py', 'terms.py'), {}],
+    ['wrong module', childMessage.replace('markdown_it', 'ginza'), {}],
+    ['wrong owner', childMessage, { frame: '/other/oracle.mjs' }],
+    ['setup assertion', childMessage, { line: 55 }],
+    ['loader error', childMessage, { code: 'ERR_MODULE_NOT_FOUND' }],
+    ['unowned stderr', childMessage, { stderr: childMessage }],
+    ['unowned stdout', childMessage, { extraEvents: [{ type: 'test:stdout', data: { message: childMessage } }] }],
+    ['syntax failure', childMessage + '\nSyntaxError: invalid syntax', {}],
+  ]) assert.throws(() => validateCopied(copiedReceipt(message, options)), label);
+  for (const options of [
+    { wrapDepth: 9 },
+    { wrapDepth: 1, alterWrapper: error => { error.message += 'unrelated error'; } },
+    { wrapDepth: 1, alterWrapper: error => { error.stack += '\nTraceback (most recent call last): unrelated'; } },
+    { wrapDepth: 1, alterWrapper: error => { error.failureType = 'hookFailed'; } },
+    { mirror: true, alterMirror: event => { event.data.details.error.message += 'unrelated'; } },
+    { mirror: true, alterMirror: event => { event.data.name = 'unrelated test'; } },
+    { mirror: true, alterMirror: event => { event.data.details.passed = true; } },
+    { mirror: true, alterMirror: event => { event.data.testId = 'unrelated-test-id'; } },
+    { mirror: true, duplicateMirror: true },
+  ]) assert.throws(() => validateCopied(copiedReceipt(childMessage, options)),
+    'serialization aliases must identify exactly the same owned assertion, never another failure');
+  const mismatchedPrimary = clone(copied);
+  mismatchedPrimary.oracle.requiredAssertionLines = [68];
+  assert.throws(() => validateCopied(copiedReceipt(childMessage), mismatchedPrimary),
+    'execution plans must retain the exact frozen primary assertion declaration');
+  for (const declaration of [undefined, { script: 'terms.py', module: 'markdown_it' },
+    { script: 'outline.py', module: 'ginza' }]) {
+    const target = clone(copied);
+    target.oracle.intentionalDependencyFailure = declaration;
+    assert.throws(() => validateCopied(copiedReceipt(childMessage), target),
+      'the narrow exception cannot authorize another tool or dependency');
+  }
 });
 
 /** @id TEST-RELQ-PH-001 @verifies REQ-RELQ-003, REQ-RELQ-005 */
@@ -1251,8 +1388,8 @@ function readinessFixture(directory, history = []) {
 test('TEST-RELQ-001 admits the locked Linux plan and enumerates every cell-policy violation', async t => {
   const scope = scopeFixture(workspace(t));
   const admitted = await admitPlan(scope);
-  assert.equal(admitted.status, 'PASS', 'the complete genuinely locked stable0.2.8 24-cell plan must be admitted');
-  assert.equal(admitted.plan.targetVersion, '0.2.8', 'admit only the independently selected current candidate');
+  assert.equal(admitted.status, 'PASS', 'the complete genuinely locked stable0.2.9 24-cell plan must be admitted');
+  assert.equal(admitted.plan.targetVersion, '0.2.9', 'admit only the independently selected current candidate');
   const baseline = read(scope.planPath);
   const changes = [];
   for (const cell of required) {
@@ -1272,7 +1409,7 @@ test('TEST-RELQ-001 admits the locked Linux plan and enumerates every cell-polic
     ['previous unpublished candidate', p => { p.targetVersion = '0.2.5'; }],
     ['prerelease candidate', p => { p.targetVersion = '0.2.6-dev.0'; }],
     ['previous stable candidate', p => { p.targetVersion = '0.2.6'; }],
-    ['current prerelease candidate', p => { p.targetVersion = '0.2.8-dev.0'; }],
+    ['current prerelease candidate', p => { p.targetVersion = '0.2.9-dev.0'; }],
     ['previous published candidate', p => { p.targetVersion = '0.2.7'; }],
     ['missing WSL exclusion', p => { p.excludedCells = []; }],
     ['WSL falsely passed', p => { p.excludedCells[0].status = 'PASS'; }],
@@ -2299,7 +2436,7 @@ test('TEST-RELQ-005 binds durable helpers and exact package-entry receipts witho
   assert.equal(cli.status, 1, 'real durable CLI must refuse malformed input without a cyclic-module exit');
   assert.equal(JSON.parse(cli.stderr.trim()).status, 'FAIL');
   assert.equal(cli.signal, null);
-  const tgz = write(path.join(directory, 'musubix6-0.2.8.tgz'), 'synthetic package bytes for verifier fixtures');
+  const tgz = write(path.join(directory, 'musubix6-0.2.9.tgz'), 'synthetic package bytes for verifier fixtures');
   const helpers = ['release-qualification.mjs', 'release-qualification.test.mjs',
     'release-host-mutations.mjs', 'release-host-mutations.test.mjs'].map(name => {
     const file = write(path.join(directory, 'source', 'scripts', name), `export const fixture = '${name}';\n`);
@@ -2307,7 +2444,7 @@ test('TEST-RELQ-005 binds durable helpers and exact package-entry receipts witho
   });
   const packageCommands = major => [
     { command: [`/fixture/node${major}`, '/fixture/npm-cli.js', 'install', '--offline', tgz], output: 'installed' },
-    { command: [`/fixture/node${major}`, '/fixture/node_modules/.bin/musubix6', '--version'], output: '0.2.8\n' },
+    { command: [`/fixture/node${major}`, '/fixture/node_modules/.bin/musubix6', '--version'], output: '0.2.9\n' },
     { command: [`/fixture/node${major}`, '/fixture/node_modules/.bin/musubix6', 'init', '--host', 'both'], output: 'copied both hosts' },
   ].map((row, index) => ({
     command: row.command, exit: 0, signal: null, timedOut: false,
@@ -2315,12 +2452,12 @@ test('TEST-RELQ-005 binds durable helpers and exact package-entry receipts witho
     stderr: retained(directory, `package-${major}-command-${index}.stderr`, ''),
   }));
   const packageReceipts = [20, 22, 24].map(major => ({
-    runtimeMajor: major, tgzPath: tgz, tgzSha256: fileDigest(tgz), installedVersion: '0.2.8',
+    runtimeMajor: major, tgzPath: tgz, tgzSha256: fileDigest(tgz), installedVersion: '0.2.9',
     offline: true, entrypoint: 'node_modules/.bin/musubix6', host: 'both',
     command: ['npm', 'exec', '--offline', '--', 'musubix6', 'init', '--host', 'both'],
     exit: 0, signal: null, timedOut: false,
     log: retained(directory, `package-${major}.json`, JSON.stringify({
-      runtimeMajor: major, version: '0.2.8', host: 'both',
+      runtimeMajor: major, version: '0.2.9', host: 'both',
       copiedHosts: ['.github/skills', '.claude/skills'], status: 'PASS',
       commands: packageCommands(major),
     })),
@@ -2330,7 +2467,7 @@ test('TEST-RELQ-005 binds durable helpers and exact package-entry receipts witho
     },
   }));
   const request = {
-    targetVersion: '0.2.8', packagePath: tgz, packageSha256: fileDigest(tgz), helpers, packageReceipts,
+    targetVersion: '0.2.9', packagePath: tgz, packageSha256: fileDigest(tgz), helpers, packageReceipts,
     readiness: { status: 'PASS', technicalReady: true, streak: 2, publishingAuthorized: false },
     artifacts: [{ path: tgz, sha256: fileDigest(tgz) }],
     exclusions: clone(approvedPlan.excludedCells),
@@ -2351,7 +2488,7 @@ test('TEST-RELQ-005 binds durable helpers and exact package-entry receipts witho
   const oldVersion = clone(packageReceipts[0]); oldVersion.installedVersion = '0.2.4';
   assert.throws(() => validateAdapter({ cell, catalogue, evidence: adapterEvidence(oldVersion) }),
     /runtime\/entrypoint mismatch/, 'the previous published version is not this candidate');
-  for (const version of ['0.2.5', '0.2.6-dev.0', '0.2.6', '0.2.7', '0.2.7-dev.0', '0.2.8-dev.0']) {
+  for (const version of ['0.2.5', '0.2.6-dev.0', '0.2.6', '0.2.7', '0.2.7-dev.0', '0.2.8', '0.2.9-dev.0']) {
     const invalidVersion = clone(packageReceipts[0]); invalidVersion.installedVersion = version;
     assert.throws(() => validateAdapter({ cell, catalogue, evidence: adapterEvidence(invalidVersion) }),
       /runtime\/entrypoint mismatch/, `${version} is not the selected stable candidate`);
@@ -2394,7 +2531,7 @@ test('TEST-RELQ-005 binds durable helpers and exact package-entry receipts witho
   const calls = [];
   const runtimes = [20, 22, 24].map(major => ({ major, executable: `/fixture/node${major}/bin/node` }));
   await pass(verifyPackageEntrypoints({
-    packagePath: tgz, packageSha256: fileDigest(tgz), targetVersion: '0.2.8',
+    packagePath: tgz, packageSha256: fileDigest(tgz), targetVersion: '0.2.9',
     runtimes, workRoot: path.join(directory, 'package-work'),
   }, {
     installAndInvoke: async invocation => {

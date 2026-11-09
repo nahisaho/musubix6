@@ -1,0 +1,101 @@
+{
+  "schemaVersion": 1,
+  "task": "TASK-RELQ-004",
+  "sequence": 10,
+  "previous": "362c83739e6fd2f4817a33bfb22c027ec7920f660302d5fcc87a3aac6db2aa0b",
+  "definitionSha256": "84427edebbd84ad73f15097cf3ca4f6ac7bdd9dc6185d25b8dec6aeaa8ca5e77",
+  "inputSha256": "b9b54f22eaa51f9188d4dbefbfad4ae9b0804a71e9e546c83737ba1c01c644b8",
+  "status": "PASS",
+  "exit": 0,
+  "checks": [
+    {
+      "name": "regression-1",
+      "argv": [
+        "node",
+        "--test",
+        "--test-name-pattern",
+        "^(?:.*\\b(?:TEST-RELQ-READINESS-001|TEST-RELQ-004))(?![0-9A-Za-z])",
+        "scripts/release-qualification.test.mjs"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/ea566fd8dcc45f090bbb58cbb164569368264ed6a6f464c72ed20485084892c2/attempt-0672ec32-4c6d-452a-ba08-19d0d03504db/0.log",
+        "sha256": "f358245e3ded98076f4c96ab2cccd64bcca41cf8065d8d407081d8de4c2838e5",
+        "bytes": 343
+      }
+    },
+    {
+      "name": "native-TEST-RELQ-004",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/GitHub/musubix6/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-RELQ-004",
+        "--root",
+        "/home/nahisaho/GitHub/musubix6"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/ea566fd8dcc45f090bbb58cbb164569368264ed6a6f464c72ed20485084892c2/attempt-0672ec32-4c6d-452a-ba08-19d0d03504db/1.log",
+        "sha256": "4f3364e5e6645a0c501a83b8136536bd3c31cf9711ad7fe1763e0b06a235b753",
+        "bytes": 49
+      }
+    },
+    {
+      "name": "native-TEST-RELQ-READINESS-001",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/GitHub/musubix6/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-RELQ-READINESS-001",
+        "--root",
+        "/home/nahisaho/GitHub/musubix6"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/ea566fd8dcc45f090bbb58cbb164569368264ed6a6f464c72ed20485084892c2/attempt-0672ec32-4c6d-452a-ba08-19d0d03504db/2.log",
+        "sha256": "352387b2161b435895eb8a6888c3855d1adb3fffa85eec51062b5373bf915fe6",
+        "bytes": 59
+      }
+    }
+  ],
+  "ledgerEvents": [
+    {
+      "test": "TEST-RELQ-004",
+      "hashes": [
+        "6582fdc53f7247c21c60ea27dcfa46495b722ffe433a6a3846b15af111ab85ab",
+        "7ab1727251fca624daeb2ac9e8540b744a71a642ffa58e2faa9973e8445d0534",
+        "90e240ded20a5496882c038dc57152d88eb0241bf5e53aeac960ab7b44b982d7",
+        "951becaee670c495cea9aa397cbaaabed02fbdb7c886aa56365ecf516d4cc7c8",
+        "cc15a34686cc21de40a96ee4f4a3aee3d54f41eae7ee51a55514b6ce65f149f1",
+        "de4e292ce9eeab92b26f331491488c573dee69f05ab1d50350cf67b29d7075cb"
+      ]
+    },
+    {
+      "test": "TEST-RELQ-READINESS-001",
+      "hashes": [
+        "5af320e87ba71fe6e2b6c5d2cfc1449282ff79891990be9627e45478826b1291",
+        "8a01eefe21276d0855cdecfdf3bce750143e5759badbe1c47a457f97fbe7be2d",
+        "b15782bc7128b6350856bdce121b3f11b2a85067f7878664e670ed9bfd9b39ab",
+        "b5833269354b77762ad2f1d094f1322397d6e2decce269cb46141789579e3534",
+        "dd521706357ac1caf3f69247f503283ff12e25e38f42fccee56db51adf72ad9a",
+        "fd090536ee76ec8f53e67b5c04d6c6a7ccca26838da9bfb05346c148992b823e"
+      ]
+    }
+  ],
+  "errors": []
+}

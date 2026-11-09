@@ -6,9 +6,10 @@ import { test } from 'node:test';
 import { sha, fileSha, json, equal, ensure, mkdir, save, execute, retainProcess, cleanEnvironment, externalOutput } from './release-qualification-io.mjs';
 import { validateContentNative } from './release-qualification-evidence.mjs';
 
-export const contentRelative = '.sdd/release-content-mutations.v0.2.8.json';
+export const contentRelative = '.sdd/release-content-mutations.v0.2.9.json';
 const nativeTest = '.github/skills/japanese-prose/scripts/test_engine.py';
 const nodeTest = 'scripts/kotonoha-skills.test.mjs';
+const copiedRuntimeTest = 'scripts/japanese-prose-naturalness.test.mjs';
 const self = fileURLToPath(import.meta.url);
 const escape = text => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const phases = ['baseline', 'mutant', 'restored'];
@@ -16,10 +17,10 @@ const phases = ['baseline', 'mutant', 'restored'];
 /** @id CODE-RELQ-CONTENT-001 @implements REQ-RELQ-003, REQ-RELQ-005 */
 export function contentCaseCatalogue(reference, cellId) {
   equal(reference.exactRequiredCaseCounts, {
-    skillMechanisms: 13, sourceVendorChallenges: 1180, originSensitivityChallenges: 60,
-    vendorChallenges: 1240, skillCellTotal: 1253, placeholderMechanisms: 14,
+    skillMechanisms: 28, sourceVendorChallenges: 1180, originSensitivityChallenges: 60,
+    vendorChallenges: 1240, skillCellTotal: 1268, placeholderMechanisms: 14,
   });
-  equal(reference.skillCatalogue.length, 13);
+  equal(reference.skillCatalogue.length, 28);
   equal(reference.placeholderCatalogue.length, 14);
   equal(reference.vendorReference.referenceFiles.length, 118);
   equal(reference.vendorReference.originSensitivityCases.length, 60);
@@ -59,8 +60,8 @@ export function applyContentEdit(text, mutation) {
 
 function referenceAt(source) { return json(path.join(source, contentRelative)); }
 
-function nodeNames(source, prefixes) {
-  const titles = [...fs.readFileSync(path.join(source, nodeTest), 'utf8').matchAll(/^test\('([^']+)'/gm)].map(match => match[1]);
+function nodeNames(source, file, prefixes) {
+  const titles = [...fs.readFileSync(path.join(source, file), 'utf8').matchAll(/^test\('([^']+)'/gm)].map(match => match[1]);
   return prefixes.map(prefix => {
     const matches = titles.filter(title => title.startsWith(prefix + ' '));
     equal(matches.length, 1);
@@ -90,9 +91,13 @@ export function buildContentCasePlan(context, target) {
   } else {
     plan.family = target.oracle.errorFamily;
     plan.assertionLines = target.oracle.expectedAssertionLines;
+    plan.requiredDiagnosticFragments = target.oracle.requiredDiagnosticFragments;
+    plan.requiredAssertionLines = target.oracle.requiredAssertionLines;
     const witnesses = Array.isArray(target.oracle.evidence) ? target.oracle.evidence : [target.oracle.evidence];
-    const oracle = witnesses.find(row => row.path === (plan.family === 'Python AssertionError' ? nativeTest : nodeTest));
-    ensure(oracle, 'independent oracle hash required');
+    const oracles = witnesses.filter(row => plan.family === 'Python AssertionError' ?
+      row.path === nativeTest : [nodeTest, copiedRuntimeTest].includes(row.path));
+    ensure(oracles.length === 1, 'one trusted independent oracle hash required');
+    const oracle = oracles[0];
     equal(fileSha(path.join(context.source, oracle.path)), oracle.sha256);
     plan.oracleSha256 = oracle.sha256;
     if (plan.family === 'Python AssertionError') {
@@ -103,8 +108,8 @@ export function buildContentCasePlan(context, target) {
       plan.command = [plan.python, '-B', plan.assertionSource, '-v', ...plan.targetNames];
     } else {
       const prefix = target.oracle.test.split(' ')[0];
-      plan.targetNames = nodeNames(context.source, [prefix]);
-      plan.assertionSource = path.join(source, nodeTest);
+      plan.targetNames = nodeNames(context.source, oracle.path, [prefix]);
+      plan.assertionSource = path.join(source, oracle.path);
       plan.command = [context.node, '--test', `--test-reporter=${path.join(context.source, 'scripts/release-host-events.mjs')}`,
         '--test-name-pattern', `^${escape(plan.targetNames[0])}$`, plan.assertionSource];
     }
@@ -113,10 +118,10 @@ export function buildContentCasePlan(context, target) {
     'exact positive independent assertion lines required');
   if (target.kind === 'semantic' && plan.family === 'Python AssertionError') {
     const index = Number(target.id.split('-').at(-1));
-    const positive = index <= 3 ? 'DiagnosticTests.test_proofreading_preserves_names_code_and_deliberate_styles' :
+    const positive = target.oracle.positiveTest ?? (index <= 3 ? 'DiagnosticTests.test_proofreading_preserves_names_code_and_deliberate_styles' :
       index <= 5 ? 'DiagnosticTests.test_unnatural_fixture_scores_below_natural_fixture' :
       index === 6 ? 'DiagnosticTests.test_proofreading_detects_adjacent_duplicates' :
-      'InvariantTests.test_review_must_cover_exact_edits_and_all_semantic_checks';
+      'InvariantTests.test_review_must_cover_exact_edits_and_all_semantic_checks');
     plan.positive = { ...plan, targetNames: [positive], command: [...plan.command.slice(0, -1), positive] };
   }
   const setupCommands = [];
@@ -132,7 +137,7 @@ export function buildContentCasePlan(context, target) {
       tgz = context.configuration.packagePath;
       plan.packageInput = { path: tgz, sha256: context.configuration.packageSha256 };
     } else {
-      tgz = path.join(pack, 'musubix6-0.2.8.tgz');
+      tgz = path.join(pack, 'musubix6-0.2.9.tgz');
       plan.developmentRepack = true;
       setupCommands.push([context.node, npm, 'pack', '--ignore-scripts', '--json', '--pack-destination', pack]);
     }
@@ -208,7 +213,8 @@ export function assertContentInventory(input) {
 
 function copySource(source, destination) {
   mkdir(destination);
-  for (const relative of ['.github', 'bin', 'package.json', 'README.md', 'README-ja.md', 'CLANGELOG.md', 'LICENSE', nodeTest]) {
+  for (const relative of ['.github', 'bin', 'package.json', 'README.md', 'README-ja.md', 'CLANGELOG.md', 'LICENSE',
+    nodeTest, copiedRuntimeTest]) {
     const file = path.join(source, relative);
     if (!fs.existsSync(file)) continue;
     mkdir(path.dirname(path.join(destination, relative)));

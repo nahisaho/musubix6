@@ -1,3 +1,220 @@
+# v0.2.9 revision2 README artifact refresh (2026-11-09)
+
+Final proof refresh `v029-release-task-renewal-PGpaGH` refused an unexpected
+concurrent README artifact change before renewing any task. Both READMEs had
+three global npm commands updated with `--prefer-online` and the explicit
+public registry. No external edit was overwritten. The human explicitly
+chose to retain the edits and then separately reapproved all seven exact
+artifact paths/hashes after a fresh native preparation manifest.
+Native approval was recorded only after rechecking every approved hash.
+
+The prior genuine seven-file revision2 unit and its approval are retained
+in `v029-approved-r2/manifest.json` and the archived file tree.
+`v029-readme-refresh-static.json` verifies exactly those six command changes
+and unchanged bytes for the five other preparation artifacts.
+The revision2 policy, specification, mutations, counts, budgets and source
+reference inventory did not change. No canonical production or test bytes
+changed in this refresh.
+
+Independent Claude Sonnet5.5 review returned two bounded CLEAN rounds.
+Round1 inspected both diffs and nearby wording; round2 used retained
+context without rereading unchanged files. Neither round executed npm,
+tests or operational evidence. The flags prefer online revalidation;
+they do not disable cache use. This is a static documentation review, not
+proof that npm installation or release qualification succeeded.
+
+Affected task verification, final cost proofs and the full gate must be
+renewed against the new native approval and corrected strong package-binding
+Red. Required frozen qualification remains two consecutive clean runs of
+the identical candidate/24-cell manifest in fresh state. Existing failures
+remain retained, no old qualification credit transfers, and preparation
+reapproval does not authorize main merge, tagging or publication.
+
+The subsequent native renewal completed successfully:
+`v029-release-task-renewal-fe9ixd/report.json` records119 complete tasks,
+current full-scope plan consistency PASS,201/201 native TDD evidence and
+the full gate passing1195/1195 tests with zero skips. The corrected
+package-binding strong Red is no longer listed among weak retests.
+Three historical weak retests and the existing rust-stub-confidence/
+windows-runner implementation-review warnings remain disclosed by the
+native gate; they were not removed or relabeled. Root diagnostic
+INCOMPLETE snapshots remain as documented below. Final precommit cost
+generation and both cost-task proofs are renewed separately, without
+claiming a new production-code test run. Formal frozen qualification and
+explicit exact-artifact publication approval remain outstanding.
+
+# v0.2.9 revision2 implementation evidence (2026-11-09)
+
+V029-R2-PRIMARY|S2|scripts/release-qualification-evidence.mjs:262|fixed-current-native-Red-Green-and-restored-mutations
+V029-R2-MATERIALIZATION|S2|scripts/release-qualification-content-mutations.mjs:214|fixed-current-restored-mutation-and-actual-controls
+V029-R2-NODE-SERIALIZATION|S2|scripts/release-qualification-evidence.mjs:359|fixed-current-exact-alias-rejections-and-actual-copied-case
+
+The human explicitly approved the exact seven-file revision2 preparation
+unit, and native approval was recorded after rechecking every hash.
+This is preparation approval only, not permission to merge main, tag or
+publish. The approved artifact bytes remain unchanged.
+
+The current SKILL regression first failed on the missing mandatory primary
+witness, then passed after implementation, with the same test hash:
+`v029-primary-r2-red.stdout.log` and `v029-primary-r2-green.stdout.log`.
+The parser now validates optional primary declarations even for passing
+controls, binds them to the frozen case through the execution plan, and
+requires every declared primary among independently owned final throwing
+frames. Collateral-only evidence cannot substitute for a primary.
+
+`v029-release-adapter-mutations-anDv8j/report.json` records30 isolated
+mutations detected by owned regression assertions, exact byte/mode
+restoration and four passing restored controls. These include primary
+omission, requiring only some primaries, duplicate declarations, lost plan
+binding/materialization, wrapper identity/kind and completion identity,
+verdict and multiplicity. This is bounded mechanism coverage, not exhaustive
+mutation testing. Numeric invalid declarations cover negative, zero,
+fractional, unowned, duplicate, unsafe, NaN and infinite representatives;
+the wrapper/mirror acceptance table covers depths0..8 and both mirror states.
+
+All15 new actual semantic cases passed in one current execution:
+`v029-release-semantic-yay2Lt/report.json`. Every case retained its real
+baseline0, mutant1 and restored0 receipts; Python cases also retained both
+passing positive controls. No mutation, primary diagnostic, matrix cell,
+budget or reference inventory was changed to obtain these results.
+The three affected suites passed29/29 with zero skips:
+`v029-restored-tests-WvVtgg/report.json`. All paths in this section are
+relative to the retained session evidence directory.
+
+The version-bound admission test received current native assertion
+Red/restore/Green in `v029-release-version-tdd-JtcYba/report.json`.
+Final raw-output inspection found that the package-binding retest in the same
+report actually passed and was recorded as weak: its mutation targeted the
+receipt validator rather than the package execution adapter. The operational
+harness initially checked native command acceptance without requiring an
+actual assertion failure; that report does not establish a strong package
+Red. Its original evidence is retained. The corrected harness now explicitly
+requires `fails with: AssertionError [ERR_ASSERTION]` and rejects passing/weak
+retests. An initial correction using unchanged-test `--retest` was refused
+(`v029-release-version-tdd-lDD6l8`); refusal is not Red evidence.
+With the actual adapter target changed to0.2.8, a normal native Red failed
+at the owned assertion; exact production restoration then passed Green:
+`v029-release-version-tdd-aCV9F4/report.json`. No production or test bytes
+changed permanently. These retests did not precede the original version
+cutover; no such chronology is claimed.
+
+The official preimplementation plan measurement remained FAIL for12 retained
+historical receipt renewals, including the package-owning Japanese-prose
+task. All119 task fingerprints were measurable, with no unknown input, and
+an independent check found no stale authored specification or prerequisite
+bindings. Old failures and receipts remain retained. Task renewal, the current
+full gate and frozen qualification are pending.
+JavaScript diagnostics are INCOMPLETE2 because no single root ESLint flat
+configuration exists; Python diagnostics are INCOMPLETE2 because root
+`.venv/bin/python` is absent. External test tooling passing does not turn these
+root diagnostic snapshots into passes. Qualification credit remains zero.
+
+Independent Claude Sonnet5.5 implementation review returned two bounded
+CLEAN rounds with no concrete S1/S2 finding. Across the two rounds it inspected
+the release helper/version/test delta, primary and exact Node alias logic,
+the host test diffs and the plan's changed definitions. The second round used
+retained context for unchanged implementation. It did not execute tests,
+independently authenticate operational reports, or individually compare all
+119 task checks/prerequisites. A separate developer mechanical comparison,
+`v029-r2-plan-scope-comparison.json`, verified identical IDs, feature/kind,
+REQs, prerequisites, native tests and literal checks for every119 task,
+unchanged non-task fields and retention of every previous artifact.
+These are static review/comparison results, not gate or qualification
+evidence. The first native renewal completed all119 tasks and the full gate
+passed1195/1195 with zero skips (`v029-release-task-renewal-gBVeHB/report.json`).
+That successful gate predates the package-binding strong-Red correction
+above. The affected task, final cost proofs and full gate will be refreshed
+against the corrected ledger before freezing a candidate.
+
+# v0.2.9 revision2 preparation delta (2026-11-09)
+
+V029-R2-PRIMARY|S2|.sdd/release-content-mutations.v0.2.9.json:954|proposed-awaiting-human-preparation-approval
+V029-R2-MATERIALIZATION|S2|scripts/release-qualification-content-mutations.mjs:213|fixed-native-Red-Green-and-isolated-mutation
+V029-R2-NODE-SERIALIZATION|S2|scripts/release-qualification-evidence.mjs:343|fixed-native-Red-Green-and-real-copied-case
+V029-R2-PROVENANCE|LOW|.sdd/release-content-mutations.v0.2.9.json:5|fixed-two-bounded-static-CLEAN-rounds
+V029-R2-DISCLOSURE|LOW|.sdd/release-content-mutations.v0.2.9.json:1238|fixed-two-bounded-static-CLEAN-rounds
+
+The independent Claude Sonnet5.5 reviewer compared the exact retained r1
+files and their original hashes with revision2. Its provenance and case28
+serialization-disclosure findings were corrected in both revision reasons
+and case28's golden outcome. Two subsequent bounded rounds returned CLEAN.
+The last round used retained context without new reads; the developer then
+independently rehashed the prepared seven-file unit. This is static
+preparation-delta review, not implementation review, runtime validation or
+human approval.
+
+The original approved seven-artifact unit is retained byte-for-byte in
+`v029-approved-r1/manifest.json` and its file tree in the session evidence.
+Current production metadata is0.2.9, with genuine version/admission/catalogue
+assertion Reds and Greens. An additional materialization assertion first
+failed, then passed after copying the newly trusted Node oracle into each
+case. Nineteen isolated adapter mutations were detected by owned assertions,
+exactly restored, and four restored controls passed before the subsequent
+native-serialization and primary-witness refinements; those earlier results
+do not establish mutation coverage for the later code.
+
+Actual semantic development runs retained13 successful current cases out
+of15 across `v029-release-semantic-taRhmc`, `v029-release-semantic-UhNrI3`
+and `v029-release-semantic-fh0NrD`. Cases22/25 were correctly rejected by
+revision1 because their unchanged mutations also produce independently owned
+collateral assertions262/305. Failed originals and a rejected isolation spike
+remain retained. Revision2 does not change any mutation, input, primary
+diagnostic, count, budget, inventory or exclusion. It proposes exact secondary
+ownership plus mandatory original primary frames, rather than accepting an
+arbitrary failure or changing a mutant to fit the comparator.
+
+Node24's real error serializes the same owned assertion in testCodeFailure
+wrappers and a test:complete mirror. The corrected narrow parser passed a
+finite0..8-wrapper/optional-mirror table, foreign-data rejection and actual
+case28 baseline/mutant/restored controls. The affected three suites then
+passed29/29 with zero skips (`v029-restored-tests-rDq9jx/report.json`).
+After that run, the stronger primary-witness regression was added and its
+expected owned assertion Red was recorded. Current primary enforcement,
+its Green/restored mutations, affected task renewal, full gate, independent
+implementation review and frozen qualification remain pending. No current
+all-tests-passing or publication claim is made.
+
+Mechanical revision2 comparison confirmed unchanged24-cell tuples,
+28 exact mutation edits,14 placeholder cases/policy,118-file reference
+inventory and historical lineage. Exact seven-artifact human preparation
+reapproval is required for the new ownership declarations. Qualification
+credit remains zero; no main merge, tag or publication is authorized.
+
+# v0.2.9 preparation proposal review (2026-11-09)
+
+V029-DOC-BASELINE|LOW|README.md:10|corrected-in-proposal
+V029-SECRET-WORDING|LOW|.sdd/specs/release-qualification.md:103|corrected-in-proposal
+V029-POSITIVE-CONTROLS|MEDIUM|.sdd/release-content-mutations.v0.2.9.json:108|corrected-in-proposal
+V029-OWNED-MECHANISMS|MEDIUM|.sdd/release-content-mutations.v0.2.9.json:630|corrected-in-proposal
+V029-COPIED-DEPENDENCY|MEDIUM|.sdd/release-content-mutations.v0.2.9.json:1211|corrected-in-proposal
+
+Two independent Claude Sonnet5.5 proposal reviewers found the five issues above.
+The corrected delta then received two bounded CLEAN rounds from an independent
+Claude Sonnet5.5 reviewer. The final round reused retained context rather than
+independently rereading unchanged bytes. These are static proposal reviews,
+not executed implementation tests or qualification.
+
+The developer separately verified unchanged24 cells/budgets/exclusions,
+13 retained mutation before/after anchors,14 placeholder cases/policy,
+118 ordered source/package paths/full modes, mode policies and60 origin
+sensitivities. The independently retained committed551228c/archive/offline-npm/
+both-host feasibility spike passed on real Node20/22/24 with explicit private
+process umask0022. Its initial inherited-umask mode failure remains retained,
+not regression Red. New mechanism-specific assertion/diagnostic contracts are
+proposed data only; enforcement, native Red/Green and bounded restored
+mutations are pending preparation approval.
+
+Both README structural checks retain the same17 category/line flags as HEAD.
+Japanese prose/reading-load/outline/terms and unchanged-text invariants actually
+ran: prose96, reading-load99, four existing informational prose findings kept,
+and invariant status passed. No optional wording rewrite or new finding was
+introduced; this does not authenticate factual claims or replace human approval.
+
+Preparation approval must cover every exact seven-artifact path/hash and the
+nested host-version specification. Production metadata/helpers remain0.2.8.
+No0.2.9 native proof, current integrated gate, frozen run, main merge, tag,
+publication or transferred0.2.8 qualification credit is claimed.
+
 # v0.2.8 NO-CHANGE fixture admission proposal review (2026-11-07)
 
 NC-PREPARATION|CLEAN|.sdd/specs/release-qualification.md:110|closed
