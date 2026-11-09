@@ -68,8 +68,8 @@ Node.js 20 以上と npm を用意し、スキルを導入するプロジェク�
 ネットワークの問題を解消するか、ソースから導入します。未公開とは限りません。
 
 ```sh
-npm view musubix6@latest version &&
-npm install -g musubix6@latest &&
+npm view musubix6@latest version --prefer-online --registry=https://registry.npmjs.org &&
+npm install -g musubix6@latest --prefer-online --registry=https://registry.npmjs.org &&
 musubix6 --version &&
 musubix6 init . &&
 musubix6 list
@@ -521,7 +521,7 @@ gate でのコマンド定義の変化は、既存の `scopePolicy` に従いま
 3. グローバルの CLI を最新版に更新します。
 
    ```sh
-   npm install -g musubix6@latest
+   npm install -g musubix6@latest --prefer-online --registry=https://registry.npmjs.org
    musubix6 --version
    ```
 

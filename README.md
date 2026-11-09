@@ -73,8 +73,8 @@ or network error, or use the source checkout; do not assume the version is
 unpublished.
 
 ```sh
-npm view musubix6@latest version &&
-npm install -g musubix6@latest &&
+npm view musubix6@latest version --prefer-online --registry=https://registry.npmjs.org &&
+npm install -g musubix6@latest --prefer-online --registry=https://registry.npmjs.org &&
 musubix6 --version &&
 musubix6 init . &&
 musubix6 list
@@ -526,7 +526,7 @@ or use `--host both` and back up/review both directories.
 3. Update the global CLI to the latest published version:
 
    ```sh
-   npm install -g musubix6@latest
+   npm install -g musubix6@latest --prefer-online --registry=https://registry.npmjs.org
    musubix6 --version
    ```
 
