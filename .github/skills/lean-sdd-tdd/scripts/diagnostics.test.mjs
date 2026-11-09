@@ -138,7 +138,7 @@ test('TEST-DIAGCLI-001 exact arguments, roots and help fail closed', () => {
   }
   const help = run(root, ['--help']);
   assert.equal(help.code, 0);
-  assert.match(help.out, /diagnostics.*--root.*--json/s);
+  for (const token of ['diagnostics', '--root', '--json']) assert.ok(help.out.includes(token), token);
 });
 
 /** @id TEST-DIAGCLI-002 @verifies REQ-DIAGCLI-002 */

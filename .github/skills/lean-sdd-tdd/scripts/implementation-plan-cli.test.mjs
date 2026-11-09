@@ -78,6 +78,299 @@ function fixture(t, { implementation = false } = {}) {
 const plan = f => json(call(f.root, ['plan', 'check', '--json']));
 const taskState = (result, id) => result.tasks.find(task => task.id === id).state;
 
+function snapshot(root) {
+  return fs.readdirSync(root, { recursive: true }).sort().map(file => {
+    const absolute = path.join(root, file);
+    const stat = fs.lstatSync(absolute);
+    return [file, stat.isDirectory() ? 'directory' : stat.isSymbolicLink() ? fs.readlinkSync(absolute) : digest(fs.readFileSync(absolute))];
+  });
+}
+function adoptBindings(f, result) {
+  for (const operation of result.patch) {
+    assert.equal(operation.op, 'replace');
+    const match = /^\/tasks\/(\d+)\/(specs|dependencies)$/.exec(operation.path);
+    assert.ok(match, 'Preview must not change scope, graph, status or history pointers');
+    f.document.tasks[Number(match[1])][match[2]] = operation.value;
+  }
+  f.save();
+}
+
+/** @id TEST-PLAN-CLI-008 @verifies REQ-PLAN-CLI-008 */
+test('TEST-PLAN-CLI-008 explicit help is successful, complete, input-independent and strict', t => {
+  const f = fixture(t);
+  fs.writeFileSync(path.join(f.root, '.sdd/config.json'), '{');
+  const before = snapshot(f.root);
+  for (const entry of [script, wrapper]) {
+    const commands = ['review', 'init', 'approve', 'guard', 'tdd', 'trace', 'gate', 'status', 'plan', 'impact', 'context', 'diagnostics'];
+    for (const args of [['--help'], ['help'], ['help', 'plan'], ['plan', 'bindings', '--help'],
+      ['plan', 'check', '--help'], ['plan', 'verify', 'TASK', '--help'], ['diagnostics', '--profile', 'javascript', '--help'],
+      ['plan', 'verify', '--help'], ['tdd', 'red', '--help'], ['tdd', 'stub', '--help'],
+      ['tdd', 'check', '--help'], ['tdd', 'merge-ledger', '--help'], ['approve', 'record', '--help'], ['review', 'check', '--help'],
+      ...commands.map(command => [command, '--help'])]) {
+      const result = call(f.root, args, entry);
+      assert.equal(result.exit, 0, `Explicit help must succeed: ${result.text}`);
+      for (const command of ['diagnostics', 'plan check', 'plan verify', 'plan bindings']) assert.ok(result.text.includes(command), command);
+    }
+    for (const args of [['unknown'], ['constructor'], ['unknown', '--help'], ['constructor', '--help'],
+      ['--help', '--typo'], ['help', 'extra', 'extra'], ['help', 'plan', 'extra'],
+      ['plan', 'bindings', 'extra', '--help'], ['plan', '--help', '--typo'],
+      ['plan', 'unknown', '--help'], ['tdd', 'unknown', '--help'], ['approve', 'unknown', '--help'],
+      ['plan', 'verify', 'TASK', 'extra', '--help'], ['approve', 'record', 'feature', 'extra', '--help'],
+      ['diagnostics', '--help', '--json'], ['diagnostics', '--help', '--changed']]) {
+      assert.equal(call(f.root, args, entry).exit, 2, JSON.stringify(args));
+    }
+  }
+  const observer = fixture(t), preload = path.join(observer.root, 'no-project-reads.mjs');
+  write(observer.root, 'no-project-reads.mjs', `import fs from 'node:fs';
+import path from 'node:path';
+import {syncBuiltinESMExports} from 'node:module';
+const root=${JSON.stringify(f.root)};
+for(const name of ['readFileSync','openSync','readdirSync','statSync','lstatSync','realpathSync','accessSync','existsSync']){
+  const original=fs[name];
+  fs[name]=function(file,...args){
+    if(typeof file==='string' && (path.resolve(file)===root || path.resolve(file).startsWith(root+path.sep))) throw new Error('HELP-PROJECT-READ:'+name);
+    return original.call(this,file,...args);
+  };
+}
+syncBuiltinESMExports();
+`);
+  for (const args of [['--help'], ['help'], ['plan', '--help'], ['diagnostics', '--help']]) {
+    const observed = spawnSync(process.execPath, ['--import', preload, script, ...args, '--root', f.root],
+      { cwd: f.root, env, encoding: 'utf8', timeout: 60000 });
+    assert.equal(observed.error, undefined);
+    assert.equal(observed.status, 0, 'Help must not attempt project reads: ' + observed.stderr);
+    assert.equal(observed.stderr, '');
+  }
+  assert.deepEqual(snapshot(f.root), before);
+});
+
+/** @id TEST-PLAN-CLI-009 @verifies REQ-PLAN-CLI-009 */
+test('TEST-PLAN-CLI-009 binding preview repairs only hashes over chain/diamond/shared graphs and preserves history', t => {
+  for (const shape of ['chain', 'diamond', 'shared']) {
+    const f = fixture(t);
+    f.enable();
+    const a = f.document.tasks[0], b = f.document.tasks[1];
+    if (shape === 'chain') {
+      f.document.features[1].dependsOn = ['a'];
+      b.dependencies = {};
+    } else if (shape === 'diamond') {
+      for (const [id, deps] of [['C', ['A']], ['D', ['B', 'C']]]) {
+        f.document.tasks.push({ ...structuredClone(a), id, dependsOn: deps, dependencies: {} });
+      }
+      b.dependsOn = ['A'];
+    } else b.artifacts = ['a.md'];
+    for (const task of f.document.tasks) {
+      task.specs = {};
+      task.checks[0].argv = [process.execPath, '-e', "require('node:fs').writeFileSync('MUST-NOT-EXECUTE','bad')"];
+    }
+    f.save();
+    const before = snapshot(f.root);
+    assert.equal(call(f.root, ['plan', 'check', '--json']).exit, 1, 'Only preview may tolerate missing binding entries');
+    const preview = json(call(f.root, ['plan', 'bindings', '--json']));
+    assert.equal(preview.stage, 'bindings');
+    assert.equal(preview.readOnly, true);
+    assert.equal(preview.qualifiesCompletion, false);
+    assert.deepEqual(snapshot(f.root), before, 'Preview must not create even evidence directories');
+    assert.equal(call(f.root, ['plan', 'verify', 'A', '--json']).exit, 1, 'Preview must not weaken verification loading');
+    const again = json(call(f.root, ['plan', 'bindings', '--json'], wrapper));
+    assert.deepEqual(again, preview);
+    for (const row of preview.tasks) {
+      assert.equal(row.specs['.sdd/specs/' + row.feature + '.md'], digest(fs.readFileSync(path.join(f.root, '.sdd/specs', row.feature + '.md'))));
+      const expected = shape === 'chain' && row.id === 'B' ? ['A'] : shape === 'diamond'
+        ? ({ A: [], B: ['A'], C: ['A'], D: ['B', 'C'] }[row.id]) : [];
+      assert.deepEqual(row.effectiveDeps, expected);
+      assert.match(row.fingerprint, /^[a-f0-9]{64}$/);
+      for (const id of expected) assert.equal(row.dependencies[id], preview.tasks.find(task => task.id === id).fingerprint);
+    }
+    adoptBindings(f, preview);
+    const consistent = plan(f);
+    for (const row of preview.tasks) assert.equal(row.fingerprint, consistent.tasks.find(task => task.id === row.id).fingerprint);
+    assert.equal(fs.existsSync(path.join(f.root, 'MUST-NOT-EXECUTE')), false);
+    const gate = json(call(f.root, ['gate', '--no-run', '--json']), 1);
+    assert.equal(gate.verdict, 'FAIL', 'Existing full gate rejects missing native Green evidence');
+    assert.equal(gate.planning.status, 'INCOMPLETE', 'Binding adoption is not task completion');
+  }
+  const f = fixture(t);
+  f.enable();
+  f.native();
+  const verified = f.adopt('A');
+  let preview = json(call(f.root, ['plan', 'bindings', '--json']));
+  assert.equal(preview.tasks.find(row => row.id === 'A').history.head, verified.receipt);
+  assert.equal(preview.tasks.find(row => row.id === 'A').history.current, true);
+  f.document.tasks[0].receipt = '.sdd/plan-evidence/missing.json';
+  f.save();
+  const before = snapshot(f.root);
+  preview = json(call(f.root, ['plan', 'bindings', '--json']));
+  assert.equal(preview.tasks.find(row => row.id === 'A').history.current, false);
+  assert.match(preview.tasks.find(row => row.id === 'A').history.reasons.join(';'), /receipt|history/);
+  assert.deepEqual(snapshot(f.root), before);
+  f.document.tasks[0].receipt = verified.receipt;
+  write(f.root, 'a.md', 'not ready anymore');
+  f.document.tasks[0].checks[0].argv = [process.execPath, '-e', 'process.exitCode=1'];
+  f.save();
+  const failure = json(call(f.root, ['plan', 'verify', 'A', '--json']), 1);
+  f.document.tasks[0].receipt = failure.receipt; f.save();
+  preview = json(call(f.root, ['plan', 'bindings', '--json']));
+  assert.equal(preview.tasks.find(row => row.id === 'A').history.status, 'FAIL');
+  assert.equal(preview.tasks.find(row => row.id === 'A').history.current, false);
+  fs.writeFileSync(path.join(f.root, failure.receipt), '{');
+  const corruptBefore = snapshot(f.root);
+  assert.equal(json(call(f.root, ['plan', 'bindings', '--json']), 2).status, 'INCOMPLETE');
+  assert.deepEqual(snapshot(f.root), corruptBefore);
+});
+
+/** @id TEST-PLAN-CLI-010 @verifies REQ-PLAN-CLI-009 */
+test('TEST-PLAN-CLI-010 preview refuses structural errors and never proposes unknown fingerprints', t => {
+  const f = fixture(t);
+  f.enable();
+  f.document.tasks[1].dependsOn = ['A'];
+  f.document.tasks[1].dependencies = {};
+  f.save();
+  fs.unlinkSync(path.join(f.root, 'a.md'));
+  const before = snapshot(f.root);
+  const preview = json(call(f.root, ['plan', 'bindings', '--json']), 2);
+  assert.equal(preview.stage, 'bindings', 'Unknown inputs must still be a binding-preview decision');
+  assert.equal(preview.status, 'INCOMPLETE');
+  for (const row of preview.tasks) assert.equal(row.fingerprint, null);
+  assert.equal(preview.tasks.find(row => row.id === 'B').dependencies.A, null);
+  assert.ok(preview.patch.every(op => !Object.values(op.value).includes(null)));
+  assert.deepEqual(snapshot(f.root), before);
+  write(f.root, 'a.md', 'ready');
+  const valid = structuredClone(f.document);
+  for (const change of [
+    () => { f.document.tasks[0].specs = { '.sdd/specs/a.md': 'not-a-hash' }; },
+    () => { f.document.tasks[0].dependencies = { UNKNOWN: 'a'.repeat(64) }; },
+    () => { f.document.tasks[0].artifacts = ['../outside.md']; },
+    () => { f.document.tasks[0].dependsOn = ['B']; },
+    () => { f.document.features.pop(); f.document.tasks.pop(); },
+    () => { delete f.document.tasks[0].specs; },
+    () => { delete f.document.tasks[0].dependencies; },
+  ]) {
+    Object.assign(f.document, structuredClone(valid)); change(); f.save();
+    const snapshotBefore = snapshot(f.root);
+    assert.equal(json(call(f.root, ['plan', 'bindings', '--json']), 1).status, 'FAIL');
+    assert.deepEqual(snapshot(f.root), snapshotBefore);
+  }
+  Object.assign(f.document, structuredClone(valid));
+  f.config.planning = { required: false }; f.configure(); f.save();
+  const disabled = json(call(f.root, ['plan', 'bindings', '--json']));
+  assert.equal(disabled.status, 'DISABLED');
+  assert.deepEqual(disabled.patch, []);
+  const native = fixture(t, { implementation: true });
+  native.enable();
+  native.document.tasks[1].dependsOn = ['A'];
+  native.document.tasks[1].dependencies = {};
+  native.document.tasks[0].checks[0].argv = [process.execPath, '-e', "require('node:fs').writeFileSync('MUST-NOT-EXECUTE','bad')"];
+  native.save();
+  const pending = json(call(native.root, ['plan', 'bindings', '--json']));
+  assert.match(pending.tasks.find(task => task.id === 'A').fingerprint, /^[a-f0-9]{64}$/, 'A measurable binding is not native Green');
+  assert.equal(pending.tasks.find(task => task.id === 'A').history.current, false);
+  adoptBindings(native, pending);
+  assert.equal(call(native.root, ['plan', 'verify', 'A', '--json']).exit, 2, 'Preview cannot authorize execution without Green');
+  assert.equal(fs.existsSync(path.join(native.root, 'MUST-NOT-EXECUTE')), false);
+  write(native.root, '.sdd/tdd.jsonl', '{');
+  assert.equal(json(call(native.root, ['plan', 'bindings', '--json']), 2).status, 'INCOMPLETE');
+  fs.unlinkSync(path.join(native.root, '.sdd/tdd.jsonl'));
+  fs.unlinkSync(path.join(native.root, 'a.test.mjs'));
+  const unknown = json(call(native.root, ['plan', 'bindings', '--json']), 2);
+  assert.ok(unknown.tasks.every(task => task.fingerprint === null));
+  assert.ok(unknown.patch.every(op => !Object.values(op.value).includes(null)));
+  const escaping = fixture(t);
+  escaping.enable();
+  fs.unlinkSync(path.join(escaping.root, 'a.md'));
+  fs.symlinkSync(path.join(f.root, 'b.md'), path.join(escaping.root, 'a.md'));
+  assert.equal(json(call(escaping.root, ['plan', 'bindings', '--json']), 1).status, 'FAIL');
+});
+
+/** @id TEST-PLAN-CLI-011 @verifies REQ-PLAN-CLI-011 */
+test('TEST-PLAN-CLI-011 preview shares native input reads without caching ordinary inspections', t => {
+  const f = fixture(t, { implementation: true });
+  f.document.tasks[1].kind = 'implementation';
+  f.document.tasks[1].tests = ['TEST-FIX-B'];
+  f.enable(); f.native(); f.adopt('A'); f.adopt('B');
+  const observer = fixture(t), preload = path.join(observer.root, 'ledger-observer.mjs');
+  const counter = path.join(observer.root, 'reads.json');
+  write(observer.root, 'ledger-observer.mjs', `import fs from 'node:fs';
+import path from 'node:path';
+const ledger=${JSON.stringify(path.join(f.root, '.sdd/tdd.jsonl'))};
+const open=fs.openSync; let reads=0;
+fs.openSync=function(file,...args){
+  if(typeof file==='string' && path.resolve(file)===ledger) reads++;
+  return open.call(this,file,...args);
+};
+process.on('exit',()=>fs.writeFileSync(${JSON.stringify(counter)},JSON.stringify(reads)));
+`);
+  const observed = (mode, expected = 0) => {
+    const result = spawnSync(process.execPath, ['--import', preload, script, 'plan', mode, '--json', '--root', f.root],
+      { cwd: f.root, env, encoding: 'utf8', timeout: 60000 });
+    assert.equal(result.error, undefined);
+    assert.equal(result.status, expected, result.stdout + result.stderr);
+    return { result: JSON.parse(result.stdout), reads: JSON.parse(fs.readFileSync(counter, 'utf8')) };
+  };
+  const before = snapshot(f.root), preview = observed('bindings');
+  assert.equal(preview.reads, 1, 'Shared native ledger must be read/validated once per read-only preview');
+  assert.deepEqual(snapshot(f.root), before);
+  adoptBindings(f, preview.result);
+  const consistency = observed('check');
+  assert.equal(consistency.reads, 2, 'Ordinary inspections must stay fresh rather than share preview cache');
+  for (const task of preview.result.tasks) {
+    assert.equal(task.fingerprint, consistency.result.tasks.find(row => row.id === task.id).fingerprint);
+  }
+  write(f.root, '.sdd/tdd.jsonl', '{');
+  const failedBefore = snapshot(f.root), failed = observed('bindings', 2);
+  assert.equal(failed.reads, 1, 'Unavailable shared evidence must not be retried per task');
+  assert.ok(failed.result.tasks.every(task => task.fingerprint === null));
+  assert.deepEqual(failed.result.patch, []);
+  assert.deepEqual(snapshot(f.root), failedBefore);
+  const ordinaryFailure = observed('check', 2);
+  assert.equal(ordinaryFailure.reads, 2);
+  assert.deepEqual(ordinaryFailure.result.tasks.map(task => task.fingerprint),
+    consistency.result.tasks.map(task => task.fingerprint), 'Known ordinary input hashes are unchanged by unreadable evidence');
+});
+
+/** @id TEST-PLAN-CLI-012 @verifies REQ-PLAN-CLI-012 */
+test('TEST-PLAN-CLI-012 current canonical oracle hashes bypass repeated compatibility scans', t => {
+  const f = fixture(t, { implementation: true });
+  write(f.root, 'oracle.mjs', 'export const ready=()=>true;\n');
+  write(f.root, 'a.test.mjs', `import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import {ready} from './oracle.mjs';
+/** @${'id'} TEST-FIX-A @verifies REQ-FIX-A */
+test('TEST-FIX-A',()=>{assert.equal(ready(),true);assert.match(fs.readFileSync('a.md','utf8'),/ready/);});
+`);
+  f.enable(); f.native(); f.adopt('A');
+  const reference = plan(f), observer = fixture(t);
+  const preload = path.join(observer.root, 'source-observer.mjs'), counter = path.join(observer.root, 'reads.json');
+  write(observer.root, 'source-observer.mjs', `import fs from 'node:fs';
+import path from 'node:path';
+const source=${JSON.stringify(path.join(f.root, 'a.test.mjs'))};
+const read=fs.readFileSync; let reads=0;
+fs.readFileSync=function(file,...args){
+  if(typeof file==='string' && path.resolve(file)===source) reads++;
+  return read.call(this,file,...args);
+};
+process.on('exit',()=>fs.writeFileSync(${JSON.stringify(counter)},JSON.stringify(reads)));
+`);
+  const before = snapshot(f.root);
+  const result = spawnSync(process.execPath, ['--import', preload, script, 'plan', 'bindings', '--json', '--root', f.root],
+    { cwd: f.root, env, encoding: 'utf8', timeout: 60000 });
+  assert.equal(result.error, undefined);
+  assert.equal(result.status, 0, result.stdout + result.stderr);
+  const reads = JSON.parse(fs.readFileSync(counter, 'utf8'));
+  assert.ok(reads > 0 && reads <= 16, `Canonical matching exhausted compatibility scans: ${reads} source reads (limit16)`);
+  assert.equal(JSON.parse(result.stdout).tasks.find(task => task.id === 'A').fingerprint,
+    reference.tasks.find(task => task.id === 'A').fingerprint);
+  assert.deepEqual(snapshot(f.root), before);
+  write(f.root, 'oracle.mjs', 'export const ready=()=>false;\n');
+  const staleBefore = snapshot(f.root), stale = json(call(f.root, ['plan', 'bindings', '--json']));
+  const changed = stale.tasks.find(task => task.id === 'A');
+  assert.equal(changed.history.current, false);
+  assert.match(changed.reasons.join('; '), /test changed since last Green\/Refactor/,
+    'Memoization must not turn a changed oracle into matching native history');
+  assert.deepEqual(snapshot(f.root), staleBefore);
+});
+
 /** @id TEST-PLAN-CLI-007 @verifies REQ-PLAN-MODEL-005 REQ-PLAN-CLI-001 */
 test('TEST-PLAN-CLI-007 init and existing unset projects require plans across entry points', t => {
   for (const entry of [script, wrapper]) {

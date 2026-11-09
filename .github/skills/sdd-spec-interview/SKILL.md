@@ -60,6 +60,9 @@ only explicit `planning.required:false` disables planning.
 Delegate schema, scope, fingerprints and the seven-step execution sequence to
 sibling `lean-sdd-tdd`; requirements/design remain in the existing specs.
 Cover every active REQ, task owner and prerequisite, then run `plan check`.
+Use `plan bindings --json` for a read-only binding-only proposal when needed;
+inspect and explicitly adopt known hashes before checking. The preview runs
+no checks, writes no files and cannot resolve null inputs or retained failures.
 Hand off planned tests/stubs and unresolved bindings explicitly; only the
 implementation workflow runs `plan verify TASK` against current native
 evidence and adopts its successful receipt. It updates progress after each

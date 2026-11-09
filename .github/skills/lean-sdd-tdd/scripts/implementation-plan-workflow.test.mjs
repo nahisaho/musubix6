@@ -290,7 +290,7 @@ test('TEST-PLAN-FLOW-003 normative evidence stages and bilingual examples cannot
     'mutation', 'unknown', 'skipped']) assert.ok(canonical.includes(token), `Missing distinct evidence obligation: ${token}`);
   const readmes = ['README.md', 'README-ja.md'].map(name => planningReadme(source, name));
   const commands = text => [...text.matchAll(/^musubix6 sdd (.+)$/gm)].map(match => match[1]);
-  const expected = ['plan check --json', 'context FEATURE --json', 'plan verify TASK --json',
+  const expected = ['--help', 'plan bindings --json', 'plan check --json', 'context FEATURE --json', 'plan verify TASK --json',
     'gate --changed --json', 'gate --json'];
   for (const text of readmes) {
     assert.deepEqual(commands(text), expected, 'Both READMEs expose the independently specified command sequence.');

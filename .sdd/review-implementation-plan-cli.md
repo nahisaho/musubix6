@@ -1,4 +1,4 @@
-spec: sha256:8c1e560bc73bdaadb5c02f1355baee7397c06e23bdf2a350da6b1cc53a96ac34
+spec: sha256:025edb593a1f14dfd2c1f9a5118ad2a3a2b0bdd6b7ac845abbd4129c4cf9c3c1
 verdict: pass
 open: 0
 
@@ -99,3 +99,36 @@ are recorded in the existing CLI spec. The default-disabled configuration
 is unchanged. Own-plan re-adoption, canonical reference/human approval,
 original full gate, same-head hosted checks, frozen qualification and
 publication remain pending at this followup checkpoint.
+
+## v0.2.10 candidate delta
+
+| ID | Severity | Where | Status |
+|---|---|---|---|
+| V0210-HELP-OPERANDS | S2 | `sdd.mjs:8133` omitted operands prevented command-help discovery | Closed |
+| V0210-SHARED-INPUTS | S2 | `sdd.mjs:6987` repeated shared native-ledger parsing | Closed |
+| V0210-CANONICAL-HASH | S2 | `sdd.mjs:840` canonical hash followed compatibility variants | Closed |
+| V0210-HISTORY-HASH | S2 | `sdd.mjs:7060` repeated identical historical TEST comparisons | Closed |
+| V0210-DIAGNOSTIC-HELP | S2 | `sdd.mjs:8144` global help bypassed diagnostic mixed-option refusal | Closed |
+
+Independent delta reviewer `bac4e213-1e8f-4318-8cc0-3c71e9ee83c4`
+completed two clean rounds for the preview memo and two for the final diagnostic
+guard. The oracle-global concern was resolved by checking that every consumer
+explicitly recomputes its own metadata. The preview comparator is scoped to one
+TEST inspection; ordinary stages retain fresh matching and post-command inputs.
+Reviewers did not independently verify every execution log.
+
+Session28d27536 `files/v0210-*` references in the specification are session-local,
+unversioned evidence. The final selected suite passes31 tests with zero skips;
+Node20/22 each pass all five changed CLI regressions. The actual candidate tarball
+passes those five on each installed host on Node24. The mutation report retains26
+isolated assertion detections with exact restoration and affected passing controls.
+Native assertion Reds/Greens remain append-only in `.sdd/tdd.jsonl`.
+
+This verdict covers the reviewed candidate delta, not full-project readiness.
+Full npm checks are nonpassing/incomplete; exact Python/Rust providers, cleanup
+and release-readiness fixture results are not waived. Root JavaScript diagnosis
+is incomplete because the required root ESLint flat config is absent.
+Existing full-scope tasks/receipts and human release locks are not certified or
+refreshed by this review. Frozen qualification and publication remain unauthorized.
+The final caller-bounded full gate ended137 after180.07s without a JSON verdict;
+its terminal cause is unknown, and it supplies no passing gate evidence.

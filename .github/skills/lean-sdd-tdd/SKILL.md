@@ -58,7 +58,7 @@ missing plans refuse with exit2 rather than generating placeholder tasks.
 
 1. Read current approved specifications; define PASS conditions and counterexamples in those same specs.
 2. Author/update the JSON feature/task graph and trusted scope before production implementation; cover every active REQ and explicit artifact owner.
-3. Run `$S plan check --json`; resolve stale/unknown bindings before production changes. Planned regression tests/stubs may be needed to make TEST inputs measurable; a draft or an unknown fingerprint is not a pass.
+3. Use `$S plan bindings --json` to preview binding-only replacements if needed; inspect and explicitly adopt known hashes, then run `$S plan check --json`. Preview never executes checks, changes files or certifies completion; null inputs and retained failures stay unresolved. Resolve stale/unknown bindings before production changes. Planned regression tests/stubs may be needed to make TEST inputs measurable; a draft or an unknown fingerprint is not a pass.
 4. Implement one ready task in dependency order using genuine assertion Red and Green, valid controls and bounded restored mutations.
 5. Run `$S plan verify TASK --json` only after current native TDD evidence exists; declared checks plus guarded native verification must succeed. Never use an aggregate gate as a task check.
 6. Update progress after each task: adopt the returned current successful `receipt` and set authored `status`; retain failure receipts and report pending/unknown work honestly.

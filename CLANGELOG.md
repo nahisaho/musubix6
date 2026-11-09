@@ -3,6 +3,27 @@
 User-facing changes to musubix6, with upgrade guidance and known release limitations.
 Release dates use Japan Standard Time (UTC+09:00).
 
+## [0.2.10] - Candidate prepared 2026-11-10
+
+Source candidate for #386 and #387, based on the committed v0.2.8 source.
+Uncommitted v0.2.9 work is not included. No tag or npm publication is implied;
+full-project validation, frozen qualification and publication approval remain
+separate requirements.
+
+### Fixed
+
+- Return exit0 for explicit SDD help without reading project inputs, and list
+  diagnostics plus plan check, verify and bindings; invalid usage still exits2.
+
+### Added
+
+- Preview specification/dependency hash bindings with `sdd plan bindings --json`
+  without executing checks or writing files. Output includes effective
+  prerequisites, known/null fingerprints, retained history and a binding-only
+  RFC6902 patch. Review and apply it explicitly, then check and freshly verify.
+  A preview is not completion evidence; unknown inputs remain incomplete,
+  malformed histories refuse, and strict check/gate/verify policy is unchanged.
+
 ## [0.2.8] - Candidate prepared 2026-11-05
 
 Development preparation only: metadata cutover, full-project checks, frozen

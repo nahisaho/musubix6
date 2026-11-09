@@ -52,6 +52,9 @@ existing unset projects. Create/update `.sdd/implementation-plan.json`
 from current specifications before production implementation. Delegate the
 complete schema and seven-step workflow to sibling `lean-sdd-tdd`; do not
 create a second contract or invent a parallel evidence format.
+Use `plan bindings --json` for a read-only binding-only proposal when needed;
+inspect and explicitly adopt known hashes, never null inputs or completion.
+The preview runs no checks, writes no files and preserves retained failures.
 Run its read-only `plan check`, then implement ready tasks in dependency order
 with actual Red/Green. Run `plan verify TASK` against current native evidence
 and update authored progress/receipt after each verified task.

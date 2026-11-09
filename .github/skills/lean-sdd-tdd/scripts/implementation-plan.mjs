@@ -46,9 +46,10 @@ function strings(value, id, label, { empty = true, pattern } = {}) {
   requirePlan(new Set(value).size === value.length, id, `${id}: duplicate ${label}`);
   return value;
 }
-function hashBindings(value, expected, id, label) {
+function hashBindings(value, expected, id, label, preview = false) {
   requirePlan(record(value), id, `${id}: ${label} must be an object`);
-  requirePlan(Object.keys(value).length === expected.length && expected.every(key => Object.hasOwn(value, key)),
+  requirePlan(Object.keys(value).every(key => expected.includes(key))
+    && (preview || expected.every(key => Object.hasOwn(value, key))),
     id, `${id}: ${label} must bind exactly ${expected.join(', ') || '(none)'}`);
   requirePlan(Object.values(value).every(item => typeof item === 'string' && HASH.test(item)),
     id, `${id}: ${label} requires lowercase SHA256 hashes`);
@@ -174,7 +175,7 @@ function graphOrder(graph, label) {
   return queue;
 }
 
-function validateModel(root, config, specs, document, selected) {
+function validateModel(root, config, specs, document, selected, preview = false) {
   fields(document, ['schemaVersion', 'features', 'tasks'], PLAN);
   requirePlan(document.schemaVersion === 1, PLAN, `${PLAN}: unsupported schemaVersion`);
   requirePlan(Array.isArray(document.features) && document.features.length > 0 && document.features.length <= 256,
@@ -248,7 +249,7 @@ function validateModel(root, config, specs, document, selected) {
     requirePlan(raw.tests.every(test => declaredTests.has(test))
       && (raw.kind === 'documentation' || raw.tests.length === declaredTests.size),
     id, `${id}: TEST references must match required TEST mappings`);
-    hashBindings(raw.specs, [...neededSpecs], id, 'specs');
+    hashBindings(raw.specs, [...neededSpecs], id, 'specs', preview);
     for (const spec of neededSpecs) if (!currentSpecs.has(spec)) currentSpecs.set(spec, planningFileSha256(root, spec));
     requirePlan(Array.isArray(raw.checks) && raw.checks.length > 0, id, `${id}: explicit checks required`);
     const checkNames = new Set();
@@ -269,7 +270,8 @@ function validateModel(root, config, specs, document, selected) {
       if (!owners.has(canonical)) owners.set(canonical, new Set());
       owners.get(canonical).add(id);
     }
-    const task = { ...raw, requiredTests: [...raw.tests].sort(), definitionSha256: taskDefinitionSha256(raw) };
+    const task = { ...raw, requiredTests: [...raw.tests].sort(), requiredSpecs: [...neededSpecs].sort(),
+      definitionSha256: taskDefinitionSha256(raw) };
     tasks.push(task);
     byId.set(id, task);
   }
@@ -283,7 +285,7 @@ function validateModel(root, config, specs, document, selected) {
     graph.set(task.id, task.effectiveDeps);
   }
   const taskOrder = graphOrder(graph, 'task');
-  for (const task of tasks) hashBindings(task.dependencies, task.effectiveDeps, task.id, 'dependencies');
+  for (const task of tasks) hashBindings(task.dependencies, task.effectiveDeps, task.id, 'dependencies', preview);
   const covered = new Set(tasks.flatMap(task => task.reqs));
   const exclusions = [];
   for (const feature of scope) for (const req of metadata.get(feature).reqs) {
@@ -298,6 +300,15 @@ function validateModel(root, config, specs, document, selected) {
 
 /** @id CODE-PLAN-MODEL-002 @implements REQ-PLAN-MODEL-001 REQ-PLAN-MODEL-002 REQ-PLAN-MODEL-003 REQ-PLAN-MODEL-004 */
 export function loadImplementationPlan({ root, config = {}, specs }) {
+  return loadPlan({ root, config, specs }, false);
+}
+
+/** @id CODE-PLAN-CLI-BINDING-MODEL @implements REQ-PLAN-CLI-009 */
+export function loadImplementationPlanBindings({ root, config = {}, specs }) {
+  return loadPlan({ root, config, specs }, true);
+}
+
+function loadPlan({ root, config, specs }, preview) {
   try {
     const selected = policyScope(config);
     if (selected === null) return { enabled: false, stage: 'structure', status: 'DISABLED', exit: 0, errors: [], model: null };
@@ -305,7 +316,7 @@ export function loadImplementationPlan({ root, config = {}, specs }) {
     let realRoot;
     try { realRoot = fs.realpathSync(root); } catch (error) { ioError(error, root); }
     const document = readPlanningJson(realRoot, PLAN);
-    const model = validateModel(realRoot, config, specs, document, selected);
+    const model = validateModel(realRoot, config, specs, document, selected, preview);
     return { enabled: true, stage: 'structure', status: 'PASS', exit: 0, errors: [], model };
   } catch (error) {
     if (!(error instanceof PlanningError)) throw error;

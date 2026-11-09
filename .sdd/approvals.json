@@ -329,10 +329,11 @@
   "implementation-plan-cli": {
     "by": "ai:claude-sonnet-5.5",
     "kind": "ai",
-    "review": "Independent T2 specification review: all-unset migration and direct/wrapper/standalone fail-closed boundaries; no scope narrowing or release authorization.",
-    "at": "2026-11-05T06:16:50.274Z",
+    "review": ".sdd/review-implementation-plan-cli.md",
+    "reviewSha": "d5d2d239d844c24639893b9b2de7986ae574b88e48037a648c4e003185ebed0c",
+    "at": "2026-11-09T22:32:51.154Z",
     "artifacts": {
-      ".sdd/specs/implementation-plan-cli.md": "b11456fe2fa58e4c722f92a9a735049c19dc357bfecf8108e274dcd7ada23f16"
+      ".sdd/specs/implementation-plan-cli.md": "025edb593a1f14dfd2c1f9a5118ad2a3a2b0bdd6b7ac845abbd4129c4cf9c3c1"
     },
     "tier": "T2",
     "requireHuman": false

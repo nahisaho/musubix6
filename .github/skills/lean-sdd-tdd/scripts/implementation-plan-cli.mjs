@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { PlanningError, containedPlanningPath, planningSha256, readPlanningJson } from './implementation-plan.mjs';
-import { evaluateImplementationPlan, verifyImplementationTask } from './implementation-plan-evidence.mjs';
+import { evaluateImplementationPlan, verifyImplementationTask, previewImplementationBindings } from './implementation-plan-evidence.mjs';
 
 export function planningRefusal(error, stage) {
   if (!(error instanceof PlanningError)) throw error;
@@ -82,12 +82,15 @@ export function planningFeatureClosure(model, initial) {
 /** @id CODE-PLAN-CLI-004 @implements REQ-PLAN-CLI-001 REQ-PLAN-CLI-004 */
 export function publicPlanningResult(result) {
   return { enabled: result.enabled, stage: result.stage, status: result.status, exit: result.exit,
+    ...(result.stage === 'bindings' ? { readOnly: true, qualifiesCompletion: false, patch: result.patch ?? [] } : {}),
     ...(result.task ? { task: result.task } : {}),
     ...(result.receipt ? { receipt: result.receipt } : {}),
     ...(result.fingerprint ? { fingerprint: result.fingerprint } : {}),
     errors: (result.errors ?? []).map(error => ({ id: error.id, reason: error.reason, exit: error.exit ?? result.exit })),
     tasks: (result.tasks ?? []).map(task => ({ id: task.id, feature: task.feature, reqs: task.reqs,
-      state: task.state, fingerprint: task.fingerprint, exit: task.exit, reasons: task.reasons })) };
+      ...(result.stage === 'bindings' ? { specs: task.specs, effectiveDeps: task.effectiveDeps,
+        dependencies: task.dependencies, history: task.history } : { state: task.state }),
+      fingerprint: task.fingerprint, exit: task.exit, reasons: task.reasons })) };
 }
 
 export function emitPlanningResult(result, json) {
@@ -95,7 +98,12 @@ export function emitPlanningResult(result, json) {
   if (json) console.log(JSON.stringify(value));
   else {
     console.log(`SDD PLAN ${value.status} stage=${value.stage} enabled=${value.enabled}`);
-    for (const task of value.tasks.slice(0, 7)) console.log(`${task.id} [${task.reqs.join(', ')}] ${task.state}${task.reasons.length ? ': ' + task.reasons.join('; ') : ''}`);
+    for (const task of value.tasks.slice(0, 7)) {
+      console.log(value.stage === 'bindings'
+        ? `${task.id}: fingerprint=${task.fingerprint} prerequisites=${task.effectiveDeps.join(',') || '(none)'} history=${task.history.status ?? '(none)'} current=${task.history.current}`
+        : `${task.id} [${task.reqs.join(', ')}] ${task.state}${task.reasons.length ? ': ' + task.reasons.join('; ') : ''}`);
+    }
+    if (value.stage === 'bindings') console.log(`Read-only proposal, not completion evidence. ${value.patch.length} binding replacements; use --json for hashes, history and patch.`);
     for (const error of value.errors.slice(0, 5)) console.log(`${error.id}: ${error.reason}`);
     if (value.receipt) console.log(`receipt: ${value.receipt}`);
     if (value.tasks.length > 7 || value.errors.length > 5) console.log('Additional task/reason rows omitted; use --json for the complete decision.');
@@ -105,17 +113,19 @@ export function emitPlanningResult(result, json) {
 
 /** @id CODE-PLAN-CLI-VERIFY @implements REQ-PLAN-CLI-002 REQ-PLAN-CLI-004 */
 export function runPlanningCommand(session, pos, flags) {
+  const stage = pos[1] === 'bindings' ? 'bindings' : pos[1] === 'verify' ? 'verify' : 'consistency';
   try {
     if (Object.keys(flags).some(flag => !['root', 'json', 'help'].includes(flag))
-      || !(pos.length === 1 || pos.length === 2 && pos[1] === 'check'
+      || !(pos.length === 1 || pos.length === 2 && ['check', 'bindings'].includes(pos[1])
         || pos.length === 3 && pos[1] === 'verify')) {
-      throw new PlanningError(2, 'planning', 'usage: plan [check] | plan verify TASK [--json] [--root DIR]');
+      throw new PlanningError(2, 'planning', 'usage: plan [check] | plan bindings | plan verify TASK [--json] [--root DIR]');
     }
-    if (session.exit) return { ...session, stage: pos[1] === 'verify' ? 'verify' : 'consistency' };
+    if (session.exit) return { ...session, stage };
     if (!session.enabled) {
       if (pos[1] === 'verify') throw new PlanningError(2, 'planning', 'plan verify requires planning.required:true');
-      return { enabled: false, stage: 'consistency', status: 'DISABLED', exit: 0, errors: [], tasks: [] };
+      return { enabled: false, stage, status: 'DISABLED', exit: 0, errors: [], tasks: [] };
     }
+    if (stage === 'bindings') return previewImplementationBindings({ model: session.model, adapter: session.adapter });
     if (pos[1] === 'verify') {
       const task = session.model.tasks.find(task => task.id === pos[2]);
       if (task) for (const check of task.checks) {
@@ -129,5 +139,5 @@ export function runPlanningCommand(session, pos, flags) {
     }
     return evaluateImplementationPlan({ model: session.model, adapter: session.adapter,
       taskIds: planningTaskScope(session.model), stage: 'consistency' });
-  } catch (error) { return planningRefusal(error, pos[1] === 'verify' ? 'verify' : 'consistency'); }
+  } catch (error) { return planningRefusal(error, stage); }
 }

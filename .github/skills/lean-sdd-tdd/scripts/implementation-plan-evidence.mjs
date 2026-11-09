@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { PlanningError, containedPlanningPath, loadImplementationPlan,
-  planningSha256, planningFileSha256 } from './implementation-plan.mjs';
+  planningSha256, planningFileSha256, taskDefinitionSha256 } from './implementation-plan.mjs';
 
 /** @id CODE-PLAN-STATE-001 @implements REQ-PLAN-STATE-001 REQ-PLAN-STATE-002 REQ-PLAN-STATE-004 */
 export function deriveImplementationTaskState(facts) {
@@ -305,6 +305,74 @@ export function evaluateImplementationPlan({ model, adapter, stage = 'consistenc
     EvidenceStore.require(['consistency', 'gate'].includes(stage), 1, 'planning', 'unsupported evaluation stage');
     return evaluate(model, adapter, stage, taskIds);
   } catch (error) { return { enabled: true, stage, tasks: [], ...EvidenceStore.refusal(error, 'planning') }; }
+}
+
+/** @id CODE-PLAN-CLI-BINDINGS @implements REQ-PLAN-CLI-009 */
+export function previewImplementationBindings({ model, adapter }) {
+  const store = new EvidenceStore(model.root), rows = new Map(), errors = [];
+  const tasks = model.tasks.map(task => {
+    const specs = Object.fromEntries(task.requiredSpecs.map(file => [file, model.currentSpecs[file]]));
+    const projected = { ...task, specs };
+    return { ...projected, definitionSha256: taskDefinitionSha256(projected) };
+  });
+  const byId = new Map(tasks.map(task => [task.id, task]));
+  for (const id of model.taskOrder) {
+    const task = byId.get(id);
+    const row = { id, feature: task.feature, reqs: task.reqs, effectiveDeps: task.effectiveDeps,
+      specs: task.specs, dependencies: Object.fromEntries(task.effectiveDeps.map(id => [id, rows.get(id)?.fingerprint ?? null])),
+      fingerprint: null, inputsKnown: false, exit: 0, reasons: [],
+      history: { head: null, status: null, authored: task.receipt, current: false, reasons: [] } };
+    let history;
+    try {
+      history = store.history(task);
+      const head = history.at(-1);
+      row.history.head = head?.path ?? null;
+      row.history.status = head?.status ?? null;
+      if (!head) row.history.reasons.push('verification history is missing');
+      if (task.receipt !== (head?.path ?? null)) row.history.reasons.push('authored receipt does not name the current history head');
+      if (task.receipt !== null && !store.exists(task.receipt)) row.history.reasons.push('referenced receipt is missing');
+      if (head && head.exit !== 0) row.history.reasons.push('latest retained verification did not pass');
+      const inputs = taskInputs(model, task, adapter, rows);
+      const inputErrors = inputs.inspection.inputErrors ?? [];
+      EvidenceStore.require(Array.isArray(inputErrors), 2, id, 'unparseable native input errors');
+      if (inputErrors.length) {
+        const verdict = EvidenceStore.verdict(inputErrors);
+        row.historyError = true;
+        throw new PlanningError(verdict.exit, id, inputErrors.map(error => error.reason).join('; '));
+      }
+      EvidenceStore.require(inputs.inputsKnown, 2, id, 'current native TEST binding is unavailable');
+      EvidenceStore.require(inputs.artifacts.every(([, hash]) => hash !== null), 2, id, 'required current artifact is missing');
+      row.fingerprint = inputs.fingerprint;
+      row.inputsKnown = true;
+      row.reasons.push(...inputs.inspection.errors.map(error => error.reason));
+      if (head && (head.inputSha256 !== row.fingerprint || head.definitionSha256 !== task.definitionSha256)) {
+        row.history.reasons.push('retained verification inputs or definition are stale');
+      }
+      row.history.current = Boolean(head && head.exit === 0 && head.path === task.receipt
+        && head.inputSha256 === row.fingerprint && head.definitionSha256 === task.definitionSha256
+        && !inputs.inspection.errors.length);
+    } catch (error) {
+      const refusal = EvidenceStore.refusal(error, id);
+      row.exit = refusal.exit;
+      row.historyError ||= history === undefined;
+      row.reasons.push(...refusal.errors.map(error => error.reason));
+      errors.push(...refusal.errors);
+    }
+    rows.set(id, row);
+  }
+  const patch = [];
+  const differs = (authored, current) => Object.keys(authored).length !== Object.keys(current).length
+    || Object.entries(current).some(([key, hash]) => authored[key] !== hash);
+  for (const [index, task] of model.tasks.entries()) {
+    const row = rows.get(task.id);
+    if (row.historyError) continue;
+    if (differs(task.specs, row.specs)) patch.push({ op: 'replace', path: `/tasks/${index}/specs`, value: row.specs });
+    if (Object.values(row.dependencies).every(hash => hash !== null) && differs(task.dependencies, row.dependencies)) {
+      patch.push({ op: 'replace', path: `/tasks/${index}/dependencies`, value: row.dependencies });
+    }
+  }
+  return { enabled: true, stage: 'bindings', readOnly: true, qualifiesCompletion: false,
+    ...EvidenceStore.verdict(errors), errors, tasks: [...rows.values()], patch };
 }
 
 /** @id CODE-PLAN-STATE-003 @implements REQ-PLAN-STATE-003 REQ-PLAN-STATE-004 */
