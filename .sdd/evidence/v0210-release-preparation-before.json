@@ -1,0 +1,6 @@
+{
+  "status": "FAIL",
+  "errors": [
+    "Expected values to be strictly deep-equal:\n+ actual - expected\n\n+ '306b6d5d3d9fe13a364870831eb0f4d812df9ba644bc4ce002bc86d7bed779c1'\n- 'a7148f0d77458fa702c41ba8c9b2305ee7a93dd908b65ec41f25cf8da7a1b2a5'\n"
+  ]
+}

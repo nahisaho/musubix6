@@ -2,17 +2,17 @@
 feature: release-qualification
 tier: T2
 approval: human
-artifacts: .sdd/release-validation.v0.2.8.json, .sdd/release-content-mutations.v0.2.8.json, .sdd/specs/claude-code-support.md, README.md, README-ja.md, CLANGELOG.md
+artifacts: .sdd/release-validation.v0.2.10.json, .sdd/release-content-mutations.v0.2.10.json, .sdd/specs/claude-code-support.md, README.md, README-ja.md, CLANGELOG.md
 ---
 # Reproducible Linux-only release qualification
-Goal: retain durable qualification tooling and establish technical readiness for the exact stable0.2.8 candidate, including default-enabled specification-linked planning and check-output retention, without authorizing publication. Preserve the approved Linux-only scope, all24 required cells and budgets, every historical replacement and zero transferred credit. Status: prospective0.2.8 contract with independent committed-source/archive/npm/both-host inventory feasibility observed; exact-artifact human preparation approval, current task verification and qualification controls remain required. Earlier version-specific planning below remains historical, not current approval or readiness.
+Goal: prepare the exact stable0.2.10 candidate from main for the unchanged24-cell Linux qualification, with zero transferred credit and no publication authorization. The current contract is the stable0.2.10 successor section below; earlier version-specific preparation and evidence remain historical. Genuine seven-artifact human preparation approval, current native verification, two fresh unchanged complete runs and separate exact-package human publication approval remain required.
 | ID | EARS requirement | Test |
 | --- | --- | --- |
 | REQ-RELQ-001 | When a Linux-only qualification plan is admitted, the validator shall require all 24 inherited non-WSL cells with unchanged budgets and an explicit excluded NATIVE-WSLC cell, bind the scope and explicit committed historical test lineage to the approved plan, and reject missing, duplicate or weakened required cases and invalid lineage. | TEST-RELQ-001, TEST-RELQ-LINEAGE-001 |
 | REQ-RELQ-002 | When a candidate is frozen, checked or prepared for its fresh required gate, the launcher shall bind source/archive/package, exact authored planning definitions, current named catalogues and approved historical replacements, helpers, dependencies, configuration and real Node 20/22/24 and native tool inputs by digest, establish genuine current native task verification and receipt adoption in that gate's own source root before the full gate, reject unavailable or changed inputs or missing replacements, and preserve old/failed history and revisions without transferring credit. | TEST-RELQ-002, TEST-RELQ-LINEAGE-001, TEST-RELQ-LINEAGE-002, TEST-RELQ-PLANNING-001 |
 | REQ-RELQ-003 | When any required cell finishes, the validator shall require its exact named cases and valid controls, including required active replacements for resolved historical TODOs, actual command/exit and retained parseable evidence; INTEGRATED-GATE shall additionally require every frozen planning task's genuine current native proof and the actual unfiltered full gate within its unchanged shared deadline, rejecting unprepared raw-gate or preparation-only claims; missing, skipped, timed-out, unknown or setup-error outcomes shall never count as a pass. | TEST-RELQ-003, TEST-RELQ-LINEAGE-002, TEST-RELQ-PLANNING-001 |
 | REQ-RELQ-004 | When technical readiness is evaluated, the launcher shall require two consecutive complete clean runs of the identical frozen matrix and candidate in fresh isolated state, reset the streak on failure or relevant change, and never authorize tagging or publishing. | TEST-RELQ-004 |
-| REQ-RELQ-005 | When a stable 0.2.8 qualification package is prepared, it shall retain executable, reviewable helpers and self-tests in the repository, verify the exact tgz through the actual package entry point on Node 20/22/24, report exact artifact paths/hashes, exclusions and residual risks separately from human release approval, and require the publishing workflow to verify the packed tgz against the approved digest before publishing that same file. | TEST-RELQ-005, TEST-HOST-005, TEST-RELQ-PUBLISH-001 |
+| REQ-RELQ-005 | When a stable 0.2.10 qualification package is prepared, it shall retain executable, reviewable helpers and self-tests in the repository, verify the exact tgz through the actual package entry point on Node 20/22/24, report exact artifact paths/hashes, exclusions and residual risks separately from human release approval, and require the publishing workflow to verify the packed tgz against the approved digest before publishing that same file. | TEST-RELQ-005, TEST-HOST-005, TEST-RELQ-PUBLISH-001 |
 ## PASS conditions and counterexamples
 | REQ | PASS condition | Concrete counterexample / expected | TEST/command | Observed evidence |
 | `REQ-RELQ-001` | Exactly the old 25 cells minus NATIVE-WSLC are required; NATIVE-WSLC is explicitly excluded, never reported as passed. | Delete PACKAGE-22, duplicate REGRESSION-24, shorten MUTATION's 3600-second budget, or silently count WSL as passed: reject; complete approved Linux plan: accept. | TEST-RELQ-001, complete finite cell-policy rows | Pending |
@@ -601,6 +601,135 @@ for genuine renewed approval. The previous registration-only preflight
 including the new oracle regression; it grants no credit to changed artifacts.
 The earlier Node24 archive/npm feasibility hashes identify their historical
 checkpoint, not the package after this root-document correction.
+
+## Stable0.2.10 successor: current preparation contract
+
+The user requested main commit/push and npm publication on2026-11-11, then
+explicitly selected0.2.10 release-preparation changes and validation.
+Main337ad8f contains the previously merged #386/#387 and proofreading work;
+the separate0.2.9 branch is not merged. Publication is not yet authorized for
+an exact artifact. Preserve the old0.2.8 contracts, genuine approvals, failed
+runs and all historical evidence unchanged.
+The proofreading payload entered main through existing551228c and PR388,
+not through5917e42. Only the latter's additional release-catalogue definitions
+are prospective prior art for this preparation; neither its helper changes,
+human approval nor evidence is already merged or credited. Both qualifying
+runs must execute the final0.2.10 successor candidate, never either ancestor.
+
+The exact new human preparation unit is this specification,
+`.sdd/release-validation.v0.2.10.json`,
+`.sdd/release-content-mutations.v0.2.10.json`,
+`.sdd/specs/claude-code-support.md`, README.md, README-ja.md and CLANGELOG.md.
+Scope/content revision1 names its exact0.2.8 predecessor hashes and the
+separately committed5917e42 development catalogue as explicit prior art, not
+transferred approval. All24 required Linux cells, exclusions, commands,
+unchanged budgets, original13 semantic mechanisms,14 placeholder mechanisms,
+118 source paths/full modes,1180 source challenges and60 origin sensitivities
+remain mandatory. Add the15 already specified contextual-proofreading
+mechanisms:28 semantic plus1240 vendor cases =1268 SKILL-MUTATION cases.
+Required current regression discovery includes all #386/#387 cases.
+No existing case, assertion oracle, environment or budget is removed or
+weakened. Missing, skipped, setup-error or unknown evidence cannot pass.
+Preparation approval precedes the production cutover and native successor
+checks; it does not require or authorize a prematurely frozen candidate.
+Only after that approved implementation, current proof and a final clean
+commit may the launcher freeze the candidate and count fresh runs.
+
+Independent source reference337ad8f, skill tree
+`98052db3fb78bce20f14dc9b038f175094ed7dc4`, is prospective, not frozen.
+The retained preparation report `v0210-release-reference-report.json`
+compares all118 committed Git blobs, permission-preserving archive and actual
+offline npm package bytes/modes, then initializes source/package on both
+hosts (Copilot118/Claude115) using actual Node24.22.1. Twenty canonical byte
+digests differ from the old0.2.8 reference; no path or mode changes.
+The report's exact source/tree identities and hashes must be checked before
+approval; no comparator failure or mutant result may repair the reference.
+This is feasibility only: no Node20/22 qualification, native adapter Green,
+full fresh-root gate, frozen run or approved publication tgz is claimed.
+
+### Design of the cutover
+
+After genuine approval, retarget only the release launcher/cells/content
+reference/default receipt checks to stable0.2.10. Preserve the actual0.2.10
+host regression; its current version behavior is already implemented, so
+aligning the stale host specification is not a new metadata implementation
+or a fabricated assertion Red. Actual old/prerelease package receipts must
+still reject.
+
+Reuse the reviewed0.2.9 catalogue mechanisms only where needed for the
+already merged proofreading behavior: copy the trusted naturalness oracle,
+select its exact owning test, preserve every primary Python assertion and
+diagnostic fragment, and retain valid-input/baseline/restored controls.
+The intentional missing-markdown_it child diagnostic is acceptable only
+inside TEST-JAPROSE-005's exact owned assertion at line68, with the frozen
+outline.py dependency declaration and otherwise clean execution. Wrong
+module/script, stderr/setup events, foreign frame, malformed/extra native
+events or a surviving mutant must reject. This does not generally accept
+loader failures or relax another mutation's oracle.
+The native regression must enumerate all finite witness subsets: for case22,
+only {252} and {252,262} pass; {} and {262} reject. For case25, only
+{283,296} and {283,296,305} pass; {}, {283}, {296}, {305}, {283,305} and
+{296,305} reject. Add explicit wrong outline/terms script, markdown_it/ginza
+module, owning test/frame and unowned stdout/stderr controls for case28,
+including the positive exact owned child-failure case and successful
+baseline/restoration. These are required planned tests, not executed evidence.
+Derive these exact frames and expected fragments from the independently pinned
+test_engine.py and naturalness-test blobs in337ad8f, not future mutant output.
+The existing content comparator checks the oracle digest before execution.
+A refactor, changed line, additional sub-check or diagnostic change requires
+a reviewed successor reference, renewed exact-artifact human approval and
+reset qualification; it must fail closed, never silently widen the frame set.
+
+Keep the historical703a4fe seven-artifact CI fixture and its exact old
+package metadata distinct from the new human-approved0.2.10 unit. Current
+release regressions must consume the exact newly approved fixture revision
+and committed source references, not mix live docs with old approval hashes
+or silently synthesize production human approval. Historical controls may
+materialize and execute their actual pinned historical helpers; they grant
+the current candidate no qualification credit. Every current adapter still
+requires the complete positive and negative regression controls.
+
+Author the complete affected native TEST union and artifacts in the existing
+implementation plan before production edits. Rebind changed specifications
+and transitive task dependencies, retain old/failed receipts, and genuinely
+verify each affected task. Freeze only the final clean committed candidate,
+including the finalized cost snapshot; do not mutate owned cost inputs
+after verification or during either run. Any relevant edit resets validation.
+The existing checkFrozenCandidate and evaluateReadiness paths recheck frozen
+file/tool/configuration digests and manifest/history bindings before accepting
+each run or two-run streak; retain their exact manifests and process logs.
+
+| REQ | PASS condition | Counterexample and expected verdict | TEST/command | Observed evidence |
+| --- | --- | --- | --- | --- |
+| `REQ-RELQ-001`, `REQ-RELQ-002` | Complete genuine0.2.10 seven-artifact approval admits24 unchanged cells and118 committed byte/full-mode references | Old0.2.8/0.2.9 approval, stale suite hash, missing cell/path, changed mode or reduced budget: reject; exact current approved unit: accept | TEST-RELQ-001, TEST-RELQ-BASELINE-001, TEST-RELQ-CONTENT-ADMISSION-001, TEST-RELQ-LINEAGE-001 | Actual main admission FAIL: current suite306b6d5d differs from old a7148f0d. Independent Node24 Git/archive/npm/both-host inventory passed118/118; genuine approval/native successor controls pending |
+| `REQ-RELQ-003` | All1268 skill cases retain exact named selection, required primary assertions/diagnostics and passing controls | For case22, observe collateral line262 but omit primary252: reject. For case25, omit either283 or296 while observing305: reject. For case28, wrong module/script/frame or unowned traceback: reject. Complete exact owned witnesses: accept | TEST-RELQ-SKILL-001, bounded isolated mutations of primary/diagnostic/origin acceptance; all frozen content cases | Prior5917e42 mechanisms are reviewed prior art only. No current assertion Red/Green, mutation or qualification credit yet |
+| `REQ-RELQ-005` | Actual current package adapter installs exactly stable0.2.10 from the frozen tgz and retains all required runtime/host receipts | Receipt0.2.8,0.2.9 or0.2.10-dev.0, substituted archive/hash, missing actual entry point or repacked qualification origin: reject; exact current artifact: accept | TEST-RELQ-PACKAGE-BINDING-001, TEST-RELQ-005, TEST-HOST-005 and PACKAGE-20/22/24 | Current launcher/cells still hardcode0.2.8. Node24 preparation package/CLI/both-host inventory passed; successor assertion Red/Green and three-runtime package cells pending |
+| `REQ-RELQ-004` | Same final candidate/manifest passes every required cell twice consecutively in fresh isolated state, then a separate exact-tgz human decision authorizes publication | Developer gate1203/1203, historical passes, partial run, changed cost/source/manifest, reused state or merely saying npm publish: no qualification/publication credit | Existing freeze/check/run/status, TEST-RELQ-004, TEST-RELQ-READINESS-001, TEST-RELQ-PUBLISH-001 | Credit0, no frozen0.2.10 manifest and no publication artifact approved |
+
+All six first-failure stages apply: contract = exact new human preparation
+unit and strict version/scope; trusted inputs = independently committed118
+references, exact executable/dependency closure and archive identity;
+execution = real native Red/Green, positive controls and every unchanged
+budget in fresh state; verdict = reject stale/invalid/foreign evidence while
+accepting valid controls; evidence history = immutable failures/predecessors,
+zero inherited credit and reset on relevant edits; integration/distribution =
+actual package on20/22/24 and both hosts, two full frozen runs, publishing
+identity check without exposing credentials and separate exact-artifact human
+release approval. No stage is waived.
+
+The current GitHub record closes #385 by the maintainer's explicit
+2026-11-07 non-reproduction disposition, not a root-cause fix or severity
+downgrade. Retain the unidentified historical first failure and all diagnostic
+history as residual risk. Do not silently convert old contract prose saying
+it remains open into evidence of repair; show the current disposition and
+the remaining uncertainty to the final approver. Any newly observed in-scope
+S1/S2 or unclassified failure still blocks readiness. Existing developer-gate
+human-implementation-drift/trace/stub warnings and incomplete root JavaScript
+diagnostics remain disclosed; their developer verdict is not qualification.
+Windows/macOS, WSL containers and live Claude interactions remain unqualified.
+This specification and CLANGELOG.md carry the #385 disclosure inside the
+seven-artifact unit; the final exact-package release report and approval
+request must repeat it rather than reducing it to the issue's CLOSED label.
 
 ## Risks / assumptions
 Six first-failure stages: contract — approved Linux scope and exact inherited 24-cell equality; trusted inputs — pin actual files/tools/configuration and reject absent dependencies; execution — fresh isolated work, bounded commands, real native controls; verdict — independent named catalogues, positive controls and assertion mutants; evidence history — immutable failed records, no old credit, deterministic streak reset; integration/distribution — exact tgz and both-host inventories on Node20/22/24, separate human approval.

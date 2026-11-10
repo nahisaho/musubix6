@@ -1,3 +1,38 @@
+# Stable0.2.10 preparation proposal review (2026-11-11)
+
+Scope: prospective human preparation unit only. No production cutover,
+new native Red/Green, mutation detection, frozen run or publication is
+claimed. Earlier reviews and failed evidence below remain unchanged.
+
+R210-PROVENANCE|CLEAN|.sdd/specs/release-qualification.md:609|closed
+R210-ORACLE-DESIGN|CLEAN|.sdd/specs/release-qualification.md:609|closed
+R210-PREPARATION-ONLY|CLEAN|.sdd/specs/release-qualification.md:609|closed
+
+Two independent tool-free proposal reviews challenged contract/input/history
+and native-verdict/integration risks. Clarified that payload551228c entered
+main through PR388, while5917e42 is only explicitly identified catalogue
+prior art with no approval/evidence transfer. Enumerated every required
+primary-frame subset, concrete wrong script/module/frame/log controls, the
+independently committed oracle identities, change-control/reset behavior
+and exact artifacts carrying the historical #385 residual risk.
+
+Declined demands to freeze before preparation approval: the genuine human
+lock must precede admission, production cutover and freeze. Declined replacing
+exact frozen assertion-frame/hash ownership with test-ID-only matching:
+that would weaken the existing fail-closed oracle. Refactors intentionally
+require reviewed successor references, renewed approval and reset validation.
+Claims that the Node24 inventory was unexecuted or warnings undisclosed were
+factually inapplicable; actual command/log receipts are retained and the
+canonical specification explicitly discloses all pending verification.
+
+The final bounded independent rubber-duck delta review returned no actionable
+findings after these fixes and recorded exceptions. This is one clean final
+proposal review, not two clean implementation-review rounds. Production
+implementation, genuine native controls and bounded mutations still require
+their own subsequent review and evidence. Structural lint reports four
+pre-existing historical TODO-policy lexical false positives, not unresolved
+new placeholders; the aligned host contract has zero findings.
+
 # v0.2.8 NO-CHANGE fixture admission proposal review (2026-11-07)
 
 NC-PREPARATION|CLEAN|.sdd/specs/release-qualification.md:110|closed

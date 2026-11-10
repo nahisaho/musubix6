@@ -211,10 +211,10 @@
         }
       ],
       "specs": {
-        ".sdd/specs/claude-code-support.md": "82bb16e36ab143167e445dcb422d49f5c0f9af8ea024bcc51c4e3092cfefee9b"
+        ".sdd/specs/claude-code-support.md": "2c846e5878db59abb7ba0cc3aa9b7f49256c91a6a250931a7e0e53a7cf826560"
       },
       "dependencies": {},
-      "status": "complete",
+      "status": "in-progress",
       "receipt": ".sdd/plan-evidence/157009ff6c2ab93372586a4c23092cef65738f5841092c02ffd98a5f7244adbe/0a60f3cf6748576c2490ed8ecf83665a18cecc16a0861314cc34bb7c99f2d501.json"
     },
     {
@@ -248,10 +248,10 @@
         }
       ],
       "specs": {
-        ".sdd/specs/claude-code-support.md": "82bb16e36ab143167e445dcb422d49f5c0f9af8ea024bcc51c4e3092cfefee9b"
+        ".sdd/specs/claude-code-support.md": "2c846e5878db59abb7ba0cc3aa9b7f49256c91a6a250931a7e0e53a7cf826560"
       },
       "dependencies": {},
-      "status": "complete",
+      "status": "in-progress",
       "receipt": ".sdd/plan-evidence/7d21335fe17eb043f799f2b86484e5b565531dcde66c1b90932a580247b49dcb/ed44c5c57a995e9adc2f816f6798024746aede94ca1d5ebb43cb84e430a830f5.json"
     },
     {
@@ -285,10 +285,10 @@
         }
       ],
       "specs": {
-        ".sdd/specs/claude-code-support.md": "82bb16e36ab143167e445dcb422d49f5c0f9af8ea024bcc51c4e3092cfefee9b"
+        ".sdd/specs/claude-code-support.md": "2c846e5878db59abb7ba0cc3aa9b7f49256c91a6a250931a7e0e53a7cf826560"
       },
       "dependencies": {},
-      "status": "complete",
+      "status": "in-progress",
       "receipt": ".sdd/plan-evidence/8c7cdd53ad1743b348e8341be1f23183d44565a81ec9fbf824a38b4712ce6baf/5732b8133e919298cf95879c84afa47de5a44ccc7b561ee3621bf3f252cb2824.json"
     },
     {
@@ -322,10 +322,10 @@
         }
       ],
       "specs": {
-        ".sdd/specs/claude-code-support.md": "82bb16e36ab143167e445dcb422d49f5c0f9af8ea024bcc51c4e3092cfefee9b"
+        ".sdd/specs/claude-code-support.md": "2c846e5878db59abb7ba0cc3aa9b7f49256c91a6a250931a7e0e53a7cf826560"
       },
       "dependencies": {},
-      "status": "complete",
+      "status": "in-progress",
       "receipt": ".sdd/plan-evidence/791aad174ebe53b3a0b62d7e3c41dfc435f15888dfb19cedf355d379bdb56726/2471050a6e58165411de9e151b754fbe541695bf9942857e2c11ac88a9781f67.json"
     },
     {
@@ -359,10 +359,10 @@
         }
       ],
       "specs": {
-        ".sdd/specs/claude-code-support.md": "82bb16e36ab143167e445dcb422d49f5c0f9af8ea024bcc51c4e3092cfefee9b"
+        ".sdd/specs/claude-code-support.md": "2c846e5878db59abb7ba0cc3aa9b7f49256c91a6a250931a7e0e53a7cf826560"
       },
       "dependencies": {},
-      "status": "complete",
+      "status": "in-progress",
       "receipt": ".sdd/plan-evidence/c25eab68e833d4748861ecdf64ee398ce88be1acd60cbfd07b37f5d5da928589/c1d48b244f32ea0776afc36b41a49b639d0e46456b70c34e691afe1973aaace8.json"
     },
     {
@@ -3905,8 +3905,8 @@
       ],
       "dependsOn": [],
       "artifacts": [
-        ".sdd/release-content-mutations.v0.2.8.json",
-        ".sdd/release-validation.v0.2.8.json",
+        ".sdd/release-content-mutations.v0.2.10.json",
+        ".sdd/release-validation.v0.2.10.json",
         ".sdd/specs/claude-code-support.md",
         ".sdd/specs/release-qualification.md",
         "CLANGELOG.md",
@@ -3936,10 +3936,10 @@
         }
       ],
       "specs": {
-        ".sdd/specs/release-qualification.md": "90727c0b7a25f3c18a941b24dc1ee09c07bb82357511fa23689c1d02a89dedce"
+        ".sdd/specs/release-qualification.md": "353b263e8a543158d28fbc2c18a9315ecbc8de5584fe19b14e6e09719d50b265"
       },
       "dependencies": {},
-      "status": "complete",
+      "status": "in-progress",
       "receipt": ".sdd/plan-evidence/73f0cbb6742cc4492aeeadca22db81f5f31db4650b1951f0febd38355f8df151/613a0a45ea3ce974ed9561d86db6df33a41bd5aebe32ef9778d106b985953d7c.json"
     },
     {
@@ -3951,8 +3951,8 @@
       ],
       "dependsOn": [],
       "artifacts": [
-        ".sdd/release-content-mutations.v0.2.8.json",
-        ".sdd/release-validation.v0.2.8.json",
+        ".sdd/release-content-mutations.v0.2.10.json",
+        ".sdd/release-validation.v0.2.10.json",
         ".sdd/specs/claude-code-support.md",
         ".sdd/specs/release-qualification.md",
         "CLANGELOG.md",
@@ -3987,10 +3987,10 @@
         }
       ],
       "specs": {
-        ".sdd/specs/release-qualification.md": "90727c0b7a25f3c18a941b24dc1ee09c07bb82357511fa23689c1d02a89dedce"
+        ".sdd/specs/release-qualification.md": "353b263e8a543158d28fbc2c18a9315ecbc8de5584fe19b14e6e09719d50b265"
       },
       "dependencies": {},
-      "status": "complete",
+      "status": "in-progress",
       "receipt": ".sdd/plan-evidence/dd865d9c8b78a2d77814f6c74fb5613d75c1f641a17ccffea1a8e080c0bc0a07/a6dd8f5f4542ff35a5a2557b411a1ad1d0af1b4738dc73bf87ed504c6d03af8a.json"
     },
     {
@@ -4002,8 +4002,8 @@
       ],
       "dependsOn": [],
       "artifacts": [
-        ".sdd/release-content-mutations.v0.2.8.json",
-        ".sdd/release-validation.v0.2.8.json",
+        ".sdd/release-content-mutations.v0.2.10.json",
+        ".sdd/release-validation.v0.2.10.json",
         ".sdd/specs/claude-code-support.md",
         ".sdd/specs/release-qualification.md",
         "CLANGELOG.md",
@@ -4060,10 +4060,10 @@
         }
       ],
       "specs": {
-        ".sdd/specs/release-qualification.md": "90727c0b7a25f3c18a941b24dc1ee09c07bb82357511fa23689c1d02a89dedce"
+        ".sdd/specs/release-qualification.md": "353b263e8a543158d28fbc2c18a9315ecbc8de5584fe19b14e6e09719d50b265"
       },
       "dependencies": {},
-      "status": "complete",
+      "status": "in-progress",
       "receipt": ".sdd/plan-evidence/89f75a0ef83095915c1bfb35bc420da94e27f50547ef905b5527a6c34744793b/c7b4e99247df228c9a1fca81e192dac70eee49124498b278e45c6eb9a536e623.json"
     },
     {
@@ -4076,8 +4076,8 @@
       "dependsOn": [],
       "artifacts": [
         ".sdd/evidence/v028-preparation.json",
-        ".sdd/release-content-mutations.v0.2.8.json",
-        ".sdd/release-validation.v0.2.8.json",
+        ".sdd/release-content-mutations.v0.2.10.json",
+        ".sdd/release-validation.v0.2.10.json",
         ".sdd/specs/claude-code-support.md",
         ".sdd/specs/release-qualification.md",
         "CLANGELOG.md",
@@ -4106,10 +4106,10 @@
         }
       ],
       "specs": {
-        ".sdd/specs/release-qualification.md": "90727c0b7a25f3c18a941b24dc1ee09c07bb82357511fa23689c1d02a89dedce"
+        ".sdd/specs/release-qualification.md": "353b263e8a543158d28fbc2c18a9315ecbc8de5584fe19b14e6e09719d50b265"
       },
       "dependencies": {},
-      "status": "complete",
+      "status": "in-progress",
       "receipt": ".sdd/plan-evidence/ea566fd8dcc45f090bbb58cbb164569368264ed6a6f464c72ed20485084892c2/0e6f3daa354544d10bed346255640aca1bcd436acb4bf5c6991dba14170a694e.json"
     },
     {
@@ -4121,8 +4121,8 @@
       ],
       "dependsOn": [],
       "artifacts": [
-        ".sdd/release-content-mutations.v0.2.8.json",
-        ".sdd/release-validation.v0.2.8.json",
+        ".sdd/release-content-mutations.v0.2.10.json",
+        ".sdd/release-validation.v0.2.10.json",
         ".sdd/specs/claude-code-support.md",
         ".sdd/specs/release-qualification.md",
         "CLANGELOG.md",
@@ -4181,10 +4181,10 @@
         }
       ],
       "specs": {
-        ".sdd/specs/release-qualification.md": "90727c0b7a25f3c18a941b24dc1ee09c07bb82357511fa23689c1d02a89dedce"
+        ".sdd/specs/release-qualification.md": "353b263e8a543158d28fbc2c18a9315ecbc8de5584fe19b14e6e09719d50b265"
       },
       "dependencies": {},
-      "status": "complete",
+      "status": "in-progress",
       "receipt": ".sdd/plan-evidence/8a500e1cd57c470ca565540630853ab2031d74efe95b650b3b5670f6edf9e10d/27b4e65e678e51f04ba20920ae222b7ba4b1313796008b5d1b3adda738d95a2d.json"
     },
     {

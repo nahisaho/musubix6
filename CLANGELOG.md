@@ -10,6 +10,24 @@ Uncommitted v0.2.9 work is not included. No tag or npm publication is implied;
 full-project validation, frozen qualification and publication approval remain
 separate requirements.
 
+### Release preparation
+
+- The merged main candidate passed its development full gate (1203 tests,
+  zero failures/skips), all126 task checks and latest-head hosted CI. These
+  developer results are not frozen release qualification.
+- A prospective0.2.10 successor retains the24 required Linux cells and
+  unchanged budgets,118 canonical skill files/full modes and every inherited
+  mutation. Fifteen contextual-proofreading mechanisms are added to the
+  original13, for1268 required skill/vendor/origin cases.
+- Old release contracts and failed history are retained. The new exact
+  seven-artifact preparation approval, fresh native proof, two identical
+  complete frozen runs and separate exact-package publication approval remain
+  required. No package is published by this preparation entry.
+- #385 was closed by the maintainer's explicit non-reproduction disposition,
+  not a demonstrated root-cause fix. Its unidentified historical first
+  failure remains a disclosed residual risk. Windows/macOS, WSL containers
+  and live Claude interactions remain outside qualified support.
+
 ### Fixed
 
 - Return exit0 for explicit SDD help without reading project inputs, and list

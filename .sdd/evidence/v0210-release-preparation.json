@@ -1,0 +1,387 @@
+{
+  "status": "PASS",
+  "stage": "independent-preparation-inventory-only",
+  "commit": "337ad8f7016d91c4b373a3b17babc98801c75bce",
+  "node": "v24.22.1",
+  "workRoot": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-release-reference-UXcm2q",
+  "archive": {
+    "path": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-release-reference-UXcm2q/source.tar",
+    "sha256": "981e4e9371967511985ea1e32de612c08ef0be8eac498dee387a268229b1f9bc"
+  },
+  "developmentPackage": {
+    "path": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-release-reference-UXcm2q/musubix6-0.2.10.tgz",
+    "sha256": "dc891c8bdd440de6033354ddac49f6e4f30e1cda45f9db11c564d00d55872d4e",
+    "publishingApproved": false
+  },
+  "canonicalFiles": 118,
+  "changedReferences": [
+    {
+      "path": ".github/skills/japanese-prose/SKILL.md",
+      "before": "bda0b1f87bfc07ea0dfcfd757621c10e2515a3a0adf68cf3533538522d741cf1",
+      "after": "1e8e3630147bd2e2f2a35ad56d3b9d053bca75b0e141133c5831b3f73dfcd9cd"
+    },
+    {
+      "path": ".github/skills/japanese-prose/references/review-workflow.md",
+      "before": "e5ebfc731f37c69c806d3055f4a9fca26dad1971f45df6c60fd31ae955e51f09",
+      "after": "5e348feeb1416716bf47b50f3db14d3695ae2acfd49e8631c39fdcb6ba31c882"
+    },
+    {
+      "path": ".github/skills/japanese-prose/references/writing-guidelines.md",
+      "before": "30ae24e05b2270f0876f2c32969a35c1a0e7ee1b65a0b7e4960075c632aece85",
+      "after": "ab8b385e3c64f69e2d6e9200da6477a3b853ad294a9b2273199bf05795f1ca81"
+    },
+    {
+      "path": ".github/skills/japanese-prose/scripts/core.py",
+      "before": "919fa499dc5a004b7134b727892e43a51f937c207304fd28248495f73778b342",
+      "after": "3b875d90b556a26002a9ef320c66376cf86b7260e664a80c651d1cdc65d485f3"
+    },
+    {
+      "path": ".github/skills/japanese-prose/scripts/lint.py",
+      "before": "7fc3b6884ed8ba8e4e6462082aa26dc3d86873530d74cc94f944b26155e58987",
+      "after": "b45e8591ed8fb423a3ddc4171d42484f06b4ac391056af4ead23c79689a64cde"
+    },
+    {
+      "path": ".github/skills/japanese-prose/scripts/outline.py",
+      "before": "9b8763fa5dcc28c1d9f9d71e25f410e7c5af40625a1801579d132a5918525633",
+      "after": "c9b797d8d9b8e092c0e86b01b76b860a5651dc72f9f55ac89f4f32de9b5b9ec0"
+    },
+    {
+      "path": ".github/skills/japanese-prose/scripts/terms.py",
+      "before": "4ea464f1af255d9167268c85183538ddecc73cbacb01bd7fc6b8e86899b16b20",
+      "after": "fc8506d3d1dc24cabda2c4f9f089e8b439131b58a631d8bdbd66998b4c6bfd86"
+    },
+    {
+      "path": ".github/skills/japanese-prose/scripts/test_engine.py",
+      "before": "7d1a9935453038787ff520c360637037b275fe6769210a17961930f7966d649a",
+      "after": "401e7507ab7bd74bbe48029131bd24a9f948237fd59688a1484277e98a5ef3f2"
+    },
+    {
+      "path": ".github/skills/lean-agentic-coding/SKILL.md",
+      "before": "289a90f8295260dd3f961e2247722084dde8a5826b2d13678b245b732524edb6",
+      "after": "0048f822092061e9f631375f8fa7e91daff9b44d58194dac70160b495f1828ca"
+    },
+    {
+      "path": ".github/skills/lean-sdd-tdd/SKILL.md",
+      "before": "9ff2206980ae9b11e358f175e1e08ebf0577c0226ea2255f3f597ded6cd2b997",
+      "after": "a507127d7a46e145c4b392aeeae7ddb79c8cf0474d4f21d0b0975e1ee071c7d4"
+    },
+    {
+      "path": ".github/skills/lean-sdd-tdd/scripts/diagnostics.test.mjs",
+      "before": "ea2f5f38bfdb3ef68cd4845c39bd980f6ff22272244f1abe32b890fe46b8c82d",
+      "after": "eb0f2f1b0b757172b41789025dd8aa4222046a595ee52fa2574abd75152a8369"
+    },
+    {
+      "path": ".github/skills/lean-sdd-tdd/scripts/implementation-plan-cli.mjs",
+      "before": "deb20d0abd1f908a89fa115e489008cb9cbcda225d751a159e1f4e68e5570fa2",
+      "after": "7057997535dc2be86416ba6f3166c00840e3d49563cd1fb88de9872c68e61118"
+    },
+    {
+      "path": ".github/skills/lean-sdd-tdd/scripts/implementation-plan-cli.test.mjs",
+      "before": "4782e5c2dc6e312ffd5cec4c2c2097a23777c58ece93263e9dd742facdf71443",
+      "after": "d830cf57e9a94c52d88a88134e3d52ab906b0513135df3cc247f5d58ded3e474"
+    },
+    {
+      "path": ".github/skills/lean-sdd-tdd/scripts/implementation-plan-evidence.mjs",
+      "before": "6ab57010efaf0d611661601c8a36ed9286ada22879156a5659b97f66a94c4639",
+      "after": "548b46c222a8ec91c8839ba3df185f194818b4fe64c12d4fc86756e0e3dd6360"
+    },
+    {
+      "path": ".github/skills/lean-sdd-tdd/scripts/implementation-plan-workflow.test.mjs",
+      "before": "499b7f1de9c8abb9ddf6c7a25787cd990c04ebbdae36272a58ea65205eb77685",
+      "after": "c6419678d4f54dc687686936554e23f7c95e15a6416053d6a60886df35871c06"
+    },
+    {
+      "path": ".github/skills/lean-sdd-tdd/scripts/implementation-plan.mjs",
+      "before": "9c4cac4e884709c16002e3fae9e4c33f660d342973f21cf86009442d227632db",
+      "after": "450af6fff33ab418ada609345e6fed2f997f396b4024f01d07e1c657e0a30d47"
+    },
+    {
+      "path": ".github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+      "before": "3f5c88b4ab9e640ca7a33f3edd966ad268a4c3b335d8ada50790862564f6cd39",
+      "after": "3a6eb5f599640cff7a37151228174dc2aacc90000b8c96b6b2ba1f5b9a1b12ee"
+    },
+    {
+      "path": ".github/skills/lean-sdd-tdd/scripts/sdd.test.mjs",
+      "before": "a7148f0d77458fa702c41ba8c9b2305ee7a93dd908b65ec41f25cf8da7a1b2a5",
+      "after": "306b6d5d3d9fe13a364870831eb0f4d812df9ba644bc4ce002bc86d7bed779c1"
+    },
+    {
+      "path": ".github/skills/sdd-reverse-spec/SKILL.md",
+      "before": "3e8a2f230e27f22e954d15c4498c9ac0b3366827f81dc1d76ff93947aa4597e4",
+      "after": "d7f3135c5550e8a217eecb3718297596c36681c2062e0eb3f5bf79b62945c4a0"
+    },
+    {
+      "path": ".github/skills/sdd-spec-interview/SKILL.md",
+      "before": "f2cd7054dc0d014d90c52a357e563475dbec81eef0e27a1338f72b2a9d69d246",
+      "after": "c911308d6e7cd957ae10aa268b843afaf8ca48c85324bffe83850bb70fc94b03"
+    }
+  ],
+  "hostResults": [
+    {
+      "origin": "source",
+      "host": "copilot",
+      "files": 118,
+      "status": "PASS"
+    },
+    {
+      "origin": "source",
+      "host": "claude",
+      "files": 115,
+      "status": "PASS"
+    },
+    {
+      "origin": "package",
+      "host": "copilot",
+      "files": 118,
+      "status": "PASS"
+    },
+    {
+      "origin": "package",
+      "host": "claude",
+      "files": 115,
+      "status": "PASS"
+    }
+  ],
+  "semanticMechanisms": 28,
+  "placeholderMechanisms": 14,
+  "commands": [
+    {
+      "argv": [
+        "tar",
+        "--extract",
+        "--same-permissions",
+        "--file",
+        "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-release-reference-UXcm2q/source.tar",
+        "--directory",
+        "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-release-reference-UXcm2q/source"
+      ],
+      "cwd": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-release-reference-UXcm2q",
+      "startedAt": "2026-11-10T22:11:43.078Z",
+      "finishedAt": "2026-11-10T22:11:43.186Z",
+      "exit": 0,
+      "signal": null,
+      "error": null,
+      "stdout": {
+        "path": ".sdd/evidence/v0210-release-preparation/command-0.stdout.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "stderr": {
+        "path": ".sdd/evidence/v0210-release-preparation/command-0.stderr.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      }
+    },
+    {
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/lib/node_modules/npm/bin/npm-cli.js",
+        "pack",
+        "--offline",
+        "--ignore-scripts",
+        "--json",
+        "--pack-destination",
+        "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-release-reference-UXcm2q"
+      ],
+      "cwd": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-release-reference-UXcm2q/source",
+      "startedAt": "2026-11-10T22:11:43.187Z",
+      "finishedAt": "2026-11-10T22:11:43.701Z",
+      "exit": 0,
+      "signal": null,
+      "error": null,
+      "stdout": {
+        "path": ".sdd/evidence/v0210-release-preparation/command-1.stdout.log",
+        "sha256": "383e960562851ad55fd6fc14db5ee47ff3d37e852b3eadceb415f41c299838a2",
+        "bytes": 17548
+      },
+      "stderr": {
+        "path": ".sdd/evidence/v0210-release-preparation/command-1.stderr.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      }
+    },
+    {
+      "argv": [
+        "tar",
+        "--extract",
+        "--gzip",
+        "--same-permissions",
+        "--file",
+        "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-release-reference-UXcm2q/musubix6-0.2.10.tgz",
+        "--directory",
+        "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-release-reference-UXcm2q"
+      ],
+      "cwd": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-release-reference-UXcm2q",
+      "startedAt": "2026-11-10T22:11:43.702Z",
+      "finishedAt": "2026-11-10T22:11:43.715Z",
+      "exit": 0,
+      "signal": null,
+      "error": null,
+      "stdout": {
+        "path": ".sdd/evidence/v0210-release-preparation/command-2.stdout.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "stderr": {
+        "path": ".sdd/evidence/v0210-release-preparation/command-2.stderr.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      }
+    },
+    {
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-release-reference-UXcm2q/package/bin/musubix6.mjs",
+        "--version"
+      ],
+      "cwd": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-release-reference-UXcm2q",
+      "startedAt": "2026-11-10T22:11:43.719Z",
+      "finishedAt": "2026-11-10T22:11:43.752Z",
+      "exit": 0,
+      "signal": null,
+      "error": null,
+      "stdout": {
+        "path": ".sdd/evidence/v0210-release-preparation/command-3.stdout.log",
+        "sha256": "011cfdb24c667a75861adfffaabe68e66358d982f437b47270ef09d86c6c6cd7",
+        "bytes": 7
+      },
+      "stderr": {
+        "path": ".sdd/evidence/v0210-release-preparation/command-3.stderr.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      }
+    },
+    {
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-release-reference-UXcm2q/source/bin/musubix6.mjs",
+        "init",
+        "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-release-reference-UXcm2q/source-copilot",
+        "--host",
+        "copilot"
+      ],
+      "cwd": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-release-reference-UXcm2q",
+      "startedAt": "2026-11-10T22:11:44.684Z",
+      "finishedAt": "2026-11-10T22:11:44.728Z",
+      "exit": 0,
+      "signal": null,
+      "error": null,
+      "stdout": {
+        "path": ".sdd/evidence/v0210-release-preparation/command-4.stdout.log",
+        "sha256": "dba0d3adb3d637694bf4ebbfc5e87a53530da159e6d949391e10b826d7da4dad",
+        "bytes": 1864
+      },
+      "stderr": {
+        "path": ".sdd/evidence/v0210-release-preparation/command-4.stderr.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      }
+    },
+    {
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-release-reference-UXcm2q/source/bin/musubix6.mjs",
+        "init",
+        "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-release-reference-UXcm2q/source-claude",
+        "--host",
+        "claude"
+      ],
+      "cwd": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-release-reference-UXcm2q",
+      "startedAt": "2026-11-10T22:11:44.733Z",
+      "finishedAt": "2026-11-10T22:11:44.783Z",
+      "exit": 0,
+      "signal": null,
+      "error": null,
+      "stdout": {
+        "path": ".sdd/evidence/v0210-release-preparation/command-5.stdout.log",
+        "sha256": "3d098813fc74654803c9594e01f794026174d6a39bc69b29a84a454fc98db4d3",
+        "bytes": 1672
+      },
+      "stderr": {
+        "path": ".sdd/evidence/v0210-release-preparation/command-5.stderr.log",
+        "sha256": "8f81fb96fef3fa9efaeb104a69c273bb31c6243846aeea89924f1634ebeb448c",
+        "bytes": 46
+      }
+    },
+    {
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-release-reference-UXcm2q/package/bin/musubix6.mjs",
+        "init",
+        "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-release-reference-UXcm2q/package-copilot",
+        "--host",
+        "copilot"
+      ],
+      "cwd": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-release-reference-UXcm2q",
+      "startedAt": "2026-11-10T22:11:44.789Z",
+      "finishedAt": "2026-11-10T22:11:44.836Z",
+      "exit": 0,
+      "signal": null,
+      "error": null,
+      "stdout": {
+        "path": ".sdd/evidence/v0210-release-preparation/command-6.stdout.log",
+        "sha256": "845a2d966fa48ed7b062a1245a0b326a138899958cfec4cbeadbe437ee1fe951",
+        "bytes": 1874
+      },
+      "stderr": {
+        "path": ".sdd/evidence/v0210-release-preparation/command-6.stderr.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      }
+    },
+    {
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-release-reference-UXcm2q/package/bin/musubix6.mjs",
+        "init",
+        "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-release-reference-UXcm2q/package-claude",
+        "--host",
+        "claude"
+      ],
+      "cwd": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-release-reference-UXcm2q",
+      "startedAt": "2026-11-10T22:11:44.844Z",
+      "finishedAt": "2026-11-10T22:11:44.889Z",
+      "exit": 0,
+      "signal": null,
+      "error": null,
+      "stdout": {
+        "path": ".sdd/evidence/v0210-release-preparation/command-7.stdout.log",
+        "sha256": "81f3ca3b75cba47ddc659ad6b896a6abc7a24f173f1d64dc9c1f8edc2e5c3260",
+        "bytes": 1681
+      },
+      "stderr": {
+        "path": ".sdd/evidence/v0210-release-preparation/command-7.stderr.log",
+        "sha256": "8f81fb96fef3fa9efaeb104a69c273bb31c6243846aeea89924f1634ebeb448c",
+        "bytes": 46
+      }
+    }
+  ],
+  "qualifyingCredit": 0,
+  "runsPerformed": 0,
+  "contracts": {
+    "scope": {
+      "path": ".sdd/release-validation.v0.2.10.json",
+      "sha256": "fce4b43abb229843e0dd246534c10f7bf70321a3ab899b0461986105278f11bf"
+    },
+    "content": {
+      "path": ".sdd/release-content-mutations.v0.2.10.json",
+      "sha256": "4f39011db146f92e32aeb54a161781f1643ee9121fe78c88f0c3f5e53c8ee7d2"
+    }
+  },
+  "validation": {
+    "unchangedRequiredCells": 24,
+    "unchangedExcludedCells": 1,
+    "policyOrBudgetWeakening": false,
+    "genuinePreparationApprovalRecorded": false,
+    "nativeSuccessorControls": "NOT_RUN",
+    "frozenQualificationRuns": 0,
+    "publicationAuthorized": false
+  },
+  "limits": [
+    "Independent Node24 preparation inventory only; Node20/22 native package cells and all qualification controls remain required.",
+    "The development source archive/package identify committed main337ad8f before the proposed root-document changes, not a final frozen or approved publication artifact.",
+    "Both genuine human feature approvals (release-qualification and claude-code-support) remain pending; their union is the seven-artifact unit.",
+    "Old task receipts are retained; ten directly affected tasks are in-progress and no fresh native verification is claimed.",
+    "Historical issue385 is human-closed as non-reproducible, not diagnosed/fixed; unknown original failure remains a residual risk."
+  ]
+}

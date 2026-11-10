@@ -1,0 +1,651 @@
+[
+  {
+    "id": "musubix6@0.2.10",
+    "name": "musubix6",
+    "version": "0.2.10",
+    "size": 740974,
+    "unpackedSize": 2677803,
+    "shasum": "02ab94c49eb76bdfd2d2918913876170372cc5c7",
+    "integrity": "sha512-Yg4AqXJbof4oGtyp8f6LXZ5klgWN+CSDykM3eY8N9qaFTSv22tbvxYq+SDnA4GaxBlY0Cw//Kt3+gpUemb53hw==",
+    "filename": "musubix6-0.2.10.tgz",
+    "files": [
+      {
+        "path": ".github/skills/agent-watchdog/scripts/watchdog.mjs",
+        "size": 2262,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/agent-watchdog/scripts/watchdog.test.mjs",
+        "size": 3103,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/agent-watchdog/SKILL.md",
+        "size": 2362,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/consulting-analyst/assets/templates/analysis-brief.md",
+        "size": 1624,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/consulting-analyst/assets/templates/decision-analysis.md",
+        "size": 2656,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/consulting-analyst/assets/templates/hypothesis-evidence-ledger.md",
+        "size": 2361,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/consulting-analyst/assets/templates/issue-tree.md",
+        "size": 1099,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/consulting-analyst/assets/templates/synthesis-handoff.md",
+        "size": 2988,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/consulting-analyst/references/evidence-and-hypotheses.md",
+        "size": 2822,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/consulting-analyst/references/framework-selection.md",
+        "size": 2968,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/consulting-analyst/references/handoff-contract.md",
+        "size": 3553,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/consulting-analyst/SKILL.md",
+        "size": 9939,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/japanese-prose/NOTICE.md",
+        "size": 1113,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/japanese-prose/references/review-workflow.md",
+        "size": 5205,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/japanese-prose/references/scoring.md",
+        "size": 1263,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/japanese-prose/references/writing-guidelines.md",
+        "size": 3431,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/japanese-prose/scripts/core.py",
+        "size": 6695,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/japanese-prose/scripts/fixtures/natural.md",
+        "size": 307,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/japanese-prose/scripts/fixtures/unnatural.md",
+        "size": 544,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/japanese-prose/scripts/invariants.py",
+        "size": 7454,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/japanese-prose/scripts/lint.py",
+        "size": 19427,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/japanese-prose/scripts/outline.py",
+        "size": 1978,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/japanese-prose/scripts/terms.py",
+        "size": 3622,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/japanese-prose/scripts/test_engine.py",
+        "size": 23564,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/japanese-prose/SKILL.md",
+        "size": 7690,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/lean-agentic-coding/references/contract-template.md",
+        "size": 1312,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/lean-agentic-coding/references/ledger-format.md",
+        "size": 650,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/lean-agentic-coding/references/t2-protocol.md",
+        "size": 1629,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/lean-agentic-coding/scripts/gate.sh",
+        "size": 1056,
+        "mode": 493
+      },
+      {
+        "path": ".github/skills/lean-agentic-coding/SKILL.md",
+        "size": 8285,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/lean-sdd-tdd/references/config.md",
+        "size": 56757,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/lean-sdd-tdd/references/enforced-rules.md",
+        "size": 79244,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/lean-sdd-tdd/references/spec-template.md",
+        "size": 2298,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/lean-sdd-tdd/references/stubs.md",
+        "size": 29512,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/lean-sdd-tdd/references/t2.md",
+        "size": 1486,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/lean-sdd-tdd/scripts/diagnostics-eslint.mjs",
+        "size": 2997,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/lean-sdd-tdd/scripts/diagnostics-native.mjs",
+        "size": 3870,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/lean-sdd-tdd/scripts/diagnostics-profiles.test.mjs",
+        "size": 40243,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/lean-sdd-tdd/scripts/diagnostics-python.mjs",
+        "size": 8713,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/lean-sdd-tdd/scripts/diagnostics-python.py",
+        "size": 4244,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/lean-sdd-tdd/scripts/diagnostics-rust.mjs",
+        "size": 9096,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/lean-sdd-tdd/scripts/diagnostics-typescript.mjs",
+        "size": 3357,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/lean-sdd-tdd/scripts/diagnostics-worker.mjs",
+        "size": 1303,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/lean-sdd-tdd/scripts/diagnostics.mjs",
+        "size": 11588,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/lean-sdd-tdd/scripts/diagnostics.test.mjs",
+        "size": 37697,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/lean-sdd-tdd/scripts/implementation-plan-cli.mjs",
+        "size": 8597,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/lean-sdd-tdd/scripts/implementation-plan-cli.test.mjs",
+        "size": 52768,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/lean-sdd-tdd/scripts/implementation-plan-evidence.mjs",
+        "size": 30109,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/lean-sdd-tdd/scripts/implementation-plan-evidence.test.mjs",
+        "size": 25893,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/lean-sdd-tdd/scripts/implementation-plan-workflow.test.mjs",
+        "size": 24363,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/lean-sdd-tdd/scripts/implementation-plan.mjs",
+        "size": 18366,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/lean-sdd-tdd/scripts/implementation-plan.test.mjs",
+        "size": 24001,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "size": 641910,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/lean-sdd-tdd/scripts/sdd.test.mjs",
+        "size": 930829,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/lean-sdd-tdd/scripts/source-discovery.test.mjs",
+        "size": 5004,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/lean-sdd-tdd/scripts/spec-context.mjs",
+        "size": 8232,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/lean-sdd-tdd/scripts/spec-context.test.mjs",
+        "size": 10467,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/lean-sdd-tdd/scripts/windows-native.test.mjs",
+        "size": 4740,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/lean-sdd-tdd/scripts/windows-runner.test.mjs",
+        "size": 16835,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/lean-sdd-tdd/SKILL.md",
+        "size": 19574,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/presentation-planner/assets/design-templates/data-report.yaml",
+        "size": 2241,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/presentation-planner/assets/design-templates/executive-proposal.yaml",
+        "size": 2152,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/presentation-planner/assets/design-templates/technical-briefing.yaml",
+        "size": 2290,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/presentation-planner/assets/scenario-templates/data-report.md",
+        "size": 2976,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/presentation-planner/assets/scenario-templates/executive-decision.md",
+        "size": 2790,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/presentation-planner/assets/scenario-templates/technical-briefing.md",
+        "size": 3181,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/presentation-planner/references/customizing-design-templates.md",
+        "size": 4989,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/presentation-planner/references/design-spec-schema.md",
+        "size": 3544,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/presentation-planner/references/handoff-contract.md",
+        "size": 1597,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/presentation-planner/references/responsibility-boundary.md",
+        "size": 1492,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/presentation-planner/references/scenario-templates.md",
+        "size": 2684,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/presentation-planner/SKILL.md",
+        "size": 11281,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/sdd-reverse-spec/SKILL.md",
+        "size": 8319,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/sdd-spec-interview/SKILL.md",
+        "size": 8758,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/tech-writer/assets/templates/blueprint.md",
+        "size": 7752,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/tech-writer/assets/templates/design-doc.md",
+        "size": 525,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/tech-writer/assets/templates/migration-plan.md",
+        "size": 7236,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/tech-writer/assets/templates/obsidian.md",
+        "size": 1014,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/tech-writer/assets/templates/operations-runbook.md",
+        "size": 8539,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/tech-writer/assets/templates/pr-description.md",
+        "size": 352,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/tech-writer/assets/templates/qiita.md",
+        "size": 1106,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/tech-writer/assets/templates/readme.md",
+        "size": 595,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/tech-writer/assets/templates/requirements-definition.md",
+        "size": 6182,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/tech-writer/assets/templates/rfi.md",
+        "size": 4378,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/tech-writer/assets/templates/rfp.md",
+        "size": 7713,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/tech-writer/assets/templates/security-design.md",
+        "size": 7168,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/tech-writer/assets/templates/system-design.md",
+        "size": 8058,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/tech-writer/assets/templates/technical-proposal.md",
+        "size": 3731,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/tech-writer/assets/templates/test-plan.md",
+        "size": 6359,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/tech-writer/assets/templates/user-manual.md",
+        "size": 453,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/tech-writer/assets/templates/white-paper.md",
+        "size": 8894,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/tech-writer/references/doctypes/api-docs.md",
+        "size": 1458,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/tech-writer/references/doctypes/blueprint.md",
+        "size": 4061,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/tech-writer/references/doctypes/code-comments.md",
+        "size": 1678,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/tech-writer/references/doctypes/design-doc.md",
+        "size": 1752,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/tech-writer/references/doctypes/migration-plan.md",
+        "size": 2836,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/tech-writer/references/doctypes/obsidian.md",
+        "size": 5228,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/tech-writer/references/doctypes/operations-runbook.md",
+        "size": 2806,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/tech-writer/references/doctypes/pr-commit.md",
+        "size": 2967,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/tech-writer/references/doctypes/qiita.md",
+        "size": 3076,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/tech-writer/references/doctypes/readme.md",
+        "size": 1935,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/tech-writer/references/doctypes/release-notes.md",
+        "size": 1132,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/tech-writer/references/doctypes/requirements-definition.md",
+        "size": 3315,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/tech-writer/references/doctypes/rfi.md",
+        "size": 1737,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/tech-writer/references/doctypes/rfp.md",
+        "size": 2026,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/tech-writer/references/doctypes/security-design.md",
+        "size": 3330,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/tech-writer/references/doctypes/system-design.md",
+        "size": 3572,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/tech-writer/references/doctypes/technical-proposal.md",
+        "size": 2019,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/tech-writer/references/doctypes/test-plan.md",
+        "size": 3108,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/tech-writer/references/doctypes/user-manual.md",
+        "size": 2469,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/tech-writer/references/doctypes/white-paper.md",
+        "size": 4218,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/tech-writer/references/doctypes/zenn.md",
+        "size": 2787,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/tech-writer/references/japanese-prose-optimization.md",
+        "size": 6351,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/tech-writer/references/style-constitution.md",
+        "size": 5474,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/tech-writer/scripts/lint.py",
+        "size": 17474,
+        "mode": 493
+      },
+      {
+        "path": ".github/skills/tech-writer/SKILL.md",
+        "size": 28401,
+        "mode": 420
+      },
+      {
+        "path": ".github/skills/wslc-containers/scripts/wslc.sh",
+        "size": 1363,
+        "mode": 493
+      },
+      {
+        "path": ".github/skills/wslc-containers/SKILL.md",
+        "size": 11760,
+        "mode": 420
+      },
+      {
+        "path": "CLANGELOG.md",
+        "size": 30321,
+        "mode": 420
+      },
+      {
+        "path": "LICENSE",
+        "size": 1065,
+        "mode": 420
+      },
+      {
+        "path": "README-ja.md",
+        "size": 52204,
+        "mode": 420
+      },
+      {
+        "path": "README.md",
+        "size": 39252,
+        "mode": 420
+      },
+      {
+        "path": "bin/musubix6.mjs",
+        "size": 4479,
+        "mode": 493
+      },
+      {
+        "path": "package.json",
+        "size": 2005,
+        "mode": 420
+      },
+      {
+        "path": "scripts/host-compatibility.test.mjs",
+        "size": 19301,
+        "mode": 420
+      },
+      {
+        "path": "scripts/japanese-prose-naturalness.test.mjs",
+        "size": 3449,
+        "mode": 420
+      },
+      {
+        "path": "scripts/kotonoha-skills.test.mjs",
+        "size": 11990,
+        "mode": 420
+      }
+    ],
+    "entryCount": 127,
+    "bundled": []
+  }
+]
