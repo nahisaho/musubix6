@@ -252,16 +252,15 @@
   "release-qualification": {
     "by": "nahisaho",
     "kind": "human",
-    "review": "Same explicit90727c0b seven-artifact human approval, which cryptographically binds exact helper28ec18ed/test57c89a75; approved production bytes now verified after native Red/Green/mutation/restoration, refresh current implementation snapshot only; no scope change/main/tag/npm/GH385 exception",
-    "at": "2026-11-07T02:25:23.169Z",
+    "at": "2026-11-10T07:48:43.289Z",
     "artifacts": {
       ".sdd/specs/release-qualification.md": "90727c0b7a25f3c18a941b24dc1ee09c07bb82357511fa23689c1d02a89dedce",
       ".sdd/release-validation.v0.2.8.json": "683269310de4498ee64f33cfe2b4e30e742a33fbf616da3577770198bb6bb280",
       ".sdd/release-content-mutations.v0.2.8.json": "07f7567b66498bb10ee1da8a9bc367db1f891982353fb2f17a45a23376c2fd01",
       ".sdd/specs/claude-code-support.md": "82bb16e36ab143167e445dcb422d49f5c0f9af8ea024bcc51c4e3092cfefee9b",
-      "README.md": "bf778bde30d77e538a850e342ac5b518354179b205706827e1480294addb95c7",
-      "README-ja.md": "efb7a08fdd02fa0719f5ac31f819ac7d5c061cefe87b97d3ab60309efbcf748c",
-      "CLANGELOG.md": "d1c7e13ac5d29dafc6dc876a8ee52025cab8edce77e05a16f222e534cfb26c7d"
+      "README.md": "8dc3288651f7a3b28dc4a25b92f04ca63f9ecd81a2d793a7cd14da8ef69c4645",
+      "README-ja.md": "45e3abf8658fc019abe6c0c8921dae31fd6c81fcf31fa66ccf2cda6910cb26b5",
+      "CLANGELOG.md": "9a3a0879ed3acc05e2e3c3d8111c2ebbcdcf07ef776eb9ec31d3e324e5846a64"
     },
     "tier": "T2",
     "requireHuman": true,
