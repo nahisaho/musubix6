@@ -1,0 +1,69 @@
+{
+  "schemaVersion": 1,
+  "task": "TASK-R36G-001",
+  "sequence": 3,
+  "previous": "3780a25bb9ba36fe7fa636942cf63d919e70f299622db66081a2f4723cee36d4",
+  "definitionSha256": "767cdec6f0592142dfe72aaba4f6f88f5a160ca8992a529741708ef4730104ba",
+  "inputSha256": "971b0a25784eebdf7594d4409cd52a82e535abc06b6ababb7b288b05803a9607",
+  "status": "PASS",
+  "exit": 0,
+  "checks": [
+    {
+      "name": "regression-1",
+      "argv": [
+        "node",
+        "--test",
+        "--test-name-pattern",
+        "^(?:.*\\b(?:TEST-R36G-001))(?![0-9A-Za-z])",
+        ".github/skills/lean-sdd-tdd/scripts/sdd.test.mjs"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/18b33c75f5cc1432e30a3cf80d01fbc13f44320763acdd4e72483be098731cdf/attempt-9e9ce0a7-b04c-47cd-a8a2-dd0bfd5a2a2c/0.log",
+        "sha256": "198c910fd212ce56185894b893abf5edc2bb7707fe1d27deeca2fa63f5e01832",
+        "bytes": 229
+      }
+    },
+    {
+      "name": "native-TEST-R36G-001",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/tmp/musubix6-v0210-28d27536/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-R36G-001",
+        "--root",
+        "/tmp/musubix6-v0210-28d27536"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/18b33c75f5cc1432e30a3cf80d01fbc13f44320763acdd4e72483be098731cdf/attempt-9e9ce0a7-b04c-47cd-a8a2-dd0bfd5a2a2c/1.log",
+        "sha256": "8e52d7bc62b6a3211d257074a2d0a5e64d4589a19fd6c56e11adf79d9e79e1aa",
+        "bytes": 48
+      }
+    }
+  ],
+  "ledgerEvents": [
+    {
+      "test": "TEST-R36G-001",
+      "hashes": [
+        "7e51b751bf5618c94689eb1a54fa8cf1934d94d83cab19bd22593a03b5baae92",
+        "7e6b7a6870197de6e53189965a2a402d3c2f64cb3cc68676a97294de6bd7a4a0",
+        "807577b10a8ce1f876640b9c6c9966231ec0bb0610518f408a798609ae9d0d6d",
+        "9d9d685e28eea196d080ad59038d9d0158c1d6b8a2f9e2ba03c7565280410e99",
+        "c04251d0eabbb22ab777cb4a6513f9170cc528c734dd83324fa5bd428d4f2fa7",
+        "d89d9c225e36ef766dd190b7304a4039093b31dbf4d1c5108cd40a213254a2c4",
+        "ff55e0362ff01439e2bc10414633193d585bc32a3328a060ea5bb8445f73df0f"
+      ]
+    }
+  ],
+  "errors": []
+}

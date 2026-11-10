@@ -1,0 +1,10 @@
+✔ #365 TEST-NODE20-001 iterator-free setup Red retains weakness (1199.370134ms)
+✔ #365 TEST-NODE20-002 iterator-free validation-helper Red stays strong (1166.887843ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 4841.170839

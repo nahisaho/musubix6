@@ -1,0 +1,12 @@
+✔ #373 TEST-R36I-EXIT-001 native-valid C/C++ cannot verify silent failed compilers (701.640165ms)
+✔ #373 TEST-R36I-INVALID-001 exact native-invalid fixture never becomes verified with silent exit101 (512.971678ms)
+✔ #373 TEST-R36I-BOUNDARY-001 failed terminal/unparseable/startup/signal/output-budget outcomes are explicit (2631.192819ms)
+✔ #373 TEST-R36I-REASON-001 process reasons precede supplementary parsed compiler errors (728.582699ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 6995.017376

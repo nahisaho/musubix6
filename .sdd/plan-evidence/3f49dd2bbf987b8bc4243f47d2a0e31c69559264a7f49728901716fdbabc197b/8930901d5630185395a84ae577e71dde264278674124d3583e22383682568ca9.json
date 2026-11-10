@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 1,
+  "task": "TASK-DIAGFLOW-001",
+  "sequence": 3,
+  "previous": "a23538469f37d3f0ba6fbfbe76bc39ca10e97e1913d38f8bc00fc822fd6ac0d9",
+  "definitionSha256": "98cea0f696aff8df8a5958660959f3fec79ed95f04b2663a5551a8429ba3d3ec",
+  "inputSha256": "3ab3304c7ef1ccd804dd557f58df339a04e9f906c88025f069ddbc7822963c15",
+  "status": "FAIL",
+  "exit": 1,
+  "checks": [
+    {
+      "name": "regression-1",
+      "argv": [
+        "node",
+        "--test",
+        "--test-name-pattern",
+        "^(?:.*\\b(?:TEST-DIAGFLOW-005))(?![0-9A-Za-z])",
+        ".github/skills/lean-sdd-tdd/scripts/diagnostics-profiles.test.mjs"
+      ],
+      "timeoutMs": 600000,
+      "exit": 1,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/3f49dd2bbf987b8bc4243f47d2a0e31c69559264a7f49728901716fdbabc197b/attempt-ce7e9683-ef3a-48fa-afe8-023130b93a30/0.log",
+        "sha256": "b74b77704ea3967cc077051b2191c40291d93674927bdbc585b815d1c71af33a",
+        "bytes": 1346
+      }
+    }
+  ],
+  "ledgerEvents": [
+    {
+      "test": "TEST-DIAGFLOW-001",
+      "hashes": [
+        "0ae29e671edc66526792e85c09d0ec4aa2dfdefb3894075a96dd01d267c3c348",
+        "2225922b0b073796eb5d728c58127b7b28c55f23bc915f25eed7dc9db2ed873f",
+        "404580e9a3f5f80ea03ff90d0797f11d23656733b69a81ec6f66dce38cae877f",
+        "4fc8d3222b1fa9a3ed1166cc6bdd8a83fd2ca067ccb5781cadc04bad76be26da",
+        "6f570cb4187089cdca9ebcc4b2685dc366d957f17c21440ee5a049eae4338beb",
+        "a26d19d04a897c9e5892063d5c43a042ca7726305bd40386fb18e4347bd9d276",
+        "d5426edb5242a98c96aa6e63bbe553a1b474e63aeb649c4242a912a383420d40"
+      ]
+    },
+    {
+      "test": "TEST-DIAGFLOW-005",
+      "hashes": [
+        "02b67341f907d5f77b040d1911a15b30198f14a47785b7652870c7686b45d7d1",
+        "047635b00e0b2626ec8ff9dfce1b182d7b20928100f1bfb966e6f6b070fddafe",
+        "5dc8fbdaac2c7d2d60a6c8e62caa9a8ed2286bdb6b9e8d8d5023d70cfe70c5f5",
+        "72ec7db779154bc2e8efb6b49e755d2fc08375857237e4459f1551d00bfa2f04",
+        "9a9aea3e3933cd5862a7f3c130b30f4933ecff47d181c207fdd6f906c91f015c",
+        "9dacfe93a28f86b58230971834b73a971c858e07337de2a9f7886af56239ff65",
+        "a00e0a2f8aee5ac1770b41f31cfce1dfcd055ec65c511fd2cb8a882763cd2d51",
+        "a82f14306ba40594ba9e3a7a8f6ed83d5cc35ddb8e79572b63cd129276a4c1e5",
+        "c73cbc50fca41e33032a184fcd1371ea74819cd207001b4b2efb3ff22e080b42",
+        "efe2b0ff194b05586d229a5b8a82f01eee9f79fc55694cefc99d569c6bd3eb6b"
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "id": "TASK-DIAGFLOW-001",
+      "exit": 1,
+      "reason": "regression-1: native verification exited 1"
+    }
+  ]
+}

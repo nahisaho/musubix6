@@ -1,0 +1,10 @@
+✔ #381 TEST-RSTUB-CONTROL-001 evidenced functions and typed constants preserve native compilation (1082.007882ms)
+✔ #381 TEST-RSTUB-004 placeholder compile failures refuse Red and preserve evidence bytes (3498.371433ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 7048.503873

@@ -1,0 +1,29 @@
+✖ TEST-DIAGFLOW-005 profile docs and source/wrapper/packed/copied 0/1/2 parity (620.93724ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 702.798064
+
+✖ failing tests:
+
+test at .github/skills/lean-sdd-tdd/scripts/diagnostics-profiles.test.mjs:566:1
+✖ TEST-DIAGFLOW-005 profile docs and source/wrapper/packed/copied 0/1/2 parity (620.93724ms)
+  AssertionError [ERR_ASSERTION]: Set MUSUBIX_DIAGNOSTICS_TEST_VENV to the pinned developer-tool venv; do not install tools inside diagnostics
+      at toolVenv (file:///tmp/musubix6-v0210-28d27536/.github/skills/lean-sdd-tdd/scripts/diagnostics-profiles.test.mjs:71:10)
+      at python (file:///tmp/musubix6-v0210-28d27536/.github/skills/lean-sdd-tdd/scripts/diagnostics-profiles.test.mjs:76:18)
+      at TestContext.<anonymous> (file:///tmp/musubix6-v0210-28d27536/.github/skills/lean-sdd-tdd/scripts/diagnostics-profiles.test.mjs:588:32)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

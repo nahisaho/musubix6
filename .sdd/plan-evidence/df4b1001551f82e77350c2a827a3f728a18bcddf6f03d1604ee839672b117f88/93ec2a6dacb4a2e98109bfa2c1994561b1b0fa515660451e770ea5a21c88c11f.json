@@ -1,0 +1,69 @@
+{
+  "schemaVersion": 1,
+  "task": "TASK-RSTUB-005",
+  "sequence": 3,
+  "previous": "0533a1b7eca37b1bfa1e5e70eec9e0484b96fb4e86431399f0c7460ff6378cf1",
+  "definitionSha256": "8c193cae2ca8f0485be4f59a7ae0020be1f2a2cdce94234a76ef73d4c556e40a",
+  "inputSha256": "d5a221d41fb4eea819a10aa360b0afb8d83bc4fccd3da1b2c0e2e933e3079011",
+  "status": "PASS",
+  "exit": 0,
+  "checks": [
+    {
+      "name": "regression-1",
+      "argv": [
+        "node",
+        "--test",
+        "--test-name-pattern",
+        "^(?:.*\\b(?:TEST-RSTUB-005))(?![0-9A-Za-z])",
+        ".github/skills/lean-sdd-tdd/scripts/sdd.test.mjs"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/df4b1001551f82e77350c2a827a3f728a18bcddf6f03d1604ee839672b117f88/attempt-f225a0ad-b9f4-43c1-89f8-f03d87039059/0.log",
+        "sha256": "333d6e52067b9e11af86e0eb45da711683c365d1020625e87c998ddb73c10702",
+        "bytes": 229
+      }
+    },
+    {
+      "name": "native-TEST-RSTUB-005",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/tmp/musubix6-v0210-28d27536/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-RSTUB-005",
+        "--root",
+        "/tmp/musubix6-v0210-28d27536"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/df4b1001551f82e77350c2a827a3f728a18bcddf6f03d1604ee839672b117f88/attempt-f225a0ad-b9f4-43c1-89f8-f03d87039059/1.log",
+        "sha256": "a7a4e841820d3b7641747408e7c315b69a1df29559a216616582713f00ebfa5c",
+        "bytes": 51
+      }
+    }
+  ],
+  "ledgerEvents": [
+    {
+      "test": "TEST-RSTUB-005",
+      "hashes": [
+        "2afa5d3a35274f78325b9057b038fa1bcaafd89ed07687603c6bb8112784823d",
+        "6b7fa41db21471e5581f4a6c5c769861479dae636b36cee71d6aea275d15ead9",
+        "7284d0662583976a243a7eb5c38c89b21c44849195c94fee08ac2892b8753aa0",
+        "a297e76807934dc152eb3bc12cbef3f182e49568f999f9e7c914a40bc9d0a89b",
+        "c672faa8e0070741245cd42e67a05a7e5a32f7fa1eb1cf5c72580d94f8f2d4c0",
+        "f9a98d35a27c204d45a48e5702d6138f9a15a5ce607276f8e49a56ea861b73f1",
+        "fcbd37afebd76be4cb5c4c21c0c501ae70382bf6f6c8568cee7adfe544aab7ff"
+      ]
+    }
+  ],
+  "errors": []
+}

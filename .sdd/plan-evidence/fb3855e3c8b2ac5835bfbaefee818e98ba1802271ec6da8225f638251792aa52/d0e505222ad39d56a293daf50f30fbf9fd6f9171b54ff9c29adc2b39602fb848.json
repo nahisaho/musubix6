@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "task": "TASK-RSTUB-001",
+  "sequence": 3,
+  "previous": "eb01d0713d1444311eed0bc7673b5d3782714cd0b0c67dd85474b0c315599daa",
+  "definitionSha256": "c62da6ac5fd04c9beb2f2f7c670c7e9534baa99e264c60d58725920cdc0fa14a",
+  "inputSha256": "ab6b8d1a86aa67f9cf9e1327da05990fcb169b2a51970e93302d7a2890031f5f",
+  "status": "PASS",
+  "exit": 0,
+  "checks": [
+    {
+      "name": "regression-1",
+      "argv": [
+        "node",
+        "--test",
+        "--test-name-pattern",
+        "^(?:.*\\b(?:TEST-RSTUB-001))(?![0-9A-Za-z])",
+        ".github/skills/lean-sdd-tdd/scripts/sdd.test.mjs"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/fb3855e3c8b2ac5835bfbaefee818e98ba1802271ec6da8225f638251792aa52/attempt-4bf307d1-dddf-4290-9b78-6bd04073eb68/0.log",
+        "sha256": "a8e14e392651967287321b974eba22fa4c61fcbac2d719e02a5323c94b34163a",
+        "bytes": 221
+      }
+    },
+    {
+      "name": "native-TEST-RSTUB-001",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/tmp/musubix6-v0210-28d27536/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-RSTUB-001",
+        "--root",
+        "/tmp/musubix6-v0210-28d27536"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/fb3855e3c8b2ac5835bfbaefee818e98ba1802271ec6da8225f638251792aa52/attempt-4bf307d1-dddf-4290-9b78-6bd04073eb68/1.log",
+        "sha256": "aae2812d86ed44f5cebb6ee5783d0e3178e9d1d27b0e37e84e81aa50d138c3ff",
+        "bytes": 50
+      }
+    }
+  ],
+  "ledgerEvents": [
+    {
+      "test": "TEST-RSTUB-001",
+      "hashes": [
+        "0ebcc2f52bbddc0ac9c7ffab187bc3b776bdcf3e244505343797c1c06f15f8f9",
+        "462f2a1a4353b1a180c20992df9c6ae2d343cd02db26023afe0db431216062b1",
+        "48ca54925d664ea722d035f3d25f8896371faaa65d622838838d291164354f75",
+        "52d92a66d6be2e7ff649b1e4e04e3bfe5cd0a0b5fbf9ae3e9b94994f9e3e66f1",
+        "6679f1adcd4d961dd32ae8e6744ada71c1e59f1d22e7b340a5ff62d4831e0fd5",
+        "9cf68b7f688174fcd787d70ae2a794de1de89f70a477a7ff8a1242e0de44011c",
+        "ab0bfc70a1c6fc9ea1e6c657e2a6fcfc588edc0be9883b970123a398bf39d58b",
+        "b2a192b223d6ee273b48e83bbe119c9b16e3fdf0647bbf1a0d2b2d0ffcc2786a"
+      ]
+    }
+  ],
+  "errors": []
+}
