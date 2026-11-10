@@ -1,9 +1,9 @@
 # AI cost log (USD)
 
 - Project: `/tmp/musubix6-v0210-28d27536`
-- Updated: 2026-11-10 02:07 UTC
+- Updated: 2026-11-10 06:06 UTC
 - Sessions: 22
-- **Total: $1,048.27**
+- **Total: $1,050.35**
 - History: `cost-history.json` (schema 1)
 - Basis: exact live `total_nano_aiu` / 1e9 = AIU; 1 AIU = 0.01 USD.
 - Archived report totals retain their original cent precision independently of rounded rows.
@@ -16,8 +16,8 @@ Regenerate with `python3 scripts/cost-log.py`. Do not edit by hand.
 | Model | Calls | USD | Input tokens | Output tokens |
 |---|---:|---:|---:|---:|
 | claude-sonnet-5.5 | 22208 | $596.90 | 1859190320 | 19705011 |
-| gpt-6.1-sol | 18465 | $450.27 | 1574126113 | 14676422 |
-| claude-sonnet-5 | 22 | $0.78 | 1131106 | 14620 |
+| gpt-6.1-sol | 18507 | $451.90 | 1579592672 | 14705452 |
+| claude-sonnet-5 | 25 | $1.22 | 1350313 | 19962 |
 | gpt-5.6-terra | 26 | $0.33 | 412537 | 9674 |
 | gpt-5.6-luna | 8 | $0.01 | 47460 | 2438 |
 
@@ -57,6 +57,6 @@ Regenerate with `python3 scripts/cost-log.py`. Do not edit by hand.
 | 2026-10-27T10:37 | `28b37d8f-56f4-4e28-b9c8-71cc59366d60` | gpt-6.1-sol | 3188 | $127.27 | Install musubix6 and Verify README |
 | 2026-10-29T00:05 | `1f3fca45-165b-46a5-a9cb-f50f07eb054e` | claude-sonnet-5.5 | 204 | $6.35 | Update musubix for GiNZA 5.3 |
 | 2026-10-29T00:05 | `1f3fca45-165b-46a5-a9cb-f50f07eb054e` | gpt-6.1-sol | 1572 | $53.30 | Update musubix for GiNZA 5.3 |
-| 2026-11-08T00:12 | `28d27536-ac83-42a7-9e75-6a0dee9b5df2` | claude-sonnet-5 | 22 | $0.78 | Check Latest Version of musubix6 |
+| 2026-11-08T00:12 | `28d27536-ac83-42a7-9e75-6a0dee9b5df2` | claude-sonnet-5 | 25 | $1.22 | Check Latest Version of musubix6 |
 | 2026-11-08T00:12 | `28d27536-ac83-42a7-9e75-6a0dee9b5df2` | claude-sonnet-5.5 | 71 | $2.42 | Check Latest Version of musubix6 |
-| 2026-11-08T00:12 | `28d27536-ac83-42a7-9e75-6a0dee9b5df2` | gpt-6.1-sol | 355 | $10.77 | Check Latest Version of musubix6 |
+| 2026-11-08T00:12 | `28d27536-ac83-42a7-9e75-6a0dee9b5df2` | gpt-6.1-sol | 397 | $12.41 | Check Latest Version of musubix6 |

@@ -1,0 +1,9 @@
+✔ TEST-PLAN-CLI-011 preview shares native input reads without caching ordinary inspections (3023.399652ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3097.069843

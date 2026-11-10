@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "task": "TASK-PLAN-CLI-008",
+  "sequence": 1,
+  "previous": "",
+  "definitionSha256": "646847336187a69c50f2e58af635b13bab320caa3abf7867d690745daa900f4c",
+  "inputSha256": "7c0597838024a4f181c82774456259f1d9e9954421ac38bbaeb9377fd7370bd1",
+  "status": "INCOMPLETE",
+  "exit": 2,
+  "checks": [],
+  "ledgerEvents": [],
+  "errors": [
+    {
+      "id": "TASK-PLAN-CLI-008",
+      "exit": 2,
+      "reason": "prerequisite verification is not complete"
+    }
+  ]
+}
