@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 1,
+  "task": "TASK-KOTO-SYNC-002",
+  "sequence": 2,
+  "previous": "50b52b8e52acee6ca6f3160322da11dba22c25248dfe849519ce19c8bf8f132b",
+  "definitionSha256": "942790b58f03822d264a9bf75a2a70acb489903b1dd2ebcce7811a07ad70dcb2",
+  "inputSha256": "6f383b6736d7d4268c80c7f9b581169b3b027b90234169227826a73a98ae9506",
+  "status": "PASS",
+  "exit": 0,
+  "checks": [
+    {
+      "name": "regression-1",
+      "argv": [
+        "node",
+        "--test",
+        "--test-name-pattern",
+        "^(?:.*\\b(?:TEST-KOTO-SYNC-002))(?![0-9A-Za-z])",
+        "scripts/kotonoha-skills.test.mjs"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/ad533c506c49d243ef4d070a0611b4392118ee67c6db72f9615a1e39a384c4d8/attempt-e68a76d3-5693-4225-8c34-a5eca64dbfbe/0.log",
+        "sha256": "a5d53ca7816386ded363ad1e6fc4690e528b1addc946780c653a9f0ffadaa0fb",
+        "bytes": 216
+      }
+    },
+    {
+      "name": "native-TEST-KOTO-SYNC-002",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/GitHub/musubix6/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-KOTO-SYNC-002",
+        "--root",
+        "/home/nahisaho/GitHub/musubix6"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/ad533c506c49d243ef4d070a0611b4392118ee67c6db72f9615a1e39a384c4d8/attempt-e68a76d3-5693-4225-8c34-a5eca64dbfbe/1.log",
+        "sha256": "e4fcfdc876edb2d5751bc48e5a6b652727606b137168b75567f03d36fdb6cd92",
+        "bytes": 57
+      }
+    }
+  ],
+  "ledgerEvents": [
+    {
+      "test": "TEST-KOTO-SYNC-002",
+      "hashes": [
+        "011fe65eb560cb985f25374008201e4f6213f40bd45f30f2e6df9f50c95f35f3",
+        "431296de8b632b56fd2a03a4ed4fc30c45d594082562f2f80e08bced9087ff64",
+        "64e144b1578f33b6de64e010f8b2652bc794261abb5a1c6f65a6f35c393d85ae",
+        "762ddd46df40e9fc9818fe208a4e6c987de9f0281b97cd9fd59cb375cc4dea01",
+        "a5d9820bbdbf90145d85407e42b5562bcfe5d126d54083eabe4526cad8c1dd66",
+        "bc4284c8d67f9fde80ca85f9c034fdf28036fc401f243fc455c678966e72bc21"
+      ]
+    }
+  ],
+  "errors": []
+}

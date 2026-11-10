@@ -1,0 +1,9 @@
+✔ TEST-CHECK-CLOSURE-004 r31a #344 Cargo closure tracks complete ancestor config and toolchains including additions and removals (34601.81389ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 37057.583628

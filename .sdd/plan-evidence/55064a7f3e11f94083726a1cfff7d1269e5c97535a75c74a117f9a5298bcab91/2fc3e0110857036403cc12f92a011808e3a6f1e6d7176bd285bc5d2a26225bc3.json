@@ -1,0 +1,104 @@
+{
+  "schemaVersion": 1,
+  "task": "TASK-R36D-OWN-001",
+  "sequence": 3,
+  "previous": "7540e85e2b1770071140a23ca29eae286055a1afd1e2eb85d6cd9c455a7738ad",
+  "definitionSha256": "079b1aca3dc778d5c92cfc1c245689739fe74fd8152c330df57723660b5f5de9",
+  "inputSha256": "fb7617d99dbb237ca061140ab75900e4624f461462376cf66a9655a31885d8ce",
+  "status": "PASS",
+  "exit": 0,
+  "checks": [
+    {
+      "name": "regression-1",
+      "argv": [
+        "node",
+        "--test",
+        "--test-name-pattern",
+        "^(?:.*\\b(?:TEST-R36D-OWN-001|TEST-R36D-OWN-002))(?![0-9A-Za-z])",
+        ".github/skills/lean-sdd-tdd/scripts/sdd.test.mjs"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/55064a7f3e11f94083726a1cfff7d1269e5c97535a75c74a117f9a5298bcab91/attempt-ae2becad-757d-4384-bbc0-0d2d64a5a774/0.log",
+        "sha256": "3052516d15e0d1f5a54e980e04f6faa44805e73af60e0927e8a6c268e80fcba8",
+        "bytes": 330
+      }
+    },
+    {
+      "name": "native-TEST-R36D-OWN-001",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/tmp/musubix6-v0210-28d27536/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-R36D-OWN-001",
+        "--root",
+        "/tmp/musubix6-v0210-28d27536"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/55064a7f3e11f94083726a1cfff7d1269e5c97535a75c74a117f9a5298bcab91/attempt-ae2becad-757d-4384-bbc0-0d2d64a5a774/1.log",
+        "sha256": "f95fa478d8c99d057ed265258abe162fb304695c5b9c51605b2c3e89dbfb4fc2",
+        "bytes": 56
+      }
+    },
+    {
+      "name": "native-TEST-R36D-OWN-002",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/tmp/musubix6-v0210-28d27536/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-R36D-OWN-002",
+        "--root",
+        "/tmp/musubix6-v0210-28d27536"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/55064a7f3e11f94083726a1cfff7d1269e5c97535a75c74a117f9a5298bcab91/attempt-ae2becad-757d-4384-bbc0-0d2d64a5a774/2.log",
+        "sha256": "fb938f862946bb97c2680750c498a6c728982e0cf0e7adf257f4986aaf16ee4c",
+        "bytes": 56
+      }
+    }
+  ],
+  "ledgerEvents": [
+    {
+      "test": "TEST-R36D-OWN-001",
+      "hashes": [
+        "06bf04788805c82f8d3506b4ddf0b8323bae1333b8bf185dd09c69e58bcbabca",
+        "08ba88e2c85a76fbf3174a35fc872d0db2bda3ff080c6adfc318916fb001db3a",
+        "37f9f0aa9495a1aa4a7421fa1da5f7da8b1d570d283954142fa3b96f1f2ff875",
+        "80f0448045775fee652ee289059d95bb3e6bcf5237367a7dbf6e63380b19544c",
+        "85009a4363970482f6c6f7d209b39da02f688b9c287f9af4f2f65a5c75918867",
+        "b3e16ee5968e331fc0d8ee6d77d79b3cc04d53059d7475450b6a2fe36d4a5c86",
+        "cbd84927be9171e7cbd1df6f07580c47fb8ecd66a20032a3d31adf67863b3a05"
+      ]
+    },
+    {
+      "test": "TEST-R36D-OWN-002",
+      "hashes": [
+        "14c0443b4801d37d23ab9a60a27c02003064a2170f571e5f0b5ff2c75b0e362c",
+        "1a777fd2877cf1bc5f99668c86ecd3115b15e0579de6c4a641ea4302ab9bfe85",
+        "226d3fc70883211dda9c5b4d8ec668323af6a47aed275c1dc9a9db7c68e3095c",
+        "62029edee6417c24b16ed3cb974812903d2d43e1b47fcbe0b3a4bb423e955eae",
+        "6677ae7e5f1dda7badd043d6125a28b15b578c6f5526734f7ccf580d755226ec",
+        "73bc45352a040cfa90799c0263c9f635f216c216c6427ab9207935f7ef9e49ec",
+        "9849fb66f0e094e84b1196e018799396dbb779ce95ad4663626667fea3c4005f",
+        "a556c43302287fd286821233d1d1baa3100ddc7fbfee0bfcc90156ccc94bd8e1"
+      ]
+    }
+  ],
+  "errors": []
+}

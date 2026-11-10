@@ -9,15 +9,15 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Iterable
 
+from markdown_it import MarkdownIt
+from markdown_it.rules_inline import backtick
+
 
 FENCE_RE = re.compile(r"^\s{0,3}(`{3,}|~{3,})")
 HEADING_RE = re.compile(r"^\s{0,3}#{1,6}\s+")
 LIST_RE = re.compile(r"^\s*(?:[-+*]|\d+[.)])\s+")
 BLOCKQUOTE_RE = re.compile(r"^\s*>\s?")
-INLINE_CODE_RE = re.compile(r"`[^`\n]*`")
-LINK_RE = re.compile(r"!?\[([^\]]*)\]\([^)]+\)")
 URL_RE = re.compile(r"https?://\S+")
-HTML_TAG_RE = re.compile(r"<[^>]+>")
 SENTENCE_END_RE = re.compile(r"[。！？!?]+(?:[」』）】〉》]*)")
 JAPANESE_RE = re.compile(r"[ぁ-んァ-ヶ一-龠々]")
 
@@ -49,12 +49,45 @@ def read_text(path: Path) -> str:
     return path.read_text(encoding="utf-8")
 
 
+def code_span_with_lines(state, silent: bool) -> bool:
+    """Retain source newlines that CommonMark normalizes inside code spans."""
+    start, count = state.pos, len(state.tokens)
+    accepted = backtick(state, silent)
+    if accepted and not silent and len(state.tokens) > count:
+        token = state.tokens[-1]
+        if token.type == "code_inline":
+            token.meta["line_breaks"] = state.src[start:state.pos].count("\n")
+    return accepted
+
+
+@lru_cache(maxsize=1)
+def markdown_parser() -> MarkdownIt:
+    parser = MarkdownIt("commonmark")
+    parser.inline.ruler.at("backticks", code_span_with_lines)
+    return parser
+
+
+def visible_inline(tokens) -> str:
+    parts: list[str] = []
+    for token in tokens:
+        if token.type == "code_inline":
+            parts.append(" コード " + "\n" * token.meta.get("line_breaks", 0))
+        elif token.type in {"softbreak", "hardbreak"}:
+            parts.append("\n")
+        elif token.type == "html_inline":
+            parts.append(" ")
+        elif token.type == "text":
+            parts.append(token.content)
+        elif token.children:
+            parts.append(visible_inline(token.children))
+    return "".join(parts)
+
+
+# @id CODE-JAPROSE-003 @implements REQ-JAPROSE-003
 def strip_markdown_inline(text: str) -> str:
-    text = INLINE_CODE_RE.sub(" コード ", text)
-    text = LINK_RE.sub(lambda match: match.group(1), text)
+    children = markdown_parser().parseInline(text)[0].children
+    text = visible_inline(children or [])
     text = URL_RE.sub(" ", text)
-    text = HTML_TAG_RE.sub(" ", text)
-    text = text.replace("**", "").replace("__", "")
     text = text.replace("~~", "")
     return re.sub(r"[ \t]+", " ", text).strip()
 

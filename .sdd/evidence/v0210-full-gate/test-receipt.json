@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "check": "test",
+  "attempt": 1,
+  "exit": 0,
+  "signal": null,
+  "timedOut": false,
+  "outputLimit": false,
+  "error": null,
+  "stdout": {
+    "path": "stdout.log",
+    "bytes": 132542,
+    "sha256": "c71bad5b6e5f96e8355712257eb89824fc03983e076070f1f0d1e31a7837c490"
+  },
+  "stderr": {
+    "path": "stderr.log",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+}

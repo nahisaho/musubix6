@@ -1,0 +1,341 @@
+{
+  "schemaVersion": 1,
+  "task": "TASK-RELQ-005",
+  "sequence": 5,
+  "previous": "5bf2ef5d09fb488a8281999c655dc2fd96e5b338e7ec7bc640bded7e50cae9ac",
+  "definitionSha256": "8f84650f4a7e4ac02ecdc07155e45abaeed9622040c98fd01375b2f35832bfc3",
+  "inputSha256": "9047df7a4a38188d4ada19cded9a3b15959c1b98b7a65f1d10df1e2bd23f2c3b",
+  "status": "PASS",
+  "exit": 0,
+  "checks": [
+    {
+      "name": "regression-1",
+      "argv": [
+        "node",
+        "--test",
+        "--test-name-pattern",
+        "^(?:.*\\b(?:TEST-HOST-005))(?![0-9A-Za-z])",
+        "scripts/host-compatibility.test.mjs"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/8a500e1cd57c470ca565540630853ab2031d74efe95b650b3b5670f6edf9e10d/attempt-8c79a07c-2b63-4508-8844-b72961f171eb/0.log",
+        "sha256": "505651f5efd31e16d27412f23f9d410ea7d988b4840b6031a86140aba1830862",
+        "bytes": 221
+      }
+    },
+    {
+      "name": "regression-2",
+      "argv": [
+        "node",
+        "--test",
+        "--test-name-pattern",
+        "^(?:.*\\b(?:TEST-RELQ-HOST-001))(?![0-9A-Za-z])",
+        "scripts/release-host-mutations.test.mjs"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/8a500e1cd57c470ca565540630853ab2031d74efe95b650b3b5670f6edf9e10d/attempt-8c79a07c-2b63-4508-8844-b72961f171eb/1.log",
+        "sha256": "fba945a57dd41bc470f37d59d5fa2bbe04149feebdb698730fed570bb2139ef8",
+        "bytes": 259
+      }
+    },
+    {
+      "name": "regression-3",
+      "argv": [
+        "node",
+        "--test",
+        "--test-name-pattern",
+        "^(?:.*\\b(?:TEST-RELQ-PACKAGE-BINDING-001|TEST-RELQ-SKILL-001|TEST-RELQ-PH-001|TEST-RELQ-PUBLISH-001|TEST-RELQ-005))(?![0-9A-Za-z])",
+        "scripts/release-qualification.test.mjs"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/8a500e1cd57c470ca565540630853ab2031d74efe95b650b3b5670f6edf9e10d/attempt-8c79a07c-2b63-4508-8844-b72961f171eb/2.log",
+        "sha256": "5e876cd4434aa71fcfcd7af9a683d864b6e6403fc42fc0b24832b3103c760bb4",
+        "bytes": 671
+      }
+    },
+    {
+      "name": "native-TEST-HOST-005",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/GitHub/musubix6/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-HOST-005",
+        "--root",
+        "/home/nahisaho/GitHub/musubix6"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/8a500e1cd57c470ca565540630853ab2031d74efe95b650b3b5670f6edf9e10d/attempt-8c79a07c-2b63-4508-8844-b72961f171eb/3.log",
+        "sha256": "0d3cddad37e0b5d2c561f3419e36b1b7d33a15e1eccd949dc0729de9d403cd59",
+        "bytes": 48
+      }
+    },
+    {
+      "name": "native-TEST-RELQ-005",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/GitHub/musubix6/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-RELQ-005",
+        "--root",
+        "/home/nahisaho/GitHub/musubix6"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/8a500e1cd57c470ca565540630853ab2031d74efe95b650b3b5670f6edf9e10d/attempt-8c79a07c-2b63-4508-8844-b72961f171eb/4.log",
+        "sha256": "1e5e5f2b48586126d8c7624bde8e682ded5699e2a745bf7ae0d5e151b48279d4",
+        "bytes": 47
+      }
+    },
+    {
+      "name": "native-TEST-RELQ-HOST-001",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/GitHub/musubix6/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-RELQ-HOST-001",
+        "--root",
+        "/home/nahisaho/GitHub/musubix6"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/8a500e1cd57c470ca565540630853ab2031d74efe95b650b3b5670f6edf9e10d/attempt-8c79a07c-2b63-4508-8844-b72961f171eb/5.log",
+        "sha256": "7aa62b12543ba2214c6461aab85008ec438b4510c0c90fa47b0bd26da74f9226",
+        "bytes": 53
+      }
+    },
+    {
+      "name": "native-TEST-RELQ-PACKAGE-BINDING-001",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/GitHub/musubix6/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-RELQ-PACKAGE-BINDING-001",
+        "--root",
+        "/home/nahisaho/GitHub/musubix6"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/8a500e1cd57c470ca565540630853ab2031d74efe95b650b3b5670f6edf9e10d/attempt-8c79a07c-2b63-4508-8844-b72961f171eb/6.log",
+        "sha256": "4598f5d28561df43ce3c1bcbd41860ea6c1e7bf3244f5667962e878728420077",
+        "bytes": 64
+      }
+    },
+    {
+      "name": "native-TEST-RELQ-PH-001",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/GitHub/musubix6/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-RELQ-PH-001",
+        "--root",
+        "/home/nahisaho/GitHub/musubix6"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/8a500e1cd57c470ca565540630853ab2031d74efe95b650b3b5670f6edf9e10d/attempt-8c79a07c-2b63-4508-8844-b72961f171eb/7.log",
+        "sha256": "21405e40cba44fe67b1ec82d0402a1056b2a8067d3ec7d3f6d8799a3791bc1a6",
+        "bytes": 51
+      }
+    },
+    {
+      "name": "native-TEST-RELQ-PUBLISH-001",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/GitHub/musubix6/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-RELQ-PUBLISH-001",
+        "--root",
+        "/home/nahisaho/GitHub/musubix6"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/8a500e1cd57c470ca565540630853ab2031d74efe95b650b3b5670f6edf9e10d/attempt-8c79a07c-2b63-4508-8844-b72961f171eb/8.log",
+        "sha256": "372ccc8971cb80c0211e375c582c73b3128fe6784db70f31fc4ab3bf3286dade",
+        "bytes": 56
+      }
+    },
+    {
+      "name": "native-TEST-RELQ-SKILL-001",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/GitHub/musubix6/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-RELQ-SKILL-001",
+        "--root",
+        "/home/nahisaho/GitHub/musubix6"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/8a500e1cd57c470ca565540630853ab2031d74efe95b650b3b5670f6edf9e10d/attempt-8c79a07c-2b63-4508-8844-b72961f171eb/9.log",
+        "sha256": "22a20131974a135f762a33a60eedeaecb70883097c44e85f21b827fc8bea0d5e",
+        "bytes": 54
+      }
+    }
+  ],
+  "ledgerEvents": [
+    {
+      "test": "TEST-HOST-005",
+      "hashes": [
+        "034ac0bbf0330a57666035ac27a3fb93d5b050bb8790c657c455bb787177dfeb",
+        "0a3b90116f0c60e5609547762ad6311139d23e2b637dc1d29d665e6c48b93bdd",
+        "30800de2febb9cd8dc37312ceb62adf8b2e92a2aa0658a45a40e19065218c743",
+        "35b911b0e78e07058c620fbb76d4b20e870391e6bb3d4013e1c66c40c33295a3",
+        "670e04f989c2f69068b269f1e9682921ec06b10fe4174b04110ce6bd5a2e9610",
+        "705c26c301d3aa795885c442c22776599fe61e7f7f61f8bf6630a13de3190404",
+        "86a03a2e1baa9c76eea83865bced913125136c02d85897cafedb7d4c91fcc462",
+        "8c654b3c4ab149cb3fc3b6f976ae2860c3efaf357018ba2200ffc28cd634e018",
+        "9c338f04e12d590c2ba22a8d1c66ca460788e60387b28f167f6a40b58d7ce43f",
+        "a0876ea292d83c4a83e57ab4fd8dbf940db277f9be78756dad6fb24596cfdeba",
+        "b28336de7f2d2e5d7d2796c3e99e3f2a8bed7ff0ea76bf3ff6a6eee1216da4d3",
+        "b28a7e415082e0f602e9119f71dbea25e21a080ccdafae5fae9b9f1ff8cf2463",
+        "c9daa864602c14fc60efc8762b84baf85e16316756256f3c860d0395eee76871",
+        "c9ea388489ab0fb12f8fc2349987d2db2fc7aea6e7a89e6fd84e96bd528c0f0d",
+        "d5666378b3b51a2295e344c6a800cd2a0e82b7b770838092ae610f9849f46eda",
+        "d643b45d035a528a53648401735b0fdd448596c4d76bda99b7186dd2fbbc3372",
+        "f73833bf06aabb5d42d1a60533a0e90a2e6c6eff8ba8185cdab151c0ba3a79a3"
+      ]
+    },
+    {
+      "test": "TEST-RELQ-005",
+      "hashes": [
+        "112f83fdaffc66330be8a524da10e3bf7d851e4f55ad4e22b18b8c47968e37b1",
+        "20f6effb265d269e59998c257be73fc4dd67d22a9818dd2ebf938e04d521e7b5",
+        "713f5db59b7abf1e07132d65194536a86c44005fce9ca98e472da178d6c167c8",
+        "8c20866224f056dcc7217c543c7954a6b8bc323ccffe737c3fde2f3440c6999c",
+        "bab4aa1339dbd1a8c50b8b0007b32428189f344abc48829dc2a2df24999b9b21",
+        "e6efd9116fb839c8d0bfeead979f30a9c7eb5005399bad986b5eb72731eb4a0d",
+        "ef6b182396b35cf4854749b72df09f03b7caa6bcd680b87c97f13cc495da5d50",
+        "f0866546ffabc962fb044224547f3bd684b122d1fe2c8e24be3154a792a65671"
+      ]
+    },
+    {
+      "test": "TEST-RELQ-HOST-001",
+      "hashes": [
+        "067e9f28648952e297725944ad0b7d615a1867b6bcba3393300875cf93f09b2d",
+        "11a8968ddadfb94ac6d9ad75cebf2e842817455fb5442501086b792da951178a",
+        "37bfe0a77856ef56e0bc074e0a159204db5ac4b1b7a30d2369f3c63b00a7b8a1",
+        "39f220f6021bfc807cd7da309c1d56a1eb2fc275961c76b45a3230f2bd2bfe54",
+        "6c15dfde44f257f8fcb35df2765278743d5591ccc4233a6c3ccdb17e6ebad384",
+        "82584be27545d950f1f9fbef6b0dc79ab3aa2984b02d1db6ed0fdf0e66271660",
+        "8b500f0ec2bf2ebd638588e54d6b50908a6104b2fcfc38725cf30d7adc46fa4e",
+        "923a6c4d025a506b57ac901c880ab8fb98208b7677645f211951c240f052cba2",
+        "944ae58ea7e56cebd91d56e75bc8f4563401d2ad546293f1db707d41dbef7add",
+        "a2256266d68d283c7fe148ee05bd19721fcfb3e80e459216b781979af1aa8109",
+        "db3ef8dd0a60d2b1087e1d3e0e4ece2fb99e57c196666ac8a3d62d99f5fdbe0f",
+        "f9fbf32f586be9687789d564e27e9bcca72102b43de38bdea345835fcf9c658a"
+      ]
+    },
+    {
+      "test": "TEST-RELQ-PACKAGE-BINDING-001",
+      "hashes": [
+        "0691ad3a38186b774a1acc1893f5a26b4bd3eac627a18eaf682a926b4344f3cc",
+        "216819293e6a780fb4f7ae3e0e342dec9360077cdf9efda613c809cce8993536",
+        "2b63fa1e18ac4ab40c75a8a79bb66b591d3057b659053db9cd1bdd655d646520",
+        "4ae529594a7470a94f8de43c59c82c05566f996fd5a8782bad00448286977e33",
+        "74ec5c63235d3c8a79980d706595990cd1e711a5066c81268898a9017d5a995f",
+        "7655d8e728b880bfac31e838681a5d3d970ae384d47e62c5d45905fa2188170f",
+        "d9718689e8777d5473e247f03b4e6923337e479ee3f24c6ade382cbe83fbacaa",
+        "f2209a4a7c752be04a220fd82794e6b375b37c3cd53ded5832c91b3633ea8446"
+      ]
+    },
+    {
+      "test": "TEST-RELQ-PH-001",
+      "hashes": [
+        "144215bd4f0615b89ed074cad28b394c8692eea12565ed6fd69db091ccae7bc3",
+        "15275675c604ba23965fc4364800d36e367a4285cc8fe444e630330bb8f23ae5",
+        "60e3e3c688abd29d4aaa7a09e1e576f5361a2269d5870c5c299e1307ede611de",
+        "62e62434b3dbfdfb832bb6083119adee5f748cbf44b494b3a36d2faea1cc7d84",
+        "6983c48d4fdd4a5b7871ac0b0e2a0ed1271b1fc2dfb09703c47537bc88825e3e",
+        "70e4844a18d50417e44bfad279c546e32a97d89b22f618d876cab32a08a02c46",
+        "72d4546c28e9c8c803056b2fa41a53896580158521ba70ebdbac0926d62fed06",
+        "7b849578c084567d7d84c4fd017943100997c63efc443e08e0e14f69a9f6d376",
+        "8f71c803039b938c75786ddd8e46ef498b01081e5b4a8fce628e3354779b8328",
+        "a75b9cb1912d8492319fea792f32051be0cbb8d6971af5539b61f0637d881b5b",
+        "b68b4b1cc04b67143183076559da687a2b40ada17f4aada14978dc61cb2ac911",
+        "c1991a7da344a35bcaef5d72c3be21869b322374bb6739e03f81e6f8bb1438c5"
+      ]
+    },
+    {
+      "test": "TEST-RELQ-PUBLISH-001",
+      "hashes": [
+        "028eb145a8b828f8e187b5b5a63e407937635d9e66498112003277b092d2db61",
+        "06fd7e8a19924d582e6da9e972a5feba97d0a74ec0ca317a5c21ee32725325f2",
+        "34a3fa75c3b7847f3c769ff4e8ceab89dd50e3bcfdcc9a390d994cc9283b6386",
+        "3c37e17054385e1c7e62e05195a763809b3820765e280f5a136548b7d913042b",
+        "41af59764a9b20b01c2171568836dce332edfb41d1204b4f2c457e1d92eb7a8d",
+        "72930b867b0796a0a59bcbba3beee32103346bfb8d1d503548e3e1682dcdb31b",
+        "8b4ede36656edcf81283b99faf683dd084330f11df18526ffb3688b1efdb3fa7",
+        "c0cc394dc1ec739f46c3979771412a201959238b001d92f19d61f1141a42df7e"
+      ]
+    },
+    {
+      "test": "TEST-RELQ-SKILL-001",
+      "hashes": [
+        "2ab23598537eae2f8372b31638ee897b796524d2411374909b5bfe15d3c22b46",
+        "3cdf63aea3e6ce8609f6ee09fdbf846c9736c968113773181a171b91227277a1",
+        "3d7bb34872578febd5f9d4d11aba511dbdc2b6072cad96817f26cce54b064897",
+        "41348144a2bac077aa6c62f3ba052a4c7c5d41a94d6cc5bdf0e024fbd4914178",
+        "51aa2122c4968076834d4d09feb0c18707145393d326e48ee271fb91723517fb",
+        "7ce86344affef38f8230888723c1a434cd7d3842b05edbcfacfacde2d8f109d8",
+        "88e77cc29b759dfb1c6b2d8ca2b04c28d3a72f098325d7c5118fcf1e093c371a",
+        "9f672c08f7b84da6dfe6bc65e5dbe0e2287128dca83208e63e2481f8ca4eb982",
+        "a4bc6e4ce21dc55fc840193fcbf260c96b2c4adca611e35af45951821f5f25e9",
+        "a8593e61e69f6f032676af26416db5e58d796b69488f350a525d2fd09b66e417",
+        "aa473545c4e144fbe2854f5051a1c345e13347106ab75bd72ae8846f55811c97",
+        "d3f96ef924dbcd3290f686ebb5e4e5570307e4a18731a238e50dcf91dbbba42f"
+      ]
+    }
+  ],
+  "errors": []
+}

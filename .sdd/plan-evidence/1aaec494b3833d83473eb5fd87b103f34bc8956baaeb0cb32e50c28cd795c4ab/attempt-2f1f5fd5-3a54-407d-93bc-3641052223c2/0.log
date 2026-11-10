@@ -1,0 +1,17 @@
+r36f v24.22.1 /home/nahisaho/.nvm/versions/node/v24.22.1/bin/node: #363 r35a source init preserves explicit target/cwd invariants and existing options from /home/nahisaho/GitHub/musubix6 => /home/nahisaho/GitHub/musubix6/.sdd-test-r35a-work-fFBadR/r35a-init-EOw3Bm
+r36f v24.22.1 /home/nahisaho/.nvm/versions/node/v24.22.1/bin/node: #363 r35a packed installation preserves bin version/list/init/sdd contracts from /home/nahisaho/GitHub/musubix6 => /home/nahisaho/GitHub/musubix6/.sdd-test-r35a-work-ppgCPp/r35a-pack-3RDHg2
+r36f v24.22.1 /home/nahisaho/.nvm/versions/node/v24.22.1/bin/node: #363 r35a admission rejects unknown init flags without writes from /home/nahisaho/GitHub/musubix6 => /home/nahisaho/GitHub/musubix6/.sdd-test-r35a-work-oCFXEg/r35a-admission-r4j8sK
+r36f v24.22.1 /home/nahisaho/.nvm/versions/node/v24.22.1/bin/node: #363 r35a admission packed extraction and installation reject invalid init without writes from /home/nahisaho/GitHub/musubix6 => /home/nahisaho/GitHub/musubix6/.sdd-test-r35a-work-FuXcbG/r35a-admission-pack-zmnCBu
+r36f v24.22.1 /home/nahisaho/.nvm/versions/node/v24.22.1/bin/node: #363 r35a source init preserves explicit target/cwd invariants and existing options from /home/nahisaho/GitHub/musubix6/.github/skills/lean-sdd-tdd/scripts => /home/nahisaho/GitHub/musubix6/.sdd-test-r35a-work-nYAY9C/r35a-init-TachPa
+r36f v24.22.1 /home/nahisaho/.nvm/versions/node/v24.22.1/bin/node: #363 r35a packed installation preserves bin version/list/init/sdd contracts from /home/nahisaho/GitHub/musubix6/.github/skills/lean-sdd-tdd/scripts => /home/nahisaho/GitHub/musubix6/.sdd-test-r35a-work-kXw9Qm/r35a-pack-DjhZuD
+r36f v24.22.1 /home/nahisaho/.nvm/versions/node/v24.22.1/bin/node: #363 r35a admission rejects unknown init flags without writes from /home/nahisaho/GitHub/musubix6/.github/skills/lean-sdd-tdd/scripts => /home/nahisaho/GitHub/musubix6/.sdd-test-r35a-work-6ycdaq/r35a-admission-MULGIC
+r36f v24.22.1 /home/nahisaho/.nvm/versions/node/v24.22.1/bin/node: #363 r35a admission packed extraction and installation reject invalid init without writes from /home/nahisaho/GitHub/musubix6/.github/skills/lean-sdd-tdd/scripts => /home/nahisaho/GitHub/musubix6/.sdd-test-r35a-work-wsmQ5r/r35a-admission-pack-h9Q5jD
+✔ #370 TEST-R36F-LAYOUT-001 r35a fixtures stay outside distributed payload from either cwd (20062.533225ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 22552.620041

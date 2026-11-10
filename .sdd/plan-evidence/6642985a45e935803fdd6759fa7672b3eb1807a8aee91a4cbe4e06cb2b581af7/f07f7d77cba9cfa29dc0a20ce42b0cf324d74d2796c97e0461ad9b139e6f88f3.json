@@ -1,0 +1,69 @@
+{
+  "schemaVersion": 1,
+  "task": "TASK-KOTO-SYNC-001",
+  "sequence": 3,
+  "previous": "a147244cb9661e905cd670c98937c96dbd0a94a81da7cbfa1881541c56048141",
+  "definitionSha256": "74395777567a3b69b2b723e7f1588fb7bd33ed8c741954606719aef8993f3e84",
+  "inputSha256": "3c1f4edcc599971b34218bf1004b2fac1ae6e8e569e9370060de1a7cd30c5ac0",
+  "status": "PASS",
+  "exit": 0,
+  "checks": [
+    {
+      "name": "regression-1",
+      "argv": [
+        "node",
+        "--test",
+        "--test-name-pattern",
+        "^(?:.*\\b(?:TEST-KOTO-SYNC-001))(?![0-9A-Za-z])",
+        "scripts/kotonoha-skills.test.mjs"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/6642985a45e935803fdd6759fa7672b3eb1807a8aee91a4cbe4e06cb2b581af7/attempt-4c4b0dcc-c06d-4617-ab82-15b7bb8c352f/0.log",
+        "sha256": "704f3cb072beccd4930530ac52559d9e31c103f19d62bc8af1839df975c4791e",
+        "bytes": 204
+      }
+    },
+    {
+      "name": "native-TEST-KOTO-SYNC-001",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/tmp/musubix6-v0210-28d27536/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-KOTO-SYNC-001",
+        "--root",
+        "/tmp/musubix6-v0210-28d27536"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/6642985a45e935803fdd6759fa7672b3eb1807a8aee91a4cbe4e06cb2b581af7/attempt-4c4b0dcc-c06d-4617-ab82-15b7bb8c352f/1.log",
+        "sha256": "b5b80d6c1eef9e5aac939bf66de8dc05b11df5cc58998dbc0dee17948a1b9cb7",
+        "bytes": 57
+      }
+    }
+  ],
+  "ledgerEvents": [
+    {
+      "test": "TEST-KOTO-SYNC-001",
+      "hashes": [
+        "0ff3c21e7986d0ffe13afea1646820afcb8bf38feb75e72ef43ed77414ca725e",
+        "5d25e51f7439637acb1102882de0d898bcd9e5a767b8d1294009ad4f99063915",
+        "6078f7cfb0c8834e1f0b5928b771ca7fce91e176eafb1a6a6192cd9ca38d6b45",
+        "8856a06ae7c3d037fe41c5aa7ef7fdebd2bdf069daf06f8e3dd975d73db02b38",
+        "9de096e32ba5919bc8d63a5f2c80d8cd20e5719370ada58f58a328230a91ede8",
+        "ab40cc280f0661e9c2320011b83b26dd73609ba61235ae7c4035abca18e994df",
+        "abb016d68f2954fb42fc0db34b94d735b3dfba859475ec902f34ee2fa5225413"
+      ]
+    }
+  ],
+  "errors": []
+}

@@ -1,0 +1,69 @@
+{
+  "schemaVersion": 1,
+  "task": "TASK-R36G-002",
+  "sequence": 3,
+  "previous": "f1ede5c73425937961f77691f89973f98c6bdb63a17b1866696e51219eb0a91f",
+  "definitionSha256": "93b4cf90b1eb67adac89630b1cf00ae5a7b9733fc9ec03a0ca24bb7b9e4a4ab6",
+  "inputSha256": "0a25b0f467af73b83957ae8e034fea3c5cd2d193f92abd193b01b10b77f34205",
+  "status": "PASS",
+  "exit": 0,
+  "checks": [
+    {
+      "name": "regression-1",
+      "argv": [
+        "node",
+        "--test",
+        "--test-name-pattern",
+        "^(?:.*\\b(?:TEST-R36G-002))(?![0-9A-Za-z])",
+        ".github/skills/lean-sdd-tdd/scripts/sdd.test.mjs"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/28059b6f89c887907eb9d73098d0ea6461a3700ffe0119544f1014a5dc16f084/attempt-de064c63-610a-409e-89ff-47d587260ca7/0.log",
+        "sha256": "2626a47e69e70aa96bf4c8d664ee8a40b021c709ad1a842bcceec117aac988cb",
+        "bytes": 221
+      }
+    },
+    {
+      "name": "native-TEST-R36G-002",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/tmp/musubix6-v0210-28d27536/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-R36G-002",
+        "--root",
+        "/tmp/musubix6-v0210-28d27536"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/28059b6f89c887907eb9d73098d0ea6461a3700ffe0119544f1014a5dc16f084/attempt-de064c63-610a-409e-89ff-47d587260ca7/1.log",
+        "sha256": "b289d19bcd198def549a26a64e91d24e41dd2d41a75183c72a8e0157a0cc4599",
+        "bytes": 48
+      }
+    }
+  ],
+  "ledgerEvents": [
+    {
+      "test": "TEST-R36G-002",
+      "hashes": [
+        "4a8b858290c98861698aa280f6ccd838f0e03481f66488533494c810077d21fe",
+        "55d5ff5eada72b807ce5185ff08e4f0ef926b282843f92b778dabf4eeab7c1c8",
+        "6f8acd3ab141c09493af5a9cba9395bb0a07e6a2c600198429ab89debf1f3ff4",
+        "a64dfcc3e11b251ee833b8ffae31ed8ebe9a182faa011e70704747aabbb5e34f",
+        "d430cb4aa00410f6339fb841dd8c4975facd9604bfff98d786791b05e426f0fb",
+        "df7c8be51650675db3b975629a0624e11f3a6314db6819943cad3fb06f88f149",
+        "f48994ce2dc77e89d93d91e58e13cac1ecee7d3a84f9d84329b2e69883f7bd10"
+      ]
+    }
+  ],
+  "errors": []
+}

@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "task": "TASK-PLAN-CLI-009",
+  "sequence": 1,
+  "previous": "",
+  "definitionSha256": "2274c372ea0f395800fac3c33bf63ed3f793b68c3baa68a62943728cfd6fe1c7",
+  "inputSha256": "6200b55787b800cea209356c6564d6551fb9d85d94e9fdf19a56fe2210961beb",
+  "status": "PASS",
+  "exit": 0,
+  "checks": [
+    {
+      "name": "regression",
+      "argv": [
+        "node",
+        "--test",
+        "--test-name-pattern",
+        "TEST-PLAN-CLI-009|TEST-PLAN-CLI-010",
+        ".github/skills/lean-sdd-tdd/scripts/implementation-plan-cli.test.mjs"
+      ],
+      "timeoutMs": 120000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/31ef34cce4a21effc3a4f042d0e267bf6dcc7e26fb35cb81091b0ef37865984d/attempt-bf0c007c-27ac-4451-b709-a6cc4a547162/0.log",
+        "sha256": "bd84763cbe04833c271edf2a043e50bb4b849f4ce1d9489490f303943fdc971e",
+        "bytes": 357
+      }
+    },
+    {
+      "name": "native-TEST-PLAN-CLI-009",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/tmp/musubix6-v0210-28d27536/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-PLAN-CLI-009",
+        "--root",
+        "/tmp/musubix6-v0210-28d27536"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/31ef34cce4a21effc3a4f042d0e267bf6dcc7e26fb35cb81091b0ef37865984d/attempt-bf0c007c-27ac-4451-b709-a6cc4a547162/1.log",
+        "sha256": "fdccf6d2dbcca8ffbcf55a0e3e6f3dfa109eb79eeb38c9879fbf8bb42fc374cc",
+        "bytes": 56
+      }
+    },
+    {
+      "name": "native-TEST-PLAN-CLI-010",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/tmp/musubix6-v0210-28d27536/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-PLAN-CLI-010",
+        "--root",
+        "/tmp/musubix6-v0210-28d27536"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/31ef34cce4a21effc3a4f042d0e267bf6dcc7e26fb35cb81091b0ef37865984d/attempt-bf0c007c-27ac-4451-b709-a6cc4a547162/2.log",
+        "sha256": "5b1aa4bb68fb77f1df3d609f8d0cad8c8192938f055cc3efd7f907adb8c9ea0f",
+        "bytes": 56
+      }
+    }
+  ],
+  "ledgerEvents": [
+    {
+      "test": "TEST-PLAN-CLI-009",
+      "hashes": [
+        "431a66874911ddfe4acf8f47b89416386b9329f9e0ff64f2065ebe32a2c1e05b",
+        "52b45750db32fb16d476482acf840df164064814627d8d4574740622ba645f77",
+        "97ecaaa4aac3accaa7fc2bd91916ba82e88881ad7a41fc50208c15d08e67486d",
+        "9811318a940a55d0354cf52788c9f288080c7c88d2ff56c35ee2257e6828771a",
+        "9c40e6beb137d8180917166e14a8e9527477f22f5fd94ac09e53f4dcddb7a8f5",
+        "db7b3284b8d717839f657ea7865727abecc99df09ff12a88b1dbf83a29246662"
+      ]
+    },
+    {
+      "test": "TEST-PLAN-CLI-010",
+      "hashes": [
+        "7ec40cb6dd010ebe3972cfccc7ea1b722fbab4a909a1db8d68ff740b367a689a",
+        "8ddcb2f1e6f3343f02d94487f97b5e6d71d743d6cb5cf8c579694dc1e216374a",
+        "d655abdef72012f50cc045104859d5745ffa9eee4f98fa54cd49e44fd289c4ee",
+        "df88c29850345d35af3c1913bdc40413fbd030e91669234acffffd572389aaa2"
+      ]
+    }
+  ],
+  "errors": []
+}

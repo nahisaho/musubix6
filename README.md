@@ -6,7 +6,7 @@ Agent skills for **lean, spec-driven and test-driven development** and for
 
 For this source checkout, a version string does not establish publication or release qualification.
 
-This source candidate is **0.2.8**, with JSON planning enabled by default.
+This source candidate is **0.2.10**, with JSON planning enabled by default.
 The published v0.2.7 package retains its opt-in behavior. Candidate metadata
 does not establish publication or qualification. The dated release-status
 paragraphs below are historical, not the current publication status.
@@ -73,8 +73,8 @@ or network error, or use the source checkout; do not assume the version is
 unpublished.
 
 ```sh
-npm view musubix6@latest version &&
-npm install -g musubix6@latest &&
+npm view musubix6@latest version --prefer-online --registry=https://registry.npmjs.org &&
+npm install -g musubix6@latest --prefer-online --registry=https://registry.npmjs.org &&
 musubix6 --version &&
 musubix6 init . &&
 musubix6 list
@@ -84,9 +84,9 @@ Without a global install, run `npx --yes musubix6@latest init .` instead.
 `init` copies the bundled skills into the target's `.github/skills/`.
 
 For reproducible validation, record and use an exact version rather than
-`@latest`. To use this source candidate, **0.2.8**, first check
-`npm view musubix6@0.2.8 version`, then install with
-`npm install -g musubix6@0.2.8` only if available. Otherwise, use the source checkout.
+`@latest`. To use this source candidate, **0.2.10**, first check
+`npm view musubix6@0.2.10 version`, then install with
+`npm install -g musubix6@0.2.10` only if available. Otherwise, use the source checkout.
 
 `init` accepts a relative or absolute destination; omitting it uses the current
 directory. `--force` and `--only a,b` can appear before or after the destination.
@@ -176,13 +176,13 @@ inspect it before sharing and do not force-add logs to Git. Storage errors fail 
 gate explicitly. This observability fix does not identify the original intermittent
 failure tracked in [#385](https://github.com/nahisaho/musubix6/issues/385).
 
-## Keep implementation plans aligned with specifications (v0.2.8 development)
+## Keep implementation plans aligned with specifications (v0.2.10 candidate)
 
 <!-- implementation-planning:v0.2.7 -->
 
 For multi-feature work, an agent can maintain one specification-linked JSON
 plan instead of a separate Markdown task list. This section describes the
-v0.2.8 development behavior, not a published v0.2.8 release.
+v0.2.10 candidate behavior, not evidence of a published v0.2.10 release.
 
 **Prerequisites:** use the CLI and skills from this development version, current approved
 `.sdd/specs/*.md`, and an agent-authored `.sdd/implementation-plan.json`.
@@ -217,6 +217,26 @@ JSON is limited to1MiB; each check timeout is1..600000ms. Derived states are
 author planned regression tests/stubs as needed to make inputs measurable,
 and resolve consistency failures before production implementation.
 Replace `FEATURE` and `TASK` below with real IDs from the current plan.
+
+### Preview binding updates without executing checks (v0.2.10)
+
+```bash
+musubix6 sdd --help
+musubix6 sdd plan bindings --json
+```
+
+Help succeeds without reading project inputs. The read-only `bindings` stage
+reports current spec hashes, effective prerequisites, input fingerprints,
+retained history and an RFC6902 patch limited to task `specs`/`dependencies`.
+Review and explicitly apply the proposed replacements, then rerun `plan check`.
+Missing entries inside those two objects are allowed only for preview;
+malformed hashes, extra keys, invalid graphs and unsafe paths still refuse.
+Unknown inputs are `null`, propagate to dependents and make the stage exit2.
+Partial safe proposals may still be printed; never substitute a guessed hash.
+No checks run, files change, receipts are adopted or completion is certified.
+A successful preview is not verification, a gate, release qualification or
+publication approval. Inspect the reported head/verdict/staleness before
+fresh verification; failed or missing history is not repaired by a patch.
 
 ### Check consistency and read the task context
 
@@ -429,9 +449,9 @@ approval or release readiness. Keep targeted tests and the final full `gate`.
 Only Linux/Node 24 has been exercised locally; macOS/Windows remain unverified.
 No measured time or AI-cost reduction is claimed.
 
-### Claude Code and dual-host installation (v0.2.8)
+### Claude Code and dual-host installation (v0.2.10)
 
-These examples target the 0.2.8 CLI. Check npm availability in
+These examples target the 0.2.10 CLI. Check npm availability in
 [Installation](#installation) before installing, or use the
 [source checkout](#install-from-source-git-clone).
 The published 0.2.2 CLI also supports `--host`; the 0.1.x npm versions do not.
@@ -497,7 +517,7 @@ that npm's `latest` tag contains the fixes.
 Updating musubix6 has **two separate parts**: update the CLI, then refresh the
 skills copied into each project. `npm install -g` alone does not update an
 existing project's `.github/skills/` or `.claude/skills/`.
-The steps below use the default Copilot host. For the v0.2.8 CLI,
+The steps below use the default Copilot host. For the v0.2.10 CLI,
 back up/review `.claude/skills/` and add `--host claude` to refresh Claude copies,
 or use `--host both` and back up/review both directories.
 
@@ -526,14 +546,14 @@ or use `--host both` and back up/review both directories.
 3. Update the global CLI to the latest published version:
 
    ```sh
-   npm install -g musubix6@latest
+   npm install -g musubix6@latest --prefer-online --registry=https://registry.npmjs.org
    musubix6 --version
    ```
 
    To install a specific version instead, use a version such as
-   `npm install -g musubix6@0.2.8`, after checking
-   `npm view musubix6@0.2.8 version`. `@latest` follows the current npm tag
-   and may differ from this 0.2.8 source candidate.
+   `npm install -g musubix6@0.2.10`, after checking
+   `npm view musubix6@0.2.10 version`. `@latest` follows the current npm tag
+   and may differ from this 0.2.10 source candidate.
    Updating the CLI does not overwrite project
    files at this stage.
 
@@ -568,9 +588,9 @@ or use `--host both` and back up/review both directories.
 
 ### Update without a global install (npx)
 
-Before using this candidate, check `npm view musubix6@0.2.8 version`.
+Before using this candidate, check `npm view musubix6@0.2.10 version`.
 `@latest` follows npm's current tag and may differ from this checkout's
-0.2.8. Use the source checkout if registry access is unavailable.
+0.2.10. Use the source checkout if registry access is unavailable.
 
 Back up the target project's skills as above, then run these commands in its
 root:
@@ -584,7 +604,7 @@ Review the changes as in step 5. This refreshes the copied skills but does not
 update any separately installed global `musubix6` command. For the SDD gate
 check, use `npx --yes musubix6@latest sdd gate` so that the selected version runs
 instead of an older global CLI. To pin a version, replace `@latest` with
-`@0.2.8` in every npx command, including the gate check.
+`@0.2.10` in every npx command, including the gate check.
 
 ### Update a source checkout
 

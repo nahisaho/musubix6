@@ -47,6 +47,9 @@ from those current specs; delegate the schema and seven-step workflow to
 sibling `lean-sdd-tdd`. Record existing characterization honestly rather than
 relabelling it a new failing regression. Run `plan check` and report unknown
 bindings before production implementation.
+Use `plan bindings --json` for a read-only binding-only proposal when needed;
+inspect and explicitly adopt known hashes before checking. The preview runs
+no checks, writes no files and cannot resolve null inputs or retained failures.
 Subsequent behavior changes require the ordinary new-REQ Red/Green cycle and
 `plan verify TASK`; adopt only its current successful receipt and update
 progress after each verified task. After specification changes, replan

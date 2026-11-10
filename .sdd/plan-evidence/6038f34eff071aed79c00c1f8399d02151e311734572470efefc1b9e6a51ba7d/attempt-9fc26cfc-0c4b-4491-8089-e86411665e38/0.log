@@ -1,0 +1,12 @@
+r36 candidate path resolutions=14 for 4000 basenames; root/source helpers preserved
+r36 executable probes=11 for 5000 node identifiers shared by two checks
+✔ TEST-R36C-CLOSURE-001 r36c #367 absent basenames avoid normalization without losing existing helpers (533.281832ms)
+✔ TEST-R36C-CLOSURE-002 r36c #367 repeated executable identifiers share fresh closure fingerprints (553.537832ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3504.258309

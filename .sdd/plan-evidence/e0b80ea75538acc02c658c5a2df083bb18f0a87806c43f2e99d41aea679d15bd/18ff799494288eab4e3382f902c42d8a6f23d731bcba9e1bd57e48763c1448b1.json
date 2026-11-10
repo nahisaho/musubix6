@@ -1,0 +1,101 @@
+{
+  "schemaVersion": 1,
+  "task": "TASK-NODE-SUMMARY-003",
+  "sequence": 2,
+  "previous": "d3f9c89b710a7ca360fde0d9de6d6a5dd05fef8381371d38b00e5417c5704f2e",
+  "definitionSha256": "967acee7720c90ed8f29952a1a7a7652bfffca7bdeacba1c86221bcb0093341f",
+  "inputSha256": "98674d0ac89cb10470edcc1d907b9ffc258e31f0c9e8f4ea9bb001ac4d73062c",
+  "status": "PASS",
+  "exit": 0,
+  "checks": [
+    {
+      "name": "regression-1",
+      "argv": [
+        "node",
+        "--test",
+        "--test-name-pattern",
+        "^(?:.*\\b(?:TEST-NODE-SUMMARY-003|TEST-NODE-SUMMARY-004))(?![0-9A-Za-z])",
+        ".github/skills/lean-sdd-tdd/scripts/sdd.test.mjs"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/e0b80ea75538acc02c658c5a2df083bb18f0a87806c43f2e99d41aea679d15bd/attempt-3b81450f-c1fd-4f6a-848b-f93bc3f88edf/0.log",
+        "sha256": "12efa1181b24fff3ad18a8f8945a599d27ed27e66eab77f3b12508f93d558588",
+        "bytes": 349
+      }
+    },
+    {
+      "name": "native-TEST-NODE-SUMMARY-003",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/GitHub/musubix6/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-NODE-SUMMARY-003",
+        "--root",
+        "/home/nahisaho/GitHub/musubix6"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/e0b80ea75538acc02c658c5a2df083bb18f0a87806c43f2e99d41aea679d15bd/attempt-3b81450f-c1fd-4f6a-848b-f93bc3f88edf/1.log",
+        "sha256": "12e54d67393ed4d21c2253340d5336263ed628480b717272329fa46845c3deb7",
+        "bytes": 64
+      }
+    },
+    {
+      "name": "native-TEST-NODE-SUMMARY-004",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/GitHub/musubix6/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-NODE-SUMMARY-004",
+        "--root",
+        "/home/nahisaho/GitHub/musubix6"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/e0b80ea75538acc02c658c5a2df083bb18f0a87806c43f2e99d41aea679d15bd/attempt-3b81450f-c1fd-4f6a-848b-f93bc3f88edf/2.log",
+        "sha256": "3d9dfb37189dd9fa1269c184485b8f6cb45c177dabb6f50111bc75cc0a43edd3",
+        "bytes": 65
+      }
+    }
+  ],
+  "ledgerEvents": [
+    {
+      "test": "TEST-NODE-SUMMARY-003",
+      "hashes": [
+        "036f5f929f3dbb8dbb951b2ada0ad3fbbaf72deef1445dee26570f69edb8fc92",
+        "1b275fce4721bc092138138eb36b01a35d6f92f621c1bd097e0be87f1981aba8",
+        "361320f939cbf4513d0a1f20ca23a94cfa41fb7258977fcb035691c1416f8fbe",
+        "5ef29665ae293e089dd105aae20b63f75813006e0e609e6ca3e3fb55c73dd736",
+        "cfe7d317ac0a82a975c7040bd4b18aa8aa4fb3f299965deb80cb48bfa6b25c57",
+        "fba1b9c83ff3653987751375f10c79ac8643f1cbd62190dad7c3b72bf129cf9d"
+      ]
+    },
+    {
+      "test": "TEST-NODE-SUMMARY-004",
+      "hashes": [
+        "0cd585bfbc5d1b6d6976e8ccef0f4251c80910df75f537371cf4cbd9e4d32faa",
+        "1fba38e30a4f110509e2288ab08b7d9f5d9911785d6cebfe5dee9708dda67996",
+        "31d635aefb41d59a02eb3eb0bfbd2f500ffd978ee08257bef8933a3a58cd599b",
+        "369d0f72dbc9dade16f08fd24e1f4a189b84089321b2037cd02d90d4b7934760",
+        "a3fa8d9060abdcf40b4fa3fb0c3b54de79b55d5cf9a070d5c9cde1ee2f42c471",
+        "d7f82ca1f6ab00aa88273b9ebbab4a5940b7e7afbb767d2a86d50785d5951893"
+      ]
+    }
+  ],
+  "errors": []
+}

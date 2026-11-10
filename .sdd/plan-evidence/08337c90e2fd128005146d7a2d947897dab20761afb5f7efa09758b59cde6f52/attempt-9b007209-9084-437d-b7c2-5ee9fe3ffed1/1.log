@@ -1,0 +1,11 @@
+✔ TEST-DIAGCLI-004 worker success, cwd, timeout, signals, output boundaries and protocol (1744.073026ms)
+✔ TEST-DIAGCLI-PROCSTATE-001 distinguishes terminal transitions from live unknown and failed probes (1.620231ms)
+✔ TEST-DIAGCLI-CLOSE-001 checks close-time deadlines and retains native failures during descendant cleanup (513.551834ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2505.302089

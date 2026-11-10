@@ -1,0 +1,10 @@
+✔ TEST-NODE-SUMMARY-003 every check attempt keeps exact private output and fail-closed retry history (2368.048899ms)
+✔ TEST-NODE-SUMMARY-004 retention rejects unsafe storage and records bounded process failures (14635.238571ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 19436.203592

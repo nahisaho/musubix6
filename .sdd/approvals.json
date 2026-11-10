@@ -252,16 +252,15 @@
   "release-qualification": {
     "by": "nahisaho",
     "kind": "human",
-    "review": "Same explicit90727c0b seven-artifact human approval, which cryptographically binds exact helper28ec18ed/test57c89a75; approved production bytes now verified after native Red/Green/mutation/restoration, refresh current implementation snapshot only; no scope change/main/tag/npm/GH385 exception",
-    "at": "2026-11-07T02:25:23.169Z",
+    "at": "2026-11-10T07:48:43.289Z",
     "artifacts": {
       ".sdd/specs/release-qualification.md": "90727c0b7a25f3c18a941b24dc1ee09c07bb82357511fa23689c1d02a89dedce",
       ".sdd/release-validation.v0.2.8.json": "683269310de4498ee64f33cfe2b4e30e742a33fbf616da3577770198bb6bb280",
       ".sdd/release-content-mutations.v0.2.8.json": "07f7567b66498bb10ee1da8a9bc367db1f891982353fb2f17a45a23376c2fd01",
       ".sdd/specs/claude-code-support.md": "82bb16e36ab143167e445dcb422d49f5c0f9af8ea024bcc51c4e3092cfefee9b",
-      "README.md": "bf778bde30d77e538a850e342ac5b518354179b205706827e1480294addb95c7",
-      "README-ja.md": "efb7a08fdd02fa0719f5ac31f819ac7d5c061cefe87b97d3ab60309efbcf748c",
-      "CLANGELOG.md": "d1c7e13ac5d29dafc6dc876a8ee52025cab8edce77e05a16f222e534cfb26c7d"
+      "README.md": "8dc3288651f7a3b28dc4a25b92f04ca63f9ecd81a2d793a7cd14da8ef69c4645",
+      "README-ja.md": "45e3abf8658fc019abe6c0c8921dae31fd6c81fcf31fa66ccf2cda6910cb26b5",
+      "CLANGELOG.md": "9a3a0879ed3acc05e2e3c3d8111c2ebbcdcf07ef776eb9ec31d3e324e5846a64"
     },
     "tier": "T2",
     "requireHuman": true,
@@ -329,10 +328,11 @@
   "implementation-plan-cli": {
     "by": "ai:claude-sonnet-5.5",
     "kind": "ai",
-    "review": "Independent T2 specification review: all-unset migration and direct/wrapper/standalone fail-closed boundaries; no scope narrowing or release authorization.",
-    "at": "2026-11-05T06:16:50.274Z",
+    "review": ".sdd/review-implementation-plan-cli.md",
+    "reviewSha": "d5d2d239d844c24639893b9b2de7986ae574b88e48037a648c4e003185ebed0c",
+    "at": "2026-11-09T22:32:51.154Z",
     "artifacts": {
-      ".sdd/specs/implementation-plan-cli.md": "b11456fe2fa58e4c722f92a9a735049c19dc357bfecf8108e274dcd7ada23f16"
+      ".sdd/specs/implementation-plan-cli.md": "025edb593a1f14dfd2c1f9a5118ad2a3a2b0bdd6b7ac845abbd4129c4cf9c3c1"
     },
     "tier": "T2",
     "requireHuman": false
@@ -348,5 +348,34 @@
     "tier": "T2",
     "requireHuman": true,
     "code": {}
+  },
+  "japanese-prose-naturalness": {
+    "by": "nahisaho",
+    "kind": "human",
+    "at": "2026-11-08T13:48:27.350Z",
+    "artifacts": {
+      ".sdd/specs/japanese-prose-naturalness.md": "1399674c8e6c68d1ee6b7a8c4860ed00fe1498127dbf3313f2d6f0e9c344e147"
+    },
+    "tier": "T2",
+    "requireHuman": true,
+    "code": {
+      ".github/skills/japanese-prose/scripts/core.py": "3b875d90b556a26002a9ef320c66376cf86b7260e664a80c651d1cdc65d485f3",
+      ".github/skills/japanese-prose/scripts/lint.py": "b45e8591ed8fb423a3ddc4171d42484f06b4ac391056af4ead23c79689a64cde"
+    }
+  },
+  "ci-regression-fixtures": {
+    "by": "ai:rubber-duck",
+    "kind": "ai",
+    "review": "Initial and final delta review24a5f820: no blockers; prior input-sweep findings resolved; limits and interrupted baseline recovery recorded in feature review.",
+    "at": "2026-11-10T02:10:05.643Z",
+    "artifacts": {
+      ".sdd/specs/ci-regression-fixtures.md": "40688b171ff273268c0b9f17f5aa08be41230b95392d6306409ee54c404f9e24",
+      "scripts/release-qualification.test.mjs": "72933e3fcbda01e5a123f9e537b102b44c15731296781bb054a6ce9fcfe86fb5",
+      "scripts/release-host-mutations.test.mjs": "6a6798b24e1aae5bb01c8502c4edb99da0281894562c25779bf3bbb7deccd914",
+      ".github/skills/lean-sdd-tdd/scripts/sdd.test.mjs": "306b6d5d3d9fe13a364870831eb0f4d812df9ba644bc4ce002bc86d7bed779c1",
+      ".github/skills/lean-sdd-tdd/scripts/implementation-plan-cli.test.mjs": "d830cf57e9a94c52d88a88134e3d52ab906b0513135df3cc247f5d58ded3e474"
+    },
+    "tier": "T2",
+    "requireHuman": false
   }
 }

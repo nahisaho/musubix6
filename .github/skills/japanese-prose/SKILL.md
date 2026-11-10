@@ -125,6 +125,22 @@ The score is a triage aid, not a quality certificate. Read
 observations; the agent remains responsible for deciding whether a change is
 correct in context.
 
+`ambiguous_metaphor` is an advisory candidate with noun, dependency and verb
+evidence, not a judgment that a metaphor is wrong or proof of its intended
+meaning. Review the matched expression, not an unrelated quotation elsewhere
+in the sentence. Preserve physical uses, quoted examples and intentional
+domain language.
+
+`reader_prompt_cliche` is limited to an isolated question or the stock
+prefixes 「以上です」「さて」 with punctuation and whitespace. Additional
+paragraph content suppresses this candidate; a real proposal or request must
+not be deleted merely because it contains 「いかがでしょうか」.
+
+All prose tools use CommonMark inline-code parsing, including longer
+backtick delimiters, embedded backticks and multiline spans. They mask code
+without changing the input file; use each tool's declared `uv` environment.
+The existing invariant gate still blocks protected-code edits.
+
 ## Completion report
 
 Report:

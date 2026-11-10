@@ -14,7 +14,7 @@ const digest = file => crypto.createHash('sha256').update(fs.readFileSync(file))
 
 /** @id TEST-RELQ-HOST-001 @verifies REQ-RELQ-003 REQ-RELQ-005 */
 test('TEST-RELQ-HOST-001 retains every inherited host mechanism and detects current version mutants with owned restored controls', t => {
-  const cases = hostMutations('0.2.8');
+  const cases = developmentHostMutations();
   assert.deepEqual(cases.map(item => item.name), inherited.hostMutationCatalogue,
     'all28 inherited host mechanisms must remain executable on the current candidate');
   assert.equal(replace('alpha', 'beta')('alpha'), 'beta');
@@ -182,3 +182,20 @@ test('TEST-RELQ-HOST-001 retains every inherited host mechanism and detects curr
   assert.deepEqual(['package.json', 'bin/musubix6.mjs'].map(file => digest(path.join(root, file))), before,
     'isolated mutations must not modify the source candidate');
 });
+
+/** @id TEST-CI-FIXTURE-002 @verifies REQ-CI-FIXTURE-002 */
+test('TEST-CI-FIXTURE-002 every development host mutation applies to the actual stable candidate', () => {
+  const cases = developmentHostMutations();
+  assert.deepEqual(cases.map(item => item.name), inherited.hostMutationCatalogue);
+  for (const item of cases) {
+    const original = fs.readFileSync(path.join(root, item.file), 'utf8');
+    let mutated;
+    assert.doesNotThrow(() => { mutated = item.mutate(original); }, item.name);
+    assert.notEqual(mutated, original, item.name);
+  }
+});
+
+/** @id CODE-CI-FIXTURE-002 @implements REQ-CI-FIXTURE-002 */
+function developmentHostMutations() {
+  return hostMutations(JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8')).version);
+}

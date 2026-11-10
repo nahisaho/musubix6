@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "task": "TASK-CI-FIXTURE-002",
+  "sequence": 1,
+  "previous": "",
+  "definitionSha256": "0ae27d82957c69dbfaae761c27556c90ad6ea7df926f63e15c2b40caf9a04f7d",
+  "inputSha256": "f3f774af6d81ef53a939c6d66506d167c8e4051380b6dd736336cf5387a3bded",
+  "status": "PASS",
+  "exit": 0,
+  "checks": [
+    {
+      "name": "regression",
+      "argv": [
+        "node",
+        "--test",
+        "--test-name-pattern",
+        "TEST-CI-FIXTURE-002",
+        "scripts/release-host-mutations.test.mjs"
+      ],
+      "timeoutMs": 120000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/a58ed2a1f339580ab6f9d30c38a26bf7fe75241f750a09803b15323b61a67559/attempt-1f157d9b-0b56-4e5f-ac0a-4ea2e1f74019/0.log",
+        "sha256": "48a4242b582725c4896aa2cd99c3d87f6643114ac3305308583dceaa8b821f68",
+        "bytes": 222
+      }
+    },
+    {
+      "name": "native-TEST-CI-FIXTURE-002",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/tmp/musubix6-v0210-28d27536/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-CI-FIXTURE-002",
+        "--root",
+        "/tmp/musubix6-v0210-28d27536"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/a58ed2a1f339580ab6f9d30c38a26bf7fe75241f750a09803b15323b61a67559/attempt-1f157d9b-0b56-4e5f-ac0a-4ea2e1f74019/1.log",
+        "sha256": "be330e9d7b3bf470a2d530d7b26bde217fc4988a1692926490ccc2b67f93189e",
+        "bytes": 59
+      }
+    }
+  ],
+  "ledgerEvents": [
+    {
+      "test": "TEST-CI-FIXTURE-002",
+      "hashes": [
+        "230f6598220d933d9ece0c84da3f47ab6a47bcb56ea166efc303664887272e94",
+        "331e03db01a4f12b7d14681e62264f81061a162750ca315a4fa05b6151d929ff",
+        "491079a39468e04ccb7a3030f53eecf6630874c21419bae1f55ac3eea08747a7"
+      ]
+    }
+  ],
+  "errors": []
+}

@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 1,
+  "task": "TASK-R30C-001",
+  "sequence": 2,
+  "previous": "f6f4e95a83d3a7f2dd727862951ffad0b98d9a9e1f59e81fe3a6c724b6ab21e8",
+  "definitionSha256": "b1d6931dd58a3db4534ac2df82fff34e176e90fb97a4833b14dcc7120bfabc16",
+  "inputSha256": "f5602ed0393abf86ae6a96bd3e483800dd78f8e1dbd04649f05609f2dbcbe0cc",
+  "status": "PASS",
+  "exit": 0,
+  "checks": [
+    {
+      "name": "regression-1",
+      "argv": [
+        "node",
+        "--test",
+        "--test-name-pattern",
+        "^(?:.*\\b(?:TEST-R30C-001))(?![0-9A-Za-z])",
+        ".github/skills/lean-sdd-tdd/scripts/sdd.test.mjs"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/3b49ac15fffb42a59de2da4cd3805f12f07f96f42487890c7f5a479e55ac3ca5/attempt-cadbbd1f-b772-4373-a6c0-060296d6f112/0.log",
+        "sha256": "2460831f31eb54ec48dc7459755c316ae5c30f2e7984ed8b04d402e46a518619",
+        "bytes": 233
+      }
+    },
+    {
+      "name": "native-TEST-R30C-001",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/GitHub/musubix6/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-R30C-001",
+        "--root",
+        "/home/nahisaho/GitHub/musubix6"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/3b49ac15fffb42a59de2da4cd3805f12f07f96f42487890c7f5a479e55ac3ca5/attempt-cadbbd1f-b772-4373-a6c0-060296d6f112/1.log",
+        "sha256": "7c52f30f08d16b5180c4c2a5a820d8db3a06b5d25faf15c2602ce4d40857f3cc",
+        "bytes": 48
+      }
+    }
+  ],
+  "ledgerEvents": [
+    {
+      "test": "TEST-R30C-001",
+      "hashes": [
+        "045ba0792d119fd747eea2eda8d65617da9747bef77517f74a9aae2b588acb1f",
+        "24597e5c388b7a3ba14353b2c7e250cc9b143aeaaa88820eea3a2d22ab7b07eb",
+        "4033cc0ef310a71112761ef7447440b595ac9366c520c207b24e95a9243f9390",
+        "999bd1277043d2d2d43f11ae45d1927240ef0658897fbeb235adb54bafb056c9",
+        "b5f7a63a21272676d4fd190aa63f2ec96549ec978828d9315ee33f4de24e16b3",
+        "f7195598041b601ae1a963003395e37a02b7498c273d17b16353ef95c1a359ac"
+      ]
+    }
+  ],
+  "errors": []
+}

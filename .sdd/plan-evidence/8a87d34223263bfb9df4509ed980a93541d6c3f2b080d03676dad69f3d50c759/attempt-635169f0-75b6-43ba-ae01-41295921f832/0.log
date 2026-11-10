@@ -1,0 +1,10 @@
+✔ #374 TEST-R36J-DIAGNOSTIC-001 zero exit cannot erase plain or internally SGR-split Go compiler diagnostics (601.992003ms)
+✔ #374 TEST-R36J-COLOR-001 colored actual native missing-symbol diagnostics retain independently valid inference (1105.781828ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 4205.46307

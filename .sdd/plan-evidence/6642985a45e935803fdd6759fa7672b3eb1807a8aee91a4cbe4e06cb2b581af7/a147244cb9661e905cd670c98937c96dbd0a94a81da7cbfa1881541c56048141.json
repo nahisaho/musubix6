@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 1,
+  "task": "TASK-KOTO-SYNC-001",
+  "sequence": 2,
+  "previous": "cb57dd51306a1c4cffe7ae8856aa726216d83fd0377b33cefe9c317946a6c02e",
+  "definitionSha256": "74395777567a3b69b2b723e7f1588fb7bd33ed8c741954606719aef8993f3e84",
+  "inputSha256": "9ebceeb6cf9ff0f80e038f84b5a0dfe30df722f1f655a52264aaa6c225302cd4",
+  "status": "PASS",
+  "exit": 0,
+  "checks": [
+    {
+      "name": "regression-1",
+      "argv": [
+        "node",
+        "--test",
+        "--test-name-pattern",
+        "^(?:.*\\b(?:TEST-KOTO-SYNC-001))(?![0-9A-Za-z])",
+        "scripts/kotonoha-skills.test.mjs"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/6642985a45e935803fdd6759fa7672b3eb1807a8aee91a4cbe4e06cb2b581af7/attempt-407048a0-79eb-41b8-afcf-20a8de9da9b2/0.log",
+        "sha256": "42e0721afc38d86a918fc51bc2629bece0929000d5b084b371ea300a92f8520f",
+        "bytes": 204
+      }
+    },
+    {
+      "name": "native-TEST-KOTO-SYNC-001",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/GitHub/musubix6/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-KOTO-SYNC-001",
+        "--root",
+        "/home/nahisaho/GitHub/musubix6"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/6642985a45e935803fdd6759fa7672b3eb1807a8aee91a4cbe4e06cb2b581af7/attempt-407048a0-79eb-41b8-afcf-20a8de9da9b2/1.log",
+        "sha256": "2dd4de951d52de6f53daa533f045f5597f2ad59db3cc4fb0284cba9ffacc6e2d",
+        "bytes": 57
+      }
+    }
+  ],
+  "ledgerEvents": [
+    {
+      "test": "TEST-KOTO-SYNC-001",
+      "hashes": [
+        "0ff3c21e7986d0ffe13afea1646820afcb8bf38feb75e72ef43ed77414ca725e",
+        "5d25e51f7439637acb1102882de0d898bcd9e5a767b8d1294009ad4f99063915",
+        "6078f7cfb0c8834e1f0b5928b771ca7fce91e176eafb1a6a6192cd9ca38d6b45",
+        "9de096e32ba5919bc8d63a5f2c80d8cd20e5719370ada58f58a328230a91ede8",
+        "ab40cc280f0661e9c2320011b83b26dd73609ba61235ae7c4035abca18e994df",
+        "abb016d68f2954fb42fc0db34b94d735b3dfba859475ec902f34ee2fa5225413"
+      ]
+    }
+  ],
+  "errors": []
+}

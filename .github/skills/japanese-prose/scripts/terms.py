@@ -5,6 +5,7 @@
 #   "ginza>=5.3.0,<5.4",
 #   "ja-ginza>=5.3.0,<5.4",
 #   "spacy>=3.8.16,<4",
+#   "markdown-it-py>=3,<5",
 # ]
 # ///
 # @id CODE-GINZA-002 @implements REQ-GINZA-001

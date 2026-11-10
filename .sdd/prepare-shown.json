@@ -8,5 +8,6 @@
   "implementation-plan-contract": "e17d79769daddaee739076e77033225e13a2173dfa0f4aa9813eb6fd03adcf67",
   "implementation-plan-evidence": "7e88457e5fe509f41d3480c1f4d62ec8492af11857afc4cbad5397caa846175c",
   "implementation-plan-cli": "5a5b6c5e5280ff57d099e801eb340f4bf122187576ce1f35ef2e4b66b21b6652",
-  "implementation-plan-workflow": "a31ea9c1fe79f018e6361c0a3244d1969a87ee0a9342bd689eef0e31e0c64fba"
+  "implementation-plan-workflow": "a31ea9c1fe79f018e6361c0a3244d1969a87ee0a9342bd689eef0e31e0c64fba",
+  "japanese-prose-naturalness": "1399674c8e6c68d1ee6b7a8c4860ed00fe1498127dbf3313f2d6f0e9c344e147"
 }

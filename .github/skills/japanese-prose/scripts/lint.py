@@ -5,6 +5,7 @@
 #   "ginza>=5.3.0,<5.4",
 #   "ja-ginza>=5.3.0,<5.4",
 #   "spacy>=3.8.16,<4",
+#   "markdown-it-py>=3,<5",
 # ]
 # ///
 # @id CODE-GINZA-001 @implements REQ-GINZA-001
@@ -17,6 +18,7 @@ import json
 import re
 import statistics
 import sys
+import unicodedata
 from collections import Counter
 from pathlib import Path
 
@@ -37,7 +39,7 @@ from core import (
 PHRASE_RULES = {
     "と言えるでしょう": ("formulaic_conclusion", "断定を弱める定型句です。根拠か具体的な判断に置き換えます。"),
     "と言えるだろう": ("formulaic_conclusion", "断定を弱める定型句です。根拠か具体的な判断に置き換えます。"),
-    "いかがでしょうか": ("reader_prompt_cliche", "読者への定型的な呼びかけです。必要な行動を直接示します。"),
+    "いかがでしょうか": ("reader_prompt_cliche", "定型的な締めくくりの候補です。問いかけの目的と前後の文脈を確認します。"),
     "結論として": ("formulaic_transition", "結論の内容を見出しまたは先頭文で直接示します。"),
     "以下のとおりです": ("empty_preview", "後続内容の要点を先に示します。"),
     "重要なポイント": ("abstract_emphasis", "何が重要かを具体的な条件や数値で示します。"),
@@ -87,6 +89,25 @@ GENRE_LIMITS = {
     "tech": {"length": 110, "critical_length": 180, "commas": 6, "depth": 9},
     "business": {"length": 80, "critical_length": 140, "commas": 5, "depth": 8},
 }
+
+METAPHOR_PAIRS = {
+    ("時間", "obj", "溶かす"),
+    ("方針", "obj", "倒す"),
+    ("説明", "nsubj", "刺さる"),
+    ("提案", "nsubj", "刺さる"),
+}
+QUOTE_PAIRS = {"「": "」", "『": "』", "“": "”"}
+
+
+# @id CODE-JAPROSE-002 @implements REQ-JAPROSE-002
+def standalone_reader_prompt(text: str) -> bool:
+    compact = "".join(
+        character for character in text
+        if not character.isspace() and not unicodedata.category(character).startswith("P")
+    )
+    return compact in {
+        "いかがでしょうか", "以上ですいかがでしょうか", "さていかがでしょうか",
+    }
 
 
 def add(
@@ -161,6 +182,48 @@ def proofread(block, doc, findings: list[Finding]) -> None:
             first_style = style
 
 
+def quotation_ranges(text: str) -> list[tuple[int, int]]:
+    ranges: list[tuple[int, int]] = []
+    ascii_open: dict[str, int] = {}
+    stack: list[tuple[str, int]] = []
+    for index, character in enumerate(text):
+        if character == "'" and 0 < index < len(text) - 1:
+            left, right = text[index - 1], text[index + 1]
+            if left.isascii() and left.isalnum() and right.isascii() and right.isalnum():
+                continue
+        if character in {"'", '"'}:
+            start = ascii_open.pop(character, None)
+            if start is None:
+                ascii_open[character] = index
+            else:
+                ranges.append((start, index + 1))
+        elif character in QUOTE_PAIRS:
+            stack.append((character, index))
+        elif stack and character == QUOTE_PAIRS[stack[-1][0]]:
+            _, start = stack.pop()
+            ranges.append((start, index + 1))
+    return ranges
+
+
+# @id CODE-JAPROSE-001 @implements REQ-JAPROSE-001
+def review_metaphors(block, doc, findings: list[Finding]) -> None:
+    quotes = quotation_ranges(block.text)
+    for token in doc:
+        verb = token.head
+        pair = (token.lemma_, token.dep_, verb.lemma_)
+        if token.pos_ not in {"NOUN", "PROPN"} or verb.pos_ != "VERB" or pair not in METAPHOR_PAIRS:
+            continue
+        if any(start <= token.idx < end or start <= verb.idx < end for start, end in quotes):
+            continue
+        add(
+            findings, sentence_line(block, token.sent.start_char),
+            "ambiguous_metaphor", "info",
+            "比喩の意味が読み手に伝わるか確認します。対象や意図が不明なら、推測で書き換えません。",
+            token.sent.text,
+            {"noun": pair[0], "relation": pair[1], "verb": pair[2]},
+        )
+
+
 def analyze(path: Path, genre: str, reading_load: bool) -> dict:
     text = read_text(path)
     blocks = iter_prose_blocks(text)
@@ -173,11 +236,16 @@ def analyze(path: Path, genre: str, reading_load: bool) -> dict:
     for block, doc in zip(blocks, nlp.pipe([item.text for item in blocks])):
         if not reading_load:
             proofread(block, doc, findings)
+            review_metaphors(block, doc, findings)
         paragraph_tokens = content_tokens(doc)
         if paragraph_tokens:
             paragraph_leads.append((block.start_line, paragraph_tokens[0].lemma_))
 
         for phrase, (category, message) in PHRASE_RULES.items():
+            if category == "reader_prompt_cliche":
+                if not reading_load and standalone_reader_prompt(block.text):
+                    add(findings, block.start_line, category, "warning", message, block.text)
+                continue
             pattern = re.escape(phrase)
             if category == "formulaic_conclusion":
                 pattern += r"(?!か|[?？])"

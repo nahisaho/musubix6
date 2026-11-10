@@ -1,0 +1,265 @@
+{
+  "schemaVersion": 1,
+  "task": "TASK-JAPROSE-001",
+  "sequence": 1,
+  "previous": "",
+  "definitionSha256": "5a81190cd5d8903d09296e5c5f3bfad5eae0ba375a59eb5a7d6c017908052f7c",
+  "inputSha256": "2d542c3ddff649a1b0a7f9c57a11128d2a7b6daf00126b1923a101d6d7f56a32",
+  "status": "PASS",
+  "exit": 0,
+  "checks": [
+    {
+      "name": "japanese-prose-regressions",
+      "argv": [
+        "node",
+        "--test",
+        "scripts/japanese-prose-naturalness.test.mjs"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/ea509afbde8ff438cd6b6e4dc31fa9436b424733518d711be4b61866eb346b9b/attempt-e05b36d9-4374-47df-a164-e6107f2e3f97/0.log",
+        "sha256": "426697576b7c8829f3475eb10d53d6126448255b1f950bde560e5335030bd069",
+        "bytes": 641
+      }
+    },
+    {
+      "name": "installed-ginza-compatibility",
+      "argv": [
+        "node",
+        "--test",
+        "--test-name-pattern",
+        "TEST-GINZA-001(?![0-9A-Za-z])",
+        "scripts/kotonoha-skills.test.mjs"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/ea509afbde8ff438cd6b6e4dc31fa9436b424733518d711be4b61866eb346b9b/attempt-e05b36d9-4374-47df-a164-e6107f2e3f97/1.log",
+        "sha256": "81f2e940f08c805b6310265cb1327faa43e4be53404adee5bdfdc284fd085a5d",
+        "bytes": 218
+      }
+    },
+    {
+      "name": "native-TEST-JAPROSE-001",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/GitHub/musubix6/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-JAPROSE-001",
+        "--root",
+        "/home/nahisaho/GitHub/musubix6"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/ea509afbde8ff438cd6b6e4dc31fa9436b424733518d711be4b61866eb346b9b/attempt-e05b36d9-4374-47df-a164-e6107f2e3f97/2.log",
+        "sha256": "b5553a57969e53507c855861d9cd03a1cc921a5658a3beb90690d7d1ce2d252f",
+        "bytes": 54
+      }
+    },
+    {
+      "name": "native-TEST-JAPROSE-002",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/GitHub/musubix6/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-JAPROSE-002",
+        "--root",
+        "/home/nahisaho/GitHub/musubix6"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/ea509afbde8ff438cd6b6e4dc31fa9436b424733518d711be4b61866eb346b9b/attempt-e05b36d9-4374-47df-a164-e6107f2e3f97/3.log",
+        "sha256": "70abf11a2028fb6bd84686f3bcda7242c2da1768d5ebba589250b6c54cd990d2",
+        "bytes": 54
+      }
+    },
+    {
+      "name": "native-TEST-JAPROSE-003",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/GitHub/musubix6/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-JAPROSE-003",
+        "--root",
+        "/home/nahisaho/GitHub/musubix6"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/ea509afbde8ff438cd6b6e4dc31fa9436b424733518d711be4b61866eb346b9b/attempt-e05b36d9-4374-47df-a164-e6107f2e3f97/4.log",
+        "sha256": "a96f57d5aa2a83afbde5316c5b610282cb0e7a619ae8d09dd178773778e8b95a",
+        "bytes": 54
+      }
+    },
+    {
+      "name": "native-TEST-JAPROSE-004",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/GitHub/musubix6/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-JAPROSE-004",
+        "--root",
+        "/home/nahisaho/GitHub/musubix6"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/ea509afbde8ff438cd6b6e4dc31fa9436b424733518d711be4b61866eb346b9b/attempt-e05b36d9-4374-47df-a164-e6107f2e3f97/5.log",
+        "sha256": "c4fe86e4fa2eb4ebd3e89c3942e05829b024e18c02941d5cac5faa2228081a4a",
+        "bytes": 54
+      }
+    },
+    {
+      "name": "native-TEST-JAPROSE-005",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/GitHub/musubix6/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-JAPROSE-005",
+        "--root",
+        "/home/nahisaho/GitHub/musubix6"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/ea509afbde8ff438cd6b6e4dc31fa9436b424733518d711be4b61866eb346b9b/attempt-e05b36d9-4374-47df-a164-e6107f2e3f97/6.log",
+        "sha256": "6875b2caf35a69a3e89b14db8bc96f24ceb3dad1e41d274bd6d750f35a4419c3",
+        "bytes": 54
+      }
+    },
+    {
+      "name": "native-TEST-GINZA-001",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/GitHub/musubix6/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-GINZA-001",
+        "--root",
+        "/home/nahisaho/GitHub/musubix6"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/ea509afbde8ff438cd6b6e4dc31fa9436b424733518d711be4b61866eb346b9b/attempt-e05b36d9-4374-47df-a164-e6107f2e3f97/7.log",
+        "sha256": "b446e4a2df3b30204bf7ea0ec5778faf6d22982820f269589993b201e1b0df6b",
+        "bytes": 51
+      }
+    }
+  ],
+  "ledgerEvents": [
+    {
+      "test": "TEST-JAPROSE-001",
+      "hashes": [
+        "5912a62a851c81f6071c9d0540762df1c6ea5575de822b0086e09eafdab8a543",
+        "7e921e883d4169584959d1d56cf21429317ccfab49a613170f6e30973c63f89b",
+        "944da2044e9a69ba5a80d36e1eb843979244f54739d674541b1cca40da8194b4",
+        "97c37097f9b17967fae29d884d28274668c1ea16bdeddbb239228f0cf544d517",
+        "9bc8061eec0c9985e31e979649d6cc1f1d6901ecec54ed91c4bc27770c5367b3",
+        "ab8431642128aedf0f5c2e69d848709547460ce5e96e13a19d0a701681d43957",
+        "c10b2b5f321610ce9d43b3454f640cb25ea2c5e99eff98a6379ca05f0cf72b24",
+        "dddd896e89434abecba91053df1dd9706aeea910803ded04b8ec81aecbc62772",
+        "de72de3578aa77abfc3bf661fb48126713b75f901f5dddeb3bea05e534171473"
+      ]
+    },
+    {
+      "test": "TEST-JAPROSE-002",
+      "hashes": [
+        "0ba66ee37da9984d4b54dda924388323649f41cd3810d80b17c3056eef84af95",
+        "106471ee17e768024778ae8996bba85655483320096b7eb9a47a057c10e2e0a8",
+        "26a94c5a7abaf9b1cb2927dbf5c4439d63135ce42ea73e088de4b402d5d9a514",
+        "6f0afcac381b09852943df7e3dd48c02f4fef5e41f4d9e2bc10fc7cbf7c0fe87",
+        "6f0d9a66212aa2cccc6ad127a97c86933b3426b61dcee0d3e4b982510fd8d43c",
+        "9e4612e529fc6f6363ef0400a0b7111e2330a948da7916c9bc7603f10534d4bb",
+        "b5fd779a0ee45e31ac3741e50fab4446f1a86226936fd2523264ddb10543bd56",
+        "f4635aaac32eaef9ed7ad2dcb3740d70163befd163a74c892a4bca64ac961a7a"
+      ]
+    },
+    {
+      "test": "TEST-JAPROSE-003",
+      "hashes": [
+        "1c404f5b71e53792937a31b66a311a2bb716d9802859d71a606296d80397c4a7",
+        "34f0c5370b26e07752a05b05c84e4bad49eeb3371e57888492b7f0576b0b68f5",
+        "3f0e577cfc7de10b58c2741c0aea081544acaa527d409062fad852e2b2f08ef7",
+        "8460d9cab9c713ba9a218f9f29abdf3cf9c6ea679e78bd303e26599c23a844b8",
+        "8f12b755f7a223fe1756097b95259dabba217fe82d069316ecd30818c3a7d9d1",
+        "bdfc5adf6aaad9e7f93281869bb8aed92f641ff4e72178b275f7aa22eea1222a",
+        "cdc5a0bc28f625b8f0397f1fdaab9440ba3a747ae924f69ea91546cb90b0ed13"
+      ]
+    },
+    {
+      "test": "TEST-JAPROSE-004",
+      "hashes": [
+        "038978147f01445187863fff0ec241cfbda3a3be5f3ac8c8d01a935b607978ee",
+        "2f26d85b498e69a69c9499e853c731869069a51a7c5e3457fee884992518e0de",
+        "309bb771c1bf6a1077932cd6aa77f60cab878965939a1626cfb9bfa65bbe6b4b",
+        "40951fc544525455a8ada38582bcd3bb3c48dffdb0a553f77f95554692c7b0ca",
+        "420e0e541083bf8713ac0a6f72da534c6d64f6d037d55dc25aa171beb4c25fee",
+        "70c294cdea26766df0b41d4bdd7e799cf9bd30f8650e2b805bd365ef9cad3933",
+        "e2be3f5195c20d8d32842c4a9c02ce2c7ef8a0d967b507f51fb69729f1855c1f",
+        "ff88e6ffc34ba30a49789f920629182ee89d4c49861f7f9326145ff62032e839"
+      ]
+    },
+    {
+      "test": "TEST-JAPROSE-005",
+      "hashes": [
+        "050044f67331e31fe94e7c2510ad40b6166d06cb80358888b0d749648269f0f2",
+        "43add9a29837a4314f9ebda5f0aebbdd19917b31b952b2a6bbee3477381e8fc7",
+        "6b377fb3bdc6f5afb9b14c24749129ecc25e7601cab2f5f968827743105f8a63",
+        "a993dffbcba8362163eda4db8e6da3f6114c296e86986b3319ed9f83c577dcc2",
+        "b784d38dc65ff24ab7e3ba60a6c3ebcdfeee20ee80c569776ebbcd912edc93e0",
+        "c649fb9adc233ab1448d24f4a07d10f416cebbbf642d7f50ef0a45ac7f8d180e",
+        "dfebf3ff623a85de75b3416fce39ed1a9099f8eac2ae3d297d4b2cec2a1fc7ea"
+      ]
+    },
+    {
+      "test": "TEST-GINZA-001",
+      "hashes": [
+        "03141a671f7d887ee3a34e8d914893c8a0a7480e2b678defceabfae3ed99b9f9",
+        "0cf3411f73a40e6d822e7d6a542f6c629551e3f8449c4ffdfe4a0f484a31654e",
+        "63f440cfaae33ea3bbdf41efbe24a781361a6497f292dd41675a3f3fe4aa41eb",
+        "7c137982c27e74ec3a18cd97bf3a0fef492be5d7d23e300cd90c0bf2b544d321",
+        "b21ad8e69eba5bed0e129c25acb29c6d6aa87ab41ec607f010b7be07af4bfe8b",
+        "b2e837e7482c14133a25f341f1a54e3313fe61a5b93d31ee01fd10da45996bb8",
+        "c4b1dea6513fd05c3ad1abd2a871d4ae2469652125bcaac6c3eec2d578bcaf5d",
+        "dd58aca84060c17feaf847f8fc3f9af3799cdf6b69434754d5dc8183c0dbc7ec",
+        "e5f9b08090c478e03be93da999119c8bd29687d0e45294053ad4d9deaa137bd3",
+        "f0d7eecbfd012ebefb7e162f0460bb8e6cd476216da3ec832dfd676b4c31741b",
+        "fd0a4c803a055d482454b73101f88b7b04f079b7df5663fddec2d8106e311736"
+      ]
+    }
+  ],
+  "errors": []
+}

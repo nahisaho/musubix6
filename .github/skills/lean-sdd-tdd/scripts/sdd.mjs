@@ -46,7 +46,7 @@ if (planningCommand) {
   }
 }
 const [planningModel = {}, planningEvidence = {}, planningCli = {}] = planningModules;
-const { PlanningError, loadImplementationPlan } = planningModel;
+const { PlanningError, loadImplementationPlan, loadImplementationPlanBindings } = planningModel;
 const { evaluateImplementationPlan } = planningEvidence;
 const { readPlanningConfiguration, planningRefusal, planningTaskScope,
   publicPlanningResult, emitPlanningResult, runPlanningCommand } = planningCli;
@@ -836,7 +836,8 @@ const testShaVariant = (p, id, trim, norm = false, legacy = false, cut = true, i
 };
 const testOwnSha = (p, id) => { eolNorm = true; try { return testShaVariant(p, id, true, true); } finally { eolNorm = false; } };
 const testSha = (p, id) => { eolNorm = true; try { return externalOracleSha(p, testShaVariant(p, id, true, true)); } finally { eolNorm = false; } };
-const shaMatchesBase = (recorded, p, id) => /\.(?:py|jl)$/.test(p) || BRACE_TEST.test(p) ? recorded === testSha(p, id) || (/\.(?:c|cc|cpp|cxx)$/.test(p) && (() => { cLegacy = true; try { return recorded === testSha(p, id); } finally { cLegacy = false; } })()) : shaMatchesRaw(recorded, p, id) || (() => { eolNorm = true; try { return shaMatchesRaw(recorded, p, id); } finally { eolNorm = false; } })();
+/** @id CODE-PLAN-CLI-CANONICAL-HASH @implements REQ-PLAN-CLI-012 */
+const shaMatchesBase = (recorded, p, id) => /\.(?:py|jl)$/.test(p) || BRACE_TEST.test(p) ? recorded === testSha(p, id) || (/\.(?:c|cc|cpp|cxx)$/.test(p) && (() => { cLegacy = true; try { return recorded === testSha(p, id); } finally { cLegacy = false; } })()) : recorded === testSha(p, id) || shaMatchesRaw(recorded, p, id) || (() => { eolNorm = true; try { return shaMatchesRaw(recorded, p, id); } finally { eolNorm = false; } })();
 // a comment-only `@id CODE-… @implements …` line added to a test file is not a test edit (#300): retry with those lines dropped
 let stripCodeAnn = false;
 const CODE_ANN_LINE = /^[ \t]*(?:\/\/|#|--|;|%|\/?\*)+.*@id\s+CODE-.*(?:\r?\n|$)/gm;
@@ -1325,7 +1326,7 @@ function testRegionSha(p, id) {
   } catch { return undefined; }
 }
 const evidenceLedgerProblems = new WeakMap();
-function evidenceStatus(testId, testPath, entries) {
+function evidenceStatus(testId, testPath, entries, matches = shaMatches) {
   // Evidence checks share an immutable ledger snapshot; hash it once, not once per test.
   if (!evidenceLedgerProblems.has(entries)) evidenceLedgerProblems.set(entries, verifyChain(entries));
   const problem = evidenceLedgerProblems.get(entries);
@@ -1333,13 +1334,13 @@ function evidenceStatus(testId, testPath, entries) {
   const es = entries.filter((e) => e.test === testId);
   // reverting to content that already has Green/Refactor evidence recovers it, even after a later refactor recorded against moved setup (#274)
   const gs = es.filter((e) => e.type === 'green');
-  const g = gs.filter((e) => shaMatches(e.fileSha, testPath, testId)).at(-1) ?? gs.at(-1);
+  const g = gs.filter((e) => matches(e.fileSha, testPath, testId)).at(-1) ?? gs.at(-1);
   if (!g) return { ok: false, why: 'no Green recorded' };
   const r = es.filter((e) => e.type === 'red' && e.seq < g.seq && e.fileSha === g.fileSha).at(-1);
   if (!r) return { ok: false, why: 'no Red preceding Green with same test hash' };
   const ge = es.filter((e) => e.type === 'green' || e.type === 'refactor');
-  const last = ge.filter((e) => shaMatches(e.fileSha, testPath, testId)).at(-1) ?? ge.at(-1);
-  if (!shaMatches(last.fileSha, testPath, testId)) return { ok: false, why: `test changed since last Green/Refactor${oracleNote(changedOracleDeps(last, testPath, testId))} (if the spec changes the expected output, update the test and re-record: tdd red ${testId} --retest "<reason>", then tdd green; otherwise revert the test)`.replace(/^(.*?) \(if the spec.*$/, (m, a) => last.regSha && last.regSha === testRegionSha(testPath, testId) ? `${a} but its own lines did not (shared test-file content moved): re-run tdd refactor ${testId}${last.req && loadSpecs().some((x) => x.tier === 'T1' && x.reqs.some((q) => q.id === last.req)) ? ' --wording "<why>"' : ''} (a --retest needs the test expectation itself to change)` : m) };
+  const last = ge.filter((e) => matches(e.fileSha, testPath, testId)).at(-1) ?? ge.at(-1);
+  if (!matches(last.fileSha, testPath, testId)) return { ok: false, why: `test changed since last Green/Refactor${oracleNote(changedOracleDeps(last, testPath, testId))} (if the spec changes the expected output, update the test and re-record: tdd red ${testId} --retest "<reason>", then tdd green; otherwise revert the test)`.replace(/^(.*?) \(if the spec.*$/, (m, a) => last.regSha && last.regSha === testRegionSha(testPath, testId) ? `${a} but its own lines did not (shared test-file content moved): re-run tdd refactor ${testId}${last.req && loadSpecs().some((x) => x.tier === 'T1' && x.reqs.some((q) => q.id === last.req)) ? ' --wording "<why>"' : ''} (a --retest needs the test expectation itself to change)` : m) };
   // every verified REQ is hash-tracked (reqShas); older entries carry only the first one
   for (const [rid, rsha] of Object.entries(last.reqShas ?? { [last.req]: last.reqSha })) {
     if (rsha && reqShaOf(rid) && !reqShaSame(rid, rsha)) return { ok: false, why: `${rid} changed in the spec since last Green/Refactor: re-verify with tdd refactor (wording only) or tdd red/green (behaviour changed)` };
@@ -6975,46 +6976,69 @@ function planningSession(specs, scanned) {
     const metadata = specs.map(spec => ({ ...spec, reqs: spec.reqs.map(req => ({ ...req,
       tests: [...new Set([...req.tests, ...[...scanned.ents.values()].filter(entity => entity.kind === 'TEST'
         && entity.refs.verifies.includes(req.id)).map(entity => entity.id)])] })) }));
-    const loaded = loadImplementationPlan({ root: ROOT, config, specs: metadata });
+    const preview = pos[0] === 'plan' && pos[1] === 'bindings';
+    const loader = preview ? loadImplementationPlanBindings : loadImplementationPlan;
+    const loaded = loader({ root: ROOT, config, specs: metadata });
     if (loaded.exit) return loaded;
     const nativeScript = fileURLToPath(import.meta.url);
     const nativeChecks = task => task.tests.map(id => ({ name: `native-${id}`,
       argv: [process.execPath, nativeScript, 'tdd', 'refactor', id, '--root', ROOT],
       timeoutMs: Math.min(config.timeoutMs ?? 600000, 600000) }));
-    const inspect = task => {
-      const bindings = Object.fromEntries(task.tests.map(id => [id, null])), errors = [], events = [];
-      const problem = (id, exit, reason) => errors.push({ id, exit, reason });
+    let cachedInspection;
+    /** @id CODE-PLAN-CLI-PREVIEW-INPUTS @implements REQ-PLAN-CLI-011 */
+    function inspectionInputs() {
+      if (preview && cachedInspection) {
+        if (Object.hasOwn(cachedInspection, 'error')) throw cachedInspection.error;
+        return cachedInspection.value;
+      }
       try {
-        const currentConfig = readPlanningConfiguration(ROOT, loadConfig);
-        const currentSpecs = loadSpecs(), { ents, dups } = scanEntities(listFiles());
+        const currentConfig = preview ? config : readPlanningConfiguration(ROOT, loadConfig);
+        const currentSpecs = preview ? specs : loadSpecs();
+        const { ents, dups } = preview ? scanned : scanEntities(listFiles());
         const tool = sha(['sdd.mjs', 'implementation-plan.mjs', 'implementation-plan-evidence.mjs',
           'implementation-plan-cli.mjs', 'spec-context.mjs'].map(file => file + '\0'
             + sha(fs.readFileSync(new URL(file, import.meta.url)))).join('\0'));
-        const trace = traceCheck(ents, dups, currentSpecs);
-        const ids = new Set([...task.reqs, ...task.tests]);
-        for (const reason of trace.errors) if ([...reason.matchAll(/\b(?:REQ|TEST|CODE)-[A-Z0-9-]+\b/g)].some(match => ids.has(match[0]))) {
-          problem(task.id, / has no test \(@verifies\)/.test(reason) ? 2 : 1, reason);
-        }
+        const trace = traceCheck(ents, dups, currentSpecs), ledgerErrors = [];
         let entries = [], ledgerUnavailable = false;
         try {
           const fd = fs.openSync(LEDGER, 'r');
           try {
-            if (fs.fstatSync(fd).size > 67108864) throw new PlanningError(2, task.id, 'Native ledger exceeds read budget');
+            if (fs.fstatSync(fd).size > 67108864) throw new PlanningError(2, 'native-ledger', 'Native ledger exceeds read budget');
             const bytes = fs.readFileSync(fd);
-            if (bytes.length > 67108864) throw new PlanningError(2, task.id, 'Native ledger exceeds read budget');
+            if (bytes.length > 67108864) throw new PlanningError(2, 'native-ledger', 'Native ledger exceeds read budget');
             entries = new TextDecoder('utf-8', { fatal: true }).decode(bytes).split('\n').filter(Boolean).map(line => JSON.parse(line));
           } finally { fs.closeSync(fd); }
         } catch (error) {
           if (error.code !== 'ENOENT') {
-            if (error instanceof PlanningError) problem(error.id, error.exit, error.message);
+            if (error instanceof PlanningError) ledgerErrors.push({ exit: error.exit, reason: error.message });
             else if (error instanceof SyntaxError || error instanceof TypeError || error.code) {
-              problem(task.id, 2, 'Native ledger is unavailable or unparseable');
+              ledgerErrors.push({ exit: 2, reason: 'Native ledger is unavailable or unparseable' });
             } else throw error;
             ledgerUnavailable = true;
           }
         }
         const chain = ledgerUnavailable ? null : verifyChain(entries);
-        if (chain) problem(task.id, 1, `invalid native ledger: ${chain}`);
+        if (chain) ledgerErrors.push({ exit: 1, reason: `invalid native ledger: ${chain}` });
+        const value = { currentConfig, currentSpecs, ents, tool, trace, entries, ledgerUnavailable, chain, ledgerErrors };
+        if (preview) cachedInspection = { value };
+        return value;
+      } catch (error) {
+        if (preview) cachedInspection = { error };
+        throw error;
+      }
+    }
+    const inspect = task => {
+      const bindings = Object.fromEntries(task.tests.map(id => [id, null])), errors = [], events = [], inputErrors = [];
+      const problem = (id, exit, reason) => errors.push({ id, exit, reason });
+      try {
+        const { currentConfig, currentSpecs, ents, tool, trace, entries,
+          ledgerUnavailable, chain, ledgerErrors } = inspectionInputs();
+        const ids = new Set([...task.reqs, ...task.tests]);
+        for (const reason of trace.errors) if ([...reason.matchAll(/\b(?:REQ|TEST|CODE)-[A-Z0-9-]+\b/g)].some(match => ids.has(match[0]))) {
+          problem(task.id, / has no test \(@verifies\)/.test(reason) ? 2 : 1, reason);
+        }
+        inputErrors.push(...ledgerErrors.map(error => ({ ...error, id: task.id })));
+        errors.push(...inputErrors);
         for (const id of task.tests) {
           const entity = ents.get(id);
           if (!entity || entity.kind !== 'TEST') { problem(id, 2, 'Required native TEST is unavailable'); continue; }
@@ -7032,7 +7056,12 @@ function planningSession(specs, scanned) {
             }
           }
           if (chain || ledgerUnavailable) continue;
-          const status = evidenceStatus(id, entity.path, entries);
+          const compared = new Map();
+          const matches = preview ? recorded => {
+            if (!compared.has(recorded)) compared.set(recorded, shaMatches(recorded, entity.path, id));
+            return compared.get(recorded);
+          } : shaMatches;
+          const status = evidenceStatus(id, entity.path, entries, matches);
           if (!status.ok) {
             problem(id, /^no (?:Green|Red)/.test(status.why) ? 2 : 1, status.why);
             continue;
@@ -7042,7 +7071,7 @@ function planningSession(specs, scanned) {
           for (const entry of entries.filter(entry => entry.test === id)) {
             if (entry.type === 'red') { reds.set(entry.fileSha, entry); continue; }
             if (!['green', 'refactor'].includes(entry.type)) continue;
-            const current = shaMatches(entry.fileSha, entity.path, id);
+            const current = matches(entry.fileSha, entity.path, id);
             if (entry.type === 'green') {
               latest = { green: entry, red: reds.get(entry.fileSha) };
               if (current) matching = latest;
@@ -7063,7 +7092,7 @@ function planningSession(specs, scanned) {
         else if (error.code) problem(task.id, 2, `Native evidence input unavailable (${error.code})`);
         else throw error;
       }
-      return { bindings, events, errors };
+      return { bindings, events, errors, inputErrors };
     };
     return { ...loaded, adapter: { inspect, nativeChecks, run(argv, timeoutMs) {
       const result = run1(argv, timeoutMs, '.', 8388609);
@@ -8082,7 +8111,7 @@ async function cmdDiagnostics() {
 }
 
 const cmds = { review: cmdReview, init: cmdInit, approve: cmdApprove, guard: cmdGuard, tdd: cmdTdd, trace: cmdTrace, gate: cmdGate, status: cmdStatus, plan: cmdPlan, impact: cmdImpact, context: cmdContext, diagnostics: cmdDiagnostics };
-const fn = cmds[pos[0]];
+const fn = Object.hasOwn(cmds, pos[0]) ? cmds[pos[0]] : undefined;
 // a mistyped flag (`gate --changd`) must not silently run the full gate (#146)
 // known flags = every flags.<name> / flags['<name>'] this script reads
 const KNOWN_FLAGS = new Set([...fs.readFileSync(new URL(import.meta.url), 'utf8').matchAll(/\bflags(?:\.([\w-]+)|\['([\w-]+)'\])/g)].map((m) => m[1] ?? m[2]).concat(['help', 'max-bytes']));
@@ -8091,25 +8120,47 @@ if (fn && badFlags.length && pos[0] !== 'diagnostics') {
   out(`unknown flag${badFlags.length > 1 ? 's' : ''}: ${badFlags.map((k) => '--' + k).join(', ')} (known: ${[...KNOWN_FLAGS].map((k) => '--' + k).join(' ')})`);
   process.exit(2);
 }
-if (!fn) {
-  out('usage: sdd.mjs init | review template <feature|--feature f> | review check <file> --feature <f> (or positional feature) | approve prepare|record <feature> | guard | tdd red|green|refactor <TEST-ID> | tdd stub <TEST-ID> [<TEST-ID>... | --all] | tdd check | trace [--baseline] | gate [--changed] [--no-run] | status | plan | impact <REQ|TEST|CODE|file> [--json] | context <feature|REQ|file>... | context --changed [--max-bytes N] [--json]   [--root dir]\n  tdd red: tdd red --characterization "<reason>" records a data-only/characterization test that cannot fail without implementation (weak Red); --expect <text> requires that text in the failure; --allow-setup-red accepts a stub-in-setup Red; --retest "<reason>" re-records a weak Red after correcting a wrong test expectation (needs a previous Red/Green and a changed test); --missing-module accepts a Red caused by the test own not-yet-created import (non-weak); approve record --by ai:<reviewer> needs --review <path|summary>');
-  process.exit(2);
+const usage = 'usage: sdd.mjs init | review template <feature|--feature f> | review check <file> --feature <f> (or positional feature) | approve prepare|record <feature> | guard | tdd red|green|refactor <TEST-ID> | tdd stub <TEST-ID> [<TEST-ID>... | --all] | tdd check | trace [--baseline] | gate [--changed] [--no-run] | status | plan | plan check [--json] | plan verify TASK [--json] | plan bindings [--json] | impact <REQ|TEST|CODE|file> [--json] | context <feature|REQ|file>... | context --changed [--max-bytes N] [--json] | diagnostics [--profile typescript|javascript|python|rust] [--json]   [--root dir]\n  tdd red: tdd red --characterization "<reason>" records a data-only/characterization test that cannot fail without implementation (weak Red); --expect <text> requires that text in the failure; --allow-setup-red accepts a stub-in-setup Red; --retest "<reason>" re-records a weak Red after correcting a wrong test expectation (needs a previous Red/Green and a changed test); --missing-module accepts a Red caused by the test own not-yet-created import (non-weak); approve record --by ai:<reviewer> needs --review <path|summary>';
+/** @id CODE-PLAN-CLI-HELP @implements REQ-PLAN-CLI-008 */
+function validHelp() {
+  const command = pos[0] === 'help' ? pos[1] : pos[0];
+  if (Object.keys(flags).some(flag => !KNOWN_FLAGS.has(flag) && !(command === 'diagnostics' && flag === 'profile'))) return false;
+  if (command === undefined) return true;
+  if (!Object.hasOwn(cmds, command)) return false;
+  if (pos[0] === 'help') return pos.length === 2;
+  const args = pos.slice(1);
+  if (!args.length) return true;
+  if (command === 'plan') return args.length === 1 && ['check', 'bindings', 'verify'].includes(args[0])
+    || args.length === 2 && args[0] === 'verify';
+  if (command === 'context') return true;
+  if (command === 'impact') return args.length === 1;
+  if (command === 'approve') return args.length <= 2 && ['prepare', 'record', 'retire'].includes(args[0]);
+  if (command === 'review') return args.length <= 3 && ['template', 'check'].includes(args[0]);
+  if (command === 'tdd') return ['check', 'merge-ledger'].includes(args[0]) && args.length === 1
+    || ['red', 'green', 'refactor'].includes(args[0]) && args.length <= 2
+    || args[0] === 'stub' && args.slice(1).every(id => /^TEST-[A-Z0-9]+(?:-[A-Z0-9]+)*$/.test(id));
+  return false;
 }
-if (fn && flags.help && !['impact', 'diagnostics'].includes(pos[0])) {
-  out(`usage: sdd.mjs ${pos[0]} ${{ gate: '[--changed] [--no-run] [--verbose]', trace: '[--baseline] [--verbose]', context: '<feature|REQ|file>... [--changed] [--max-bytes N] [--json]' }[pos[0]] ?? '(see sdd.mjs --help for all commands)'}`.replace('sdd.mjs gate', 'gate').replace('sdd.mjs trace', 'trace'));
-  process.exit(0);
-}
-if (planningCommand && !planningModules.length) {
-  const refusal = standalonePlanningRefusal();
-  if (refusal) {
-    out(flags.json ? JSON.stringify(refusal) : `SDD PLAN ${refusal.status}: ${refusal.errors[0].reason}`);
-    process.exit(refusal.exit);
+if (pos[0] === 'diagnostics' && flags.help
+  && Object.keys(flags).some(flag => !['help', 'root', 'profile'].includes(flag))) {
+  process.exitCode = await cmdDiagnostics();
+} else if (flags.help || pos[0] === 'help') {
+  out(usage);
+  process.exitCode = validHelp() ? 0 : 2;
+} else {
+  if (!fn) { out(usage); process.exit(2); }
+  if (planningCommand && !planningModules.length) {
+    const refusal = standalonePlanningRefusal();
+    if (refusal) {
+      out(flags.json ? JSON.stringify(refusal) : `SDD PLAN ${refusal.status}: ${refusal.errors[0].reason}`);
+      process.exit(refusal.exit);
+    }
   }
-}
-/** @id CODE-PLAN-CLI-006 @implements REQ-PLAN-CLI-004 */
-try { process.exitCode = await fn() ?? 0; }
-catch (error) {
-  if (!/^REFUSED: (?:source scan:|unresolved (?:Rust include (?:oracle|ownership)|pytest_plugins|Python (?:relative import|module)))/.test(error.message)) throw error;
-  out(error.message);
-  process.exit(1);
+  /** @id CODE-PLAN-CLI-006 @implements REQ-PLAN-CLI-004 */
+  try { process.exitCode = await fn() ?? 0; }
+  catch (error) {
+    if (!/^REFUSED: (?:source scan:|unresolved (?:Rust include (?:oracle|ownership)|pytest_plugins|Python (?:relative import|module)))/.test(error.message)) throw error;
+    out(error.message);
+    process.exit(1);
+  }
 }

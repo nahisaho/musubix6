@@ -26,11 +26,28 @@ consecutive nouns.
 Name who checks, changes, approves, records, or observes something. Avoid
 turning actions into abstract nouns when a direct verb is clearer.
 
+An objective nonhuman subject can be precise. Do not invent a human actor
+for a system action merely to make the sentence sound conversational.
+
+## Resolve figurative language from context, not plausibility
+
+Check what an expression refers to, who acts, and what effect is intended.
+An advisory metaphor finding is not a ban: preserve deliberate imagery,
+quoted examples and established domain usage when they serve the reader.
+Offer a concrete alternative only when the surrounding facts support it.
+If the intended meaning is unclear, keep the original and report the
+uncertainty rather than fabricate an interpretation.
+
 ## Treat formulaic expressions as review targets
 
 Expressions such as 「と言えるでしょう」 or 「以下のとおりです」 are not
 automatically wrong. Keep them only when their rhetorical function is
 necessary. Otherwise state the evidence, conclusion, or preview directly.
+
+A question that names a proposal, date or requested decision can be useful;
+the preceding sentence may supply its target. Do not remove it merely
+because it uses 「いかがでしょうか」. Review isolated stock closings in
+context, without inventing a request that the author did not make.
 
 ## Vary rhythm according to information weight
 
@@ -47,6 +64,10 @@ established product names, protocol names, identifiers, and domain terms.
 
 Keep distinctions among confirmed facts, estimates, assumptions, and
 recommendations. Do not make prose smoother by increasing certainty.
+
+Preserve tense, conditions, exceptions, negation, register and the author's
+voice. Keep defined terms even when a more familiar synonym sounds smoother.
+Necessary corrections and optional style changes remain separate decisions.
 
 ## Use emphasis sparingly and safely
 
