@@ -6681,7 +6681,8 @@ test('#258 gate --help prints usage and does not run the gate', () => {
   const d = mini('---\nfeature: r\ntier: T1\n---\n| REQ-R-001 | x shall work. | TEST-R-001 |\n');
   const r = sdd(d, 'gate', '--help');
   assert.equal(r.code, 0, r.out);
-  assert.match(r.out, /usage: gate/, r.out);
+  assert.match(r.out, /usage: sdd\.mjs/, r.out);
+  assert.match(r.out, /gate \[--changed\] \[--no-run\]/, r.out);
   assert.doesNotMatch(r.out, /SDD GATE/, r.out);
 });
 

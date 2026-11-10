@@ -871,3 +871,13 @@ test('TEST-PLAN-CLI-005 standalone legacy commands survive absent optional plann
   fs.unlinkSync(path.join(directory, 'outside-config.json'));
   for (const entry of [script, standalone]) json(call(f.root, ['plan', '--json'], entry), 1);
 });
+
+/** @id TEST-CI-FIXTURE-003 @verifies REQ-CI-FIXTURE-003 */
+test('TEST-CI-FIXTURE-003 retained gate-help control agrees with the global help contract', () => {
+  const file = fileURLToPath(new URL('./sdd.test.mjs', import.meta.url));
+  const result = spawnSync(process.execPath, ['--test', '--test-name-pattern', '^#258 gate --help', file],
+    { env, encoding: 'utf8', timeout: 60000, maxBuffer: 8 * 1024 * 1024 });
+  assert.equal(result.error, undefined);
+  assert.equal(result.signal, null);
+  assert.equal(result.status, 0, result.stdout + result.stderr);
+});

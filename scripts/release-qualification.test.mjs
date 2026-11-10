@@ -30,11 +30,11 @@ const read = file => JSON.parse(fs.readFileSync(file, 'utf8'));
 const clone = value => structuredClone(value);
 const digest = value => createHash('sha256').update(value).digest('hex');
 const fileDigest = file => digest(fs.readFileSync(file));
-const inherited = read(path.join(root, inheritedRelative));
-const approvedPlan = read(path.join(root, planRelative));
-const genuineLock = read(path.join(root, approvalsRelative))['release-qualification'];
+const inherited = JSON.parse(qualificationFixtureFile(inheritedRelative));
+const approvedPlan = JSON.parse(qualificationFixtureFile(planRelative));
+const genuineLock = JSON.parse(qualificationFixtureFile(approvalsRelative))['release-qualification'];
 const required = inherited.requiredCells.filter(cell => cell.id !== 'NATIVE-WSLC');
-const contentReference = read(path.join(root, contentRelative));
+const contentReference = JSON.parse(qualificationFixtureFile(contentRelative));
 const write = (file, value) => {
   fs.mkdirSync(path.dirname(file), { recursive: true });
   fs.writeFileSync(file, typeof value === 'string' ? value : JSON.stringify(value, null, 2));
@@ -672,8 +672,7 @@ function workspace(t) {
 }
 
 function contentContext(directory, cellId, source = approvedSourceFixture(directory)) {
-  fs.copyFileSync(path.join(root, contentRelative),
-    path.join(source, contentRelative));
+  write(path.join(source, contentRelative), qualificationFixtureFile(contentRelative));
   return {
     source, output: path.join(directory, 'content'), node: process.execPath,
     cell: { id: cellId, runtime: '24', timeoutSeconds: 3600 },
@@ -690,7 +689,7 @@ function approvedSourceFixture(directory) {
     contentReference.vendorReference.sourceCommit], { cwd: root });
   execFileSync('tar', ['--extract', '--same-permissions', '--file', archive, '--directory', source]);
   for (const file of ['package.json', 'package-lock.json']) {
-    fs.copyFileSync(path.join(root, file), path.join(source, file));
+    write(path.join(source, file), qualificationFixtureFile(file));
   }
   return source;
 }
@@ -724,8 +723,8 @@ test('TEST-RELQ-CONTENT-ADMISSION-001 accepts seven genuine bindings and rejects
 /** @id TEST-RELQ-BASELINE-001 @verifies REQ-RELQ-001 REQ-RELQ-002 */
 test('TEST-RELQ-BASELINE-001 validates the historical approved source inventory before tool preparation', async t => {
   const { preflight } = await import('./release-qualification-cli.mjs');
-  const referencePath = path.join(root, contentRelative);
   const directory = workspace(t), scope = scopeFixture(directory);
+  const referencePath = path.join(scope.root, contentRelative);
   const approvedSource = approvedSourceFixture(directory);
   fs.cpSync(path.join(approvedSource, '.github/skills'), path.join(scope.root, '.github/skills'), { recursive: true });
   assert.doesNotThrow(() => assertContentInventory({ referencePath, referenceSha256: fileDigest(referencePath),
@@ -789,8 +788,9 @@ test('TEST-RELQ-SKILL-001 preserves 1253 exact cases and owned native inventory 
   const row = await runContentCase(context, target);
   assert.equal(row.status, 'PASS');
   assert.doesNotThrow(() => validateContentCase({ row, target, plan, reference: contentReference }));
-  const inventoryInput = { referencePath: path.join(root, contentRelative),
-    referenceSha256: fileDigest(path.join(root, contentRelative)),
+  const referencePath = path.join(context.source, contentRelative);
+  const inventoryInput = { referencePath,
+    referenceSha256: fileDigest(referencePath),
     originRoot: plan.originRoot, origin: 'source', host: 'copilot' };
   assert.doesNotThrow(() => assertContentInventory(inventoryInput));
   assert.throws(() => assertContentInventory({ ...inventoryInput, duplicateProbe: true }), /duplicate paths/);
@@ -1004,11 +1004,11 @@ test('TEST-RELQ-PH-001 binds all 14 cases to exact native assertions and policy 
 function scopeFixture(directory) {
   const source = path.join(directory, 'source');
   for (const relative of Object.keys(genuineLock.artifacts)) {
-    write(path.join(source, relative), fs.readFileSync(path.join(root, relative), 'utf8'));
+    write(path.join(source, relative), qualificationFixtureFile(relative));
   }
-  write(path.join(source, inheritedRelative), fs.readFileSync(path.join(root, inheritedRelative), 'utf8'));
-  const lineageSuite = read(path.join(root, planRelative)).historicalTestLineage.suite;
-  write(path.join(source, lineageSuite), fs.readFileSync(path.join(root, lineageSuite), 'utf8'));
+  write(path.join(source, inheritedRelative), qualificationFixtureFile(inheritedRelative));
+  const lineageSuite = approvedPlan.historicalTestLineage.suite;
+  write(path.join(source, lineageSuite), qualificationFixtureFile(lineageSuite));
   write(path.join(source, approvalsRelative), { 'release-qualification': clone(genuineLock) });
   return {
     root: source,
@@ -1049,7 +1049,7 @@ function currentLiteralRegressionNames() {
 }
 
 function frozenCatalogues() {
-  const mappings = read(path.join(root, planRelative)).historicalTestLineage.mappings;
+  const mappings = approvedPlan.historicalTestLineage.mappings;
   const replaced = new Set(mappings.map(row => row.from));
   return {
     regressions: [...new Set([...inherited.catalogue.filter(name => !replaced.has(name)),
@@ -1290,7 +1290,7 @@ test('TEST-RELQ-001 admits the locked Linux plan and enumerates every cell-polic
     relockFixture(scope);
     await reject(admitPlan(scope), label);
   }
-  write(scope.planPath, fs.readFileSync(path.join(root, planRelative), 'utf8'));
+  write(scope.planPath, qualificationFixtureFile(planRelative));
   write(scope.approvalsPath, { 'release-qualification': clone(genuineLock) });
   for (const relative of Object.keys(genuineLock.artifacts)) {
     const file = path.join(scope.root, relative);
@@ -1350,7 +1350,7 @@ test('TEST-RELQ-LINEAGE-001 admits committed lineage and rejects every invalid m
 
 /** @id TEST-RELQ-LINEAGE-002 @verifies REQ-RELQ-002 REQ-RELQ-003 */
 test('TEST-RELQ-LINEAGE-002 freezes required replacements and never excludes promoted TODOs', async t => {
-  const directory = workspace(t), mappings = read(path.join(root, planRelative)).historicalTestLineage.mappings;
+  const directory = workspace(t), mappings = approvedPlan.historicalTestLineage.mappings;
   const baseline = freezeFixture(path.join(directory, 'valid'));
   const frozen = await pass(freezeCandidate(baseline.request, baseline.effects), 'complete current replacements must freeze without obsolete names');
   assert.deepEqual(frozen.manifest.catalogues.excludedTodos, [], 'all four resolved TODOs are required, not exclusions');
@@ -1660,7 +1660,7 @@ test('TEST-RELQ-SCANNER-001 binds only the two approved scanner prefixes and rej
   }
   const source = path.join(directory, 'scope');
   const suite = overrides[0].suite;
-  write(path.join(source, suite), fs.readFileSync(path.join(root, suite), 'utf8'));
+  write(path.join(source, suite), qualificationFixtureFile(suite));
   const scopedManifest = clone(manifest);
   scopedManifest.catalogues.mutations.mutations = inherited.mutationCatalogue.mutations
     .filter(row => overrides.some(override => override.id === row.id));
@@ -2411,3 +2411,32 @@ test('TEST-RELQ-005 binds durable helpers and exact package-entry receipts witho
     assert.equal(call.host, 'both');
   }
 });
+
+/** @id TEST-CI-FIXTURE-001 @verifies REQ-CI-FIXTURE-001 */
+test('TEST-CI-FIXTURE-001 historical admission is isolated from development bytes and grants no release credit', async t => {
+  const before = Object.keys(genuineLock.artifacts).map(file => [file, fileDigest(path.join(root, file))]);
+  const scope = scopeFixture(workspace(t));
+  const admitted = await admitPlan(scope);
+  assert.equal(admitted.status, 'PASS', JSON.stringify(admitted.errors));
+  assert.equal(fileDigest(path.join(scope.root, 'README.md')),
+    'bf778bde30d77e538a850e342ac5b518354179b205706827e1480294addb95c7');
+  assert.equal(admitted.requiredCells.length, 24);
+  assert.equal(admitted.plan.targetVersion, '0.2.8');
+  assert.equal(admitted.plan.priorQualificationCredit, 0);
+  assert.equal(admitted.plan.publishingAuthorized, false);
+  const historicalSource = approvedSourceFixture(workspace(t));
+  assert.equal(read(path.join(historicalSource, 'package.json')).version, '0.2.8');
+  assert.equal(read(path.join(historicalSource, 'package-lock.json')).version, '0.2.8');
+  assert.throws(() => qualificationFixtureFile('.sdd/specs/ci-regression-fixtures.md'),
+    /does not exist in|exists on disk, but not in/,
+    'a current-only file must not replace a missing historical Git object');
+  fs.appendFileSync(path.join(scope.root, 'README.md'), '\nchanged fixture\n');
+  await reject(admitPlan(scope), 'fixture drift must still invalidate its historical lock');
+  assert.deepEqual(Object.keys(genuineLock.artifacts).map(file => [file, fileDigest(path.join(root, file))]), before);
+});
+
+/** @id CODE-CI-FIXTURE-001 @implements REQ-CI-FIXTURE-001 */
+function qualificationFixtureFile(relative) {
+  return execFileSync('git', ['show', `703a4fed16b781a229a9ce85eeb2e83446ba8d8a:${relative}`],
+    { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+}

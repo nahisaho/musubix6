@@ -363,5 +363,20 @@
       ".github/skills/japanese-prose/scripts/core.py": "3b875d90b556a26002a9ef320c66376cf86b7260e664a80c651d1cdc65d485f3",
       ".github/skills/japanese-prose/scripts/lint.py": "b45e8591ed8fb423a3ddc4171d42484f06b4ac391056af4ead23c79689a64cde"
     }
+  },
+  "ci-regression-fixtures": {
+    "by": "ai:rubber-duck",
+    "kind": "ai",
+    "review": "Initial and final delta review24a5f820: no blockers; prior input-sweep findings resolved; limits and interrupted baseline recovery recorded in feature review.",
+    "at": "2026-11-10T02:10:05.643Z",
+    "artifacts": {
+      ".sdd/specs/ci-regression-fixtures.md": "40688b171ff273268c0b9f17f5aa08be41230b95392d6306409ee54c404f9e24",
+      "scripts/release-qualification.test.mjs": "72933e3fcbda01e5a123f9e537b102b44c15731296781bb054a6ce9fcfe86fb5",
+      "scripts/release-host-mutations.test.mjs": "6a6798b24e1aae5bb01c8502c4edb99da0281894562c25779bf3bbb7deccd914",
+      ".github/skills/lean-sdd-tdd/scripts/sdd.test.mjs": "306b6d5d3d9fe13a364870831eb0f4d812df9ba644bc4ce002bc86d7bed779c1",
+      ".github/skills/lean-sdd-tdd/scripts/implementation-plan-cli.test.mjs": "d830cf57e9a94c52d88a88134e3d52ab906b0513135df3cc247f5d58ded3e474"
+    },
+    "tier": "T2",
+    "requireHuman": false
   }
 }
