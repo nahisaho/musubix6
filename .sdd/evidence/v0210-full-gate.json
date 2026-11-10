@@ -1,0 +1,79 @@
+{
+  "schemaVersion": 1,
+  "stage": "full-project-gate",
+  "verdict": "PASS",
+  "sourceHead": "4a922dee7b86477d446523d8cb395c514e5a9bca",
+  "sourceState": "Source HEAD plus generated cost snapshot and two genuine COST-HISTORY receipt/ledger updates; all are included in this evidence commit.",
+  "startedAt": "2026-11-10T13:26:26.056Z",
+  "finishedAt": "2026-11-10T14:33:23.932Z",
+  "elapsedMs": 4017821.822507,
+  "command": [
+    "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+    ".github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+    "gate",
+    "--json"
+  ],
+  "exit": 0,
+  "changedInputs": [],
+  "planning": {
+    "status": "PASS",
+    "complete": 126,
+    "total": 126
+  },
+  "test": {
+    "attempt": 1,
+    "tests": 1203,
+    "pass": 1203,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "artifacts": {
+    "gate": {
+      "path": ".sdd/evidence/v0210-full-gate/gate.json",
+      "sha256": "7d9687437b39fe4b99b22018f4a6ddf3a4e036f0aeddefac17f8d7829ba15ab5",
+      "bytes": 32018
+    },
+    "process": {
+      "path": ".sdd/evidence/v0210-full-gate/process.json",
+      "sha256": "77d0c6b86e3d3f2faaaff770a10838ad6044869a7cf0cca63dd0eaa411665571",
+      "bytes": 4914
+    },
+    "gateStderr": {
+      "path": ".sdd/evidence/v0210-full-gate/gate.stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "receipt": {
+      "path": ".sdd/evidence/v0210-full-gate/test-receipt.json",
+      "sha256": "83e66a14adb36b6cef7873c3d303ec9f91b837b8d60ea096a34cb21a2ac35a87",
+      "bytes": 442
+    },
+    "stdout": {
+      "path": ".sdd/evidence/v0210-full-gate/test.stdout.log",
+      "sha256": "c71bad5b6e5f96e8355712257eb89824fc03983e076070f1f0d1e31a7837c490",
+      "bytes": 132542
+    },
+    "stderr": {
+      "path": ".sdd/evidence/v0210-full-gate/test.stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    }
+  },
+  "warnings": [
+    "! human-approved diagnostics-contract: implementation changed since approval (.github/skills/lean-sdd-tdd/scripts/diagnostics.test.mjs) — a human should re-review, then approve record",
+    "! human-approved rust-stub-confidence: implementation changed since approval (.github/skills/lean-sdd-tdd/scripts/sdd.mjs) — a human should re-review, then approve record",
+    "! human-approved windows-runner: implementation changed since approval (.github/skills/lean-sdd-tdd/scripts/sdd.mjs) — a human should re-review, then approve record",
+    "! stub: 2 source file(s) of Green REQs still hold SDD-TODO(stub) / 'not implemented:' placeholders: .github/skills/lean-sdd-tdd/scripts/sdd.mjs:1844, .github/skills/lean-sdd-tdd/scripts/sdd.test.mjs:693 — implement or remove them (scopePolicy warn: set \"scopePolicy\": \"strict\" to fail)"
+  ],
+  "limits": [
+    "Existing human-approved implementation-drift warnings for diagnostics-contract, rust-stub-confidence and windows-runner remain warnings; no new human approval is claimed.",
+    "Trace warnings, historical weak/characterization/retest evidence and stub-placeholder warnings remain visible in the exact gate output; these are not new assertion Red claims.",
+    "Standalone JavaScript diagnostics remain INCOMPLETE because no root ESLint flat configuration exists.",
+    "This is one development full-project gate, not two frozen qualification runs, v0.2.10 release readiness, tagging or publication authorization.",
+    "Hosted CI must pass on the final pushed evidence commit before the authorized PR merge.",
+    "The generated cost snapshot was finalized before two COST task verifications and this gate; it is not regenerated afterward because those files are explicit task inputs.",
+    "Raw native output is retained byte-for-byte, including any runner whitespace; formatting checks exclude only raw .log evidence, whose SHA256 is checked independently."
+  ]
+}

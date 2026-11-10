@@ -402,7 +402,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/1517e548507a2deebb202a54350fbfecb559bf735331f257f090736fcc8681b3/c120972f6e2482de03c83338cbe439c1a6fc9911f5625bca1fc18ed973cbd936.json"
+      "receipt": ".sdd/plan-evidence/1517e548507a2deebb202a54350fbfecb559bf735331f257f090736fcc8681b3/8fc2679f3d7829d3b8d9e461375469f15e1b1a07e1a43ff8ce9505a9f214a9bf.json"
     },
     {
       "id": "TASK-COST-HISTORY-002",
@@ -441,7 +441,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/db45ca0244d8f0421a909af8a8dba45c430c6f6e5f46719b2db62f0fcde44be0/ab5de37a6f32f1463bd2fbd371af879056154942349598c647d87b0d37bd861b.json"
+      "receipt": ".sdd/plan-evidence/db45ca0244d8f0421a909af8a8dba45c430c6f6e5f46719b2db62f0fcde44be0/78466aa9934f3304423a4c539ee65509d3b3dd86fecbb6ae8d8225f8b00b16fa.json"
     },
     {
       "id": "TASK-DIAGCLI-001",
