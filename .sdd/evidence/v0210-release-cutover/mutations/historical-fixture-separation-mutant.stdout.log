@@ -1,0 +1,25 @@
+✖ TEST-CI-FIXTURE-001 historical admission is isolated from development bytes and grants no release credit (304.803384ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 420.472917
+
+✖ failing tests:
+
+test at scripts/release-qualification.test.mjs:2583:1
+✖ TEST-CI-FIXTURE-001 historical admission is isolated from development bytes and grants no release credit (304.803384ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception: a current-only file must not replace a missing historical Git object
+      at TestContext.<anonymous> (file:///home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-release-mutations/scripts/release-qualification.test.mjs:2605:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /does not exist in|exists on disk, but not in/,
+    operator: 'throws',
+    diff: 'simple'
+  }

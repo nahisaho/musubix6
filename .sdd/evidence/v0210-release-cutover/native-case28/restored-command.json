@@ -1,0 +1,26 @@
+{
+  "command": [
+    "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+    "--test",
+    "--test-reporter=/tmp/musubix6-v0210-28d27536/scripts/release-host-events.mjs",
+    "--test-name-pattern",
+    "^TEST-JAPROSE-005 copied PEP723 tools independently hide protected inline code$",
+    "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-release-native-case28-r2/content/cases/92bee390bda29936daf0ec0d1906c56f6dc6d1ebccf843d9a75d72a432c9c00d/source/scripts/japanese-prose-naturalness.test.mjs"
+  ],
+  "cwd": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-release-native-case28-r2/content/cases/92bee390bda29936daf0ec0d1906c56f6dc6d1ebccf843d9a75d72a432c9c00d/source",
+  "startedAt": "2026-11-10T22:58:26.538Z",
+  "completedAt": "2026-11-10T22:58:37.904Z",
+  "exit": 0,
+  "signal": null,
+  "timedOut": false,
+  "outputLimit": false,
+  "error": null,
+  "stdout": {
+    "path": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-release-native-case28-r2/content/cases/92bee390bda29936daf0ec0d1906c56f6dc6d1ebccf843d9a75d72a432c9c00d/restored/stdout.log",
+    "sha256": "e9d77a150ebdd341e4379f659b6d2c7151308d37ce6eb3d26bb4de57b2075423"
+  },
+  "stderr": {
+    "path": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-release-native-case28-r2/content/cases/92bee390bda29936daf0ec0d1906c56f6dc6d1ebccf843d9a75d72a432c9c00d/restored/stderr.log",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+}

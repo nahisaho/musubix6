@@ -1,0 +1,1 @@
+RED ok TEST-RELQ-005 (REQ-RELQ-005) 277ms — fails with: AssertionError [ERR_ASSERTION]: Got unwanted exception: the independently chosen stable candidate receipt must

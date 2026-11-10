@@ -1,0 +1,1 @@
+RED ok TEST-RELQ-BASELINE-001 (REQ-RELQ-001) 624ms — fails with: AssertionError [ERR_ASSERTION]: valid inventory must reach the next preparation stage

@@ -296,10 +296,10 @@
       "created": "2026-11-08T00:12",
       "models": {
         "claude-sonnet-5": {
-          "calls": 31,
-          "inputTokens": 1520986,
-          "nanoAiu": 149754610000,
-          "outputTokens": 23057
+          "calls": 44,
+          "inputTokens": 2101173,
+          "nanoAiu": 179278460000,
+          "outputTokens": 27991
         },
         "claude-sonnet-5.5": {
           "calls": 71,
@@ -308,10 +308,10 @@
           "outputTokens": 27512
         },
         "gpt-6.1-sol": {
-          "calls": 595,
-          "inputTokens": 71429812,
-          "nanoAiu": 1907506390000,
-          "outputTokens": 471846
+          "calls": 729,
+          "inputTokens": 84917429,
+          "nanoAiu": 2254125420000,
+          "outputTokens": 568738
         }
       },
       "summary": "Check Latest Version of musubix6"

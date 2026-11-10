@@ -1,0 +1,888 @@
+{
+  "schemaVersion": 1,
+  "stage": "development-cutover-only",
+  "qualificationCredit": 0,
+  "publishingAuthorized": false,
+  "approvalSourceCommit": "1d756415fae1f349aef9be7a82c5b461f1460a27",
+  "controls": [
+    {
+      "path": ".sdd/evidence/v0210-release-cutover/v0210-release-red-admission.log",
+      "sha256": "7c9ff1e44763fd8f1e2f76de2cd3b6be0d41a7f5891d89a5625b6a46053abb0b",
+      "bytes": 163
+    },
+    {
+      "path": ".sdd/evidence/v0210-release-cutover/v0210-release-red-baseline.log",
+      "sha256": "ae5a244b4382d0ca681b39ed1bdf2c1e5a8e5521e3ba86376d8bb68b30e4cd5b",
+      "bytes": 153
+    },
+    {
+      "path": ".sdd/evidence/v0210-release-cutover/v0210-release-red-skill.log",
+      "sha256": "170232873977e6b533595c3c0fb0f56268e10e63b5484fd20310e16cb2e8e636",
+      "bytes": 175
+    },
+    {
+      "path": ".sdd/evidence/v0210-release-cutover/v0210-release-red-package.log",
+      "sha256": "c1e253bc62d5a3f25695d8c4ac6a91458aad9463d7764db526729819a1b6312d",
+      "bytes": 169
+    },
+    {
+      "path": ".sdd/evidence/v0210-release-cutover/v0210-release-green-admission.log",
+      "sha256": "e1011b86a8d047f522c642a087a819c3a26215d7cb5c9bfe4e74b57dffed254a",
+      "bytes": 370
+    },
+    {
+      "path": ".sdd/evidence/v0210-release-cutover/v0210-release-green-baseline.log",
+      "sha256": "fe435598317de97406123fc33ab8853870ec41688051d246a241d85036e52b77",
+      "bytes": 331
+    },
+    {
+      "path": ".sdd/evidence/v0210-release-cutover/v0210-release-green-skill.log",
+      "sha256": "173a28d53fe29c8da8ca7bf01052e21136bdb3bcf0acec6aa560a958ccc4fc23",
+      "bytes": 1011
+    },
+    {
+      "path": ".sdd/evidence/v0210-release-cutover/v0210-release-green-package.log",
+      "sha256": "a258dd212cc15ca9972ef872c02917d232328dab450fa7a5dfd43024f4f78bf6",
+      "bytes": 975
+    },
+    {
+      "path": ".sdd/evidence/v0210-release-cutover/v0210-release-red-mixed-child.log",
+      "sha256": "de5093ac4e2f856b9a0310b45df83da82b31ef10bbc97e32e47845272413ff96",
+      "bytes": 146
+    },
+    {
+      "path": ".sdd/evidence/v0210-release-cutover/v0210-release-green-mixed-child.log",
+      "sha256": "2f86878b00fbc16f8d50cc17bc7d4ce18ed5c9f8af22503a3bdd233d02cc0a2e",
+      "bytes": 982
+    },
+    {
+      "path": ".sdd/evidence/v0210-release-cutover/v0210-release-red-import-error.log",
+      "sha256": "53868e949c4bb016e9987b0471c460cdf5d5ba5666e57c34b2c9e89c07b987ba",
+      "bytes": 163
+    },
+    {
+      "path": ".sdd/evidence/v0210-release-cutover/v0210-release-red-real-child-chain.log",
+      "sha256": "e468359d6d3f4f94dd40da6dee88baffa6751c8a03442dd02209bd61d5e3686e",
+      "bytes": 176
+    },
+    {
+      "path": ".sdd/evidence/v0210-release-cutover/v0210-release-green-complete-child.log",
+      "sha256": "e36dfae959f3834608587fd968d257346463c39193c3c439716a37bafd2ac0e9",
+      "bytes": 51
+    },
+    {
+      "path": ".sdd/evidence/v0210-release-cutover/v0210-release-focused.log",
+      "sha256": "f2a9e81da4984241723a5122413b9edcb6eaf998886bb6ad2ef5bdc9b1987a1f",
+      "bytes": 3633
+    },
+    {
+      "path": ".sdd/evidence/v0210-release-cutover/v0210-release-focused-final.log",
+      "sha256": "3fd4419eecf9732e964f526caebba154422e816b708b5d444ababb36701da73a",
+      "bytes": 3630
+    },
+    {
+      "path": ".sdd/evidence/v0210-release-cutover/v0210-release-focused-complete-child.log",
+      "sha256": "d34ccc5c80b032cb78e8c213113b7209eddf6e0846b19518590ad2f37a87547a",
+      "bytes": 3638
+    },
+    {
+      "path": ".sdd/evidence/v0210-release-cutover/v0210-release-native-refactors.log",
+      "sha256": "ca18cc4ef99a4345fd8f79ce4cb50f445a4654149d786ac0a456f8fc2d881de7",
+      "bytes": 2895
+    },
+    {
+      "path": ".sdd/evidence/v0210-release-cutover/v0210-release-native-refactors-final.log",
+      "sha256": "a8898f2720088c9a4a08e5a57990db28e60658f72dae3fc633b0dda7e1cce786",
+      "bytes": 2947
+    }
+  ],
+  "diagnostics": {
+    "path": ".sdd/evidence/v0210-release-cutover/v0210-release-diagnostics-complete-child.json",
+    "sha256": "3b31ee89e60ea5b2232cd3b866c7ed0c7fe5e05ea7f6fcc4776fab429aa11e5a",
+    "bytes": 504
+  },
+  "preflight": {
+    "path": ".sdd/evidence/v0210-release-cutover/v0210-release-current-native-preflight.json",
+    "sha256": "0ec2aeb3d754c01ece7d09839140935399a959b2dc9f86d8ff5626d1e6e1f39b",
+    "bytes": 1737575
+  },
+  "mutations": [
+    {
+      "id": "stable-admission",
+      "file": "scripts/release-qualification.mjs",
+      "test": "TEST-RELQ-001",
+      "before": "plan.targetVersion === '0.2.10'",
+      "after": "plan.targetVersion === '0.2.9'",
+      "originalSha256": "c305f554ccef4d14ddad3b18455749074a0cd4c32e30ddf7dafe41c1580177bb",
+      "mutantSha256": "cda90e862a46551ec69ab1e494bdf5f418cd1c3e22f555bb1f2728265073756a",
+      "mutant": {
+        "command": [
+          "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+          "--test",
+          "--test-reporter=spec",
+          "--test-name-pattern",
+          "^TEST-RELQ-001 ",
+          "scripts/release-qualification.test.mjs"
+        ],
+        "cwd": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-release-mutations",
+        "exit": 1,
+        "signal": null,
+        "error": null,
+        "stdout": {
+          "path": ".sdd/evidence/v0210-release-cutover/mutations/stable-admission-mutant.stdout.log",
+          "sha256": "b9fac1e8a6f701d9b24f661e529d5d5a81367a17ccb101d6386ae5e6d4edfd16",
+          "bytes": 1023
+        },
+        "stderr": {
+          "path": ".sdd/evidence/v0210-release-cutover/mutations/stable-admission-mutant.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      },
+      "detected": true,
+      "restoredSha256": "c305f554ccef4d14ddad3b18455749074a0cd4c32e30ddf7dafe41c1580177bb",
+      "restored": {
+        "command": [
+          "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+          "--test",
+          "--test-reporter=spec",
+          "--test-name-pattern",
+          "^TEST-RELQ-001 ",
+          "scripts/release-qualification.test.mjs"
+        ],
+        "cwd": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-release-mutations",
+        "exit": 0,
+        "signal": null,
+        "error": null,
+        "stdout": {
+          "path": ".sdd/evidence/v0210-release-cutover/mutations/stable-admission-restored.stdout.log",
+          "sha256": "d5b42a06b47de66fb56f43556d5baf867e0686bb1d58ec035c9eb83f3beb5cec",
+          "bytes": 221
+        },
+        "stderr": {
+          "path": ".sdd/evidence/v0210-release-cutover/mutations/stable-admission-restored.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      }
+    },
+    {
+      "id": "complete-catalogue",
+      "file": "scripts/release-qualification-content-mutations.mjs",
+      "test": "TEST-RELQ-SKILL-001",
+      "before": "skillMechanisms: 28,",
+      "after": "skillMechanisms: 13,",
+      "originalSha256": "f615cd4251688f4c2de4e3e11060d7646748a8f60c8ad0a6eb8d96c8cd0b4793",
+      "mutantSha256": "c27c33767fa0d51376d3c2f497a6f4593550552fc58aaa40bb2b7360d3e3c98e",
+      "mutant": {
+        "command": [
+          "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+          "--test",
+          "--test-reporter=spec",
+          "--test-name-pattern",
+          "^TEST-RELQ-SKILL-001 ",
+          "scripts/release-qualification.test.mjs"
+        ],
+        "cwd": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-release-mutations",
+        "exit": 1,
+        "signal": null,
+        "error": null,
+        "stdout": {
+          "path": ".sdd/evidence/v0210-release-cutover/mutations/complete-catalogue-mutant.stdout.log",
+          "sha256": "b3732cbc82879272e841e8ccf096d60ebf1e8a20c701e88455c41804cbb8dec9",
+          "bytes": 2901
+        },
+        "stderr": {
+          "path": ".sdd/evidence/v0210-release-cutover/mutations/complete-catalogue-mutant.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      },
+      "detected": true,
+      "restoredSha256": "f615cd4251688f4c2de4e3e11060d7646748a8f60c8ad0a6eb8d96c8cd0b4793",
+      "restored": {
+        "command": [
+          "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+          "--test",
+          "--test-reporter=spec",
+          "--test-name-pattern",
+          "^TEST-RELQ-SKILL-001 ",
+          "scripts/release-qualification.test.mjs"
+        ],
+        "cwd": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-release-mutations",
+        "exit": 0,
+        "signal": null,
+        "error": null,
+        "stdout": {
+          "path": ".sdd/evidence/v0210-release-cutover/mutations/complete-catalogue-restored.stdout.log",
+          "sha256": "46be9454a2956b9d23f7cdbe3f0bb0f9f3c3b3edd582e31efe21c3adf31dffa9",
+          "bytes": 219
+        },
+        "stderr": {
+          "path": ".sdd/evidence/v0210-release-cutover/mutations/complete-catalogue-restored.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      }
+    },
+    {
+      "id": "all-primary-witnesses",
+      "file": "scripts/release-qualification-evidence.mjs",
+      "test": "TEST-RELQ-SKILL-001",
+      "before": "ensure(primary.every(line => observedLines.has(line))",
+      "after": "ensure(primary.some(line => observedLines.has(line))",
+      "originalSha256": "1f2af8ec0e458893ae7f580fc2b5e1020c32f5c2d19aa848336e698c512837f2",
+      "mutantSha256": "dee367e8c0917c31b0faa02bf47ff192a095e47c08e22feb461c7879afa0042e",
+      "mutant": {
+        "command": [
+          "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+          "--test",
+          "--test-reporter=spec",
+          "--test-name-pattern",
+          "^TEST-RELQ-SKILL-001 ",
+          "scripts/release-qualification.test.mjs"
+        ],
+        "cwd": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-release-mutations",
+        "exit": 1,
+        "signal": null,
+        "error": null,
+        "stdout": {
+          "path": ".sdd/evidence/v0210-release-cutover/mutations/all-primary-witnesses-mutant.stdout.log",
+          "sha256": "939cc8960f35f9d7fa3057ef09b4fffa69490c5853ac9fc4cdf8545f874e18ce",
+          "bytes": 1064
+        },
+        "stderr": {
+          "path": ".sdd/evidence/v0210-release-cutover/mutations/all-primary-witnesses-mutant.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      },
+      "detected": true,
+      "restoredSha256": "1f2af8ec0e458893ae7f580fc2b5e1020c32f5c2d19aa848336e698c512837f2",
+      "restored": {
+        "command": [
+          "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+          "--test",
+          "--test-reporter=spec",
+          "--test-name-pattern",
+          "^TEST-RELQ-SKILL-001 ",
+          "scripts/release-qualification.test.mjs"
+        ],
+        "cwd": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-release-mutations",
+        "exit": 0,
+        "signal": null,
+        "error": null,
+        "stdout": {
+          "path": ".sdd/evidence/v0210-release-cutover/mutations/all-primary-witnesses-restored.stdout.log",
+          "sha256": "1875dd6619ddfeeba5acfed0595ab73be9a2d1ea9f638b4fcde4c7e9b8d2e265",
+          "bytes": 219
+        },
+        "stderr": {
+          "path": ".sdd/evidence/v0210-release-cutover/mutations/all-primary-witnesses-restored.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      }
+    },
+    {
+      "id": "all-diagnostic-fragments",
+      "file": "scripts/release-qualification-evidence.mjs",
+      "test": "TEST-RELQ-SKILL-001",
+      "before": "ensure(fragments.every(fragment => messages.some",
+      "after": "ensure(fragments.some(fragment => messages.some",
+      "originalSha256": "1f2af8ec0e458893ae7f580fc2b5e1020c32f5c2d19aa848336e698c512837f2",
+      "mutantSha256": "83af6293c5e118d368664581d5f5dbd5e8ae71860e9e642177ecd51e492f5da7",
+      "mutant": {
+        "command": [
+          "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+          "--test",
+          "--test-reporter=spec",
+          "--test-name-pattern",
+          "^TEST-RELQ-SKILL-001 ",
+          "scripts/release-qualification.test.mjs"
+        ],
+        "cwd": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-release-mutations",
+        "exit": 1,
+        "signal": null,
+        "error": null,
+        "stdout": {
+          "path": ".sdd/evidence/v0210-release-cutover/mutations/all-diagnostic-fragments-mutant.stdout.log",
+          "sha256": "028e3c2c5d17764781e47711ae51e66267f45692b529bb828c9918fe7c68e36c",
+          "bytes": 1108
+        },
+        "stderr": {
+          "path": ".sdd/evidence/v0210-release-cutover/mutations/all-diagnostic-fragments-mutant.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      },
+      "detected": true,
+      "restoredSha256": "1f2af8ec0e458893ae7f580fc2b5e1020c32f5c2d19aa848336e698c512837f2",
+      "restored": {
+        "command": [
+          "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+          "--test",
+          "--test-reporter=spec",
+          "--test-name-pattern",
+          "^TEST-RELQ-SKILL-001 ",
+          "scripts/release-qualification.test.mjs"
+        ],
+        "cwd": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-release-mutations",
+        "exit": 0,
+        "signal": null,
+        "error": null,
+        "stdout": {
+          "path": ".sdd/evidence/v0210-release-cutover/mutations/all-diagnostic-fragments-restored.stdout.log",
+          "sha256": "352c112677d86eb6fa5296e9db38157a1058602a877603f3ae55852936e568b7",
+          "bytes": 219
+        },
+        "stderr": {
+          "path": ".sdd/evidence/v0210-release-cutover/mutations/all-diagnostic-fragments-restored.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      }
+    },
+    {
+      "id": "unowned-stderr",
+      "file": "scripts/release-qualification-evidence.mjs",
+      "test": "TEST-RELQ-SKILL-001",
+      "before": "ensure(!setup.test(stderr), 'setup failure cannot count as native assertion');",
+      "after": "ensure(true, 'setup failure cannot count as native assertion');",
+      "originalSha256": "1f2af8ec0e458893ae7f580fc2b5e1020c32f5c2d19aa848336e698c512837f2",
+      "mutantSha256": "775236314cda452dcbc18d73ed53d82f3ba34e385e6ec87646e825c2cd153d19",
+      "mutant": {
+        "command": [
+          "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+          "--test",
+          "--test-reporter=spec",
+          "--test-name-pattern",
+          "^TEST-RELQ-SKILL-001 ",
+          "scripts/release-qualification.test.mjs"
+        ],
+        "cwd": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-release-mutations",
+        "exit": 1,
+        "signal": null,
+        "error": null,
+        "stdout": {
+          "path": ".sdd/evidence/v0210-release-cutover/mutations/unowned-stderr-mutant.stdout.log",
+          "sha256": "c13c390d5013ded67d3b1d174dfa71880dae297a6abc43d3d61156fc4e257677",
+          "bytes": 1052
+        },
+        "stderr": {
+          "path": ".sdd/evidence/v0210-release-cutover/mutations/unowned-stderr-mutant.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      },
+      "detected": true,
+      "restoredSha256": "1f2af8ec0e458893ae7f580fc2b5e1020c32f5c2d19aa848336e698c512837f2",
+      "restored": {
+        "command": [
+          "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+          "--test",
+          "--test-reporter=spec",
+          "--test-name-pattern",
+          "^TEST-RELQ-SKILL-001 ",
+          "scripts/release-qualification.test.mjs"
+        ],
+        "cwd": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-release-mutations",
+        "exit": 0,
+        "signal": null,
+        "error": null,
+        "stdout": {
+          "path": ".sdd/evidence/v0210-release-cutover/mutations/unowned-stderr-restored.stdout.log",
+          "sha256": "9185df1d994ff90b0286eb1556932a128aa2c094e15c2a4a811678727dc725d1",
+          "bytes": 219
+        },
+        "stderr": {
+          "path": ".sdd/evidence/v0210-release-cutover/mutations/unowned-stderr-restored.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      }
+    },
+    {
+      "id": "mixed-child-failures",
+      "file": "scripts/release-qualification-evidence.mjs",
+      "test": "TEST-RELQ-SKILL-001",
+      "before": "    const message = rows[0].error.message;\n    const child = /^Traceback \\(most recent call last\\):\\n  File \"([^\"\\r\\n]+\\/)outline\\.py\", line 16, in <module>\\n/.exec(message);\n    ensure(child, 'the pinned copied-outline child traceback is required');\n    const expectedChild = [\n      'Traceback (most recent call last):',\n      `  File \"${child[1]}outline.py\", line 16, in <module>`,\n      '    from core import excerpt, iter_content_lines, iter_prose_blocks, read_text',\n      `  File \"${child[1]}core.py\", line 12, in <module>`,\n      '    from markdown_it import MarkdownIt',\n      \"ModuleNotFoundError: No module named 'markdown_it'\",\n    ].join('\\n');\n    equal(message.replace(/\\n+(?:1 !== 0\\n*)?$/, ''), expectedChild);",
+      "after": "    ensure(/Traceback \\(most recent call last\\)/.test(rows[0].error.message),\n      'intentional copied-child traceback required');",
+      "originalSha256": "1f2af8ec0e458893ae7f580fc2b5e1020c32f5c2d19aa848336e698c512837f2",
+      "mutantSha256": "53d9bd92330191b6964fd072ea750509c118bd1ebedc761d99b26ffcd25a0462",
+      "mutant": {
+        "command": [
+          "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+          "--test",
+          "--test-reporter=spec",
+          "--test-name-pattern",
+          "^TEST-RELQ-SKILL-001 ",
+          "scripts/release-qualification.test.mjs"
+        ],
+        "cwd": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-release-mutations",
+        "exit": 1,
+        "signal": null,
+        "error": null,
+        "stdout": {
+          "path": ".sdd/evidence/v0210-release-cutover/mutations/mixed-child-failures-mutant.stdout.log",
+          "sha256": "1735d76479a77ef8a8f29e79780520c8f9c7d681cd2b9d32163515aeec16cacc",
+          "bytes": 1051
+        },
+        "stderr": {
+          "path": ".sdd/evidence/v0210-release-cutover/mutations/mixed-child-failures-mutant.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      },
+      "detected": true,
+      "restoredSha256": "1f2af8ec0e458893ae7f580fc2b5e1020c32f5c2d19aa848336e698c512837f2",
+      "restored": {
+        "command": [
+          "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+          "--test",
+          "--test-reporter=spec",
+          "--test-name-pattern",
+          "^TEST-RELQ-SKILL-001 ",
+          "scripts/release-qualification.test.mjs"
+        ],
+        "cwd": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-release-mutations",
+        "exit": 0,
+        "signal": null,
+        "error": null,
+        "stdout": {
+          "path": ".sdd/evidence/v0210-release-cutover/mutations/mixed-child-failures-restored.stdout.log",
+          "sha256": "979c7f4c813940f4e5d3c7c38d0b116484eae0088ac018c8758c0d71e968cbc6",
+          "bytes": 219
+        },
+        "stderr": {
+          "path": ".sdd/evidence/v0210-release-cutover/mutations/mixed-child-failures-restored.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      }
+    },
+    {
+      "id": "valid-child-chain",
+      "file": "scripts/release-qualification-evidence.mjs",
+      "test": "TEST-RELQ-SKILL-001",
+      "before": "`  File \"${child[1]}core.py\", line 12, in <module>`",
+      "after": "`  File \"${child[1]}core.py\", line 13, in <module>`",
+      "originalSha256": "1f2af8ec0e458893ae7f580fc2b5e1020c32f5c2d19aa848336e698c512837f2",
+      "mutantSha256": "43c7da35559ab6b8e11d3565d2f963243f6fd3fe833581857fc4838e85658ab1",
+      "mutant": {
+        "command": [
+          "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+          "--test",
+          "--test-reporter=spec",
+          "--test-name-pattern",
+          "^TEST-RELQ-SKILL-001 ",
+          "scripts/release-qualification.test.mjs"
+        ],
+        "cwd": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-release-mutations",
+        "exit": 1,
+        "signal": null,
+        "error": null,
+        "stdout": {
+          "path": ".sdd/evidence/v0210-release-cutover/mutations/valid-child-chain-mutant.stdout.log",
+          "sha256": "7ef33f18a05553ab9b8ffbb8102513cf3aae9d4aa410a2201e69ff1a89145ed7",
+          "bytes": 3444
+        },
+        "stderr": {
+          "path": ".sdd/evidence/v0210-release-cutover/mutations/valid-child-chain-mutant.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      },
+      "detected": true,
+      "restoredSha256": "1f2af8ec0e458893ae7f580fc2b5e1020c32f5c2d19aa848336e698c512837f2",
+      "restored": {
+        "command": [
+          "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+          "--test",
+          "--test-reporter=spec",
+          "--test-name-pattern",
+          "^TEST-RELQ-SKILL-001 ",
+          "scripts/release-qualification.test.mjs"
+        ],
+        "cwd": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-release-mutations",
+        "exit": 0,
+        "signal": null,
+        "error": null,
+        "stdout": {
+          "path": ".sdd/evidence/v0210-release-cutover/mutations/valid-child-chain-restored.stdout.log",
+          "sha256": "9ced06e6e72ade1e0a61ef9e288f2eaf68dce724693c8f41c7e265cfb5b1c814",
+          "bytes": 219
+        },
+        "stderr": {
+          "path": ".sdd/evidence/v0210-release-cutover/mutations/valid-child-chain-restored.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      }
+    },
+    {
+      "id": "copied-runtime-oracle",
+      "file": "scripts/release-qualification-content-mutations.mjs",
+      "test": "TEST-RELQ-SKILL-001",
+      "before": "    nodeTest, copiedRuntimeTest]) {",
+      "after": "    nodeTest]) {",
+      "originalSha256": "f615cd4251688f4c2de4e3e11060d7646748a8f60c8ad0a6eb8d96c8cd0b4793",
+      "mutantSha256": "552a65b3848a4169ef771fb122a47e049e09b664a579400393505573ac4f5feb",
+      "mutant": {
+        "command": [
+          "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+          "--test",
+          "--test-reporter=spec",
+          "--test-name-pattern",
+          "^TEST-RELQ-SKILL-001 ",
+          "scripts/release-qualification.test.mjs"
+        ],
+        "cwd": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-release-mutations",
+        "exit": 1,
+        "signal": null,
+        "error": null,
+        "stdout": {
+          "path": ".sdd/evidence/v0210-release-cutover/mutations/copied-runtime-oracle-mutant.stdout.log",
+          "sha256": "d5e4ca3d6520dc86f81ceb274c81b5a29c6499f2a290a931c366e452553f5127",
+          "bytes": 1089
+        },
+        "stderr": {
+          "path": ".sdd/evidence/v0210-release-cutover/mutations/copied-runtime-oracle-mutant.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      },
+      "detected": true,
+      "restoredSha256": "f615cd4251688f4c2de4e3e11060d7646748a8f60c8ad0a6eb8d96c8cd0b4793",
+      "restored": {
+        "command": [
+          "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+          "--test",
+          "--test-reporter=spec",
+          "--test-name-pattern",
+          "^TEST-RELQ-SKILL-001 ",
+          "scripts/release-qualification.test.mjs"
+        ],
+        "cwd": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-release-mutations",
+        "exit": 0,
+        "signal": null,
+        "error": null,
+        "stdout": {
+          "path": ".sdd/evidence/v0210-release-cutover/mutations/copied-runtime-oracle-restored.stdout.log",
+          "sha256": "ac95530cd0d30f8426037e97e110abc3beaa0cefa5e62fb98cf72cfcc74209eb",
+          "bytes": 219
+        },
+        "stderr": {
+          "path": ".sdd/evidence/v0210-release-cutover/mutations/copied-runtime-oracle-restored.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      }
+    },
+    {
+      "id": "development-package-name",
+      "file": "scripts/release-qualification-content-mutations.mjs",
+      "test": "TEST-RELQ-PACKAGE-BINDING-001",
+      "before": "'musubix6-0.2.10.tgz'",
+      "after": "'musubix6-0.2.8.tgz'",
+      "originalSha256": "f615cd4251688f4c2de4e3e11060d7646748a8f60c8ad0a6eb8d96c8cd0b4793",
+      "mutantSha256": "d0e0e677935ea1a1d9eed2b399d1ad222713bde07dddf309ebf933538e3bde70",
+      "mutant": {
+        "command": [
+          "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+          "--test",
+          "--test-reporter=spec",
+          "--test-name-pattern",
+          "^TEST-RELQ-PACKAGE-BINDING-001 ",
+          "scripts/release-qualification.test.mjs"
+        ],
+        "cwd": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-release-mutations",
+        "exit": 1,
+        "signal": null,
+        "error": null,
+        "stdout": {
+          "path": ".sdd/evidence/v0210-release-cutover/mutations/development-package-name-mutant.stdout.log",
+          "sha256": "a8f53cef88abced5e0bb1880fbfff08195d0398d4083fd9c8102fc4cc94b2038",
+          "bytes": 2466
+        },
+        "stderr": {
+          "path": ".sdd/evidence/v0210-release-cutover/mutations/development-package-name-mutant.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      },
+      "detected": true,
+      "restoredSha256": "f615cd4251688f4c2de4e3e11060d7646748a8f60c8ad0a6eb8d96c8cd0b4793",
+      "restored": {
+        "command": [
+          "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+          "--test",
+          "--test-reporter=spec",
+          "--test-name-pattern",
+          "^TEST-RELQ-PACKAGE-BINDING-001 ",
+          "scripts/release-qualification.test.mjs"
+        ],
+        "cwd": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-release-mutations",
+        "exit": 0,
+        "signal": null,
+        "error": null,
+        "stdout": {
+          "path": ".sdd/evidence/v0210-release-cutover/mutations/development-package-name-restored.stdout.log",
+          "sha256": "11a2e1b834621e3bc3f4d940e293bf2d38088c3c219ee4cfa49a60ecbbe7af2e",
+          "bytes": 232
+        },
+        "stderr": {
+          "path": ".sdd/evidence/v0210-release-cutover/mutations/development-package-name-restored.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      }
+    },
+    {
+      "id": "installed-stable-version",
+      "file": "scripts/release-qualification-cells.mjs",
+      "test": "TEST-RELQ-005",
+      "before": "receipt.installedVersion === '0.2.10'",
+      "after": "receipt.installedVersion === '0.2.9'",
+      "originalSha256": "e5536c18d0da555222cf50ee76cfa0c2cc5a4fe921d57b547c7b91e5ce41ba20",
+      "mutantSha256": "7043ddb2319eb0de8e01a06f13d5dc942a6ac2addce05c4496fd55c26deebd71",
+      "mutant": {
+        "command": [
+          "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+          "--test",
+          "--test-reporter=spec",
+          "--test-name-pattern",
+          "^TEST-RELQ-005 ",
+          "scripts/release-qualification.test.mjs"
+        ],
+        "cwd": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-release-mutations",
+        "exit": 1,
+        "signal": null,
+        "error": null,
+        "stdout": {
+          "path": ".sdd/evidence/v0210-release-cutover/mutations/installed-stable-version-mutant.stdout.log",
+          "sha256": "2dbabe99653d14a2aedecd813a8488eb08367936f04aaa94c9f5fdaf2f3d7039",
+          "bytes": 2150
+        },
+        "stderr": {
+          "path": ".sdd/evidence/v0210-release-cutover/mutations/installed-stable-version-mutant.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      },
+      "detected": true,
+      "restoredSha256": "e5536c18d0da555222cf50ee76cfa0c2cc5a4fe921d57b547c7b91e5ce41ba20",
+      "restored": {
+        "command": [
+          "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+          "--test",
+          "--test-reporter=spec",
+          "--test-name-pattern",
+          "^TEST-RELQ-005 ",
+          "scripts/release-qualification.test.mjs"
+        ],
+        "cwd": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-release-mutations",
+        "exit": 0,
+        "signal": null,
+        "error": null,
+        "stdout": {
+          "path": ".sdd/evidence/v0210-release-cutover/mutations/installed-stable-version-restored.stdout.log",
+          "sha256": "bd13cf279c8081f709797d88d99e0d27c10edd0b54b110f50a1b0ede6b31c7b6",
+          "bytes": 232
+        },
+        "stderr": {
+          "path": ".sdd/evidence/v0210-release-cutover/mutations/installed-stable-version-restored.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      }
+    },
+    {
+      "id": "historical-fixture-separation",
+      "file": "scripts/release-qualification.test.mjs",
+      "test": "TEST-CI-FIXTURE-001",
+      "before": "'show', `703a4fed16b781a229a9ce85eeb2e83446ba8d8a:${relative}`",
+      "after": "'show', `1d756415fae1f349aef9be7a82c5b461f1460a27:${relative}`",
+      "originalSha256": "a7480b343e4a6c0dcfcb9e039e32ca58298efaee275d532a0e6aff046727d282",
+      "mutantSha256": "8cf17f9d573ff9922c3cfe2c42a2db1d6fc07716a1d0225ae2858260dfb93818",
+      "mutant": {
+        "command": [
+          "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+          "--test",
+          "--test-reporter=spec",
+          "--test-name-pattern",
+          "^TEST-CI-FIXTURE-001 ",
+          "scripts/release-qualification.test.mjs"
+        ],
+        "cwd": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-release-mutations",
+        "exit": 1,
+        "signal": null,
+        "error": null,
+        "stdout": {
+          "path": ".sdd/evidence/v0210-release-cutover/mutations/historical-fixture-separation-mutant.stdout.log",
+          "sha256": "e8ffc7d7dc6f8fd94aea63cbaae13a21004de2ba27eb864d31ab220d8e732f5b",
+          "bytes": 1101
+        },
+        "stderr": {
+          "path": ".sdd/evidence/v0210-release-cutover/mutations/historical-fixture-separation-mutant.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      },
+      "detected": true,
+      "restoredSha256": "a7480b343e4a6c0dcfcb9e039e32ca58298efaee275d532a0e6aff046727d282",
+      "restored": {
+        "command": [
+          "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+          "--test",
+          "--test-reporter=spec",
+          "--test-name-pattern",
+          "^TEST-CI-FIXTURE-001 ",
+          "scripts/release-qualification.test.mjs"
+        ],
+        "cwd": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-release-mutations",
+        "exit": 0,
+        "signal": null,
+        "error": null,
+        "stdout": {
+          "path": ".sdd/evidence/v0210-release-cutover/mutations/historical-fixture-separation-restored.stdout.log",
+          "sha256": "f1e0599734491b902fae0399c225b8675b386f8bf1c347bb7ea757e9c81cfbeb",
+          "bytes": 239
+        },
+        "stderr": {
+          "path": ".sdd/evidence/v0210-release-cutover/mutations/historical-fixture-separation-restored.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      }
+    }
+  ],
+  "nativeRecord": {
+    "path": ".sdd/evidence/v0210-release-cutover/native-case28/development-control.json",
+    "sha256": "85b999abaf89bc699e6d2ccdd61c86e4388a222f13b54907a3b7d7af39d56c74",
+    "bytes": 9295
+  },
+  "nativeLogs": {
+    "baseline": {
+      "stdout": {
+        "path": ".sdd/evidence/v0210-release-cutover/native-case28/baseline-stdout.log",
+        "sha256": "4ad33b9a0919c186711cfcdaea0c8b77a4c412e16a6c8ad945724b277c9120e1",
+        "bytes": 7156
+      },
+      "stderr": {
+        "path": ".sdd/evidence/v0210-release-cutover/native-case28/baseline-stderr.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "receipt": {
+        "path": ".sdd/evidence/v0210-release-cutover/native-case28/baseline-command.json",
+        "sha256": "785ada0cf36b57409a76acaf0018aea88067059642b8efbcde472ed234e15fa3",
+        "bytes": 1585
+      }
+    },
+    "mutant": {
+      "stdout": {
+        "path": ".sdd/evidence/v0210-release-cutover/native-case28/mutant-stdout.log",
+        "sha256": "a3e805666741fe7e3c63a8dab6e0d284ab911ac9725d403e9f2538ddccb2f531",
+        "bytes": 15532
+      },
+      "stderr": {
+        "path": ".sdd/evidence/v0210-release-cutover/native-case28/mutant-stderr.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "receipt": {
+        "path": ".sdd/evidence/v0210-release-cutover/native-case28/mutant-command.json",
+        "sha256": "5a4041f6d2573cf0a54c7d100a485d148f84bf1276ed2e6912d5fa3da50abc77",
+        "bytes": 1581
+      }
+    },
+    "restored": {
+      "stdout": {
+        "path": ".sdd/evidence/v0210-release-cutover/native-case28/restored-stdout.log",
+        "sha256": "e9d77a150ebdd341e4379f659b6d2c7151308d37ce6eb3d26bb4de57b2075423",
+        "bytes": 7156
+      },
+      "stderr": {
+        "path": ".sdd/evidence/v0210-release-cutover/native-case28/restored-stderr.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "receipt": {
+        "path": ".sdd/evidence/v0210-release-cutover/native-case28/restored-command.json",
+        "sha256": "d1ac07a575867901e0fb17e1f208863ade9eeb6acb226d9773c810e96abc9011",
+        "bytes": 1585
+      }
+    }
+  },
+  "retainedRejectedNativeControl": {
+    "status": "FAIL",
+    "firstViolation": "verdict",
+    "reason": "One-child-frame implementation rejected the legitimate independently pinned outline16/core12 import chain. Restored native command passed; this rejection is not discarded or credited.",
+    "evidence": {
+      "baseline": {
+        "stdout.log": {
+          "path": ".sdd/evidence/v0210-release-cutover/rejected-native-case28/baseline-stdout.log",
+          "sha256": "0626c9fdd3c2f3396a980ce72917cb9e43a4b14f06a3d2de25bcbfa7c571f0eb",
+          "bytes": 7102
+        },
+        "stderr.log": {
+          "path": ".sdd/evidence/v0210-release-cutover/rejected-native-case28/baseline-stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        },
+        "command.json": {
+          "path": ".sdd/evidence/v0210-release-cutover/rejected-native-case28/baseline-command.json",
+          "sha256": "c31e484b1341743dfaf570b18a5bd0028d6aa92a0e4f2a378fe342aa0c0229b1",
+          "bytes": 1573
+        }
+      },
+      "mutant": {
+        "stdout.log": {
+          "path": ".sdd/evidence/v0210-release-cutover/rejected-native-case28/mutant-stdout.log",
+          "sha256": "38481f286d107b2649c07848cc413a2d135bcb3080e03b28ae8c5987dc1ce601",
+          "bytes": 15424
+        },
+        "stderr.log": {
+          "path": ".sdd/evidence/v0210-release-cutover/rejected-native-case28/mutant-stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        },
+        "command.json": {
+          "path": ".sdd/evidence/v0210-release-cutover/rejected-native-case28/mutant-command.json",
+          "sha256": "6ae33e0bbda51f7e3391c2e004c9c73088c43444a2604e291584d3a45fd7c045",
+          "bytes": 1569
+        }
+      },
+      "restored": {
+        "stdout.log": {
+          "path": ".sdd/evidence/v0210-release-cutover/rejected-native-case28/restored-stdout.log",
+          "sha256": "c139fec15ca6a8a40e943933ea73ce12edd64a6d112a17cc59b0fe3b698ab2c9",
+          "bytes": 7102
+        },
+        "stderr.log": {
+          "path": ".sdd/evidence/v0210-release-cutover/rejected-native-case28/restored-stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        },
+        "command.json": {
+          "path": ".sdd/evidence/v0210-release-cutover/rejected-native-case28/restored-command.json",
+          "sha256": "d83a243b47162a11fcad1269f8fcb651b73a4fa9177616c4c848fd319bbc5606",
+          "bytes": 1573
+        }
+      }
+    }
+  },
+  "preparationErrors": [
+    "Initial mutation runner stopped after9 detected/restored cases because historical Git hash anchor was not unique. Narrowed exact show-command anchor then detected/restored the10th; final11-case run uses latest source.",
+    "An export-only CLI helper invocation emitted no JSON and executed no preflight. It is not evidence. The actual release-qualification.mjs entrypoint returned parsed PASS with errors[].",
+    "Initial complete-union native refactor stopped at stale ci-regression-fixtures T2 approval. Earlier successful native records are retained; final union must run after genuine independent AI approval renewal."
+  ],
+  "limits": [
+    "Finite case22 and case25 witness subsets are enumerated; no general hostile-host attestation is claimed.",
+    "Copied-child parser accepts the complete independently committed337ad8f outline16/core12 diagnostic only, plus the optional Node assertion suffix. Source/oracle refactors require reviewed references and reset qualification.",
+    "JavaScript diagnostics remain INCOMPLETE2: exactly one root ESLint flat config is required.",
+    "Native case28 and affected suites are development controls, not frozen-cell qualification.",
+    "Full gate, same final frozen candidate24-cell clean runs twice, and exact-package human publication approval remain required."
+  ]
+}

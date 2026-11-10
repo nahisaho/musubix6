@@ -1,4 +1,25 @@
+spec: sha256:40688b171ff273268c0b9f17f5aa08be41230b95392d6306409ee54c404f9e24
+verdict: pass
+open: 0
+
 # CI fixture review
+
+## Stable0.2.10 successor fixture separation
+
+Independent GPT-6.1 Sol correctness and test-adequacy reviewers completed
+two bounded clean rounds on the current fixture delta. The genuine current
+seven-artifact unit is pinned to1d756415; historical703a4fed source and
+its actual0.2.8 admission helper remain separate, including the missing-object
+rejection and unchanged historical package/approval checks. Neither fixture
+synthesizes production human approval or grants qualification credit.
+An isolated historical-to-current lookup mutation was assertion-detected;
+exact restoration passed. The previous native refactor refusal for stale
+T2 implementation approval is retained and requires normal AI-lock renewal
+and genuine fresh native verification, not a bypass.
+
+CI-REVIEW-210|CLEAN|scripts/release-qualification.test.mjs:2612|closed
+
+## Historical implementation review
 
 Independent reviewer: rubber-duck agent24a5f820-2a5d-4418-965c-d565ea7a9a1a.
 Initial spec/design review: no blocking findings; all3 raw regressions fail by

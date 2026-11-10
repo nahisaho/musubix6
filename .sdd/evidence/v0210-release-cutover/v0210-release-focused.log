@@ -1,0 +1,39 @@
+✔ TEST-HOST-001 routes all host selections and option positions without changing the default (523.363087ms)
+✔ TEST-HOST-002 enumerates watchdog policy and rejects malformed requests before writes (1201.305984ms)
+✔ TEST-HOST-003 enumerates per-host skip/force states and retains extra files (624.581139ms)
+✔ TEST-HOST-004 shared instructions are host-neutral and relocated helpers execute (616.268296ms)
+✔ TEST-HOST-005 stable release metadata and real npm payload preserve wrapper contracts (1229.577865ms)
+✔ TEST-RELQ-HOST-001 retains every inherited host mechanism and detects current version mutants with owned restored controls (7805.711891ms)
+✔ TEST-CI-FIXTURE-002 every development host mutation applies to the actual stable candidate (2.712399ms)
+✔ TEST-RELQ-PLANNING-001 prepares genuine fresh-root parent/child proof before the actual full gate (8246.585932ms)
+✔ TEST-RELQ-GIT-001 restores bound suite history without conflating discovery or accepting invalid inputs (134.09969ms)
+✔ TEST-RELQ-PROCESS-001 rejects observation and cleanup errors and bounds repeated termination (3.194298ms)
+✔ TEST-RELQ-CLOSURE-001 rejects unbound execution inputs and manifest policy rewrites (954.503099ms)
+✔ TEST-RELQ-READINESS-001 refuses synthetic inline empty-run readiness without a bound manifest (11052.586272ms)
+✔ TEST-RELQ-PACKAGE-BINDING-001 uses the exact frozen tgz and rejects mismatched packaged origins (1998.991723ms)
+✔ TEST-RELQ-CONTENT-ADMISSION-001 accepts seven genuine bindings and rejects absent or changed content catalogue (113.719374ms)
+✔ TEST-RELQ-BASELINE-001 validates the historical approved source inventory before tool preparation (462.011639ms)
+✔ TEST-RELQ-SKILL-001 preserves 1268 exact cases and owned native inventory controls (1939.497335ms)
+✔ TEST-RELQ-PH-001 binds all 14 cases to exact native assertions and policy witnesses (1212.943308ms)
+✔ TEST-RELQ-001 admits the locked Linux plan and enumerates every cell-policy violation (863.783203ms)
+✔ TEST-RELQ-LINEAGE-001 admits committed lineage and rejects every invalid mapping shape (465.374323ms)
+✔ TEST-RELQ-LINEAGE-002 freezes required replacements and never excludes promoted TODOs (5667.73527ms)
+✔ TEST-RELQ-002 freezes external current inputs and detects bounded byte, probe and catalogue drift (2290.493758ms)
+✔ TEST-RELQ-DIAGNOSTIC-001 binds generated match diagnostics to the frozen literal and owned frame (354.194841ms)
+✔ TEST-RELQ-DIAGBOUNDARY-001 keeps diagnostic mutation ownership separate from legacy message policy (340.761566ms)
+✔ TEST-RELQ-SCANNER-001 binds only the two approved scanner prefixes and rejects invalid overrides (5071.633858ms)
+✔ TEST-RELQ-QUOTED-001 accepts owned quoted setup text but rejects actual setup and foreign failures (339.588035ms)
+✔ TEST-RELQ-NOCHANGE-001 admits execution-only routing controls without weakening default planning or check errors (2564.889044ms)
+✔ TEST-RELQ-003 requires named retained outcomes and all owned host mutation controls (1111.519017ms)
+✔ TEST-RELQ-004 enumerates streak resets, fresh per-cell state and immutable failed history (17339.955455ms)
+✔ TEST-RELQ-PUBLISH-001 publishes only the exact remotely approved archive and preserves dry runs (4423.561844ms)
+✔ TEST-RELQ-005 binds durable helpers and exact package-entry receipts without release authorization (73.753737ms)
+✔ TEST-CI-FIXTURE-001 historical admission is isolated from development bytes and grants no release credit (230.234675ms)
+ℹ tests 31
+ℹ suites 0
+ℹ pass 31
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 67479.009418

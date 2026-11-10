@@ -1,0 +1,104 @@
+{
+  "schemaVersion": 1,
+  "task": "TASK-HOST-004",
+  "sequence": 4,
+  "previous": "2471050a6e58165411de9e151b754fbe541695bf9942857e2c11ac88a9781f67",
+  "definitionSha256": "ace48d42f4e5d7b54275474bced00d817cfdc3e21e39c4b30635383339d81ef0",
+  "inputSha256": "fe5218b2307f69227a290d7b3a839c36dc8861fda012511aa47323fd2879c1bf",
+  "status": "PASS",
+  "exit": 0,
+  "checks": [
+    {
+      "name": "regression-1",
+      "argv": [
+        "node",
+        "--test",
+        "--test-name-pattern",
+        "^(?:.*\\b(?:TEST-HOST-004|TEST-HOST-005))(?![0-9A-Za-z])",
+        "scripts/host-compatibility.test.mjs"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/791aad174ebe53b3a0b62d7e3c41dfc435f15888dfb19cedf355d379bdb56726/attempt-ff9806f3-a338-42ab-b95f-1f21914b36a8/0.log",
+        "sha256": "750c89af9ae943ee6b834086883a49beabf741a65ecbbafbff3bf020b39d5d9e",
+        "bytes": 321
+      }
+    },
+    {
+      "name": "native-TEST-HOST-004",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/tmp/musubix6-v0210-28d27536/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-HOST-004",
+        "--root",
+        "/tmp/musubix6-v0210-28d27536"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/791aad174ebe53b3a0b62d7e3c41dfc435f15888dfb19cedf355d379bdb56726/attempt-ff9806f3-a338-42ab-b95f-1f21914b36a8/1.log",
+        "sha256": "94d66dc78c6fd601b6fa8be51923ad6ebd814f1a07a5f629353066e77ba31d14",
+        "bytes": 47
+      }
+    },
+    {
+      "name": "native-TEST-HOST-005",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/tmp/musubix6-v0210-28d27536/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-HOST-005",
+        "--root",
+        "/tmp/musubix6-v0210-28d27536"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/791aad174ebe53b3a0b62d7e3c41dfc435f15888dfb19cedf355d379bdb56726/attempt-ff9806f3-a338-42ab-b95f-1f21914b36a8/2.log",
+        "sha256": "92828d8f7051fd83517a3cb32f33e97bac61109d2e9c155591640f269d2ec95b",
+        "bytes": 48
+      }
+    }
+  ],
+  "ledgerEvents": [
+    {
+      "test": "TEST-HOST-004",
+      "hashes": [
+        "0877550b296af6eab49b2d3741ec5743a44b8a9077a13ce3219f5261b287beec",
+        "23e94b47bbef897e0c500209cad5f8e851501b76772cbf086cef4c18f98d47ac",
+        "468542cb08d7e1f8e3ffd98841f8e8bcbcb143678d0e5fb639791964b7c0a3c4",
+        "4757c704b0feb25571a2e41b1d42d2484247a4363f4a8ce359d7df3aea1aa84a",
+        "4dbd374ac33d677388e493e0070f360b2eb3ed010a6f443c6a9258e19acf4f92",
+        "521ac114fd5c1cbd5916c3ac0a036283613b8e4ef76ceca19342065586afe69a",
+        "761a073992c906501340723d7b89385b086c0db1fa2daac93c064f44b989df18",
+        "a5d137d1fa70ad89ae8a052557b2ac9b03ba0a142efbc669dbe92a83c63428e2",
+        "b53b1e6f4ad816176e16e9d15b3216dbe64a519c156030ad718b94436a32ed63",
+        "ef12e4c9e02f8c81cec75f705f9b68db15401dc790e9eaa1499d698313b4a3a4"
+      ]
+    },
+    {
+      "test": "TEST-HOST-005",
+      "hashes": [
+        "0964904894a549f668bcb384bb671c36313a3e367584de19727b29634d2d32a5",
+        "16b654c0f4b11fee030f05a1fd192c44068a69bb5e75f04a877880590d24fac3",
+        "5c6ad3c277b605b7b4be1ff9a7aaf79034fe412a42f1ebcc1e6e572cf3eceb48",
+        "7816d9f5b8f8e97977c710e3a7a6c465ddb4c554f2469a3c4eda92d7d647b47b",
+        "dfe4e9cbc8a127632db081e23b967eb233051878a5e0368327ffafea885157b7"
+      ]
+    }
+  ],
+  "errors": []
+}

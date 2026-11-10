@@ -1,0 +1,162 @@
+{
+  "stage": "development-native-case-only",
+  "qualificationCredit": 0,
+  "startedAt": "2026-11-10T22:57:58.774Z",
+  "row": {
+    "id": "SKILL-REPLACEMENT-28",
+    "status": "PASS",
+    "plan": {
+      "id": "SKILL-REPLACEMENT-28",
+      "directory": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-release-native-case28-r2/content/cases/92bee390bda29936daf0ec0d1906c56f6dc6d1ebccf843d9a75d72a432c9c00d",
+      "source": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-release-native-case28-r2/content/cases/92bee390bda29936daf0ec0d1906c56f6dc6d1ebccf843d9a75d72a432c9c00d/source",
+      "node": "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+      "helper": "/tmp/musubix6-v0210-28d27536/scripts/release-qualification-content-mutations.mjs",
+      "helperSha256": "f615cd4251688f4c2de4e3e11060d7646748a8f60c8ad0a6eb8d96c8cd0b4793",
+      "referencePath": "/tmp/musubix6-v0210-28d27536/.sdd/release-content-mutations.v0.2.10.json",
+      "referenceSha256": "4f39011db146f92e32aeb54a161781f1643ee9121fe78c88f0c3f5e53c8ee7d2",
+      "family": "Node ERR_ASSERTION",
+      "assertionLines": [
+        68
+      ],
+      "requiredDiagnosticFragments": [
+        "outline.py\", line",
+        "ModuleNotFoundError: No module named 'markdown_it'"
+      ],
+      "oracleSha256": "785dd13c88eac89fa8355ce5733a2bba2fe9819aff3201279a8dbb5d9359805e",
+      "targetNames": [
+        "TEST-JAPROSE-005 copied PEP723 tools independently hide protected inline code"
+      ],
+      "assertionSource": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-release-native-case28-r2/content/cases/92bee390bda29936daf0ec0d1906c56f6dc6d1ebccf843d9a75d72a432c9c00d/source/scripts/japanese-prose-naturalness.test.mjs",
+      "command": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "--test",
+        "--test-reporter=/tmp/musubix6-v0210-28d27536/scripts/release-host-events.mjs",
+        "--test-name-pattern",
+        "^TEST-JAPROSE-005 copied PEP723 tools independently hide protected inline code$",
+        "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-release-native-case28-r2/content/cases/92bee390bda29936daf0ec0d1906c56f6dc6d1ebccf843d9a75d72a432c9c00d/source/scripts/japanese-prose-naturalness.test.mjs"
+      ],
+      "setupCommands": []
+    },
+    "setup": [],
+    "nativeCounts": {
+      "baseline": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "mutant": {
+        "tests": 1,
+        "pass": 0,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "restored": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    "beforeSha256": "c9b797d8d9b8e092c0e86b01b76b860a5651dc72f9f55ac89f4f32de9b5b9ec0",
+    "baseline": {
+      "command": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "--test",
+        "--test-reporter=/tmp/musubix6-v0210-28d27536/scripts/release-host-events.mjs",
+        "--test-name-pattern",
+        "^TEST-JAPROSE-005 copied PEP723 tools independently hide protected inline code$",
+        "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-release-native-case28-r2/content/cases/92bee390bda29936daf0ec0d1906c56f6dc6d1ebccf843d9a75d72a432c9c00d/source/scripts/japanese-prose-naturalness.test.mjs"
+      ],
+      "cwd": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-release-native-case28-r2/content/cases/92bee390bda29936daf0ec0d1906c56f6dc6d1ebccf843d9a75d72a432c9c00d/source",
+      "startedAt": "2026-11-10T22:57:58.816Z",
+      "completedAt": "2026-11-10T22:58:15.373Z",
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "outputLimit": false,
+      "error": null,
+      "stdout": {
+        "path": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-release-native-case28-r2/content/cases/92bee390bda29936daf0ec0d1906c56f6dc6d1ebccf843d9a75d72a432c9c00d/baseline/stdout.log",
+        "sha256": "4ad33b9a0919c186711cfcdaea0c8b77a4c412e16a6c8ad945724b277c9120e1"
+      },
+      "stderr": {
+        "path": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-release-native-case28-r2/content/cases/92bee390bda29936daf0ec0d1906c56f6dc6d1ebccf843d9a75d72a432c9c00d/baseline/stderr.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "receipt": {
+        "path": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-release-native-case28-r2/content/cases/92bee390bda29936daf0ec0d1906c56f6dc6d1ebccf843d9a75d72a432c9c00d/baseline/command.json",
+        "sha256": "785ada0cf36b57409a76acaf0018aea88067059642b8efbcde472ed234e15fa3"
+      }
+    },
+    "mutant": {
+      "command": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "--test",
+        "--test-reporter=/tmp/musubix6-v0210-28d27536/scripts/release-host-events.mjs",
+        "--test-name-pattern",
+        "^TEST-JAPROSE-005 copied PEP723 tools independently hide protected inline code$",
+        "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-release-native-case28-r2/content/cases/92bee390bda29936daf0ec0d1906c56f6dc6d1ebccf843d9a75d72a432c9c00d/source/scripts/japanese-prose-naturalness.test.mjs"
+      ],
+      "cwd": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-release-native-case28-r2/content/cases/92bee390bda29936daf0ec0d1906c56f6dc6d1ebccf843d9a75d72a432c9c00d/source",
+      "startedAt": "2026-11-10T22:58:15.376Z",
+      "completedAt": "2026-11-10T22:58:26.535Z",
+      "exit": 1,
+      "signal": null,
+      "timedOut": false,
+      "outputLimit": false,
+      "error": null,
+      "stdout": {
+        "path": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-release-native-case28-r2/content/cases/92bee390bda29936daf0ec0d1906c56f6dc6d1ebccf843d9a75d72a432c9c00d/mutant/stdout.log",
+        "sha256": "a3e805666741fe7e3c63a8dab6e0d284ab911ac9725d403e9f2538ddccb2f531"
+      },
+      "stderr": {
+        "path": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-release-native-case28-r2/content/cases/92bee390bda29936daf0ec0d1906c56f6dc6d1ebccf843d9a75d72a432c9c00d/mutant/stderr.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "receipt": {
+        "path": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-release-native-case28-r2/content/cases/92bee390bda29936daf0ec0d1906c56f6dc6d1ebccf843d9a75d72a432c9c00d/mutant/command.json",
+        "sha256": "5a4041f6d2573cf0a54c7d100a485d148f84bf1276ed2e6912d5fa3da50abc77"
+      }
+    },
+    "restored": {
+      "command": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "--test",
+        "--test-reporter=/tmp/musubix6-v0210-28d27536/scripts/release-host-events.mjs",
+        "--test-name-pattern",
+        "^TEST-JAPROSE-005 copied PEP723 tools independently hide protected inline code$",
+        "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-release-native-case28-r2/content/cases/92bee390bda29936daf0ec0d1906c56f6dc6d1ebccf843d9a75d72a432c9c00d/source/scripts/japanese-prose-naturalness.test.mjs"
+      ],
+      "cwd": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-release-native-case28-r2/content/cases/92bee390bda29936daf0ec0d1906c56f6dc6d1ebccf843d9a75d72a432c9c00d/source",
+      "startedAt": "2026-11-10T22:58:26.538Z",
+      "completedAt": "2026-11-10T22:58:37.904Z",
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "outputLimit": false,
+      "error": null,
+      "stdout": {
+        "path": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-release-native-case28-r2/content/cases/92bee390bda29936daf0ec0d1906c56f6dc6d1ebccf843d9a75d72a432c9c00d/restored/stdout.log",
+        "sha256": "e9d77a150ebdd341e4379f659b6d2c7151308d37ce6eb3d26bb4de57b2075423"
+      },
+      "stderr": {
+        "path": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-release-native-case28-r2/content/cases/92bee390bda29936daf0ec0d1906c56f6dc6d1ebccf843d9a75d72a432c9c00d/restored/stderr.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "receipt": {
+        "path": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-release-native-case28-r2/content/cases/92bee390bda29936daf0ec0d1906c56f6dc6d1ebccf843d9a75d72a432c9c00d/restored/command.json",
+        "sha256": "d1ac07a575867901e0fb17e1f208863ade9eeb6acb226d9773c810e96abc9011"
+      }
+    },
+    "afterSha256": "c9b797d8d9b8e092c0e86b01b76b860a5651dc72f9f55ac89f4f32de9b5b9ec0"
+  },
+  "status": "PASS",
+  "completedAt": "2026-11-10T22:58:37.908Z"
+}

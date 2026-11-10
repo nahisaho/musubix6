@@ -1,0 +1,26 @@
+✖ TEST-RELQ-SKILL-001 preserves 1268 exact cases and owned native inventory controls (2132.016865ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2241.551673
+
+✖ failing tests:
+
+test at scripts/release-qualification.test.mjs:762:1
+✖ TEST-RELQ-SKILL-001 preserves 1268 exact cases and owned native inventory controls (2132.016865ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception: wrong module
+      at TestContext.<anonymous> (file:///home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-release-mutations/scripts/release-qualification.test.mjs:1096:13)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: undefined,
+    operator: 'throws',
+    diff: 'simple'
+  }

@@ -248,7 +248,24 @@ export function validateMutationRows({ evidence, catalogue, adapterOutput }) {
   return { cases: data.cases };
 }
 
+function requireContentDiagnostics(messages, fragments) {
+  if (fragments === undefined) return;
+  ensure(Array.isArray(fragments) && fragments.length > 0 &&
+    fragments.every(fragment => typeof fragment === 'string' && fragment.length > 0),
+  'frozen diagnostic fragments required');
+  ensure(messages.every(message => typeof message === 'string'), 'native assertion diagnostic required');
+  ensure(fragments.every(fragment => messages.some(message => message.includes(fragment))),
+    'wrong native assertion diagnostic');
+}
+
 export function parseContentPython(text, plan, failed) {
+  const primary = plan.requiredAssertionLines;
+  if (primary !== undefined) {
+    ensure(Array.isArray(primary) && primary.length > 0 &&
+      new Set(primary).size === primary.length &&
+      primary.every(line => Number.isSafeInteger(line) && line > 0 && plan.assertionLines.includes(line)),
+    'valid approved primary assertion lines required');
+  }
   const summaries = [...text.matchAll(/^Ran (\d+) tests? in [^\n]+$/gm)];
   ensure(summaries.length === 1 && Number(summaries[0][1]) === 1, 'one selected native unittest required');
   const diagnosticStart = text.search(/^(?:={10,}|FAIL: |ERROR: |UNEXPECTED SUCCESS: )/m);
@@ -267,6 +284,8 @@ export function parseContentPython(text, plan, failed) {
   ensure(summary, 'real native unittest assertion failures required');
   const blocks = text.split(/^FAIL: /m).slice(1);
   equal(blocks.length, Number(summary[1]));
+  const diagnostics = [];
+  const observedLines = new Set();
   for (const block of blocks) {
     ensure(/^AssertionError(?::|$)/m.test(block), 'Python AssertionError required');
     ensure(block.startsWith(plan.targetNames[0].split('.').at(-1) + ' '), 'wrong selected unittest');
@@ -281,6 +300,14 @@ export function parseContentPython(text, plan, failed) {
     ensure(throwing && path.isAbsolute(throwing[1]) && throwing[1] === plan.assertionSource &&
       plan.assertionLines.includes(Number(throwing[2])) && Number.isSafeInteger(Number(throwing[2])),
     'wrong exact Python assertion frame');
+    observedLines.add(Number(throwing[2]));
+    const assertion = /^AssertionError(?::|$)[\s\S]*/m.exec(block)[0]
+      .split(/\n(?:={10,}|-{10,}|Ran \d+ tests? in )/)[0];
+    diagnostics.push(block.split('\n')[0] + '\n' + assertion);
+  }
+  requireContentDiagnostics(diagnostics, plan.requiredDiagnosticFragments);
+  if (primary !== undefined) {
+    ensure(primary.every(line => observedLines.has(line)), 'every required primary assertion must be observed');
   }
   return { tests: 1, failures: Number(summary[1]) };
 }
@@ -298,14 +325,17 @@ export function validateContentNative({ receipt, phase, target, plan }) {
   ensure(plan.assertionLines.length > 0 && plan.assertionLines.every(line => Number.isSafeInteger(line) && line > 0),
     'positive independent assertion lines required');
   const stdout = readRef(receipt.stdout), stderr = readRef(receipt.stderr);
+  equal(plan.requiredDiagnosticFragments, target.oracle?.requiredDiagnosticFragments);
+  equal(plan.requiredAssertionLines, target.oracle?.requiredAssertionLines);
   if (plan.family === 'Python AssertionError') return parseContentPython(stdout + stderr, plan, phase === 'mutant');
   equal(plan.family, 'Node ERR_ASSERTION');
-  ensure(!/ERR_MODULE_NOT_FOUND|SyntaxError:|MODULE_NOT_FOUND|Traceback \(most recent call last\)/.test(stdout + stderr),
+  ensure(!/ERR_MODULE_NOT_FOUND|SyntaxError:|MODULE_NOT_FOUND/.test(stdout + stderr),
     'setup failure cannot count as native assertion');
   const parsed = parseNative(stdout);
   const rows = namedControl(parsed, plan.targetNames, { failedTarget: phase === 'mutant' ? plan.targetNames[0] : null });
   if (phase === 'mutant') {
     ensure(ownedAssertion(rows[0].error, plan.assertionSource, plan.assertionLines), 'wrong exact native assertion owner/family');
+    requireContentDiagnostics([rows[0].error.message], plan.requiredDiagnosticFragments);
     if (target.oracle?.failureWitnesses) {
       const message = rows[0].error.message;
       ensure(typeof message === 'string', 'native diagnostic message required');
@@ -316,6 +346,62 @@ export function validateContentNative({ receipt, phase, target, plan }) {
         diagnostics.some(row => Array.isArray(row) && row.length === 2 &&
           row[0] === witness.input && row[1] === witness.expected)), 'unrelated policy-row failure is not this mechanism');
     }
+  }
+  const setup = /ERR_MODULE_NOT_FOUND|SyntaxError:|MODULE_NOT_FOUND|Traceback \(most recent call last\)/;
+  ensure(!setup.test(stderr), 'setup failure cannot count as native assertion');
+  if (setup.test(stdout)) {
+    ensure(phase === 'mutant' && target.id === 'SKILL-REPLACEMENT-28' &&
+      target.oracle?.test === 'TEST-JAPROSE-005' &&
+      plan.assertionSource === path.join(plan.source, 'scripts/japanese-prose-naturalness.test.mjs'),
+    'setup failure cannot count as native assertion');
+    equal(target.oracle.intentionalDependencyFailure, { script: 'outline.py', module: 'markdown_it' });
+    equal(plan.assertionLines, [68]);
+    equal(plan.oracleSha256, target.oracle.evidence.sha256);
+    const message = rows[0].error.message;
+    const child = /^Traceback \(most recent call last\):\n  File "([^"\r\n]+\/)outline\.py", line 16, in <module>\n/.exec(message);
+    ensure(child, 'the pinned copied-outline child traceback is required');
+    const expectedChild = [
+      'Traceback (most recent call last):',
+      `  File "${child[1]}outline.py", line 16, in <module>`,
+      '    from core import excerpt, iter_content_lines, iter_prose_blocks, read_text',
+      `  File "${child[1]}core.py", line 12, in <module>`,
+      '    from markdown_it import MarkdownIt',
+      "ModuleNotFoundError: No module named 'markdown_it'",
+    ].join('\n');
+    equal(message.replace(/\n+(?:1 !== 0\n*)?$/, ''), expectedChild);
+    const events = stdout.trim().split('\n').map(line => JSON.parse(line));
+    const selected = events.find(event => event.type === 'test:fail' &&
+      event.data.nesting === 0 && event.data.name === plan.targetNames[0]);
+    const originalError = structuredClone(selected.data.details.error);
+    const aliases = events.filter(event => ['test:fail', 'test:complete'].includes(event.type) &&
+      event.data.nesting === 0 && event.data.name === plan.targetNames[0]);
+    ensure(aliases.filter(event => event.type === 'test:complete').length <= 1, 'duplicate completion mirror');
+    for (const event of aliases) {
+      if (event.type === 'test:complete') {
+        equal(event.data.details.passed, false);
+        for (const key of ['testId', 'parentId', 'testNumber', 'file', 'entryFile', 'line', 'column']) {
+          equal(event.data[key], selected.data[key]);
+        }
+      }
+      equal(event.data.details.error, originalError);
+      let error = event.data.details.error;
+      const wrappers = [];
+      for (let depth = 0; depth < 8 && error.code === 'ERR_TEST_FAILURE' && error.name === 'Error'; depth++) {
+        wrappers.push(error);
+        error = error.cause;
+      }
+      equal(error, rows[0].error);
+      for (const wrapper of wrappers) {
+        equal(wrapper.failureType, 'testCodeFailure');
+        equal(wrapper.message, error.message);
+        equal(wrapper.stack, `Error [ERR_TEST_FAILURE]: ${error.message}`);
+        wrapper.message = '';
+        wrapper.stack = '';
+      }
+      error.stack = error.stack.slice(`AssertionError [ERR_ASSERTION]: ${error.message}\n`.length);
+      error.message = '';
+    }
+    ensure(!setup.test(JSON.stringify(events)), 'unowned setup failure cannot count as native assertion');
   }
   return parsed.counts;
 }

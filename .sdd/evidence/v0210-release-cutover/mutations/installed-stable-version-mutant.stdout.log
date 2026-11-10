@@ -1,0 +1,34 @@
+✖ TEST-RELQ-005 binds durable helpers and exact package-entry receipts without release authorization (75.413848ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 220.090474
+
+✖ failing tests:
+
+test at scripts/release-qualification.test.mjs:2459:1
+✖ TEST-RELQ-005 binds durable helpers and exact package-entry receipts without release authorization (75.413848ms)
+  AssertionError [ERR_ASSERTION]: Got unwanted exception: the independently chosen stable candidate receipt must pass the package adapter
+  Actual message: "package runtime/entrypoint mismatch"
+      at TestContext.<anonymous> (file:///home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-release-mutations/scripts/release-qualification.test.mjs:2516:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: AssertionError [ERR_ASSERTION]: package runtime/entrypoint mismatch
+        at ensure (file:///home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-release-mutations/scripts/release-qualification-io.mjs:29:54)
+        at validateAdapter (file:///home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-release-mutations/scripts/release-qualification-cells.mjs:688:5)
+        at file:///home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-release-mutations/scripts/release-qualification.test.mjs:2516:29
+        at getActual (node:assert:611:5)
+        at strict.doesNotThrow (node:assert:779:32)
+        at TestContext.<anonymous> (file:///home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-release-mutations/scripts/release-qualification.test.mjs:2516:10)
+        at async Test.run (node:internal/test_runner/test:1409:7)
+        at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3),
+    expected: undefined,
+    operator: 'doesNotThrow',
+    diff: 'simple'
+  }

@@ -1,0 +1,9 @@
+✔ TEST-CI-FIXTURE-001 historical admission is isolated from development bytes and grants no release credit (258.849476ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 440.861824

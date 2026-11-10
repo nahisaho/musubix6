@@ -1,0 +1,62 @@
+✖ TEST-RELQ-SKILL-001 preserves 1268 exact cases and owned native inventory controls (6.603216ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 145.842406
+
+✖ failing tests:
+
+test at scripts/release-qualification.test.mjs:762:1
+✖ TEST-RELQ-SKILL-001 preserves 1268 exact cases and owned native inventory controls (6.603216ms)
+  AssertionError [ERR_ASSERTION]: Got unwanted exception: the independently approved 118-file catalogue must accept before case execution
+  Actual message: "Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    {
+      originSensitivityChallenges: 60,
+      placeholderMechanisms: 14,
+      skillCellTotal: 1268,
+  +   skillMechanisms: 28,
+  -   skillMechanisms: 13,
+      sourceVendorChallenges: 1180,
+      vendorChallenges: 1240
+    }
+  "
+      at TestContext.<anonymous> (file:///home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-release-mutations/scripts/release-qualification.test.mjs:765:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+    + actual - expected
+    
+      {
+        originSensitivityChallenges: 60,
+        placeholderMechanisms: 14,
+        skillCellTotal: 1268,
+    +   skillMechanisms: 28,
+    -   skillMechanisms: 13,
+        sourceVendorChallenges: 1180,
+        vendorChallenges: 1240
+      }
+    
+        at equal (file:///home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-release-mutations/scripts/release-qualification-io.mjs:21:39)
+        at contentCaseCatalogue (file:///home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-release-mutations/scripts/release-qualification-content-mutations.mjs:19:3)
+        at file:///home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-release-mutations/scripts/release-qualification.test.mjs:765:43
+        at getActual (node:assert:611:5)
+        at strict.doesNotThrow (node:assert:779:32)
+        at TestContext.<anonymous> (file:///home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-release-mutations/scripts/release-qualification.test.mjs:765:10)
+        at Test.runInAsyncScope (node:async_hooks:227:14)
+        at Test.run (node:internal/test_runner/test:1402:25)
+        at Test.start (node:internal/test_runner/test:1262:17)
+        at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17),
+    expected: undefined,
+    operator: 'doesNotThrow',
+    diff: 'simple'
+  }

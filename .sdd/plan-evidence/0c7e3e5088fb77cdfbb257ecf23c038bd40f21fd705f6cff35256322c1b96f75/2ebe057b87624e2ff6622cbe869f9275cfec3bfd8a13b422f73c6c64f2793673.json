@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "task": "TASK-CI-FIXTURE-001",
+  "sequence": 2,
+  "previous": "8acb0960da64b0282e5f0f78ed232d7183f17d6be45694453a7a36928fbb018d",
+  "definitionSha256": "4ce0a86a49f4bf2d7220f852c2e9c2a8107559cd241ae04b4bb9092344837bed",
+  "inputSha256": "b0f91081e54784c81b46db7ee83ccc00d9debaf707ce03b43978abfad4f06f40",
+  "status": "PASS",
+  "exit": 0,
+  "checks": [
+    {
+      "name": "regression",
+      "argv": [
+        "node",
+        "--test",
+        "--test-name-pattern",
+        "TEST-CI-FIXTURE-001",
+        "scripts/release-qualification.test.mjs"
+      ],
+      "timeoutMs": 120000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/0c7e3e5088fb77cdfbb257ecf23c038bd40f21fd705f6cff35256322c1b96f75/attempt-27bad2a2-4751-4339-840f-d154ebaf657c/0.log",
+        "sha256": "738f462e31ae66a97582744323c5b4639582b369ca55bdc77be4f6db76c01830",
+        "bytes": 239
+      }
+    },
+    {
+      "name": "native-TEST-CI-FIXTURE-001",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/tmp/musubix6-v0210-28d27536/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-CI-FIXTURE-001",
+        "--root",
+        "/tmp/musubix6-v0210-28d27536"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/0c7e3e5088fb77cdfbb257ecf23c038bd40f21fd705f6cff35256322c1b96f75/attempt-27bad2a2-4751-4339-840f-d154ebaf657c/1.log",
+        "sha256": "28e97b68d0c98b9421ba6b696f7ed94b9dd0fa709865f8e9f594819d943daa01",
+        "bytes": 59
+      }
+    }
+  ],
+  "ledgerEvents": [
+    {
+      "test": "TEST-CI-FIXTURE-001",
+      "hashes": [
+        "37541ac2eb72bd64e84522362b517923322d619f800a27e244f90502c763d33b",
+        "511459eadd118f2a2639b408787af3bc90c4576495acd2b45e10fbf04573eca6",
+        "5754b230b4fc99e6ab9fcd6f24e73eda9357b43deb9a8a660d65c73e4544b69e",
+        "f648bec295604cb492e8de5484c82c44dc69cef0d3b95dc73159981f3ee82658"
+      ]
+    }
+  ],
+  "errors": []
+}

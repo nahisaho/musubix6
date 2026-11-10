@@ -1,3 +1,33 @@
+# Stable0.2.10 adapter implementation review
+
+Independent GPT-6.1 Sol correctness/contract and test-adequacy reviewers
+completed two consecutive bounded clean rounds on the unchanged final diff.
+Review was read-only; it does not authorize publication or grant frozen credit.
+
+R210-MIXED-CHILD|HIGH|scripts/release-qualification-evidence.mjs:358|closed
+R210-FOREIGN-IMPORT|HIGH|scripts/release-qualification-evidence.mjs:358|closed
+R210-VALID-CHAIN|HIGH|scripts/release-qualification-evidence.mjs:358|closed
+R210-CORRECTNESS|CLEAN|scripts/release-qualification-evidence.mjs:358|closed
+R210-TEST-ADEQUACY|CLEAN|scripts/release-qualification.test.mjs:1030|closed
+
+Review found that partial traceback checks could erase additional child
+failures, including traceback-free ImportError. Genuine assertion Reds
+preceded both fixes. A real copied-runtime control also exposed rejection
+of the valid outline16/core12 chain; its failed evidence is retained.
+The complete diagnostic now matches independently committed337ad8f import
+sites and the exact missing markdown_it exception before alias sanitization.
+Foreign additions reject; valid Node assertion suffix and identical native
+aliases remain accepted. Real baseline/mutant/restored phases subsequently
+passed with zero skips, cancellation or TODOs and exact source restoration.
+
+The final affected suite passed31/31. Eleven isolated mutations were
+assertion-detected and exactly restored, including both invalid-evidence
+acceptance and valid-evidence rejection. Complete execution records are in
+.sdd/evidence/v0210-release-cutover.json. Native task refresh/full gate,
+two unchanged frozen24-cell runs and exact-package human approval remain
+separate obligations. Root JavaScript diagnostics are INCOMPLETE because
+the required root ESLint flat configuration is absent.
+
 # Stable0.2.10 preparation proposal review (2026-11-11)
 
 Scope: prospective human preparation unit only. No production cutover,

@@ -364,13 +364,14 @@
     }
   },
   "ci-regression-fixtures": {
-    "by": "ai:rubber-duck",
+    "by": "ai:gpt-6.1-sol-independent-review",
     "kind": "ai",
-    "review": "Initial and final delta review24a5f820: no blockers; prior input-sweep findings resolved; limits and interrupted baseline recovery recorded in feature review.",
-    "at": "2026-11-10T02:10:05.643Z",
+    "review": ".sdd/review-ci-regression-fixtures.md",
+    "reviewSha": "e468994fac23a1131906989a5b4442aa280445b77efdcfd83daf65b7e4a8af40",
+    "at": "2026-11-10T23:04:11.495Z",
     "artifacts": {
       ".sdd/specs/ci-regression-fixtures.md": "40688b171ff273268c0b9f17f5aa08be41230b95392d6306409ee54c404f9e24",
-      "scripts/release-qualification.test.mjs": "72933e3fcbda01e5a123f9e537b102b44c15731296781bb054a6ce9fcfe86fb5",
+      "scripts/release-qualification.test.mjs": "a7480b343e4a6c0dcfcb9e039e32ca58298efaee275d532a0e6aff046727d282",
       "scripts/release-host-mutations.test.mjs": "6a6798b24e1aae5bb01c8502c4edb99da0281894562c25779bf3bbb7deccd914",
       ".github/skills/lean-sdd-tdd/scripts/sdd.test.mjs": "306b6d5d3d9fe13a364870831eb0f4d812df9ba644bc4ce002bc86d7bed779c1",
       ".github/skills/lean-sdd-tdd/scripts/implementation-plan-cli.test.mjs": "d830cf57e9a94c52d88a88134e3d52ab906b0513135df3cc247f5d58ded3e474"
