@@ -38,6 +38,7 @@ const sdd = (d, ...a) => {
     const file = path.join(d, '.sdd/config.json');
     const config = JSON.parse(fs.readFileSync(file, 'utf8'));
     config.planning = { required: false };
+    config.specFeedback = { required: false };
     fs.writeFileSync(file, JSON.stringify(config, null, 2) + '\n');
   }
   return result;

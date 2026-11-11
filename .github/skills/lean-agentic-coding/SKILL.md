@@ -64,6 +64,24 @@ Retain failures and distinguish consistency, task verification, full-project
 gate, frozen qualification and explicit human publication approval.
 Only explicit `planning.required:false` retains the existing workflow.
 
+## Implementation-to-specification feedback
+
+Delegate every implementation batch to sibling `lean-sdd-tdd`'s canonical
+feedback loop: review intended requirements, update the existing `.sdd/specs/`
+Design/change entry even when requirements are unchanged, reconcile genuine
+approval, plan bindings and native Red/Green, explicitly `feedback record FEATURE`,
+then `plan verify TASK`. Repeat affected stages after relevant changes.
+New `sdd init` projects default feedback on; existing projects explicitly opt in.
+Run CLI acceptance only when feedback is enabled; disabled projects keep their
+existing verification workflow without `feedback record`, while retaining
+canonical impact review and design/change notes.
+Planning is required; completion is blocked while feedback is missing/stale,
+but Red/Green remains available. Do not create a second contract, weaken intended
+requirements, discard failures or confuse identity acceptance with semantic
+review, task/gate success or release approval. Generated execution evidence is
+not implementation input. See `lean-sdd-tdd/references/config.md` for exact
+configuration, entry format, counterpart reconciliation and exit codes.
+
 ## 3. T1 loop
 0. **PASS conditions and counterexamples first**: use the host's development model (see Host defaults) to define observable success conditions and concrete violations in the existing contract (`REQ | PASS condition | counterexample | TEST/command | evidence`). Check contract, inputs, execution, verdict, history and integration risks; explain non-applicable stages. Derive expectations from the contract or an independent reference, never the implementation's output.
 1. Failing test first, named/annotated with its REQ ID (`@verifies REQ-F-001`). Run it, confirm Red for the right assertion, not a setup/compile failure or skip. Add valid-input controls and relevant boundary/error cases.

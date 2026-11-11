@@ -1,0 +1,10 @@
+✔ TEST-PLAN-CLI-009 binding preview repairs only hashes over chain/diamond/shared graphs and preserves history (3690.672292ms)
+✔ TEST-PLAN-CLI-010 preview refuses structural errors and never proposes unknown fingerprints (1110.677345ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 4872.437487

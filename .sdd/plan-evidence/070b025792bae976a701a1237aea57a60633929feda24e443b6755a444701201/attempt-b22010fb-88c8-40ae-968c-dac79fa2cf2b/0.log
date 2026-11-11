@@ -1,0 +1,9 @@
+✔ #375 TEST-R36K-PORTABILITY-001 missing-function fixture is natively invalid independently of implicit-call severity (136.794611ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2566.86841

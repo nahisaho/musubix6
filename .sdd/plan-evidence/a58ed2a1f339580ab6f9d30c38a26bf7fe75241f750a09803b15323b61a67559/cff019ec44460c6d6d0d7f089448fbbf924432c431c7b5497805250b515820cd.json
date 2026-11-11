@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "task": "TASK-CI-FIXTURE-002",
+  "sequence": 2,
+  "previous": "cb6e7afa7530073198ebffb02faba83e623101c3e5aff2e44ea0cf8ab6421faa",
+  "definitionSha256": "0ae27d82957c69dbfaae761c27556c90ad6ea7df926f63e15c2b40caf9a04f7d",
+  "inputSha256": "54ea0e874bc6f59cfedef16266e0c07c3e99fdfdc6406b2fd9c800a85237102d",
+  "status": "PASS",
+  "exit": 0,
+  "checks": [
+    {
+      "name": "regression",
+      "argv": [
+        "node",
+        "--test",
+        "--test-name-pattern",
+        "TEST-CI-FIXTURE-002",
+        "scripts/release-host-mutations.test.mjs"
+      ],
+      "timeoutMs": 120000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/a58ed2a1f339580ab6f9d30c38a26bf7fe75241f750a09803b15323b61a67559/attempt-856eec12-a565-4c43-bc10-716322909c22/0.log",
+        "sha256": "5bad3cb44864ec476886c6215b2370e0cc1106fd7791f27a5ec68531baa6367d",
+        "bytes": 222
+      }
+    },
+    {
+      "name": "native-TEST-CI-FIXTURE-002",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/tmp/musubix6-spec-feedback-28d27536/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-CI-FIXTURE-002",
+        "--root",
+        "/tmp/musubix6-spec-feedback-28d27536"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/a58ed2a1f339580ab6f9d30c38a26bf7fe75241f750a09803b15323b61a67559/attempt-856eec12-a565-4c43-bc10-716322909c22/1.log",
+        "sha256": "ccb29ad637b364e725dc489788010f1e5705599a650f20122588eadd9cf17c32",
+        "bytes": 59
+      }
+    }
+  ],
+  "ledgerEvents": [
+    {
+      "test": "TEST-CI-FIXTURE-002",
+      "hashes": [
+        "230f6598220d933d9ece0c84da3f47ab6a47bcb56ea166efc303664887272e94",
+        "331e03db01a4f12b7d14681e62264f81061a162750ca315a4fa05b6151d929ff",
+        "491079a39468e04ccb7a3030f53eecf6630874c21419bae1f55ac3eea08747a7",
+        "6a91ddab22f3ae141b0f78f5f0cada3702c7131ab16154ca37353956293f517a",
+        "7625aaf065bba399740c1bf12e773596fa117842f87e6fb8c78c0bcab641042c"
+      ]
+    }
+  ],
+  "errors": []
+}

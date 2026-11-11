@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "task": "TASK-CI-FIXTURE-001",
+  "sequence": 3,
+  "previous": "2ebe057b87624e2ff6622cbe869f9275cfec3bfd8a13b422f73c6c64f2793673",
+  "definitionSha256": "4ce0a86a49f4bf2d7220f852c2e9c2a8107559cd241ae04b4bb9092344837bed",
+  "inputSha256": "517c627b2f69fb5d5fd505243da0dbab6a9e1ebd91effc20660bd2bef7354d2a",
+  "status": "PASS",
+  "exit": 0,
+  "checks": [
+    {
+      "name": "regression",
+      "argv": [
+        "node",
+        "--test",
+        "--test-name-pattern",
+        "TEST-CI-FIXTURE-001",
+        "scripts/release-qualification.test.mjs"
+      ],
+      "timeoutMs": 120000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/0c7e3e5088fb77cdfbb257ecf23c038bd40f21fd705f6cff35256322c1b96f75/attempt-d6db216d-5bc1-4e7b-87e5-300e8fc11cc3/0.log",
+        "sha256": "410041302e3e3502751a5e07feb3e17df646ee6be573d8f9ae2ae5cb05ca5354",
+        "bytes": 237
+      }
+    },
+    {
+      "name": "native-TEST-CI-FIXTURE-001",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/tmp/musubix6-spec-feedback-28d27536/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-CI-FIXTURE-001",
+        "--root",
+        "/tmp/musubix6-spec-feedback-28d27536"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/0c7e3e5088fb77cdfbb257ecf23c038bd40f21fd705f6cff35256322c1b96f75/attempt-d6db216d-5bc1-4e7b-87e5-300e8fc11cc3/1.log",
+        "sha256": "c3a41fcdcfab257f5d5309d46e008365604b2cb650814cef116e52a645bd38bb",
+        "bytes": 59
+      }
+    }
+  ],
+  "ledgerEvents": [
+    {
+      "test": "TEST-CI-FIXTURE-001",
+      "hashes": [
+        "37541ac2eb72bd64e84522362b517923322d619f800a27e244f90502c763d33b",
+        "4507f8b20ef100cf30e3cefec23134d7ab9f453488a935d8b82bc24a9056b2e0",
+        "511459eadd118f2a2639b408787af3bc90c4576495acd2b45e10fbf04573eca6",
+        "5754b230b4fc99e6ab9fcd6f24e73eda9357b43deb9a8a660d65c73e4544b69e",
+        "f648bec295604cb492e8de5484c82c44dc69cef0d3b95dc73159981f3ee82658"
+      ]
+    }
+  ],
+  "errors": []
+}

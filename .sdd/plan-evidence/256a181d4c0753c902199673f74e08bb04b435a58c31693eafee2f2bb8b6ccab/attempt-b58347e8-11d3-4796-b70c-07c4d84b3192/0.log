@@ -1,0 +1,11 @@
+✔ TEST-PLAN-CLI-007 init and existing unset projects require plans across entry points (21816.066641ms)
+✔ TEST-PLAN-CLI-001 opt-in authority, strict config and unchanged disabled commands (5340.897439ms)
+✔ TEST-PLAN-CLI-005 standalone legacy commands survive absent optional planning modules (17940.204576ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 45166.027139

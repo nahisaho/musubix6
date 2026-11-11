@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import { feedbackRequired } from './implementation-feedback.mjs';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { PlanningError, containedPlanningPath, loadImplementationPlan,
@@ -194,7 +195,19 @@ function taskInputs(model, task, adapter, rows) {
     if (!inspection.errors.length && !coverage) inspection = { ...inspection,
       errors: [{ id: task.id, exit: 2, reason: 'required current native ledger-event coverage is missing' }] };
   }
-  const inputsKnown = Object.values(inspection.bindings).every(value => value !== null && value !== undefined);
+  let completion = null;
+  if (feedbackRequired(model.config)) {
+    EvidenceStore.require(typeof adapter?.completionInputs === 'function', 2, task.id, 'Required feedback input adapter is unavailable');
+    completion = adapter.completionInputs(task);
+    EvidenceStore.require(completion?.enabled === true && Array.isArray(completion.errors)
+      && completion.errors.every(error => error && [1, 2].includes(error.exit)
+        && typeof error.id === 'string' && typeof error.reason === 'string')
+      && (completion.bindings === null || completion.bindings && typeof completion.bindings === 'object'
+        && !Array.isArray(completion.bindings)), 2, task.id, 'Feedback input adapter returned unparseable evidence');
+    inspection = { ...inspection, errors: [...inspection.errors, ...completion.errors] };
+  }
+  const inputsKnown = Object.values(inspection.bindings).every(value => value !== null && value !== undefined)
+    && (!completion || completion.bindings !== null);
   if (!inputsKnown && !inspection.errors.length) inspection = { ...inspection,
     errors: [{ id: task.id, exit: 2, reason: 'required current native TEST binding is unavailable' }] };
   const commands = [...task.checks, ...native];
@@ -221,15 +234,34 @@ function taskInputs(model, task, adapter, rows) {
   const specs = Object.keys(task.specs).sort().map(relative => [relative, planningFileSha256(model.root, relative)]);
   const fingerprint = planningSha256(JSON.stringify({ definition: task.definitionSha256, specs, artifacts,
     configuration: { declared: model.config, sha256: fileBinding('.sdd/config.json') },
-    dependencies, verification: inspection.bindings, commands }));
+    dependencies, verification: inspection.bindings, commands,
+    ...(completion ? { feedback: completion.bindings } : {}) }));
   return { fingerprint, dependencies, inspection, commands, artifacts, inputsKnown,
+    ...(completion ? { feedbackErrors: completion.errors } : {}),
     bindingsCurrent: specs.every(([relative, current]) => task.specs[relative] === current)
       && Object.entries(dependencies).every(([id, current]) => task.dependencies[id] === current) };
+}
+
+/** @id CODE-FEEDBACK-SCOPE @implements REQ-FEEDBACK-004 REQ-FEEDBACK-005 */
+function feedbackScopeInputs(model, adapter) {
+  if (!feedbackRequired(model.config)) return null;
+  EvidenceStore.require(typeof adapter?.scopeInputs === 'function', 2, 'feedback', 'Required feedback inventory adapter is unavailable');
+  const result = adapter.scopeInputs();
+  EvidenceStore.require(result?.enabled === true && Array.isArray(result.errors)
+    && result.errors.every(error => error && [1, 2].includes(error.exit)
+      && typeof error.id === 'string' && typeof error.reason === 'string'),
+  2, 'feedback', 'Feedback inventory adapter returned unparseable evidence');
+  if (result.errors.length) throw new PlanningError(2, 'feedback', result.errors.map(error => error.reason).join('; '));
+  EvidenceStore.require(result.bindings && ['inventorySha256', 'historySha256', 'policySha256']
+    .every(key => typeof result.bindings[key] === 'string' && /^[a-f0-9]{64}$/.test(result.bindings[key])),
+  2, 'feedback', 'Current feedback inventory identity is unavailable');
+  return result.bindings;
 }
 
 /** @id CODE-PLAN-STATE-EVALUATE @implements REQ-PLAN-STATE-001 REQ-PLAN-STATE-002 REQ-PLAN-STATE-003 REQ-PLAN-STATE-004 */
 function evaluate(model, adapter, stage, taskIds, owner = null) {
   EvidenceStore.require(model && Array.isArray(model.tasks), 2, 'planning', 'validated planning model required');
+  const feedbackScope = feedbackScopeInputs(model, adapter);
   const byId = new Map(model.tasks.map(task => [task.id, task])), selected = new Set(taskIds ?? model.tasks.map(task => task.id));
   for (const id of selected) {
     EvidenceStore.require(byId.has(id), 2, id, 'unknown task scope');
@@ -257,6 +289,9 @@ function evaluate(model, adapter, stage, taskIds, owner = null) {
           verificationExit = 2; reasons.push('current verification history is missing');
         } else if (task.receipt !== head.path) {
           verificationExit = 1; reasons.push('authored receipt must name the current history head');
+        } else if (inputs.feedbackErrors?.length) {
+          verificationExit = EvidenceStore.verdict(inputs.feedbackErrors).exit;
+          reasons.push(...inputs.feedbackErrors.map(error => error.reason));
         } else if (head.inputSha256 !== inputs.fingerprint) {
           verificationExit = inputs.inputsKnown ? 1 : EvidenceStore.verdict(inputs.inspection.errors).exit || 2;
           reasons.push(inputs.inputsKnown ? 'verification inputs changed' : 'current native TEST binding is unavailable');
@@ -296,7 +331,8 @@ function evaluate(model, adapter, stage, taskIds, owner = null) {
   const errors = tasks.filter(task => stage === 'gate' ? task.state !== 'complete'
     : ['replan-required', 'revalidation-required'].includes(task.state))
     .map(task => ({ id: task.id, reason: task.reasons.join('; ') || `task is ${task.state}`, exit: task.exit }));
-  return { enabled: true, stage, ...EvidenceStore.verdict(errors), tasks, errors };
+  return { enabled: true, stage, ...EvidenceStore.verdict(errors), tasks, errors,
+    ...(feedbackScope ? { feedbackScope } : {}) };
 }
 
 /** @id CODE-PLAN-STATE-002 @implements REQ-PLAN-STATE-001 REQ-PLAN-STATE-002 REQ-PLAN-STATE-004 */
@@ -385,7 +421,8 @@ export function verifyImplementationTask({ model, taskId, adapter } = {}) {
     try {
       EvidenceStore.require(store.files(task).length < EvidenceStore.maxReceipts, 2, task.id,
         'receipt capacity reached; no checks executed and no history changed');
-      const before = evaluate(model, adapter, 'consistency', [task.id], task.id).tasks.find(row => row.id === task.id);
+      const evaluated = evaluate(model, adapter, 'consistency', [task.id], task.id);
+      const before = evaluated.tasks.find(row => row.id === task.id);
       EvidenceStore.require(!before.historyError, before.exit, task.id, before.reasons.join('; '));
       const head = before.history.at(-1);
       const receipt = { schemaVersion: 1, task: task.id, sequence: before.history.length + 1,
@@ -437,10 +474,18 @@ export function verifyImplementationTask({ model, taskId, adapter } = {}) {
           addError(loaded.exit || 2, 'current plan could not be revalidated after execution: '
             + loaded.errors.map(error => error.reason).join('; '));
         } else {
-          const current = evaluate(loaded.model, adapter, 'consistency', [task.id], task.id);
-          const after = current.tasks.find(row => row.id === task.id);
-          if (!after) addError(2, 'current task scope is unavailable after execution');
-          else {
+          let current;
+          try { current = evaluate(loaded.model, adapter, 'consistency', [task.id], task.id); }
+          catch (error) {
+            if (!(error instanceof PlanningError)) throw error;
+            addError(error.exit, error.message);
+          }
+          if (current && JSON.stringify(current.feedbackScope) !== JSON.stringify(evaluated.feedbackScope)) {
+            addError(1, 'feedback inventory or history changed during verification');
+          }
+          const after = current?.tasks.find(row => row.id === task.id);
+          if (current && !after) addError(2, 'current task scope is unavailable after execution');
+          else if (after) {
             if (after.fingerprint !== before.fingerprint) addError(1, 'task inputs changed during verification');
             if (after.historyError) addError(after.exit, 'retained history changed during verification: ' + after.reasons.join('; '));
             if (!after.ready) addError(current.exit || 2, 'current prerequisites or verification inputs are no longer available');

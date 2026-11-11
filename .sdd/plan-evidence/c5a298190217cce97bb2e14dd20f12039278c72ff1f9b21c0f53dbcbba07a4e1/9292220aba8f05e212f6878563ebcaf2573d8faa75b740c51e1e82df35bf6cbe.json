@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "task": "TASK-DIAGJS-002",
+  "sequence": 4,
+  "previous": "e9c8ae4146fab96f540b3254713d847ffb49333470499e7d6dd5a41b63aa54a0",
+  "definitionSha256": "7755a63726f1ec6264e2e60dbfb1e10739e4ee8202f42dbb17e8463bdaed9dc2",
+  "inputSha256": "0046263a67074188772f0f23567be6bf09005320febf8635d5b94a072457ceb7",
+  "status": "PASS",
+  "exit": 0,
+  "checks": [
+    {
+      "name": "regression-1",
+      "argv": [
+        "node",
+        "--test",
+        "--test-name-pattern",
+        "^(?:.*\\b(?:TEST-DIAGJS-002))(?![0-9A-Za-z])",
+        ".github/skills/lean-sdd-tdd/scripts/diagnostics-profiles.test.mjs"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/c5a298190217cce97bb2e14dd20f12039278c72ff1f9b21c0f53dbcbba07a4e1/attempt-866c0f4f-1236-47a5-add9-faabebb8017b/0.log",
+        "sha256": "aa3ed01567be7e765d5897c150015ec1ac49d82ef0d899866fd34e7bab7ba1ca",
+        "bytes": 207
+      }
+    },
+    {
+      "name": "native-TEST-DIAGJS-002",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/tmp/musubix6-spec-feedback-28d27536/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-DIAGJS-002",
+        "--root",
+        "/tmp/musubix6-spec-feedback-28d27536"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/c5a298190217cce97bb2e14dd20f12039278c72ff1f9b21c0f53dbcbba07a4e1/attempt-866c0f4f-1236-47a5-add9-faabebb8017b/1.log",
+        "sha256": "7859a80dcc74715d1ae6f1745bce1eb7349190f42b613ecc344c72a1e2d310bf",
+        "bytes": 51
+      }
+    }
+  ],
+  "ledgerEvents": [
+    {
+      "test": "TEST-DIAGJS-002",
+      "hashes": [
+        "0f621a4f2a8a98888679cde191fe2311f16bcea822c24df3f8ac223f43cdd1d0",
+        "2aea05a48788b82203525794262a5113a45c902c3c6b64edc099de6ff10d5a2f",
+        "319a22d6aebf41dba2873bef591e79c7ab553fd3e6a02f6404dee06ef97b2a4a",
+        "4c614fea36e2f0a19c92f5e977886336627a39ce06da581e1dfb67754a4a9711",
+        "623091b8da192bdf130d9e87931c26f841d268e89f08fb4563bf03df6e32b4d8",
+        "76328d61b7222dba7b4640222d20c456e721361b7130ade2f053706f0005f832",
+        "975500252be70dae9056e2b9299797ec28dbb607dbfa7780789f49aa1fec5048",
+        "a50a263b9c2b8bd9412312ff3fa65c96ce6c80f7c27436d7c92576423531f1c4"
+      ]
+    }
+  ],
+  "errors": []
+}

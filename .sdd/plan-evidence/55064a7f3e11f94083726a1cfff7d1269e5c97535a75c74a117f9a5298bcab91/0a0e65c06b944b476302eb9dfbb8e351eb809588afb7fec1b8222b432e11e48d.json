@@ -1,0 +1,106 @@
+{
+  "schemaVersion": 1,
+  "task": "TASK-R36D-OWN-001",
+  "sequence": 4,
+  "previous": "2fc3e0110857036403cc12f92a011808e3a6f1e6d7176bd285bc5d2a26225bc3",
+  "definitionSha256": "079b1aca3dc778d5c92cfc1c245689739fe74fd8152c330df57723660b5f5de9",
+  "inputSha256": "aa19b847a4c9e0761f845117630bfb34bbf0e9feac63047d3792efeae42ccbd3",
+  "status": "PASS",
+  "exit": 0,
+  "checks": [
+    {
+      "name": "regression-1",
+      "argv": [
+        "node",
+        "--test",
+        "--test-name-pattern",
+        "^(?:.*\\b(?:TEST-R36D-OWN-001|TEST-R36D-OWN-002))(?![0-9A-Za-z])",
+        ".github/skills/lean-sdd-tdd/scripts/sdd.test.mjs"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/55064a7f3e11f94083726a1cfff7d1269e5c97535a75c74a117f9a5298bcab91/attempt-a796ce93-5685-45fd-8b4d-f760bc9b62c0/0.log",
+        "sha256": "e3d2e60d479dcb6725a2b68755668fb70b8c9f3c3008a8007b44dc12979d10b3",
+        "bytes": 331
+      }
+    },
+    {
+      "name": "native-TEST-R36D-OWN-001",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/tmp/musubix6-spec-feedback-28d27536/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-R36D-OWN-001",
+        "--root",
+        "/tmp/musubix6-spec-feedback-28d27536"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/55064a7f3e11f94083726a1cfff7d1269e5c97535a75c74a117f9a5298bcab91/attempt-a796ce93-5685-45fd-8b4d-f760bc9b62c0/1.log",
+        "sha256": "f7751adbf958005f5f24a9ca2a5093774f1dd70547c680a99ed11973b7bf963b",
+        "bytes": 56
+      }
+    },
+    {
+      "name": "native-TEST-R36D-OWN-002",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/tmp/musubix6-spec-feedback-28d27536/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-R36D-OWN-002",
+        "--root",
+        "/tmp/musubix6-spec-feedback-28d27536"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/55064a7f3e11f94083726a1cfff7d1269e5c97535a75c74a117f9a5298bcab91/attempt-a796ce93-5685-45fd-8b4d-f760bc9b62c0/2.log",
+        "sha256": "a7bd750d55f25ac2d99973c2bea85592249a5e2fd734c70b304fdfa1dad7ed5b",
+        "bytes": 56
+      }
+    }
+  ],
+  "ledgerEvents": [
+    {
+      "test": "TEST-R36D-OWN-001",
+      "hashes": [
+        "06bf04788805c82f8d3506b4ddf0b8323bae1333b8bf185dd09c69e58bcbabca",
+        "08ba88e2c85a76fbf3174a35fc872d0db2bda3ff080c6adfc318916fb001db3a",
+        "37f9f0aa9495a1aa4a7421fa1da5f7da8b1d570d283954142fa3b96f1f2ff875",
+        "53654b60eecaa4e3c220c81d15fcd9b11763c855d6aec4fb1e02718f32552e22",
+        "80f0448045775fee652ee289059d95bb3e6bcf5237367a7dbf6e63380b19544c",
+        "85009a4363970482f6c6f7d209b39da02f688b9c287f9af4f2f65a5c75918867",
+        "b3e16ee5968e331fc0d8ee6d77d79b3cc04d53059d7475450b6a2fe36d4a5c86",
+        "cbd84927be9171e7cbd1df6f07580c47fb8ecd66a20032a3d31adf67863b3a05"
+      ]
+    },
+    {
+      "test": "TEST-R36D-OWN-002",
+      "hashes": [
+        "14c0443b4801d37d23ab9a60a27c02003064a2170f571e5f0b5ff2c75b0e362c",
+        "1a777fd2877cf1bc5f99668c86ecd3115b15e0579de6c4a641ea4302ab9bfe85",
+        "226d3fc70883211dda9c5b4d8ec668323af6a47aed275c1dc9a9db7c68e3095c",
+        "233a093b01f7cb3f863f7b070b30d7cd0e6265b656101a0a57465c24979bf570",
+        "62029edee6417c24b16ed3cb974812903d2d43e1b47fcbe0b3a4bb423e955eae",
+        "6677ae7e5f1dda7badd043d6125a28b15b578c6f5526734f7ccf580d755226ec",
+        "73bc45352a040cfa90799c0263c9f635f216c216c6427ab9207935f7ef9e49ec",
+        "9849fb66f0e094e84b1196e018799396dbb779ce95ad4663626667fea3c4005f",
+        "a556c43302287fd286821233d1d1baa3100ddc7fbfee0bfcc90156ccc94bd8e1"
+      ]
+    }
+  ],
+  "errors": []
+}

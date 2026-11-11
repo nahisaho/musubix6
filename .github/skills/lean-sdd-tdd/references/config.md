@@ -1,5 +1,99 @@
 # Install, config and test-runner detection
 
+Configure the installed SDD runner and reconcile implementation changes with
+canonical specifications without replacing native verification.
+
+## Implementation-to-specification feedback
+
+Use the installed `sdd.mjs` that exposes `feedback --help` (development
+checkout feature). This loop assumes a current JSON implementation plan and
+canonical `.sdd/specs/` requirements. New `sdd init` writes
+`"specFeedback":{"required":true}` only when creating configuration.
+Existing configurations with an omitted field, `{}` or `{"required":false}`
+stay disabled; opt in explicitly with `{"required":true}`.
+Invalid outer types, unknown fields or nonboolean `required` refuse with 2.
+Enabled feedback requires planning; explicit planning opt-out also requires
+explicit feedback opt-out in a new project, never a validation bypass.
+
+Resolve `$S` to this installed skill's script. Substitute actual feature/task
+IDs for `FEATURE`/`TASK`:
+
+```sh
+$S feedback status FEATURE --json
+$S feedback record FEATURE --json
+$S plan verify TASK --json
+```
+
+Status is read-only. Before recording, append a fenced entry to the existing
+owning specification and update intended requirements/Design as needed.
+Even unchanged requirements require a meaningful design/change summary.
+Replace this example digest and REQ/TEST IDs with the current status digest
+and actual mapped IDs. The six fields are exact:
+
+````markdown
+```sdd-feedback
+{
+  "schemaVersion": 1,
+  "id": "value-refactor-1",
+  "implementationSha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "summary": "Extract value calculation without changing the intended return contract.",
+  "reqs": ["REQ-VALUE-001"],
+  "tests": ["TEST-VALUE-001"]
+}
+```
+````
+
+IDs are feature-local lifetime-unique portable strings (1..128 characters);
+summary is nonblank and at most 4096 UTF-8 bytes. REQ/TEST arrays are nonempty,
+unique and refer to existing mappings covering every affected current/former
+REQ. Retain all accepted entries unchanged and ordered; the newest entry must
+match current implementation. A-to-B-to-A needs a fresh ID. Repeating an
+already-current record is read-only and idempotent.
+
+Inventory combines configured native sources and explicit implementation-task
+artifacts before scope filtering. Every candidate needs plan ownership and
+consistent CODE/REQ mappings; unannotated source is not implicitly a test.
+Canonical specs, `.sdd/` execution state, documentation-only artifacts and
+TEST-only native files without CODE annotations are excluded. Shared files
+bind all owners. Digest is SHA256(JSON.stringify(rows)), sorted by path, using
+`{path,sha256,owners:[{feature,task,reqs,codes}]}`; owners sort by feature/task,
+and REQ/CODE arrays sort lexically. Status supplies the digest; it does not
+certify prose meaning.
+
+Removal requires the former owner's entry. Same-path transfers retain
+recipient identities until all affected owners acknowledge, including an
+already-empty recipient. Receiving-owner-first acceptance counts only for an
+exact source/ownership identity after the former owner's last owning record.
+Resolved transfers release former owners from future recipient edits.
+Missing canonical former owners/REQs block; this feature adds no retirement
+mechanism or semantic inference for renames with changed paths and CODE IDs.
+
+| Result | Exit | Recovery |
+| --- | --- | --- |
+| Disabled/current status or accepted explicit record | 0 | Run normal native verification; this is not task/gate/release success |
+| Previously accepted implementation/specification/ownership changed | 1 | Update the canonical entry and reconcile every affected owner |
+| Missing entry/acceptance, unresolved mapping/planning/configuration/history, occupied lock | 2 | Resolve the named input; do not fabricate baseline evidence |
+
+`plan verify` refuses missing/stale feedback before executing task checks;
+full/changed gates validate effective tasks and prerequisites. Global unknown
+inventory/malformed history refuses even an empty changed scope. Red/Green
+remains available. Source/history changes across live verification/gate checks
+prevent success. Disabled mode does not read feedback history.
+
+Acceptance appends/fsyncs `.sdd/spec-feedback.jsonl` under the non-stealable
+`.sdd/spec-feedback.lock` directory lease. History binds complete specification,
+source/ownership, immutable entry-prefix and transfer/acknowledgement identities.
+Bounds: history 8 MiB; specification/canonical record 1 MiB; 4096 records/source
+paths; source hashing 64 MiB total; configured per-source scan cap (16 MiB default).
+For an occupied lock, confirm its owner is absent before manually removing that
+exact lock; retain malformed/partial history for investigation.
+Trusted scan policy, local history and command-boundary snapshots do not attest
+excluded/unsupported files, intermediate edits or hostile-host rollback.
+Never weaken intended requirements, discard failures or infer semantic correctness,
+approval, test success, task completion or release permission from acceptance.
+
+## Other installation and runner settings
+
 - Since v0.2.8, `sdd init` writes `"planning":{"required":true}` in new `.sdd/config.json` files. Missing config/planning/required also enables JSON planning for existing projects without rewriting their configuration. Only explicit boolean false opts out; malformed planning policy or nonboolean `required` refuses with FAIL1, including the string `"false"`. Prepare a current `.sdd/implementation-plan.json` covering the configured/default scope before plan/context/gate, or explicitly select `"planning":{"required":false}` for legacy Markdown. No automatic task decomposition, plan migration or completion receipt is supplied; missing plans are INCOMPLETE2.
   For v0.2.7 compatibility, an explicit boolean false in a valid planning object ignores unused sibling fields such as `features`; those fields do not select scope while planning is disabled.
 

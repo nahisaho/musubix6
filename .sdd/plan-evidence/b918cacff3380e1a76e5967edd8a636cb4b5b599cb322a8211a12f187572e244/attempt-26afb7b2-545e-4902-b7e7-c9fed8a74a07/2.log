@@ -1,0 +1,22 @@
+node:fs:621
+  return binding.open(
+                 ^
+
+Error: ENOENT: no such file or directory, open '/tmp/musubix6-spec-feedback-28d27536/.sdd-test-work-etBBBZ/r34-counted.mjs'
+    at Object.openSync (node:fs:621:18)
+    at Object.readFileSync (node:fs:487:35)
+    at fileSha (file:///tmp/musubix6-spec-feedback-28d27536/.github/skills/lean-sdd-tdd/scripts/sdd.mjs:60:31)
+    at file:///tmp/musubix6-spec-feedback-28d27536/.github/skills/lean-sdd-tdd/scripts/sdd.mjs:5492:1497
+    at Array.map (<anonymous>)
+    at cmdTdd (file:///tmp/musubix6-spec-feedback-28d27536/.github/skills/lean-sdd-tdd/scripts/sdd.mjs:5492:1482)
+    at file:///tmp/musubix6-spec-feedback-28d27536/.github/skills/lean-sdd-tdd/scripts/sdd.mjs:8218:34
+    at ModuleJob.run (node:internal/modules/esm/module_job:561:25)
+    at async node:internal/modules/esm/loader:647:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/tmp/musubix6-spec-feedback-28d27536/.sdd-test-work-etBBBZ/r34-counted.mjs'
+}
+
+Node.js v24.22.1

@@ -9,5 +9,8 @@
   "implementation-plan-evidence": "7e88457e5fe509f41d3480c1f4d62ec8492af11857afc4cbad5397caa846175c",
   "implementation-plan-cli": "5a5b6c5e5280ff57d099e801eb340f4bf122187576ce1f35ef2e4b66b21b6652",
   "implementation-plan-workflow": "a31ea9c1fe79f018e6361c0a3244d1969a87ee0a9342bd689eef0e31e0c64fba",
-  "japanese-prose-naturalness": "1399674c8e6c68d1ee6b7a8c4860ed00fe1498127dbf3313f2d6f0e9c344e147"
+  "japanese-prose-naturalness": "1399674c8e6c68d1ee6b7a8c4860ed00fe1498127dbf3313f2d6f0e9c344e147",
+  "implementation-feedback": "8bf9839210ddc537a2dc18f68732ccd25a6a95c4db4b2b1e927386902a338569",
+  "implementation-feedback-workflow": "1d923d0e83784d9da45baeba32a85ceae620d9358f23382876f6c288df1f200c",
+  "ci-regression-fixtures": "40688b171ff273268c0b9f17f5aa08be41230b95392d6306409ee54c404f9e24"
 }

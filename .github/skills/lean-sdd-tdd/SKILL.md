@@ -97,6 +97,40 @@ retain exact artifact paths/hashes, residual risks and explicit human approval.
 Instructions cannot mechanically guarantee agent obedience or hostile-host
 attestation. Scope/policy weakening still needs explicit approval.
 
+## Implementation-to-specification feedback
+
+For every implementation batch, reconcile delivered changes with the owning
+canonical specification in `.sdd/specs/`. The CLI loop requires specification-linked
+planning: new `sdd init` configurations default to `specFeedback.required:true`;
+existing projects opt in explicitly. Omitted settings remain disabled.
+To intentionally use legacy planning in a new project, explicitly disable
+both planning and feedback; never disable either merely to pass validation.
+Canonical impact review and design/change notes apply to every batch. The
+numbered CLI acceptance steps below apply only when feedback is enabled;
+disabled projects retain their existing approval/TDD/gate workflow without
+`feedback record`. Enabling an existing project requires an explicit decision,
+not an automatic configuration rewrite.
+
+1. Run `$S feedback status FEATURE --json` to identify current source/ownership digests, affected REQs and pending counterparts.
+2. Review the implementation delta against intended requirements, Design and TEST mappings. Resolve intended behavior changes before proceeding; fix unintended deviations in code.
+3. Update the existing specification's Design/change log with a fresh fenced `sdd-feedback` entry, even when requirements are unchanged (including refactoring). Include the current digest, lifetime-unique ID, meaningful summary, affected existing REQs and mapped TEST IDs; retain accepted entries unchanged and ordered. Use the exact format in `references/config.md`, not a second requirements document.
+4. Obtain current independent review and required approval for the changed canonical specification. Policy weakening, destructive operations and release still require genuine human approval.
+5. Inspect `$S plan bindings --json`, adopt known binding changes and reconcile affected/transitive tasks. Obtain current native Red/Green evidence and bounded, restored mutation results; do not replace execution with hash-only receipt refreshes.
+6. Run `$S feedback record FEATURE --json` to accept that explicit entry. Shared sources and ownership transfers require every affected counterpart to reconcile; inspect status again until current.
+7. Refresh affected/transitive plan bindings and prerequisite verification after recording, because acceptance changes completion fingerprints. Previously previewed hashes may now be stale.
+8. Run `$S plan verify TASK --json`, then adopt only its current successful receipt and update progress. Repeat affected stages after any relevant implementation, specification, ownership or test change; run the full project gate before merge.
+
+Never weaken requirements to legitimize defective code. The agent owns semantic
+review; CLI hashes establish identity consistency, not semantic correctness.
+Feedback acceptance is not test success, task completion, gate success or
+release readiness. Preserve failed evidence and genuine required approvals.
+Missing/stale feedback blocks verification before checks and blocks scoped/full
+gate completion, but not Red/Green. Unknown inventory/history blocks even an
+empty changed-task scope. Canonical specs and generated execution evidence are
+excluded from implementation hashing to avoid self-referential updates.
+Scan policy and declared ownership remain trusted inputs; snapshots do not
+observe every editor action or prove model obedience or hostile-host integrity.
+
 ## 1. Spec (one file = requirements + design + approval unit)
 `.sdd/specs/<feature>.md`, template in `references/spec-template.md`. Frontmatter `feature`, `tier`, optional `approval: human`. One `REQ-<F>-nnn` line per requirement (EARS). Bug fix: one REQ describing the correct behavior. First use: `$S init`.
 

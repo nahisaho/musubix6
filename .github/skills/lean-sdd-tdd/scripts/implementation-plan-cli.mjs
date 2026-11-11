@@ -23,7 +23,7 @@ export function readPlanningConfiguration(root, fallback) {
   return config;
 }
 
-const bookkeeping = new Set(['.sdd/tdd.jsonl', '.sdd/approvals.json', '.sdd/prepare-shown.json', '.sdd/prepare-cache.json']);
+const bookkeeping = new Set(['.sdd/tdd.jsonl', '.sdd/approvals.json', '.sdd/prepare-shown.json', '.sdd/prepare-cache.json', '.sdd/spec-feedback.jsonl']);
 function isPlanningBookkeeping(model, file) {
   if (bookkeeping.has(file) || file === '.sdd/plan.md') return true;
   return model.tasks.some(task => {

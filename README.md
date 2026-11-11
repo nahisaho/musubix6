@@ -193,6 +193,12 @@ Optional `planning.features` selects trusted scope; otherwise all current spec
 features and prerequisites are required. Plan JSON cannot narrow that scope.
 Only explicit `"planning":{"required":false}` preserves Markdown planning
 without reading JSON. Enabled mode uses only JSON and ignores Markdown.
+In this development checkout, fresh `sdd init` also enables
+`"specFeedback":{"required":true}`; existing configurations explicitly opt in.
+It requires canonical implementation-change entries before task verification
+and gates, but not Red/Green. To intentionally use legacy planning when feedback
+is enabled, explicitly set `"specFeedback":{"required":false}` too.
+See the installed skill's [feedback configuration and loop](.github/skills/lean-sdd-tdd/references/config.md#implementation-to-specification-feedback).
 Malformed planning policy or a nonboolean `required` value exits1 instead of
 opting out; the string `"false"` is not the boolean `false`.
 Existing projects need a current full-scope plan or an explicit opt-out;

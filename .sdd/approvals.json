@@ -252,26 +252,27 @@
   "release-qualification": {
     "by": "nahisaho",
     "kind": "human",
-    "at": "2026-11-10T22:27:26.321Z",
+    "review": "Explicit approval of the seven prepared current path/hash pairs for development task verification only. Release qualification, tagging, npm publication, commit and push remain stopped.",
+    "at": "2026-11-11T08:30:33.408Z",
     "artifacts": {
       ".sdd/specs/release-qualification.md": "353b263e8a543158d28fbc2c18a9315ecbc8de5584fe19b14e6e09719d50b265",
       ".sdd/release-validation.v0.2.10.json": "fce4b43abb229843e0dd246534c10f7bf70321a3ab899b0461986105278f11bf",
       ".sdd/release-content-mutations.v0.2.10.json": "4f39011db146f92e32aeb54a161781f1643ee9121fe78c88f0c3f5e53c8ee7d2",
       ".sdd/specs/claude-code-support.md": "2c846e5878db59abb7ba0cc3aa9b7f49256c91a6a250931a7e0e53a7cf826560",
-      "README.md": "8dc3288651f7a3b28dc4a25b92f04ca63f9ecd81a2d793a7cd14da8ef69c4645",
-      "README-ja.md": "45e3abf8658fc019abe6c0c8921dae31fd6c81fcf31fa66ccf2cda6910cb26b5",
+      "README.md": "5f44a69042171b2b3c281ffd6816f7df846f6b14b636d0c44e228f20eac81cec",
+      "README-ja.md": "5eadfaf6998167c0c0bc3ef39b1de1168a492c35cf0a4c00db073f98355724ec",
       "CLANGELOG.md": "b2988d54fc58f1e27a800ca3c4b4e9066d21573146ac10da22886ff2b0470e31"
     },
     "tier": "T2",
     "requireHuman": true,
     "code": {
       "scripts/release-host-mutations.mjs": "6921bf50d7f7df70ce2e3a3e23b0acbf67def78f0e4d358b1d7a5adcb091b618",
-      "scripts/release-qualification-cells.mjs": "28ec18edf72b2387070435eb8e73673d9ff64cf13dc7b592c59f55c07b4f1337",
-      "scripts/release-qualification-cli.mjs": "865e7ddb1aa399e5cc845b15754e9c616eef7cf1add92ccf349b455afb6ffcca",
-      "scripts/release-qualification-content-mutations.mjs": "dcd56b74b62917a321bcf8a1df55da521a9be27b29e16c73f1868a1fd6395b6e",
-      "scripts/release-qualification-evidence.mjs": "65bb176846b259cea684ba2bdb5dc53f6394cf1224fc2424455c0c32d48ca1a0",
+      "scripts/release-qualification-cells.mjs": "e5536c18d0da555222cf50ee76cfa0c2cc5a4fe921d57b547c7b91e5ce41ba20",
+      "scripts/release-qualification-cli.mjs": "14796bd1efbe8f9d26a7a835d06eafe40403b4054db6ef57b287e96082639ceb",
+      "scripts/release-qualification-content-mutations.mjs": "f615cd4251688f4c2de4e3e11060d7646748a8f60c8ad0a6eb8d96c8cd0b4793",
+      "scripts/release-qualification-evidence.mjs": "1f2af8ec0e458893ae7f580fc2b5e1020c32f5c2d19aa848336e698c512837f2",
       "scripts/release-qualification-io.mjs": "56da8043e445f7f636388fb00e8cad1cfa9b5e56c6f1a2f787f270acd8184fb0",
-      "scripts/release-qualification.mjs": "56a74b69cd3624921e869065b76ac27ea4051b514eefad6fdaf640be450de9e3"
+      "scripts/release-qualification.mjs": "c305f554ccef4d14ddad3b18455749074a0cd4c32e30ddf7dafe41c1580177bb"
     }
   },
   "rust-stub-confidence": {
@@ -364,17 +365,41 @@
     }
   },
   "ci-regression-fixtures": {
-    "by": "ai:gpt-6.1-sol-independent-review",
+    "by": "ai:feedback-contract",
     "kind": "ai",
     "review": ".sdd/review-ci-regression-fixtures.md",
-    "reviewSha": "e468994fac23a1131906989a5b4442aa280445b77efdcfd83daf65b7e4a8af40",
-    "at": "2026-11-10T23:04:11.495Z",
+    "reviewSha": "6e3b0f3ab2c3d06e79ba0ed84e2ca55ced4322d524aa7721f1c5981fc79b5c9d",
+    "at": "2026-11-11T08:30:35.053Z",
     "artifacts": {
       ".sdd/specs/ci-regression-fixtures.md": "40688b171ff273268c0b9f17f5aa08be41230b95392d6306409ee54c404f9e24",
       "scripts/release-qualification.test.mjs": "a7480b343e4a6c0dcfcb9e039e32ca58298efaee275d532a0e6aff046727d282",
       "scripts/release-host-mutations.test.mjs": "6a6798b24e1aae5bb01c8502c4edb99da0281894562c25779bf3bbb7deccd914",
-      ".github/skills/lean-sdd-tdd/scripts/sdd.test.mjs": "306b6d5d3d9fe13a364870831eb0f4d812df9ba644bc4ce002bc86d7bed779c1",
+      ".github/skills/lean-sdd-tdd/scripts/sdd.test.mjs": "b0810139e648802f6c2e59d4f1ad435612f6a1f96903a9ff3948cf150830c86a",
       ".github/skills/lean-sdd-tdd/scripts/implementation-plan-cli.test.mjs": "d830cf57e9a94c52d88a88134e3d52ab906b0513135df3cc247f5d58ded3e474"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "implementation-feedback": {
+    "by": "ai:feedback-contract",
+    "kind": "ai",
+    "review": ".sdd/review-implementation-feedback.md",
+    "reviewSha": "bc7c224f9e4ba273ff11d8fb9f91ece6cc756fa5cb6be4803ba7dba8eea784d3",
+    "at": "2026-11-11T06:52:58.524Z",
+    "artifacts": {
+      ".sdd/specs/implementation-feedback.md": "44daba87154799951133fd243de1fe0e8c14bc7a584fb9e19667cd73f2236b68"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "implementation-feedback-workflow": {
+    "by": "ai:feedback-contract",
+    "kind": "ai",
+    "review": ".sdd/review-implementation-feedback-workflow.md",
+    "reviewSha": "1ea03fb4ec7d6fab15acadc93e8ba4470098e2f4de0c199fedecd5ce13e0a650",
+    "at": "2026-11-11T04:51:45.746Z",
+    "artifacts": {
+      ".sdd/specs/implementation-feedback-workflow.md": "066d142587668b87317c0014d0a8a0bb0baa4880e8d50d0c730ef37e573fb7c0"
     },
     "tier": "T2",
     "requireHuman": false

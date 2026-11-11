@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "task": "TASK-R36G-002",
+  "sequence": 4,
+  "previous": "44293e2b567c4b8a4ea79325d860322021745bbf970d4f807484399741af21a3",
+  "definitionSha256": "93b4cf90b1eb67adac89630b1cf00ae5a7b9733fc9ec03a0ca24bb7b9e4a4ab6",
+  "inputSha256": "2c3ee90fc62f2d3a41d8401e1d7b9cdad94f7ec47e852b4dd86b0a6223867755",
+  "status": "PASS",
+  "exit": 0,
+  "checks": [
+    {
+      "name": "regression-1",
+      "argv": [
+        "node",
+        "--test",
+        "--test-name-pattern",
+        "^(?:.*\\b(?:TEST-R36G-002))(?![0-9A-Za-z])",
+        ".github/skills/lean-sdd-tdd/scripts/sdd.test.mjs"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/28059b6f89c887907eb9d73098d0ea6461a3700ffe0119544f1014a5dc16f084/attempt-76a8c6de-e512-4b29-b835-b817a72f4093/0.log",
+        "sha256": "2cec30ee3ee98d7470c91ea9eeb2fdd8904d020fc9351f3b8577319819cd91ca",
+        "bytes": 221
+      }
+    },
+    {
+      "name": "native-TEST-R36G-002",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/tmp/musubix6-spec-feedback-28d27536/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-R36G-002",
+        "--root",
+        "/tmp/musubix6-spec-feedback-28d27536"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/28059b6f89c887907eb9d73098d0ea6461a3700ffe0119544f1014a5dc16f084/attempt-76a8c6de-e512-4b29-b835-b817a72f4093/1.log",
+        "sha256": "0561b6b6c86cb7996e55bec4323882e57babb14907504b235190f8b9d6f0a766",
+        "bytes": 48
+      }
+    }
+  ],
+  "ledgerEvents": [
+    {
+      "test": "TEST-R36G-002",
+      "hashes": [
+        "0ef708e386ebf1fcfbf7e930b50d80bf016add6efbc5904a0684b819a581f933",
+        "4a8b858290c98861698aa280f6ccd838f0e03481f66488533494c810077d21fe",
+        "55d5ff5eada72b807ce5185ff08e4f0ef926b282843f92b778dabf4eeab7c1c8",
+        "6f8acd3ab141c09493af5a9cba9395bb0a07e6a2c600198429ab89debf1f3ff4",
+        "a64dfcc3e11b251ee833b8ffae31ed8ebe9a182faa011e70704747aabbb5e34f",
+        "d430cb4aa00410f6339fb841dd8c4975facd9604bfff98d786791b05e426f0fb",
+        "df7c8be51650675db3b975629a0624e11f3a6314db6819943cad3fb06f88f149",
+        "f48994ce2dc77e89d93d91e58e13cac1ecee7d3a84f9d84329b2e69883f7bd10"
+      ]
+    }
+  ],
+  "errors": []
+}

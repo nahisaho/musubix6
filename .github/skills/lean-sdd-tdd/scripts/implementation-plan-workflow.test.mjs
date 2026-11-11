@@ -67,6 +67,68 @@ function roleFiles(root, environment) {
 }
 const invalidGitFailure = error => error instanceof assert.AssertionError
   && error.actual === 128 && error.expected === 0;
+const feedbackHeading = '## Implementation-to-specification feedback';
+function feedbackInstructions(root, role) {
+  return section(fs.readFileSync(path.join(root, '.github/skills', role, 'SKILL.md'), 'utf8'), feedbackHeading);
+}
+
+/** @id TEST-FEEDBACK-FLOW-001 @verifies REQ-FEEDBACK-FLOW-001 */
+test('TEST-FEEDBACK-FLOW-001 implementation batches repeat the canonical specification feedback loop', () => {
+  const body = feedbackInstructions(source, 'lean-sdd-tdd');
+  for (const token of ['every implementation batch', 'canonical specification', 'Design', 'sdd-feedback',
+    'feedback status', 'feedback record FEATURE', 'plan bindings', 'plan verify TASK', 'Red/Green', 'approval']) {
+    assert.ok(body.includes(token), `The canonical feedback loop must require ${token}.`);
+  }
+  assert.match(body, /requirements.*unchanged/i, 'Refactoring still requires an implementation-change entry.');
+  assert.match(body, /repeat/i, 'Relevant changes must loop back through reconciliation.');
+  assert.match(feedbackInstructions(source, 'lean-agentic-coding'), /lean-sdd-tdd/,
+    'The orchestration skill must delegate to the same canonical loop.');
+});
+
+/** @id TEST-FEEDBACK-FLOW-002 @verifies REQ-FEEDBACK-FLOW-002 */
+test('TEST-FEEDBACK-FLOW-002 feedback instructions retain semantic, approval and evidence boundaries', () => {
+  const body = feedbackInstructions(source, 'lean-sdd-tdd');
+  for (const token of ['Never weaken requirements', 'semantic', 'identity', 'failed evidence',
+    'human approval', 'release', 'generated execution evidence']) {
+    assert.ok(body.includes(token), `Feedback rules must preserve ${token}.`);
+  }
+  assert.match(body, /not.*(?:test success|task completion)/i);
+  assert.match(body, /new.*default|default.*new/i);
+  assert.match(body, /existing.*opt in|opt in.*existing/i);
+});
+
+/** @id TEST-FEEDBACK-FLOW-003 @verifies REQ-FEEDBACK-FLOW-003 */
+test('TEST-FEEDBACK-FLOW-003 actual package and both installed hosts expose identical feedback runtime and defaults', t => {
+  const work = temporary(t), environment = isolatedEnvironment(work);
+  const packed = JSON.parse(run(source, 'npm', ['pack', '--ignore-scripts', '--json', '--pack-destination', work], 0, environment));
+  assert.equal(packed.length, 1);
+  run(work, 'tar', ['-xzf', path.join(work, packed[0].filename)]);
+  const payload = path.join(work, 'package');
+  const relative = '.github/skills/lean-sdd-tdd/scripts/implementation-feedback.mjs';
+  assert.ok(fs.existsSync(path.join(payload, relative)), 'The actual tarball must include the feedback runtime.');
+  assert.deepEqual(fs.readFileSync(path.join(payload, relative)), fs.readFileSync(path.join(source, relative)));
+  const installed = path.join(work, 'application');
+  run(work, process.execPath, [path.join(payload, 'bin/musubix6.mjs'), 'init', installed,
+    '--host', 'both', '--only', 'lean-sdd-tdd,lean-agentic-coding'], 0, environment);
+  for (const host of ['.github', '.claude']) {
+    const directory = path.join(installed, host, 'skills/lean-sdd-tdd');
+    assert.ok(fs.existsSync(path.join(directory, 'scripts/implementation-feedback.mjs')),
+      'Each installed host must include its own feedback runtime.');
+    assert.deepEqual(fs.readFileSync(path.join(directory, 'scripts/implementation-feedback.mjs')),
+      fs.readFileSync(path.join(source, relative)));
+    for (const role of ['lean-sdd-tdd', 'lean-agentic-coding']) {
+      assert.equal(fs.readFileSync(path.join(installed, host, 'skills', role, 'SKILL.md'), 'utf8'),
+        fs.readFileSync(path.join(source, '.github/skills', role, 'SKILL.md'), 'utf8'));
+    }
+    const project = path.join(work, host.slice(1)); fs.mkdirSync(project);
+    const entry = [path.join(directory, 'scripts/sdd.mjs')];
+    cli(project, entry, ['init'], 0, environment);
+    assert.equal(JSON.parse(fs.readFileSync(path.join(project, '.sdd/config.json'), 'utf8')).specFeedback?.required, true,
+      'The real installed entry must default feedback on, without a source fallback.');
+    assert.match(cli(project, entry, ['feedback', '--help'], 0, environment), /feedback status/);
+    assert.equal(json(project, entry, ['feedback', 'status'], 2, environment).status, 'INCOMPLETE');
+  }
+});
 function section(body, start) {
   const index = body.indexOf(start);
   assert.ok(index >= 0, `Required operational planning instructions are missing: ${start}`);

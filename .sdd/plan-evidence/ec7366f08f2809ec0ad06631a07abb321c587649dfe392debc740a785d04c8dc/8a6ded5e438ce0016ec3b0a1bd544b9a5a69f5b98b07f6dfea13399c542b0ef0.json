@@ -1,0 +1,132 @@
+{
+  "schemaVersion": 1,
+  "task": "TASK-FEEDBACK-WORKFLOW",
+  "sequence": 2,
+  "previous": "25ca3b59e9d6819e369858eef1d733fe92878dcf1636539c81c94d3c158c7054",
+  "definitionSha256": "79f4c396f1d39ade445da5fd721b86c5bad79379513fda5c7eaa34080da04807",
+  "inputSha256": "1b483f0e76cba26e3867a545fbd757451215381bf404d1af3ae907f7754aed31",
+  "status": "PASS",
+  "exit": 0,
+  "checks": [
+    {
+      "name": "feedback-workflow",
+      "argv": [
+        "node",
+        "--test",
+        "--test-name-pattern",
+        "TEST-FEEDBACK-FLOW-",
+        ".github/skills/lean-sdd-tdd/scripts/implementation-plan-workflow.test.mjs"
+      ],
+      "timeoutMs": 120000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/ec7366f08f2809ec0ad06631a07abb321c587649dfe392debc740a785d04c8dc/attempt-baa3da70-0883-4dee-83b5-63a5cd563ea2/0.log",
+        "sha256": "6738a75da484b1fefd000dbe83ce52c1410c03fc1b97b3e75d8721121de0ec33",
+        "bytes": 470
+      }
+    },
+    {
+      "name": "native-TEST-FEEDBACK-FLOW-001",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/tmp/musubix6-spec-feedback-28d27536/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-FEEDBACK-FLOW-001",
+        "--root",
+        "/tmp/musubix6-spec-feedback-28d27536"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/ec7366f08f2809ec0ad06631a07abb321c587649dfe392debc740a785d04c8dc/attempt-baa3da70-0883-4dee-83b5-63a5cd563ea2/1.log",
+        "sha256": "73a9c4b8e772d70381eed20c81d9660685f73dff20c3591b951a7ef5bc4360b3",
+        "bytes": 65
+      }
+    },
+    {
+      "name": "native-TEST-FEEDBACK-FLOW-002",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/tmp/musubix6-spec-feedback-28d27536/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-FEEDBACK-FLOW-002",
+        "--root",
+        "/tmp/musubix6-spec-feedback-28d27536"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/ec7366f08f2809ec0ad06631a07abb321c587649dfe392debc740a785d04c8dc/attempt-baa3da70-0883-4dee-83b5-63a5cd563ea2/2.log",
+        "sha256": "7aaf6296a8663096102bd9070f32f61489869e3b57b1311aeb8c0f423cbc7b00",
+        "bytes": 65
+      }
+    },
+    {
+      "name": "native-TEST-FEEDBACK-FLOW-003",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/tmp/musubix6-spec-feedback-28d27536/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-FEEDBACK-FLOW-003",
+        "--root",
+        "/tmp/musubix6-spec-feedback-28d27536"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/ec7366f08f2809ec0ad06631a07abb321c587649dfe392debc740a785d04c8dc/attempt-baa3da70-0883-4dee-83b5-63a5cd563ea2/3.log",
+        "sha256": "0d7fb163f1b34f2427493e7b026115adb5818d355a7b9ba3bad4bdf3d5b448e7",
+        "bytes": 66
+      }
+    }
+  ],
+  "ledgerEvents": [
+    {
+      "test": "TEST-FEEDBACK-FLOW-001",
+      "hashes": [
+        "14f76a87919ee30abc6327ec64f78ddf0862622f0d63767db333c04379421cc5",
+        "44efab07e22ccdf2f70dff089082585147e741c1ee11d4ca762936355e2ede35",
+        "460e470c053a0e9c6ec904095fd5bbf9ad52bc122a2725997eaf800ad644b012",
+        "96916f6ba7a681e2f40d4147035261c12ec995f6167543dddf30a123c8c69845",
+        "985b5320a887ba281ebea7276e647bc78dc566e02cfbb3ba7f6d0c1e5877c747"
+      ]
+    },
+    {
+      "test": "TEST-FEEDBACK-FLOW-002",
+      "hashes": [
+        "144834d6045c58f95e4c2f45351ef4906bdf5b2565707d105091d7015eb42ee0",
+        "272962761ea2df4b529357dcdc8f9b092c00eb3a8b7d653769cd7568d6292b5d",
+        "65998f48f8f2951ff5f453db3b6269b0061b27c64d45c7b57967ba1c27eccec1",
+        "b05b357e88a9254c92637d5bfb4a26f94281d18545dd532ebd99c9c09b1a92fc",
+        "c32ae67da4687a8364bab5c6000af4e0d207b58aa09d83c26305064ed7370812"
+      ]
+    },
+    {
+      "test": "TEST-FEEDBACK-FLOW-003",
+      "hashes": [
+        "727c5e22d25ad969ba06dbaf67ff307d25c2dca933b3bb409396a4d5d7d225c2",
+        "b22274852d9d72dd49bd1b885e48d61d47037d93cf4a2ea605aae62fdfbbd5f3",
+        "c71c7f197f389ace01bc2a0489915ec96640c62b1051a64069b3d238ae3affe1",
+        "e2d8fe0a91f46acaccd8db6bf62331025184fd51bf263e5e3f8bb10712cdd013",
+        "e904126a122b5df07fb1944f7c65f65ac606b172fe672ded087099acf4fa4797",
+        "f9df4443ed7cb7f63efeb4f1e55fb641faf748fcfded7b4fc651eb191cf6ea8b"
+      ]
+    }
+  ],
+  "errors": []
+}

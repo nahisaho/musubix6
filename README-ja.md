@@ -185,6 +185,12 @@ Markdown のタスク一覧を別途管理する必要はありません。
 前提機能が対象です。計画 JSON だけで対象を狭めることはできません。
 `"planning":{"required":false}` を明示した場合だけ、従来の Markdown 計画を使い、
 JSON は読みません。
+この開発版の新規 `sdd init` は、`"specFeedback":{"required":true}` も保存します。
+既存の設定では、利用者が明示的に有効化します。
+有効時は、タスク検証とゲートの前に、実装変更を正本の仕様書へ記録する必要があります。
+Red/Green は実行できます。従来の方式へ切り替える場合は、
+`"specFeedback":{"required":false}` も明示してください。
+詳しくは、導入済みスキルの [フィードバック設定と手順](.github/skills/lean-sdd-tdd/references/config.md#implementation-to-specification-feedback) を参照してください。
 有効時は JSON だけを正本とし、Markdown は参照しません。
 planning の形式が不正な場合や required が真偽値でない場合は、無効化せず終了コード1で拒否します。
 文字列の `"false"` は真偽値の `false` とは異なります。

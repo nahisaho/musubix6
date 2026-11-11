@@ -35,21 +35,23 @@ const APPROVALS = path.join(SDD, 'approvals.json');
 const PREPARE_SHOWN = path.join(SDD, 'prepare-shown.json');
 const LEDGER = path.join(SDD, 'tdd.jsonl');
 const RETIRED_REQS = path.join(SDD, 'retired-reqs.json');
-const planningCommand = ['plan', 'context', 'gate'].includes(pos[0]);
+const planningCommand = ['plan', 'context', 'gate', 'feedback'].includes(pos[0]);
 let planningModules = [];
 if (planningCommand) {
   try {
     planningModules = await Promise.all([import('./implementation-plan.mjs'),
-      import('./implementation-plan-evidence.mjs'), import('./implementation-plan-cli.mjs')]);
+      import('./implementation-plan-evidence.mjs'), import('./implementation-plan-cli.mjs'),
+      import('./implementation-feedback.mjs')]);
   } catch (error) {
     if (error.code !== 'ERR_MODULE_NOT_FOUND') throw error;
   }
 }
-const [planningModel = {}, planningEvidence = {}, planningCli = {}] = planningModules;
+const [planningModel = {}, planningEvidence = {}, planningCli = {}, feedbackModule = {}] = planningModules;
 const { PlanningError, loadImplementationPlan, loadImplementationPlanBindings } = planningModel;
 const { evaluateImplementationPlan } = planningEvidence;
 const { readPlanningConfiguration, planningRefusal, planningTaskScope,
   publicPlanningResult, emitPlanningResult, runPlanningCommand } = planningCli;
+const { feedbackRequired, feedbackStatus, recordFeedback, feedbackCompletion, feedbackInventory } = feedbackModule;
 
 const sha = (b) => createHash('sha256').update(b).digest('hex');
 const rel = (p) => path.relative(ROOT, p).split(path.sep).join('/');
@@ -2036,7 +2038,7 @@ function cmdInit() {
   const projects = detectProjects(new Set(rootManifests.map(ecoOf)));
   if (projects.length) { cfg.projects = projects; if (!rootManifests.length) cfg.checks = []; }
   const kept = fs.existsSync(CONFIG);
-  if (!kept) writeJson(CONFIG, { ...cfg, scopePolicy: 'strict', planning: { required: true } });
+  if (!kept) writeJson(CONFIG, { ...cfg, scopePolicy: 'strict', planning: { required: true }, specFeedback: { required: true } });
   const shown = kept ? { ...cfg, ...readJson(CONFIG, {}) } : cfg;
   fs.mkdirSync(SPECS, { recursive: true });
   if (cfg.projects?.length) out(`${rootManifests.length ? 'root + ' : ''}projects: ${cfg.projects.map((p) => `${p.root} (${p.testCmd.slice(0, 2).join(' ')})`).join(', ')} — each test runs in its project directory`);
@@ -6954,6 +6956,12 @@ function standalonePlanningRefusal() {
       && typeof config.planning.required !== 'boolean')) {
     return refuse(1, 'planning.required must be a boolean when present');
   }
+  if (Object.hasOwn(config, 'specFeedback')) {
+    const policy = config.specFeedback;
+    if (!record(policy) || Object.keys(policy).some(key => key !== 'required')
+      || Object.hasOwn(policy, 'required') && typeof policy.required !== 'boolean'
+      || policy.required === true) return refuse(2, 'Feedback policy requires the complete lean-sdd-tdd installation');
+  }
   if (config.planning?.required === false && (pos[0] === 'gate' || pos[0] === 'plan' && pos.length === 1)) return null;
   if (config.planning?.required !== false && config.planning) {
     const policy = config.planning;
@@ -6970,6 +6978,7 @@ function planningSession(specs, scanned) {
   if (!planningModules.length) return { enabled: false, stage: 'structure', status: 'DISABLED', exit: 0, errors: [] };
   try {
     const config = readPlanningConfiguration(ROOT, loadConfig);
+    const requiresFeedback = feedbackRequired(config);
     if (config.planning?.required === false) return loadImplementationPlan({ root: ROOT, config, specs: [] });
     specs ??= loadSpecs();
     scanned ??= scanEntities(listFiles());
@@ -6996,7 +7005,7 @@ function planningSession(specs, scanned) {
         const currentSpecs = preview ? specs : loadSpecs();
         const { ents, dups } = preview ? scanned : scanEntities(listFiles());
         const tool = sha(['sdd.mjs', 'implementation-plan.mjs', 'implementation-plan-evidence.mjs',
-          'implementation-plan-cli.mjs', 'spec-context.mjs'].map(file => file + '\0'
+          'implementation-plan-cli.mjs', 'spec-context.mjs', 'implementation-feedback.mjs'].map(file => file + '\0'
             + sha(fs.readFileSync(new URL(file, import.meta.url)))).join('\0'));
         const trace = traceCheck(ents, dups, currentSpecs), ledgerErrors = [];
         let entries = [], ledgerUnavailable = false;
@@ -7094,7 +7103,13 @@ function planningSession(specs, scanned) {
       }
       return { bindings, events, errors, inputErrors };
     };
-    return { ...loaded, adapter: { inspect, nativeChecks, run(argv, timeoutMs) {
+    const currentFeedbackContext = requiresFeedback ? { root: ROOT, config, model: loaded.model,
+      files: listFiles(), entities: [...scanned.ents.values()], duplicates: scanned.dups } : null;
+    return { ...loaded, feedbackContext: currentFeedbackContext, adapter: { inspect, nativeChecks,
+      ...(requiresFeedback ? { completionInputs: task => feedbackCompletion(
+        preview ? () => currentFeedbackContext : readFeedbackContext, task),
+      scopeInputs: () => feedbackInventory(preview ? () => currentFeedbackContext : readFeedbackContext) } : {}),
+      run(argv, timeoutMs) {
       const result = run1(argv, timeoutMs, '.', 8388609);
       if (argv[1] === nativeScript && argv[2] === 'tdd' && result.exit === 2 && !result.error) {
         result.error = 'Native verification is incomplete (exit 2)';
@@ -7102,6 +7117,42 @@ function planningSession(specs, scanned) {
       return result;
     } } };
   } catch (error) { return planningRefusal(error, 'structure'); }
+}
+
+function readFeedbackContext() {
+  const session = planningSession();
+  if (session.exit || !session.feedbackContext) throw new PlanningError(2, 'feedback',
+    session.errors?.map(error => error.reason).join('; ') || 'Current planning inputs are unavailable');
+  return session.feedbackContext;
+}
+
+/** @id CODE-FEEDBACK-CLI @implements REQ-FEEDBACK-001 REQ-FEEDBACK-002 REQ-FEEDBACK-003 */
+function cmdFeedback() {
+  let result;
+  try {
+    if (Object.keys(flags).some(flag => !['root', 'json', 'help'].includes(flag))
+      || !(pos[1] === 'status' && pos.length <= 3 || pos[1] === 'record' && pos.length === 3)) {
+      throw new PlanningError(2, 'feedback', 'usage: feedback status [FEATURE] | feedback record FEATURE [--json] [--root DIR]');
+    }
+    const config = readPlanningConfiguration(ROOT, loadConfig);
+    if (!feedbackRequired(config)) {
+      if (pos[1] === 'record') throw new PlanningError(2, 'feedback', 'Recording requires specFeedback.required:true');
+      result = { enabled: false, status: 'DISABLED', exit: 0, features: [], errors: [] };
+    } else result = pos[1] === 'record' ? recordFeedback(readFeedbackContext, pos[2])
+      : feedbackStatus(readFeedbackContext, pos[2] ? [pos[2]] : undefined);
+  } catch (error) {
+    if (!(error instanceof PlanningError)) throw error;
+    result = { enabled: true, status: 'INCOMPLETE', exit: 2, features: [],
+      errors: [{ id: error.id, exit: 2, reason: error.message }] };
+  }
+  if (flags.json) out(JSON.stringify(result));
+  else {
+    out(`SDD FEEDBACK ${result.status} enabled=${result.enabled}`);
+    for (const row of result.features.slice(0, 7)) out(`${row.feature}: ${row.state} implementationSha256=${row.implementationSha256}`);
+    for (const error of result.errors.slice(0, 5)) out(`${error.id}: ${error.reason}`);
+    if (result.features.length > 7 || result.errors.length > 5) out('Additional rows omitted; use --json for the complete decision.');
+  }
+  return result.exit;
 }
 
 /** @id CODE-GATESNAPSHOT-001 @implements REQ-GATESNAPSHOT-001 */
@@ -7124,7 +7175,7 @@ function cmdGate() {
   const cfg = loadConfig();
   const planning = planningSession(specs, { ents, dups });
   if (planning.exit) return emitPlanningResult({ ...planning, stage: 'gate' }, flags.json);
-  let planningDecision = null, planningIds = null;
+  let planningDecision = null, planningIds = null, planningFeedbackScope;
   const inputSnapshot = flags['no-run'] ? null : gateInputSnapshot(specs, ents, cfg);
   let inputsStable = true;
   const checkInputs = (stage) => {
@@ -7189,8 +7240,10 @@ function cmdGate() {
     try { planningIds = planningTaskScope(planning.model, {
       changed: flags.changed ? changedFiles() : null, relevant, impactOne }); }
     catch (error) { return emitPlanningResult(planningRefusal(error, 'gate'), flags.json); }
-    planningDecision = publicPlanningResult(evaluateImplementationPlan({ model: planning.model,
-      adapter: planning.adapter, stage: 'gate', taskIds: planningIds }));
+    const decision = evaluateImplementationPlan({ model: planning.model,
+      adapter: planning.adapter, stage: 'gate', taskIds: planningIds });
+    planningFeedbackScope = decision.feedbackScope;
+    planningDecision = publicPlanningResult(decision);
     if (planningDecision.exit === 1) add(false, 'planning: FAIL', planningDecision.errors.map(error => `${error.id}: ${error.reason}`));
     else if (planningDecision.exit === 2) {
       incomplete = true;
@@ -7604,6 +7657,10 @@ function cmdGate() {
       : { enabled: false, stage: 'gate', status: 'FAIL', exit: 1,
         errors: [{ id: 'planning', reason: 'planning policy changed during gate', exit: 1 }], tasks: [] };
     const current = publicPlanningResult(result);
+    if (result.feedbackScope && planningFeedbackScope
+      && JSON.stringify(result.feedbackScope) !== JSON.stringify(planningFeedbackScope)) {
+      add(false, 'feedback inventory or history changed during gate');
+    }
     if (current.exit === 1) add(false, 'planning inputs changed or are invalid after checks',
       current.errors.map(error => `${error.id}: ${error.reason}`));
     else if (current.exit === 2) { incomplete = true; lines.push('! planning after checks: INCOMPLETE',
@@ -8110,7 +8167,7 @@ async function cmdDiagnostics() {
   return runDiagnostics(process.argv.slice(2));
 }
 
-const cmds = { review: cmdReview, init: cmdInit, approve: cmdApprove, guard: cmdGuard, tdd: cmdTdd, trace: cmdTrace, gate: cmdGate, status: cmdStatus, plan: cmdPlan, impact: cmdImpact, context: cmdContext, diagnostics: cmdDiagnostics };
+const cmds = { review: cmdReview, init: cmdInit, approve: cmdApprove, guard: cmdGuard, tdd: cmdTdd, trace: cmdTrace, gate: cmdGate, status: cmdStatus, plan: cmdPlan, feedback: cmdFeedback, impact: cmdImpact, context: cmdContext, diagnostics: cmdDiagnostics };
 const fn = Object.hasOwn(cmds, pos[0]) ? cmds[pos[0]] : undefined;
 // a mistyped flag (`gate --changd`) must not silently run the full gate (#146)
 // known flags = every flags.<name> / flags['<name>'] this script reads
@@ -8120,7 +8177,7 @@ if (fn && badFlags.length && pos[0] !== 'diagnostics') {
   out(`unknown flag${badFlags.length > 1 ? 's' : ''}: ${badFlags.map((k) => '--' + k).join(', ')} (known: ${[...KNOWN_FLAGS].map((k) => '--' + k).join(' ')})`);
   process.exit(2);
 }
-const usage = 'usage: sdd.mjs init | review template <feature|--feature f> | review check <file> --feature <f> (or positional feature) | approve prepare|record <feature> | guard | tdd red|green|refactor <TEST-ID> | tdd stub <TEST-ID> [<TEST-ID>... | --all] | tdd check | trace [--baseline] | gate [--changed] [--no-run] | status | plan | plan check [--json] | plan verify TASK [--json] | plan bindings [--json] | impact <REQ|TEST|CODE|file> [--json] | context <feature|REQ|file>... | context --changed [--max-bytes N] [--json] | diagnostics [--profile typescript|javascript|python|rust] [--json]   [--root dir]\n  tdd red: tdd red --characterization "<reason>" records a data-only/characterization test that cannot fail without implementation (weak Red); --expect <text> requires that text in the failure; --allow-setup-red accepts a stub-in-setup Red; --retest "<reason>" re-records a weak Red after correcting a wrong test expectation (needs a previous Red/Green and a changed test); --missing-module accepts a Red caused by the test own not-yet-created import (non-weak); approve record --by ai:<reviewer> needs --review <path|summary>';
+const usage = 'usage: sdd.mjs init | review template <feature|--feature f> | review check <file> --feature <f> (or positional feature) | approve prepare|record <feature> | guard | tdd red|green|refactor <TEST-ID> | tdd stub <TEST-ID> [<TEST-ID>... | --all] | tdd check | trace [--baseline] | gate [--changed] [--no-run] | status | plan | plan check [--json] | plan verify TASK [--json] | plan bindings [--json] | feedback status [FEATURE] [--json] | feedback record FEATURE [--json] | impact <REQ|TEST|CODE|file> [--json] | context <feature|REQ|file>... | context --changed [--max-bytes N] [--json] | diagnostics [--profile typescript|javascript|python|rust] [--json]   [--root dir]\n  tdd red: tdd red --characterization "<reason>" records a data-only/characterization test that cannot fail without implementation (weak Red); --expect <text> requires that text in the failure; --allow-setup-red accepts a stub-in-setup Red; --retest "<reason>" re-records a weak Red after correcting a wrong test expectation (needs a previous Red/Green and a changed test); --missing-module accepts a Red caused by the test own not-yet-created import (non-weak); approve record --by ai:<reviewer> needs --review <path|summary>';
 /** @id CODE-PLAN-CLI-HELP @implements REQ-PLAN-CLI-008 */
 function validHelp() {
   const command = pos[0] === 'help' ? pos[1] : pos[0];
@@ -8132,6 +8189,7 @@ function validHelp() {
   if (!args.length) return true;
   if (command === 'plan') return args.length === 1 && ['check', 'bindings', 'verify'].includes(args[0])
     || args.length === 2 && args[0] === 'verify';
+  if (command === 'feedback') return args.length <= 2 && ['status', 'record'].includes(args[0]);
   if (command === 'context') return true;
   if (command === 'impact') return args.length === 1;
   if (command === 'approve') return args.length <= 2 && ['prepare', 'record', 'retire'].includes(args[0]);

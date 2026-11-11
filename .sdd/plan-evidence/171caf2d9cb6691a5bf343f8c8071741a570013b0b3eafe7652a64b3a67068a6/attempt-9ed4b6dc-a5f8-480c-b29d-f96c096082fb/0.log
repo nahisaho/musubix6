@@ -1,0 +1,22 @@
+✔ TEST-CHECK-CLOSURE-001 r31a #340 command closure follows interpreter targets nested wrappers make recipes and cycles (13908.704191ms)
+✔ TEST-CHECK-CLOSURE-002 r31a #340 package wrappers include nested script calls project cwd and symlink targets (3769.543546ms)
+✔ TEST-CHECK-CLOSURE-005 r31a #340 changed checks share closure and committed wrapper drift still fails changed gate (2096.097103ms)
+✔ TEST-R34-PYREL-001 r34c #359 Python plugin closure protects all declared relative forms (47525.32261ms)
+✔ TEST-R34-PYREL-002 r34c #359 protected Python inputs fail closed for unresolved relative forms (5040.999777ms)
+✔ TEST-R34-PYREL-003 r34c #359 module attributes are not sibling submodules and package boundaries stay local (1919.801397ms)
+✔ TEST-R34-PYREL-004 r34c #359 deleted relative helper cannot disappear from protected inputs (1255.9269ms)
+✔ TEST-R34-PYREL-005 r34c #359 real relative-plugin oracle rejects wrong Green and gates and accepts restored answer (4674.995831ms)
+✔ TEST-R34-PYREL-006 r34c #359 absolute local controls fail closed for unresolved forms (3691.936487ms)
+✔ TEST-R34-PYREL-007 r34c #359 namespace absolute imports and relative star imports retain helper provenance (4652.195257ms)
+✔ TEST-R34-PYREL-008 r34c #359 deleted package initializer cannot silently become an unpinned namespace (3133.68399ms)
+✔ TEST-R34-PYREL-009 r34c #359 parent modules cannot masquerade as regular or namespace packages (2428.245828ms)
+✔ TEST-R34-PYREL-010 r34c #359 continued relative import statements protect their helper (1575.513401ms)
+✔ TEST-R34-INTEGRATION-002 r34 integration real relative-plugin restored control invalidates timestamp bytecode (940.238341ms)
+ℹ tests 14
+ℹ suites 0
+ℹ pass 14
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 99098.613885
