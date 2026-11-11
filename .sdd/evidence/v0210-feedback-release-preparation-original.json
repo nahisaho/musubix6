@@ -1,0 +1,332 @@
+{
+  "status": "PASS",
+  "stage": "independent-prospective-inventory-only",
+  "commit": "01e1f0d98c9e32f5a1cfa682435b09b4e54d6957",
+  "skillTree": "74a4b3296575f2eba31483987e5d164bc307da0e",
+  "node": "v24.22.1",
+  "workRoot": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-feedback-inventory-reference-xzWPR0",
+  "archive": {
+    "path": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-feedback-inventory-reference-xzWPR0/source.tar",
+    "sha256": "828972e9e43be7464ca7cd3bc07dc4c42422e5795306fb75a5dd769a87a8e385"
+  },
+  "developmentPackage": {
+    "path": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-feedback-inventory-reference-xzWPR0/musubix6-0.2.10.tgz",
+    "sha256": "3fa72ea5534e583a87b7ccff19ad77f5d282e783afbd68232d2ce4d9dbead3ae",
+    "publishingApproved": false
+  },
+  "canonicalFiles": 120,
+  "changedReferences": [
+    {
+      "path": ".github/skills/lean-agentic-coding/SKILL.md",
+      "before": "0048f822092061e9f631375f8fa7e91daff9b44d58194dac70160b495f1828ca",
+      "after": "be4fde0249619d2a7ac641a2e16b80ddd29240aed83515aee060737f18ffce6a"
+    },
+    {
+      "path": ".github/skills/lean-sdd-tdd/SKILL.md",
+      "before": "a507127d7a46e145c4b392aeeae7ddb79c8cf0474d4f21d0b0975e1ee071c7d4",
+      "after": "ec039c9351c86e67db02a026b0b6ebd95d6c64622a7245613d474b7df7c1ce4f"
+    },
+    {
+      "path": ".github/skills/lean-sdd-tdd/references/config.md",
+      "before": "3bde90d4b95a59fb6546cc7e45cf4ad31b13ab49139f5a7bcedee64dccbfd342",
+      "after": "6f662e891deb7cc56194c0fd164250d0c60fcddd7664b4665fcc8f57863326a6"
+    },
+    {
+      "path": ".github/skills/lean-sdd-tdd/scripts/implementation-plan-cli.mjs",
+      "before": "7057997535dc2be86416ba6f3166c00840e3d49563cd1fb88de9872c68e61118",
+      "after": "33a943070180e94c3442e8bc3affbc2d879fe44671ef1500436a9f88697af3ad"
+    },
+    {
+      "path": ".github/skills/lean-sdd-tdd/scripts/implementation-plan-evidence.mjs",
+      "before": "548b46c222a8ec91c8839ba3df185f194818b4fe64c12d4fc86756e0e3dd6360",
+      "after": "b0795b1b4fbece29eb56fd005a946c3a7685776aa661a2eeca1878d97e2577bd"
+    },
+    {
+      "path": ".github/skills/lean-sdd-tdd/scripts/implementation-plan-workflow.test.mjs",
+      "before": "c6419678d4f54dc687686936554e23f7c95e15a6416053d6a60886df35871c06",
+      "after": "aff18a2f37dd0c8eb6e7516013405a18d27a29e022aae4e86021bb15e733d357"
+    },
+    {
+      "path": ".github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+      "before": "3a6eb5f599640cff7a37151228174dc2aacc90000b8c96b6b2ba1f5b9a1b12ee",
+      "after": "e31bba4b12dad6a11c0200009b5816d23961c76da9d5984e3775098c625ab379"
+    },
+    {
+      "path": ".github/skills/lean-sdd-tdd/scripts/sdd.test.mjs",
+      "before": "306b6d5d3d9fe13a364870831eb0f4d812df9ba644bc4ce002bc86d7bed779c1",
+      "after": "b0810139e648802f6c2e59d4f1ad435612f6a1f96903a9ff3948cf150830c86a"
+    }
+  ],
+  "addedReferences": [
+    {
+      "path": ".github/skills/lean-sdd-tdd/scripts/implementation-feedback.mjs",
+      "sha256": "2c391eff3ad985981389242927d5e1f04070a63a969f51c1f45749147895f03e",
+      "sourceMode": 436,
+      "packageMode": 420
+    },
+    {
+      "path": ".github/skills/lean-sdd-tdd/scripts/implementation-feedback.test.mjs",
+      "sha256": "7d2772fe1a6544bac0ab992d0533d7f86bc14426f2b25c10e5e37e523a11d759",
+      "sourceMode": 436,
+      "packageMode": 420
+    }
+  ],
+  "hostResults": [
+    {
+      "origin": "source",
+      "host": "copilot",
+      "files": 120,
+      "status": "PASS"
+    },
+    {
+      "origin": "source",
+      "host": "claude",
+      "files": 117,
+      "status": "PASS"
+    },
+    {
+      "origin": "package",
+      "host": "copilot",
+      "files": 120,
+      "status": "PASS"
+    },
+    {
+      "origin": "package",
+      "host": "claude",
+      "files": 117,
+      "status": "PASS"
+    }
+  ],
+  "renewedOracleIdentity": {
+    "path": ".github/skills/lean-sdd-tdd/scripts/sdd.test.mjs",
+    "previous": "306b6d5d3d9fe13a364870831eb0f4d812df9ba644bc4ce002bc86d7bed779c1",
+    "sha256": "b0810139e648802f6c2e59d4f1ad435612f6a1f96903a9ff3948cf150830c86a",
+    "reason": "Previously reviewed shared legacy fixture explicitly disables feedback with disabled planning; primary assertion/control policy unchanged."
+  },
+  "oldContentSha256": "4f39011db146f92e32aeb54a161781f1643ee9121fe78c88f0c3f5e53c8ee7d2",
+  "contentSha256": "4c7316c6f5eda09dfb72c92b2a7a18495566ffd08f370daacb25f0e6276e9c92",
+  "oldScopeSha256": "fce4b43abb229843e0dd246534c10f7bf70321a3ab899b0461986105278f11bf",
+  "scopeSha256": "67dc9d7df31dec91bbd91158edeff9db3800436909db7e879677762224d13581",
+  "counts": {
+    "skillMechanisms": 28,
+    "sourceVendorChallenges": 1200,
+    "originSensitivityChallenges": 60,
+    "vendorChallenges": 1260,
+    "skillCellTotal": 1288,
+    "placeholderMechanisms": 14
+  },
+  "commands": [
+    {
+      "argv": [
+        "tar",
+        "--extract",
+        "--same-permissions",
+        "--file",
+        "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-feedback-inventory-reference-xzWPR0/source.tar",
+        "--directory",
+        "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-feedback-inventory-reference-xzWPR0/source"
+      ],
+      "cwd": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-feedback-inventory-reference-xzWPR0",
+      "startedAt": "2026-11-11T12:32:34.549Z",
+      "finishedAt": "2026-11-11T12:32:34.689Z",
+      "exit": 0,
+      "signal": null,
+      "error": null,
+      "stdout": {
+        "path": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-feedback-inventory-reference-xzWPR0/command-0.stdout.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "stderr": {
+        "path": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-feedback-inventory-reference-xzWPR0/command-0.stderr.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      }
+    },
+    {
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/lib/node_modules/npm/bin/npm-cli.js",
+        "pack",
+        "--offline",
+        "--ignore-scripts",
+        "--json",
+        "--pack-destination",
+        "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-feedback-inventory-reference-xzWPR0"
+      ],
+      "cwd": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-feedback-inventory-reference-xzWPR0/source",
+      "startedAt": "2026-11-11T12:32:34.689Z",
+      "finishedAt": "2026-11-11T12:32:35.232Z",
+      "exit": 0,
+      "signal": null,
+      "error": null,
+      "stdout": {
+        "path": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-feedback-inventory-reference-xzWPR0/command-1.stdout.log",
+        "sha256": "ef8c57ed772f463773fd687543478722f8dbc7d3f3c6ac2d29967a04f504b461",
+        "bytes": 17839
+      },
+      "stderr": {
+        "path": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-feedback-inventory-reference-xzWPR0/command-1.stderr.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      }
+    },
+    {
+      "argv": [
+        "tar",
+        "--extract",
+        "--gzip",
+        "--same-permissions",
+        "--file",
+        "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-feedback-inventory-reference-xzWPR0/musubix6-0.2.10.tgz",
+        "--directory",
+        "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-feedback-inventory-reference-xzWPR0"
+      ],
+      "cwd": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-feedback-inventory-reference-xzWPR0",
+      "startedAt": "2026-11-11T12:32:35.233Z",
+      "finishedAt": "2026-11-11T12:32:35.248Z",
+      "exit": 0,
+      "signal": null,
+      "error": null,
+      "stdout": {
+        "path": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-feedback-inventory-reference-xzWPR0/command-2.stdout.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "stderr": {
+        "path": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-feedback-inventory-reference-xzWPR0/command-2.stderr.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      }
+    },
+    {
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-feedback-inventory-reference-xzWPR0/package/bin/musubix6.mjs",
+        "--version"
+      ],
+      "cwd": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-feedback-inventory-reference-xzWPR0",
+      "startedAt": "2026-11-11T12:32:35.254Z",
+      "finishedAt": "2026-11-11T12:32:35.289Z",
+      "exit": 0,
+      "signal": null,
+      "error": null,
+      "stdout": {
+        "path": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-feedback-inventory-reference-xzWPR0/command-3.stdout.log",
+        "sha256": "011cfdb24c667a75861adfffaabe68e66358d982f437b47270ef09d86c6c6cd7",
+        "bytes": 7
+      },
+      "stderr": {
+        "path": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-feedback-inventory-reference-xzWPR0/command-3.stderr.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      }
+    },
+    {
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-feedback-inventory-reference-xzWPR0/source/bin/musubix6.mjs",
+        "init",
+        "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-feedback-inventory-reference-xzWPR0/source-copilot",
+        "--host",
+        "copilot"
+      ],
+      "cwd": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-feedback-inventory-reference-xzWPR0",
+      "startedAt": "2026-11-11T12:32:36.295Z",
+      "finishedAt": "2026-11-11T12:32:36.342Z",
+      "exit": 0,
+      "signal": null,
+      "error": null,
+      "stdout": {
+        "path": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-feedback-inventory-reference-xzWPR0/command-4.stdout.log",
+        "sha256": "76831206628dda931a32a545a998826669f2934236ea6d63cb3f4f8b8e306fb4",
+        "bytes": 1974
+      },
+      "stderr": {
+        "path": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-feedback-inventory-reference-xzWPR0/command-4.stderr.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      }
+    },
+    {
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-feedback-inventory-reference-xzWPR0/source/bin/musubix6.mjs",
+        "init",
+        "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-feedback-inventory-reference-xzWPR0/source-claude",
+        "--host",
+        "claude"
+      ],
+      "cwd": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-feedback-inventory-reference-xzWPR0",
+      "startedAt": "2026-11-11T12:32:36.348Z",
+      "finishedAt": "2026-11-11T12:32:36.392Z",
+      "exit": 0,
+      "signal": null,
+      "error": null,
+      "stdout": {
+        "path": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-feedback-inventory-reference-xzWPR0/command-5.stdout.log",
+        "sha256": "629577273cf21163adae8ba57d52f7d05a2bdf9aadffa3e3390e82c2fe49d97f",
+        "bytes": 1771
+      },
+      "stderr": {
+        "path": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-feedback-inventory-reference-xzWPR0/command-5.stderr.log",
+        "sha256": "8f81fb96fef3fa9efaeb104a69c273bb31c6243846aeea89924f1634ebeb448c",
+        "bytes": 46
+      }
+    },
+    {
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-feedback-inventory-reference-xzWPR0/package/bin/musubix6.mjs",
+        "init",
+        "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-feedback-inventory-reference-xzWPR0/package-copilot",
+        "--host",
+        "copilot"
+      ],
+      "cwd": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-feedback-inventory-reference-xzWPR0",
+      "startedAt": "2026-11-11T12:32:36.398Z",
+      "finishedAt": "2026-11-11T12:32:36.444Z",
+      "exit": 0,
+      "signal": null,
+      "error": null,
+      "stdout": {
+        "path": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-feedback-inventory-reference-xzWPR0/command-6.stdout.log",
+        "sha256": "a7ce52971d79f159a0e26645a37a96ef9d76c224046cad56588c97257e9d8127",
+        "bytes": 1984
+      },
+      "stderr": {
+        "path": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-feedback-inventory-reference-xzWPR0/command-6.stderr.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      }
+    },
+    {
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-feedback-inventory-reference-xzWPR0/package/bin/musubix6.mjs",
+        "init",
+        "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-feedback-inventory-reference-xzWPR0/package-claude",
+        "--host",
+        "claude"
+      ],
+      "cwd": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-feedback-inventory-reference-xzWPR0",
+      "startedAt": "2026-11-11T12:32:36.449Z",
+      "finishedAt": "2026-11-11T12:32:36.495Z",
+      "exit": 0,
+      "signal": null,
+      "error": null,
+      "stdout": {
+        "path": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-feedback-inventory-reference-xzWPR0/command-7.stdout.log",
+        "sha256": "650555f474e0ce9716734988bb9103b0ea02af11155ede0daa07790a90a09a26",
+        "bytes": 1780
+      },
+      "stderr": {
+        "path": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-feedback-inventory-reference-xzWPR0/command-7.stderr.log",
+        "sha256": "8f81fb96fef3fa9efaeb104a69c273bb31c6243846aeea89924f1634ebeb448c",
+        "bytes": 46
+      }
+    }
+  ],
+  "qualifyingCredit": 0,
+  "runsPerformed": 0
+}

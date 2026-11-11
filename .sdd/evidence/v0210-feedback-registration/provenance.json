@@ -1,0 +1,117 @@
+{
+  "purpose": "Byte-exact copies of previously executed development/preparation outputs, not new executions or qualification credit",
+  "copiedAt": "2026-11-11T12:45:44.751Z",
+  "historicalStructuralFlags": 4,
+  "newEntryStructuralFlags": 0,
+  "records": [
+    {
+      "source": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-feedback-inventory-reference-report.json",
+      "path": ".sdd/evidence/v0210-feedback-release-preparation-original.json",
+      "sha256": "6faeb7c9d0bb63f0bb768a2ae1681ef023e07f6e8c4d4094becd430b59f1e7bb",
+      "bytes": 15470
+    },
+    {
+      "source": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-feedback-inventory-reference-report-02.json",
+      "path": ".sdd/evidence/v0210-feedback-release-preparation.json",
+      "sha256": "b0d94b2642d54754b7f385b9f9b00fb5c7278f8077a47b85f898c33fc7d83865",
+      "bytes": 16216
+    },
+    {
+      "source": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-feedback-registration-integration-native-red.log",
+      "path": ".sdd/evidence/v0210-feedback-registration/native-red.log",
+      "sha256": "0c3d5ab180e617456b32b2b6bbc4ec914c2d0b90694bb2bf8e58018267769e8f",
+      "bytes": 170
+    },
+    {
+      "source": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-feedback-registration-integration-native-green.log",
+      "path": ".sdd/evidence/v0210-feedback-registration/native-green.log",
+      "sha256": "d4f539173da0d2678dad5d6072ef05a31166dbe2c0159c86cde24e10ca8c0178",
+      "bytes": 158
+    },
+    {
+      "source": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-feedback-registration-integration-native-green-02.log",
+      "path": ".sdd/evidence/v0210-feedback-registration/native-green-02.log",
+      "sha256": "6ccbcbce4d85d5e950872a38d3c2c588d117504c155b889be57e5d9568b1bc0f",
+      "bytes": 56
+    },
+    {
+      "source": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-feedback-registration-integration-native-restored.log",
+      "path": ".sdd/evidence/v0210-feedback-registration/native-restored.log",
+      "sha256": "a8a0002603f4a13d7848c66c89f58b24e41cf6822f2e587ff1f75e9de1667123",
+      "bytes": 59
+    },
+    {
+      "source": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-feedback-registration-integration-native-final-observation.log",
+      "path": ".sdd/evidence/v0210-feedback-registration/native-final-observation.log",
+      "sha256": "4db0cf79bf68399787b37e5a6a5fa683b70acb1d2548871761054603e24b847e",
+      "bytes": 59
+    },
+    {
+      "source": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-feedback-registration-integration-eager-mutation.log",
+      "path": ".sdd/evidence/v0210-feedback-registration/eager-mutation.log",
+      "sha256": "4e988612e498fa0553775252ac9c05b3f5626959e61eefcf4878ef108a18e8bc",
+      "bytes": 1057
+    },
+    {
+      "source": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-feedback-registration-integration-restoration.json",
+      "path": ".sdd/evidence/v0210-feedback-registration/restoration.json",
+      "sha256": "748266de2a2d5c482b8518b2c2da2e9379611014264a1abad49b061562dc8516",
+      "bytes": 169
+    },
+    {
+      "source": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-feedback-registration-integration-restored-suites.log",
+      "path": ".sdd/evidence/v0210-feedback-registration/restored-suites.log",
+      "sha256": "e6ebf4b613a6d5e2641a94a60860359ab0245f4b711e2442f94f33bd0c3794d5",
+      "bytes": 3118
+    },
+    {
+      "source": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-feedback-registration-integration-diagnostics.json",
+      "path": ".sdd/evidence/v0210-feedback-registration/diagnostics.json",
+      "sha256": "870d55c7f77068c7863954e2971420513b33d5059bafad99db720c2b574621a8",
+      "bytes": 451
+    },
+    {
+      "source": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-feedback-registration-current-runtimes/summary.json",
+      "path": ".sdd/evidence/v0210-feedback-registration/summary.json",
+      "sha256": "9cf800211bd795390d23330120360f3b3aacf5d1409f2d1a81e220db3137bc98",
+      "bytes": 821
+    },
+    {
+      "source": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-feedback-registration-current-runtimes/node20-registration.json",
+      "path": ".sdd/evidence/v0210-feedback-registration/node20-registration.json",
+      "sha256": "04b1d3f05baa62adc4d6d7fc8fcd58becd8cd730878e80a33716bd0ad9805143",
+      "bytes": 7812
+    },
+    {
+      "source": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-feedback-registration-current-runtimes/node20-missing-history.json",
+      "path": ".sdd/evidence/v0210-feedback-registration/node20-missing-history.json",
+      "sha256": "f4690497943cf3f7090e0e60e9f62548cff5b26d1d2f4e854ae5735422256972",
+      "bytes": 9117
+    },
+    {
+      "source": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-feedback-registration-current-runtimes/node22-registration.json",
+      "path": ".sdd/evidence/v0210-feedback-registration/node22-registration.json",
+      "sha256": "7fdcad370ceb6438fadf535e268638850c2d3b252bb80dafea9c3deb0ad9e5f1",
+      "bytes": 1287
+    },
+    {
+      "source": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-feedback-registration-current-runtimes/node22-missing-history.json",
+      "path": ".sdd/evidence/v0210-feedback-registration/node22-missing-history.json",
+      "sha256": "c436aa1a84b9c8918da3755079a4f6e98fe684337b4cfff28da1e273a83752fb",
+      "bytes": 2452
+    },
+    {
+      "source": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-feedback-registration-current-runtimes/node24-registration.json",
+      "path": ".sdd/evidence/v0210-feedback-registration/node24-registration.json",
+      "sha256": "b08fd8c358686ae0fff1eb26176f17a1985ff20c722163796ea017949590952a",
+      "bytes": 990
+    },
+    {
+      "source": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-feedback-registration-current-runtimes/node24-missing-history.json",
+      "path": ".sdd/evidence/v0210-feedback-registration/node24-missing-history.json",
+      "sha256": "92f242cc154c98b34e7035ad7b6de185a0be71e1cabec88661a2ceba1efba179",
+      "bytes": 2469
+    }
+  ],
+  "qualificationCredit": 0
+}

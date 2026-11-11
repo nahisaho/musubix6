@@ -1,0 +1,29 @@
+✖ TEST-CI-FIXTURE-001 historical admission is isolated from development bytes and grants no release credit (372.188404ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 479.942109
+
+✖ failing tests:
+
+test at scripts/release-qualification.test.mjs:2588:1
+✖ TEST-CI-FIXTURE-001 historical admission is isolated from development bytes and grants no release credit (372.188404ms)
+  AssertionError [ERR_ASSERTION]: Git-free registration must not construct genuine execution fixtures
+  
+  1 !== 0
+  
+      at TestContext.<anonymous> (file:///tmp/musubix6-spec-feedback-28d27536/scripts/release-qualification.test.mjs:2613:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

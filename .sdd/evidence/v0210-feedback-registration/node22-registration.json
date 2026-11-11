@@ -1,0 +1,19 @@
+{
+  "command": [
+    "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/runtimes/node22/bin/node",
+    "--test",
+    "--test-name-pattern",
+    "(?!)",
+    "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-feedback-registration-current-runtimes/git-free/scripts/release-qualification.test.mjs"
+  ],
+  "cwd": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-feedback-registration-current-runtimes/git-free",
+  "startedAt": "2026-11-11T12:24:34.188Z",
+  "completedAt": "2026-11-11T12:24:34.314Z",
+  "exit": 0,
+  "signal": null,
+  "timedOut": false,
+  "outputLimit": false,
+  "error": null,
+  "stdout": "TAP version 13\n1..0\n# Subtest: /home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-feedback-registration-current-runtimes/git-free/scripts/release-qualification.test.mjs\nok 1 - /home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-feedback-registration-current-runtimes/git-free/scripts/release-qualification.test.mjs\n  ---\n  duration_ms: 74.860065\n  type: 'test'\n  ...\n1..1\n# tests 1\n# suites 0\n# pass 1\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 84.403357\n",
+  "stderr": ""
+}

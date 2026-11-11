@@ -16,13 +16,24 @@ const phases = ['baseline', 'mutant', 'restored'];
 
 /** @id CODE-RELQ-CONTENT-001 @implements REQ-RELQ-003, REQ-RELQ-005 */
 export function contentCaseCatalogue(reference, cellId) {
+  if (reference.targetVersion === '0.2.10') {
+    ensure([1, 2].includes(reference.revision), 'supported0.2.10 content revision required');
+  }
+  const requiredFileCount = reference.targetVersion === '0.2.10' && reference.revision === 2 ? 120 : 118;
+  const sourceVendorChallenges = requiredFileCount * 10, vendorChallenges = sourceVendorChallenges + 60;
   equal(reference.exactRequiredCaseCounts, {
-    skillMechanisms: 28, sourceVendorChallenges: 1180, originSensitivityChallenges: 60,
-    vendorChallenges: 1240, skillCellTotal: 1268, placeholderMechanisms: 14,
+    skillMechanisms: 28, sourceVendorChallenges, originSensitivityChallenges: 60,
+    vendorChallenges, skillCellTotal: 28 + vendorChallenges, placeholderMechanisms: 14,
   });
   equal(reference.skillCatalogue.length, 28);
   equal(reference.placeholderCatalogue.length, 14);
-  equal(reference.vendorReference.referenceFiles.length, 118);
+  equal(reference.vendorReference.referenceFiles.length, requiredFileCount);
+  if (requiredFileCount === 120) {
+    for (const file of [
+      '.github/skills/lean-sdd-tdd/scripts/implementation-feedback.mjs',
+      '.github/skills/lean-sdd-tdd/scripts/implementation-feedback.test.mjs',
+    ]) ensure(reference.vendorReference.referenceFiles.some(row => row.path === file), `required revision2 vendor file: ${file}`);
+  }
   equal(reference.vendorReference.originSensitivityCases.length, 60);
   const semantic = rows => rows.map(row => ({ ...row, id: row.proposedId, kind: 'semantic' }));
   let result;
@@ -31,6 +42,9 @@ export function contentCaseCatalogue(reference, cellId) {
     equal(cellId, 'SKILL-MUTATION');
     const policies = ['unauthorized-byte', ...reference.vendorReference.modePolicy.map(row => row.name)];
     equal(new Set(policies).size, 10);
+    equal(policies.slice().sort(), ['unauthorized-byte',
+      ...['400', '200', '100', '040', '020', '010', '004', '002', '001'].map(bit => `unauthorized-mode-${bit}`),
+    ].sort());
     result = [...semantic(reference.skillCatalogue),
       ...reference.vendorReference.referenceFiles.flatMap(file => policies.map(policy => ({
         id: `vendor:${policy}:${file.path}`, kind: 'vendor', file: file.path, policy, origin: 'source', host: 'copilot',

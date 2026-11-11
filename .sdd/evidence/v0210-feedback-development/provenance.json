@@ -1,0 +1,139 @@
+{
+  "purpose": "Actual development gate and task evidence, not frozen qualification or publication approval",
+  "copiedAt": "2026-11-11T16:00:39.655Z",
+  "qualificationCredit": 0,
+  "gate": {
+    "verdict": "PASS",
+    "protectedInputs": 2882,
+    "changedDuringGate": [],
+    "nativeSuite": {
+      "tests": 1211,
+      "pass": 1211,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "planningTasks": 128,
+    "warnings": [
+      "! human-approved diagnostics-contract: implementation changed since approval (.github/skills/lean-sdd-tdd/scripts/diagnostics.test.mjs) — a human should re-review, then approve record",
+      "! human-approved rust-stub-confidence: implementation changed since approval (.github/skills/lean-sdd-tdd/scripts/sdd.mjs) — a human should re-review, then approve record",
+      "! human-approved windows-runner: implementation changed since approval (.github/skills/lean-sdd-tdd/scripts/sdd.mjs) — a human should re-review, then approve record",
+      "    warning: REQ-HOST-004 has no @implements code",
+      "    warning: REQ-FEEDBACK-FLOW-001 has no @implements code",
+      "    warning: REQ-FEEDBACK-FLOW-002 has no @implements code",
+      "! stub: 2 source file(s) of Green REQs still hold SDD-TODO(stub) / 'not implemented:' placeholders: .github/skills/lean-sdd-tdd/scripts/sdd.mjs:1846, .github/skills/lean-sdd-tdd/scripts/sdd.test.mjs:694 — implement or remove them (scopePolicy warn: set \"scopePolicy\": \"strict\" to fail)",
+      "! check output test attempt 1: .sdd/check-output/attempt-cZHIOS/receipt.json (sha256 73587dbd9facf2715f6d3fedb39d565d07c4bcd90f405087764ee8466ba79c28)"
+    ]
+  },
+  "refresh": {
+    "retained": 118,
+    "revalidated": 10,
+    "total": 128
+  },
+  "launchSetup": "First launcher refused occupied refresh-output label with EEXIST before invoking a gate; fresh gate-output label preserved the earlier evidence.",
+  "copies": [
+    {
+      "path": ".sdd/evidence/v0210-feedback-development/gate/start.json",
+      "source": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/spec-feedback-development-feedback-catalogue-gate-final/start.json",
+      "sha256": "d6b29fed8bb7b386c4d15ee12f0f8d40a2f93da15db7057934e753389be72a72",
+      "bytes": 707994
+    },
+    {
+      "path": ".sdd/evidence/v0210-feedback-development/gate/summary.json",
+      "source": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/spec-feedback-development-feedback-catalogue-gate-final/summary.json",
+      "sha256": "ae7a9286636d91b2a1cdf6c8722aeb72e1eeaf2f60c0feac39318656c3ccdda0",
+      "bytes": 179
+    },
+    {
+      "path": ".sdd/evidence/v0210-feedback-development/gate/full-development-gate.stdout.log",
+      "source": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/spec-feedback-development-feedback-catalogue-gate-final/full-development-gate.stdout.log",
+      "sha256": "0a82281b0e58f4142d1612c258ffaf7045d9d96093656aaf7f0b291f5dc0fa04",
+      "bytes": 32719
+    },
+    {
+      "path": ".sdd/evidence/v0210-feedback-development/gate/full-development-gate.stderr.log",
+      "source": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/spec-feedback-development-feedback-catalogue-gate-final/full-development-gate.stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": ".sdd/evidence/v0210-feedback-development/gate/full-development-gate.process.json",
+      "source": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/spec-feedback-development-feedback-catalogue-gate-final/full-development-gate.process.json",
+      "sha256": "130428fe36f2d2499f48093fe41d926ae7ccb23065a6888a26a14495cf30c073",
+      "bytes": 483
+    },
+    {
+      "path": ".sdd/evidence/v0210-feedback-development/refresh/start.json",
+      "source": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/spec-feedback-development-feedback-catalogue-final/start.json",
+      "sha256": "16aca596dad84db7f4205ad7d9f4901b64a93e2b7253db54b9d7686719277be1",
+      "bytes": 707992
+    },
+    {
+      "path": ".sdd/evidence/v0210-feedback-development/refresh/summary.json",
+      "source": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/spec-feedback-development-feedback-catalogue-final/summary.json",
+      "sha256": "82604bd978bcfc54a1cf24ed90ac9eacef218062048b90401736fa614863153f",
+      "bytes": 2570
+    },
+    {
+      "path": ".sdd/evidence/v0210-feedback-development/refresh/progress.json",
+      "source": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/spec-feedback-development-feedback-catalogue-final/progress.json",
+      "sha256": "8f12289d3634464a72bd9b02c59005725915fe557a2d2adef73f0737c2139b16",
+      "bytes": 5371
+    },
+    {
+      "path": ".sdd/evidence/v0210-feedback-development/refresh/native-stale.stdout.log",
+      "source": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/spec-feedback-development-feedback-catalogue-final/native-stale.stdout.log",
+      "sha256": "4a0680fbd9e5cc9029b17108692ffd37225b1e2beaf73794c1463361b13dd4da",
+      "bytes": 1235
+    },
+    {
+      "path": ".sdd/evidence/v0210-feedback-development/refresh/native-stale.process.json",
+      "source": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/spec-feedback-development-feedback-catalogue-final/native-stale.process.json",
+      "sha256": "43cf30302cec09f31a8cea67e2edb815d6b2b4044d34974941a6435c8b772cb0",
+      "bytes": 638
+    },
+    {
+      "path": ".sdd/evidence/v0210-feedback-development/refresh/final-plan-check.stdout.log",
+      "source": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/spec-feedback-development-feedback-catalogue-final/final-plan-check.stdout.log",
+      "sha256": "0d845ef6c4c9d2019d3fc6b17d02f873f476ce4f1b04ec8433953037701e646d",
+      "bytes": 27019
+    },
+    {
+      "path": ".sdd/evidence/v0210-feedback-development/refresh/final-plan-check.process.json",
+      "source": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/spec-feedback-development-feedback-catalogue-final/final-plan-check.process.json",
+      "sha256": "741af4a80cbfaa6525f5e549cd83ee0cbbf715095f06a7d8c667e63f15a00fff",
+      "bytes": 496
+    },
+    {
+      "path": ".sdd/evidence/v0210-feedback-development/refresh/final-ledger-check.stdout.log",
+      "source": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/spec-feedback-development-feedback-catalogue-final/final-ledger-check.stdout.log",
+      "sha256": "49fcc8238d79cc13466e205f54d8522cb8bb102570c01a02298f66d6829db990",
+      "bytes": 25
+    },
+    {
+      "path": ".sdd/evidence/v0210-feedback-development/refresh/final-ledger-check.process.json",
+      "source": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/spec-feedback-development-feedback-catalogue-final/final-ledger-check.process.json",
+      "sha256": "bf2360860924e607db388baa67410237ece593e415c8f5966ee188b1487c8c18",
+      "bytes": 481
+    },
+    {
+      "path": ".sdd/evidence/v0210-feedback-development/suite/receipt.json",
+      "source": "/tmp/musubix6-spec-feedback-28d27536/.sdd/check-output/attempt-cZHIOS/receipt.json",
+      "sha256": "73587dbd9facf2715f6d3fedb39d565d07c4bcd90f405087764ee8466ba79c28",
+      "bytes": 442
+    },
+    {
+      "path": ".sdd/evidence/v0210-feedback-development/suite/stdout.log",
+      "source": "/tmp/musubix6-spec-feedback-28d27536/.sdd/check-output/attempt-cZHIOS/stdout.log",
+      "sha256": "7bc6a3b82d3ee7add0ccc968dfbb4e4c593e96fd755d856729c146656642f44f",
+      "bytes": 133693
+    },
+    {
+      "path": ".sdd/evidence/v0210-feedback-development/suite/stderr.log",
+      "source": "/tmp/musubix6-spec-feedback-28d27536/.sdd/check-output/attempt-cZHIOS/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    }
+  ]
+}

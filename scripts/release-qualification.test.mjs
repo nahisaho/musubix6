@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { test } from 'node:test';
+import { beforeEach, test } from 'node:test';
 import { EventEmitter } from 'node:events';
 import { PassThrough } from 'node:stream';
 import { execFileSync, spawn } from 'node:child_process';
@@ -30,11 +30,16 @@ const read = file => JSON.parse(fs.readFileSync(file, 'utf8'));
 const clone = value => structuredClone(value);
 const digest = value => createHash('sha256').update(value).digest('hex');
 const fileDigest = file => digest(fs.readFileSync(file));
-const inherited = JSON.parse(qualificationFixtureFile(inheritedRelative));
-const approvedPlan = JSON.parse(qualificationFixtureFile(planRelative));
-const genuineLock = JSON.parse(qualificationFixtureFile(approvalsRelative))['release-qualification'];
-const required = inherited.requiredCells.filter(cell => cell.id !== 'NATIVE-WSLC');
-const contentReference = JSON.parse(qualificationFixtureFile(contentRelative));
+let inherited, approvedPlan, genuineLock, required, contentReference;
+/** @id CODE-CI-FIXTURE-004 @implements REQ-CI-FIXTURE-001 */
+beforeEach(() => {
+  if (required) return;
+  inherited = JSON.parse(qualificationFixtureFile(inheritedRelative));
+  approvedPlan = JSON.parse(qualificationFixtureFile(planRelative));
+  genuineLock = JSON.parse(qualificationFixtureFile(approvalsRelative))['release-qualification'];
+  contentReference = JSON.parse(qualificationFixtureFile(contentRelative));
+  required = inherited.requiredCells.filter(cell => cell.id !== 'NATIVE-WSLC');
+});
 const write = (file, value) => {
   fs.mkdirSync(path.dirname(file), { recursive: true });
   fs.writeFileSync(file, typeof value === 'string' ? value : JSON.stringify(value, null, 2));
@@ -782,6 +787,68 @@ test('TEST-RELQ-SKILL-001 preserves 1268 exact cases and owned native inventory 
   }
   assert.deepEqual(catalogue.slice(0, 28).map(row => row.id), contentReference.skillCatalogue.map(row => row.proposedId));
   assert.deepEqual(catalogue.slice(-60).map(row => row.id), contentReference.vendorReference.originSensitivityCases.map(row => row.id));
+  {
+    const successor = read(path.join(root, contentRelative));
+    let successorCatalogue;
+    assert.doesNotThrow(() => { successorCatalogue = contentCaseCatalogue(successor, 'SKILL-MUTATION'); },
+      'the approved revision2 120-file catalogue must accept before case execution');
+    assert.equal(successorCatalogue.length, 1288, '28 semantic plus1260 vendor/origin mechanisms');
+    const successorIds = new Set(successorCatalogue.map(row => row.id));
+    assert.equal(successorIds.size, 1288);
+    const legacyIds = new Set(catalogue.map(row => row.id));
+    assert.ok([...legacyIds].every(id => successorIds.has(id)), 'every inherited case remains mandatory');
+    const newPaths = [
+      '.github/skills/lean-sdd-tdd/scripts/implementation-feedback.mjs',
+      '.github/skills/lean-sdd-tdd/scripts/implementation-feedback.test.mjs',
+    ];
+    const policies = ['unauthorized-byte', ...['400', '200', '100', '040', '020', '010', '004', '002', '001']
+      .map(bit => `unauthorized-mode-${bit}`)];
+    assert.deepEqual(successorCatalogue.filter(row => !legacyIds.has(row.id)).map(row => row.id).sort(),
+      newPaths.flatMap(file => policies.map(policy => `vendor:${policy}:${file}`)).sort(),
+      'exactly the20 independent new-file/full-policy combinations are added');
+    assert.deepEqual(contentCaseCatalogue(successor, 'PLACEHOLDER-MUTATION').map(row => row.id),
+      contentReference.placeholderCatalogue.map(row => row.proposedId),
+      'all14 placeholder mechanisms remain unchanged');
+    for (const revision of [0, 3, -1, '2', null, undefined]) {
+      for (const base of [contentReference, successor]) {
+        const changed = clone(base);
+        changed.revision = revision;
+        for (const cell of ['SKILL-MUTATION', 'PLACEHOLDER-MUTATION']) {
+          assert.throws(() => contentCaseCatalogue(changed, cell), /revision/,
+            `unsupported current revision ${JSON.stringify(revision)} must not fall back`);
+        }
+      }
+    }
+    for (const file of newPaths) {
+      const changed = clone(successor);
+      changed.vendorReference.referenceFiles = changed.vendorReference.referenceFiles.filter(row => row.path !== file);
+      assert.throws(() => contentCaseCatalogue(changed, 'SKILL-MUTATION'), `${file}: missing119th/120th file must reject`);
+      const substituted = clone(successor);
+      substituted.vendorReference.referenceFiles.find(row => row.path === file).path =
+        file.replace('/implementation-feedback', '/unapproved-feedback');
+      assert.throws(() => contentCaseCatalogue(substituted, 'SKILL-MUTATION'),
+        `${file}: replacing a required path at unchanged120-file cardinality must reject`);
+    }
+    for (const [label, change] of [
+      ['extra121st file', value => value.vendorReference.referenceFiles.push({
+        ...value.vendorReference.referenceFiles[0], path: '.github/skills/tech-writer/unapproved.md',
+      })],
+      ['duplicate file', value => { value.vendorReference.referenceFiles[0] = clone(value.vendorReference.referenceFiles[1]); }],
+      ['stale1268 counts', value => { value.exactRequiredCaseCounts = clone(contentReference.exactRequiredCaseCounts); }],
+      ['duplicate permission policy', value => { value.vendorReference.modePolicy[1] = clone(value.vendorReference.modePolicy[0]); }],
+      ['replaced permission policy', value => { value.vendorReference.modePolicy[0].name = 'unauthorized-mode-800'; }],
+    ]) {
+      const changed = clone(successor);
+      change(changed);
+      assert.throws(() => contentCaseCatalogue(changed, 'SKILL-MUTATION'), label);
+    }
+    for (let index = 0; index < 9; index++) {
+      const changed = clone(successor);
+      changed.vendorReference.modePolicy.splice(index, 1);
+      assert.throws(() => contentCaseCatalogue(changed, 'SKILL-MUTATION'),
+        `omitted permission policy ${index}: none of the nine bits is optional`);
+    }
+  }
   const context = contentContext(directory, 'SKILL-MUTATION');
   const target = catalogue.find(row => row.kind === 'vendor' && row.origin === 'source' && row.policy === 'unauthorized-mode-400');
   const plan = buildContentCasePlan(context, target);
@@ -2581,6 +2648,39 @@ test('TEST-RELQ-005 binds durable helpers and exact package-entry receipts witho
 
 /** @id TEST-CI-FIXTURE-001 @verifies REQ-CI-FIXTURE-001 */
 test('TEST-CI-FIXTURE-001 historical admission is isolated from development bytes and grants no release credit', async t => {
+  const registrationDirectory = workspace(t);
+  const gitFree = path.join(registrationDirectory, 'git-free');
+  fs.cpSync(root, gitFree, { recursive: true, filter: file => {
+    const relative = path.relative(root, file).split(path.sep).join('/');
+    return !['.git', 'node_modules', '.sdd/check-output'].some(excluded =>
+      relative === excluded || relative.startsWith(excluded + '/'));
+  } });
+  const registrationEnvironment = { ...process.env };
+  for (const key of Object.keys(registrationEnvironment)) {
+    if (key.startsWith('GIT_') || ['NODE_TEST_CONTEXT', 'NODE_OPTIONS', 'NODE_PATH'].includes(key)) {
+      delete registrationEnvironment[key];
+    }
+  }
+  registrationEnvironment.GIT_CEILING_DIRECTORIES = registrationDirectory;
+  const register = pattern => processIo.execute({
+    command: [process.execPath, '--test', '--test-name-pattern', pattern,
+      path.join(gitFree, 'scripts/release-qualification.test.mjs')],
+    cwd: gitFree, env: registrationEnvironment, timeoutMs: 120000, maxBytes: 8 * 1024 * 1024,
+  });
+  const discovery = await register('(?!)');
+  assert.equal(discovery.error, null);
+  assert.equal(discovery.signal, null);
+  assert.equal(discovery.timedOut, false);
+  assert.equal(discovery.outputLimit, false);
+  assert.equal(discovery.exit, 0, 'Git-free registration must not construct genuine execution fixtures');
+  const selected = await register('^TEST-RELQ-001 ');
+  assert.equal(selected.error, null);
+  assert.equal(selected.signal, null);
+  assert.equal(selected.timedOut, false);
+  assert.equal(selected.outputLimit, false);
+  assert.equal(selected.exit, 1, 'selected fixture execution must still require genuine Git history');
+  assert.match(selected.stdout + selected.stderr, /not a git repository/);
+
   const before = Object.keys(genuineLock.artifacts).map(file => [file, fileDigest(path.join(root, file))]);
   const directory = workspace(t);
   const historicalSource = path.join(directory, 'historical-source');

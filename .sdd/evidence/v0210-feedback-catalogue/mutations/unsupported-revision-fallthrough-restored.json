@@ -1,0 +1,19 @@
+{
+  "command": [
+    "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+    "--test",
+    "--test-name-pattern",
+    "^TEST-RELQ-SKILL-001 ",
+    "/tmp/musubix6-spec-feedback-28d27536/scripts/release-qualification.test.mjs"
+  ],
+  "cwd": "/tmp/musubix6-spec-feedback-28d27536",
+  "startedAt": "2026-11-11T13:51:33.760Z",
+  "completedAt": "2026-11-11T13:51:35.800Z",
+  "exit": 0,
+  "signal": null,
+  "timedOut": false,
+  "outputLimit": false,
+  "error": null,
+  "stdout": "✔ TEST-RELQ-SKILL-001 preserves 1268 exact cases and owned native inventory controls (1920.870331ms)\nℹ tests 1\nℹ suites 0\nℹ pass 1\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 2001.116341\n",
+  "stderr": ""
+}

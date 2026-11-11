@@ -1,0 +1,19 @@
+{
+  "command": [
+    "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+    "--test",
+    "--test-name-pattern",
+    "^TEST-RELQ-SKILL-001 ",
+    "/tmp/musubix6-spec-feedback-28d27536/scripts/release-qualification.test.mjs"
+  ],
+  "cwd": "/tmp/musubix6-spec-feedback-28d27536",
+  "startedAt": "2026-11-11T13:51:44.666Z",
+  "completedAt": "2026-11-11T13:51:44.829Z",
+  "exit": 1,
+  "signal": null,
+  "timedOut": false,
+  "outputLimit": false,
+  "error": null,
+  "stdout": "✖ TEST-RELQ-SKILL-001 preserves 1268 exact cases and owned native inventory controls (42.602765ms)\nℹ tests 1\nℹ suites 0\nℹ pass 0\nℹ fail 1\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 124.041023\n\n✖ failing tests:\n\ntest at scripts/release-qualification.test.mjs:767:1\n✖ TEST-RELQ-SKILL-001 preserves 1268 exact cases and owned native inventory controls (42.602765ms)\n  AssertionError [ERR_ASSERTION]: 28 semantic plus1260 vendor/origin mechanisms\n  \n  1278 !== 1288\n  \n      at TestContext.<anonymous> (file:///tmp/musubix6-spec-feedback-28d27536/scripts/release-qualification.test.mjs:795:12)\n      at Test.runInAsyncScope (node:async_hooks:227:14)\n      at Test.run (node:internal/test_runner/test:1402:25)\n      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {\n    generatedMessage: false,\n    code: 'ERR_ASSERTION',\n    actual: 1278,\n    expected: 1288,\n    operator: 'strictEqual',\n    diff: 'simple'\n  }\n",
+  "stderr": ""
+}

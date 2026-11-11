@@ -1,0 +1,1 @@
+RED ok TEST-RELQ-SKILL-001 (REQ-RELQ-003) 224ms — fails with: AssertionError [ERR_ASSERTION]: Got unwanted exception: the approved revision2 120-file catalogue must accept 

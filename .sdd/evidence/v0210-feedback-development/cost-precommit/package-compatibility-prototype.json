@@ -1,0 +1,44 @@
+{
+  "status": "PASS",
+  "purpose": "Actual offline npm10/npm11 archive compatibility, not qualification or publication approval",
+  "stage": "prototype-before-clean-commit",
+  "source": "/tmp/musubix6-spec-feedback-28d27536",
+  "qualificationCredit": 0,
+  "rows": [
+    {
+      "major": 22,
+      "command": [
+        "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/runtimes/node22/bin/node",
+        "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/runtimes/node22/lib/node_modules/npm/bin/npm-cli.js",
+        "pack",
+        "--ignore-scripts",
+        "--offline",
+        "--json",
+        "--pack-destination",
+        "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-feedback-package-compatibility-rPqMRO/node22"
+      ],
+      "artifact": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-feedback-package-compatibility-rPqMRO/node22/musubix6-0.2.10.tgz",
+      "sha256": "49cf3c0fea315f6427ad011da418be189c81d5c6118c562064459abe89c39c22",
+      "files": 129,
+      "integrity": "sha512-BdGL8XbDiHcUW5g3mKXkBr8Y0dGRObM7PbpolO4mkr6oAdcQbPSa4LO/uZHbHI6IA1qjdeAefQSBHbFNtNb40A=="
+    },
+    {
+      "major": 24,
+      "command": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/lib/node_modules/npm/bin/npm-cli.js",
+        "pack",
+        "--ignore-scripts",
+        "--offline",
+        "--json",
+        "--pack-destination",
+        "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-feedback-package-compatibility-rPqMRO/node24"
+      ],
+      "artifact": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-feedback-package-compatibility-rPqMRO/node24/musubix6-0.2.10.tgz",
+      "sha256": "49cf3c0fea315f6427ad011da418be189c81d5c6118c562064459abe89c39c22",
+      "files": 129,
+      "integrity": "sha512-BdGL8XbDiHcUW5g3mKXkBr8Y0dGRObM7PbpolO4mkr6oAdcQbPSa4LO/uZHbHI6IA1qjdeAefQSBHbFNtNb40A=="
+    }
+  ],
+  "output": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-feedback-package-compatibility-rPqMRO"
+}

@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "revision": 1,
+  "revision": 2,
   "targetVersion": "0.2.10",
-  "revisionReason": "Prospective0.2.10 successor from committed main337ad8f: retain all24 Linux cells/budgets, all118 paths/full modes, all original13 semantic/14 placeholder mechanisms and1240 vendor/origin challenges; add the15 existing contextual-proofreading mechanisms with their independently specified primary assertions/diagnostics. Retain0.2.8 provenance and the explicitly identified0.2.9 catalogue-development reference, never its approval or run credit. Renew genuine seven-artifact human preparation approval before admission.",
+  "revisionReason": "Prospective0.2.10 feedback successor from committed01e1f0d: preserve all24 Linux cells/budgets, all118 inherited paths/full modes,28 semantic mechanisms,14 placeholder mechanisms and every1240 inherited vendor/origin challenge; renew8 intentionally changed canonical byte digests and add2 shipped feedback files with all10 source byte/full-mode policies each. Copilot120/Claude117,1200 source challenges plus60 origin sensitivities,1288 total skill cases. Credit/streak0; genuine seven-artifact human preparation approval required before adapter cutover or admission.",
   "status": "proposed-normative-contract-not-approval-or-run-evidence",
   "originalExactSemanticsRecovered": false,
   "originalSevenVendorPathsRecovered": false,
@@ -17,10 +17,10 @@
   },
   "exactRequiredCaseCounts": {
     "skillMechanisms": 28,
-    "sourceVendorChallenges": 1180,
+    "sourceVendorChallenges": 1200,
     "originSensitivityChallenges": 60,
-    "vendorChallenges": 1240,
-    "skillCellTotal": 1268,
+    "vendorChallenges": 1260,
+    "skillCellTotal": 1288,
     "placeholderMechanisms": 14
   },
   "mutationSelectionRule": "Require exactly one occurrence of before within scope. A non-null scope identifies the exact named top-level function, ending before the next top-level function/class definition; null means the whole file. Match exact pre-edit bytes and refuse a missing/ambiguous anchor.",
@@ -570,7 +570,7 @@
           },
           {
             "path": ".github/skills/lean-sdd-tdd/scripts/sdd.test.mjs",
-            "sha256": "306b6d5d3d9fe13a364870831eb0f4d812df9ba644bc4ce002bc86d7bed779c1",
+            "sha256": "b0810139e648802f6c2e59d4f1ad435612f6a1f96903a9ff3948cf150830c86a",
             "lines": [
               6173,
               6182
@@ -2040,109 +2040,49 @@
     "definition": "existing markerPolicyRows/contextPolicyRows expected-count pairs, not the linter output; same line numbers/snippets/JSON keys checked in source and installed outputs; no replacement by full-suite-only coverage"
   },
   "vendorReference": {
-    "sourceCommit": "337ad8f7016d91c4b373a3b17babc98801c75bce",
-    "sourceSkillTree": "98052db3fb78bce20f14dc9b038f175094ed7dc4",
-    "origin": "Independent committed Git blobs, permission-preserving source archive, offline npm package and actual source/package both-host initialization agree at main337ad8f on Node24. This preparation spike is not frozen qualification or publication approval; required Node20/22/24 qualification remains pending.",
+    "sourceCommit": "01e1f0d98c9e32f5a1cfa682435b09b4e54d6957",
+    "sourceSkillTree": "74a4b3296575f2eba31483987e5d164bc307da0e",
+    "origin": "Independent committed Git blobs, live-source full modes, permission-preserving archive, offline npm package and actual source/package both-host initialization agree at01e1f0d on Node24. Preparation only: no frozen qualification or publication approval.",
     "intendedLocalDeltas": [
       {
-        "path": ".github/skills/japanese-prose/SKILL.md",
-        "before": "bda0b1f87bfc07ea0dfcfd757621c10e2515a3a0adf68cf3533538522d741cf1",
-        "after": "1e8e3630147bd2e2f2a35ad56d3b9d053bca75b0e141133c5831b3f73dfcd9cd"
-      },
-      {
-        "path": ".github/skills/japanese-prose/references/review-workflow.md",
-        "before": "e5ebfc731f37c69c806d3055f4a9fca26dad1971f45df6c60fd31ae955e51f09",
-        "after": "5e348feeb1416716bf47b50f3db14d3695ae2acfd49e8631c39fdcb6ba31c882"
-      },
-      {
-        "path": ".github/skills/japanese-prose/references/writing-guidelines.md",
-        "before": "30ae24e05b2270f0876f2c32969a35c1a0e7ee1b65a0b7e4960075c632aece85",
-        "after": "ab8b385e3c64f69e2d6e9200da6477a3b853ad294a9b2273199bf05795f1ca81"
-      },
-      {
-        "path": ".github/skills/japanese-prose/scripts/core.py",
-        "before": "919fa499dc5a004b7134b727892e43a51f937c207304fd28248495f73778b342",
-        "after": "3b875d90b556a26002a9ef320c66376cf86b7260e664a80c651d1cdc65d485f3"
-      },
-      {
-        "path": ".github/skills/japanese-prose/scripts/lint.py",
-        "before": "7fc3b6884ed8ba8e4e6462082aa26dc3d86873530d74cc94f944b26155e58987",
-        "after": "b45e8591ed8fb423a3ddc4171d42484f06b4ac391056af4ead23c79689a64cde"
-      },
-      {
-        "path": ".github/skills/japanese-prose/scripts/outline.py",
-        "before": "9b8763fa5dcc28c1d9f9d71e25f410e7c5af40625a1801579d132a5918525633",
-        "after": "c9b797d8d9b8e092c0e86b01b76b860a5651dc72f9f55ac89f4f32de9b5b9ec0"
-      },
-      {
-        "path": ".github/skills/japanese-prose/scripts/terms.py",
-        "before": "4ea464f1af255d9167268c85183538ddecc73cbacb01bd7fc6b8e86899b16b20",
-        "after": "fc8506d3d1dc24cabda2c4f9f089e8b439131b58a631d8bdbd66998b4c6bfd86"
-      },
-      {
-        "path": ".github/skills/japanese-prose/scripts/test_engine.py",
-        "before": "7d1a9935453038787ff520c360637037b275fe6769210a17961930f7966d649a",
-        "after": "401e7507ab7bd74bbe48029131bd24a9f948237fd59688a1484277e98a5ef3f2"
-      },
-      {
         "path": ".github/skills/lean-agentic-coding/SKILL.md",
-        "before": "289a90f8295260dd3f961e2247722084dde8a5826b2d13678b245b732524edb6",
-        "after": "0048f822092061e9f631375f8fa7e91daff9b44d58194dac70160b495f1828ca"
+        "before": "0048f822092061e9f631375f8fa7e91daff9b44d58194dac70160b495f1828ca",
+        "after": "be4fde0249619d2a7ac641a2e16b80ddd29240aed83515aee060737f18ffce6a"
       },
       {
         "path": ".github/skills/lean-sdd-tdd/SKILL.md",
-        "before": "9ff2206980ae9b11e358f175e1e08ebf0577c0226ea2255f3f597ded6cd2b997",
-        "after": "a507127d7a46e145c4b392aeeae7ddb79c8cf0474d4f21d0b0975e1ee071c7d4"
+        "before": "a507127d7a46e145c4b392aeeae7ddb79c8cf0474d4f21d0b0975e1ee071c7d4",
+        "after": "ec039c9351c86e67db02a026b0b6ebd95d6c64622a7245613d474b7df7c1ce4f"
       },
       {
-        "path": ".github/skills/lean-sdd-tdd/scripts/diagnostics.test.mjs",
-        "before": "ea2f5f38bfdb3ef68cd4845c39bd980f6ff22272244f1abe32b890fe46b8c82d",
-        "after": "eb0f2f1b0b757172b41789025dd8aa4222046a595ee52fa2574abd75152a8369"
+        "path": ".github/skills/lean-sdd-tdd/references/config.md",
+        "before": "3bde90d4b95a59fb6546cc7e45cf4ad31b13ab49139f5a7bcedee64dccbfd342",
+        "after": "6f662e891deb7cc56194c0fd164250d0c60fcddd7664b4665fcc8f57863326a6"
       },
       {
         "path": ".github/skills/lean-sdd-tdd/scripts/implementation-plan-cli.mjs",
-        "before": "deb20d0abd1f908a89fa115e489008cb9cbcda225d751a159e1f4e68e5570fa2",
-        "after": "7057997535dc2be86416ba6f3166c00840e3d49563cd1fb88de9872c68e61118"
-      },
-      {
-        "path": ".github/skills/lean-sdd-tdd/scripts/implementation-plan-cli.test.mjs",
-        "before": "4782e5c2dc6e312ffd5cec4c2c2097a23777c58ece93263e9dd742facdf71443",
-        "after": "d830cf57e9a94c52d88a88134e3d52ab906b0513135df3cc247f5d58ded3e474"
+        "before": "7057997535dc2be86416ba6f3166c00840e3d49563cd1fb88de9872c68e61118",
+        "after": "33a943070180e94c3442e8bc3affbc2d879fe44671ef1500436a9f88697af3ad"
       },
       {
         "path": ".github/skills/lean-sdd-tdd/scripts/implementation-plan-evidence.mjs",
-        "before": "6ab57010efaf0d611661601c8a36ed9286ada22879156a5659b97f66a94c4639",
-        "after": "548b46c222a8ec91c8839ba3df185f194818b4fe64c12d4fc86756e0e3dd6360"
+        "before": "548b46c222a8ec91c8839ba3df185f194818b4fe64c12d4fc86756e0e3dd6360",
+        "after": "b0795b1b4fbece29eb56fd005a946c3a7685776aa661a2eeca1878d97e2577bd"
       },
       {
         "path": ".github/skills/lean-sdd-tdd/scripts/implementation-plan-workflow.test.mjs",
-        "before": "499b7f1de9c8abb9ddf6c7a25787cd990c04ebbdae36272a58ea65205eb77685",
-        "after": "c6419678d4f54dc687686936554e23f7c95e15a6416053d6a60886df35871c06"
-      },
-      {
-        "path": ".github/skills/lean-sdd-tdd/scripts/implementation-plan.mjs",
-        "before": "9c4cac4e884709c16002e3fae9e4c33f660d342973f21cf86009442d227632db",
-        "after": "450af6fff33ab418ada609345e6fed2f997f396b4024f01d07e1c657e0a30d47"
+        "before": "c6419678d4f54dc687686936554e23f7c95e15a6416053d6a60886df35871c06",
+        "after": "aff18a2f37dd0c8eb6e7516013405a18d27a29e022aae4e86021bb15e733d357"
       },
       {
         "path": ".github/skills/lean-sdd-tdd/scripts/sdd.mjs",
-        "before": "3f5c88b4ab9e640ca7a33f3edd966ad268a4c3b335d8ada50790862564f6cd39",
-        "after": "3a6eb5f599640cff7a37151228174dc2aacc90000b8c96b6b2ba1f5b9a1b12ee"
+        "before": "3a6eb5f599640cff7a37151228174dc2aacc90000b8c96b6b2ba1f5b9a1b12ee",
+        "after": "e31bba4b12dad6a11c0200009b5816d23961c76da9d5984e3775098c625ab379"
       },
       {
         "path": ".github/skills/lean-sdd-tdd/scripts/sdd.test.mjs",
-        "before": "a7148f0d77458fa702c41ba8c9b2305ee7a93dd908b65ec41f25cf8da7a1b2a5",
-        "after": "306b6d5d3d9fe13a364870831eb0f4d812df9ba644bc4ce002bc86d7bed779c1"
-      },
-      {
-        "path": ".github/skills/sdd-reverse-spec/SKILL.md",
-        "before": "3e8a2f230e27f22e954d15c4498c9ac0b3366827f81dc1d76ff93947aa4597e4",
-        "after": "d7f3135c5550e8a217eecb3718297596c36681c2062e0eb3f5bf79b62945c4a0"
-      },
-      {
-        "path": ".github/skills/sdd-spec-interview/SKILL.md",
-        "before": "f2cd7054dc0d014d90c52a357e563475dbec81eef0e27a1338f72b2a9d69d246",
-        "after": "c911308d6e7cd957ae10aa268b843afaf8ca48c85324bffe83850bb70fc94b03"
+        "before": "306b6d5d3d9fe13a364870831eb0f4d812df9ba644bc4ce002bc86d7bed779c1",
+        "after": "b0810139e648802f6c2e59d4f1ad435612f6a1f96903a9ff3948cf150830c86a"
       }
     ],
     "skillNames": [
@@ -2157,7 +2097,7 @@
       "tech-writer",
       "wslc-containers"
     ],
-    "fileCount": 118,
+    "fileCount": 120,
     "hostInventories": {
       "copilot": {
         "skillNames": [
@@ -2172,7 +2112,7 @@
           "tech-writer",
           "wslc-containers"
         ],
-        "fileCount": 118
+        "fileCount": 120
       },
       "claude": {
         "skillNames": [
@@ -2186,7 +2126,7 @@
           "tech-writer",
           "wslc-containers"
         ],
-        "fileCount": 115,
+        "fileCount": 117,
         "excludedSkill": "agent-watchdog",
         "reason": "Existing Copilot-only watchdog host contract, not a skipped required test."
       }
@@ -2196,7 +2136,7 @@
       "sourceInit": "Exact source reference mode & 0777.",
       "package": "Exact frozen packageMode: 0755 for approved executable reference files, otherwise 0644. Derived before mutations, never from mutated files.",
       "packageInit": "Exact frozen packageMode & 0777.",
-      "justification": "Real npm normalizes source modes. Independent current118-file Git archive/source/npm checks establish the exact source nine-bit and normalized package modes before mutations; do not infer them from mutant results."
+      "justification": "Real npm normalizes source modes. Independent current120-file Git archive/source/npm checks establish the exact source nine-bit and normalized package modes before mutations; do not infer them from mutant results."
     },
     "referenceFiles": [
       {
@@ -2402,7 +2342,7 @@
       {
         "path": ".github/skills/lean-agentic-coding/SKILL.md",
         "mode": 436,
-        "sha256": "0048f822092061e9f631375f8fa7e91daff9b44d58194dac70160b495f1828ca",
+        "sha256": "be4fde0249619d2a7ac641a2e16b80ddd29240aed83515aee060737f18ffce6a",
         "packageMode": 420,
         "sourceModeOctal": "0664",
         "packageModeOctal": "0644"
@@ -2442,7 +2382,7 @@
       {
         "path": ".github/skills/lean-sdd-tdd/SKILL.md",
         "mode": 436,
-        "sha256": "a507127d7a46e145c4b392aeeae7ddb79c8cf0474d4f21d0b0975e1ee071c7d4",
+        "sha256": "ec039c9351c86e67db02a026b0b6ebd95d6c64622a7245613d474b7df7c1ce4f",
         "packageMode": 420,
         "sourceModeOctal": "0664",
         "packageModeOctal": "0644"
@@ -2450,7 +2390,7 @@
       {
         "path": ".github/skills/lean-sdd-tdd/references/config.md",
         "mode": 436,
-        "sha256": "3bde90d4b95a59fb6546cc7e45cf4ad31b13ab49139f5a7bcedee64dccbfd342",
+        "sha256": "6f662e891deb7cc56194c0fd164250d0c60fcddd7664b4665fcc8f57863326a6",
         "packageMode": 420,
         "sourceModeOctal": "0664",
         "packageModeOctal": "0644"
@@ -2568,9 +2508,25 @@
         "packageModeOctal": "0644"
       },
       {
+        "path": ".github/skills/lean-sdd-tdd/scripts/implementation-feedback.mjs",
+        "mode": 436,
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644",
+        "sha256": "2c391eff3ad985981389242927d5e1f04070a63a969f51c1f45749147895f03e"
+      },
+      {
+        "path": ".github/skills/lean-sdd-tdd/scripts/implementation-feedback.test.mjs",
+        "mode": 436,
+        "packageMode": 420,
+        "sourceModeOctal": "0664",
+        "packageModeOctal": "0644",
+        "sha256": "7d2772fe1a6544bac0ab992d0533d7f86bc14426f2b25c10e5e37e523a11d759"
+      },
+      {
         "path": ".github/skills/lean-sdd-tdd/scripts/implementation-plan-cli.mjs",
         "mode": 436,
-        "sha256": "7057997535dc2be86416ba6f3166c00840e3d49563cd1fb88de9872c68e61118",
+        "sha256": "33a943070180e94c3442e8bc3affbc2d879fe44671ef1500436a9f88697af3ad",
         "packageMode": 420,
         "sourceModeOctal": "0664",
         "packageModeOctal": "0644"
@@ -2586,7 +2542,7 @@
       {
         "path": ".github/skills/lean-sdd-tdd/scripts/implementation-plan-evidence.mjs",
         "mode": 436,
-        "sha256": "548b46c222a8ec91c8839ba3df185f194818b4fe64c12d4fc86756e0e3dd6360",
+        "sha256": "b0795b1b4fbece29eb56fd005a946c3a7685776aa661a2eeca1878d97e2577bd",
         "packageMode": 420,
         "sourceModeOctal": "0664",
         "packageModeOctal": "0644"
@@ -2602,7 +2558,7 @@
       {
         "path": ".github/skills/lean-sdd-tdd/scripts/implementation-plan-workflow.test.mjs",
         "mode": 436,
-        "sha256": "c6419678d4f54dc687686936554e23f7c95e15a6416053d6a60886df35871c06",
+        "sha256": "aff18a2f37dd0c8eb6e7516013405a18d27a29e022aae4e86021bb15e733d357",
         "packageMode": 420,
         "sourceModeOctal": "0664",
         "packageModeOctal": "0644"
@@ -2626,7 +2582,7 @@
       {
         "path": ".github/skills/lean-sdd-tdd/scripts/sdd.mjs",
         "mode": 436,
-        "sha256": "3a6eb5f599640cff7a37151228174dc2aacc90000b8c96b6b2ba1f5b9a1b12ee",
+        "sha256": "e31bba4b12dad6a11c0200009b5816d23961c76da9d5984e3775098c625ab379",
         "packageMode": 420,
         "sourceModeOctal": "0664",
         "packageModeOctal": "0644"
@@ -2634,7 +2590,7 @@
       {
         "path": ".github/skills/lean-sdd-tdd/scripts/sdd.test.mjs",
         "mode": 436,
-        "sha256": "306b6d5d3d9fe13a364870831eb0f4d812df9ba644bc4ce002bc86d7bed779c1",
+        "sha256": "b0810139e648802f6c2e59d4f1ad435612f6a1f96903a9ff3948cf150830c86a",
         "packageMode": 420,
         "sourceModeOctal": "0664",
         "packageModeOctal": "0644"
@@ -3199,7 +3155,7 @@
       }
     ],
     "finiteDefinition": "Cartesian product of every explicit referenceFiles row and these10 explicit byte/mode policy rows; unique IDs vendor:<policy-name>:<reference-file-path>. Baseline and restored full frozen inventories pass for EVERY row. This explicitly defined finite product contains no unknown policy rows.",
-    "mutationCount": 1180,
+    "mutationCount": 1200,
     "originSensitivityCases": [
       {
         "id": "origin:sourceInit:unauthorized-byte:.github/skills/agent-watchdog/scripts/watchdog.mjs",
@@ -3803,7 +3759,7 @@
       }
     ],
     "originSensitivityDefinition": "Exactly 60 additional cases: three non-source origins times two explicit frozen file representatives (nonexecutable and executable) times ten byte/mode policies. Source-init and package-init baseline controls invoke the real candidate CLI; both supported hosts have positive inventory controls. Freeze selected native assertion/argv/host before execution. These are bounded origin-check sensitivities, not a claim to enumerate all host/file products.",
-    "challengeOrigin": "Fresh private source inventory for each of the 1180 byte/mode challenges; baseline and restoration cover the entire approved inventory. Additional source/init/package/package-init controls use their own approved origin modes.",
+    "challengeOrigin": "Fresh private source inventory for each of the 1200 byte/mode challenges; baseline and restoration cover the entire approved inventory. Additional source/init/package/package-init controls use their own approved origin modes.",
     "modeEvaluationOrder": "Proposed validator must lstat and assert exact mode before reading content, so removing owner read permission is detected by the owned mode assertion rather than credited as an EACCES setup error. This behavior is proposed, not implemented.",
     "forbiddenInventory": "Reject obsidian-prefixed skills, __pycache__, .pyc/.pyo, missing/extra/duplicate paths and external symlinks. References may not be rebuilt from mutated inputs or comparator output.",
     "limits": "One append-newline challenge and nine single-bit XOR mode challenges per file, not every possible byte edit or proof of the seven unavailable legacy identities. Native end-to-end cell duration and verdict quality remain unverified."
@@ -3814,9 +3770,10 @@
     "sha256": "07f7567b66498bb10ee1da8a9bc367db1f891982353fb2f17a45a23376c2fd01"
   },
   "previousRevision": {
-    "number": 2,
-    "sha256": "07f7567b66498bb10ee1da8a9bc367db1f891982353fb2f17a45a23376c2fd01",
-    "sourceCommit": "95a890a5e7f61cb54976d0f9ffb3133be4d8f6e4"
+    "number": 1,
+    "sha256": "4f39011db146f92e32aeb54a161781f1643ee9121fe78c88f0c3f5e53c8ee7d2",
+    "sourceCommit": "337ad8f7016d91c4b373a3b17babc98801c75bce",
+    "artifactCommit": "01e1f0d98c9e32f5a1cfa682435b09b4e54d6957"
   },
   "catalogueDevelopmentReference": {
     "commit": "5917e42",

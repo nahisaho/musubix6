@@ -1,4 +1,84 @@
-# Stable0.2.10 adapter implementation review
+# Feedback-integrated scope2/content2 implementation review
+
+Current canonical spec SHA256:
+19e94f81df3d02452330567062cc16484006923e51080ab1ca2c1cdd72550451.
+Current helper SHA256:
+60a7549229a3a94dc889f9255450fdf7be23867f0dd31b50ed4ff54dbd3b2d8b.
+Current regression-module SHA256:
+1554f4d7ab9c405bba026ef27cbbac89d434ae2afe81e8c72ac986015a99d9a4.
+
+Independent Claude Sonnet5.5 reviewers catalogue-contract-sonnet
+(`f5f70706-f9f1-4f63-971e-0ef99fd4e95f`) and catalogue-evidence-sonnet
+(`e340d066-3e0a-4056-a86e-33a9b08fa80b`) completed two consecutive
+post-fix clean rounds. The contract reviewer first found that substituting
+either required feedback path while retaining120 unique paths bypassed
+the cardinality guard. Both concrete regressions produced genuine native
+assertion Red before the explicit two-path presence guard; native Green
+then passed. Both reviewers found the fix clean, and their final round
+checked the bounded native-stage evidence update and unchanged contract.
+Review was read-only; reviewers did not execute or attest the parent's
+runtime commands. The final contract round read the evidence narrative,
+not the retained raw outputs or source again.
+
+R210-FEEDBACK-SUBSTITUTION|MEDIUM|scripts/release-qualification-content-mutations.mjs:30-35|closed
+R210-FEEDBACK-CONTRACT|CLEAN|scripts/release-qualification-content-mutations.mjs:18-61|closed
+R210-FEEDBACK-EVIDENCE|CLEAN|.sdd/specs/release-qualification.md:734|closed
+
+The parent ran genuine initial/substitution native Reds and Greens,
+eight isolated assertion-detected mutations with byte/mode restoration
+and a passing native control after each,29/29 complete release/host tests
+and actual JS47/47 diagnostics with ignored0. Thirty byte-exact raw copies
+and provenance are retained under .sdd/evidence/v0210-feedback-catalogue/.
+The preimplementation plan check honestly returned1 for eight changed
+old histories; bindings were measured/known128, with120 histories retained
+current. This is not a current full development gate or a full content cell.
+The preparation lock must be genuinely renewed after the canonical evidence
+update, followed by actual affected-task/full-gate validation, two unchanged
+complete frozen clean runs and separate exact-package publication approval.
+No frozen credit, human approval or publication is inferred.
+
+# Historical feedback-integrated scope2/content2 preparation review
+
+Current canonical spec SHA256:
+806bac7691502b8411766ddc694802239aaafbfb1cf4a2eb0d1d1f2844da73e3.
+Scope: prospective seven-artifact human preparation unit and the atomic0.2.10
+release-note entry, not completed adapter implementation or qualification.
+
+Independent GPT-6.1 Sol reviewers release-feedback-contract
+(`9897cff8-fe94-49f1-a2e4-8e52fadf0e4a`) and release-feedback-evidence
+(`0091e8d1-e836-4d7e-a7a1-4954172780e1`) reviewed the bounded four-file delta.
+The contract reviewer identified two inherited descriptive counts that still
+said118/1180. Correcting them to120/1200 changed no source/policy, primary
+assertion, recipe, mode or valid control. Both follow-up reviews reported
+CLEAN SPEC/PREPARATION; hash reconstruction confirmed only those two strings
+and the dependent content binding changed. The raw comparison report remains
+unchanged; report02 is explicitly a metadata-only supplement, not a rerun.
+
+R210-FEEDBACK-COUNT|LOW|.sdd/release-content-mutations.v0.2.10.json:3762|closed
+R210-FEEDBACK-SCOPE|CLEAN|.sdd/specs/release-qualification.md:734|closed
+R210-FEEDBACK-ORACLE|CLEAN|.sdd/release-content-mutations.v0.2.10.json:2142|closed
+
+Both reviewers confirmed all24 cells/budgets,118 inherited paths/full modes,
+28 semantic/14 placeholder mechanisms,60 origin sensitivities and ten source
+policies remain; two new files add20 source cases, producing1288 skill cases.
+Only the exact current SDK-test oracle identity is renewed; historicalEvidence
+is unchanged. Fresh-project defaults, existing explicit opt-in and separate
+preparation/qualification/publication boundaries are clear in the release note.
+Structural lint exited0 with four historical TODO-mention flags outside the
+new entry; these retained release-history descriptions are not new placeholders.
+Actual source inventory also passed against corrected content SHA9019a596.
+The parent ran those checks; reviewers did not execute or attest runtime proof.
+
+The existing adapter still has its old118 policy. Genuine current human
+preparation approval, new native assertion Red before implementation, valid
+legacy/current controls, restored sensitivities, affected-task/full-gate
+validation and two fixed complete clean runs remain required. Baseline01e
+Linux and Windows development CI succeeded on20/22/24, not this later delta.
+Current JS diagnostics passed47/47; the incomplete observation in historical
+reviews below is not current. No human approval, run credit or publication
+authorization is inferred.
+
+# Historical stable0.2.10 adapter implementation review
 
 Independent GPT-6.1 Sol correctness/contract and test-adequacy reviewers
 completed two consecutive bounded clean rounds on the unchanged final diff.

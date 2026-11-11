@@ -1,0 +1,19 @@
+{
+  "command": [
+    "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+    "--test",
+    "--test-name-pattern",
+    "^TEST-RELQ-001 ",
+    "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-feedback-registration-current-runtimes/git-free/scripts/release-qualification.test.mjs"
+  ],
+  "cwd": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-feedback-registration-current-runtimes/git-free",
+  "startedAt": "2026-11-11T12:24:34.617Z",
+  "completedAt": "2026-11-11T12:24:34.761Z",
+  "exit": 1,
+  "signal": null,
+  "timedOut": false,
+  "outputLimit": false,
+  "error": null,
+  "stdout": "✖ TEST-RELQ-001 admits the locked Linux plan and enumerates every cell-policy violation (7.505694ms)\nℹ tests 1\nℹ suites 0\nℹ pass 0\nℹ fail 1\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 102.29518\n\n✖ failing tests:\n\ntest at scripts/release-qualification.test.mjs:1421:1\n✖ TEST-RELQ-001 admits the locked Linux plan and enumerates every cell-policy violation (7.505694ms)\n  Error: Command failed: git show 1d756415fae1f349aef9be7a82c5b461f1460a27:.sdd/release-validation.v0.2.0.json\n  fatal: not a git repository (or any of the parent directories): .git\n  \n      at genericNodeError (node:internal/errors:986:15)\n      at wrappedFn (node:internal/errors:540:14)\n      at checkExecSyncError (node:child_process:943:11)\n      at execFileSync (node:child_process:979:15)\n      at qualificationFixtureFile (file:///home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-feedback-registration-current-runtimes/git-free/scripts/release-qualification.test.mjs:2658:10)\n      at TestContext.<anonymous> (file:///home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-feedback-registration-current-runtimes/git-free/scripts/release-qualification.test.mjs:37:26)\n      at TestHook.runInAsyncScope (node:async_hooks:227:14)\n      at TestHook.run (node:internal/test_runner/test:1402:25)\n      at TestHook.run (node:internal/test_runner/test:1757:18)\n      at Test.runHook (node:internal/test_runner/test:1289:20) {\n    status: 128,\n    signal: null,\n    output: [ null, '', 'fatal: not a git repository (or any of the parent directories): .git\\n' ],\n    pid: 1445771,\n    stdout: '',\n    stderr: 'fatal: not a git repository (or any of the parent directories): .git\\n'\n  }\n",
+  "stderr": ""
+}

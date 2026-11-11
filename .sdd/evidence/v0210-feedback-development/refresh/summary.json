@@ -1,0 +1,60 @@
+{
+  "phase": "refresh",
+  "total": 128,
+  "retained": 118,
+  "revalidated": 10,
+  "outcomes": [
+    {
+      "task": "TASK-CI-FIXTURE-001",
+      "receipt": ".sdd/plan-evidence/0c7e3e5088fb77cdfbb257ecf23c038bd40f21fd705f6cff35256322c1b96f75/6cde3e0c961eac247cac61184470079fc499db42c62f5df8b7491de6754851b2.json",
+      "checks": 2
+    },
+    {
+      "task": "TASK-CI-FIXTURE-002",
+      "receipt": ".sdd/plan-evidence/a58ed2a1f339580ab6f9d30c38a26bf7fe75241f750a09803b15323b61a67559/9e4c5ec948e811e8b4dd77bbe8f5bffab940fa618b4a98aec68a860f1f7b5f52.json",
+      "checks": 2
+    },
+    {
+      "task": "TASK-CI-FIXTURE-003",
+      "receipt": ".sdd/plan-evidence/b1b133d08bc9b4fc0f94b19884888ba1dc2c3fe58c7d57d580d71d5223599cfd/b0c8a13e33d3c34b7643a8012aa7906a14144b61dc1f6e4732782df01ce076cc.json",
+      "checks": 2
+    },
+    {
+      "task": "TASK-COST-HISTORY-001",
+      "receipt": ".sdd/plan-evidence/1517e548507a2deebb202a54350fbfecb559bf735331f257f090736fcc8681b3/0644819274484c84e60bd8e5ccff81bed112ac70497c715293b3478a54040cdb.json",
+      "checks": 2
+    },
+    {
+      "task": "TASK-COST-HISTORY-002",
+      "receipt": ".sdd/plan-evidence/db45ca0244d8f0421a909af8a8dba45c430c6f6e5f46719b2db62f0fcde44be0/4d0b0ae72ca5b33bec1ef867a45f2945f2998858f289978f44f16177d1770398.json",
+      "checks": 2
+    },
+    {
+      "task": "TASK-RELQ-001",
+      "receipt": ".sdd/plan-evidence/73f0cbb6742cc4492aeeadca22db81f5f31db4650b1951f0febd38355f8df151/79c5344ce79c4578661f12a3cfd683cb10641a5ea93064d63d6c0a626e8ffe39.json",
+      "checks": 5
+    },
+    {
+      "task": "TASK-RELQ-002",
+      "receipt": ".sdd/plan-evidence/dd865d9c8b78a2d77814f6c74fb5613d75c1f641a17ccffea1a8e080c0bc0a07/66c94c25400677a36b1eb8fee7c56fe475e252588e2ac233c618968e35df325c.json",
+      "checks": 8
+    },
+    {
+      "task": "TASK-RELQ-003",
+      "receipt": ".sdd/plan-evidence/89f75a0ef83095915c1bfb35bc420da94e27f50547ef905b5527a6c34744793b/adfd6bad1b4a0eb0629929757e7f3f9b08fd8509075b6362877d86ae1ca048c1.json",
+      "checks": 15
+    },
+    {
+      "task": "TASK-RELQ-004",
+      "receipt": ".sdd/plan-evidence/ea566fd8dcc45f090bbb58cbb164569368264ed6a6f464c72ed20485084892c2/deaee3855d1f076948c86c8fa46b7c50d914be78326a30db241557a6296e8dbf.json",
+      "checks": 3
+    },
+    {
+      "task": "TASK-RELQ-005",
+      "receipt": ".sdd/plan-evidence/8a500e1cd57c470ca565540630853ab2031d74efe95b650b3b5670f6edf9e10d/a98f5e75ccd3625b25fef9bb25a3d8ef2e1689031360c4ff2890d07ca37916f6.json",
+      "checks": 10
+    }
+  ],
+  "qualificationCredit": 0,
+  "completedAt": "2026-11-11T14:45:46.067Z"
+}

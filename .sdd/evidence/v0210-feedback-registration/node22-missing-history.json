@@ -1,0 +1,19 @@
+{
+  "command": [
+    "/home/nahisaho/.copilot/session-state/1f3fca45-165b-46a5-a9cb-f50f07eb054e/files/runtimes/node22/bin/node",
+    "--test",
+    "--test-name-pattern",
+    "^TEST-RELQ-001 ",
+    "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-feedback-registration-current-runtimes/git-free/scripts/release-qualification.test.mjs"
+  ],
+  "cwd": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-feedback-registration-current-runtimes/git-free",
+  "startedAt": "2026-11-11T12:24:34.314Z",
+  "completedAt": "2026-11-11T12:24:34.473Z",
+  "exit": 1,
+  "signal": null,
+  "timedOut": false,
+  "outputLimit": false,
+  "error": null,
+  "stdout": "TAP version 13\n# Subtest: TEST-RELQ-001 admits the locked Linux plan and enumerates every cell-policy violation\nnot ok 1 - TEST-RELQ-001 admits the locked Linux plan and enumerates every cell-policy violation\n  ---\n  duration_ms: 5.876454\n  type: 'test'\n  location: '/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-feedback-registration-current-runtimes/git-free/scripts/release-qualification.test.mjs:1421:1'\n  failureType: 'hookFailed'\n  error: |-\n    Command failed: git show 1d756415fae1f349aef9be7a82c5b461f1460a27:.sdd/release-validation.v0.2.0.json\n    fatal: not a git repository (or any of the parent directories): .git\n    \n  code: 'ERR_TEST_FAILURE'\n  stack: |-\n    genericNodeError (node:internal/errors:983:15)\n    wrappedFn (node:internal/errors:537:14)\n    checkExecSyncError (node:child_process:916:11)\n    execFileSync (node:child_process:952:15)\n    qualificationFixtureFile (file:///home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-feedback-registration-current-runtimes/git-free/scripts/release-qualification.test.mjs:2658:10)\n    TestContext.<anonymous> (file:///home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-feedback-registration-current-runtimes/git-free/scripts/release-qualification.test.mjs:37:26)\n    TestHook.runInAsyncScope (node:async_hooks:214:14)\n    TestHook.run (node:internal/test_runner/test:1047:25)\n    TestHook.run (node:internal/test_runner/test:1354:18)\n    Test.runHook (node:internal/test_runner/test:965:20)\n  ...\n1..1\n# tests 1\n# suites 0\n# pass 0\n# fail 1\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 116.815032\n",
+  "stderr": ""
+}

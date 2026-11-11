@@ -1,0 +1,10 @@
+✔ TEST-RELQ-READINESS-001 refuses synthetic inline empty-run readiness without a bound manifest (10838.97974ms)
+✔ TEST-RELQ-004 enumerates streak resets, fresh per-cell state and immutable failed history (16552.457953ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 27500.599615

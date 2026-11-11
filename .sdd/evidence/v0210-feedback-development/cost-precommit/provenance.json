@@ -1,0 +1,90 @@
+{
+  "purpose": "Final generated USD metadata verification after full unchanged-code development gate",
+  "copiedAt": "2026-11-11T16:25:18.403Z",
+  "qualificationCredit": 0,
+  "changedProtectedInputsAfterGate": [
+    ".sdd/cost-history.json",
+    ".sdd/cost-log.md"
+  ],
+  "unchangedOtherProtectedInputs": 2880,
+  "nativeSourceUnchanged": [
+    {
+      "path": "scripts/release-qualification-content-mutations.mjs",
+      "sha256": "60a7549229a3a94dc889f9255450fdf7be23867f0dd31b50ed4ff54dbd3b2d8b"
+    },
+    {
+      "path": "scripts/release-qualification.test.mjs",
+      "sha256": "1554f4d7ab9c405bba026ef27cbbac89d434ae2afe81e8c72ac986015a99d9a4"
+    }
+  ],
+  "currentCompleteTasks": 128,
+  "metadataTasksRevalidated": [
+    {
+      "task": "TASK-COST-HISTORY-001",
+      "receipt": ".sdd/plan-evidence/1517e548507a2deebb202a54350fbfecb559bf735331f257f090736fcc8681b3/e6b505675787ae31f766b8bf6b6511e76d5ee81a980bd0ac9e74876b55f9b05e.json",
+      "checks": 2
+    },
+    {
+      "task": "TASK-COST-HISTORY-002",
+      "receipt": ".sdd/plan-evidence/db45ca0244d8f0421a909af8a8dba45c430c6f6e5f46719b2db62f0fcde44be0/96f5adde7d612f3d77c63e2ca5f483c44369bbec4dc87b6763dd9d587558e050.json",
+      "checks": 2
+    }
+  ],
+  "fullSuiteRepeated": false,
+  "copies": [
+    {
+      "path": ".sdd/evidence/v0210-feedback-development/cost-precommit/start.json",
+      "source": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/spec-feedback-development-feedback-catalogue-cost-precommit/start.json",
+      "sha256": "06512f5ecbe121ea4c026f9b384deaf48da3630b6f97b8001d927e038f661be5",
+      "bytes": 708001
+    },
+    {
+      "path": ".sdd/evidence/v0210-feedback-development/cost-precommit/summary.json",
+      "source": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/spec-feedback-development-feedback-catalogue-cost-precommit/summary.json",
+      "sha256": "3d2a90c3b2fb0578ff3c80c70daf5943f367910da57b600976619899601e5acf",
+      "bytes": 661
+    },
+    {
+      "path": ".sdd/evidence/v0210-feedback-development/cost-precommit/progress.json",
+      "source": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/spec-feedback-development-feedback-catalogue-cost-precommit/progress.json",
+      "sha256": "0e054dffb671bd2a9d3b339f1e50cd66e5386b257bb5f5bd1bb7ae5b974d923a",
+      "bytes": 3649
+    },
+    {
+      "path": ".sdd/evidence/v0210-feedback-development/cost-precommit/final-plan-check.stdout.log",
+      "source": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/spec-feedback-development-feedback-catalogue-cost-precommit/final-plan-check.stdout.log",
+      "sha256": "5ab139af029d32abd3116412e4aa8c4f6236a6e17a82e901e5a28c014b54aec8",
+      "bytes": 27019
+    },
+    {
+      "path": ".sdd/evidence/v0210-feedback-development/cost-precommit/final-plan-check.process.json",
+      "source": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/spec-feedback-development-feedback-catalogue-cost-precommit/final-plan-check.process.json",
+      "sha256": "11b2b22ceac60cf58b0fdde72fc180773510e91270fba064f3bf60073617fe9f",
+      "bytes": 496
+    },
+    {
+      "path": ".sdd/evidence/v0210-feedback-development/cost-precommit/final-ledger-check.stdout.log",
+      "source": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/spec-feedback-development-feedback-catalogue-cost-precommit/final-ledger-check.stdout.log",
+      "sha256": "2ad25c9f656f48b50e320c0836512602d22e8664f4b497448c341a8bc1c29572",
+      "bytes": 25
+    },
+    {
+      "path": ".sdd/evidence/v0210-feedback-development/cost-precommit/final-ledger-check.process.json",
+      "source": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/spec-feedback-development-feedback-catalogue-cost-precommit/final-ledger-check.process.json",
+      "sha256": "489fd37f60f5f0dc18dfbe1c0b10bfe195c8bffec479757880d3bf68ecf47b53",
+      "bytes": 481
+    },
+    {
+      "path": ".sdd/evidence/v0210-feedback-development/cost-precommit/cost-generation.log",
+      "source": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-feedback-catalogue-cost-precommit.log",
+      "sha256": "90aae9e0ec0dd53dec4098011bf150acd573bf119a9e723ea60d108855f69ddc",
+      "bytes": 78
+    },
+    {
+      "path": ".sdd/evidence/v0210-feedback-development/cost-precommit/package-compatibility-prototype.json",
+      "source": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-feedback-package-compatibility-prototype-before-clean-commit.json",
+      "sha256": "3cfdc6a55cf8274ea8833412c5568502f95f8aa32fef30391dbacc6cb1971673",
+      "bytes": 2243
+    }
+  ]
+}

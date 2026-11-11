@@ -1,0 +1,38 @@
+{
+  "status": "PASS",
+  "purpose": "actual current-source Git-free runtime controls, not frozen qualification",
+  "sourceSha256": "1a679956ea38ee3e40b301399f1340c7fdc33f83a727f3511584d5d95379244f",
+  "copySha256": "1a679956ea38ee3e40b301399f1340c7fdc33f83a727f3511584d5d95379244f",
+  "results": [
+    {
+      "node": "v20.20.2",
+      "name": "registration",
+      "exit": 0
+    },
+    {
+      "node": "v20.20.2",
+      "name": "missing-history",
+      "exit": 1
+    },
+    {
+      "node": "v22.23.3",
+      "name": "registration",
+      "exit": 0
+    },
+    {
+      "node": "v22.23.3",
+      "name": "missing-history",
+      "exit": 1
+    },
+    {
+      "node": "v24.22.1",
+      "name": "registration",
+      "exit": 0
+    },
+    {
+      "node": "v24.22.1",
+      "name": "missing-history",
+      "exit": 1
+    }
+  ]
+}

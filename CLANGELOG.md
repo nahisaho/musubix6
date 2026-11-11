@@ -3,22 +3,38 @@
 User-facing changes to musubix6, with upgrade guidance and known release limitations.
 Release dates use Japan Standard Time (UTC+09:00).
 
-## [0.2.10] - Candidate prepared 2026-11-10
+## [0.2.10] - Candidate prepared 2026-11-11
 
 Source candidate for #386 and #387, based on the committed v0.2.8 source.
 Uncommitted v0.2.9 work is not included. No tag or npm publication is implied;
 full-project validation, frozen qualification and publication approval remain
 separate requirements.
 
+### Implementation feedback and upgrade
+
+- Require each implementation batch to update the existing canonical
+  requirements/design impact and change notes, including no-requirement-change
+  decisions; do not create a competing specification.
+- Enable CLI feedback enforcement for newly initialized planning-enabled
+  projects. After review/approval and native validation, use
+  `sdd feedback record FEATURE` to accept the current implementation/spec
+  identity. Missing or stale acceptance blocks task verification and gates,
+  not Red/Green. Existing projects stay opted out unless they explicitly set
+  `"specFeedback":{"required":true}`; enabled feedback requires planning.
+- Preserve ownership transfers and accepted history, and distribute the same
+  workflow and helpers to both supported agent hosts. Recording feedback is
+  not a substitute for tests, task verification or release approval.
+
 ### Release preparation
 
-- The merged main candidate passed its development full gate (1203 tests,
-  zero failures/skips), all126 task checks and latest-head hosted CI. These
-  developer results are not frozen release qualification.
-- A prospective0.2.10 successor retains the24 required Linux cells and
-  unchanged budgets,118 canonical skill files/full modes and every inherited
-  mutation. Fifteen contextual-proofreading mechanisms are added to the
-  original13, for1268 required skill/vendor/origin cases.
+- The feedback development baseline passed its full gate (1211 tests,
+  zero failures/skips) and all128 task checks. Subsequent release-fixture and
+  inventory changes require fresh affected-task and full-project validation;
+  baseline results are not current frozen qualification.
+- The prospective scope/content revision2 retains the24 required Linux cells,
+  unchanged budgets, every inherited file/full mode and mutation. It covers
+  120 canonical skill files,28 semantic mechanisms,1200 source byte/mode
+  challenges and60 origin sensitivities:1288 required skill cases.
 - Old release contracts and failed history are retained. The new exact
   seven-artifact preparation approval, fresh native proof, two identical
   complete frozen runs and separate exact-package publication approval remain
@@ -32,6 +48,8 @@ separate requirements.
 
 - Return exit0 for explicit SDD help without reading project inputs, and list
   diagnostics plus plan check, verify and bindings; invalid usage still exits2.
+- Defer historical release-test fixtures until selected execution so Git-free
+  discovery works without giving missing-history execution a fallback.
 
 ### Added
 

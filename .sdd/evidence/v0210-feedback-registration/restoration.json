@@ -1,0 +1,5 @@
+{
+  "source": "scripts/release-qualification.test.mjs",
+  "sha256": "1a679956ea38ee3e40b301399f1340c7fdc33f83a727f3511584d5d95379244f",
+  "byteExactRestoration": true
+}

@@ -5,7 +5,7 @@ approval: human
 artifacts: .sdd/release-validation.v0.2.10.json, .sdd/release-content-mutations.v0.2.10.json, .sdd/specs/claude-code-support.md, README.md, README-ja.md, CLANGELOG.md
 ---
 # Reproducible Linux-only release qualification
-Goal: prepare the exact stable0.2.10 candidate from main for the unchanged24-cell Linux qualification, with zero transferred credit and no publication authorization. The current contract is the stable0.2.10 successor section below; earlier version-specific preparation and evidence remain historical. Genuine seven-artifact human preparation approval, current native verification, two fresh unchanged complete runs and separate exact-package human publication approval remain required.
+Goal: prepare the exact stable0.2.10 candidate from main for the unchanged24-cell Linux qualification, with zero transferred credit and no publication authorization. The current contract is the stable0.2.10 successor plus its feedback-integrated scope2/content2 amendment below; earlier preparation and evidence remain historical. Genuine seven-artifact human preparation approval, current native verification, two fresh unchanged complete runs and separate exact-package human publication approval remain required.
 | ID | EARS requirement | Test |
 | --- | --- | --- |
 | REQ-RELQ-001 | When a Linux-only qualification plan is admitted, the validator shall require all 24 inherited non-WSL cells with unchanged budgets and an explicit excluded NATIVE-WSLC cell, bind the scope and explicit committed historical test lineage to the approved plan, and reject missing, duplicate or weakened required cases and invalid lineage. | TEST-RELQ-001, TEST-RELQ-LINEAGE-001 |
@@ -730,6 +730,141 @@ Windows/macOS, WSL containers and live Claude interactions remain unqualified.
 This specification and CLANGELOG.md carry the #385 disclosure inside the
 seven-artifact unit; the final exact-package release report and approval
 request must repeat it rather than reducing it to the issue's CLOSED label.
+
+### Feedback-integrated successor: scope2/content2 preparation
+
+The user explicitly resumed release work through the existing GitHub Actions
+publication workflow after the feedback feature commit/push. This permits
+preparation and validation, not unseen artifact approval or a local publish.
+Source reference01e1f0d98c9e32f5a1cfa682435b09b4e54d6957, skill tree
+`74a4b3296575f2eba31483987e5d164bc307da0e`, contains the feedback feature.
+The preceding scope1/content1 descriptions remain historical preparation.
+
+The old inventory correctly rejected the two newly shipped helper/test
+paths. Scope/content revision2 preserves every old118 path/full mode,
+all24 required Linux cells, exclusions, unchanged budgets,28 semantic
+mechanisms,14 placeholder mechanisms, nine source permission-bit policies
+plus byte policy and all60 origin sensitivities. Renew exactly8 intended
+canonical byte digests; add
+`.github/skills/lean-sdd-tdd/scripts/implementation-feedback.mjs` and
+`.github/skills/lean-sdd-tdd/scripts/implementation-feedback.test.mjs`.
+Each added file receives all10 source byte/full-mode challenges, not an
+exception:120 source files,1200 source challenges,1260 total vendor/origin
+challenges and1288 total SKILL-MUTATION cases. Copilot owns120 files and
+Claude117; the existing three-file watchdog exclusion is unchanged.
+No prior case, primary assertion, diagnostic, mode or valid control is
+removed or weakened. The two new source modes are0664/package0644.
+
+Revision1 hashes are retained explicitly:
+scope `fce4b43abb229843e0dd246534c10f7bf70321a3ab899b0461986105278f11bf`
+and content `4f39011db146f92e32aeb54a161781f1643ee9121fe78c88f0c3f5e53c8ee7d2`.
+Prospective revision2 hashes are:
+scope `4d91abf448412004f8b98d51c412d49e6d0115e0359a240bddd4641c2a6284d9`
+and content `9019a5968859179375d61897fb86abef07f57aeb2dad0e9858bb879378c93f40`.
+Keep their exact reasons/predecessor identities and zero streak/credit.
+
+The independent preparation report
+`v0210-feedback-inventory-reference-report-02.json`, SHA256
+`b0d94b2642d54754b7f385b9f9b00fb5c7278f8077a47b85f898c33fc7d83865`,
+compared all120 committed blobs, live/full archive modes, actual offline
+npm package bytes/modes and source/package initialization on both hosts.
+All four host inventories passed120/117. The development tgz SHA256
+`3fa72ea5534e583a87b7ccff19ad77f5d282e783afbd68232d2ce4d9dbead3ae`
+is preparation-only, not the final frozen/publication artifact.
+The comparator rejected an initially unaccounted current-oracle hash change,
+then rejected an overbroad guard that reached historical provenance. The
+corrected explicit renewal touches only current oracle evidence for the
+already reviewed shared legacy-fixture opt-out:
+SDK test SHA306b6d5d becomes b0810139; historicalEvidence SHA0e5b1285 and
+every mechanism/edit/primary assertion/diagnostic remain unchanged.
+Both failed attempts and command records are retained, never Red or run credit.
+The unchanged raw report
+`v0210-feedback-inventory-reference-report.json`, SHA256
+`6faeb7c9d0bb63f0bb768a2ae1681ef023e07f6e8c4d4094becd430b59f1e7bb`,
+retains those actual commands. Report02 is a metadata-only supplement after
+independent review corrected two inherited count descriptions to120/1200;
+its predecessor draft hashes are retained. No source/policy, primary assertion
+or command result changed, and no comparator/command rerun is attributed to
+that supplement.
+
+After genuine renewal of the same seven-artifact preparation unit, extend
+only the current content-catalogue adapter's fixed policy for stable0.2.10
+revision2. Preserve revision1's118/1268 fixture behavior; revision2 requires
+exactly120/1288 and every old case plus exactly20 new source challenges.
+Unsupported current-version revisions and missing/extra files, stale counts,
+duplicate IDs or omitted new-path policies must reject. Do not derive the
+required count from whatever inventory the input happens to supply.
+First extend the existing native regression, obtain its actual assertion
+Red against the old118 guard, then implement the bounded policy and prove
+Green, valid legacy/current controls and isolated restored sensitivities.
+The genuine seven-artifact preparation approval was recorded by nahisaho
+before adapter cutover; it did not approve publication. The bounded adapter
+now accepts the valid revision2 catalogue and rejects the declared invalid
+inputs. These are development-stage results, not a complete content-cell run.
+
+| REQ | PASS condition | Counterexample and expected verdict | TEST/command | Observed evidence |
+|---|---|---|---|---|
+| `REQ-RELQ-001`, `REQ-RELQ-002` | Exact new seven-artifact approval binds120 committed paths/full modes, unchanged24-cell scope and current lineage | Old human lock or scope/content1,119/121 files, stale byte/mode/lineage or weaker budget: reject; exact new approved unit: accept | Independent Git/archive/npm/both-host comparator; TEST-RELQ-BASELINE-001 and TEST-RELQ-CONTENT-ADMISSION-001 |120/120 inventory and four host origins passed; genuine preparation approval recorded before implementation; full development validation/frozen admission pending, and this evidence update requires a renewed exact preparation lock |
+| `REQ-RELQ-003`, `REQ-RELQ-005` | Legacy revision1 yields1268 named skill cases; revision2 yields1288, preserving every legacy ID and adding exactly the20 declared new-file/policy combinations; placeholder catalogue remains14 | Treat revision2 as118 files, drop or substitute either new file at unchanged120 cardinality, omit a policy, duplicate a row, keep old1268 counts or use an unsupported revision: reject; both valid controls accept | TEST-RELQ-SKILL-001; actual native Red/Green, final eight isolated restored mutations and complete release/host modules | Initial native assertion Red/Green and independently found substitution Red/Green passed; final29/29 complete controls, JS47/47 ignored0 and eight assertion-detected/restored sensitivities passed; no complete content-cell claim |
+| `REQ-RELQ-003` | Git-free discovery does not construct pinned execution fixtures; selected execution without history rejects | Eager fixture reads fail discovery; fallback/suppressed reads hide genuine missing history | Existing TEST-CI-FIXTURE-001 and CODE-CI-FIXTURE-004 | Genuine current native Red/Green, eager-read mutation and exact restoration;26/26 affected controls, six exact-source Node20/22/24 controls and JS47/47 passed. Independent implementation reviews clean twice; affected-task/full-gate validation still pending |
+| `REQ-RELQ-004`, `REQ-RELQ-005` | Two fresh complete identical frozen runs precede separate human approval of the exact Actions-compatible tgz; only the approved annotated tag triggers publication | Prior1211-test development gate, subset/native controls, a new hash or broad npm request cannot authorize readiness/publication | Existing freeze/check/run/status and publication workflow | Qualification credit0; no final artifact, tag or publication |
+
+Actual adapter-stage evidence is byte-exact in
+`.sdd/evidence/v0210-feedback-catalogue/provenance.json` and its30 copied
+outputs. The private proposed-policy spike ran one native test, passed one
+and skipped zero without modifying live source; it predates the subsequent
+substitution hardening and is not the final source or live Green.
+`tdd red TEST-RELQ-SKILL-001 --retest ...` produced the initial approved120-file
+assertion failure in `native-red-02.log`, followed by genuine native Green.
+Independent review then found that replacing either required path with a
+different unique path retained120 entries and bypassed the count guard.
+Both concrete substitution regressions were added before the second fix;
+`native-red-03.log` records Missing expected exception, and
+`native-green-02.log` records genuine Green after explicitly requiring both
+declared paths. This closes a contract-stage failure, not a scope expansion.
+
+The final selected regression enumerates24 unsupported-revision combinations
+(six invalid values, both legacy/current payload shapes and both cells),
+both missing paths, both cardinality-preserving substitutions, extra and
+duplicate paths, stale counts, duplicate/replaced policies and each of the
+nine omitted bits. Valid1268/1288 and unchanged14-placeholder controls accept.
+Final isolated mutations each independently removed or violated one guard:
+valid120 rejection, revision fallback, file cardinality, count binding,
+policy-name set, case-ID uniqueness, new-file case generation and required
+path presence. Each produced one actual native assertion failure, then
+byte/mode restoration and one passing native control with zero skips.
+`mutations/summary.json` retains all eight results and source identity.
+`affected-suites-02.log` records29/29 complete release/host tests, zero
+failures/skips; `diagnostics-02.json` records actual ESLint47/47, ignored0.
+These bounded examples and eight mutations are not exhaustive arbitrary
+input, hostile-host or full1288-case qualification proof.
+
+The actual preimplementation consistency check returned1, not PASS: eight
+affected old receipt heads required revalidation after the genuine canonical
+specification changes. Its read-only binding preview had128 known current
+fingerprints and eight measured replacements, with no unknown inputs; those
+bindings were adopted without clearing history-head pointers. The other120
+task histories remained current. Both actual outputs are retained; neither
+binding renewal nor old completion status is task verification. Fresh
+affected-task verification, the current full development gate and two frozen
+complete clean runs remain pending. Record those later stage outputs without
+claiming they ran here or repeatedly changing this native-stage observation.
+
+All six first-failure stages apply: contract=the newly advertised two-file
+scope needs this explicit prospective revision, not an inventory exception;
+trusted inputs=committed blobs/full modes, current-only oracle identity and
+separate historical provenance; execution=real native assertion Red/Green,
+restored mutations and all unchanged per-cell budgets; verdict=accept both
+valid revisions and reject every declared invalid row; evidence history=keep
+failed attempts/predecessors, reset on each relevant edit and transfer no
+credit; integration/distribution=actual20/22/24 package/host cells, fresh-root
+task proof/full gate, two fixed clean runs and separate exact-package approval.
+No stage is waived. Root JS diagnostics are now complete47/47; earlier
+incomplete observations are historical. The baseline01e1f0d development gate
+was1211/1211 with128 current tasks, not proof for these subsequent changes.
+Keep #385's non-reproduction disposition, warnings and unqualified-platform
+limits disclosed above. This amendment and CLANGELOG.md require renewed
+human preparation approval before adapter cutover; no approval is synthesized.
 
 ## Risks / assumptions
 Six first-failure stages: contract — approved Linux scope and exact inherited 24-cell equality; trusted inputs — pin actual files/tools/configuration and reject absent dependencies; execution — fresh isolated work, bounded commands, real native controls; verdict — independent named catalogues, positive controls and assertion mutants; evidence history — immutable failed records, no old credit, deterministic streak reset; integration/distribution — exact tgz and both-host inventories on Node20/22/24, separate human approval.

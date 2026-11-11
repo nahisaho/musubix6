@@ -302,16 +302,16 @@
           "outputTokens": 27991
         },
         "claude-sonnet-5.5": {
-          "calls": 71,
-          "inputTokens": 3668389,
-          "nanoAiu": 242455170000,
-          "outputTokens": 27512
+          "calls": 88,
+          "inputTokens": 4293608,
+          "nanoAiu": 275243420000,
+          "outputTokens": 32477
         },
         "gpt-6.1-sol": {
-          "calls": 1150,
-          "inputTokens": 134527345,
-          "nanoAiu": 3697903670000,
-          "outputTokens": 1028974
+          "calls": 1356,
+          "inputTokens": 155686400,
+          "nanoAiu": 4347696120000,
+          "outputTokens": 1258072
         }
       },
       "summary": "Check Latest Version of musubix6"

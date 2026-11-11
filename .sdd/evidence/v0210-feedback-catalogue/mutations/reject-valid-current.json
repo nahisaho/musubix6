@@ -1,0 +1,19 @@
+{
+  "command": [
+    "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+    "--test",
+    "--test-name-pattern",
+    "^TEST-RELQ-SKILL-001 ",
+    "/tmp/musubix6-spec-feedback-28d27536/scripts/release-qualification.test.mjs"
+  ],
+  "cwd": "/tmp/musubix6-spec-feedback-28d27536",
+  "startedAt": "2026-11-11T13:51:31.459Z",
+  "completedAt": "2026-11-11T13:51:31.623Z",
+  "exit": 1,
+  "signal": null,
+  "timedOut": false,
+  "outputLimit": false,
+  "error": null,
+  "stdout": "✖ TEST-RELQ-SKILL-001 preserves 1268 exact cases and owned native inventory controls (37.708476ms)\nℹ tests 1\nℹ suites 0\nℹ pass 0\nℹ fail 1\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 120.475172\n\n✖ failing tests:\n\ntest at scripts/release-qualification.test.mjs:767:1\n✖ TEST-RELQ-SKILL-001 preserves 1268 exact cases and owned native inventory controls (37.708476ms)\n  AssertionError [ERR_ASSERTION]: Got unwanted exception: the approved revision2 120-file catalogue must accept before case execution\n  Actual message: \"Expected values to be strictly deep-equal:\n  + actual - expected\n  \n    {\n      originSensitivityChallenges: 60,\n      placeholderMechanisms: 14,\n  +   skillCellTotal: 1288,\n  -   skillCellTotal: 1268,\n      skillMechanisms: 28,\n  +   sourceVendorChallenges: 1200,\n  +   vendorChallenges: 1260\n  -   sourceVendorChallenges: 1180,\n  -   vendorChallenges: 1240\n    }\n  \"\n      at TestContext.<anonymous> (file:///tmp/musubix6-spec-feedback-28d27536/scripts/release-qualification.test.mjs:793:12)\n      at Test.runInAsyncScope (node:async_hooks:227:14)\n      at Test.run (node:internal/test_runner/test:1402:25)\n      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {\n    generatedMessage: false,\n    code: 'ERR_ASSERTION',\n    actual: AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:\n    + actual - expected\n    \n      {\n        originSensitivityChallenges: 60,\n        placeholderMechanisms: 14,\n    +   skillCellTotal: 1288,\n    -   skillCellTotal: 1268,\n        skillMechanisms: 28,\n    +   sourceVendorChallenges: 1200,\n    +   vendorChallenges: 1260\n    -   sourceVendorChallenges: 1180,\n    -   vendorChallenges: 1240\n      }\n    \n        at equal (file:///tmp/musubix6-spec-feedback-28d27536/scripts/release-qualification-io.mjs:21:39)\n        at contentCaseCatalogue (file:///tmp/musubix6-spec-feedback-28d27536/scripts/release-qualification-content-mutations.mjs:24:3)\n        at file:///tmp/musubix6-spec-feedback-28d27536/scripts/release-qualification.test.mjs:793:54\n        at getActual (node:assert:611:5)\n        at strict.doesNotThrow (node:assert:779:32)\n        at TestContext.<anonymous> (file:///tmp/musubix6-spec-feedback-28d27536/scripts/release-qualification.test.mjs:793:12)\n        at Test.runInAsyncScope (node:async_hooks:227:14)\n        at Test.run (node:internal/test_runner/test:1402:25)\n        at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3),\n    expected: undefined,\n    operator: 'doesNotThrow',\n    diff: 'simple'\n  }\n",
+  "stderr": ""
+}

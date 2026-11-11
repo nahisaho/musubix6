@@ -1,0 +1,1 @@
+RED ok TEST-CI-FIXTURE-001 (REQ-CI-FIXTURE-001) 571ms — fails with: AssertionError [ERR_ASSERTION]: Git-free registration must not construct genuine execution fixtures

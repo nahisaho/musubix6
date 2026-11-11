@@ -1,0 +1,66 @@
+{
+  "status": "PASS",
+  "purpose": "bounded native sensitivities, not frozen qualification",
+  "sourceSha256": "60a7549229a3a94dc889f9255450fdf7be23867f0dd31b50ed4ff54dbd3b2d8b",
+  "sourceMode": 436,
+  "command": [
+    "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+    "--test",
+    "--test-name-pattern",
+    "^TEST-RELQ-SKILL-001 ",
+    "/tmp/musubix6-spec-feedback-28d27536/scripts/release-qualification.test.mjs"
+  ],
+  "mutations": [
+    {
+      "name": "reject-valid-current",
+      "mutantSha256": "5427e167bb35fffc46b16b979be78ff466bf3c9ffae1ac4a3445d3004c57cd29",
+      "assertionDetected": true,
+      "restoredPassed": true
+    },
+    {
+      "name": "unsupported-revision-fallthrough",
+      "mutantSha256": "a780fcf811444179f38fa2a02edf576e910299166300d8caf31daf87ff9f580f",
+      "assertionDetected": true,
+      "restoredPassed": true
+    },
+    {
+      "name": "accept-missing-extra-files",
+      "mutantSha256": "6166696ae4d7b23f1bedf1c721099856bcaadcd8f9ef584789406ff362dccf22",
+      "assertionDetected": true,
+      "restoredPassed": true
+    },
+    {
+      "name": "accept-stale-counts",
+      "mutantSha256": "1df73a206c9580ad2da6f1172e2b56705fa5f7137bd2a6881fe0ab7064ce1be7",
+      "assertionDetected": true,
+      "restoredPassed": true
+    },
+    {
+      "name": "accept-replaced-permission-policy",
+      "mutantSha256": "b9a935ef5e0286554937745062e85de63a19bc38f21c31c95cd01be9437adcf3",
+      "assertionDetected": true,
+      "restoredPassed": true
+    },
+    {
+      "name": "accept-duplicate-case-ids",
+      "mutantSha256": "da7f5d3782a9573c5f1919f818b3a7fefb1ca93cceb716ac6dc3011b49135e83",
+      "assertionDetected": true,
+      "restoredPassed": true
+    },
+    {
+      "name": "omit-new-file-challenges",
+      "mutantSha256": "b41d1361cdac0e61abb0e64469c86d8fa37ad9e048956aefe70b3c30d2f3da00",
+      "assertionDetected": true,
+      "restoredPassed": true
+    },
+    {
+      "name": "accept-required-file-substitution",
+      "mutantSha256": "8009917a3cc53d2cfa47190c9503a4ed474894582065f1846f5eedf3412e50b2",
+      "assertionDetected": true,
+      "restoredPassed": true
+    }
+  ],
+  "total": 8,
+  "output": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-feedback-catalogue-mutations-ZHADVK",
+  "qualificationCredit": 0
+}

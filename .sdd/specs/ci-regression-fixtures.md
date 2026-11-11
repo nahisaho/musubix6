@@ -12,7 +12,7 @@ production qualification policy, active human approvals or historical catalogues
 
 | ID | EARS requirement | Test |
 |---|---|---|
-| REQ-CI-FIXTURE-001 | When constructing the historical0.2.8 qualification unit fixture, the test harness shall use the exact approved Git snapshot703a4fed16b781a229a9ce85eeb2e83446ba8d8a for its seven-artifact lock, artifacts, inherited manifest, lineage suite and historical package metadata, independently of current development documentation; admission shall accept that unchanged fixture and reject its modified artifacts without writing production approval or qualification evidence. | TEST-CI-FIXTURE-001 |
+| REQ-CI-FIXTURE-001 | When constructing the historical0.2.8 qualification unit fixture, the test harness shall use the exact approved Git snapshot703a4fed16b781a229a9ce85eeb2e83446ba8d8a for its seven-artifact lock, artifacts, inherited manifest, lineage suite and historical package metadata, independently of current development documentation; admission shall accept that unchanged fixture and reject its modified artifacts without writing production approval or qualification evidence; discovery-only registration from a Git-free candidate shall not construct fixtures or read Git history, while selected fixture tests shall still require their genuine pinned Git inputs. | TEST-CI-FIXTURE-001 |
 | REQ-CI-FIXTURE-002 | When exercising host mutation adapters against the current development checkout, the test harness shall select the stable target version from its package manifest and require every inherited host mutation to apply and the actual version/package controls to detect and restore their changes; historical version-specific parser cases shall remain fixed. | TEST-CI-FIXTURE-002 |
 | REQ-CI-FIXTURE-003 | When the retained gate-help regression runs, its expected usage shall match the approved complete global-help contract while still requiring exit0 and absence of gate execution. (test-only) | TEST-CI-FIXTURE-003 |
 
@@ -38,6 +38,47 @@ The historical snapshot is a test reference, not a0.2.10 release plan. Keep its
 Keep current development host-version tests separate from this reference.
 Do not rename/delete inherited test cases, skip checks, modify production
 approval hashes or narrow the CI/release matrix.
+
+For Git-free discovery, defer those same pinned reads until a selected test
+starts. Set the shared ready marker only after every read succeeds. Do not
+give discovery Git metadata, catch missing-history errors, add fallback bytes,
+or change the candidate materializer. The paused correction is integrated
+without changing the original fixture inputs or execution assertions.
+The regression removes inherited `GIT_*` routing/object-store settings before
+setting its own ceiling, as well as Node injection variables; an external
+repository must not turn its deliberately Git-free child into a Git-backed one.
+
+| REQ | PASS condition | Counterexample | TEST/command | Observed evidence |
+|---|---|---|---|---|
+| `REQ-CI-FIXTURE-001` | Register the actual module in a complete Git-free copy with `(?!)`: exit0; select `^TEST-RELQ-001 ` there: exit1 with missing genuine Git-history diagnostic; normal repository fixtures pass | Eager reads make registration exit1; suppressing reads or adding live fallbacks makes selected execution pass or fail without the required history diagnostic | TEST-CI-FIXTURE-001; isolated eager-initialization mutation; actual Git-free discovery | Current integration obtained genuine native assertion Red before implementation, then Green after reviewed artifact-lock renewal. Reintroducing eager initialization was assertion-detected; byte-exact restoration matched the pre-mutation approval and native refactor plus all26 affected release/host tests passed with0skips. Exact integration-stage module bytes also passed both controls on real Node20/22/24. Historical2cff failure and paused proof are retained provenance, not qualification credit. |
+
+This S2 first violates trusted inputs: discovery intentionally has no Git
+history, but eager construction requests it before test execution. All six
+stages apply: contract=separate discovery/execution; inputs=exact pinned Git;
+execution=actual module registration and selected failure; verdict=valid
+acceptance plus invalid rejection; history=retain the failed freeze and reset
+on the new candidate; integration=new committed source, full gate, same-head
+CI and two unchanged complete qualification runs. No stage is waived.
+The feedback candidate01e1f0d has a 1211-test development gate and current task
+proof, not release credit. Its root JS diagnostics passed47/47; prior missing
+flat-config observations below remain historical, not current failures.
+
+Current integration evidence is retained in the session's
+`v0210-feedback-registration-integration-native-{red,green-02,restored}.log`,
+`v0210-feedback-registration-integration-eager-mutation.log`,
+`v0210-feedback-registration-integration-restoration.json`,
+`v0210-feedback-registration-integration-restored-suites.log` and
+`v0210-feedback-registration-current-runtimes/summary.json`.
+The integration-stage module SHA256 is
+`1a679956ea38ee3e40b301399f1340c7fdc33f83a727f3511584d5d95379244f`.
+Each real runtime20.20.2/22.23.3/24.22.1 registered the exact Git-free copied
+module with exit0 and rejected selected execution with exit1 and the required
+missing-history diagnostic. The first proposed-source spike's import-count
+setup failure and the stale-lock Green refusal are retained, not Red evidence.
+Current JS diagnostics passed; the current plan has8 honestly pending
+affected tasks, with measured bindings and retained history-head receipts.
+Their fresh verification, the new full gate, additive content-inventory
+renewal and frozen qualification remain required. No run credit is claimed.
 
 Six first-failure stages: contract = distinguish historical fixtures from
 current release authorization; trusted inputs = pinned Git bytes and real

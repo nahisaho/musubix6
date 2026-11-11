@@ -252,16 +252,16 @@
   "release-qualification": {
     "by": "nahisaho",
     "kind": "human",
-    "review": "Explicit approval of the seven prepared current path/hash pairs for development task verification only. Release qualification, tagging, npm publication, commit and push remain stopped.",
-    "at": "2026-11-11T08:30:33.408Z",
+    "review": "Genuine explicit ask_user approval: 上記7ファイルの準備・対応実装・検証のみ承認する. Exact seven-artifact unit shown by final prepare-02: canonical19e94f81, scope4d91abf4, content9019a596, Claude2c846e58, README5f44a690, README-ja5eadfaf6, changelogc7447bf2. Recorded actual native stage evidence only; unchanged required24-cell scope/budgets, zero frozen credit; current affected-task/full-gate validation pending; separate final exact Actions-compatible package paths/hashes/residual-risk approval required before tag/npm publication.",
+    "at": "2026-11-11T14:00:07.169Z",
     "artifacts": {
-      ".sdd/specs/release-qualification.md": "353b263e8a543158d28fbc2c18a9315ecbc8de5584fe19b14e6e09719d50b265",
-      ".sdd/release-validation.v0.2.10.json": "fce4b43abb229843e0dd246534c10f7bf70321a3ab899b0461986105278f11bf",
-      ".sdd/release-content-mutations.v0.2.10.json": "4f39011db146f92e32aeb54a161781f1643ee9121fe78c88f0c3f5e53c8ee7d2",
+      ".sdd/specs/release-qualification.md": "19e94f81df3d02452330567062cc16484006923e51080ab1ca2c1cdd72550451",
+      ".sdd/release-validation.v0.2.10.json": "4d91abf448412004f8b98d51c412d49e6d0115e0359a240bddd4641c2a6284d9",
+      ".sdd/release-content-mutations.v0.2.10.json": "9019a5968859179375d61897fb86abef07f57aeb2dad0e9858bb879378c93f40",
       ".sdd/specs/claude-code-support.md": "2c846e5878db59abb7ba0cc3aa9b7f49256c91a6a250931a7e0e53a7cf826560",
       "README.md": "5f44a69042171b2b3c281ffd6816f7df846f6b14b636d0c44e228f20eac81cec",
       "README-ja.md": "5eadfaf6998167c0c0bc3ef39b1de1168a492c35cf0a4c00db073f98355724ec",
-      "CLANGELOG.md": "b2988d54fc58f1e27a800ca3c4b4e9066d21573146ac10da22886ff2b0470e31"
+      "CLANGELOG.md": "c7447bf2b65c470d42f56890516fa39123762f490b0aadb32a28649d56559ce8"
     },
     "tier": "T2",
     "requireHuman": true,
@@ -269,7 +269,7 @@
       "scripts/release-host-mutations.mjs": "6921bf50d7f7df70ce2e3a3e23b0acbf67def78f0e4d358b1d7a5adcb091b618",
       "scripts/release-qualification-cells.mjs": "e5536c18d0da555222cf50ee76cfa0c2cc5a4fe921d57b547c7b91e5ce41ba20",
       "scripts/release-qualification-cli.mjs": "14796bd1efbe8f9d26a7a835d06eafe40403b4054db6ef57b287e96082639ceb",
-      "scripts/release-qualification-content-mutations.mjs": "f615cd4251688f4c2de4e3e11060d7646748a8f60c8ad0a6eb8d96c8cd0b4793",
+      "scripts/release-qualification-content-mutations.mjs": "60a7549229a3a94dc889f9255450fdf7be23867f0dd31b50ed4ff54dbd3b2d8b",
       "scripts/release-qualification-evidence.mjs": "1f2af8ec0e458893ae7f580fc2b5e1020c32f5c2d19aa848336e698c512837f2",
       "scripts/release-qualification-io.mjs": "56da8043e445f7f636388fb00e8cad1cfa9b5e56c6f1a2f787f270acd8184fb0",
       "scripts/release-qualification.mjs": "c305f554ccef4d14ddad3b18455749074a0cd4c32e30ddf7dafe41c1580177bb"
@@ -365,14 +365,13 @@
     }
   },
   "ci-regression-fixtures": {
-    "by": "ai:feedback-contract",
+    "by": "ai:catalogue-contract-sonnet",
     "kind": "ai",
-    "review": ".sdd/review-ci-regression-fixtures.md",
-    "reviewSha": "6e3b0f3ab2c3d06e79ba0ed84e2ca55ced4322d524aa7721f1c5981fc79b5c9d",
-    "at": "2026-11-11T08:30:35.053Z",
+    "review": "Two independent Claude Sonnet5.5 bounded post-fix clean rounds; current regression artifact1554f4d7, unchanged CI spec2ae0796b; native substitution Red/Green, final29/29 complete release/host controls and47/47 diagnostics; genuine native evidence retained; no human release approval or qualification inferred.",
+    "at": "2026-11-11T13:56:55.981Z",
     "artifacts": {
-      ".sdd/specs/ci-regression-fixtures.md": "40688b171ff273268c0b9f17f5aa08be41230b95392d6306409ee54c404f9e24",
-      "scripts/release-qualification.test.mjs": "a7480b343e4a6c0dcfcb9e039e32ca58298efaee275d532a0e6aff046727d282",
+      ".sdd/specs/ci-regression-fixtures.md": "2ae0796b125a369eea494cf1135639cd4e85152cf43bba29b2211571dfb62e60",
+      "scripts/release-qualification.test.mjs": "1554f4d7ab9c405bba026ef27cbbac89d434ae2afe81e8c72ac986015a99d9a4",
       "scripts/release-host-mutations.test.mjs": "6a6798b24e1aae5bb01c8502c4edb99da0281894562c25779bf3bbb7deccd914",
       ".github/skills/lean-sdd-tdd/scripts/sdd.test.mjs": "b0810139e648802f6c2e59d4f1ad435612f6a1f96903a9ff3948cf150830c86a",
       ".github/skills/lean-sdd-tdd/scripts/implementation-plan-cli.test.mjs": "d830cf57e9a94c52d88a88134e3d52ab906b0513135df3cc247f5d58ded3e474"

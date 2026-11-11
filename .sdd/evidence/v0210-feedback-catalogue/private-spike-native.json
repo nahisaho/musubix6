@@ -1,0 +1,19 @@
+{
+  "command": [
+    "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+    "--test",
+    "--test-name-pattern",
+    "^TEST-RELQ-SKILL-001 ",
+    "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-feedback-catalogue-spike-JFot5y/source/scripts/release-qualification.test.mjs"
+  ],
+  "cwd": "/home/nahisaho/.copilot/session-state/28d27536-ac83-42a7-9e75-6a0dee9b5df2/files/v0210-feedback-catalogue-spike-JFot5y/source",
+  "startedAt": "2026-11-11T13:37:13.431Z",
+  "completedAt": "2026-11-11T13:37:15.608Z",
+  "exit": 0,
+  "signal": null,
+  "timedOut": false,
+  "outputLimit": false,
+  "error": null,
+  "stdout": "✔ TEST-RELQ-SKILL-001 preserves 1268 exact cases and owned native inventory controls (2047.636304ms)\nℹ tests 1\nℹ suites 0\nℹ pass 1\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 2132.573131\n",
+  "stderr": ""
+}
