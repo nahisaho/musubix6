@@ -1,8 +1,63 @@
-spec: sha256:ab5afb1e73d39d1fe9f7f36054450f6c5ae9fe575bc1608786852772536d4d52
+spec: sha256:eec5a6d8b35d6bccfd345e57d303ba45a9dc5a4a2392ce5b7dbdf2bda79d8055
 verdict: pass
 open: 0
 
 # Ledger-compaction review
+
+## Windows amendment: reviewed implementation, native CI pending
+
+The current verdict covers the specification and changed implementation.
+Both retained reviewers completed two consecutive fresh whole-assigned-scope
+post-implementation static CLEAN rounds. Neither executed tests.
+Current full-scope task verification, a new full gate, corrected Windows CI,
+frozen qualification and publication remain pending. Historical successful
+evidence below applies to the earlier source freeze, not current readiness.
+
+Independent retained reviewers a5379e68-15d0-4bd7-9b87-bfb2587e01c1
+(storage/state) and877ef8ec-d754-4cb2-80ac-edef246478f7 (integration/test)
+returned pre-lock CLEAN for the current spec after the latter identified
+Windows drive-letter paths in the test helper's `--import` argument.
+That finding is fixed before formal Red by the existing pathToFileURL helper;
+every shared caller benefits. Neither reviewer executed tests.
+
+Authentic failed product CI43226374480 and diagnostic run43228207529 are
+retained separately. The latter proves real `r+` and `rs+` directory flushes,
+not a product repair. Formal native TEST014 Red fails the intended Windows
+valid-handle assertion (196ms), then unchanged-test Green passes (855ms).
+The only production behavior change is directory-open access: Windows uses
+`r+`, other platforms retain `r`; fsync, finally-close and refusal are intact.
+SDK SHA256:251303cb76dc669b237463df58ac2dfc1f93fccc161453007537c5ccbab37270.
+Test SHA256:b8efd9f1d86b8a86890ccf431b0fb68c1923ab6b1749a0312c504ff46d5ca804.
+Windows workflow SHA256:0e5cea8adf8c995517b64c80eba4392dcabfb2005728ac70b9280466d82a78de.
+
+Actual TEST014 executes eight valid modeled rows and140 refused error rows,
+two real plain/oversized appends and two real injected-flush refusals.
+Those injected failures occur during lock acquisition, not append/rotation
+flush boundaries; retained-prefix success is not claimed as that later proof.
+Five isolated mutants are assertion-detected and each byte-exact restoration
+passes: Windows read-only mode, POSIX read/write mode, omitted directory
+flush, swallowed directory error and swallowed file error. The report is
+ledger-windows-flush-mutations-2hnfdu/report.json in session artifacts.
+The source ledger/runner selection passes16/16 with zero skips: twelve ledger
+tests001-011/014 plus four runner tests, not fourteen ledger tests.
+Actual native refactors001-013 additionally pass, including012/013 in the
+release test file. Five other shared-code warning tests also pass genuine
+native refactors. JavaScript diagnostics PASS. Both generated-cost tasks
+receive fresh real successful receipts after the generator; this does not
+establish full current plan consistency.
+
+The pre-implementation full plan check is retained as FAIL:128 complete,
+only TASK-LEDGER-COMPACTION replan-required against its old history/definition.
+All129 binding fingerprints were measured with no required binding patch.
+Its old genuine history-head receipt pointer is retained and authored status
+remains in-progress until fresh verification and native CI; no historical
+receipt is represented as current completion.
+
+No directory flush is skipped and no actual I/O error is ignored.
+ACL-restricted/non-admin scenarios, other Windows filesystems and power-loss
+behavior are not inferred from hosted-runner API success. Pre-existing
+temporary-file residue or live-PID lock behavior after an I/O failure is not
+changed or qualified by this repair.
 
 ## 2026-11-12 remediation source freeze
 

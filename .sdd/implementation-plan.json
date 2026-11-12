@@ -206,11 +206,13 @@
         "REQ-LEDGER-003",
         "REQ-LEDGER-004",
         "REQ-LEDGER-005",
-        "REQ-LEDGER-006"
+        "REQ-LEDGER-006",
+        "REQ-LEDGER-007"
       ],
       "dependsOn": [],
       "artifacts": [
         ".github/skills/lean-sdd-tdd/scripts/tdd-ledger.test.mjs",
+        ".github/workflows/windows-runner.yml",
         ".github/skills/lean-sdd-tdd/scripts/sdd.mjs",
         ".github/skills/lean-sdd-tdd/scripts/implementation-plan-cli.mjs",
         ".github/skills/lean-sdd-tdd/SKILL.md",
@@ -221,7 +223,7 @@
         "README-ja.md",
         "package.json"
       ],
-      "condition": "Automatic append-time gzip archival above 2 MiB preserves exact logical events and existing native/approval/receipt/baseline verdicts; corruption, missing storage and interrupted or concurrent switches never become successful evidence. All thirteen current regressions and actual source/package/both-host Node20/22/24 controls must execute.",
+      "condition": "Automatic append-time gzip archival above 2 MiB preserves exact logical events and existing native/approval/receipt/baseline verdicts; corruption, missing storage and interrupted or concurrent switches never become successful evidence. All fourteen current regressions and actual source/package/both-host Node20/22/24 controls must execute. Windows uses a genuinely flushable directory handle, preserves actual I/O-error refusal, and passes the focused flush-access regression plus every existing native source/both-host/standalone CI control on Node20/22/24.",
       "tests": [
         "TEST-LEDGER-001",
         "TEST-LEDGER-002",
@@ -235,7 +237,8 @@
         "TEST-LEDGER-010",
         "TEST-LEDGER-011",
         "TEST-LEDGER-012",
-        "TEST-LEDGER-013"
+        "TEST-LEDGER-013",
+        "TEST-LEDGER-014"
       ],
       "checks": [
         {
@@ -249,10 +252,10 @@
         }
       ],
       "specs": {
-        ".sdd/specs/ledger-compaction.md": "ab5afb1e73d39d1fe9f7f36054450f6c5ae9fe575bc1608786852772536d4d52"
+        ".sdd/specs/ledger-compaction.md": "eec5a6d8b35d6bccfd345e57d303ba45a9dc5a4a2392ce5b7dbdf2bda79d8055"
       },
       "dependencies": {},
-      "status": "complete",
+      "status": "in-progress",
       "receipt": ".sdd/plan-evidence/20ff5a525d91188d51dab4ea4292337c28e84b3d94fc52e2e6887f42ce43d7df/af9b9e6b2f42ad8354d0db6b998b5fb69b925c1c1c198fcce741b35612c1a62f.json"
     },
     {
@@ -477,7 +480,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/1517e548507a2deebb202a54350fbfecb559bf735331f257f090736fcc8681b3/ee18dc639746bbae7730ebdbaad8e69206876ae2647190cae2b27f61ddcdbafc.json"
+      "receipt": ".sdd/plan-evidence/1517e548507a2deebb202a54350fbfecb559bf735331f257f090736fcc8681b3/d0389fbe7e893555e9aa938bd6bea14a2e914f7cec243c9b68d0a19f5c58664b.json"
     },
     {
       "id": "TASK-COST-HISTORY-002",
@@ -516,7 +519,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/db45ca0244d8f0421a909af8a8dba45c430c6f6e5f46719b2db62f0fcde44be0/585d0a6dba0500b602bcc4a28d252e9290faa843f3eb53a39718694f3c6a43a9.json"
+      "receipt": ".sdd/plan-evidence/db45ca0244d8f0421a909af8a8dba45c430c6f6e5f46719b2db62f0fcde44be0/625128460eaa3e8de8d97c53a6ce54ba5ba19d454098a0585d6e9949880e1118.json"
     },
     {
       "id": "TASK-DIAGCLI-001",

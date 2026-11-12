@@ -16,7 +16,7 @@ const sha = value => crypto.createHash('sha256').update(value).digest('hex');
 const { NODE_TEST_CONTEXT, NODE_OPTIONS, ...environment } = process.env;
 const env = { ...environment, GIT_CEILING_DIRECTORIES: scratch };
 function command(root, args, options = {}) {
-  const result = spawnSync(process.execPath, [...(options.import ? ['--import', options.import] : []),
+  const result = spawnSync(process.execPath, [...(options.import ? ['--import', pathToFileURL(options.import).href] : []),
     script, '--root', root, ...args], { encoding: 'utf8', env,
     timeout: options.timeout ?? 45000, maxBuffer: 8 * 1024 * 1024 });
   assert.ifError(result.error);
@@ -647,4 +647,109 @@ test('TEST-LEDGER-011 release catalogues bind the complete logical ledger rather
   corrupt[corrupt.length - 8] ^= 1;
   fs.writeFileSync(archive.file, corrupt);
   assert.throws(catalogue, /archive digest mismatch/, 'Corrupt storage must not yield a successful catalogue');
+});
+
+/** @id TEST-LEDGER-014 @verifies REQ-LEDGER-007 */
+test('TEST-LEDGER-014 platform flush access preserves valid writes and refuses actual I/O failures', () => {
+  const source = fs.readFileSync(script, 'utf8');
+  const start = source.indexOf('class LedgerError extends Error');
+  const end = source.indexOf('const ledgerStorage = new LedgerStorage(SDD);');
+  assert.ok(start >= 0 && end > start, 'Actual standalone storage implementation is required');
+  const load = new Function('fs', 'path', 'process',
+    source.slice(start, end) + '\nreturn { LedgerStorage, LedgerError };');
+  let valid = 0, invalid = 0;
+  for (const platform of ['win32', 'linux', 'darwin', 'unknown-platform']) {
+    for (const target of ['directory', 'file']) {
+      const exercise = (stage = null, code = null) => {
+        const trace = { flushes: 0, closes: 0 };
+        let opened;
+        const fail = name => {
+          if (stage === name) throw Object.assign(new Error(`injected ${name} ${code}`), { code });
+        };
+        const io = {
+          openSync(file, mode) {
+            fail('open');
+            const writable = typeof mode === 'number' ? (mode & fs.constants.O_RDWR) !== 0 :
+              ['r+', 'rs+', 'wx'].includes(mode);
+            if (target === 'directory' && platform !== 'win32' && writable) {
+              throw Object.assign(new Error('POSIX directory cannot be opened read/write'), { code: 'EISDIR' });
+            }
+            opened = { writable };
+            return 65;
+          },
+          writeFileSync(fd, bytes) {
+            assert.equal(fd, 65);
+            assert.equal(bytes.toString(), 'valid file bytes');
+            fail('write');
+          },
+          fsyncSync(fd) {
+            assert.equal(fd, 65);
+            trace.flushes++;
+            fail('flush');
+            if (platform === 'win32' && !opened.writable) {
+              throw Object.assign(new Error('FlushFileBuffers requires write access'), { code: 'EPERM' });
+            }
+          },
+          closeSync(fd) {
+            assert.equal(fd, 65);
+            trace.closes++;
+            fail('close');
+          },
+        };
+        const { LedgerStorage, LedgerError } = load(io, path, { platform });
+        const storage = new LedgerStorage('fixture');
+        const invoke = () => storage.io(() => target === 'directory'
+          ? storage.syncDirectory() : storage.write('file', Buffer.from('valid file bytes')));
+        const label = `${platform}/${target}/${stage ?? 'valid'}/${code ?? 'success'}`;
+        if (stage === null) {
+          assert.doesNotThrow(invoke, label);
+          assert.equal(trace.flushes, 1, `${label}: synchronization must actually execute`);
+          assert.equal(trace.closes, 1, `${label}: handle must close`);
+          valid++;
+        } else {
+          assert.throws(invoke, error => error instanceof LedgerError && error.exit === 2
+            && error.message.includes(`(${code})`), label);
+          assert.equal(trace.closes, stage === 'open' ? 0 : 1, `${label}: close acquired handle`);
+          invalid++;
+        }
+      };
+      exercise();
+      for (const stage of target === 'directory' ? ['open', 'flush', 'close'] : ['open', 'write', 'flush', 'close']) {
+        for (const code of ['EPERM', 'EACCES', 'EIO', 'EROFS', 'ENOSPC']) exercise(stage, code);
+      }
+    }
+  }
+  assert.equal(valid, 8);
+  assert.equal(invalid, 140);
+  for (const padding of ['', 'x'.repeat(2097153)]) {
+    const root = project(), rows = synthetic(3, padding), before = encode(rows);
+    writePlain(root, rows);
+    const result = approve(root);
+    assert.equal(result.code, 0, result.text);
+    const after = logical(root), events = after.toString('utf8').trimEnd().split('\n').map(JSON.parse);
+    assert.ok(after.subarray(0, before.length).equals(before), 'Actual append preserves every original byte');
+    assert.equal(events.length, 4);
+    assert.equal(events.at(-1).type, 'approval');
+    assert.equal(fs.existsSync(path.join(root, '.sdd/tdd-manifest.json')), padding.length > 0);
+  }
+  for (const target of ['directory', 'file']) {
+    const root = project(), rows = synthetic(), before = encode(rows);
+    writePlain(root, rows);
+    const loader = path.join(scratch, `flush-failure-${target}.mjs`);
+    fs.writeFileSync(loader, `import fs from 'node:fs';
+const original = fs.fsyncSync;
+fs.fsyncSync = fd => {
+  if (fs.fstatSync(fd).isDirectory() === ${target === 'directory'}) {
+    throw Object.assign(new Error('injected flush failure'), { code: '${target === 'directory' ? 'EPERM' : 'EIO'}' });
+  }
+  return original(fd);
+};
+`);
+    const result = command(root, ['approve', 'record', 'calc',
+      '--by', 'ai:ledger-fixture', '--review', 'Independent synthetic failure control'], { import: loader });
+    assert.equal(result.code, 2, result.text);
+    assert.match(result.text, /storage operation unavailable \((?:EPERM|EIO)\)/);
+    assert.ok(fs.readFileSync(path.join(root, '.sdd/tdd.jsonl')).equals(before));
+    assert.doesNotMatch(result.text, /APPROVED|PASS/);
+  }
 });

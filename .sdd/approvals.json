@@ -405,13 +405,12 @@
     "requireHuman": false
   },
   "ledger-compaction": {
-    "by": "ai:ledger-state-review",
+    "by": "ai:ledger-state-and-integration-review",
     "kind": "ai",
-    "review": ".sdd/review-ledger-compaction.md",
-    "reviewSha": "f526184f5d30da61380f96da48e185deddd3f26ddbb5dd5fac094b8e5fc30b3b",
-    "at": "2026-11-12T07:18:43.588Z",
+    "review": "Independent retained storage/state and integration/test reviewers returned pre-lock CLEAN for spec eec5a6d8; Windows file-URL regression setup corrected before Red; actual native handle probe confirms writable Windows directory access without dropping synchronization. Development repair only; no release approval.",
+    "at": "2026-11-12T13:46:01.873Z",
     "artifacts": {
-      ".sdd/specs/ledger-compaction.md": "ab5afb1e73d39d1fe9f7f36054450f6c5ae9fe575bc1608786852772536d4d52"
+      ".sdd/specs/ledger-compaction.md": "eec5a6d8b35d6bccfd345e57d303ba45a9dc5a4a2392ce5b7dbdf2bda79d8055"
     },
     "tier": "T2",
     "requireHuman": false

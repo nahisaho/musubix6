@@ -11,6 +11,7 @@ approval: auto
 | REQ-LEDGER-004 | While appending, compacting or recovering, the CLI shall serialize writers without stealing a live owner's lock; interrupted rotation shall recover the exact pre- or committed post-state without event loss or duplication before another mutation. | TEST-LEDGER-004 |
 | REQ-LEDGER-005 | When checking baseline retention, approvals, TDD, planning receipts or merging ledger branches, the CLI shall evaluate the full logical ledger from both the working tree and selected Git baseline, retain existing deletion/rewriting rejection and preserve plain-ledger behavior. | TEST-LEDGER-005 |
 | REQ-LEDGER-006 | When distributed through source, npm or either supported host, the archive-aware CLI and its required files shall support Node 20/22/24; existing projects shall require no manual conversion and help shall explain automatic archival and recovery. | TEST-LEDGER-006 |
+| REQ-LEDGER-007 | When synchronizing ledger storage, the CLI shall use access rights appropriate to the actual platform and preserve file and directory flushes; a real open, write or flush failure shall remain an explicit refusal rather than being ignored to obtain Windows compatibility. | TEST-LEDGER-014 |
 ## Design
 One storage adapter owns legacy reads, strict gzip segments, a versioned manifest, active-tail writes and recoverable rotation; native verdict and approval rules remain in sdd.mjs.
 Expose the same strict, read-only logical-byte reconstruction as an SDK module
@@ -106,3 +107,54 @@ explicit coverage limits, not passes or frozen qualification credit.
 ## Assumptions / risks
 User selected automatic archival on append above 2 MiB. No payload deduplication, permanent evidence deletion, network restore, Git-history rewrite, release/tag/publish or change to the current frozen release candidate is authorized. Actual Node20.20.2/22.23.3/24.22.1 Linux spike preserved 2160998 UTF-8 bytes across an oversized row, rejected a corrupted gzip CRC, and passed staged fsync/rename/directory-fsync and live-PID probes (external ledger-compaction-storage-spike.log); this is not CLI/recovery/Windows evidence. Speed/RAM gains are unmeasured.
 Contract: event identity/deletion policy; trusted inputs: manifest, gzip, paths and Git blobs; execution: size boundaries, concurrency and interrupted switches; verdict: no missing-evidence PASS; evidence history: original chain and referenced receipts; integration/distribution: both hosts, npm and Node 20/22/24. All six apply.
+
+## Windows flush-access repair (development proposal)
+
+Actual hosted run43226374480 at26ce8b6 fails TEST-WINRUN-003 on each
+Node20/22/24 with `LEDGER UNRESOLVED ... EPERM ... fsync`; the other five
+source controls pass, and copied-host/standalone stages are not reached.
+Do not treat this failure or the Linux development gate as Windows success.
+
+The current directory handle is opened with `r`. Microsoft documents
+GENERIC_WRITE as a prerequisite for FlushFileBuffers; libuv1.51.0 maps
+O_RDONLY to FILE_GENERIC_READ, O_RDWR to FILE_GENERIC_READ plus
+FILE_GENERIC_WRITE, and opens directories with FILE_FLAG_BACKUP_SEMANTICS.
+These establish an access-rights counterexample. Isolated diagnostic
+run43228207529 at79edcd4 then measured all three modes without modifying
+the SDK: Windows Node20.20.2/libuv1.46.0, Node22.23.4/libuv1.51.0 and
+Node24.22.2/libuv1.52.1 each reject `r` at flush with EPERM, successfully
+flush `r+` and `rs+`, and pass a real `wx` file-flush control.
+This supports selecting `r+` only for Windows while retaining POSIX's
+read-only directory mode. It is not a product-fix or qualification pass:
+the diagnostic branch deliberately retains the original failing assertions.
+
+| REQ | PASS condition | Counterexample | TEST/command | Observed evidence |
+|---|---|---|---|---|
+| `REQ-LEDGER-007` | A valid Windows writer completes real file and directory flushes; native Red/Green and provenance-drift controls keep their expected outcomes on Node20/22/24 | Open the directory with `r`, obtain EPERM, and reject an otherwise valid Green with exit2 | TEST-LEDGER-014; existing TEST-WINRUN-003; actual Windows source/both-host/standalone CI | Authentic first failure and successful handle-access probe retained separately; product regression and corrected native CI remain pending |
+| `REQ-LEDGER-007` | POSIX retains a usable directory handle and valid append/rotation succeeds | Apply Windows read/write opening indiscriminately and receive EISDIR on POSIX | TEST-LEDGER-014; existing ledger controls | Pending; no new success claimed |
+| `REQ-LEDGER-007` | Every injected open/file-flush/directory-flush error refuses with exit2, preserves old logical evidence and never creates successful evidence | Catch EPERM or EIO around fsync and return successful append or compaction | TEST-LEDGER-014; isolated restored mutations | Planned finite model: Windows/Linux/macOS/unknown-platform, directory/file, eight valid rows and140 error rows across applicable open/write/flush/close stages and EPERM/EACCES/EIO/EROFS/ENOSPC. Actual plain/oversized appends and injected directory/file-flush refusals supplement the model. Execution pending; no skips or surviving mutations count as success |
+
+Use the existing test-only source-extraction pattern to execute the actual
+standalone storage methods with independently modeled platform access rights.
+The model is bounded to those four platform labels and five error codes, not
+proof for every operating system or filesystem. Native append/rotation and
+error controls execute the unmodified SDK on the real host, and the focused
+regression must also execute in all four existing Windows CI source/copy
+contexts. Unrelated name-filtered ledger tests are not required Windows
+controls and are not credited as executed tests. No existing control is removed.
+
+First violated condition is execution: the handle does not satisfy the
+documented flush-access prerequisite. All six stages apply: contract=keep
+the existing flush/error guarantees; trusted inputs=retain owner, archive,
+baseline and approval checks; execution=measure native handle modes;
+verdict=accept valid writes and reject actual I/O failures; history=retain
+the failed CI and genuine Red/Green/mutation evidence, reset candidate
+qualification on relevant changes; integration/distribution=actual
+Windows20/22/24 source, copied-host and standalone controls plus current
+Linux regressions and full gate. No stage is waived.
+
+If no usable native handle exists, do not silently omit directory flushing,
+introduce an implicit shell or weaken recovery guarantees. Report the
+feasibility failure and obtain an explicit human policy decision before
+changing the durability contract. Windows power-loss qualification is not
+established by an API probe or the existing development workflow.

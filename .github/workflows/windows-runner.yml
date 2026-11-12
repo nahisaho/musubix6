@@ -24,6 +24,8 @@ jobs:
       - uses: ilammy/msvc-dev-cmd@v1
       - name: Run source native controls and literal-argv admission regressions
         run: node --test --test-reporter=spec .github/skills/lean-sdd-tdd/scripts/windows-native.test.mjs .github/skills/lean-sdd-tdd/scripts/windows-runner.test.mjs
+      - name: Run source ledger flush-access regression
+        run: node --test --test-reporter=spec --test-name-pattern="^TEST-LEDGER-014 " .github/skills/lean-sdd-tdd/scripts/tdd-ledger.test.mjs
       - name: Copy skills to both hosts
         shell: pwsh
         run: |
@@ -36,6 +38,8 @@ jobs:
             $env:SDD_SCRIPT_UNDER_TEST = "$env:RUNNER_TEMP/runner-installed/$hostDirectory/skills/lean-sdd-tdd/scripts/sdd.mjs"
             node --test --test-reporter=spec .github/skills/lean-sdd-tdd/scripts/windows-native.test.mjs .github/skills/lean-sdd-tdd/scripts/windows-runner.test.mjs
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            node --test --test-reporter=spec --test-name-pattern="^TEST-LEDGER-014 " .github/skills/lean-sdd-tdd/scripts/tdd-ledger.test.mjs
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           }
       - name: Run lone standalone script controls
         shell: pwsh
@@ -44,4 +48,6 @@ jobs:
           Copy-Item ".github/skills/lean-sdd-tdd/scripts/sdd.mjs" "$env:RUNNER_TEMP/runner-standalone/sdd.mjs"
           $env:SDD_SCRIPT_UNDER_TEST = "$env:RUNNER_TEMP/runner-standalone/sdd.mjs"
           node --test --test-reporter=spec .github/skills/lean-sdd-tdd/scripts/windows-native.test.mjs .github/skills/lean-sdd-tdd/scripts/windows-runner.test.mjs
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node --test --test-reporter=spec --test-name-pattern="^TEST-LEDGER-014 " .github/skills/lean-sdd-tdd/scripts/tdd-ledger.test.mjs
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

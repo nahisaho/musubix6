@@ -1160,7 +1160,7 @@ function ledgerRows(bytes, label = 'tdd.jsonl') {
     return event;
   });
 }
-/** @id CODE-LEDGER-001 @implements REQ-LEDGER-001 REQ-LEDGER-002 REQ-LEDGER-003 REQ-LEDGER-004 REQ-LEDGER-005 REQ-LEDGER-006 */
+/** @id CODE-LEDGER-001 @implements REQ-LEDGER-001 REQ-LEDGER-002 REQ-LEDGER-003 REQ-LEDGER-004 REQ-LEDGER-005 REQ-LEDGER-006 REQ-LEDGER-007 */
 class LedgerStorage {
   constructor(directory) { this.directory = directory; this.owner = null; }
   file(name) { return path.join(this.directory, name); }
@@ -1173,7 +1173,7 @@ class LedgerStorage {
     }
   }
   syncDirectory(directory = this.directory) {
-    const fd = fs.openSync(directory, 'r');
+    const fd = fs.openSync(directory, process.platform === 'win32' ? 'r+' : 'r');
     try { fs.fsyncSync(fd); } finally { fs.closeSync(fd); }
   }
   write(file, bytes) {
