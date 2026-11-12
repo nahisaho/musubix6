@@ -21,6 +21,41 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
+      - name: Probe native directory flush access without changing product policy
+        shell: pwsh
+        run: |
+          @'
+          const fs = require('node:fs');
+          const os = require('node:os');
+          const path = require('node:path');
+          const root = fs.mkdtempSync(path.join(os.tmpdir(), 'ledger-flush-probe-'));
+          console.log(JSON.stringify({ node: process.version, uv: process.versions.uv, platform: process.platform }));
+          try {
+            for (const mode of ['r', 'r+', 'rs+']) {
+              let fd;
+              let phase = 'open';
+              try {
+                fd = fs.openSync(root, mode);
+                phase = 'flush';
+                fs.fsyncSync(fd);
+                console.log(JSON.stringify({ target: 'directory', mode, phase, ok: true }));
+              } catch (error) {
+                console.log(JSON.stringify({ target: 'directory', mode, phase, ok: false, code: error.code }));
+              } finally {
+                if (fd !== undefined) fs.closeSync(fd);
+              }
+            }
+            const file = path.join(root, 'file-control');
+            const fd = fs.openSync(file, 'wx');
+            try {
+              fs.writeFileSync(fd, 'valid file flush control\n');
+              fs.fsyncSync(fd);
+              console.log(JSON.stringify({ target: 'file', mode: 'wx', ok: true }));
+            } finally { fs.closeSync(fd); }
+            fs.unlinkSync(file);
+          } finally { fs.rmdirSync(root); }
+          '@ | node
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - uses: ilammy/msvc-dev-cmd@v1
       - name: Run source native controls and literal-argv admission regressions
         run: node --test --test-reporter=spec .github/skills/lean-sdd-tdd/scripts/windows-native.test.mjs .github/skills/lean-sdd-tdd/scripts/windows-runner.test.mjs
