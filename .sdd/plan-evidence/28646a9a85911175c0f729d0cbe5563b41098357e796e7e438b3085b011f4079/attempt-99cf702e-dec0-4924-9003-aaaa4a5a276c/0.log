@@ -1,0 +1,9 @@
+✔ #371 TEST-R36H2-CWD-001 native pytest fixture contains cache from a foreign suite cwd (10087.22935ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 12517.750845

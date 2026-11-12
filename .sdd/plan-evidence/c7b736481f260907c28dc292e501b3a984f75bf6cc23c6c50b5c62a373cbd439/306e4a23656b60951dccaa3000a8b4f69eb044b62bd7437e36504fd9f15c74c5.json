@@ -1,0 +1,109 @@
+{
+  "schemaVersion": 1,
+  "task": "TASK-R36I-002",
+  "sequence": 6,
+  "previous": "5b6fa21ee93c70ddc2b8fce509d2c7587cc773a25bb4168eb765d525c78d008f",
+  "definitionSha256": "3cd6cf5e513631cd2c3136eea474c0b9cd08441ce0a947187dc86295e5460f7b",
+  "inputSha256": "3a52a486081363272fafcc3b9ea264ad80e7e6e7c3037690f808bbd7f493edab",
+  "status": "PASS",
+  "exit": 0,
+  "checks": [
+    {
+      "name": "regression-1",
+      "argv": [
+        "node",
+        "--test",
+        "--test-name-pattern",
+        "^(?:.*\\b(?:TEST-R36I-DIAGNOSTIC-001|TEST-R36I-PARSE-COLOR-001))(?![0-9A-Za-z])",
+        ".github/skills/lean-sdd-tdd/scripts/sdd.test.mjs"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/c7b736481f260907c28dc292e501b3a984f75bf6cc23c6c50b5c62a373cbd439/attempt-aaa3ba66-613f-47b5-8efb-aa5aa19a0580/0.log",
+        "sha256": "d0a732f7cdb909fcac0109df8c03263093a0aa4b1ddc592d02258ad0a77867cf",
+        "bytes": 351
+      }
+    },
+    {
+      "name": "native-TEST-R36I-DIAGNOSTIC-001",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/tmp/musubix6-ledger-compaction-28d27536/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-R36I-DIAGNOSTIC-001",
+        "--root",
+        "/tmp/musubix6-ledger-compaction-28d27536"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/c7b736481f260907c28dc292e501b3a984f75bf6cc23c6c50b5c62a373cbd439/attempt-aaa3ba66-613f-47b5-8efb-aa5aa19a0580/1.log",
+        "sha256": "f55ef665be9c75ed5417108adb3c175b94f3874433f65ac2b81e8ae4c2bf4c26",
+        "bytes": 59
+      }
+    },
+    {
+      "name": "native-TEST-R36I-PARSE-COLOR-001",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/tmp/musubix6-ledger-compaction-28d27536/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-R36I-PARSE-COLOR-001",
+        "--root",
+        "/tmp/musubix6-ledger-compaction-28d27536"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/c7b736481f260907c28dc292e501b3a984f75bf6cc23c6c50b5c62a373cbd439/attempt-aaa3ba66-613f-47b5-8efb-aa5aa19a0580/2.log",
+        "sha256": "4b0cd52e7e972d4e90cec970436079662c22127752a4142eae5b72766047ce44",
+        "bytes": 60
+      }
+    }
+  ],
+  "ledgerEvents": [
+    {
+      "test": "TEST-R36I-DIAGNOSTIC-001",
+      "hashes": [
+        "07beef0565ed333d1a284da397c3db028ed4d3bffb11c5e5fd4704f0a54f1588",
+        "26b5c6b917dba18f6fb6f2fc39e1be4bca1d6ae1756c1d051798b4335fc121fc",
+        "2b69e4ce13deb00f83412aa6eb3343df70f6e7a2b87bda060c4cece7b8f57503",
+        "4326d57ebe3355c523461feb2e4dfaf137a8b60c8c075c3e3036506a00f04908",
+        "5b40f1a088452346a8050d307abccce312eefb1355da87164d8c820369ee327c",
+        "7492ec52910361e77ef144475ca8760cfed632048fb124181fa83bc73244aa8f",
+        "b2687605982e663c67d33eb4651bd66a8f760e58b4f597bc2ac942a3e86feefd",
+        "cf3014b07b9791a7e0c9623bc80eb6784c73833906e1d5bcca29b51871a16670",
+        "d0ff8b59975167fb25590e30f82b783cf08bad6781a2f16db0c320599e65384d",
+        "db95dcb087f58ba98cbc176489381b2c97ae3a3c70d1cee168cec55fd77b6df7"
+      ]
+    },
+    {
+      "test": "TEST-R36I-PARSE-COLOR-001",
+      "hashes": [
+        "12b2d698e97f544532188ab3dd903a6b6fe009b663785c78f3b87d718b07b6ae",
+        "2f855647916b0776c9d19efcf2e050b3cc4d468fc7bfe64514a362a176b8ebfe",
+        "80d7a162ea562ea5b6fd99f6bd2639c0347651a44895c7c2fe6b22c3204aadac",
+        "962143e8cc3ce5f5612ea376bb6bacc3048423dcd8c58e2c5bd2c1e199739556",
+        "a3cae2dba63d826b64ecf5fd3a02f2e782ba839afbc5fb50a6ca2d00f13a308d",
+        "bd7eb0e366c6833db25ff27c083580337b43b11c6d3bde2692b547478eab60a4",
+        "cdd81578afc5f37370faf86f61ea316a504aa17168aaf1bd23ff44f8ac0e787a",
+        "d75fe0718ae9e8ee0e5425e13d545e4f0c14ba9f1e6ddc98212528c169ea8dab",
+        "df5b65b29de2f861363148c9436f7bc345e719f01098a7e8b421f379faaa2dc0",
+        "e078fac06eaa2df1517223dbc7c5d7ded057d68c0eb6bd598f027b65c5d69b77"
+      ]
+    }
+  ],
+  "errors": []
+}

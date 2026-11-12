@@ -2720,3 +2720,199 @@ function qualificationFixtureFile(relative) {
   return execFileSync('git', ['show', `1d756415fae1f349aef9be7a82c5b461f1460a27:${relative}`],
     { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
 }
+
+/** @id TEST-LEDGER-012 @verifies REQ-LEDGER-005 */
+test('TEST-LEDGER-012 native planning proof accepts archived witnesses and rotation without weakening immutable history', async t => {
+  const { gunzipSync } = await import('node:zlib');
+  const fixture = await planningGateFixture(t);
+  const tail = path.join(fixture.source, '.sdd/tdd.jsonl');
+  const original = fs.readFileSync(tail);
+  let last = JSON.parse(original.toString().trimEnd().split('\n').at(-1));
+  function padding(bytes) {
+    const event = { v: 1, seq: last.seq + 1, type: 'approval', feature: 'archive-padding-fixture',
+      approvalSha: 'a'.repeat(64), at: last.at, prev: last.hash, padding: '' };
+    const overhead = Buffer.byteLength(JSON.stringify({ ...event, hash: '0'.repeat(64) }) + '\n');
+    event.padding = 'x'.repeat(bytes - overhead);
+    event.hash = digest(JSON.stringify(event));
+    const encoded = Buffer.from(JSON.stringify(event) + '\n');
+    assert.equal(encoded.length, bytes);
+    fs.appendFileSync(tail, encoded);
+    last = event;
+    return encoded;
+  }
+  const firstPadding = padding(2097153);
+  const compact = await fixture.invoke(['tdd', 'compact']);
+  assert.equal(compact.exit, 0, compact.stdout + compact.stderr);
+  const oldManifest = read(path.join(fixture.source, '.sdd/tdd-manifest.json'));
+  const oldArchives = oldManifest.segments.map(segment => ({
+    path: segment.path, bytes: fs.readFileSync(path.join(fixture.source, '.sdd', segment.path)),
+  }));
+  const active = padding(2097152 - 128);
+  const expectedPrefix = Buffer.concat([original, firstPadding, active]);
+  const source = path.join(fixture.directory, 'archived-fresh');
+  copyPlanningSource(fixture.source, source);
+  const { cellCatalogue, commandForCell } = await import('./release-qualification-cells.mjs');
+  const cell = { id: 'INTEGRATED-GATE', kind: 'gate',
+    runtime: String(process.versions.node.split('.')[0]), timeoutSeconds: 12000 };
+  const catalogue = cellCatalogue({}, cell, source);
+  assert.deepEqual(catalogue[0].ledger,
+    { bytes: expectedPrefix.length, sha256: digest(expectedPrefix) },
+    'Catalogue must include both old archives and the active prefix');
+  const output = path.join(fixture.directory, 'archived-output');
+  const context = write(path.join(fixture.directory, 'archived-context.json'), {
+    cell, source, output, node: process.execPath, environment: fixture.environment, catalogue,
+    configuration: { sourceRoot: fixture.source },
+  });
+  const replacements = { '{node}': process.execPath, '{source}': source, '{context}': context };
+  const command = commandForCell(cell, ['parent.test.mjs', 'child.test.mjs']).map(argument =>
+    Object.entries(replacements).reduce((text, [key, value]) => text.replaceAll(key, value), argument));
+  const result = await processIo.execute({ command, cwd: source, env: fixture.environment,
+    timeoutMs: 120000, maxBytes: 8 * 1024 * 1024 });
+  assert.equal(result.error, null, result.stderr);
+  assert.equal(result.signal, null, result.stderr);
+  assert.equal(result.exit, 0, result.stdout + result.stderr + gateFailureDetails(output));
+  const evidence = { ...processIo.retainProcess(path.join(output, 'outer'), result), format: 'adapter' };
+  const accepted = () => validateCellEvidence({ cell, catalogue, evidence });
+  assert.equal((await accepted()).status, 'PASS', 'A real archived native proof must be accepted');
+  const refuse = async reason => {
+    const verdict = await accepted();
+    assert.equal(verdict.status, 'FAIL');
+    assert.match(verdict.errors.join('\n'), reason);
+  };
+  const data = JSON.parse(result.stdout);
+  assert.equal(data.planning.oldLedgerBytes, expectedPrefix.length);
+  assert.equal(data.planning.oldLedgerSha256, digest(expectedPrefix));
+  const manifestFile = path.join(source, '.sdd/tdd-manifest.json');
+  const manifestBytes = fs.readFileSync(manifestFile), manifest = JSON.parse(manifestBytes);
+  assert.ok(manifest.segments.length > oldManifest.segments.length, 'Native append must actually rotate the near-limit tail');
+  const archived = Buffer.concat(manifest.segments.map(segment =>
+    gunzipSync(fs.readFileSync(path.join(source, '.sdd', segment.path)))));
+  const logical = Buffer.concat([archived, fs.readFileSync(path.join(source, '.sdd/tdd.jsonl'))]);
+  assert.deepEqual(logical.subarray(0, expectedPrefix.length), expectedPrefix);
+  const archivedHashes = new Set(archived.toString().trimEnd().split('\n').map(line => JSON.parse(line).hash));
+  const receipt = read(data.planning.verifications[0].receipt.path);
+  assert.ok(receipt.ledgerEvents.some(event => event.hashes.some(hash => archivedHashes.has(hash))),
+    'The newly verified receipt must reference a witness stored only in an archive');
+  for (const archive of oldArchives) {
+    const file = path.join(source, '.sdd', archive.path);
+    assert.deepEqual(fs.readFileSync(file), archive.bytes, 'Existing archive bytes must remain immutable');
+    fs.unlinkSync(file);
+    try { await refuse(/missing.*tdd-archive/); }
+    finally { fs.writeFileSync(file, archive.bytes); }
+    assert.equal((await accepted()).status, 'PASS');
+    const corrupt = Buffer.from(archive.bytes); corrupt[corrupt.length - 8] ^= 1;
+    fs.writeFileSync(file, corrupt);
+    try { await refuse(/archive digest mismatch/); }
+    finally { fs.writeFileSync(file, archive.bytes); }
+    assert.equal((await accepted()).status, 'PASS');
+  }
+  fs.writeFileSync(manifestFile, Buffer.concat([manifestBytes, Buffer.from('\n')]));
+  try {
+    const { readLedgerHistory } = await import('../.github/skills/lean-sdd-tdd/scripts/sdd.mjs');
+    assert.deepEqual(readLedgerHistory(source), logical, 'Whitespace-padded manifest remains valid logical storage');
+    await refuse(/captured gate state changed/);
+  }
+  finally { fs.writeFileSync(manifestFile, manifestBytes); }
+  assert.equal((await accepted()).status, 'PASS');
+  const stray = path.join(source, '.sdd/tdd-archive/stray.jsonl.gz');
+  fs.writeFileSync(stray, 'stray');
+  try { await refuse(/captured gate state changed/); }
+  finally { fs.unlinkSync(stray); }
+  assert.equal((await accepted()).status, 'PASS');
+  const newArchive = path.join(source, '.sdd', manifest.segments.at(-1).path);
+  const newBytes = fs.readFileSync(newArchive);
+  fs.unlinkSync(newArchive);
+  try { await refuse(/missing.*tdd-archive/); }
+  finally { fs.writeFileSync(newArchive, newBytes); }
+  assert.equal((await accepted()).status, 'PASS');
+  const activeFile = path.join(source, '.sdd/tdd.jsonl'), activeBytes = fs.readFileSync(activeFile);
+  fs.appendFileSync(activeFile, '\n');
+  try { await refuse(/captured gate state changed/); }
+  finally { fs.writeFileSync(activeFile, activeBytes); }
+  assert.equal((await accepted()).status, 'PASS', 'Restored exact storage must remain admissible');
+});
+
+/** @id TEST-LEDGER-013 @verifies REQ-LEDGER-005 */
+test('TEST-LEDGER-013 no-change evidence binds archived logical bytes and unchanged physical storage', async t => {
+  const { gunzipSync } = await import('node:zlib');
+  const directory = workspace(t);
+  const hook = write(path.join(directory, 'archive-before-gate.mjs'), [
+    "import fs from 'node:fs'; import path from 'node:path'; import {createHash} from 'node:crypto'; import {gzipSync} from 'node:zlib';",
+    'const hash = bytes => createHash("sha256").update(bytes).digest("hex");',
+    'const sdd = path.join(process.cwd(),".sdd");',
+    'if(process.argv[2] === "gate" && process.argv[3] === "--changed" && path.basename(process.cwd()) === "unchanged" && !fs.existsSync(path.join(sdd,"tdd-manifest.json"))) {',
+    'const raw = fs.readFileSync(path.join(sdd,"tdd.jsonl")), rows = raw.toString().trimEnd().split("\\n").map(line=>JSON.parse(line));',
+    'const compressed = gzipSync(raw), first = rows[0], last = rows.at(-1);',
+    'const file = `tdd-archive/${first.seq}-${last.seq}-${hash(compressed)}.jsonl.gz`;',
+    'fs.mkdirSync(path.join(sdd,"tdd-archive")); fs.writeFileSync(path.join(sdd,file),compressed);',
+    'fs.writeFileSync(path.join(sdd,"tdd-manifest.json"),JSON.stringify({schemaVersion:1,segments:[{path:file,compressedSha256:hash(compressed),sha256:hash(raw),bytes:raw.length,count:rows.length,firstSeq:first.seq,lastSeq:last.seq,firstPrev:first.prev,lastHash:last.hash}]}));',
+    'fs.writeFileSync(path.join(sdd,"tdd.jsonl"),""); }',
+  ].join('\n'));
+  const environment = { ...process.env, NODE_OPTIONS: `--import=${pathToFileURL(hook).href}` };
+  delete environment.NODE_TEST_CONTEXT;
+  delete environment.NODE_PATH;
+  const output = path.join(directory, 'no-change');
+  const cell = { id: `NO-CHANGE-${process.versions.node.split('.')[0]}`,
+    kind: 'extra', mode: 'no-change', timeoutSeconds: 300 };
+  const { runAdapter, validateAdapter } = await import('./release-qualification-cells.mjs');
+  const data = await runAdapter({ source: root, output, node: process.execPath, environment, cell,
+    catalogue: [{ name: 'archived no-change' }], configuration: {} });
+  const source = path.join(output, 'unchanged'), manifestFile = path.join(source, '.sdd/tdd-manifest.json');
+  const manifestBytes = fs.readFileSync(manifestFile), manifest = JSON.parse(manifestBytes);
+  const raw = Buffer.concat([...manifest.segments.map(segment =>
+    gunzipSync(fs.readFileSync(path.join(source, '.sdd', segment.path)))),
+  fs.readFileSync(path.join(source, '.sdd/tdd.jsonl'))]);
+  assert.ok(raw.length > 0);
+  assert.equal(fs.statSync(path.join(source, '.sdd/tdd.jsonl')).size, 0);
+  assert.equal(data.beforeLedgerSha256, digest(raw), 'Before digest must bind archived events, not the empty tail');
+  assert.equal(data.afterLedgerSha256, digest(raw));
+  const outer = await processIo.execute({
+    command: [process.execPath, '-e', `process.stdout.write(${JSON.stringify(JSON.stringify(data))})`],
+    cwd: source, env: environment, timeoutMs: 15000, maxBytes: 8 * 1024 * 1024,
+  });
+  assert.equal(outer.exit, 0);
+  let attempt = 0;
+  const validate = (value = data, adapterOutput = output) => validateAdapter({ cell, adapterOutput, catalogue: [{ name: 'archived no-change' }],
+    evidence: processIo.retainProcess(path.join(directory, `validation-${attempt++}`),
+      { ...outer, stdout: JSON.stringify(value) }) });
+  assert.equal(validate().status, 'PASS', 'Valid archived no-change evidence must be accepted');
+  assert.throws(() => validate({ ...data, beforeLedgerSha256: '0'.repeat(64) }), /no-change logical history changed/,
+    'Different before and after logical digests must refuse');
+  const other = path.join(directory, 'equal-content-other-root');
+  fs.cpSync(source, other, { recursive: true });
+  assert.throws(() => validate({ ...data, source: other }), /no-change fixture root mismatch/);
+  const replayOutput = path.join(directory, 'other-adapter');
+  const replayed = await runAdapter({ source: root, output: replayOutput, node: process.execPath, environment, cell,
+    catalogue: [{ name: 'archived no-change' }], configuration: {} });
+  assert.equal(validate(replayed, replayOutput).status, 'PASS', 'A real second fixture is valid only for its own expected output');
+  assert.throws(() => validate(replayed), /no-change fixture root mismatch/,
+    'Genuine receipts from another fixture must not override the expected adapter output');
+  fs.writeFileSync(manifestFile, Buffer.concat([manifestBytes, Buffer.from('\n')]));
+  try {
+    const { readLedgerHistory } = await import('../.github/skills/lean-sdd-tdd/scripts/sdd.mjs');
+    assert.deepEqual(readLedgerHistory(source), raw);
+    assert.throws(() => validate(), /no-change ledger storage state changed/);
+  }
+  finally { fs.writeFileSync(manifestFile, manifestBytes); }
+  assert.equal(validate().status, 'PASS');
+  const stray = path.join(source, '.sdd/tdd-archive/stray.jsonl.gz');
+  fs.writeFileSync(stray, 'stray');
+  try { assert.throws(() => validate(), /no-change ledger storage state changed/); }
+  finally { fs.unlinkSync(stray); }
+  assert.equal(validate().status, 'PASS');
+  const archive = path.join(source, '.sdd', manifest.segments[0].path), bytes = fs.readFileSync(archive);
+  fs.unlinkSync(archive);
+  try { assert.throws(() => validate(), /no-change ledger storage state changed/); }
+  finally { fs.writeFileSync(archive, bytes); }
+  assert.equal(validate().status, 'PASS');
+  const corrupt = Buffer.from(bytes); corrupt[corrupt.length - 8] ^= 1;
+  fs.writeFileSync(archive, corrupt);
+  try { assert.throws(() => validate(), /no-change ledger storage state changed/); }
+  finally { fs.writeFileSync(archive, bytes); }
+  assert.equal(validate().status, 'PASS');
+  const tail = path.join(source, '.sdd/tdd.jsonl'), tailBytes = fs.readFileSync(tail);
+  fs.appendFileSync(tail, '\n');
+  try { assert.throws(() => validate(), /no-change ledger storage state changed/); }
+  finally { fs.writeFileSync(tail, tailBytes); }
+  assert.equal(validate().status, 'PASS', 'Exact restoration must accept valid evidence again');
+});

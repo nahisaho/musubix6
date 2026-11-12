@@ -1,0 +1,19 @@
+✔ TEST-LEDGER-001 legacy and archived ledgers preserve every ordered event and identity (265.064318ms)
+✔ TEST-LEDGER-002 oversized append rotates automatically; compact is idempotent and dry-run is read-only (1748.474165ms)
+✔ TEST-LEDGER-003 invalid archives never become empty successful evidence (1040.622155ms)
+✔ TEST-LEDGER-004 unknown live locks are not stolen and interrupted switches recover once (4410.848817ms)
+✔ TEST-LEDGER-005 plain and archived Git baselines retain deletion protection and approval provenance (4087.501983ms)
+✔ TEST-LEDGER-006 copied Copilot and Claude SDK entry points reconstruct the same archive (1735.914037ms)
+✔ TEST-LEDGER-007 recovery permits a changed tail with byte-identical old and new manifests (362.907817ms)
+✔ TEST-LEDGER-008 a paused dead-owner reclaimer cannot poison a successor live writer (382.158044ms)
+✔ TEST-LEDGER-009 gate detects an archive mutation before a later check can restore it (2289.195661ms)
+✔ TEST-LEDGER-010 importing the standalone SDK exposes strict read-only logical bytes without CLI dispatch (1320.799483ms)
+✔ TEST-LEDGER-011 release catalogues bind the complete logical ledger rather than its active tail (43.283974ms)
+ℹ tests 11
+ℹ suites 0
+ℹ pass 11
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 17788.539205

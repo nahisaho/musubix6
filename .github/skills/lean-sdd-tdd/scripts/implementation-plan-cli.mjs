@@ -23,9 +23,10 @@ export function readPlanningConfiguration(root, fallback) {
   return config;
 }
 
-const bookkeeping = new Set(['.sdd/tdd.jsonl', '.sdd/approvals.json', '.sdd/prepare-shown.json', '.sdd/prepare-cache.json', '.sdd/spec-feedback.jsonl']);
+const bookkeeping = new Set(['.sdd/tdd.jsonl', '.sdd/tdd-manifest.json', '.sdd/approvals.json', '.sdd/prepare-shown.json', '.sdd/prepare-cache.json', '.sdd/spec-feedback.jsonl']);
 function isPlanningBookkeeping(model, file) {
   if (bookkeeping.has(file) || file === '.sdd/plan.md') return true;
+  if (/^\.sdd\/tdd-archive\/[1-9]\d*-[1-9]\d*-[a-f0-9]{64}\.jsonl\.gz$/.test(file)) return true;
   return model.tasks.some(task => {
     const prefix = `.sdd/plan-evidence/${planningSha256(task.id)}/`;
     return file.startsWith(prefix)

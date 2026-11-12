@@ -1,0 +1,74 @@
+r34 structural reads/stats: 110, 6100000 bytes shared by two checks
+r34 integrated namespace reads/stats: 110
+✔ TEST-R34-CLOSURE-001 r34f #362 structural budget avoids per-identifier PATH and file probes (2054.880051ms)
+✖ TEST-R34-CLOSURE-002 r34f #362 real installed TypeScript launcher reaches TDD and preserves provenance (92131.754115ms)
+✔ TEST-R34-CLOSURE-003 r34f #362 oversized definition refuses explicitly without writing evidence (623.510834ms)
+✔ TEST-R34-CLOSURE-004 r34f #362 token suffix and directory budgets refuse instead of silently truncating (2216.09346ms)
+✔ TEST-R34-INTEGRATION-003 r34 integration Python namespace probes share the compiler source-discovery budget (1077.351541ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 4
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 102163.164184
+
+✖ failing tests:
+
+test at .github/skills/lean-sdd-tdd/scripts/sdd.test.mjs:13035:1
+✖ TEST-R34-CLOSURE-002 r34f #362 real installed TypeScript launcher reaches TDD and preserves provenance (92131.754115ms)
+  AssertionError [ERR_ASSERTION]: 15s feasibility budget exceeded (15117.8ms): Error: spawnSync /home/nahisaho/.nvm/versions/node/v24.22.1/bin/node ETIMEDOUT
+  
+  
+  + actual - expected
+  
+  + Error: spawnSync /home/nahisaho/.nvm/versions/node/v24.22.1/bin/node ETIMEDOUT
+  +     at Object.spawnSync (node:internal/child_process:1191:20)
+  +     at spawnSync (node:child_process:929:24)
+  +     at r34fRun (file:///tmp/musubix6-ledger-compaction-28d27536/.github/skills/lean-sdd-tdd/scripts/sdd.test.mjs:13005:18)
+  +     at TestContext.<anonymous> (file:///tmp/musubix6-ledger-compaction-28d27536/.github/skills/lean-sdd-tdd/scripts/sdd.test.mjs:13084:22)
+  +     at Test.runInAsyncScope (node:async_hooks:227:14)
+  +     at Test.run (node:internal/test_runner/test:1402:25)
+  +     at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+  +     at Test.postRun (node:internal/test_runner/test:1542:19)
+  +     at Test.run (node:internal/test_runner/test:1467:12)
+  +     at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+  +   code: 'ETIMEDOUT',
+  +   errno: -110,
+  +   path: '/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node',
+  +   spawnargs: [
+  +     '/tmp/musubix6-ledger-compaction-28d27536/.github/skills/lean-sdd-tdd/scripts/sdd.mjs',
+  +     '--root',
+  +     '/tmp/musubix6-ledger-compaction-28d27536/.sdd-test-work-4Dlxuf/sdd-m-jpAvuY',
+  +     'gate'
+  +   ],
+  +   syscall: 'spawnSync /home/nahisaho/.nvm/versions/node/v24.22.1/bin/node'
+  + }
+  - undefined
+  
+      at r34fRun (file:///tmp/musubix6-ledger-compaction-28d27536/.github/skills/lean-sdd-tdd/scripts/sdd.test.mjs:13007:10)
+      at TestContext.<anonymous> (file:///tmp/musubix6-ledger-compaction-28d27536/.github/skills/lean-sdd-tdd/scripts/sdd.test.mjs:13084:22)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: Error: spawnSync /home/nahisaho/.nvm/versions/node/v24.22.1/bin/node ETIMEDOUT
+        at Object.spawnSync (node:internal/child_process:1191:20)
+        at spawnSync (node:child_process:929:24)
+        at r34fRun (file:///tmp/musubix6-ledger-compaction-28d27536/.github/skills/lean-sdd-tdd/scripts/sdd.test.mjs:13005:18)
+        at TestContext.<anonymous> (file:///tmp/musubix6-ledger-compaction-28d27536/.github/skills/lean-sdd-tdd/scripts/sdd.test.mjs:13084:22)
+        at Test.runInAsyncScope (node:async_hooks:227:14)
+        at Test.run (node:internal/test_runner/test:1402:25)
+        at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+        at Test.postRun (node:internal/test_runner/test:1542:19)
+        at Test.run (node:internal/test_runner/test:1467:12)
+        at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3),
+    expected: undefined,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

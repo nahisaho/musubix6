@@ -1,0 +1,9 @@
+✔ #371 TEST-R36H-PYTEST-001 hosted provisioning runs actual pytest with user-site disabled (7489.801741ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 9951.521775

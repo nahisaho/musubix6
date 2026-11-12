@@ -1,0 +1,13 @@
+✔ TEST-JAPROSE-001 reviews contextual metaphors without banning literal or quoted uses (3076.327124ms)
+✔ TEST-JAPROSE-002 preserves targeted questions and reports isolated clichés (3046.897971ms)
+✔ TEST-JAPROSE-003 follows independent CommonMark code-span visibility and edit protection (4439.182922ms)
+✔ TEST-JAPROSE-004 retains reading-load, JSON, natural controls and semantic review compatibility (2891.065921ms)
+✔ TEST-JAPROSE-005 copied PEP723 tools independently hide protected inline code (5891.746805ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 19413.872447

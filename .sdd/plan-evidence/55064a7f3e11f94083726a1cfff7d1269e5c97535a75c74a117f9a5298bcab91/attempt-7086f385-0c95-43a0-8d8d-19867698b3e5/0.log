@@ -1,0 +1,10 @@
+✔ #368 TEST-R36D-OWN-001 original native ownership fixture passes on the actual runtime (4625.228575ms)
+✔ #368 TEST-R36D-OWN-002 explicit project files preserve positive and missing-ID controls (3040.051516ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 10052.476252

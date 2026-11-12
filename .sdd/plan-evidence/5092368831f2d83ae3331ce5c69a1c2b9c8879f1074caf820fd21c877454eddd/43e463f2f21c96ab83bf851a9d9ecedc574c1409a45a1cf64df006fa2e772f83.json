@@ -1,0 +1,79 @@
+{
+  "schemaVersion": 1,
+  "task": "TASK-PLAN-CLI-002",
+  "sequence": 9,
+  "previous": "3fb6b7cd631fc24e0cd4d45af4820f4e765c512cd00f48d9bc5d530673b42d2d",
+  "definitionSha256": "a2315c1af654f6b6956e8d65e759a02d44494fd949b8c02891e43c882cd9ce02",
+  "inputSha256": "0771161295634d5c63b089ca5b9e38824756bb81a99a90f66f330ba61100e2f3",
+  "status": "PASS",
+  "exit": 0,
+  "checks": [
+    {
+      "name": "regression-1",
+      "argv": [
+        "node",
+        "--test",
+        "--test-name-pattern",
+        "^(?:.*\\b(?:TEST-PLAN-CLI-002))(?![0-9A-Za-z])",
+        ".github/skills/lean-sdd-tdd/scripts/implementation-plan-cli.test.mjs"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/5092368831f2d83ae3331ce5c69a1c2b9c8879f1074caf820fd21c877454eddd/attempt-8f435585-77c1-47b0-b8f6-0f4a81a141e5/0.log",
+        "sha256": "c28c8061bb419655a3507c28b703160f88f6273ce1f2515ea7f451dd5341a260",
+        "bytes": 221
+      }
+    },
+    {
+      "name": "native-TEST-PLAN-CLI-002",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/tmp/musubix6-ledger-compaction-28d27536/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-PLAN-CLI-002",
+        "--root",
+        "/tmp/musubix6-ledger-compaction-28d27536"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/5092368831f2d83ae3331ce5c69a1c2b9c8879f1074caf820fd21c877454eddd/attempt-8f435585-77c1-47b0-b8f6-0f4a81a141e5/1.log",
+        "sha256": "59200dd65461e5d77b037fc86b87f0dbe8ac3c31780ec43e4944a868eea12e0f",
+        "bytes": 57
+      }
+    }
+  ],
+  "ledgerEvents": [
+    {
+      "test": "TEST-PLAN-CLI-002",
+      "hashes": [
+        "0ed0291daf3cc8132d7d30f269d1e6a622298b69a57edad46cba416f9efb4516",
+        "0f65c5bfa61a208b5d9ecc85a234b4ab827f73aaf61a62eaf940f9fad4870328",
+        "420065cfa2e8de6748207369e80f3ecf0439c41784b6fa6062445a30b83e27c6",
+        "4c1d6f4b3dbbcb16347dd76ce9e681bed7e25b56a90d67fe49b7caece02ec25c",
+        "5331a10b97d28d3dd1f21a25809926aa192c2c2838f44a84c30cdde1a0e0a501",
+        "5b9c8d6c7efa45aa80e9cfff23d92a0ca1af1d0ca31e6ed207f1b6d4a3562936",
+        "5d723e7a413ff06af56da588b1fe7d4b0fa8fbe99780a56504fcf31742bb1a75",
+        "5f16d7bc2d998951eac155904873b3e63e4bdd45268a7373b3a610f9182bca31",
+        "8bb52dea830dc5972e6d13fee1e4d1a90bfef52d683fb7e6d6538cb1da3051ba",
+        "9cd64a0f30723094b763bab4ae749e42094c7f7caaa86dff75c3bf75a4d941cf",
+        "bb680e27ca5dfe9f6c4a91abefe63bca1e45684dc25f3a5ece5b3346cc3c9efc",
+        "c22983ae75d01c9260d9f5a7af34175b088d4ef1c7d730e280871a26624572b7",
+        "c28cfe0c79e107f57e4facf3fbc16841e98fadf9b591985db95b9da9a68cd51f",
+        "c8ec5faf02b87d5b3f58c63f2b06197de6bd604206c7c93ce3cbe1028b9c07ca",
+        "d51c03040d2f207f85ed6562ba0a3b18b8b2c7bc6513722658448a2a55d353eb",
+        "e532fb670e3a8727a83172ffcdd36bd411c16cf4cd6ec0ceebafa257e128b95a",
+        "ee5babdd0f94c25fc1ac92d3126a91f71a994f8b86a59a95bd9fd165c6dafb15"
+      ]
+    }
+  ],
+  "errors": []
+}

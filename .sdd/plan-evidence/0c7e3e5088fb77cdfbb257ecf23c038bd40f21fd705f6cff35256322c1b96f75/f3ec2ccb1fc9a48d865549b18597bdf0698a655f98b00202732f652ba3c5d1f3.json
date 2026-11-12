@@ -1,0 +1,69 @@
+{
+  "schemaVersion": 1,
+  "task": "TASK-CI-FIXTURE-001",
+  "sequence": 6,
+  "previous": "c1e6b22e1ae23871ccf1643cb690da6cd370bb96b9e31e1e27baf292ed98a9ee",
+  "definitionSha256": "4940df7529f304239241ef7fc8b360d218a8605abef05099d2d59c9eb61dd9fc",
+  "inputSha256": "637a8bcb8e57a962dab2ec78f72cda257b5a180e6c90ca6aaabbb72e49627cbb",
+  "status": "PASS",
+  "exit": 0,
+  "checks": [
+    {
+      "name": "regression",
+      "argv": [
+        "node",
+        "--test",
+        "--test-name-pattern",
+        "TEST-CI-FIXTURE-001",
+        "scripts/release-qualification.test.mjs"
+      ],
+      "timeoutMs": 120000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/0c7e3e5088fb77cdfbb257ecf23c038bd40f21fd705f6cff35256322c1b96f75/attempt-8626db45-44e2-40b6-9a4f-60f6c7bd33c9/0.log",
+        "sha256": "8256987f6d7d9ab9323a51cd069f9d2c9261aacd8231e6b0d5a69ebb300eb556",
+        "bytes": 239
+      }
+    },
+    {
+      "name": "native-TEST-CI-FIXTURE-001",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/tmp/musubix6-ledger-compaction-28d27536/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-CI-FIXTURE-001",
+        "--root",
+        "/tmp/musubix6-ledger-compaction-28d27536"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/0c7e3e5088fb77cdfbb257ecf23c038bd40f21fd705f6cff35256322c1b96f75/attempt-8626db45-44e2-40b6-9a4f-60f6c7bd33c9/1.log",
+        "sha256": "a5a423f84fa2abdfd00c23f7dd452aa23c10f5ca502171d2cd5f4bfb6037a82d",
+        "bytes": 60
+      }
+    }
+  ],
+  "ledgerEvents": [
+    {
+      "test": "TEST-CI-FIXTURE-001",
+      "hashes": [
+        "2c59db7f82400f98ce1c83503ca9341e99afd2300e132033df5f003ba4be26ab",
+        "2fdc9604e9586b0817e1b80e3f1cb4eefe464d9c8f8996b2082997cca3a7f797",
+        "325c3415411a41d8373b14cbe3df2f4197efeea999f79196aa8fa968f706e790",
+        "3cbcc8dcf4e638deef5a8755d5c7ebd4d88e414671cdb717f8f54aba2a2a6afa",
+        "805c932c63113682f16263750a9955218412e66ef38a226208eee637e95fa3ab",
+        "90a9d52c062b45c30e17b8a5635e8dc82acfa3da4a532ceff379910ea243b3f3",
+        "c8b0f790bfd9d0fff0a921590125399a42479440fbd794126d90f1417f96c348"
+      ]
+    }
+  ],
+  "errors": []
+}

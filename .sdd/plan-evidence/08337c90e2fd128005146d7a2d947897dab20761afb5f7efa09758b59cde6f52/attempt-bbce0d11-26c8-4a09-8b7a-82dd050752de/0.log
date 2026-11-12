@@ -1,0 +1,10 @@
+✔ TEST-DIAGCLI-007 cumulative native stdout/stderr bytes and elapsed time (542.336587ms)
+✔ TEST-DIAGCLI-008 parent-owned scratch cleanup on success, timeout and failure (5677.138721ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 6295.59967

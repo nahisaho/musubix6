@@ -1,0 +1,46 @@
+✖ TEST-PLAN-FLOW-002 real tarball and both hosts execute the same complete planning lifecycle (654.691039ms)
+ℹ {"kind":"planning-package-runtime","node":"v24.22.1","tarballSha256":"0d79422a564bb0720340dc1285dcc9d300d9d3a9c87bee0f7d89643621ff7d06"}
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 726.111476
+
+✖ failing tests:
+
+test at .github/skills/lean-sdd-tdd/scripts/implementation-plan-workflow.test.mjs:267:1
+✖ TEST-PLAN-FLOW-002 real tarball and both hosts execute the same complete planning lifecycle (654.691039ms)
+  AssertionError [ERR_ASSERTION]: The actual npm payload includes every source role/script file.
+  + actual - expected
+  ... Skipped lines
+  
+    [
+      '.github/skills/lean-agentic-coding/SKILL.md',
+      '.github/skills/lean-agentic-coding/references/contract-template.md',
+      '.github/skills/lean-agentic-coding/references/ledger-format.md',
+      '.github/skills/lean-agentic-coding/references/t2-protocol.md',
+  ...
+      '.github/skills/lean-sdd-tdd/scripts/spec-context.test.mjs',
+  +   '.github/skills/lean-sdd-tdd/scripts/tdd-ledger.mjs',
+  +   '.github/skills/lean-sdd-tdd/scripts/tdd-ledger.test.mjs',
+      '.github/skills/lean-sdd-tdd/scripts/windows-native.test.mjs',
+      '.github/skills/lean-sdd-tdd/scripts/windows-runner.test.mjs',
+      '.github/skills/sdd-reverse-spec/SKILL.md',
+      '.github/skills/sdd-spec-interview/SKILL.md'
+    ]
+  
+      at TestContext.<anonymous> (file:///tmp/musubix6-ledger-compaction-28d27536/.github/skills/lean-sdd-tdd/scripts/implementation-plan-workflow.test.mjs:286:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ '.github/skills/lean-agentic-coding/SKILL.md', '.github/skills/lean-agentic-coding/references/contract-template.md', '.github/skills/lean-agentic-coding/references/ledger-format.md', '.github/skills/lean-agentic-coding/references/t2-protocol.md', '.github/skills/lean-agentic-coding/scripts/gate.sh', '.github/skills/lean-sdd-tdd/SKILL.md', '.github/skills/lean-sdd-tdd/references/config.md', '.github/skills/lean-sdd-tdd/references/enforced-rules.md', '.github/skills/lean-sdd-tdd/references/spec-template.md', '.github/skills/lean-sdd-tdd/references/stubs.md', '.github/skills/lean-sdd-tdd/references/t2.md', '.github/skills/lean-sdd-tdd/scripts/diagnostics-eslint.mjs', '.github/skills/lean-sdd-tdd/scripts/diagnostics-native.mjs', '.github/skills/lean-sdd-tdd/scripts/diagnostics-profiles.test.mjs', '.github/skills/lean-sdd-tdd/scripts/diagnostics-python.mjs', '.github/skills/lean-sdd-tdd/scripts/diagnostics-python.py', '.github/skills/lean-sdd-tdd/scripts/diagnostics-rust.mjs', '.github/skills/lean-sdd-tdd/scripts/diagnostics-typescript.mjs', '.github/skills/lean-sdd-tdd/scripts/diagnostics-worker.mjs', '.github/skills/lean-sdd-tdd/scripts/diagnostics.mjs', '.github/skills/lean-sdd-tdd/scripts/diagnostics.test.mjs', '.github/skills/lean-sdd-tdd/scripts/implementation-feedback.mjs', '.github/skills/lean-sdd-tdd/scripts/implementation-feedback.test.mjs', '.github/skills/lean-sdd-tdd/scripts/implementation-plan-cli.mjs', '.github/skills/lean-sdd-tdd/scripts/implementation-plan-cli.test.mjs', '.github/skills/lean-sdd-tdd/scripts/implementation-plan-evidence.mjs', '.github/skills/lean-sdd-tdd/scripts/implementation-plan-evidence.test.mjs', '.github/skills/lean-sdd-tdd/scripts/implementation-plan-workflow.test.mjs', '.github/skills/lean-sdd-tdd/scripts/implementation-plan.mjs', '.github/skills/lean-sdd-tdd/scripts/implementation-plan.test.mjs', '.github/skills/lean-sdd-tdd/scripts/sdd.mjs', '.github/skills/lean-sdd-tdd/scripts/sdd.test.mjs', '.github/skills/lean-sdd-tdd/scripts/source-discovery.test.mjs', '.github/skills/lean-sdd-tdd/scripts/spec-context.mjs', '.github/skills/lean-sdd-tdd/scripts/spec-context.test.mjs', '.github/skills/lean-sdd-tdd/scripts/tdd-ledger.mjs', '.github/skills/lean-sdd-tdd/scripts/tdd-ledger.test.mjs', '.github/skills/lean-sdd-tdd/scripts/windows-native.test.mjs', '.github/skills/lean-sdd-tdd/scripts/windows-runner.test.mjs', '.github/skills/sdd-reverse-spec/SKILL.md', '.github/skills/sdd-spec-interview/SKILL.md' ],
+    expected: [ '.github/skills/lean-agentic-coding/SKILL.md', '.github/skills/lean-agentic-coding/references/contract-template.md', '.github/skills/lean-agentic-coding/references/ledger-format.md', '.github/skills/lean-agentic-coding/references/t2-protocol.md', '.github/skills/lean-agentic-coding/scripts/gate.sh', '.github/skills/lean-sdd-tdd/SKILL.md', '.github/skills/lean-sdd-tdd/references/config.md', '.github/skills/lean-sdd-tdd/references/enforced-rules.md', '.github/skills/lean-sdd-tdd/references/spec-template.md', '.github/skills/lean-sdd-tdd/references/stubs.md', '.github/skills/lean-sdd-tdd/references/t2.md', '.github/skills/lean-sdd-tdd/scripts/diagnostics-eslint.mjs', '.github/skills/lean-sdd-tdd/scripts/diagnostics-native.mjs', '.github/skills/lean-sdd-tdd/scripts/diagnostics-profiles.test.mjs', '.github/skills/lean-sdd-tdd/scripts/diagnostics-python.mjs', '.github/skills/lean-sdd-tdd/scripts/diagnostics-python.py', '.github/skills/lean-sdd-tdd/scripts/diagnostics-rust.mjs', '.github/skills/lean-sdd-tdd/scripts/diagnostics-typescript.mjs', '.github/skills/lean-sdd-tdd/scripts/diagnostics-worker.mjs', '.github/skills/lean-sdd-tdd/scripts/diagnostics.mjs', '.github/skills/lean-sdd-tdd/scripts/diagnostics.test.mjs', '.github/skills/lean-sdd-tdd/scripts/implementation-feedback.mjs', '.github/skills/lean-sdd-tdd/scripts/implementation-feedback.test.mjs', '.github/skills/lean-sdd-tdd/scripts/implementation-plan-cli.mjs', '.github/skills/lean-sdd-tdd/scripts/implementation-plan-cli.test.mjs', '.github/skills/lean-sdd-tdd/scripts/implementation-plan-evidence.mjs', '.github/skills/lean-sdd-tdd/scripts/implementation-plan-evidence.test.mjs', '.github/skills/lean-sdd-tdd/scripts/implementation-plan-workflow.test.mjs', '.github/skills/lean-sdd-tdd/scripts/implementation-plan.mjs', '.github/skills/lean-sdd-tdd/scripts/implementation-plan.test.mjs', '.github/skills/lean-sdd-tdd/scripts/sdd.mjs', '.github/skills/lean-sdd-tdd/scripts/sdd.test.mjs', '.github/skills/lean-sdd-tdd/scripts/source-discovery.test.mjs', '.github/skills/lean-sdd-tdd/scripts/spec-context.mjs', '.github/skills/lean-sdd-tdd/scripts/spec-context.test.mjs', '.github/skills/lean-sdd-tdd/scripts/windows-native.test.mjs', '.github/skills/lean-sdd-tdd/scripts/windows-runner.test.mjs', '.github/skills/sdd-reverse-spec/SKILL.md', '.github/skills/sdd-spec-interview/SKILL.md' ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

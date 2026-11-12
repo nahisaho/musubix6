@@ -67,13 +67,13 @@
     "requireHuman": false
   },
   "legacy-command-closure": {
-    "by": "ai:claude-sonnet-5.5",
+    "by": "ai:dispatch-correctness-and-evidence-sonnet-5.5",
     "kind": "ai",
     "review": ".sdd/review-legacy-command-closure.md",
-    "reviewSha": "058967fdcf9e8d34d0f413c6535fbc401562ccbc00d855f6d4986dc437d3710d",
-    "at": "2026-10-18T11:35:43.716Z",
+    "reviewSha": "29fc696811840cfa4be2746e8c9e2dece6be7aee2de92b58b9b7b941392ba12d",
+    "at": "2026-11-11T23:37:40.965Z",
     "artifacts": {
-      ".sdd/specs/legacy-command-closure.md": "4b30d8ee6758c82c571d3394fbb9fdc7e05ef8bd9ac26d37aea5f2f0801840c1"
+      ".sdd/specs/legacy-command-closure.md": "c40c1cfd355feb33205db19a339f08ba857d789ceceda5d1c2857d4e42eefbcd"
     },
     "tier": "T2",
     "requireHuman": false
@@ -252,22 +252,22 @@
   "release-qualification": {
     "by": "nahisaho",
     "kind": "human",
-    "review": "Genuine explicit ask_user approval: 上記7ファイルの準備・対応実装・検証のみ承認する. Exact seven-artifact unit shown by final prepare-02: canonical19e94f81, scope4d91abf4, content9019a596, Claude2c846e58, README5f44a690, README-ja5eadfaf6, changelogc7447bf2. Recorded actual native stage evidence only; unchanged required24-cell scope/budgets, zero frozen credit; current affected-task/full-gate validation pending; separate final exact Actions-compatible package paths/hashes/residual-risk approval required before tag/npm publication.",
-    "at": "2026-11-11T14:00:07.169Z",
+    "review": "Explicit genuine ask_user approval of exact seven shown artifact hashes plus helper8f85684dbf4372a2cf1bb9db08473463752e0235fbf4f2b9644e074ee8990289 for development evidence refresh/task revalidation/full gate only. No push, frozen qualification restart, tag or npm publication authorization. Capacity/bomb/corrupt-baseline/link-crash/real-Windows limits remain; required scope unchanged.",
+    "at": "2026-11-12T07:16:05.718Z",
     "artifacts": {
       ".sdd/specs/release-qualification.md": "19e94f81df3d02452330567062cc16484006923e51080ab1ca2c1cdd72550451",
       ".sdd/release-validation.v0.2.10.json": "4d91abf448412004f8b98d51c412d49e6d0115e0359a240bddd4641c2a6284d9",
       ".sdd/release-content-mutations.v0.2.10.json": "9019a5968859179375d61897fb86abef07f57aeb2dad0e9858bb879378c93f40",
       ".sdd/specs/claude-code-support.md": "2c846e5878db59abb7ba0cc3aa9b7f49256c91a6a250931a7e0e53a7cf826560",
-      "README.md": "5f44a69042171b2b3c281ffd6816f7df846f6b14b636d0c44e228f20eac81cec",
-      "README-ja.md": "5eadfaf6998167c0c0bc3ef39b1de1168a492c35cf0a4c00db073f98355724ec",
+      "README.md": "b6aa97eb2f0b5db7e43241fa5c1b0e6de796b1dd67943309a6e73a1fd4b0e8c8",
+      "README-ja.md": "8d2a0359773fc51c93e4b17bd18b7df14926a8aa8cf7b366956755f902aa84c0",
       "CLANGELOG.md": "c7447bf2b65c470d42f56890516fa39123762f490b0aadb32a28649d56559ce8"
     },
     "tier": "T2",
     "requireHuman": true,
     "code": {
       "scripts/release-host-mutations.mjs": "6921bf50d7f7df70ce2e3a3e23b0acbf67def78f0e4d358b1d7a5adcb091b618",
-      "scripts/release-qualification-cells.mjs": "e5536c18d0da555222cf50ee76cfa0c2cc5a4fe921d57b547c7b91e5ce41ba20",
+      "scripts/release-qualification-cells.mjs": "8f85684dbf4372a2cf1bb9db08473463752e0235fbf4f2b9644e074ee8990289",
       "scripts/release-qualification-cli.mjs": "14796bd1efbe8f9d26a7a835d06eafe40403b4054db6ef57b287e96082639ceb",
       "scripts/release-qualification-content-mutations.mjs": "60a7549229a3a94dc889f9255450fdf7be23867f0dd31b50ed4ff54dbd3b2d8b",
       "scripts/release-qualification-evidence.mjs": "1f2af8ec0e458893ae7f580fc2b5e1020c32f5c2d19aa848336e698c512837f2",
@@ -365,15 +365,16 @@
     }
   },
   "ci-regression-fixtures": {
-    "by": "ai:catalogue-contract-sonnet",
+    "by": "ai:ledger-integration-review",
     "kind": "ai",
-    "review": "Two independent Claude Sonnet5.5 bounded post-fix clean rounds; current regression artifact1554f4d7, unchanged CI spec2ae0796b; native substitution Red/Green, final29/29 complete release/host controls and47/47 diagnostics; genuine native evidence retained; no human release approval or qualification inferred.",
-    "at": "2026-11-11T13:56:55.981Z",
+    "review": ".sdd/review-ci-regression-fixtures.md",
+    "reviewSha": "dc0396380fb477c7fb3b71620b4533ec58c12997ac30d0dcdbec66cb82ebd752",
+    "at": "2026-11-12T07:18:02.888Z",
     "artifacts": {
       ".sdd/specs/ci-regression-fixtures.md": "2ae0796b125a369eea494cf1135639cd4e85152cf43bba29b2211571dfb62e60",
-      "scripts/release-qualification.test.mjs": "1554f4d7ab9c405bba026ef27cbbac89d434ae2afe81e8c72ac986015a99d9a4",
+      "scripts/release-qualification.test.mjs": "f3c1d5a9c71abd201ef86dee1faeba1eaba551d3ae3e4b819857c48f49fdfe3a",
       "scripts/release-host-mutations.test.mjs": "6a6798b24e1aae5bb01c8502c4edb99da0281894562c25779bf3bbb7deccd914",
-      ".github/skills/lean-sdd-tdd/scripts/sdd.test.mjs": "b0810139e648802f6c2e59d4f1ad435612f6a1f96903a9ff3948cf150830c86a",
+      ".github/skills/lean-sdd-tdd/scripts/sdd.test.mjs": "5bf8c282f28eded3aaa58c90a83319e4dddd957c6461d33f2a5cd7740822f644",
       ".github/skills/lean-sdd-tdd/scripts/implementation-plan-cli.test.mjs": "d830cf57e9a94c52d88a88134e3d52ab906b0513135df3cc247f5d58ded3e474"
     },
     "tier": "T2",
@@ -399,6 +400,18 @@
     "at": "2026-11-11T04:51:45.746Z",
     "artifacts": {
       ".sdd/specs/implementation-feedback-workflow.md": "066d142587668b87317c0014d0a8a0bb0baa4880e8d50d0c730ef37e573fb7c0"
+    },
+    "tier": "T2",
+    "requireHuman": false
+  },
+  "ledger-compaction": {
+    "by": "ai:ledger-state-review",
+    "kind": "ai",
+    "review": ".sdd/review-ledger-compaction.md",
+    "reviewSha": "f526184f5d30da61380f96da48e185deddd3f26ddbb5dd5fac094b8e5fc30b3b",
+    "at": "2026-11-12T07:18:43.588Z",
+    "artifacts": {
+      ".sdd/specs/ledger-compaction.md": "ab5afb1e73d39d1fe9f7f36054450f6c5ae9fe575bc1608786852772536d4d52"
     },
     "tier": "T2",
     "requireHuman": false

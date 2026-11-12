@@ -1,0 +1,116 @@
+{
+  "schemaVersion": 1,
+  "task": "TASK-R34-CLOSURE-001",
+  "sequence": 5,
+  "previous": "d94a1082067881d764170d77192fe6ca4592f24c6a750af33da4f8b06aa43b6f",
+  "definitionSha256": "36941d1a6922a826f7b8d9a244cba4b2009ca643c8f7704b7c3ba67d26b129b0",
+  "inputSha256": "7c728e57ed95d5016b137847ed6419fb788f65e080a5b8ab92a7f2d107abc34b",
+  "status": "FAIL",
+  "exit": 1,
+  "checks": [
+    {
+      "name": "regression-1",
+      "argv": [
+        "node",
+        "--test",
+        "--test-name-pattern",
+        "^(?:.*\\b(?:TEST-R34-CLOSURE-001|TEST-R34-CLOSURE-002|TEST-R34-CLOSURE-003|TEST-R34-CLOSURE-004|TEST-R34-INTEGRATION-003))(?![0-9A-Za-z])",
+        ".github/skills/lean-sdd-tdd/scripts/sdd.test.mjs"
+      ],
+      "timeoutMs": 600000,
+      "exit": 1,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/0b42073a24ceced3e7b5f3db0006b89bf92375e6f06f624bbd9fe0268c9bf3f5/attempt-a094350b-193d-4c4c-98e6-1a66eef85b0d/0.log",
+        "sha256": "5b9309ea48eb38362d1f368187c030bfa557abdceab9cc2951da00526ec6fc07",
+        "bytes": 4255
+      }
+    }
+  ],
+  "ledgerEvents": [
+    {
+      "test": "TEST-R34-CLOSURE-001",
+      "hashes": [
+        "08716d6526bc16c83239b92a28dabcf11971a4daf5951db2ad70da81200818e0",
+        "0f5bc00802250213ff1c8ec343c478ec3cd4575aee080a0c12b9f84973631bd7",
+        "19c433ba5751f95d4d245595145bd59306c1344a57b996d1153ac88e103ecb3c",
+        "1c56548ff9b8d872562bac73072343c8903bfcad9382d33f19cead4e72799dda",
+        "56d31037d5180a50d5f75d373e8f0ae1f783abf2cdc9f63fb185ba4af0be944a",
+        "642e4a0503de3b79ed63aa25b222cb4c8c234fbfd6e81463b34d310ccfd84d45",
+        "905f2c3160a0882ab243ebf1f1ecf38e5485f095f1eadb8f69113c4af6436a07",
+        "ad9beaf48974a615512f080ce3f0899a65a739f0ff4549908f2af97f2de9306b",
+        "cb40b590177bad4a4f9e89ce655988f80da73e78a8be820ab6e9fc50d06bc44e",
+        "d4c189590cd6af02a96828512a4ede13ea26c119884a8898a77b2a31368151e8"
+      ]
+    },
+    {
+      "test": "TEST-R34-CLOSURE-002",
+      "hashes": [
+        "68ab51698801020e84ca52815442bf87157f06181b4638c0e03796c232911100",
+        "77c91487b88bb261c2f9c921db1993ea63aebcc21370b33e199c2a428ac77ac9",
+        "7ee097f7c48a6113e2ab43692ed367c14534740db1fd5726bc5475f228e10bdf",
+        "81296567f36afbc8ac763ceed4d3076f4549cb935546259d2a06a59a5b8518ee",
+        "c67187cfb3a046ffd1c3742d0d761b87fbc15bcd72a2fc2e6dc8e8c7e47ed4d9",
+        "d2ca17ef376c9a92bb521c8c03b947aa1c6ad6301e28606a0b6146190e613bad",
+        "d7ffcf29dae86c0bdbe41765f8d0cd4a59c6bf93cb9ad365870d9c78fbf9e4dd",
+        "e23b69e10cd1652107d5164b4caee32af78670e0d39252f73c7e168bd787a091",
+        "f0fb112e7810051c7ec3125c58c452c1c92ccc8a68a65a12a46b71757077b437",
+        "fe2f428d468a18aae02f1ef1e9b90548d5993292a64cd167d5f8bdc32fca00d7"
+      ]
+    },
+    {
+      "test": "TEST-R34-CLOSURE-003",
+      "hashes": [
+        "09e749f56ed91b2fa8d7701ec10838926f6728d31ee1804ce2169144d69e56dc",
+        "22043b363dafd5ea4c7e663c78aea3b088f841a46a3ef42858aa58c51c02245f",
+        "2a4755554de5ab4cc33e6daaad1906b0ba2d3788b07f23114d424e22529a470e",
+        "3bc51f51994306a9b4b9ca9cd209831c8132133e10ac924f32c908448b645677",
+        "674adefe6ab562ed07b90cd3df79b9b84f6051ac4f9e6984b7e2514a301b2294",
+        "6796aa4be79e2fca6045102be8aebc01453bc41a73db27d0c6f9e0eab433da38",
+        "c0ae8b2fb3fc75d882e41345a721f582c064a109d1c288d73e7246ef87259fd5",
+        "c8b3f5ec322ebed2f44c4aa31b8bcbfa2b6e5b86d36077780f821ed59aef0d97",
+        "e2882c2a21e7ab07ec2a4a0880b0646de0603da65f3b66b087a77979a3300e47",
+        "ede67d1f2b7018e3dc5f460bde88ba15a5bdff964fddce91f74211fe21708c70"
+      ]
+    },
+    {
+      "test": "TEST-R34-CLOSURE-004",
+      "hashes": [
+        "15e65b9308d3dc32e05f1baa358aa6645d72a3a53d31c2c6f6ae30ea554a4635",
+        "26a92c6fb7684d4c3d220dcc4c7082d10761d3e02f3232675804be1b653513c4",
+        "508152dfc699d08a1eac29b69af3b8772e1d2501fc3882b375888937039e652e",
+        "5ffe4a7992182e8ede150a6df01ec80143bae4ccb9768b5ae8284335f5164c4f",
+        "7547bbf0d2a5ad0a9304d2f2d2b59a285c6c29413194463044fdc4d132e9f8df",
+        "a84973d6a2d86d2bc861acb2a63cd43beba71449c1fad649a6a2da34bdda1582",
+        "aa30b057fcfadaeaffba880639276753ab1b6e69750801e25624f69e65006523",
+        "deebf69bd8749380f353d3529ed0314be1ba66ef49fc25041cc0b5354cab61d4",
+        "e19aa3fbebf6dbd358afae4a5e98def1930d9c63d47369dc7ededc605e29f475",
+        "f5348bc1d5a4fbd064f70b0ede93aec50b59f5997cf73d0665adcd1c9b91d7b3"
+      ]
+    },
+    {
+      "test": "TEST-R34-INTEGRATION-003",
+      "hashes": [
+        "17d15a2aff6c63deece3314f7ec697ed6d4d2704659f36fd38ccda06e68841fb",
+        "5c21ebf240a705848565a3ccc32814e1bf13db2445010e431a5172a03e3d3f69",
+        "7a1d116f8b01b8f9db7dbc139857d8f80af3ce60eb229a5c0a6bf515c7743fca",
+        "7cf8d48088316efe5630558342076fd0106bd0c283eea46e36f782fc1674b5cc",
+        "8b3c7612673e4bd310a1a8a659694dfca750b825fc00118f058a55bd5292718f",
+        "a18301d7a53ef5e9eafbd241d25f4962ea7173d404e3c5379db6b4b4a1a04d32",
+        "a8e205843291bd16ff86da37de49ea8130174ec25c4f08efc1aafe988339fdf0",
+        "afcc2b9c16545c9c64fba7171a5547ecd0daa0e0faf13347dd81c0ce5884c8a1",
+        "b88458e8d2734b4821ee755b6010c5887b1ed2a3dcd54b9626e5c6909b5257c3",
+        "d92a5772b982468809568c15e0e4b2edbcb236abec60ad9afed5be86994bbcc4"
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "id": "TASK-R34-CLOSURE-001",
+      "exit": 1,
+      "reason": "regression-1: native verification exited 1"
+    }
+  ]
+}

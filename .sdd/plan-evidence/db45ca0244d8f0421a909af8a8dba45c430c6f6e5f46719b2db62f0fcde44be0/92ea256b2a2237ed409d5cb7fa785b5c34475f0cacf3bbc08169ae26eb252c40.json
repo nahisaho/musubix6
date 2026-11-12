@@ -1,0 +1,96 @@
+{
+  "schemaVersion": 1,
+  "task": "TASK-COST-HISTORY-002",
+  "sequence": 26,
+  "previous": "bdc084f3a7ca782a4cfb36745d6f0a189bdc896539f5dc98229e706fa543887f",
+  "definitionSha256": "2340ec52d360eabffebcffb60b06ed88ddcd1c81c67baaaec709a68ad92f0848",
+  "inputSha256": "c92d3f286b93a7868fff63af80baa3e022f15e313e6c956fdbbd255052e69d3a",
+  "status": "PASS",
+  "exit": 0,
+  "checks": [
+    {
+      "name": "regression-1",
+      "argv": [
+        "node",
+        "--test",
+        "--test-name-pattern",
+        "^(?:.*\\b(?:TEST-COST-HISTORY-002))(?![0-9A-Za-z])",
+        "scripts/cost-log.test.mjs"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/db45ca0244d8f0421a909af8a8dba45c430c6f6e5f46719b2db62f0fcde44be0/attempt-cfb466a3-bc9e-44c3-8e27-b421e3c3ee12/0.log",
+        "sha256": "f44c2437074134a8b68d78c29cf979233cf8628ddb7aab51ce7823ccb36394f9",
+        "bytes": 231
+      }
+    },
+    {
+      "name": "native-TEST-COST-HISTORY-002",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/tmp/musubix6-ledger-compaction-28d27536/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-COST-HISTORY-002",
+        "--root",
+        "/tmp/musubix6-ledger-compaction-28d27536"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/db45ca0244d8f0421a909af8a8dba45c430c6f6e5f46719b2db62f0fcde44be0/attempt-cfb466a3-bc9e-44c3-8e27-b421e3c3ee12/1.log",
+        "sha256": "808c0cf133faec2a2fdc41dc008dd33b2bc756b4f6d8b47b704504f380cf47e2",
+        "bytes": 64
+      }
+    }
+  ],
+  "ledgerEvents": [
+    {
+      "test": "TEST-COST-HISTORY-002",
+      "hashes": [
+        "10ceb9539962bd161c9726f1a9bbb940c9e38f04699c475bdc1e9dbe9734450d",
+        "1a699723129ac8f70097e3a816b70b9c41fb2cbae89494df477c009e187eb162",
+        "20a5e7e3b90949128d470b218aac1bf427b73af3d7efd4685394a29e699511f5",
+        "360a70e6c1b2ab0c180a4da0d7cb40f3caea511d1f5bc3c9d48dc9e384eaafde",
+        "37acd1f4f088824a8e088f472b8294e015f6a03d2264fe0ec0655911d17eeb54",
+        "390bc5027b0bd6b3a47f72f87d33154413fb37257873907a235897bfd2b69cbd",
+        "3bf87ff371bd66ce4bcaf1ebc6fb8b9a6fcd275f935113d1d0b1865bc7aada64",
+        "3d90ecf82f1b9a13551ff2148321f36085654f6a7bfc1f3b9da914c30b0327c4",
+        "3dfee8094c357ad5b9443c73c77995fc4bc4f96a7bb7d83bd216674c1514d526",
+        "4407a5d34a1d09e3f4b8fba2d46f044e9d689c57bad6f69170c929bd5f79fe1e",
+        "444ca0661cd0f258fec8bc15bb96ddd511d6dd62f86eb7bf2f343336a1377255",
+        "46752d6f4645a2506e0abcb1daa8d8da188d7ef37fc47f6fbdd6c4250f13decd",
+        "4676b052ef41cc1640646633736182effdc5d648d4e5105f488f1b96b6a21967",
+        "4d77a6125814138baa61d88657c30d71dab05f66740f9b8af1db58ea4ddd9cd0",
+        "4f2b3229403743afd5734687007a388c8b1536b93bd2ddcf5a2a9b53bfbd1765",
+        "5622caac195d57d7ad3eeb70dd1b6d078e2e4e0a73388e67f7fa840fafed6bec",
+        "567b50768e5404b49397d2ffedc8f52b6ac2905f97f76f20fe0d8f2bebfe000e",
+        "6b3ec8cec0ceddf4dfbd1e4e30cc0001f959c9c9bd2978e19aea2939e71bd462",
+        "731f48e2e58e16eda2668ec40e846b49bbb213d8d7488c25fd988aba47b2b54f",
+        "73da4f237d67bd5cf8d8e601b2b10bb7e70c7ece8c3976d3d702b5cc337a4589",
+        "76de160cc7661bea8b0de6f2694e48b0bb8053aa5c32feb6ca6dc23ba9e1bc2b",
+        "7b53afe5ae89fdc63f1ab0ed3d49323d03d4b14fb08676764957b1721cbec6ce",
+        "7ef5ca56be41b672e227756ae4ad824486dbfb4f8ccf7901782c4990e12c52fe",
+        "7fffd5528deb945fb51eefac525a46010cfcf4ce1d97a0730d203ed8ca82a40c",
+        "8dcc992cc301a78da69899ff7c07d0219d5608e645e251185ff7f06fa6f2631a",
+        "a104308f37bf966f5d674be1f3871c0eb4c5698bef609321ff6eeaf5ae814b4c",
+        "b89cc8ab129e7e64909703f98b277b90d18e32fac5087483ae8cb832a2c378f4",
+        "c6c9b6bec8e9d87bc2be32f777ca9ca2b33ca5bf4c3a40b26ce1970411536066",
+        "e711bf01c99e115a2c5ee7d8077056a4be50ee72debb7d8a4cea60fae3347516",
+        "e8d2a74c100cc2e07bf0dee276ba24c40b99a9a4abcdca894b4a13fbdf740e0c",
+        "ef628d74c4efe5552bd95838f7620ddf3f3f04139452c4b26d5ecb927e82f04c",
+        "f1dbb688c49c11dcf6aafe6fbef433af085ec8964862a3e53bae54961bc6795f",
+        "fda14ab33a52197a6d39972d55a667fd4463b77c9be4f00ff8b412a824359b18",
+        "fdb7577a5c637d5a8a5354f21af1a3a64da3132d0bdd3e7049fe3105c4fe5b1d"
+      ]
+    }
+  ],
+  "errors": []
+}

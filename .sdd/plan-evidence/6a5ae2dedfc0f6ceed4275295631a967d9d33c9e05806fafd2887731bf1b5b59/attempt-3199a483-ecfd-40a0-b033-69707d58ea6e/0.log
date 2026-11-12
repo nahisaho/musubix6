@@ -1,0 +1,30 @@
+✖ TEST-DIAGCLI-006 explicit profiles, invalid input and all144 policy rows (111.5084ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 188.209645
+
+✖ failing tests:
+
+test at .github/skills/lean-sdd-tdd/scripts/diagnostics-profiles.test.mjs:127:1
+✖ TEST-DIAGCLI-006 explicit profiles, invalid input and all144 policy rows (111.5084ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  2 !== 0
+  
+      at TestContext.<anonymous> (file:///tmp/musubix6-ledger-compaction-28d27536/.github/skills/lean-sdd-tdd/scripts/diagnostics-profiles.test.mjs:129:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 2,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

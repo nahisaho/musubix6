@@ -150,6 +150,15 @@ Batch: write all tests for a feature, then red each, implement, green each, **on
 ## 3. Rules the script enforces (details: `references/enforced-rules.md`)
 - Spec lock (T2, `approval: human`); REQ line changed after its test's Green ⇒ evidence stale (`tdd refactor` for wording-only, `tdd red`/`green` for behaviour; new requirement = edit spec first, then test).
 - Red before Green with identical test hash; hash-chained `.sdd/tdd.jsonl` (conflict ⇒ `tdd merge-ledger`).
+- Append above2097152 active UTF-8 bytes automatically archives complete rows
+  under `.sdd/tdd-archive/`; preserve that directory, `.sdd/tdd-manifest.json`
+  and `.sdd/tdd.jsonl` together. Never remove historical events or sealed blobs.
+  `$S tdd compact [--dry-run] [--json]` uses the same policy; dry-run is read-only.
+  Read-only evidence refuses occupied writer/recovery states; mutators recover
+  validated interrupted switches only after acquiring safe owner-bound locks.
+  Never steal unknown/live/foreign-host locks based on age. Metadata is bounded
+  to1MiB and logical uncompressed history to64MiB per operation; exceeding bounds
+  is unresolved2, not a truncated pass or permission to delete history.
 - Every REQ has a test, every annotation resolves (orphan/unknown REQ = error); skipped checks ⇒ `INCOMPLETE` (exit 2), never PASS.
 - Human approvals: `--by` must be a real name (generic/`ai` names refused); `approve prepare` first; later `@implements` code change ⇒ gate warning. A REQ with Green evidence deleted from every spec warns (fails under `scopePolicy: strict`) until `approve retire <REQ-ID> --by <human>` (recorded in `.sdd/retired-reqs.json`).
 - Not enforced (agent discipline): PASS-condition/counterexample quality, mutation coverage, security review. Report actual evidence; do not claim the script enforces these obligations.

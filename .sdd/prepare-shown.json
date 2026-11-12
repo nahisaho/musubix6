@@ -12,5 +12,6 @@
   "japanese-prose-naturalness": "1399674c8e6c68d1ee6b7a8c4860ed00fe1498127dbf3313f2d6f0e9c344e147",
   "implementation-feedback": "8bf9839210ddc537a2dc18f68732ccd25a6a95c4db4b2b1e927386902a338569",
   "implementation-feedback-workflow": "1d923d0e83784d9da45baeba32a85ceae620d9358f23382876f6c288df1f200c",
-  "ci-regression-fixtures": "40688b171ff273268c0b9f17f5aa08be41230b95392d6306409ee54c404f9e24"
+  "ci-regression-fixtures": "40688b171ff273268c0b9f17f5aa08be41230b95392d6306409ee54c404f9e24",
+  "ledger-compaction": "f6c882a607063c990b3858ea958afd5639d327be74a0e363b339aedd4a79cb4e"
 }

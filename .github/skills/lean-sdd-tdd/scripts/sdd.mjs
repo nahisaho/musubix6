@@ -1,16 +1,20 @@
 #!/usr/bin/env node
 // Lean SDD/TDD evidence tool. Zero dependencies, Node >= 20.
 // Commands: init | approve prepare|record | guard | tdd red|green|refactor|check | trace | gate | status
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { isUtf8 } from 'node:buffer';
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import { builtinModules } from 'node:module';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import { gzipSync, gunzipSync } from 'node:zlib';
 
-const BOOL = new Set(['allow-setup-red', 'allow-config-weaken', 'missing-module', 'baseline', 'weak', 'changed', 'json', 'no-run', 'verbose', 'help', 'stale', 'report', 'explain']);
+const scriptUrl = pathToFileURL(fs.realpathSync(fileURLToPath(import.meta.url)));
+const isCli = process.argv[1] !== undefined && fs.existsSync(process.argv[1])
+  && fs.realpathSync(process.argv[1]) === fileURLToPath(scriptUrl);
+const BOOL = new Set(['allow-setup-red', 'allow-config-weaken', 'missing-module', 'baseline', 'weak', 'changed', 'json', 'no-run', 'verbose', 'help', 'stale', 'report', 'explain', 'dry-run']);
 function parseArgs(argv) {
   const pos = [];
   const flags = {};
@@ -34,14 +38,15 @@ const CONFIG = path.join(SDD, 'config.json');
 const APPROVALS = path.join(SDD, 'approvals.json');
 const PREPARE_SHOWN = path.join(SDD, 'prepare-shown.json');
 const LEDGER = path.join(SDD, 'tdd.jsonl');
+const LEDGER_INPUTS = [LEDGER, path.join(SDD, 'tdd-manifest.json'), path.join(SDD, 'tdd-archive')];
 const RETIRED_REQS = path.join(SDD, 'retired-reqs.json');
-const planningCommand = ['plan', 'context', 'gate', 'feedback'].includes(pos[0]);
+const planningCommand = isCli && ['plan', 'context', 'gate', 'feedback'].includes(pos[0]);
 let planningModules = [];
 if (planningCommand) {
   try {
-    planningModules = await Promise.all([import('./implementation-plan.mjs'),
-      import('./implementation-plan-evidence.mjs'), import('./implementation-plan-cli.mjs'),
-      import('./implementation-feedback.mjs')]);
+    planningModules = await Promise.all([import(new URL('./implementation-plan.mjs', scriptUrl)),
+      import(new URL('./implementation-plan-evidence.mjs', scriptUrl)), import(new URL('./implementation-plan-cli.mjs', scriptUrl)),
+      import(new URL('./implementation-feedback.mjs', scriptUrl))]);
   } catch (error) {
     if (error.code !== 'ERR_MODULE_NOT_FOUND') throw error;
   }
@@ -1113,10 +1118,7 @@ function approvalProvenance(feature, a) {
   // Pre-event locks remain valid only while unchanged from committed history.
   const committed = spawnSync('git', ['show', 'HEAD:./.sdd/approvals.json'], { cwd: ROOT, encoding: 'utf8' });
   if (committed.status !== 0) return false;
-  const history = spawnSync('git', ['show', 'HEAD:./.sdd/tdd.jsonl'], { cwd: ROOT, encoding: 'utf8' });
-  if (history.status === 0) {
-    try { if (history.stdout.split('\n').filter(Boolean).some((l) => { const e = JSON.parse(l); return e.type === 'approval' && e.feature === feature; })) return false; } catch { return false; }
-  }
+  if (ledgerRows(ledgerStorage.gitBytes('HEAD')).some(e => e.type === 'approval' && e.feature === feature)) return false;
   try { const old = JSON.parse(committed.stdout)[feature]; return !!old && approvalSha(old) === approvalSha(a); } catch { return false; }
 }
 function approvalState(spec) {
@@ -1133,16 +1135,412 @@ function approvalState(spec) {
 }
 
 // ---------- ledger ----------
-function readLedger() {
-  if (!fs.existsSync(LEDGER)) return [];
-  const ls = fs.readFileSync(LEDGER, 'utf8').split('\n').filter(Boolean);
-  if (ls.some((l) => /^(<{7}|={7}|>{7})/.test(l))) { out(`LEDGER CONFLICT: ${rel(LEDGER)} has git merge conflict markers. Run: tdd merge-ledger (keeps both branches' evidence, re-chains the ledger)`); process.exit(2); }
-  return ls.map((l, i) => {
-    let e;
-    try { e = JSON.parse(l); } catch { out(`LEDGER CORRUPT: ${rel(LEDGER)} line ${i + 1} is not valid JSON`); process.exit(2); }
-    if (!e || typeof e !== 'object' || Array.isArray(e)) { out(`LEDGER CORRUPT: ${rel(LEDGER)} line ${i + 1} must be an event object`); process.exit(2); }
-    return e;
+class LedgerError extends Error {
+  constructor(exit, message) { super(`LEDGER ${exit === 1 ? 'FAIL' : 'UNRESOLVED'}: ${message}`); this.exit = exit; }
+}
+const ledgerFail = (exit, message) => { throw new LedgerError(exit, message); };
+const ledgerLimit = 67108864, ledgerMetadataLimit = 1048576, ledgerThreshold = 2097152;
+const ledgerDigest = value => typeof value === 'string' && /^[a-f0-9]{64}$/.test(value);
+const ledgerStamp = stat => stat && [stat.dev, stat.ino, stat.size, stat.mtimeNs, stat.ctimeNs].join(':');
+function ledgerStat(file) {
+  try { return fs.lstatSync(file, { bigint: true }); }
+  catch (error) { if (error.code === 'ENOENT') return null; throw error; }
+}
+function ledgerJson(bytes, label) {
+  if (!isUtf8(bytes)) ledgerFail(2, `${label} is not UTF-8`);
+  try { return JSON.parse(bytes.toString('utf8')); }
+  catch (error) { if (error instanceof SyntaxError) ledgerFail(2, `${label} is not valid JSON`); throw error; }
+}
+function ledgerRows(bytes, label = 'tdd.jsonl') {
+  if (!isUtf8(bytes)) ledgerFail(2, `${label} is not UTF-8`);
+  return bytes.toString('utf8').split('\n').filter(Boolean).map((line, index) => {
+    if (/^(<{7}|={7}|>{7})/.test(line)) ledgerFail(2, `LEDGER CONFLICT: ${label} has merge conflict markers; run tdd merge-ledger`);
+    const event = ledgerJson(Buffer.from(line), `${label} line ${index + 1}`);
+    if (!event || typeof event !== 'object' || Array.isArray(event)) ledgerFail(2, `LEDGER CORRUPT: ${label} line ${index + 1} must be an event object`);
+    return event;
   });
+}
+/** @id CODE-LEDGER-001 @implements REQ-LEDGER-001 REQ-LEDGER-002 REQ-LEDGER-003 REQ-LEDGER-004 REQ-LEDGER-005 REQ-LEDGER-006 */
+class LedgerStorage {
+  constructor(directory) { this.directory = directory; this.owner = null; }
+  file(name) { return path.join(this.directory, name); }
+  io(fn) {
+    try { return fn(); }
+    catch (error) {
+      if (error instanceof LedgerError) throw error;
+      if (error.code) ledgerFail(2, `storage operation unavailable (${error.code}): ${error.message}`);
+      throw error;
+    }
+  }
+  syncDirectory(directory = this.directory) {
+    const fd = fs.openSync(directory, 'r');
+    try { fs.fsyncSync(fd); } finally { fs.closeSync(fd); }
+  }
+  write(file, bytes) {
+    const fd = fs.openSync(file, 'wx', 0o600);
+    try { fs.writeFileSync(fd, bytes); fs.fsyncSync(fd); } finally { fs.closeSync(fd); }
+  }
+  readFile(name, optional = false, limit = ledgerLimit, snapshots = new Map()) {
+    const parts = name.split('/');
+    if (!parts.length || parts.some(part => !part || part === '.' || part === '..')) ledgerFail(2, `unsafe storage path ${name}`);
+    for (let index = 1; index < parts.length; index++) {
+      const directory = this.file(parts.slice(0, index).join('/')), stat = ledgerStat(directory);
+      if (stat && (!stat.isDirectory() || stat.isSymbolicLink())) ledgerFail(2, `unsafe storage directory ${name}`);
+      snapshots.set(directory, ledgerStamp(stat));
+    }
+    const file = this.file(name), before = ledgerStat(file);
+    snapshots.set(file, ledgerStamp(before));
+    if (!before) { if (optional) return null; ledgerFail(2, `missing ${name}`); }
+    if (!before.isFile() || before.isSymbolicLink()) ledgerFail(2, `unsafe storage file ${name}`);
+    if (before.size > BigInt(limit)) ledgerFail(2, `${name} exceeds read budget ${limit}`);
+    const fd = fs.openSync(file, fs.constants.O_RDONLY | (fs.constants.O_NOFOLLOW ?? 0));
+    try {
+      const opened = fs.fstatSync(fd, { bigint: true });
+      if (ledgerStamp(opened) !== ledgerStamp(before)) ledgerFail(2, `${name} changed while opening`);
+      const bytes = Buffer.alloc(Number(opened.size) + 1);
+      let length = 0, count;
+      while (length < bytes.length && (count = fs.readSync(fd, bytes, length, bytes.length - length, null)) > 0) length += count;
+      if (length !== Number(opened.size) || ledgerStamp(fs.fstatSync(fd, { bigint: true })) !== ledgerStamp(before)) ledgerFail(2, `${name} changed while reading`);
+      return bytes.subarray(0, length);
+    } finally { fs.closeSync(fd); }
+  }
+  ownerRecord(bytes) {
+    const owner = ledgerJson(bytes, 'tdd.lock/owner.json');
+    if (!owner || !Number.isSafeInteger(owner.pid) || owner.pid <= 0
+      || typeof owner.host !== 'string' || !owner.host
+      || typeof owner.nonce !== 'string' || !owner.nonce) ledgerFail(2, 'unknown ledger lock owner');
+    return owner;
+  }
+  absent(owner) {
+    if (owner.host !== os.hostname()) return false;
+    try { process.kill(owner.pid, 0); return false; }
+    catch (error) { if (error.code === 'ESRCH') return true; if (error.code === 'EPERM') return false; throw error; }
+  }
+  guard() {
+    if (!this.owner && ledgerStat(this.file('tdd-transition.lock'))) ledgerFail(2, 'ledger ownership transition is active; read-only evidence cannot recover it');
+    const directory = ledgerStat(this.file('tdd.lock'));
+    if (directory) {
+      if (!directory.isDirectory() || directory.isSymbolicLink() || !this.owner) ledgerFail(2, 'ledger writer lock is occupied; read-only evidence cannot recover it');
+      const owner = this.ownerRecord(this.readFile('tdd.lock/owner.json', false, ledgerMetadataLimit));
+      if (owner.nonce !== this.owner.nonce || owner.pid !== process.pid || owner.host !== os.hostname()) ledgerFail(2, 'ledger writer ownership changed');
+    } else if (this.owner) ledgerFail(2, 'ledger writer ownership disappeared');
+    if (ledgerStat(this.file('tdd-recovery.json'))) ledgerFail(2, 'ledger recovery is required; run tdd compact');
+  }
+  assemble(read, archivePresent, { conflicts = false } = {}) {
+    const metadata = read('tdd-manifest.json', true, ledgerMetadataLimit);
+    const manifest = metadata === null ? null : ledgerJson(metadata, 'tdd-manifest.json');
+    if (manifest && (manifest.schemaVersion !== 1 || !Array.isArray(manifest.segments)
+      || Object.keys(manifest).some(key => !['schemaVersion', 'segments'].includes(key)))) ledgerFail(2, 'unsupported or malformed ledger manifest');
+    if (metadata !== null && !manifest) ledgerFail(2, 'malformed ledger manifest');
+    if (!manifest && archivePresent) ledgerFail(2, 'archive storage has no manifest');
+    const chunks = [], archivedEntries = [];
+    let total = 0, next = 1, previous = '';
+    const seen = new Set();
+    for (const segment of manifest?.segments ?? []) {
+      const fields = ['path', 'compressedSha256', 'sha256', 'bytes', 'count', 'firstSeq', 'lastSeq', 'firstPrev', 'lastHash'];
+      if (!segment || typeof segment !== 'object' || Array.isArray(segment)
+        || Object.keys(segment).length !== fields.length || fields.some(key => !Object.hasOwn(segment, key))
+        || typeof segment.path !== 'string' || !/^tdd-archive\/[1-9]\d*-[1-9]\d*-[a-f0-9]{64}\.jsonl\.gz$/.test(segment.path)
+        || !['compressedSha256', 'sha256', 'lastHash'].every(key => ledgerDigest(segment[key]))
+        || !(segment.firstPrev === '' || ledgerDigest(segment.firstPrev))
+        || !['bytes', 'count', 'firstSeq', 'lastSeq'].every(key => Number.isSafeInteger(segment[key]) && segment[key] > 0)) ledgerFail(2, 'malformed or unsafe archive descriptor');
+      if (seen.has(segment.path) || segment.firstSeq !== next || segment.firstPrev !== previous
+        || segment.lastSeq !== segment.firstSeq + segment.count - 1
+        || segment.path !== `tdd-archive/${segment.firstSeq}-${segment.lastSeq}-${segment.compressedSha256}.jsonl.gz`) ledgerFail(1, 'archive ordering or boundary mismatch');
+      seen.add(segment.path);
+      if (segment.bytes > ledgerLimit - total) ledgerFail(2, 'logical ledger exceeds read budget');
+      const compressed = read(segment.path, false, ledgerLimit);
+      if (sha(compressed) !== segment.compressedSha256) ledgerFail(1, `compressed archive digest mismatch: ${segment.path}`);
+      let raw;
+      try { raw = gunzipSync(compressed, { maxOutputLength: segment.bytes }); }
+      catch (error) { if (error.code === 'ERR_BUFFER_TOO_LARGE') ledgerFail(1, 'archive byte length mismatch'); if (error.code?.startsWith('Z_')) ledgerFail(1, 'invalid gzip archive'); throw error; }
+      if (raw.length !== segment.bytes || sha(raw) !== segment.sha256) ledgerFail(1, 'uncompressed archive digest or length mismatch');
+      const rows = ledgerRows(raw, segment.path);
+      if (rows.length !== segment.count || rows[0]?.seq !== segment.firstSeq
+        || rows[0]?.prev !== segment.firstPrev || rows.at(-1)?.seq !== segment.lastSeq
+        || rows.at(-1)?.hash !== segment.lastHash) ledgerFail(1, 'archive event boundary mismatch');
+      if (chunks.length && chunks.at(-1).at(-1) !== 10) ledgerFail(2, 'archive row delimiter missing');
+      chunks.push(raw); archivedEntries.push(...rows); total += raw.length;
+      next = segment.lastSeq + 1; previous = segment.lastHash;
+    }
+    const archivedProblem = verifyChain(archivedEntries);
+    if (archivedProblem) ledgerFail(1, archivedProblem);
+    const tail = read('tdd.jsonl', !manifest, ledgerLimit - total) ?? Buffer.alloc(0);
+    if (tail.length && chunks.length && chunks.at(-1).at(-1) !== 10 && tail[0] !== 10) ledgerFail(2, 'archive/tail row delimiter missing');
+    const bytes = Buffer.concat([...chunks, tail]);
+    if (!conflicts) ledgerRows(bytes);
+    return { bytes, tail, manifest, metadata, archivedEntries };
+  }
+  read(options = {}) {
+    return this.io(() => {
+      const directory = ledgerStat(this.directory);
+      if (directory && (!directory.isDirectory() || directory.isSymbolicLink())) ledgerFail(2, 'unsafe .sdd storage directory');
+      this.guard();
+      const identity = stat => stat && [stat.dev, stat.ino].join(':');
+      const snapshots = new Map();
+      const archive = ledgerStat(this.file('tdd-archive'));
+      if (archive && (!archive.isDirectory() || archive.isSymbolicLink())) ledgerFail(2, 'unsafe archive directory');
+      snapshots.set(this.file('tdd-archive'), ledgerStamp(archive));
+      const state = this.assemble((...args) => this.readFile(...args, snapshots), !!archive, options);
+      for (const [file, stamp] of snapshots) if (ledgerStamp(ledgerStat(file)) !== stamp) ledgerFail(2, 'ledger snapshot changed while reading');
+      if (identity(ledgerStat(this.directory)) !== identity(directory)) ledgerFail(2, 'ledger storage directory changed while reading');
+      this.guard();
+      return state;
+    });
+  }
+  gitBytes(reference = 'HEAD') {
+    return this.io(() => {
+      const git = args => spawnSync('git', args, { cwd: ROOT, encoding: 'utf8', maxBuffer: 64e6, timeout: 60000,
+        env: { ...process.env, LC_ALL: 'C' } });
+      const ok = result => !result.error && !result.signal && result.status === 0;
+      const tree = git(['ls-tree', '-z', reference, '--', './.sdd/tdd.jsonl', './.sdd/tdd-manifest.json', './.sdd/tdd-archive']);
+      if (!ok(tree)) {
+        if (tree.error || tree.signal) ledgerFail(2, `cannot read baseline ledger of ${reference}: ${tree.error?.code || tree.signal}`);
+        const repo = git(['rev-parse', '--is-inside-work-tree']);
+        if (!repo.error && !repo.signal && repo.status === 128 && /not a git repository/.test(repo.stderr)) return Buffer.alloc(0);
+        if (ok(repo) && reference === 'HEAD') {
+          const branch = git(['symbolic-ref', '-q', 'HEAD']);
+          if (ok(branch)) {
+            const ref = git(['show-ref', '--verify', '--quiet', branch.stdout.trim()]);
+            if (!ref.error && !ref.signal && ref.status === 1) return Buffer.alloc(0);
+          }
+        }
+        ledgerFail(2, `cannot read baseline ledger of ${reference}: ${tree.stderr.trim()}`);
+      }
+      const archivePresent = tree.stdout.split('\0').some(row => /040000 tree [a-f0-9]+\t.*\/tdd-archive$/.test(row));
+      const state = this.assemble((name, optional, limit) => {
+        const entry = git(['ls-tree', '-z', reference, '--', `./.sdd/${name}`]);
+        if (!ok(entry)) ledgerFail(2, `cannot inspect baseline ${reference}: ${name}`);
+        if (!entry.stdout) { if (optional) return null; ledgerFail(2, `missing baseline storage ${name}`); }
+        if (!/^100(?:644|755) blob /.test(entry.stdout)) ledgerFail(2, `unsafe baseline storage ${name}`);
+        const result = spawnSync('git', ['show', `${reference}:./.sdd/${name}`], { cwd: ROOT, maxBuffer: Math.min(64e6, limit + 1),
+          timeout: 60000, env: { ...process.env, LC_ALL: 'C' } });
+        if (!ok(result)) ledgerFail(2, `cannot read baseline ledger of ${reference}: ${name} (${result.error?.code || result.signal || result.status})`);
+        if (result.stdout.length > limit) ledgerFail(2, `baseline ${name} exceeds read budget`);
+        return result.stdout;
+      }, archivePresent);
+      const problem = verifyChain(ledgerRows(state.bytes));
+      if (problem) ledgerFail(1, `invalid baseline ledger of ${reference}: ${problem}`);
+      return state.bytes;
+    });
+  }
+  reclaim() {
+    const lock = this.file('tdd.lock'), stat = ledgerStat(lock);
+    if (!stat) return true;
+    if (!stat?.isDirectory() || stat.isSymbolicLink()) ledgerFail(2, 'unknown ledger lock');
+    const bytes = this.readFile('tdd.lock/owner.json', true, ledgerMetadataLimit);
+    if (bytes === null) {
+      if (Date.now() - Number(stat.mtimeMs) > 1000) ledgerFail(2, 'ledger lock owner is unknown; no age permits stealing');
+      return false;
+    }
+    const owner = this.ownerRecord(bytes);
+    if (owner.host !== os.hostname()) ledgerFail(2, 'ledger lock belongs to a different host');
+    if (!this.absent(owner)) return false;
+    if (fs.readdirSync(lock).some(name => name !== 'owner.json')) ledgerFail(2, 'ambiguous ledger reclamation claim');
+    const claim = path.join(lock, 'reclaim');
+    try { this.write(claim, Buffer.from(randomUUID())); }
+    catch (error) { if (error.code === 'EEXIST') ledgerFail(2, 'another ledger reclaimer owns the claim'); throw error; }
+    if (ledgerStamp(ledgerStat(lock))?.split(':').slice(0, 2).join(':') !== ledgerStamp(stat).split(':').slice(0, 2).join(':')
+      || !this.readFile('tdd.lock/owner.json', false, ledgerMetadataLimit).equals(bytes) || !this.absent(owner)) ledgerFail(2, 'ledger owner changed during reclamation');
+    fs.unlinkSync(path.join(lock, 'owner.json'));
+    fs.unlinkSync(claim);
+    fs.rmdirSync(lock);
+    this.syncDirectory();
+    return true;
+  }
+  withTransition(fn) {
+    const owner = { pid: process.pid, host: os.hostname(), nonce: randomUUID() };
+    const temporary = this.file(`.tdd-transition-${owner.nonce}`);
+    const claim = this.file('tdd-transition.lock'), started = Date.now();
+    this.write(temporary, Buffer.from(JSON.stringify(owner) + '\n'));
+    let acquired = false;
+    try {
+      for (;;) {
+        try {
+          // A hard link publishes a fully written claim without overwriting an owner.
+          fs.linkSync(temporary, claim); acquired = true; this.syncDirectory(); break;
+        } catch (error) {
+          if (error.code !== 'EEXIST') throw error;
+          const bytes = this.readFile('tdd-transition.lock', true, ledgerMetadataLimit);
+          if (bytes !== null) {
+            const current = this.ownerRecord(bytes);
+            if (current.host !== os.hostname() || this.absent(current)) ledgerFail(2, 'interrupted or foreign ledger transition requires manual investigation');
+          }
+          if (Date.now() - started > 30000) ledgerFail(2, 'ledger transition is still active after30s');
+          Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 25);
+        }
+      }
+      return fn();
+    } finally {
+      if (acquired) {
+        const current = this.ownerRecord(this.readFile('tdd-transition.lock', false, ledgerMetadataLimit));
+        if (current.nonce !== owner.nonce || current.pid !== owner.pid || current.host !== owner.host) ledgerFail(2, 'cannot release changed ledger transition ownership');
+        fs.unlinkSync(claim);
+      }
+      fs.unlinkSync(temporary); this.syncDirectory();
+    }
+  }
+  withLock(fn) {
+    return this.io(() => {
+      if (this.owner) return fn();
+      fs.mkdirSync(this.directory, { recursive: true });
+      if (ledgerStat(this.directory)?.isSymbolicLink()) ledgerFail(2, 'unsafe .sdd storage directory');
+      const lock = this.file('tdd.lock'), started = Date.now();
+      const owner = { pid: process.pid, host: os.hostname(), nonce: randomUUID() };
+      for (;;) {
+        const acquired = this.withTransition(() => {
+          if (ledgerStat(lock) && !this.reclaim()) return false;
+          fs.mkdirSync(lock, { mode: 0o700 });
+          this.write(path.join(lock, 'owner.json'), Buffer.from(JSON.stringify(owner) + '\n'));
+          this.syncDirectory(lock); this.syncDirectory();
+          return true;
+        });
+        if (acquired) break;
+        if (Date.now() - started > 30000) ledgerFail(2, 'ledger writer is still active after30s');
+        Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 25);
+      }
+      this.owner = owner;
+      try { this.recover(); return fn(); }
+      finally {
+        this.withTransition(() => {
+          const current = this.ownerRecord(this.readFile('tdd.lock/owner.json', false, ledgerMetadataLimit));
+          if (current.nonce !== owner.nonce) ledgerFail(2, 'cannot release changed ledger ownership');
+          fs.unlinkSync(path.join(lock, 'owner.json')); fs.rmdirSync(lock);
+        });
+        this.owner = null; this.syncDirectory();
+      }
+    });
+  }
+  recover() {
+    const bytes = this.readFile('tdd-recovery.json', true, ledgerMetadataLimit);
+    if (bytes === null) return;
+    const journal = ledgerJson(bytes, 'tdd-recovery.json');
+    if (!journal || Object.keys(journal).length !== 6 || journal.schemaVersion !== 1 || !/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/.test(journal.nonce)
+      || ![journal.oldTail, journal.oldManifest].every(value => value === null || ledgerDigest(value))
+      || ![journal.newTail, journal.newManifest].every(ledgerDigest)) ledgerFail(2, 'malformed recovery journal');
+    const stage = `.tdd-stage-${journal.nonce}`;
+    const newTail = this.readFile(`${stage}/tail`), newManifest = this.readFile(`${stage}/manifest`, false, ledgerMetadataLimit);
+    if (sha(newTail) !== journal.newTail || sha(newManifest) !== journal.newManifest) ledgerFail(1, 'recovery staging digest mismatch');
+    const currentTail = this.readFile('tdd.jsonl', true), currentManifest = this.readFile('tdd-manifest.json', true, ledgerMetadataLimit);
+    const tailHash = currentTail === null ? null : sha(currentTail), manifestHash = currentManifest === null ? null : sha(currentManifest);
+    if (![journal.oldTail, journal.newTail].includes(tailHash) || ![journal.oldManifest, journal.newManifest].includes(manifestHash)
+      || manifestHash === journal.newManifest && manifestHash !== journal.oldManifest
+        && tailHash !== journal.newTail) ledgerFail(1, 'impossible interrupted ledger state');
+    const manifest = ledgerJson(newManifest, 'recovery manifest');
+    const staged = new Map();
+    const state = this.assemble((name, optional, limit) => {
+      if (name === 'tdd.jsonl') return newTail;
+      if (name === 'tdd-manifest.json') return newManifest;
+      const published = this.readFile(name, true, limit);
+      if (published !== null) return published;
+      const value = this.readFile(`${stage}/${path.basename(name)}`, optional, limit);
+      if (value !== null) staged.set(name, value);
+      return value;
+    }, true);
+    const problem = verifyChain(ledgerRows(state.bytes));
+    if (problem) ledgerFail(1, `invalid recovery ledger: ${problem}`);
+    if (manifest.segments.length) {
+      fs.mkdirSync(this.file('tdd-archive'), { recursive: true });
+      for (const [name, value] of staged) {
+        const source = this.file(`${stage}/${path.basename(name)}`);
+        if (!fs.readFileSync(source).equals(value)) ledgerFail(1, 'staged archive changed');
+        fs.linkSync(source, this.file(name));
+      }
+      this.syncDirectory(this.file('tdd-archive'));
+    }
+    if (tailHash !== journal.newTail) this.publish(`${stage}/tail`, 'tdd.jsonl', newTail);
+    if (manifestHash !== journal.newManifest) this.publish(`${stage}/manifest`, 'tdd-manifest.json', newManifest);
+    this.syncDirectory();
+    fs.unlinkSync(this.file('tdd-recovery.json')); this.syncDirectory();
+    this.cleanupStage(stage);
+  }
+  publish(source, destination, bytes) {
+    const temporary = this.file(source + '.switch');
+    if (ledgerStat(temporary)) {
+      if (!this.readFile(source + '.switch').equals(bytes)) ledgerFail(1, 'recovery switch digest mismatch');
+    } else this.write(temporary, bytes);
+    fs.renameSync(temporary, this.file(destination));
+    this.syncDirectory();
+  }
+  cleanupStage(stage) {
+    const directory = this.file(stage);
+    for (const name of fs.readdirSync(directory)) {
+      if (!/^(?:tail|manifest)(?:\.switch)?$|^[1-9]\d*-[1-9]\d*-[a-f0-9]{64}\.jsonl\.gz$/.test(name)) ledgerFail(2, 'unknown staged ledger file');
+      this.readFile(`${stage}/${name}`);
+      fs.unlinkSync(path.join(directory, name));
+    }
+    fs.rmdirSync(directory); this.syncDirectory();
+  }
+  replace(bytes, old, preservePrefix = false) {
+    if (!this.owner) ledgerFail(2, 'ledger replacement requires writer ownership');
+    if (bytes.length > ledgerLimit) ledgerFail(2, 'logical ledger exceeds read budget');
+    const rows = ledgerRows(bytes), problem = verifyChain(rows);
+    if (problem) ledgerFail(1, problem);
+    const nonce = this.owner.nonce, stage = `.tdd-stage-${nonce}`;
+    if (ledgerStat(this.file(stage))) ledgerFail(2, 'unresolved staging directory');
+    fs.mkdirSync(this.file(stage), { mode: 0o700 });
+    const manifest = { schemaVersion: 1, segments: preservePrefix ? [...(old.manifest?.segments ?? [])] : [] };
+    const prefixBytes = preservePrefix ? old.bytes.length - old.tail.length : 0;
+    if (!bytes.subarray(0, prefixBytes).equals(old.bytes.subarray(0, prefixBytes))) ledgerFail(1, 'archived prefix changed during compaction');
+    let tail = bytes.subarray(prefixBytes);
+    if (tail.length > ledgerThreshold) {
+      const firstSeq = (manifest.segments.at(-1)?.lastSeq ?? 0) + 1;
+      const compressed = gzipSync(tail), compressedSha256 = sha(compressed);
+      const segment = { path: `tdd-archive/${firstSeq}-${rows.length}-${compressedSha256}.jsonl.gz`,
+        compressedSha256, sha256: sha(tail), bytes: tail.length, count: rows.length - firstSeq + 1,
+        firstSeq, lastSeq: rows.length, firstPrev: rows[firstSeq - 1].prev, lastHash: rows.at(-1).hash };
+      manifest.segments.push(segment);
+      this.write(this.file(`${stage}/${path.basename(segment.path)}`), compressed);
+      tail = Buffer.alloc(0);
+    }
+    const metadata = Buffer.from(JSON.stringify(manifest) + '\n');
+    if (metadata.length > ledgerMetadataLimit) ledgerFail(2, 'ledger manifest exceeds metadata budget');
+    this.write(this.file(`${stage}/tail`), tail);
+    this.write(this.file(`${stage}/manifest`), metadata);
+    this.syncDirectory(this.file(stage)); this.syncDirectory();
+    const journal = { schemaVersion: 1, nonce, oldTail: old.tailExists ? sha(old.tail) : null,
+      oldManifest: old.metadata === null ? null : sha(old.metadata), newTail: sha(tail), newManifest: sha(metadata) };
+    this.write(this.file(`${stage}/journal`), Buffer.from(JSON.stringify(journal) + '\n'));
+    this.syncDirectory(this.file(stage));
+    fs.renameSync(this.file(`${stage}/journal`), this.file('tdd-recovery.json'));
+    this.syncDirectory();
+    this.recover();
+  }
+  append(line) {
+    return this.io(() => {
+      const state = this.read(), delimiter = state.bytes.length && state.bytes.at(-1) !== 10 ? '\n' : '';
+      const addition = Buffer.from(delimiter + line + '\n');
+      if (state.bytes.length + addition.length > ledgerLimit) ledgerFail(2, 'logical ledger exceeds read budget');
+      if (state.tail.length + addition.length > ledgerThreshold) {
+        this.replace(Buffer.concat([state.bytes, addition]), { ...state, tailExists: !!ledgerStat(this.file('tdd.jsonl')) }, true);
+      } else {
+        const fd = fs.openSync(this.file('tdd.jsonl'), fs.constants.O_WRONLY | fs.constants.O_APPEND | fs.constants.O_CREAT | (fs.constants.O_NOFOLLOW ?? 0), 0o600);
+        try { fs.writeFileSync(fd, addition); fs.fsyncSync(fd); } finally { fs.closeSync(fd); }
+        this.syncDirectory();
+      }
+    });
+  }
+  compact(dryRun = false) {
+    const action = () => {
+      const state = this.read(), problem = verifyChain(ledgerRows(state.bytes)) ?? ledgerRegression();
+      if (problem) ledgerFail(1, problem);
+      const changed = state.tail.length > ledgerThreshold;
+      if (changed && !dryRun) this.replace(state.bytes, { ...state, tailExists: !!ledgerStat(this.file('tdd.jsonl')) }, true);
+      return { changed, dryRun, activeBytes: changed ? 0 : state.tail.length, logicalBytes: state.bytes.length };
+    };
+    return dryRun ? action() : this.withLock(action);
+  }
+}
+const ledgerStorage = new LedgerStorage(SDD);
+/** @id CODE-LEDGER-READ-001 @implements REQ-LEDGER-005 REQ-LEDGER-006 */
+export function readLedgerHistory(root) {
+  const bytes = new LedgerStorage(path.join(path.resolve(root), '.sdd')).read().bytes;
+  const problem = verifyChain(ledgerRows(bytes));
+  if (problem) ledgerFail(1, problem);
+  return bytes;
+}
+function readLedger() {
+  return ledgerRows(ledgerStorage.read().bytes);
 }
 const entryHash = (e) => { const { hash, ...rest } = e; return sha(JSON.stringify(rest)); };
 function ledgerEventProblem(e) {
@@ -1189,18 +1587,7 @@ function verifyChain(entries) {
 }
 // exclusive lock so concurrent tdd runs cannot fork the hash chain (#109)
 function withLedgerLock(fn) {
-  fs.mkdirSync(SDD, { recursive: true });
-  const lock = path.join(SDD, 'tdd.lock');
-  const t0 = Date.now();
-  for (;;) {
-    try { fs.mkdirSync(lock); break; } catch (err) {
-      if (err.code !== 'EEXIST') throw err;
-      try { if (Date.now() - fs.statSync(lock).mtimeMs > 15000) { fs.rmdirSync(lock); continue; } } catch { continue; }
-      if (Date.now() - t0 > 30000) { out(`ledger lock ${path.relative(ROOT, lock)} held >30s by another tdd run; remove it if stale`); process.exit(2); }
-      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 25);
-    }
-  }
-  try { return fn(); } finally { try { fs.rmdirSync(lock); } catch {} }
+  return ledgerStorage.withLock(fn);
 }
 function appendLedger(e) {
   withLedgerLock(() => appendLedgerLocked(e));
@@ -1210,44 +1597,22 @@ function appendLedgerLocked(e) {
   const full = { v: 1, seq: entries.length + 1, ...e, at: new Date().toISOString(), prev: entries.at(-1)?.hash ?? '' };
   full.hash = entryHash(full);
   const problem = verifyChain([...entries, full]) ?? ledgerRegression();
-  if (problem) { out(`LEDGER FAIL: ${problem}`); process.exit(1); }
-  fs.mkdirSync(SDD, { recursive: true });
-  fs.appendFileSync(LEDGER, JSON.stringify(full) + '\n');
+  if (problem) ledgerFail(1, problem);
+  ledgerStorage.append(JSON.stringify(full));
 }
 // every baseline ledger entry must survive (ignoring seq/prev/hash, which merge-ledger re-chains); a removed or rewritten one is tampering (#328)
-function ledgerRegression(bref = 'HEAD') {
-  const git = (args) => spawnSync('git', args, { cwd: ROOT, encoding: 'utf8', maxBuffer: 64e6, timeout: 60000, env: { ...process.env, LC_ALL: 'C' } });
-  const failed = (r) => r.error || r.signal || r.status !== 0;
-  const unreadable = (r) => `cannot read baseline ledger of ${bref}: ${r.error?.code || r.signal || r.stderr?.trim() || `git exited ${r.status}`}`;
-  const sh = git(['show', `${bref}:./.sdd/tdd.jsonl`]);
-  // A failed/truncated capture is not an absent ledger. Only a successful tree
-  // lookup, a non-repository, or a verified unborn HEAD can establish absence.
-  if (sh.error || sh.signal) return unreadable(sh);
-  if (sh.status !== 0) {
-    const tree = git(['ls-tree', '-z', bref, '--', './.sdd/tdd.jsonl']);
-    if (!failed(tree)) return tree.stdout === '' ? null : unreadable(sh);
-    if (tree.error || tree.signal) return unreadable(tree);
-    const repo = git(['rev-parse', '--is-inside-work-tree']);
-    if (!repo.error && !repo.signal && repo.status === 128 && /not a git repository/.test(repo.stderr)) return null;
-    if (failed(repo)) return unreadable(repo);
-    if (bref === 'HEAD') {
-      const branch = git(['symbolic-ref', '-q', 'HEAD']);
-      if (!failed(branch)) {
-        const ref = git(['show-ref', '--verify', '--quiet', branch.stdout.trim()]);
-        if (!ref.error && !ref.signal && ref.status === 1) return null;
-        if (ref.error || ref.signal) return unreadable(ref);
-      }
-    }
-    return unreadable(tree);
-  }
+function ledgerRegression(bref = 'HEAD', candidate) {
+  const baseline = ledgerStorage.gitBytes(bref);
   const key = (l) => { try { const { seq, prev, hash, ...r } = JSON.parse(l); return JSON.stringify(r); } catch { return l; } };
-  let current;
-  try { current = fs.readFileSync(LEDGER, 'utf8'); } catch (err) {
-    if (err.code !== 'ENOENT') return `cannot read current ledger ${rel(LEDGER)}: ${err.code || err.message}`;
-    current = '';
-  }
-  const cur = new Set(current.split('\n').filter(Boolean).map(key));
-  const lost = sh.stdout.split('\n').filter(Boolean).map(key).filter((k) => !cur.has(k));
+  const current = (candidate ?? ledgerStorage.read().bytes).toString('utf8');
+  const cur = new Map();
+  for (const line of current.split('\n').filter(Boolean)) { const k = key(line); cur.set(k, (cur.get(k) ?? 0) + 1); }
+  const lost = baseline.toString('utf8').split('\n').filter(Boolean).map(key).filter(k => {
+    const remaining = cur.get(k) ?? 0;
+    if (!remaining) return true;
+    cur.set(k, remaining - 1);
+    return false;
+  });
   return lost.length ? `${lost.length} ledger entr${lost.length === 1 ? 'y' : 'ies'} of ${bref} removed or modified in ${rel(LEDGER)} (truncation/rewrite; only appends or tdd merge-ledger are allowed)` : null;
 }
 let REQ_SHA = null;
@@ -4665,7 +5030,11 @@ function testName(testPath, id) {
 
 // merging two branches that both appended to the ledger: union of both sides (deduped), ordered by time, re-chained (#79)
 function mergeLedger() {
-  if (!fs.existsSync(LEDGER)) { out('no ledger'); return 2; }
+  return withLedgerLock(() => mergeLedgerLocked());
+}
+function mergeLedgerLocked() {
+  const storage = ledgerStorage.read({ conflicts: true });
+  if (!storage.bytes.length) { out('no ledger'); return 2; }
   const seen = new Set();
   const es = [];
   // the leading run of intact, correctly chained lines is kept byte-identical (#213)
@@ -4673,7 +5042,7 @@ function mergeLedger() {
   let prefixOpen = true;
   let prev = '';
   let at = -Infinity;
-  for (const l of fs.readFileSync(LEDGER, 'utf8').split('\n')) {
+  for (const l of storage.bytes.toString('utf8').split('\n')) {
     if (!l.trim() || /^(<{7}|={7}|>{7})/.test(l)) { if (l.trim()) prefixOpen = false; continue; }
     let e;
     try { e = JSON.parse(l); } catch { out(`LEDGER CORRUPT: cannot parse line: ${l.slice(0, 80)}`); return 2; }
@@ -4699,7 +5068,10 @@ function mergeLedger() {
   const outLines = [...kept, ...tail.map((e, i) => { const full = { v: 1, seq: kept.length + i + 1, ...e, prev }; delete full.hash; full.hash = entryHash(full); prev = full.hash; return JSON.stringify(full); })];
   const problem = verifyChain(outLines.map((l) => JSON.parse(l)));
   if (problem) { out(`LEDGER FAIL: ${problem}`); return 1; }
-  fs.writeFileSync(LEDGER, outLines.join('\n') + '\n');
+  const merged = Buffer.from(outLines.join('\n') + '\n');
+  const regression = ledgerRegression('HEAD', merged);
+  if (regression) ledgerFail(1, regression);
+  if (!merged.equals(storage.bytes)) ledgerStorage.replace(merged, { ...storage, tailExists: !!ledgerStat(LEDGER) });
   out(`ledger merged: ${outLines.length} entries (${kept.length} unchanged, ${tail.length} re-chained; review with git diff; tdd check)`);
   return 0;
 }
@@ -5060,6 +5432,12 @@ function sharedImplStale(t, ents, entries) {
 function cmdTdd() {
   const sub = pos[1];
   if (sub === 'merge-ledger') return mergeLedger();
+  if (sub === 'compact') {
+    if (pos.length !== 2 || Object.keys(flags).some(key => !['root', 'json', 'dry-run'].includes(key))) { out('usage: tdd compact [--dry-run] [--json]'); return 2; }
+    const result = ledgerStorage.compact(flags['dry-run'] === true);
+    out(flags.json ? JSON.stringify(result) : `ledger compact: ${result.changed ? flags['dry-run'] ? 'would archive' : 'archived' : 'unchanged'} (${result.logicalBytes} logical bytes)`);
+    return 0;
+  }
   const files = listFiles();
   const { ents, dups } = scanEntities(files);
   if (sub === 'check') {
@@ -6342,10 +6720,10 @@ function checkDefClosure(cfg, read = null, knownFiles = null) {
           if (++ordinaryCount > 200000) refuse(token, '200000 contextual source tokens');
         }
         if (token === 'cd' && ts[i + 1]) { cwd = path.resolve(cwd, ts[++i]); continue; }
-        if (/^(?:node|npm|pnpm|yarn|bun|npx|bunx)(?:\.cmd)?$/.test(exe)) nodeDefinitions(cwd);
-        const wrapperEnv = /^((?:CARGO_BUILD_)?RUSTC(?:_WORKSPACE)?_WRAPPER)=(.*)$/.exec(token);
+        if (command && /^(?:node|npm|pnpm|yarn|bun|npx|bunx)(?:\.cmd)?$/.test(exe)) nodeDefinitions(cwd);
+        const wrapperEnv = command ? /^((?:CARGO_BUILD_)?RUSTC(?:_WORKSPACE)?_WRAPPER)=(.*)$/.exec(token) : null;
         if (wrapperEnv) compilerWrapper(wrapperEnv[2], cwd, cwd, wrapperEnv[1].toLowerCase().replaceAll('_', '-').replace(/^cargo-build-/, ''));
-        if (/^(npm|pnpm|yarn|bun)$/.test(exe)) {
+        if (command && /^(npm|pnpm|yarn|bun)$/.test(exe)) {
           let j = i + 1, packageCwd = cwd;
           while (/^(--prefix|--cwd|-C|--dir)$/.test(ts[j] ?? '') && ts[j + 1]) {
             packageCwd = path.resolve(cwd, ts[j + 1]); j += 2;
@@ -6408,8 +6786,8 @@ function checkDefClosure(cfg, read = null, knownFiles = null) {
             }
           }
         }
-        if (/^tsc(?:\.cmd)?$/.test(exe)) tsDefinitions(suffix(ts, i + 1), cwd);
-        if (/^(make|gmake)$/.test(exe)) {
+        if (command && /^tsc(?:\.cmd)?$/.test(exe)) tsDefinitions(suffix(ts, i + 1), cwd);
+        if (command && /^(make|gmake)$/.test(exe)) {
           let makeCwd = cwd;
           const inputs = [];
           inspectBudget(ts.length - i - 1);
@@ -6425,7 +6803,7 @@ function checkDefClosure(cfg, read = null, knownFiles = null) {
         if (!pythonSource && (token === 'import' || token === 'from')) {
           if (ts[i + 1]) pythonModule(ts[i + 1], cwd, sourceDir);
         }
-        const resolved = (i === 0 || /^(?:node|python[\d.]*|pytest|cargo|go|dotnet|npm|pnpm|yarn|bun|make|gmake|sh|bash|env)$/.test(exe)) ? resolve(token, cwd) : null;
+        const resolved = (i === 0 || command && /^(?:node|python[\d.]*|pytest|cargo|go|dotnet|npm|pnpm|yarn|bun|make|gmake|sh|bash|env)$/.test(exe)) ? resolve(token, cwd) : null;
         if (resolved && (i === 0 || /^(?:node|python[\d.]*|pytest|cargo|go|dotnet|npm|pnpm|yarn|bun|make|gmake|sh|bash|env)$/.test(exe))) {
           if (/^python[\d.]*$/.test(exe)) file(path.join(path.dirname(path.dirname(resolved)), 'pyvenv.cfg'), cwd, undefined, true);
           /** @id CODE-R36C-CLOSURE-002 @implements REQ-R36C-CLOSURE-001 */
@@ -6868,7 +7246,7 @@ function gateSpecPaths() {
   try { return fs.readdirSync(SPECS).filter((f) => f.endsWith('.md')).map((f) => `.sdd/specs/${f}`); } catch { return []; }
 }
 function gateInputSnapshot(specs, ents, cfg) {
-  const paths = new Set([CONFIG, LEDGER, APPROVALS, RETIRED_REQS, BASELINE].map(rel));
+  const paths = new Set([CONFIG, ...LEDGER_INPUTS, APPROVALS, RETIRED_REQS, BASELINE].map(rel));
   for (const s of specs) for (const f of s.artifacts) paths.add(rel(path.resolve(ROOT, f)));
   for (const a of Object.values(readJson(APPROVALS, {}))) if (a.reviewSha && a.review) paths.add(rel(path.resolve(ROOT, a.review)));
   for (const e of ents.values()) paths.add(e.path);
@@ -6989,7 +7367,7 @@ function planningSession(specs, scanned) {
     const loader = preview ? loadImplementationPlanBindings : loadImplementationPlan;
     const loaded = loader({ root: ROOT, config, specs: metadata });
     if (loaded.exit) return loaded;
-    const nativeScript = fileURLToPath(import.meta.url);
+    const nativeScript = fileURLToPath(scriptUrl);
     const nativeChecks = task => task.tests.map(id => ({ name: `native-${id}`,
       argv: [process.execPath, nativeScript, 'tdd', 'refactor', id, '--root', ROOT],
       timeoutMs: Math.min(config.timeoutMs ?? 600000, 600000) }));
@@ -7006,20 +7384,14 @@ function planningSession(specs, scanned) {
         const { ents, dups } = preview ? scanned : scanEntities(listFiles());
         const tool = sha(['sdd.mjs', 'implementation-plan.mjs', 'implementation-plan-evidence.mjs',
           'implementation-plan-cli.mjs', 'spec-context.mjs', 'implementation-feedback.mjs'].map(file => file + '\0'
-            + sha(fs.readFileSync(new URL(file, import.meta.url)))).join('\0'));
+            + sha(fs.readFileSync(new URL(file, scriptUrl)))).join('\0'));
         const trace = traceCheck(ents, dups, currentSpecs), ledgerErrors = [];
         let entries = [], ledgerUnavailable = false;
         try {
-          const fd = fs.openSync(LEDGER, 'r');
-          try {
-            if (fs.fstatSync(fd).size > 67108864) throw new PlanningError(2, 'native-ledger', 'Native ledger exceeds read budget');
-            const bytes = fs.readFileSync(fd);
-            if (bytes.length > 67108864) throw new PlanningError(2, 'native-ledger', 'Native ledger exceeds read budget');
-            entries = new TextDecoder('utf-8', { fatal: true }).decode(bytes).split('\n').filter(Boolean).map(line => JSON.parse(line));
-          } finally { fs.closeSync(fd); }
+          entries = ledgerRows(ledgerStorage.read().bytes);
         } catch (error) {
           if (error.code !== 'ENOENT') {
-            if (error instanceof PlanningError) ledgerErrors.push({ exit: error.exit, reason: error.message });
+            if (error instanceof PlanningError || error instanceof LedgerError) ledgerErrors.push({ exit: error.exit, reason: error.message });
             else if (error instanceof SyntaxError || error instanceof TypeError || error.code) {
               ledgerErrors.push({ exit: 2, reason: 'Native ledger is unavailable or unparseable' });
             } else throw error;
@@ -7480,7 +7852,7 @@ function cmdGate() {
         if (r2.exit === 0 && !r2.timedOut && !NO_PASSED.test(r2.text) && !pytestNoExecution(r2.text) && !noExecution(r2.text) && (!r2.pytestResults || (r2.pytestResults.some((x) => x.outcome === 'passed') && !r2.pytestResults.some((x) => x.outcome === 'failed'))) && !missingPytestIds(r2, cmd, c.cwd, ents).length && !missingNodeIds(r2, cmd, c.cwd, ents).length) {
           add(warnOnly, `cmd ${c.name} FLAKY suspected: failed on the first run, passed on re-run ${i + 1}/${retries} (${(r2.ms / 1000).toFixed(1)}s) — a flaky entry was appended to .sdd/tdd.jsonl (commit it)${warnOnly ? ' — accepted by flaky.policy "warn"' : ' — set flaky.policy "warn" in .sdd/config.json to accept, or fix the test (no sleep, injected clock, port 0, generous timeouts)'}`, failTail(r.text, 8).split('\n'));
           appendLedger({ type: 'flaky', check: c.name, retry: i + 1, retries, policy: warnOnly ? 'warn' : 'fail', outcome: warnOnly ? 'accepted' : 'fail', attempts: captured });
-          inputSnapshot.set(rel(LEDGER), gatePathSha(rel(LEDGER)));
+          for (const file of LEDGER_INPUTS) inputSnapshot.set(rel(file), gatePathSha(rel(file)));
           r = null;
           break;
         }
@@ -8154,7 +8526,7 @@ function impactOne(target, collect = false) {
 }
 
 async function cmdContext() {
-  const { runContext } = await import('./spec-context.mjs');
+  const { runContext } = await import(new URL('./spec-context.mjs', scriptUrl));
   const planning = planningSession();
   if (planning.exit) return emitPlanningResult({ ...planning, stage: 'context' }, flags.json);
   return runContext({ ROOT, pos, flags, loadSpecs, loadPlan, changedFiles, workspaceFiles, impactOne,
@@ -8163,11 +8535,12 @@ async function cmdContext() {
 
 /** @id CODE-DIAGFLOW-001 @implements REQ-DIAGFLOW-001 REQ-DIAGFLOW-003 */
 async function cmdDiagnostics() {
-  const { runDiagnostics } = await import('./diagnostics.mjs');
+  const { runDiagnostics } = await import(new URL('./diagnostics.mjs', scriptUrl));
   return runDiagnostics(process.argv.slice(2));
 }
 
 const cmds = { review: cmdReview, init: cmdInit, approve: cmdApprove, guard: cmdGuard, tdd: cmdTdd, trace: cmdTrace, gate: cmdGate, status: cmdStatus, plan: cmdPlan, feedback: cmdFeedback, impact: cmdImpact, context: cmdContext, diagnostics: cmdDiagnostics };
+if (isCli) {
 const fn = Object.hasOwn(cmds, pos[0]) ? cmds[pos[0]] : undefined;
 // a mistyped flag (`gate --changd`) must not silently run the full gate (#146)
 // known flags = every flags.<name> / flags['<name>'] this script reads
@@ -8179,6 +8552,7 @@ if (fn && badFlags.length && pos[0] !== 'diagnostics') {
 }
 const usage = 'usage: sdd.mjs init | review template <feature|--feature f> | review check <file> --feature <f> (or positional feature) | approve prepare|record <feature> | guard | tdd red|green|refactor <TEST-ID> | tdd stub <TEST-ID> [<TEST-ID>... | --all] | tdd check | trace [--baseline] | gate [--changed] [--no-run] | status | plan | plan check [--json] | plan verify TASK [--json] | plan bindings [--json] | feedback status [FEATURE] [--json] | feedback record FEATURE [--json] | impact <REQ|TEST|CODE|file> [--json] | context <feature|REQ|file>... | context --changed [--max-bytes N] [--json] | diagnostics [--profile typescript|javascript|python|rust] [--json]   [--root dir]\n  tdd red: tdd red --characterization "<reason>" records a data-only/characterization test that cannot fail without implementation (weak Red); --expect <text> requires that text in the failure; --allow-setup-red accepts a stub-in-setup Red; --retest "<reason>" re-records a weak Red after correcting a wrong test expectation (needs a previous Red/Green and a changed test); --missing-module accepts a Red caused by the test own not-yet-created import (non-weak); approve record --by ai:<reviewer> needs --review <path|summary>';
 /** @id CODE-PLAN-CLI-HELP @implements REQ-PLAN-CLI-008 */
+const ledgerUsage = '\n  tdd compact [--dry-run] [--json]: lossless gzip archival; appends automatically archive above2 MiB. Mutators recover interrupted rotation under writer ownership; read-only checks never recover. Keep .sdd/tdd-manifest.json, .sdd/tdd-archive/ and .sdd/tdd.jsonl together. Unknown/live locks are never stolen; investigate their owner before manual recovery.';
 function validHelp() {
   const command = pos[0] === 'help' ? pos[1] : pos[0];
   if (Object.keys(flags).some(flag => !KNOWN_FLAGS.has(flag) && !(command === 'diagnostics' && flag === 'profile'))) return false;
@@ -8194,7 +8568,7 @@ function validHelp() {
   if (command === 'impact') return args.length === 1;
   if (command === 'approve') return args.length <= 2 && ['prepare', 'record', 'retire'].includes(args[0]);
   if (command === 'review') return args.length <= 3 && ['template', 'check'].includes(args[0]);
-  if (command === 'tdd') return ['check', 'merge-ledger'].includes(args[0]) && args.length === 1
+  if (command === 'tdd') return ['check', 'merge-ledger', 'compact'].includes(args[0]) && args.length === 1
     || ['red', 'green', 'refactor'].includes(args[0]) && args.length <= 2
     || args[0] === 'stub' && args.slice(1).every(id => /^TEST-[A-Z0-9]+(?:-[A-Z0-9]+)*$/.test(id));
   return false;
@@ -8203,10 +8577,10 @@ if (pos[0] === 'diagnostics' && flags.help
   && Object.keys(flags).some(flag => !['help', 'root', 'profile'].includes(flag))) {
   process.exitCode = await cmdDiagnostics();
 } else if (flags.help || pos[0] === 'help') {
-  out(usage);
+  out(usage + ledgerUsage);
   process.exitCode = validHelp() ? 0 : 2;
 } else {
-  if (!fn) { out(usage); process.exit(2); }
+  if (!fn) { out(usage + ledgerUsage); process.exit(2); }
   if (planningCommand && !planningModules.length) {
     const refusal = standalonePlanningRefusal();
     if (refusal) {
@@ -8217,8 +8591,12 @@ if (pos[0] === 'diagnostics' && flags.help
   /** @id CODE-PLAN-CLI-006 @implements REQ-PLAN-CLI-004 */
   try { process.exitCode = await fn() ?? 0; }
   catch (error) {
-    if (!/^REFUSED: (?:source scan:|unresolved (?:Rust include (?:oracle|ownership)|pytest_plugins|Python (?:relative import|module)))/.test(error.message)) throw error;
-    out(error.message);
-    process.exit(1);
+    if (error instanceof LedgerError) { out(error.message); process.exitCode = error.exit; }
+    else {
+      if (!/^REFUSED: (?:source scan:|unresolved (?:Rust include (?:oracle|ownership)|pytest_plugins|Python (?:relative import|module)))/.test(error.message)) throw error;
+      out(error.message);
+      process.exit(1);
+    }
   }
+}
 }

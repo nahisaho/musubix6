@@ -4,6 +4,57 @@ open: 0
 
 # CI fixture review
 
+## Ledger-compaction shared-artifact follow-up
+
+Independent retained Claude Sonnet5.5 integration reviewer
+877ef8ec-d754-4cb2-80ac-edef246478f7 reviewed the two owned test diffs against
+62f3a77bea20c92037eaa83cf2d985c3ef550bd8 and reported bounded CLEAN.
+The canonical CI contract remains
+2ae0796b125a369eea494cf1135639cd4e85152cf43bba29b2211571dfb62e60.
+Current sdd.test.mjs SHA256 is
+5bf8c282f28eded3aaa58c90a83319e4dddd957c6461d33f2a5cd7740822f644;
+release-qualification.test.mjs is
+f3c1d5a9c71abd201ef86dee1faeba1eaba551d3ae3e4b819857c48f49fdfe3a.
+The release module adds196 lines without deleting existing fixture controls.
+The retained compiler-dispatch regression is additive. Two legacy unreadable
+Git-baseline assertions intentionally change exit1 to unresolved exit2 under
+the approved ledger contract; diagnostic, no-PASS/no-RECORDED and unchanged
+history assertions remain. This is not a successful-evidence fallback.
+Historical snapshot binding, lazy Git-free registration and all28 host
+adapters remain unchanged.
+
+The reviewer ran no tests. The parent subsequently executed the actual complete
+npm suite:1225 passed,0 failed,0 skipped. Native task verification and the full
+development gate remain separate pending stages. This renews only the AI
+shared-artifact lock, not frozen qualification or publication authorization.
+
+## Preflight dispatch regression artifact follow-up
+
+The CI specification remains2ae0796b125a369eea494cf1135639cd4e85152cf43bba29b2211571dfb62e60.
+Its shared sdd.test.mjs artifact changed from the approved b0810139e648802f6c2e59d4f1ad435612f6a1f96903a9ff3948cf150830c86a
+to770daff22f2e4e3d2b56159fd8ca9e40e1512eb5cf78107eb357f0529457fdfd:
+only the30-line TEST-R34-CLOSURE-005 addition, with no deletions or edits to
+existing fixtures, help assertions or qualification controls. The historical
+implementation-feedback hash recorded below belongs to that earlier review,
+not the current artifact.
+
+Independent Claude Sonnet5.5 reviewers419fa690-c413-4a83-ab6c-652fbabcd1f2
+and dcb0a2ef-4cb6-4cd3-b0a0-346f74721758 each returned CLEAN CI ARTIFACT
+FOLLOW-UP for this same delta after their two clean preflight review rounds.
+Both confirmed the exact current test hash and unchanged SDK6a656fb1 and
+canonical legacy specification c40c1cfd. This justifies normal renewal of
+the unchanged CI contract's AI artifact lock.
+
+Neither reviewer executed tests or re-audited the other three CI artifacts.
+The evidence reviewer scanned, rather than fully read, the historical CI
+requirements; its preservation conclusion rests on the bounded addition-only
+diff. No independent execution attestation is claimed. The parent's focused
+suite passed6/6 without skips; native Red/Green, both detected/restored
+dispatch mutations and five native refactors are recorded in the existing
+legacy-command-closure specification. Fresh CI task verification, whole-plan
+consistency and the full development gate remain required. This is not
+qualification credit, human release approval or publication authorization.
+
 ## Current inventory-adapter integration artifact follow-up
 
 The regression module now also contains the approved additive revision2

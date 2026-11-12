@@ -1,0 +1,11 @@
+✔ TEST-DIAGCLI-PROCSTATE-001 distinguishes terminal transitions from live unknown and failed probes (3.232362ms)
+✔ TEST-DIAGCLI-CLOSE-001 checks close-time deadlines and retains native failures during descendant cleanup (526.707775ms)
+✔ TEST-DIAGCLI-005 no writes, installs, emit, caches or evidence and no snapshot promotion (2462.941964ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3242.691701

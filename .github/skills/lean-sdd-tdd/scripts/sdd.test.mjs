@@ -11349,7 +11349,7 @@ require('node:module').syncBuiltinESMExports();
       const before = fs.readFileSync(path.join(d, '.sdd/tdd.jsonl'), 'utf8');
       const result = spawnSync('node', ['--require', preload, SDD, '--root', d, ...args], { encoding: 'utf8', env: ENV });
       const output = result.stdout + result.stderr;
-      assert.equal(result.status, 1, output);
+      assert.equal(result.status, 2, output);
       assert.match(output, /cannot read .*ledger.*HEAD|cannot read .*HEAD.*ledger/i, output);
       assert.doesNotMatch(output, /SDD GATE PASS|LEDGER OK|REFACTOR RECORDED/, output);
       assert.equal(fs.readFileSync(path.join(d, '.sdd/tdd.jsonl'), 'utf8'), before);
@@ -11360,7 +11360,7 @@ require('node:module').syncBuiltinESMExports();
 test('r32a #347 invalid explicit baseline cannot silently disable ledger comparison', () => {
   const { d } = r31dLedgerFixture();
   const result = sdd(d, 'gate', '--baseline', 'missing-baseline');
-  assert.equal(result.code, 1, result.out);
+  assert.equal(result.code, 2, result.out);
   assert.match(result.out, /cannot read .*ledger.*missing-baseline|cannot read .*missing-baseline.*ledger/i, result.out);
 });
 
@@ -13086,6 +13086,36 @@ test('TEST-R34-CLOSURE-002 r34f #362 real installed TypeScript launcher reaches 
     controls.push(`${file} restored=${restored.ms.toFixed(1)}ms`);
   }
   console.log(`r34 TypeScript ${pkg.version}, ${fs.statSync(bundle).size} bytes: Red=${red.ms.toFixed(1)}ms Green=${green.ms.toFixed(1)}ms gate=${valid.ms.toFixed(1)}ms; ${controls.join('; ')}`);
+});
+
+/** @id TEST-R34-CLOSURE-005 @verifies REQ-R34-CLOSURE-001 */
+test('TEST-R34-CLOSURE-005 ordinary source identifiers avoid redundant command dispatch', () => {
+  const { d, cp, cfg } = r34fFixture();
+  fs.mkdirSync(path.join(d, 'tools'));
+  const source = Array.from({ length: 150 }, (_, index) => `// identifier${index}\n`).join('').repeat(2500);
+  fs.writeFileSync(path.join(d, 'tools/bundle.cjs'), source);
+  cfg.checks = ['first', 'second'].map(name => ({ name, cmd: ['node', 'tools/bundle.cjs'] }));
+  fs.writeFileSync(cp, JSON.stringify(cfg));
+  const measured = path.join(work, 'r34-command-dispatch.mjs');
+  fs.writeFileSync(measured, fs.readFileSync(SDD, 'utf8').replace("import fs from 'node:fs';", [
+    "import fs from 'node:fs';",
+    'let commandProbes = 0;',
+    'const dispatchSources = new Set([/^(make|gmake)$/.source, /^tsc(?:\\.cmd)?$/.source]);',
+    'const originalTest = RegExp.prototype.test;',
+    'RegExp.prototype.test = function(value) {',
+    '  if (dispatchSources.has(this.source) && ++commandProbes > 100) process.exit(73);',
+    '  return originalTest.call(this, value);',
+    '};',
+    "process.on('exit', () => console.log('R34_COMMAND_PROBES=' + commandProbes));",
+  ].join('\n')));
+  const result = spawnSync(process.execPath, [measured, '--root', d, 'tdd', 'red', 'TEST-A-001'],
+    { encoding: 'utf8', env: ENV, timeout: 15000 });
+  assert.ifError(result.error);
+  assert.equal(result.signal, null, result.stderr);
+  assert.equal(result.status, 0, 'Ordinary identifiers must not consume command-dispatch probes:\n' + result.stdout + result.stderr);
+  const probes = Number(/R34_COMMAND_PROBES=(\d+)/.exec(result.stdout)?.[1]);
+  assert.ok(Number.isInteger(probes) && probes <= 100, result.stdout);
+  assert.equal(testEvidence(d).length, 1, 'The valid failing application test must still record its Red');
 });
 
 /** @id TEST-R34-CLOSURE-003 @verifies REQ-R34-CLOSURE-001 */

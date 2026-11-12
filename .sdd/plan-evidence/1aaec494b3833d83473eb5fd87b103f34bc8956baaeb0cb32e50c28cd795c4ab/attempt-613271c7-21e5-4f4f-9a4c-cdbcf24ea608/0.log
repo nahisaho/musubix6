@@ -1,0 +1,17 @@
+r36f v24.22.1 /home/nahisaho/.nvm/versions/node/v24.22.1/bin/node: #363 r35a source init preserves explicit target/cwd invariants and existing options from /tmp/musubix6-ledger-compaction-28d27536 => /tmp/musubix6-ledger-compaction-28d27536/.sdd-test-r35a-work-0RPetl/r35a-init-pmG9j3
+r36f v24.22.1 /home/nahisaho/.nvm/versions/node/v24.22.1/bin/node: #363 r35a packed installation preserves bin version/list/init/sdd contracts from /tmp/musubix6-ledger-compaction-28d27536 => /tmp/musubix6-ledger-compaction-28d27536/.sdd-test-r35a-work-7jSdpq/r35a-pack-oKMA4d
+r36f v24.22.1 /home/nahisaho/.nvm/versions/node/v24.22.1/bin/node: #363 r35a admission rejects unknown init flags without writes from /tmp/musubix6-ledger-compaction-28d27536 => /tmp/musubix6-ledger-compaction-28d27536/.sdd-test-r35a-work-D13jnf/r35a-admission-eMbJqt
+r36f v24.22.1 /home/nahisaho/.nvm/versions/node/v24.22.1/bin/node: #363 r35a admission packed extraction and installation reject invalid init without writes from /tmp/musubix6-ledger-compaction-28d27536 => /tmp/musubix6-ledger-compaction-28d27536/.sdd-test-r35a-work-jOInNN/r35a-admission-pack-2ALeWX
+r36f v24.22.1 /home/nahisaho/.nvm/versions/node/v24.22.1/bin/node: #363 r35a source init preserves explicit target/cwd invariants and existing options from /tmp/musubix6-ledger-compaction-28d27536/.github/skills/lean-sdd-tdd/scripts => /tmp/musubix6-ledger-compaction-28d27536/.sdd-test-r35a-work-TdEoTV/r35a-init-IOj3w7
+r36f v24.22.1 /home/nahisaho/.nvm/versions/node/v24.22.1/bin/node: #363 r35a packed installation preserves bin version/list/init/sdd contracts from /tmp/musubix6-ledger-compaction-28d27536/.github/skills/lean-sdd-tdd/scripts => /tmp/musubix6-ledger-compaction-28d27536/.sdd-test-r35a-work-SYNL5w/r35a-pack-Rgy6vX
+r36f v24.22.1 /home/nahisaho/.nvm/versions/node/v24.22.1/bin/node: #363 r35a admission rejects unknown init flags without writes from /tmp/musubix6-ledger-compaction-28d27536/.github/skills/lean-sdd-tdd/scripts => /tmp/musubix6-ledger-compaction-28d27536/.sdd-test-r35a-work-Oy4EGN/r35a-admission-elrcba
+r36f v24.22.1 /home/nahisaho/.nvm/versions/node/v24.22.1/bin/node: #363 r35a admission packed extraction and installation reject invalid init without writes from /tmp/musubix6-ledger-compaction-28d27536/.github/skills/lean-sdd-tdd/scripts => /tmp/musubix6-ledger-compaction-28d27536/.sdd-test-r35a-work-pM8cz3/r35a-admission-pack-fTZpYq
+✔ #370 TEST-R36F-LAYOUT-001 r35a fixtures stay outside distributed payload from either cwd (20920.3951ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 23441.778697

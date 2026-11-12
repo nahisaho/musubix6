@@ -1,0 +1,9 @@
+✔ TEST-SPECCTX-002 closes dependencies and artifacts, rejects ambiguous or escaped inputs (1126.388555ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1196.542844

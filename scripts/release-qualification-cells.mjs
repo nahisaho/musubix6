@@ -6,6 +6,7 @@ import { ensure, equal, sha, fileSha, json, mkdir, save, execute, retainProcess,
 import { parseEvents, namedControl, processControl, ownedAssertion, assertionReason, validateNativeGate } from './release-qualification-evidence.mjs';
 import { contentCaseCatalogue, runContentCell, validateContentRun } from './release-qualification-content-mutations.mjs';
 import { taskDefinitionSha256, containedPlanningPath } from '../.github/skills/lean-sdd-tdd/scripts/implementation-plan.mjs';
+import { readLedgerHistory } from '../.github/skills/lean-sdd-tdd/scripts/sdd.mjs';
 
 const skillScripts = '.github/skills/lean-sdd-tdd/scripts';
 export const unresolvedMechanisms = Object.freeze({});
@@ -198,23 +199,33 @@ function regularFiles(source, directory) {
   return fs.readdirSync(file).sort().flatMap(name => regularFiles(source, `${directory}/${name}`));
 }
 
+/** @id CODE-LEDGER-STATE-001 @implements REQ-LEDGER-005 */
+function ledgerState(source) {
+  return ['.sdd/tdd.jsonl', ...regularFiles(source, '.sdd/tdd-manifest.json'),
+    ...regularFiles(source, '.sdd/tdd-archive')].sort().map(relative => {
+    const file = containedPlanningPath(source, relative);
+    return { relative, sha256: fileSha(file), bytes: fs.statSync(file).size };
+  });
+}
+
 function gateCatalogue(cell, source) {
   ensure(cell.id === 'INTEGRATED-GATE', 'unexpected mandatory gate identity');
   const plan = json(containedPlanningPath(source, '.sdd/implementation-plan.json'));
   ensure(Array.isArray(plan.tasks) && plan.tasks.length > 0, 'nonempty frozen planning catalogue required');
   const files = [...new Set(['.sdd/config.json', ...regularFiles(source, skillScripts), ...regularFiles(source, 'scripts'),
     ...plan.tasks.flatMap(task => [...task.artifacts, ...Object.keys(task.specs)])])].sort();
+  const ledger = readLedgerHistory(source);
   return [{ name: cell.id, source: path.resolve(source), plan: planningProjection(plan),
     files: files.map(relative => ({ relative, sha256: fileSha(containedPlanningPath(source, relative)) })),
     heads: plan.tasks.map(task => ({ id: task.id, ...historyHead(source, task) })),
     history: regularFiles(source, '.sdd/plan-evidence').map(relative =>
       ({ relative, sha256: fileSha(containedPlanningPath(source, relative)) })),
-    ledger: { bytes: fs.statSync(containedPlanningPath(source, '.sdd/tdd.jsonl')).size,
-      sha256: fileSha(containedPlanningPath(source, '.sdd/tdd.jsonl')) } }];
+    ledger: { bytes: ledger.length, sha256: sha(ledger) } }];
 }
 
 function gateState(source, tasks) {
-  const files = [...new Set(['.sdd/implementation-plan.json', '.sdd/config.json', '.sdd/tdd.jsonl',
+  const files = [...new Set(['.sdd/implementation-plan.json', '.sdd/config.json',
+    ...ledgerState(source).map(row => row.relative),
     ...regularFiles(source, '.sdd/plan-evidence'),
     ...tasks.flatMap(task => [...task.artifacts, ...Object.keys(task.specs)])])].sort();
   return files.map(relative => ({ relative, sha256: fileSha(containedPlanningPath(source, relative)),
@@ -291,7 +302,7 @@ function validateGateReceipt(source, task, row, node) {
     equal(fileSha(log), check.log.sha256);
   }
   equal(receipt.ledgerEvents.map(event => event.test).sort(), [...task.tests].sort());
-  const ledgerHashes = new Set(fs.readFileSync(containedPlanningPath(source, '.sdd/tdd.jsonl'), 'utf8')
+  const ledgerHashes = new Set(readLedgerHistory(source).toString('utf8')
     .trim().split('\n').filter(Boolean).map(line => JSON.parse(line).hash));
   for (const event of receipt.ledgerEvents) {
     ensure(event.hashes.length > 0 && event.hashes.every(hash => /^[a-f0-9]{64}$/.test(hash) && ledgerHashes.has(hash)),
@@ -337,7 +348,7 @@ async function planningGate(context) {
     const fingerprints = new Map(measured.tasks.map(row => [row.id, row.fingerprint]));
     ensure([...fingerprints.values()].every(value => /^[a-f0-9]{64}$/.test(value)), 'complete actual current inputs required');
     const oldState = gateState(source, plan.tasks);
-    const oldLedger = fs.readFileSync(containedPlanningPath(source, '.sdd/tdd.jsonl'));
+    const oldLedger = readLedgerHistory(source);
     const verified = new Map(), verifications = [];
     while (verified.size < plan.tasks.length) {
       const previousBytes = fs.readFileSync(file);
@@ -362,10 +373,10 @@ async function planningGate(context) {
       adoptGatePlan(source, plan, beforeVerify);
       verified.set(task.id, row.fingerprint); verifications.push(row);
     }
-    for (const row of oldState.filter(row => !['.sdd/implementation-plan.json', '.sdd/tdd.jsonl'].includes(row.relative))) {
+    for (const row of oldState.filter(row => !['.sdd/implementation-plan.json', '.sdd/tdd.jsonl', '.sdd/tdd-manifest.json'].includes(row.relative))) {
       equal(fileSha(containedPlanningPath(source, row.relative)), row.sha256);
     }
-    const ledger = fs.readFileSync(containedPlanningPath(source, '.sdd/tdd.jsonl'));
+    const ledger = readLedgerHistory(source);
     equal(ledger.subarray(0, oldLedger.length), oldLedger);
     const admission = await run('final-admission', ['plan', 'check', '--json']);
     const current = JSON.parse(readRef(admission.stdout));
@@ -420,12 +431,13 @@ function validatePlanningGate({ cell, catalogue, evidence }, data) {
   equal(data.gate.cwd, source);
   validateNativeGate(data.gate);
   const before = JSON.parse(gateRef(data.stateBefore)), after = JSON.parse(gateRef(data.stateAfter));
-  equal(before, after); equal(after, gateState(source, plan.tasks));
+  equal(before, after);
+  ensure(JSON.stringify(after) === JSON.stringify(gateState(source, plan.tasks)), 'captured gate state changed');
   const old = JSON.parse(gateRef(data.planning.original));
-  for (const row of old.filter(row => !['.sdd/implementation-plan.json', '.sdd/tdd.jsonl'].includes(row.relative))) {
+  for (const row of old.filter(row => !['.sdd/implementation-plan.json', '.sdd/tdd.jsonl', '.sdd/tdd-manifest.json'].includes(row.relative))) {
     equal(fileSha(containedPlanningPath(source, row.relative)), row.sha256);
   }
-  const ledger = fs.readFileSync(containedPlanningPath(source, '.sdd/tdd.jsonl'));
+  const ledger = readLedgerHistory(source);
   ensure(Number.isSafeInteger(data.planning.oldLedgerBytes) && data.planning.oldLedgerBytes > 0,
     'copied ledger prefix required');
   equal(sha(ledger.subarray(0, data.planning.oldLedgerBytes)), data.planning.oldLedgerSha256);
@@ -582,11 +594,15 @@ async function noChange(context) {
   ensure(/✓ cmd app:test /.test(readRef(changed.stdout)), 'changed project positive control did not execute its test');
   receipts.push(changed);
   save(path.join(work, 'app/data.json'), '{}\n', false);
-  const before = fileSha(path.join(work, '.sdd/tdd.jsonl'));
+  const before = sha(readLedgerHistory(work)), ledgerStateBefore = ledgerState(work);
   const last = await runRecorded(context, 'unchanged-gate', command('gate', '--changed'), 0, work);
   receipts.push(last);
   ensure(/cmd app:test: no changed files/.test(readRef(last.stdout)), 'no-change gate did not disclose unchanged scope');
-  return { status: 'PASS', receipts, beforeLedgerSha256: before, afterLedgerSha256: fileSha(path.join(work, '.sdd/tdd.jsonl')) };
+  const after = sha(readLedgerHistory(work)), ledgerStateAfter = ledgerState(work);
+  ensure(before === after, 'no-change logical history changed');
+  ensure(JSON.stringify(ledgerStateBefore) === JSON.stringify(ledgerStateAfter), 'no-change ledger storage state changed');
+  return { status: 'PASS', source: work, receipts, beforeLedgerSha256: before,
+    afterLedgerSha256: after, ledgerStateBefore, ledgerStateAfter };
 }
 
 async function processSelftest(context) {
@@ -641,7 +657,7 @@ export async function runAdapter(context) {
   throw new Error(`unknown mandatory cell adapter: ${context.cell.id}`);
 }
 
-export function validateAdapter({ cell, catalogue, evidence }) {
+export function validateAdapter({ cell, catalogue, evidence, adapterOutput }) {
   const { text } = cell.kind === 'gate' ? gateProcess(evidence) : processControl(evidence);
   const data = JSON.parse(text);
   ensure(data.status === 'PASS', `${cell.id}: ${(data.blockers || []).join('; ') || 'adapter incomplete'}`);
@@ -680,6 +696,16 @@ export function validateAdapter({ cell, catalogue, evidence }) {
     ensure(/cmd app:test: no changed files/.test(readRef(data.receipts.at(-1).stdout)) &&
       data.receipts.some(receipt => /✓ cmd app:test /.test(readRef(receipt.stdout))),
     'unchanged and changed project controls did not prove their independent scope');
+    ensure(typeof adapterOutput === 'string' && path.isAbsolute(adapterOutput) &&
+      data.source === path.join(adapterOutput, 'unchanged') &&
+      data.source === data.receipts.at(-1).cwd && path.isAbsolute(data.source), 'no-change fixture root mismatch');
+    ensure(/^[a-f0-9]{64}$/.test(data.beforeLedgerSha256) &&
+      data.beforeLedgerSha256 === data.afterLedgerSha256, 'no-change logical history changed');
+    ensure(Array.isArray(data.ledgerStateBefore) && Array.isArray(data.ledgerStateAfter) &&
+      JSON.stringify(data.ledgerStateBefore) === JSON.stringify(data.ledgerStateAfter) &&
+      JSON.stringify(data.ledgerStateAfter) === JSON.stringify(ledgerState(data.source)),
+    'no-change ledger storage state changed');
+    ensure(data.afterLedgerSha256 === sha(readLedgerHistory(data.source)), 'no-change logical history changed');
   } else if (cell.mode === 'package') {
     const receipt = data.packageReceipt;
     ensure(catalogue?.length === 1 && receipt.tgzPath === catalogue[0].packagePath &&

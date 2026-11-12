@@ -1,0 +1,9 @@
+✔ TEST-PLAN-STATE-004 immutable history, bounded parsing, read-only views and explicit doc checks (6983.379532ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 7122.053794

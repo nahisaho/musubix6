@@ -1,0 +1,11 @@
+✔ #373 TEST-R36I-NATIVE-001 real native C/C++ valid and invalid no-op controls retain verdicts (448.397595ms)
+✔ #373 TEST-R36I-PARSE-001 native diagnostics still generate valid throwing C/C++ function stubs (570.503507ms)
+✔ #373 TEST-R36I-LEGACY-001 legacy string probing remains raw with identical native spawn options (5.573347ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3382.814173

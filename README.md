@@ -322,6 +322,40 @@ $S --root <app> tdd green TEST-F-001
 $S --root <app> gate
 ```
 
+### Keep the TDD ledger compact without deleting evidence (development)
+
+This source-checkout feature is not a claim that the published npm version
+includes it. No conversion is needed: an append above **2 MiB (2097152 UTF-8
+bytes)** automatically archives complete rows with gzip. An append exactly at
+the threshold does not rotate. Event bytes, hashes and referenced receipts
+remain intact; even a single oversized row is archived without splitting it.
+
+```sh
+node .github/skills/lean-sdd-tdd/scripts/sdd.mjs tdd compact --dry-run --json
+node .github/skills/lean-sdd-tdd/scripts/sdd.mjs tdd compact --json
+```
+
+`--dry-run` writes nothing. Repeating compaction below the threshold is a no-op.
+Keep and commit `.sdd/tdd.jsonl`, `.sdd/tdd-manifest.json` and all files under
+`.sdd/tdd-archive/` together. Archives are required local evidence, not disposable
+caches; removing them prevents validation. Compaction never deletes events or
+rewrites Git history. Merge recovery uses `tdd merge-ledger`, retaining sealed
+files even when it must create a newly chained stream.
+
+Read-only checks refuse active writer locks and unfinished recovery. A mutating
+`tdd compact` resumes a validated interrupted switch after proving the previous
+local owner is absent. Live, unknown, malformed and foreign-host locks are never
+stolen based on age. Investigate ownership or restore a coherent backup rather
+than deleting a lock or journal blindly. Interrupted lock initialization or a
+reclamation claim can require manual investigation.
+
+Metadata is limited to **1 MiB** and the complete uncompressed logical ledger
+to **64 MiB** per operation, including archive expansion. Exceeding a limit or
+missing/malformed storage returns2 (unresolved); demonstrated integrity or
+baseline-retention failures return1. These limits are not permission to drop old
+history. Local archive/recovery checks currently cover Linux/Node24; actual
+Node20/22 and Windows/macOS validation remain separate required work.
+
 ### Read only the specifications needed for a change (v0.1.2)
 
 Use `context` instead of loading every requirements file into the agent:

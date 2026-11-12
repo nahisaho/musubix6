@@ -1,0 +1,437 @@
+{
+  "schemaVersion": 1,
+  "task": "TASK-LEDGER-COMPACTION",
+  "sequence": 1,
+  "previous": "",
+  "definitionSha256": "c9f11ef20c4e443b6d62538eb995098a578b84424e81cfe2b845339aaac52e50",
+  "inputSha256": "e995b4a2110602d2c6c9df994e275e22bb486f442c1579b5d6a67c848e51f06e",
+  "status": "PASS",
+  "exit": 0,
+  "checks": [
+    {
+      "name": "ledger-compaction",
+      "argv": [
+        "node",
+        "--test",
+        ".github/skills/lean-sdd-tdd/scripts/tdd-ledger.test.mjs"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/20ff5a525d91188d51dab4ea4292337c28e84b3d94fc52e2e6887f42ce43d7df/attempt-dd49721b-876e-4597-b997-fdea6309dff4/0.log",
+        "sha256": "c7082eab6e92063ea506b6b10038f2ccf3bd68f5d442441b6caf95b0b41b96a0",
+        "bytes": 1331
+      }
+    },
+    {
+      "name": "native-TEST-LEDGER-001",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/tmp/musubix6-ledger-compaction-28d27536/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-LEDGER-001",
+        "--root",
+        "/tmp/musubix6-ledger-compaction-28d27536"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/20ff5a525d91188d51dab4ea4292337c28e84b3d94fc52e2e6887f42ce43d7df/attempt-dd49721b-876e-4597-b997-fdea6309dff4/1.log",
+        "sha256": "543b37ed61baed2e6b527d0eaf00bd7c8e80f1e3477f0f7d7abdbf5c10fb11c8",
+        "bytes": 51
+      }
+    },
+    {
+      "name": "native-TEST-LEDGER-002",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/tmp/musubix6-ledger-compaction-28d27536/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-LEDGER-002",
+        "--root",
+        "/tmp/musubix6-ledger-compaction-28d27536"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/20ff5a525d91188d51dab4ea4292337c28e84b3d94fc52e2e6887f42ce43d7df/attempt-dd49721b-876e-4597-b997-fdea6309dff4/2.log",
+        "sha256": "0451166c0006c6938871db03d39871a93b1f7919622b36a49b04108768ee89f0",
+        "bytes": 52
+      }
+    },
+    {
+      "name": "native-TEST-LEDGER-003",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/tmp/musubix6-ledger-compaction-28d27536/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-LEDGER-003",
+        "--root",
+        "/tmp/musubix6-ledger-compaction-28d27536"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/20ff5a525d91188d51dab4ea4292337c28e84b3d94fc52e2e6887f42ce43d7df/attempt-dd49721b-876e-4597-b997-fdea6309dff4/3.log",
+        "sha256": "8505ff0ddd17a54664dd253ecb2e7be151d2915cc4fad0581c6ba389220b8865",
+        "bytes": 52
+      }
+    },
+    {
+      "name": "native-TEST-LEDGER-004",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/tmp/musubix6-ledger-compaction-28d27536/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-LEDGER-004",
+        "--root",
+        "/tmp/musubix6-ledger-compaction-28d27536"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/20ff5a525d91188d51dab4ea4292337c28e84b3d94fc52e2e6887f42ce43d7df/attempt-dd49721b-876e-4597-b997-fdea6309dff4/4.log",
+        "sha256": "bb7569932c815f98cadf41ba153a6a0dc18ec181ef4aa64efe9bd03bc41b38cc",
+        "bytes": 52
+      }
+    },
+    {
+      "name": "native-TEST-LEDGER-005",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/tmp/musubix6-ledger-compaction-28d27536/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-LEDGER-005",
+        "--root",
+        "/tmp/musubix6-ledger-compaction-28d27536"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/20ff5a525d91188d51dab4ea4292337c28e84b3d94fc52e2e6887f42ce43d7df/attempt-dd49721b-876e-4597-b997-fdea6309dff4/5.log",
+        "sha256": "c0465e41f1f941e4f53e86f1e3c4d6256c4ad65a42381145f0b60abd9d6d5937",
+        "bytes": 52
+      }
+    },
+    {
+      "name": "native-TEST-LEDGER-006",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/tmp/musubix6-ledger-compaction-28d27536/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-LEDGER-006",
+        "--root",
+        "/tmp/musubix6-ledger-compaction-28d27536"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/20ff5a525d91188d51dab4ea4292337c28e84b3d94fc52e2e6887f42ce43d7df/attempt-dd49721b-876e-4597-b997-fdea6309dff4/6.log",
+        "sha256": "e6aa6cd5fc289551c3ba8e09c814acea7df5dd187f38ab4563f7ff7cccfc33a7",
+        "bytes": 52
+      }
+    },
+    {
+      "name": "native-TEST-LEDGER-007",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/tmp/musubix6-ledger-compaction-28d27536/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-LEDGER-007",
+        "--root",
+        "/tmp/musubix6-ledger-compaction-28d27536"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/20ff5a525d91188d51dab4ea4292337c28e84b3d94fc52e2e6887f42ce43d7df/attempt-dd49721b-876e-4597-b997-fdea6309dff4/7.log",
+        "sha256": "33b71d1320ea0bb59bca1587e2b2b4fe42135f367db2243cca34f351de76f0c5",
+        "bytes": 51
+      }
+    },
+    {
+      "name": "native-TEST-LEDGER-008",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/tmp/musubix6-ledger-compaction-28d27536/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-LEDGER-008",
+        "--root",
+        "/tmp/musubix6-ledger-compaction-28d27536"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/20ff5a525d91188d51dab4ea4292337c28e84b3d94fc52e2e6887f42ce43d7df/attempt-dd49721b-876e-4597-b997-fdea6309dff4/8.log",
+        "sha256": "624ed61573f03294bd3d3cfc8a26cb65ffad2c4a5464516b8a6ee81e2f2e8306",
+        "bytes": 51
+      }
+    },
+    {
+      "name": "native-TEST-LEDGER-009",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/tmp/musubix6-ledger-compaction-28d27536/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-LEDGER-009",
+        "--root",
+        "/tmp/musubix6-ledger-compaction-28d27536"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/20ff5a525d91188d51dab4ea4292337c28e84b3d94fc52e2e6887f42ce43d7df/attempt-dd49721b-876e-4597-b997-fdea6309dff4/9.log",
+        "sha256": "9c7fe649ce4ec4e27037c048a8ba06dc550533f6d2740080718aec92e651b88d",
+        "bytes": 52
+      }
+    },
+    {
+      "name": "native-TEST-LEDGER-010",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/tmp/musubix6-ledger-compaction-28d27536/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-LEDGER-010",
+        "--root",
+        "/tmp/musubix6-ledger-compaction-28d27536"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/20ff5a525d91188d51dab4ea4292337c28e84b3d94fc52e2e6887f42ce43d7df/attempt-dd49721b-876e-4597-b997-fdea6309dff4/10.log",
+        "sha256": "8a80b3eb74e5a1cb76058700cfab7042ddb39fa33f135e5a2e2b0f888b7c9628",
+        "bytes": 52
+      }
+    },
+    {
+      "name": "native-TEST-LEDGER-011",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/tmp/musubix6-ledger-compaction-28d27536/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-LEDGER-011",
+        "--root",
+        "/tmp/musubix6-ledger-compaction-28d27536"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/20ff5a525d91188d51dab4ea4292337c28e84b3d94fc52e2e6887f42ce43d7df/attempt-dd49721b-876e-4597-b997-fdea6309dff4/11.log",
+        "sha256": "ba3d2de8f446fc05174ab88974f75b3085bc68bc5b179f21057e5edb5c6b66af",
+        "bytes": 51
+      }
+    },
+    {
+      "name": "native-TEST-LEDGER-012",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/tmp/musubix6-ledger-compaction-28d27536/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-LEDGER-012",
+        "--root",
+        "/tmp/musubix6-ledger-compaction-28d27536"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/20ff5a525d91188d51dab4ea4292337c28e84b3d94fc52e2e6887f42ce43d7df/attempt-dd49721b-876e-4597-b997-fdea6309dff4/12.log",
+        "sha256": "b48895b718d8109f60f05962c223bcb9fff0d358049935e2ebec9bec0adaa343",
+        "bytes": 53
+      }
+    },
+    {
+      "name": "native-TEST-LEDGER-013",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/tmp/musubix6-ledger-compaction-28d27536/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-LEDGER-013",
+        "--root",
+        "/tmp/musubix6-ledger-compaction-28d27536"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/20ff5a525d91188d51dab4ea4292337c28e84b3d94fc52e2e6887f42ce43d7df/attempt-dd49721b-876e-4597-b997-fdea6309dff4/13.log",
+        "sha256": "f5c91780f3f0637c5ed333bc6c16524d6d39e3e6cfd2e199e940e68a7c3049ee",
+        "bytes": 52
+      }
+    }
+  ],
+  "ledgerEvents": [
+    {
+      "test": "TEST-LEDGER-001",
+      "hashes": [
+        "50349bdd1a9a8398b5f8f7099a6d432f5bfd4d16b5ece99319dedfc148a24f6d",
+        "8c851204040cd3fc17840f90d1a935ef77bb233d12e28d33559b684f272206aa",
+        "b823b37c26d208a5af718fc7e133531a7e693d64dd2cfdaef97b0dd9f9d1fae5",
+        "cb7e5b3b85d9efa5e82a8ce1be385933ceffb73c4babd780dc48ad1675e246ab"
+      ]
+    },
+    {
+      "test": "TEST-LEDGER-002",
+      "hashes": [
+        "4a4093f3869928a1bf62219d8491c9ed372c4a623279f6897d18e9377c00d93b",
+        "72141b16f3475b8b8aae75c0d23de4ebec0fd99c5c5eb0b542c7fe7078c03e4e",
+        "cc64062c750426f6a53376d733419d65f9ef7c4a7f18fedc3cc2a7c0f2ce5b3a",
+        "e5466846671b302c0af0ae78b7b1b3168aa3d643761f49029ad88e20637b83d7"
+      ]
+    },
+    {
+      "test": "TEST-LEDGER-003",
+      "hashes": [
+        "09ed668d5df823212e594708b3e326c9e0d87e46dd75dd51a79285d1c889f42e",
+        "14c765d2c442aaf09bd36210554cc63a4a95d3522915f1317e6223cf59638d40",
+        "283462d62a02bf95dd2043db0d04f451bdf792cd8bd4ea6a0cd3ba0804ddfe6a",
+        "b56a5c28c06c5963a898a695b4bba5ad5537ffd555f948db25dfeb0ea79889b4"
+      ]
+    },
+    {
+      "test": "TEST-LEDGER-004",
+      "hashes": [
+        "9538ab259889fc13eb6244d7a3a0e81ff46b35a406e09af049e2231496743b16",
+        "a43f9233a040a75389617a9f354db12f097b1ef6ff7d613fa7afbd9a28da84ca",
+        "c2f7b51ee76e7c1b710af98baa50db9c0175f0698c42b2472a0d6339c5aa69d1",
+        "efccb950e896a1b8498c74fba897caa31a40ef0b9afcb69fe9b4e2ca70e1089c"
+      ]
+    },
+    {
+      "test": "TEST-LEDGER-005",
+      "hashes": [
+        "1e99457e2873b63e4e1ce95b401bed26b2baaa16782a3343a3847f33474b7854",
+        "4a8d2ab7808ec54889a8bbdc775e7e075687196bb8992b2186097ed3a0923e0c",
+        "785fd7505294e25dc63bde07d3866d08869c381719e61c14de1a4cf5c67d12ac",
+        "f05ca683c1526ec107b237339f5a1bd76fee007c51ac08c23f6f24bc4810ee89"
+      ]
+    },
+    {
+      "test": "TEST-LEDGER-006",
+      "hashes": [
+        "1e8e9a2fa16fc62bb03a6ad92c7248a90612cb0456f880be2205cd3390075d7c",
+        "50262ba56a0b2babd7eb7f8cf2283059e31639efaf819e753f7c2f306ea44a45",
+        "5631711ac6716c248a990702efa5a35af2144b19f04cb09bb865dba9dd8beb4c",
+        "afb862eb0d1e0bea989dcf42d120021b310d2905773a6a3d00c001f6183b8365"
+      ]
+    },
+    {
+      "test": "TEST-LEDGER-007",
+      "hashes": [
+        "1db89c3e96d2af93cd811d293aa558b3b0d9863b83440a6dc3eaf367b0533248",
+        "29b71e1fe7d92ca263ded23eb6995f0f66625b364b3a4c541032379686d0e5a9",
+        "b51db6467246e2150a0c7770f77b82436967aa12e60141a9114de2d033405f6d",
+        "f63c18a473d76fec7be86f94dd035e4df66206aab10ceecc4f1d3568480a1e92"
+      ]
+    },
+    {
+      "test": "TEST-LEDGER-008",
+      "hashes": [
+        "2857950f18df5f7275e45dea1e335cece441561200f5da2e54b1be569ffb8b15",
+        "58405ad1fc5aa48094f97e411ec4301b69eb5be378400f1109c9f329684b9fa7",
+        "6d6d5602e7c9e571347762894e1a5da843c6feb8ad449dc083e7d9a6be2bfeb2",
+        "df7c773582066a8c22ea48062e48ac0c02d5757f79fa4b2b008b4df878c3b025",
+        "e011dc24be70a4b96442665a24eddde3e3acd9058be7237dfea5b62725150a6d"
+      ]
+    },
+    {
+      "test": "TEST-LEDGER-009",
+      "hashes": [
+        "814605d2c35057efdb3cf0e3fda101f7076080008e5b5a905d751221b54c041d",
+        "c5679d1c7eeba7bbe2da5d11f0649ffe8c8a79488b9450c1bad2477520267150",
+        "cb129ecef9f43b9ea3f86ba19ea7ca78fd8c4f8453d4c60d032cf1fa66c194a4",
+        "e1c62f529a3822406528b30a35527728e06e1af3b53ee6b626438eb6d348dadb"
+      ]
+    },
+    {
+      "test": "TEST-LEDGER-010",
+      "hashes": [
+        "1fd015164ece4b290dfa54748bd3dba45422a2a1ac10d962dfb89de4de64c6d8",
+        "20379c7989030c3a2e6399ce7edad877841b74f37ed0fe91d4fb4f8f32e0bdc7",
+        "2498b0c356bd6f7d87a9e34b15fd8e9a14022383c15f83ce727145f0efe15acb",
+        "7e07b35f1e1ab982c5301c92d33f3268a00094096cd7f0fcd708825afe2a1ed0"
+      ]
+    },
+    {
+      "test": "TEST-LEDGER-011",
+      "hashes": [
+        "31a54c13b82b7d8f6296e10d5f404dd794aa30fb0e90d317af7f67a1d3317fbe",
+        "98e6ff5bc7a6a96e442d023e822937111751f324334f1b5daa5d0eccd13e856d",
+        "e18985cbd03b68d5ccae1dc9940e0d4d8034a35ffd9bb8b35887102c85681c4c",
+        "fe92243d5fffbcba44d0011df9eafaaf5b1b0e3a609c13bb5bf46ddbf1cee6f5"
+      ]
+    },
+    {
+      "test": "TEST-LEDGER-012",
+      "hashes": [
+        "84d2b664847a3f1bf160189cbb335fb81ced7caa736901e1b8ddcfed78f2ceac",
+        "8d20dc16ac2d358b4b9f2deaf7b997f8672dbc3bf811e95b5b77c3706d72b672",
+        "e75ed3c3ac41aa00cf57d599a7a7ba837b02e665a7ab3602905f1841d5309710",
+        "f63ad004eac59e8927ea34fecaf9d1bf05dd2b1778514d32efcb6ce93e24bb7b"
+      ]
+    },
+    {
+      "test": "TEST-LEDGER-013",
+      "hashes": [
+        "434478360726bfd011608bdd98884b71e0ef5acab22f89ce02d9063411581fb4",
+        "7ec361b86da8f8fc9b93c5209f3ec0730150e9be9a3edb57c8cc1653d9883967",
+        "e4dce08eeb34c30a85c48fc73c98a3b29fe4c85438de048c6abebe8617639ae7",
+        "fe3fde964748c01655966883bbdb6f004ea4edb70ca8a1c58135ce54ca65892c"
+      ]
+    }
+  ],
+  "errors": []
+}

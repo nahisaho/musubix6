@@ -1,0 +1,71 @@
+{
+  "schemaVersion": 1,
+  "task": "TASK-DIAGJS-002",
+  "sequence": 5,
+  "previous": "9292220aba8f05e212f6878563ebcaf2573d8faa75b740c51e1e82df35bf6cbe",
+  "definitionSha256": "7755a63726f1ec6264e2e60dbfb1e10739e4ee8202f42dbb17e8463bdaed9dc2",
+  "inputSha256": "049ce7ebb777f043f7f81fdb70972343a5d184307ebafd78d7122cc4e8fced72",
+  "status": "PASS",
+  "exit": 0,
+  "checks": [
+    {
+      "name": "regression-1",
+      "argv": [
+        "node",
+        "--test",
+        "--test-name-pattern",
+        "^(?:.*\\b(?:TEST-DIAGJS-002))(?![0-9A-Za-z])",
+        ".github/skills/lean-sdd-tdd/scripts/diagnostics-profiles.test.mjs"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/c5a298190217cce97bb2e14dd20f12039278c72ff1f9b21c0f53dbcbba07a4e1/attempt-3f904312-c88a-461f-8ed9-cba233ee3df2/0.log",
+        "sha256": "af37b6fedff566a7651169e17a865c2e108a9e7de5df58c18fa443b08f0683cd",
+        "bytes": 207
+      }
+    },
+    {
+      "name": "native-TEST-DIAGJS-002",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/tmp/musubix6-ledger-compaction-28d27536/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-DIAGJS-002",
+        "--root",
+        "/tmp/musubix6-ledger-compaction-28d27536"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/c5a298190217cce97bb2e14dd20f12039278c72ff1f9b21c0f53dbcbba07a4e1/attempt-3f904312-c88a-461f-8ed9-cba233ee3df2/1.log",
+        "sha256": "7b97d039008d751c4df622ac49bfbe376eb298789fd5cf1744bda06f15bbbc4e",
+        "bytes": 51
+      }
+    }
+  ],
+  "ledgerEvents": [
+    {
+      "test": "TEST-DIAGJS-002",
+      "hashes": [
+        "0f621a4f2a8a98888679cde191fe2311f16bcea822c24df3f8ac223f43cdd1d0",
+        "2aea05a48788b82203525794262a5113a45c902c3c6b64edc099de6ff10d5a2f",
+        "319a22d6aebf41dba2873bef591e79c7ab553fd3e6a02f6404dee06ef97b2a4a",
+        "4c614fea36e2f0a19c92f5e977886336627a39ce06da581e1dfb67754a4a9711",
+        "623091b8da192bdf130d9e87931c26f841d268e89f08fb4563bf03df6e32b4d8",
+        "75f3d327c8328f16a550df723e2e5853238bc5d88b8941c08cd3a3bcf0b0dfe1",
+        "76328d61b7222dba7b4640222d20c456e721361b7130ade2f053706f0005f832",
+        "975500252be70dae9056e2b9299797ec28dbb607dbfa7780789f49aa1fec5048",
+        "a50a263b9c2b8bd9412312ff3fa65c96ce6c80f7c27436d7c92576423531f1c4"
+      ]
+    }
+  ],
+  "errors": []
+}

@@ -1,7 +1,7 @@
 # AI cost log (USD)
 
-- Project: `/tmp/musubix6-spec-feedback-28d27536`
-- Updated: 2026-11-11 16:00 UTC
+- Project: `/tmp/musubix6-ledger-compaction-28d27536`
+- Updated: 2026-11-12 12:53 UTC
 - Sessions: 22
 - **Total: $1,082.32**
 - History: `cost-history.json` (schema 1)
