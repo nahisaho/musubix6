@@ -17,9 +17,10 @@ const phases = ['baseline', 'mutant', 'restored'];
 /** @id CODE-RELQ-CONTENT-001 @implements REQ-RELQ-003, REQ-RELQ-005 */
 export function contentCaseCatalogue(reference, cellId) {
   if (reference.targetVersion === '0.2.10') {
-    ensure([1, 2].includes(reference.revision), 'supported0.2.10 content revision required');
+    ensure([1, 2, 3].includes(reference.revision), 'supported0.2.10 content revision required');
   }
-  const requiredFileCount = reference.targetVersion === '0.2.10' && reference.revision === 2 ? 120 : 118;
+  const requiredFileCount = reference.targetVersion === '0.2.10'
+    ? ({ 1: 118, 2: 120, 3: 121 })[reference.revision] : 118;
   const sourceVendorChallenges = requiredFileCount * 10, vendorChallenges = sourceVendorChallenges + 60;
   equal(reference.exactRequiredCaseCounts, {
     skillMechanisms: 28, sourceVendorChallenges, originSensitivityChallenges: 60,
@@ -28,11 +29,12 @@ export function contentCaseCatalogue(reference, cellId) {
   equal(reference.skillCatalogue.length, 28);
   equal(reference.placeholderCatalogue.length, 14);
   equal(reference.vendorReference.referenceFiles.length, requiredFileCount);
-  if (requiredFileCount === 120) {
+  if (requiredFileCount >= 120) {
     for (const file of [
       '.github/skills/lean-sdd-tdd/scripts/implementation-feedback.mjs',
       '.github/skills/lean-sdd-tdd/scripts/implementation-feedback.test.mjs',
-    ]) ensure(reference.vendorReference.referenceFiles.some(row => row.path === file), `required revision2 vendor file: ${file}`);
+      ...(requiredFileCount === 121 ? ['.github/skills/lean-sdd-tdd/scripts/tdd-ledger.test.mjs'] : []),
+    ]) ensure(reference.vendorReference.referenceFiles.some(row => row.path === file), `required revision${reference.revision} vendor file: ${file}`);
   }
   equal(reference.vendorReference.originSensitivityCases.length, 60);
   const semantic = rows => rows.map(row => ({ ...row, id: row.proposedId, kind: 'semantic' }));

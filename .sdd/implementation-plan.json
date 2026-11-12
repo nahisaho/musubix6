@@ -1906,15 +1906,15 @@
         ".sdd/specs/implementation-plan-cli.md": "025edb593a1f14dfd2c1f9a5118ad2a3a2b0bdd6b7ac845abbd4129c4cf9c3c1"
       },
       "dependencies": {
-        "TASK-PLAN-MODEL-001": "5257dfbfdf6487a48ac20ac12d0923406f0e31e23f5776b19e2e4cf619b8aba9",
-        "TASK-PLAN-MODEL-002": "05ff93effb1cc943a6d25daa41297b075365d516c2676dfe45bc2957b1b6c705",
-        "TASK-PLAN-MODEL-003": "4dc46000d3ecfbe91b3300886f3626f089272c2c4d2c843ea192f027313ba476",
-        "TASK-PLAN-MODEL-004": "4ca1fcd10ee9480a5b25797b193f499d0c7860e0776bdd2eea38df43e4eaa9a7",
-        "TASK-PLAN-MODEL-005": "1506613f36c93cb3ed5be9652e4a3b07a7a3e34c5b3e72fe11d9c270770445cc",
-        "TASK-PLAN-STATE-001": "18b7978ab7c7bc1931f6dd1688e1928ebb8d106b81299f5aa3ed6bbe644aa5fd",
-        "TASK-PLAN-STATE-002": "280d8b86c9a9464ba8a26a22fb23c5f04221bcb1e0723bd68cd8fb51df07d132",
-        "TASK-PLAN-STATE-003": "f58a7e6114bb310203459e2e6df55aa47bdad4a13ae21b9bb090ad0f7206d355",
-        "TASK-PLAN-STATE-004": "e93a4dac8d824d03b36a847c1fa7974f8e6c589f52683db3fb96dfc67141f832"
+        "TASK-PLAN-MODEL-001": "4c7bbdc5f5ace8b9dadad518b082d5571b9a653680b9f42b0d713775e3f2ec42",
+        "TASK-PLAN-MODEL-002": "f6176c0ec916387df771a3e0a628cd6ab774c9ce83ec4c10bb89ddd78872a91a",
+        "TASK-PLAN-MODEL-003": "88d52fe015737f3bf5bb9aded2bf11437c1556bb2fdc396bb646e5e5e0991289",
+        "TASK-PLAN-MODEL-004": "797af252d5651bdf40d7716a06a8e479f38137a129c0727efdd6261704604ea9",
+        "TASK-PLAN-MODEL-005": "c1f9d46ebed7919b77b69a332b8f59c539bb8f4ee0059aeaf9ff501e0d4771bf",
+        "TASK-PLAN-STATE-001": "8f78e30f2322620055d2fec389c3c8ef5ba0e87bc7ef795dc7b39bca528d5b7e",
+        "TASK-PLAN-STATE-002": "aa273517651a1e70f40b90fb0ddae1dc06db6cf535889002a02c9476dd7855d9",
+        "TASK-PLAN-STATE-003": "1b4a204047e4df4120049b91673ec0ed6104240afacbd057404f042ae0116077",
+        "TASK-PLAN-STATE-004": "3620ccbb41dd3e4df519596aec1a3241e69e1983bb1043ce0a41b2c8f4d7a66c"
       },
       "status": "complete",
       "receipt": ".sdd/plan-evidence/256a181d4c0753c902199673f74e08bb04b435a58c31693eafee2f2bb8b6ccab/ba831ac4c5cb7fe765627e37121cbdeab403819edf4cfc22d3f1d4c609cf47fb.json"
@@ -1956,16 +1956,16 @@
         ".sdd/specs/implementation-plan-cli.md": "025edb593a1f14dfd2c1f9a5118ad2a3a2b0bdd6b7ac845abbd4129c4cf9c3c1"
       },
       "dependencies": {
-        "TASK-PLAN-CLI-001": "1204c1d4c6123bfdcc0d3e0964526ead5f91b38c87e1de999addc9f50133cc9e",
-        "TASK-PLAN-MODEL-001": "5257dfbfdf6487a48ac20ac12d0923406f0e31e23f5776b19e2e4cf619b8aba9",
-        "TASK-PLAN-MODEL-002": "05ff93effb1cc943a6d25daa41297b075365d516c2676dfe45bc2957b1b6c705",
-        "TASK-PLAN-MODEL-003": "4dc46000d3ecfbe91b3300886f3626f089272c2c4d2c843ea192f027313ba476",
-        "TASK-PLAN-MODEL-004": "4ca1fcd10ee9480a5b25797b193f499d0c7860e0776bdd2eea38df43e4eaa9a7",
-        "TASK-PLAN-MODEL-005": "1506613f36c93cb3ed5be9652e4a3b07a7a3e34c5b3e72fe11d9c270770445cc",
-        "TASK-PLAN-STATE-001": "18b7978ab7c7bc1931f6dd1688e1928ebb8d106b81299f5aa3ed6bbe644aa5fd",
-        "TASK-PLAN-STATE-002": "280d8b86c9a9464ba8a26a22fb23c5f04221bcb1e0723bd68cd8fb51df07d132",
-        "TASK-PLAN-STATE-003": "f58a7e6114bb310203459e2e6df55aa47bdad4a13ae21b9bb090ad0f7206d355",
-        "TASK-PLAN-STATE-004": "e93a4dac8d824d03b36a847c1fa7974f8e6c589f52683db3fb96dfc67141f832"
+        "TASK-PLAN-CLI-001": "4b97dc8d62db263785fbbb2a9f68b59e1bd0ebad04dc9ec59fe5b9639f6bae3d",
+        "TASK-PLAN-MODEL-001": "4c7bbdc5f5ace8b9dadad518b082d5571b9a653680b9f42b0d713775e3f2ec42",
+        "TASK-PLAN-MODEL-002": "f6176c0ec916387df771a3e0a628cd6ab774c9ce83ec4c10bb89ddd78872a91a",
+        "TASK-PLAN-MODEL-003": "88d52fe015737f3bf5bb9aded2bf11437c1556bb2fdc396bb646e5e5e0991289",
+        "TASK-PLAN-MODEL-004": "797af252d5651bdf40d7716a06a8e479f38137a129c0727efdd6261704604ea9",
+        "TASK-PLAN-MODEL-005": "c1f9d46ebed7919b77b69a332b8f59c539bb8f4ee0059aeaf9ff501e0d4771bf",
+        "TASK-PLAN-STATE-001": "8f78e30f2322620055d2fec389c3c8ef5ba0e87bc7ef795dc7b39bca528d5b7e",
+        "TASK-PLAN-STATE-002": "aa273517651a1e70f40b90fb0ddae1dc06db6cf535889002a02c9476dd7855d9",
+        "TASK-PLAN-STATE-003": "1b4a204047e4df4120049b91673ec0ed6104240afacbd057404f042ae0116077",
+        "TASK-PLAN-STATE-004": "3620ccbb41dd3e4df519596aec1a3241e69e1983bb1043ce0a41b2c8f4d7a66c"
       },
       "status": "complete",
       "receipt": ".sdd/plan-evidence/5092368831f2d83ae3331ce5c69a1c2b9c8879f1074caf820fd21c877454eddd/43e463f2f21c96ab83bf851a9d9ecedc574c1409a45a1cf64df006fa2e772f83.json"
@@ -2006,16 +2006,16 @@
         ".sdd/specs/implementation-plan-cli.md": "025edb593a1f14dfd2c1f9a5118ad2a3a2b0bdd6b7ac845abbd4129c4cf9c3c1"
       },
       "dependencies": {
-        "TASK-PLAN-CLI-001": "1204c1d4c6123bfdcc0d3e0964526ead5f91b38c87e1de999addc9f50133cc9e",
-        "TASK-PLAN-MODEL-001": "5257dfbfdf6487a48ac20ac12d0923406f0e31e23f5776b19e2e4cf619b8aba9",
-        "TASK-PLAN-MODEL-002": "05ff93effb1cc943a6d25daa41297b075365d516c2676dfe45bc2957b1b6c705",
-        "TASK-PLAN-MODEL-003": "4dc46000d3ecfbe91b3300886f3626f089272c2c4d2c843ea192f027313ba476",
-        "TASK-PLAN-MODEL-004": "4ca1fcd10ee9480a5b25797b193f499d0c7860e0776bdd2eea38df43e4eaa9a7",
-        "TASK-PLAN-MODEL-005": "1506613f36c93cb3ed5be9652e4a3b07a7a3e34c5b3e72fe11d9c270770445cc",
-        "TASK-PLAN-STATE-001": "18b7978ab7c7bc1931f6dd1688e1928ebb8d106b81299f5aa3ed6bbe644aa5fd",
-        "TASK-PLAN-STATE-002": "280d8b86c9a9464ba8a26a22fb23c5f04221bcb1e0723bd68cd8fb51df07d132",
-        "TASK-PLAN-STATE-003": "f58a7e6114bb310203459e2e6df55aa47bdad4a13ae21b9bb090ad0f7206d355",
-        "TASK-PLAN-STATE-004": "e93a4dac8d824d03b36a847c1fa7974f8e6c589f52683db3fb96dfc67141f832"
+        "TASK-PLAN-CLI-001": "4b97dc8d62db263785fbbb2a9f68b59e1bd0ebad04dc9ec59fe5b9639f6bae3d",
+        "TASK-PLAN-MODEL-001": "4c7bbdc5f5ace8b9dadad518b082d5571b9a653680b9f42b0d713775e3f2ec42",
+        "TASK-PLAN-MODEL-002": "f6176c0ec916387df771a3e0a628cd6ab774c9ce83ec4c10bb89ddd78872a91a",
+        "TASK-PLAN-MODEL-003": "88d52fe015737f3bf5bb9aded2bf11437c1556bb2fdc396bb646e5e5e0991289",
+        "TASK-PLAN-MODEL-004": "797af252d5651bdf40d7716a06a8e479f38137a129c0727efdd6261704604ea9",
+        "TASK-PLAN-MODEL-005": "c1f9d46ebed7919b77b69a332b8f59c539bb8f4ee0059aeaf9ff501e0d4771bf",
+        "TASK-PLAN-STATE-001": "8f78e30f2322620055d2fec389c3c8ef5ba0e87bc7ef795dc7b39bca528d5b7e",
+        "TASK-PLAN-STATE-002": "aa273517651a1e70f40b90fb0ddae1dc06db6cf535889002a02c9476dd7855d9",
+        "TASK-PLAN-STATE-003": "1b4a204047e4df4120049b91673ec0ed6104240afacbd057404f042ae0116077",
+        "TASK-PLAN-STATE-004": "3620ccbb41dd3e4df519596aec1a3241e69e1983bb1043ce0a41b2c8f4d7a66c"
       },
       "status": "complete",
       "receipt": ".sdd/plan-evidence/0933b8144dedd499966ddd3d0249d18e3aa611afb1c1a1a6232c124eab111581/01a71d547283aa40eeedf93fa0f26f27e739ccda3b67316edc8d4f61a711a9ee.json"
@@ -2061,17 +2061,17 @@
         ".sdd/specs/implementation-plan-cli.md": "025edb593a1f14dfd2c1f9a5118ad2a3a2b0bdd6b7ac845abbd4129c4cf9c3c1"
       },
       "dependencies": {
-        "TASK-PLAN-CLI-002": "0771161295634d5c63b089ca5b9e38824756bb81a99a90f66f330ba61100e2f3",
-        "TASK-PLAN-CLI-003": "8d48eb8cef1b9bdede9ec0f3821b2d5916dcee80e40d136430f6692aa0a3ea1e",
-        "TASK-PLAN-MODEL-001": "5257dfbfdf6487a48ac20ac12d0923406f0e31e23f5776b19e2e4cf619b8aba9",
-        "TASK-PLAN-MODEL-002": "05ff93effb1cc943a6d25daa41297b075365d516c2676dfe45bc2957b1b6c705",
-        "TASK-PLAN-MODEL-003": "4dc46000d3ecfbe91b3300886f3626f089272c2c4d2c843ea192f027313ba476",
-        "TASK-PLAN-MODEL-004": "4ca1fcd10ee9480a5b25797b193f499d0c7860e0776bdd2eea38df43e4eaa9a7",
-        "TASK-PLAN-MODEL-005": "1506613f36c93cb3ed5be9652e4a3b07a7a3e34c5b3e72fe11d9c270770445cc",
-        "TASK-PLAN-STATE-001": "18b7978ab7c7bc1931f6dd1688e1928ebb8d106b81299f5aa3ed6bbe644aa5fd",
-        "TASK-PLAN-STATE-002": "280d8b86c9a9464ba8a26a22fb23c5f04221bcb1e0723bd68cd8fb51df07d132",
-        "TASK-PLAN-STATE-003": "f58a7e6114bb310203459e2e6df55aa47bdad4a13ae21b9bb090ad0f7206d355",
-        "TASK-PLAN-STATE-004": "e93a4dac8d824d03b36a847c1fa7974f8e6c589f52683db3fb96dfc67141f832"
+        "TASK-PLAN-CLI-002": "923518f9f12f76f2abd7fa14d135c9dce1a728dae3c6e29d7b13a81cc28df6b1",
+        "TASK-PLAN-CLI-003": "2c5e7c4602a44444517f1ee4d74ac77f1dcbc61ceb0f13ea25a03bb9dece9ef1",
+        "TASK-PLAN-MODEL-001": "4c7bbdc5f5ace8b9dadad518b082d5571b9a653680b9f42b0d713775e3f2ec42",
+        "TASK-PLAN-MODEL-002": "f6176c0ec916387df771a3e0a628cd6ab774c9ce83ec4c10bb89ddd78872a91a",
+        "TASK-PLAN-MODEL-003": "88d52fe015737f3bf5bb9aded2bf11437c1556bb2fdc396bb646e5e5e0991289",
+        "TASK-PLAN-MODEL-004": "797af252d5651bdf40d7716a06a8e479f38137a129c0727efdd6261704604ea9",
+        "TASK-PLAN-MODEL-005": "c1f9d46ebed7919b77b69a332b8f59c539bb8f4ee0059aeaf9ff501e0d4771bf",
+        "TASK-PLAN-STATE-001": "8f78e30f2322620055d2fec389c3c8ef5ba0e87bc7ef795dc7b39bca528d5b7e",
+        "TASK-PLAN-STATE-002": "aa273517651a1e70f40b90fb0ddae1dc06db6cf535889002a02c9476dd7855d9",
+        "TASK-PLAN-STATE-003": "1b4a204047e4df4120049b91673ec0ed6104240afacbd057404f042ae0116077",
+        "TASK-PLAN-STATE-004": "3620ccbb41dd3e4df519596aec1a3241e69e1983bb1043ce0a41b2c8f4d7a66c"
       },
       "status": "complete",
       "receipt": ".sdd/plan-evidence/c5e2bb96aa6502ec882e91732fafe2cc2be9b16d3a6332d7c38f50f8130b33ee/40d25bfacc4dd0e05a831dd186b4999a362161177d8ae9f6dd176a9c3ad305b8.json"
@@ -2149,7 +2149,7 @@
         ".sdd/specs/implementation-plan-contract.md": "6c9453c76f9c681299b1d61ac5b92e66867e2caa672d7bf18c544a9212e8595c"
       },
       "dependencies": {
-        "TASK-PLAN-MODEL-001": "5257dfbfdf6487a48ac20ac12d0923406f0e31e23f5776b19e2e4cf619b8aba9"
+        "TASK-PLAN-MODEL-001": "4c7bbdc5f5ace8b9dadad518b082d5571b9a653680b9f42b0d713775e3f2ec42"
       },
       "status": "complete",
       "receipt": ".sdd/plan-evidence/ca882bb902a446db78353bf3a3c192858924c61f3765809995eef533fe1a170b/0709f9f4b0e30e16f00f62fc30be43b156217de86fda2003fb8a04cc45ba69cc.json"
@@ -2190,7 +2190,7 @@
         ".sdd/specs/implementation-plan-contract.md": "6c9453c76f9c681299b1d61ac5b92e66867e2caa672d7bf18c544a9212e8595c"
       },
       "dependencies": {
-        "TASK-PLAN-MODEL-002": "05ff93effb1cc943a6d25daa41297b075365d516c2676dfe45bc2957b1b6c705"
+        "TASK-PLAN-MODEL-002": "f6176c0ec916387df771a3e0a628cd6ab774c9ce83ec4c10bb89ddd78872a91a"
       },
       "status": "complete",
       "receipt": ".sdd/plan-evidence/0e883e4d2b488339dc10c021a5ba985524ce6c10473ed043cc6b0231d7c744f7/13c227c9f5b65043ea3500c2e82151cfd29eba42b9b300bd8a9cd762575132ba.json"
@@ -2231,7 +2231,7 @@
         ".sdd/specs/implementation-plan-contract.md": "6c9453c76f9c681299b1d61ac5b92e66867e2caa672d7bf18c544a9212e8595c"
       },
       "dependencies": {
-        "TASK-PLAN-MODEL-001": "5257dfbfdf6487a48ac20ac12d0923406f0e31e23f5776b19e2e4cf619b8aba9"
+        "TASK-PLAN-MODEL-001": "4c7bbdc5f5ace8b9dadad518b082d5571b9a653680b9f42b0d713775e3f2ec42"
       },
       "status": "complete",
       "receipt": ".sdd/plan-evidence/31f8d74130aad029db67bdbee82fc5d45a1c6331d22f0161aa0bc08028609911/58fe6843532de5522d551229d9dff7a93cf28b4a0ab3f9a77f0ed0646da9fece.json"
@@ -2321,11 +2321,11 @@
         ".sdd/specs/implementation-plan-evidence.md": "2fd2e3453b97873e49cd4b6c01a5784951f4e7cf07efcb46f798a6645715a2fd"
       },
       "dependencies": {
-        "TASK-PLAN-MODEL-001": "5257dfbfdf6487a48ac20ac12d0923406f0e31e23f5776b19e2e4cf619b8aba9",
-        "TASK-PLAN-MODEL-002": "05ff93effb1cc943a6d25daa41297b075365d516c2676dfe45bc2957b1b6c705",
-        "TASK-PLAN-MODEL-003": "4dc46000d3ecfbe91b3300886f3626f089272c2c4d2c843ea192f027313ba476",
-        "TASK-PLAN-MODEL-004": "4ca1fcd10ee9480a5b25797b193f499d0c7860e0776bdd2eea38df43e4eaa9a7",
-        "TASK-PLAN-MODEL-005": "1506613f36c93cb3ed5be9652e4a3b07a7a3e34c5b3e72fe11d9c270770445cc"
+        "TASK-PLAN-MODEL-001": "4c7bbdc5f5ace8b9dadad518b082d5571b9a653680b9f42b0d713775e3f2ec42",
+        "TASK-PLAN-MODEL-002": "f6176c0ec916387df771a3e0a628cd6ab774c9ce83ec4c10bb89ddd78872a91a",
+        "TASK-PLAN-MODEL-003": "88d52fe015737f3bf5bb9aded2bf11437c1556bb2fdc396bb646e5e5e0991289",
+        "TASK-PLAN-MODEL-004": "797af252d5651bdf40d7716a06a8e479f38137a129c0727efdd6261704604ea9",
+        "TASK-PLAN-MODEL-005": "c1f9d46ebed7919b77b69a332b8f59c539bb8f4ee0059aeaf9ff501e0d4771bf"
       },
       "status": "complete",
       "receipt": ".sdd/plan-evidence/816423d456b92312c84d754641f8104d7a9d9ac0f65e1af5d09609feed7a4704/660f89f87bb18a509ae9b464956362490d3ddb112866df90febdbbf5fcd5b9f8.json"
@@ -2366,12 +2366,12 @@
         ".sdd/specs/implementation-plan-evidence.md": "2fd2e3453b97873e49cd4b6c01a5784951f4e7cf07efcb46f798a6645715a2fd"
       },
       "dependencies": {
-        "TASK-PLAN-MODEL-001": "5257dfbfdf6487a48ac20ac12d0923406f0e31e23f5776b19e2e4cf619b8aba9",
-        "TASK-PLAN-MODEL-002": "05ff93effb1cc943a6d25daa41297b075365d516c2676dfe45bc2957b1b6c705",
-        "TASK-PLAN-MODEL-003": "4dc46000d3ecfbe91b3300886f3626f089272c2c4d2c843ea192f027313ba476",
-        "TASK-PLAN-MODEL-004": "4ca1fcd10ee9480a5b25797b193f499d0c7860e0776bdd2eea38df43e4eaa9a7",
-        "TASK-PLAN-MODEL-005": "1506613f36c93cb3ed5be9652e4a3b07a7a3e34c5b3e72fe11d9c270770445cc",
-        "TASK-PLAN-STATE-001": "18b7978ab7c7bc1931f6dd1688e1928ebb8d106b81299f5aa3ed6bbe644aa5fd"
+        "TASK-PLAN-MODEL-001": "4c7bbdc5f5ace8b9dadad518b082d5571b9a653680b9f42b0d713775e3f2ec42",
+        "TASK-PLAN-MODEL-002": "f6176c0ec916387df771a3e0a628cd6ab774c9ce83ec4c10bb89ddd78872a91a",
+        "TASK-PLAN-MODEL-003": "88d52fe015737f3bf5bb9aded2bf11437c1556bb2fdc396bb646e5e5e0991289",
+        "TASK-PLAN-MODEL-004": "797af252d5651bdf40d7716a06a8e479f38137a129c0727efdd6261704604ea9",
+        "TASK-PLAN-MODEL-005": "c1f9d46ebed7919b77b69a332b8f59c539bb8f4ee0059aeaf9ff501e0d4771bf",
+        "TASK-PLAN-STATE-001": "8f78e30f2322620055d2fec389c3c8ef5ba0e87bc7ef795dc7b39bca528d5b7e"
       },
       "status": "complete",
       "receipt": ".sdd/plan-evidence/583e47f19cc1f90e108abc8a186c54d2de0fc7edd7628b4a59c50e1972c1391b/71432659bb7828b5dd70199a73b791ce537379cd473aa0791ca8b9000131e955.json"
@@ -2412,12 +2412,12 @@
         ".sdd/specs/implementation-plan-evidence.md": "2fd2e3453b97873e49cd4b6c01a5784951f4e7cf07efcb46f798a6645715a2fd"
       },
       "dependencies": {
-        "TASK-PLAN-MODEL-001": "5257dfbfdf6487a48ac20ac12d0923406f0e31e23f5776b19e2e4cf619b8aba9",
-        "TASK-PLAN-MODEL-002": "05ff93effb1cc943a6d25daa41297b075365d516c2676dfe45bc2957b1b6c705",
-        "TASK-PLAN-MODEL-003": "4dc46000d3ecfbe91b3300886f3626f089272c2c4d2c843ea192f027313ba476",
-        "TASK-PLAN-MODEL-004": "4ca1fcd10ee9480a5b25797b193f499d0c7860e0776bdd2eea38df43e4eaa9a7",
-        "TASK-PLAN-MODEL-005": "1506613f36c93cb3ed5be9652e4a3b07a7a3e34c5b3e72fe11d9c270770445cc",
-        "TASK-PLAN-STATE-001": "18b7978ab7c7bc1931f6dd1688e1928ebb8d106b81299f5aa3ed6bbe644aa5fd"
+        "TASK-PLAN-MODEL-001": "4c7bbdc5f5ace8b9dadad518b082d5571b9a653680b9f42b0d713775e3f2ec42",
+        "TASK-PLAN-MODEL-002": "f6176c0ec916387df771a3e0a628cd6ab774c9ce83ec4c10bb89ddd78872a91a",
+        "TASK-PLAN-MODEL-003": "88d52fe015737f3bf5bb9aded2bf11437c1556bb2fdc396bb646e5e5e0991289",
+        "TASK-PLAN-MODEL-004": "797af252d5651bdf40d7716a06a8e479f38137a129c0727efdd6261704604ea9",
+        "TASK-PLAN-MODEL-005": "c1f9d46ebed7919b77b69a332b8f59c539bb8f4ee0059aeaf9ff501e0d4771bf",
+        "TASK-PLAN-STATE-001": "8f78e30f2322620055d2fec389c3c8ef5ba0e87bc7ef795dc7b39bca528d5b7e"
       },
       "status": "complete",
       "receipt": ".sdd/plan-evidence/ddc995e0dc6ebf069112d57ae3920288e086e797fced8776168efe2ece621ab2/0d7637591851267b0ee31fde3cd2eae0031aafcf57d685a8a656f0e41b745199.json"
@@ -2459,13 +2459,13 @@
         ".sdd/specs/implementation-plan-evidence.md": "2fd2e3453b97873e49cd4b6c01a5784951f4e7cf07efcb46f798a6645715a2fd"
       },
       "dependencies": {
-        "TASK-PLAN-MODEL-001": "5257dfbfdf6487a48ac20ac12d0923406f0e31e23f5776b19e2e4cf619b8aba9",
-        "TASK-PLAN-MODEL-002": "05ff93effb1cc943a6d25daa41297b075365d516c2676dfe45bc2957b1b6c705",
-        "TASK-PLAN-MODEL-003": "4dc46000d3ecfbe91b3300886f3626f089272c2c4d2c843ea192f027313ba476",
-        "TASK-PLAN-MODEL-004": "4ca1fcd10ee9480a5b25797b193f499d0c7860e0776bdd2eea38df43e4eaa9a7",
-        "TASK-PLAN-MODEL-005": "1506613f36c93cb3ed5be9652e4a3b07a7a3e34c5b3e72fe11d9c270770445cc",
-        "TASK-PLAN-STATE-002": "280d8b86c9a9464ba8a26a22fb23c5f04221bcb1e0723bd68cd8fb51df07d132",
-        "TASK-PLAN-STATE-003": "f58a7e6114bb310203459e2e6df55aa47bdad4a13ae21b9bb090ad0f7206d355"
+        "TASK-PLAN-MODEL-001": "4c7bbdc5f5ace8b9dadad518b082d5571b9a653680b9f42b0d713775e3f2ec42",
+        "TASK-PLAN-MODEL-002": "f6176c0ec916387df771a3e0a628cd6ab774c9ce83ec4c10bb89ddd78872a91a",
+        "TASK-PLAN-MODEL-003": "88d52fe015737f3bf5bb9aded2bf11437c1556bb2fdc396bb646e5e5e0991289",
+        "TASK-PLAN-MODEL-004": "797af252d5651bdf40d7716a06a8e479f38137a129c0727efdd6261704604ea9",
+        "TASK-PLAN-MODEL-005": "c1f9d46ebed7919b77b69a332b8f59c539bb8f4ee0059aeaf9ff501e0d4771bf",
+        "TASK-PLAN-STATE-002": "aa273517651a1e70f40b90fb0ddae1dc06db6cf535889002a02c9476dd7855d9",
+        "TASK-PLAN-STATE-003": "1b4a204047e4df4120049b91673ec0ed6104240afacbd057404f042ae0116077"
       },
       "status": "complete",
       "receipt": ".sdd/plan-evidence/596cd5c6d7c56f3d70d95a4d4df5d3b5037737e72b89b2ce618875bc425e6a6c/84206144761f24660c7f23515802e812d8330a238283ea156570ecdf5aebcd8c.json"
@@ -2509,23 +2509,23 @@
         ".sdd/specs/implementation-plan-workflow.md": "a31ea9c1fe79f018e6361c0a3244d1969a87ee0a9342bd689eef0e31e0c64fba"
       },
       "dependencies": {
-        "TASK-PLAN-CLI-001": "1204c1d4c6123bfdcc0d3e0964526ead5f91b38c87e1de999addc9f50133cc9e",
-        "TASK-PLAN-CLI-002": "0771161295634d5c63b089ca5b9e38824756bb81a99a90f66f330ba61100e2f3",
-        "TASK-PLAN-CLI-003": "8d48eb8cef1b9bdede9ec0f3821b2d5916dcee80e40d136430f6692aa0a3ea1e",
-        "TASK-PLAN-CLI-004": "93b6ab940e3aa313aecb1d77f29f64a06d34ee1e5dba05a49e8b9116d266a14a",
-        "TASK-PLAN-CLI-008": "495bff01d4c46973ee7f41c59d0205353d99bd249f22713bcdf2b27c14d08aeb",
-        "TASK-PLAN-CLI-009": "302154cfcd7b01c8329d472fe60d9e1d64390853357e1aa4777d0d71e15cf717",
-        "TASK-PLAN-CLI-011": "92c1690243f26ea830f9006e7c6a6bda1829b6791017cceb9bc839099222694a",
-        "TASK-PLAN-CLI-012": "3d8919cfca808aba641abd27cf0d1d74de4558be61e63e3512e9f0ee01fdf8dc",
-        "TASK-PLAN-MODEL-001": "5257dfbfdf6487a48ac20ac12d0923406f0e31e23f5776b19e2e4cf619b8aba9",
-        "TASK-PLAN-MODEL-002": "05ff93effb1cc943a6d25daa41297b075365d516c2676dfe45bc2957b1b6c705",
-        "TASK-PLAN-MODEL-003": "4dc46000d3ecfbe91b3300886f3626f089272c2c4d2c843ea192f027313ba476",
-        "TASK-PLAN-MODEL-004": "4ca1fcd10ee9480a5b25797b193f499d0c7860e0776bdd2eea38df43e4eaa9a7",
-        "TASK-PLAN-MODEL-005": "1506613f36c93cb3ed5be9652e4a3b07a7a3e34c5b3e72fe11d9c270770445cc",
-        "TASK-PLAN-STATE-001": "18b7978ab7c7bc1931f6dd1688e1928ebb8d106b81299f5aa3ed6bbe644aa5fd",
-        "TASK-PLAN-STATE-002": "280d8b86c9a9464ba8a26a22fb23c5f04221bcb1e0723bd68cd8fb51df07d132",
-        "TASK-PLAN-STATE-003": "f58a7e6114bb310203459e2e6df55aa47bdad4a13ae21b9bb090ad0f7206d355",
-        "TASK-PLAN-STATE-004": "e93a4dac8d824d03b36a847c1fa7974f8e6c589f52683db3fb96dfc67141f832"
+        "TASK-PLAN-CLI-001": "4b97dc8d62db263785fbbb2a9f68b59e1bd0ebad04dc9ec59fe5b9639f6bae3d",
+        "TASK-PLAN-CLI-002": "923518f9f12f76f2abd7fa14d135c9dce1a728dae3c6e29d7b13a81cc28df6b1",
+        "TASK-PLAN-CLI-003": "2c5e7c4602a44444517f1ee4d74ac77f1dcbc61ceb0f13ea25a03bb9dece9ef1",
+        "TASK-PLAN-CLI-004": "7adff4e8c72d0a65b8cbee33bc812b4d801057eafb6a32425668d8e0b5772a0c",
+        "TASK-PLAN-CLI-008": "e9346a687d6793791a7226e475ad65091a7d7dabac616dcb8e1ddd7f55131ad1",
+        "TASK-PLAN-CLI-009": "f151823fee836bff4e61c4bf309cbdd3df1468c7170e04705ba657b8eb90baff",
+        "TASK-PLAN-CLI-011": "0263c4791201aafc701245aa24bada0f3ae32efa360664a9cc8be1744a33aa26",
+        "TASK-PLAN-CLI-012": "29befe3ba63044f9baa14b172554000c895fd1b58d2dad5225fd702a5e31c171",
+        "TASK-PLAN-MODEL-001": "4c7bbdc5f5ace8b9dadad518b082d5571b9a653680b9f42b0d713775e3f2ec42",
+        "TASK-PLAN-MODEL-002": "f6176c0ec916387df771a3e0a628cd6ab774c9ce83ec4c10bb89ddd78872a91a",
+        "TASK-PLAN-MODEL-003": "88d52fe015737f3bf5bb9aded2bf11437c1556bb2fdc396bb646e5e5e0991289",
+        "TASK-PLAN-MODEL-004": "797af252d5651bdf40d7716a06a8e479f38137a129c0727efdd6261704604ea9",
+        "TASK-PLAN-MODEL-005": "c1f9d46ebed7919b77b69a332b8f59c539bb8f4ee0059aeaf9ff501e0d4771bf",
+        "TASK-PLAN-STATE-001": "8f78e30f2322620055d2fec389c3c8ef5ba0e87bc7ef795dc7b39bca528d5b7e",
+        "TASK-PLAN-STATE-002": "aa273517651a1e70f40b90fb0ddae1dc06db6cf535889002a02c9476dd7855d9",
+        "TASK-PLAN-STATE-003": "1b4a204047e4df4120049b91673ec0ed6104240afacbd057404f042ae0116077",
+        "TASK-PLAN-STATE-004": "3620ccbb41dd3e4df519596aec1a3241e69e1983bb1043ce0a41b2c8f4d7a66c"
       },
       "status": "complete",
       "receipt": ".sdd/plan-evidence/d7ae83bf392014eb6b622062a89ada2908e5e9eb9d34af2411e48470c4312fa2/314b5c96f9826a3321832442eac216dc1b8bd1344a5a13fb369e3a30b7c965bd.json"
@@ -2565,24 +2565,24 @@
         ".sdd/specs/implementation-plan-workflow.md": "a31ea9c1fe79f018e6361c0a3244d1969a87ee0a9342bd689eef0e31e0c64fba"
       },
       "dependencies": {
-        "TASK-PLAN-CLI-001": "1204c1d4c6123bfdcc0d3e0964526ead5f91b38c87e1de999addc9f50133cc9e",
-        "TASK-PLAN-CLI-002": "0771161295634d5c63b089ca5b9e38824756bb81a99a90f66f330ba61100e2f3",
-        "TASK-PLAN-CLI-003": "8d48eb8cef1b9bdede9ec0f3821b2d5916dcee80e40d136430f6692aa0a3ea1e",
-        "TASK-PLAN-CLI-004": "93b6ab940e3aa313aecb1d77f29f64a06d34ee1e5dba05a49e8b9116d266a14a",
-        "TASK-PLAN-CLI-008": "495bff01d4c46973ee7f41c59d0205353d99bd249f22713bcdf2b27c14d08aeb",
-        "TASK-PLAN-CLI-009": "302154cfcd7b01c8329d472fe60d9e1d64390853357e1aa4777d0d71e15cf717",
-        "TASK-PLAN-CLI-011": "92c1690243f26ea830f9006e7c6a6bda1829b6791017cceb9bc839099222694a",
-        "TASK-PLAN-CLI-012": "3d8919cfca808aba641abd27cf0d1d74de4558be61e63e3512e9f0ee01fdf8dc",
-        "TASK-PLAN-FLOW-001": "cd2efbd4c233e9198d32c6698f3bbaacb322514a90bb38c483fe37ee2dda8a3b",
-        "TASK-PLAN-MODEL-001": "5257dfbfdf6487a48ac20ac12d0923406f0e31e23f5776b19e2e4cf619b8aba9",
-        "TASK-PLAN-MODEL-002": "05ff93effb1cc943a6d25daa41297b075365d516c2676dfe45bc2957b1b6c705",
-        "TASK-PLAN-MODEL-003": "4dc46000d3ecfbe91b3300886f3626f089272c2c4d2c843ea192f027313ba476",
-        "TASK-PLAN-MODEL-004": "4ca1fcd10ee9480a5b25797b193f499d0c7860e0776bdd2eea38df43e4eaa9a7",
-        "TASK-PLAN-MODEL-005": "1506613f36c93cb3ed5be9652e4a3b07a7a3e34c5b3e72fe11d9c270770445cc",
-        "TASK-PLAN-STATE-001": "18b7978ab7c7bc1931f6dd1688e1928ebb8d106b81299f5aa3ed6bbe644aa5fd",
-        "TASK-PLAN-STATE-002": "280d8b86c9a9464ba8a26a22fb23c5f04221bcb1e0723bd68cd8fb51df07d132",
-        "TASK-PLAN-STATE-003": "f58a7e6114bb310203459e2e6df55aa47bdad4a13ae21b9bb090ad0f7206d355",
-        "TASK-PLAN-STATE-004": "e93a4dac8d824d03b36a847c1fa7974f8e6c589f52683db3fb96dfc67141f832"
+        "TASK-PLAN-CLI-001": "4b97dc8d62db263785fbbb2a9f68b59e1bd0ebad04dc9ec59fe5b9639f6bae3d",
+        "TASK-PLAN-CLI-002": "923518f9f12f76f2abd7fa14d135c9dce1a728dae3c6e29d7b13a81cc28df6b1",
+        "TASK-PLAN-CLI-003": "2c5e7c4602a44444517f1ee4d74ac77f1dcbc61ceb0f13ea25a03bb9dece9ef1",
+        "TASK-PLAN-CLI-004": "7adff4e8c72d0a65b8cbee33bc812b4d801057eafb6a32425668d8e0b5772a0c",
+        "TASK-PLAN-CLI-008": "e9346a687d6793791a7226e475ad65091a7d7dabac616dcb8e1ddd7f55131ad1",
+        "TASK-PLAN-CLI-009": "f151823fee836bff4e61c4bf309cbdd3df1468c7170e04705ba657b8eb90baff",
+        "TASK-PLAN-CLI-011": "0263c4791201aafc701245aa24bada0f3ae32efa360664a9cc8be1744a33aa26",
+        "TASK-PLAN-CLI-012": "29befe3ba63044f9baa14b172554000c895fd1b58d2dad5225fd702a5e31c171",
+        "TASK-PLAN-FLOW-001": "dc1a1b68ab55425380c54bc349eab1d1b9e9c61bccb0e06b1ae1fefe27c2c585",
+        "TASK-PLAN-MODEL-001": "4c7bbdc5f5ace8b9dadad518b082d5571b9a653680b9f42b0d713775e3f2ec42",
+        "TASK-PLAN-MODEL-002": "f6176c0ec916387df771a3e0a628cd6ab774c9ce83ec4c10bb89ddd78872a91a",
+        "TASK-PLAN-MODEL-003": "88d52fe015737f3bf5bb9aded2bf11437c1556bb2fdc396bb646e5e5e0991289",
+        "TASK-PLAN-MODEL-004": "797af252d5651bdf40d7716a06a8e479f38137a129c0727efdd6261704604ea9",
+        "TASK-PLAN-MODEL-005": "c1f9d46ebed7919b77b69a332b8f59c539bb8f4ee0059aeaf9ff501e0d4771bf",
+        "TASK-PLAN-STATE-001": "8f78e30f2322620055d2fec389c3c8ef5ba0e87bc7ef795dc7b39bca528d5b7e",
+        "TASK-PLAN-STATE-002": "aa273517651a1e70f40b90fb0ddae1dc06db6cf535889002a02c9476dd7855d9",
+        "TASK-PLAN-STATE-003": "1b4a204047e4df4120049b91673ec0ed6104240afacbd057404f042ae0116077",
+        "TASK-PLAN-STATE-004": "3620ccbb41dd3e4df519596aec1a3241e69e1983bb1043ce0a41b2c8f4d7a66c"
       },
       "status": "complete",
       "receipt": ".sdd/plan-evidence/f2011d695b0132d2d487c2156117d0df66c9839a1c093b3b22f324ab03e9d1ae/4f31f049909464f4586c50909f7663e4ab5974303bf9c5264a332a3952368380.json"
@@ -2622,24 +2622,24 @@
         ".sdd/specs/implementation-plan-workflow.md": "a31ea9c1fe79f018e6361c0a3244d1969a87ee0a9342bd689eef0e31e0c64fba"
       },
       "dependencies": {
-        "TASK-PLAN-CLI-001": "1204c1d4c6123bfdcc0d3e0964526ead5f91b38c87e1de999addc9f50133cc9e",
-        "TASK-PLAN-CLI-002": "0771161295634d5c63b089ca5b9e38824756bb81a99a90f66f330ba61100e2f3",
-        "TASK-PLAN-CLI-003": "8d48eb8cef1b9bdede9ec0f3821b2d5916dcee80e40d136430f6692aa0a3ea1e",
-        "TASK-PLAN-CLI-004": "93b6ab940e3aa313aecb1d77f29f64a06d34ee1e5dba05a49e8b9116d266a14a",
-        "TASK-PLAN-CLI-008": "495bff01d4c46973ee7f41c59d0205353d99bd249f22713bcdf2b27c14d08aeb",
-        "TASK-PLAN-CLI-009": "302154cfcd7b01c8329d472fe60d9e1d64390853357e1aa4777d0d71e15cf717",
-        "TASK-PLAN-CLI-011": "92c1690243f26ea830f9006e7c6a6bda1829b6791017cceb9bc839099222694a",
-        "TASK-PLAN-CLI-012": "3d8919cfca808aba641abd27cf0d1d74de4558be61e63e3512e9f0ee01fdf8dc",
-        "TASK-PLAN-FLOW-001": "cd2efbd4c233e9198d32c6698f3bbaacb322514a90bb38c483fe37ee2dda8a3b",
-        "TASK-PLAN-MODEL-001": "5257dfbfdf6487a48ac20ac12d0923406f0e31e23f5776b19e2e4cf619b8aba9",
-        "TASK-PLAN-MODEL-002": "05ff93effb1cc943a6d25daa41297b075365d516c2676dfe45bc2957b1b6c705",
-        "TASK-PLAN-MODEL-003": "4dc46000d3ecfbe91b3300886f3626f089272c2c4d2c843ea192f027313ba476",
-        "TASK-PLAN-MODEL-004": "4ca1fcd10ee9480a5b25797b193f499d0c7860e0776bdd2eea38df43e4eaa9a7",
-        "TASK-PLAN-MODEL-005": "1506613f36c93cb3ed5be9652e4a3b07a7a3e34c5b3e72fe11d9c270770445cc",
-        "TASK-PLAN-STATE-001": "18b7978ab7c7bc1931f6dd1688e1928ebb8d106b81299f5aa3ed6bbe644aa5fd",
-        "TASK-PLAN-STATE-002": "280d8b86c9a9464ba8a26a22fb23c5f04221bcb1e0723bd68cd8fb51df07d132",
-        "TASK-PLAN-STATE-003": "f58a7e6114bb310203459e2e6df55aa47bdad4a13ae21b9bb090ad0f7206d355",
-        "TASK-PLAN-STATE-004": "e93a4dac8d824d03b36a847c1fa7974f8e6c589f52683db3fb96dfc67141f832"
+        "TASK-PLAN-CLI-001": "4b97dc8d62db263785fbbb2a9f68b59e1bd0ebad04dc9ec59fe5b9639f6bae3d",
+        "TASK-PLAN-CLI-002": "923518f9f12f76f2abd7fa14d135c9dce1a728dae3c6e29d7b13a81cc28df6b1",
+        "TASK-PLAN-CLI-003": "2c5e7c4602a44444517f1ee4d74ac77f1dcbc61ceb0f13ea25a03bb9dece9ef1",
+        "TASK-PLAN-CLI-004": "7adff4e8c72d0a65b8cbee33bc812b4d801057eafb6a32425668d8e0b5772a0c",
+        "TASK-PLAN-CLI-008": "e9346a687d6793791a7226e475ad65091a7d7dabac616dcb8e1ddd7f55131ad1",
+        "TASK-PLAN-CLI-009": "f151823fee836bff4e61c4bf309cbdd3df1468c7170e04705ba657b8eb90baff",
+        "TASK-PLAN-CLI-011": "0263c4791201aafc701245aa24bada0f3ae32efa360664a9cc8be1744a33aa26",
+        "TASK-PLAN-CLI-012": "29befe3ba63044f9baa14b172554000c895fd1b58d2dad5225fd702a5e31c171",
+        "TASK-PLAN-FLOW-001": "dc1a1b68ab55425380c54bc349eab1d1b9e9c61bccb0e06b1ae1fefe27c2c585",
+        "TASK-PLAN-MODEL-001": "4c7bbdc5f5ace8b9dadad518b082d5571b9a653680b9f42b0d713775e3f2ec42",
+        "TASK-PLAN-MODEL-002": "f6176c0ec916387df771a3e0a628cd6ab774c9ce83ec4c10bb89ddd78872a91a",
+        "TASK-PLAN-MODEL-003": "88d52fe015737f3bf5bb9aded2bf11437c1556bb2fdc396bb646e5e5e0991289",
+        "TASK-PLAN-MODEL-004": "797af252d5651bdf40d7716a06a8e479f38137a129c0727efdd6261704604ea9",
+        "TASK-PLAN-MODEL-005": "c1f9d46ebed7919b77b69a332b8f59c539bb8f4ee0059aeaf9ff501e0d4771bf",
+        "TASK-PLAN-STATE-001": "8f78e30f2322620055d2fec389c3c8ef5ba0e87bc7ef795dc7b39bca528d5b7e",
+        "TASK-PLAN-STATE-002": "aa273517651a1e70f40b90fb0ddae1dc06db6cf535889002a02c9476dd7855d9",
+        "TASK-PLAN-STATE-003": "1b4a204047e4df4120049b91673ec0ed6104240afacbd057404f042ae0116077",
+        "TASK-PLAN-STATE-004": "3620ccbb41dd3e4df519596aec1a3241e69e1983bb1043ce0a41b2c8f4d7a66c"
       },
       "status": "complete",
       "receipt": ".sdd/plan-evidence/f5b650634f2a6cae8fec7e885e6b5ba92b11cef6e7a5edfdfe74f985be094215/cd962968ae603802b6eff4effa111edb5efaf70f2e20149f5a523fe83cf9c7a3.json"
@@ -4099,10 +4099,10 @@
         }
       ],
       "specs": {
-        ".sdd/specs/release-qualification.md": "19e94f81df3d02452330567062cc16484006923e51080ab1ca2c1cdd72550451"
+        ".sdd/specs/release-qualification.md": "036c643e46c0f3dc8fc050dd6890a972d22b5cfe7572b7f351644406dfc663bd"
       },
       "dependencies": {},
-      "status": "complete",
+      "status": "in-progress",
       "receipt": ".sdd/plan-evidence/73f0cbb6742cc4492aeeadca22db81f5f31db4650b1951f0febd38355f8df151/2d4fd11a8d351bd6118f3181d73f9e97be918cac9e405f7759e02f3206398684.json"
     },
     {
@@ -4234,10 +4234,10 @@
         }
       ],
       "specs": {
-        ".sdd/specs/release-qualification.md": "19e94f81df3d02452330567062cc16484006923e51080ab1ca2c1cdd72550451"
+        ".sdd/specs/release-qualification.md": "036c643e46c0f3dc8fc050dd6890a972d22b5cfe7572b7f351644406dfc663bd"
       },
       "dependencies": {},
-      "status": "complete",
+      "status": "in-progress",
       "receipt": ".sdd/plan-evidence/dd865d9c8b78a2d77814f6c74fb5613d75c1f641a17ccffea1a8e080c0bc0a07/012b4e6e8c892f52333d660241d950b3a8d9c507c4a277373fe8902d0da74598.json"
     },
     {
@@ -4391,10 +4391,10 @@
         }
       ],
       "specs": {
-        ".sdd/specs/release-qualification.md": "19e94f81df3d02452330567062cc16484006923e51080ab1ca2c1cdd72550451"
+        ".sdd/specs/release-qualification.md": "036c643e46c0f3dc8fc050dd6890a972d22b5cfe7572b7f351644406dfc663bd"
       },
       "dependencies": {},
-      "status": "complete",
+      "status": "in-progress",
       "receipt": ".sdd/plan-evidence/89f75a0ef83095915c1bfb35bc420da94e27f50547ef905b5527a6c34744793b/c48a1206dd8e425cd9ad45644ed5779a594f3ed039d7046fc1d27e13848d36d4.json"
     },
     {
@@ -4521,10 +4521,10 @@
         }
       ],
       "specs": {
-        ".sdd/specs/release-qualification.md": "19e94f81df3d02452330567062cc16484006923e51080ab1ca2c1cdd72550451"
+        ".sdd/specs/release-qualification.md": "036c643e46c0f3dc8fc050dd6890a972d22b5cfe7572b7f351644406dfc663bd"
       },
       "dependencies": {},
-      "status": "complete",
+      "status": "in-progress",
       "receipt": ".sdd/plan-evidence/ea566fd8dcc45f090bbb58cbb164569368264ed6a6f464c72ed20485084892c2/bd045a325b60cc34d69f96c5f9e306cd86661ce01fa264def4cbc4511e9c2c42.json"
     },
     {
@@ -4680,10 +4680,10 @@
         }
       ],
       "specs": {
-        ".sdd/specs/release-qualification.md": "19e94f81df3d02452330567062cc16484006923e51080ab1ca2c1cdd72550451"
+        ".sdd/specs/release-qualification.md": "036c643e46c0f3dc8fc050dd6890a972d22b5cfe7572b7f351644406dfc663bd"
       },
       "dependencies": {},
-      "status": "complete",
+      "status": "in-progress",
       "receipt": ".sdd/plan-evidence/8a500e1cd57c470ca565540630853ab2031d74efe95b650b3b5670f6edf9e10d/969709f4e13244432dfe3d63e2fd20f7da9ed09ce05fe2d5be22df146bd7aab5.json"
     },
     {
@@ -5578,15 +5578,15 @@
         ".sdd/specs/implementation-plan-cli.md": "025edb593a1f14dfd2c1f9a5118ad2a3a2b0bdd6b7ac845abbd4129c4cf9c3c1"
       },
       "dependencies": {
-        "TASK-PLAN-MODEL-001": "5257dfbfdf6487a48ac20ac12d0923406f0e31e23f5776b19e2e4cf619b8aba9",
-        "TASK-PLAN-MODEL-002": "05ff93effb1cc943a6d25daa41297b075365d516c2676dfe45bc2957b1b6c705",
-        "TASK-PLAN-MODEL-003": "4dc46000d3ecfbe91b3300886f3626f089272c2c4d2c843ea192f027313ba476",
-        "TASK-PLAN-MODEL-004": "4ca1fcd10ee9480a5b25797b193f499d0c7860e0776bdd2eea38df43e4eaa9a7",
-        "TASK-PLAN-MODEL-005": "1506613f36c93cb3ed5be9652e4a3b07a7a3e34c5b3e72fe11d9c270770445cc",
-        "TASK-PLAN-STATE-001": "18b7978ab7c7bc1931f6dd1688e1928ebb8d106b81299f5aa3ed6bbe644aa5fd",
-        "TASK-PLAN-STATE-002": "280d8b86c9a9464ba8a26a22fb23c5f04221bcb1e0723bd68cd8fb51df07d132",
-        "TASK-PLAN-STATE-003": "f58a7e6114bb310203459e2e6df55aa47bdad4a13ae21b9bb090ad0f7206d355",
-        "TASK-PLAN-STATE-004": "e93a4dac8d824d03b36a847c1fa7974f8e6c589f52683db3fb96dfc67141f832"
+        "TASK-PLAN-MODEL-001": "4c7bbdc5f5ace8b9dadad518b082d5571b9a653680b9f42b0d713775e3f2ec42",
+        "TASK-PLAN-MODEL-002": "f6176c0ec916387df771a3e0a628cd6ab774c9ce83ec4c10bb89ddd78872a91a",
+        "TASK-PLAN-MODEL-003": "88d52fe015737f3bf5bb9aded2bf11437c1556bb2fdc396bb646e5e5e0991289",
+        "TASK-PLAN-MODEL-004": "797af252d5651bdf40d7716a06a8e479f38137a129c0727efdd6261704604ea9",
+        "TASK-PLAN-MODEL-005": "c1f9d46ebed7919b77b69a332b8f59c539bb8f4ee0059aeaf9ff501e0d4771bf",
+        "TASK-PLAN-STATE-001": "8f78e30f2322620055d2fec389c3c8ef5ba0e87bc7ef795dc7b39bca528d5b7e",
+        "TASK-PLAN-STATE-002": "aa273517651a1e70f40b90fb0ddae1dc06db6cf535889002a02c9476dd7855d9",
+        "TASK-PLAN-STATE-003": "1b4a204047e4df4120049b91673ec0ed6104240afacbd057404f042ae0116077",
+        "TASK-PLAN-STATE-004": "3620ccbb41dd3e4df519596aec1a3241e69e1983bb1043ce0a41b2c8f4d7a66c"
       },
       "status": "complete",
       "receipt": ".sdd/plan-evidence/3f2b46cc6ea781f8cbc989cbd41e1a440958a8b6293821321d8d056df0b835f7/ea01e241a975461e93c9cbf5de61028c93cf4b00abd0aad952563bff8efb9ea4.json"
@@ -5629,15 +5629,15 @@
         ".sdd/specs/implementation-plan-cli.md": "025edb593a1f14dfd2c1f9a5118ad2a3a2b0bdd6b7ac845abbd4129c4cf9c3c1"
       },
       "dependencies": {
-        "TASK-PLAN-MODEL-001": "5257dfbfdf6487a48ac20ac12d0923406f0e31e23f5776b19e2e4cf619b8aba9",
-        "TASK-PLAN-MODEL-002": "05ff93effb1cc943a6d25daa41297b075365d516c2676dfe45bc2957b1b6c705",
-        "TASK-PLAN-MODEL-003": "4dc46000d3ecfbe91b3300886f3626f089272c2c4d2c843ea192f027313ba476",
-        "TASK-PLAN-MODEL-004": "4ca1fcd10ee9480a5b25797b193f499d0c7860e0776bdd2eea38df43e4eaa9a7",
-        "TASK-PLAN-MODEL-005": "1506613f36c93cb3ed5be9652e4a3b07a7a3e34c5b3e72fe11d9c270770445cc",
-        "TASK-PLAN-STATE-001": "18b7978ab7c7bc1931f6dd1688e1928ebb8d106b81299f5aa3ed6bbe644aa5fd",
-        "TASK-PLAN-STATE-002": "280d8b86c9a9464ba8a26a22fb23c5f04221bcb1e0723bd68cd8fb51df07d132",
-        "TASK-PLAN-STATE-003": "f58a7e6114bb310203459e2e6df55aa47bdad4a13ae21b9bb090ad0f7206d355",
-        "TASK-PLAN-STATE-004": "e93a4dac8d824d03b36a847c1fa7974f8e6c589f52683db3fb96dfc67141f832"
+        "TASK-PLAN-MODEL-001": "4c7bbdc5f5ace8b9dadad518b082d5571b9a653680b9f42b0d713775e3f2ec42",
+        "TASK-PLAN-MODEL-002": "f6176c0ec916387df771a3e0a628cd6ab774c9ce83ec4c10bb89ddd78872a91a",
+        "TASK-PLAN-MODEL-003": "88d52fe015737f3bf5bb9aded2bf11437c1556bb2fdc396bb646e5e5e0991289",
+        "TASK-PLAN-MODEL-004": "797af252d5651bdf40d7716a06a8e479f38137a129c0727efdd6261704604ea9",
+        "TASK-PLAN-MODEL-005": "c1f9d46ebed7919b77b69a332b8f59c539bb8f4ee0059aeaf9ff501e0d4771bf",
+        "TASK-PLAN-STATE-001": "8f78e30f2322620055d2fec389c3c8ef5ba0e87bc7ef795dc7b39bca528d5b7e",
+        "TASK-PLAN-STATE-002": "aa273517651a1e70f40b90fb0ddae1dc06db6cf535889002a02c9476dd7855d9",
+        "TASK-PLAN-STATE-003": "1b4a204047e4df4120049b91673ec0ed6104240afacbd057404f042ae0116077",
+        "TASK-PLAN-STATE-004": "3620ccbb41dd3e4df519596aec1a3241e69e1983bb1043ce0a41b2c8f4d7a66c"
       },
       "status": "complete",
       "receipt": ".sdd/plan-evidence/31ef34cce4a21effc3a4f042d0e267bf6dcc7e26fb35cb81091b0ef37865984d/38a2bef2b51c832e30786bda37ff1950764a10132d47b5f79cc1816551dfd210.json"
@@ -5679,15 +5679,15 @@
         ".sdd/specs/implementation-plan-cli.md": "025edb593a1f14dfd2c1f9a5118ad2a3a2b0bdd6b7ac845abbd4129c4cf9c3c1"
       },
       "dependencies": {
-        "TASK-PLAN-MODEL-001": "5257dfbfdf6487a48ac20ac12d0923406f0e31e23f5776b19e2e4cf619b8aba9",
-        "TASK-PLAN-MODEL-002": "05ff93effb1cc943a6d25daa41297b075365d516c2676dfe45bc2957b1b6c705",
-        "TASK-PLAN-MODEL-003": "4dc46000d3ecfbe91b3300886f3626f089272c2c4d2c843ea192f027313ba476",
-        "TASK-PLAN-MODEL-004": "4ca1fcd10ee9480a5b25797b193f499d0c7860e0776bdd2eea38df43e4eaa9a7",
-        "TASK-PLAN-MODEL-005": "1506613f36c93cb3ed5be9652e4a3b07a7a3e34c5b3e72fe11d9c270770445cc",
-        "TASK-PLAN-STATE-001": "18b7978ab7c7bc1931f6dd1688e1928ebb8d106b81299f5aa3ed6bbe644aa5fd",
-        "TASK-PLAN-STATE-002": "280d8b86c9a9464ba8a26a22fb23c5f04221bcb1e0723bd68cd8fb51df07d132",
-        "TASK-PLAN-STATE-003": "f58a7e6114bb310203459e2e6df55aa47bdad4a13ae21b9bb090ad0f7206d355",
-        "TASK-PLAN-STATE-004": "e93a4dac8d824d03b36a847c1fa7974f8e6c589f52683db3fb96dfc67141f832"
+        "TASK-PLAN-MODEL-001": "4c7bbdc5f5ace8b9dadad518b082d5571b9a653680b9f42b0d713775e3f2ec42",
+        "TASK-PLAN-MODEL-002": "f6176c0ec916387df771a3e0a628cd6ab774c9ce83ec4c10bb89ddd78872a91a",
+        "TASK-PLAN-MODEL-003": "88d52fe015737f3bf5bb9aded2bf11437c1556bb2fdc396bb646e5e5e0991289",
+        "TASK-PLAN-MODEL-004": "797af252d5651bdf40d7716a06a8e479f38137a129c0727efdd6261704604ea9",
+        "TASK-PLAN-MODEL-005": "c1f9d46ebed7919b77b69a332b8f59c539bb8f4ee0059aeaf9ff501e0d4771bf",
+        "TASK-PLAN-STATE-001": "8f78e30f2322620055d2fec389c3c8ef5ba0e87bc7ef795dc7b39bca528d5b7e",
+        "TASK-PLAN-STATE-002": "aa273517651a1e70f40b90fb0ddae1dc06db6cf535889002a02c9476dd7855d9",
+        "TASK-PLAN-STATE-003": "1b4a204047e4df4120049b91673ec0ed6104240afacbd057404f042ae0116077",
+        "TASK-PLAN-STATE-004": "3620ccbb41dd3e4df519596aec1a3241e69e1983bb1043ce0a41b2c8f4d7a66c"
       },
       "status": "complete",
       "receipt": ".sdd/plan-evidence/872956fcac754af2302af93845287cf0a21c93b10a64fdc9ece548ea86f5fed0/be8c55a09b24f282121d570adacfc099848e3bf7da788523cb88ebc7ac3b1bbf.json"
@@ -5730,15 +5730,15 @@
         ".sdd/specs/implementation-plan-cli.md": "025edb593a1f14dfd2c1f9a5118ad2a3a2b0bdd6b7ac845abbd4129c4cf9c3c1"
       },
       "dependencies": {
-        "TASK-PLAN-MODEL-001": "5257dfbfdf6487a48ac20ac12d0923406f0e31e23f5776b19e2e4cf619b8aba9",
-        "TASK-PLAN-MODEL-002": "05ff93effb1cc943a6d25daa41297b075365d516c2676dfe45bc2957b1b6c705",
-        "TASK-PLAN-MODEL-003": "4dc46000d3ecfbe91b3300886f3626f089272c2c4d2c843ea192f027313ba476",
-        "TASK-PLAN-MODEL-004": "4ca1fcd10ee9480a5b25797b193f499d0c7860e0776bdd2eea38df43e4eaa9a7",
-        "TASK-PLAN-MODEL-005": "1506613f36c93cb3ed5be9652e4a3b07a7a3e34c5b3e72fe11d9c270770445cc",
-        "TASK-PLAN-STATE-001": "18b7978ab7c7bc1931f6dd1688e1928ebb8d106b81299f5aa3ed6bbe644aa5fd",
-        "TASK-PLAN-STATE-002": "280d8b86c9a9464ba8a26a22fb23c5f04221bcb1e0723bd68cd8fb51df07d132",
-        "TASK-PLAN-STATE-003": "f58a7e6114bb310203459e2e6df55aa47bdad4a13ae21b9bb090ad0f7206d355",
-        "TASK-PLAN-STATE-004": "e93a4dac8d824d03b36a847c1fa7974f8e6c589f52683db3fb96dfc67141f832"
+        "TASK-PLAN-MODEL-001": "4c7bbdc5f5ace8b9dadad518b082d5571b9a653680b9f42b0d713775e3f2ec42",
+        "TASK-PLAN-MODEL-002": "f6176c0ec916387df771a3e0a628cd6ab774c9ce83ec4c10bb89ddd78872a91a",
+        "TASK-PLAN-MODEL-003": "88d52fe015737f3bf5bb9aded2bf11437c1556bb2fdc396bb646e5e5e0991289",
+        "TASK-PLAN-MODEL-004": "797af252d5651bdf40d7716a06a8e479f38137a129c0727efdd6261704604ea9",
+        "TASK-PLAN-MODEL-005": "c1f9d46ebed7919b77b69a332b8f59c539bb8f4ee0059aeaf9ff501e0d4771bf",
+        "TASK-PLAN-STATE-001": "8f78e30f2322620055d2fec389c3c8ef5ba0e87bc7ef795dc7b39bca528d5b7e",
+        "TASK-PLAN-STATE-002": "aa273517651a1e70f40b90fb0ddae1dc06db6cf535889002a02c9476dd7855d9",
+        "TASK-PLAN-STATE-003": "1b4a204047e4df4120049b91673ec0ed6104240afacbd057404f042ae0116077",
+        "TASK-PLAN-STATE-004": "3620ccbb41dd3e4df519596aec1a3241e69e1983bb1043ce0a41b2c8f4d7a66c"
       },
       "status": "complete",
       "receipt": ".sdd/plan-evidence/f2efab58c07ae56c719c9060884f09c75875f3cdf0bfa07842f9d99b71c5c046/11f439bdc9254983ad4334455220b983b7f9abb632e6f945366a568c41b11e23.json"
@@ -5777,25 +5777,25 @@
         ".sdd/specs/ci-regression-fixtures.md": "2ae0796b125a369eea494cf1135639cd4e85152cf43bba29b2211571dfb62e60"
       },
       "dependencies": {
-        "TASK-PLAN-CLI-001": "1204c1d4c6123bfdcc0d3e0964526ead5f91b38c87e1de999addc9f50133cc9e",
-        "TASK-PLAN-CLI-002": "0771161295634d5c63b089ca5b9e38824756bb81a99a90f66f330ba61100e2f3",
-        "TASK-PLAN-CLI-003": "8d48eb8cef1b9bdede9ec0f3821b2d5916dcee80e40d136430f6692aa0a3ea1e",
-        "TASK-PLAN-CLI-004": "93b6ab940e3aa313aecb1d77f29f64a06d34ee1e5dba05a49e8b9116d266a14a",
-        "TASK-PLAN-CLI-008": "495bff01d4c46973ee7f41c59d0205353d99bd249f22713bcdf2b27c14d08aeb",
-        "TASK-PLAN-CLI-009": "302154cfcd7b01c8329d472fe60d9e1d64390853357e1aa4777d0d71e15cf717",
-        "TASK-PLAN-CLI-011": "92c1690243f26ea830f9006e7c6a6bda1829b6791017cceb9bc839099222694a",
-        "TASK-PLAN-CLI-012": "3d8919cfca808aba641abd27cf0d1d74de4558be61e63e3512e9f0ee01fdf8dc",
-        "TASK-PLAN-MODEL-001": "5257dfbfdf6487a48ac20ac12d0923406f0e31e23f5776b19e2e4cf619b8aba9",
-        "TASK-PLAN-MODEL-002": "05ff93effb1cc943a6d25daa41297b075365d516c2676dfe45bc2957b1b6c705",
-        "TASK-PLAN-MODEL-003": "4dc46000d3ecfbe91b3300886f3626f089272c2c4d2c843ea192f027313ba476",
-        "TASK-PLAN-MODEL-004": "4ca1fcd10ee9480a5b25797b193f499d0c7860e0776bdd2eea38df43e4eaa9a7",
-        "TASK-PLAN-MODEL-005": "1506613f36c93cb3ed5be9652e4a3b07a7a3e34c5b3e72fe11d9c270770445cc",
-        "TASK-PLAN-STATE-001": "18b7978ab7c7bc1931f6dd1688e1928ebb8d106b81299f5aa3ed6bbe644aa5fd",
-        "TASK-PLAN-STATE-002": "280d8b86c9a9464ba8a26a22fb23c5f04221bcb1e0723bd68cd8fb51df07d132",
-        "TASK-PLAN-STATE-003": "f58a7e6114bb310203459e2e6df55aa47bdad4a13ae21b9bb090ad0f7206d355",
-        "TASK-PLAN-STATE-004": "e93a4dac8d824d03b36a847c1fa7974f8e6c589f52683db3fb96dfc67141f832"
+        "TASK-PLAN-CLI-001": "4b97dc8d62db263785fbbb2a9f68b59e1bd0ebad04dc9ec59fe5b9639f6bae3d",
+        "TASK-PLAN-CLI-002": "923518f9f12f76f2abd7fa14d135c9dce1a728dae3c6e29d7b13a81cc28df6b1",
+        "TASK-PLAN-CLI-003": "2c5e7c4602a44444517f1ee4d74ac77f1dcbc61ceb0f13ea25a03bb9dece9ef1",
+        "TASK-PLAN-CLI-004": "7adff4e8c72d0a65b8cbee33bc812b4d801057eafb6a32425668d8e0b5772a0c",
+        "TASK-PLAN-CLI-008": "e9346a687d6793791a7226e475ad65091a7d7dabac616dcb8e1ddd7f55131ad1",
+        "TASK-PLAN-CLI-009": "f151823fee836bff4e61c4bf309cbdd3df1468c7170e04705ba657b8eb90baff",
+        "TASK-PLAN-CLI-011": "0263c4791201aafc701245aa24bada0f3ae32efa360664a9cc8be1744a33aa26",
+        "TASK-PLAN-CLI-012": "29befe3ba63044f9baa14b172554000c895fd1b58d2dad5225fd702a5e31c171",
+        "TASK-PLAN-MODEL-001": "4c7bbdc5f5ace8b9dadad518b082d5571b9a653680b9f42b0d713775e3f2ec42",
+        "TASK-PLAN-MODEL-002": "f6176c0ec916387df771a3e0a628cd6ab774c9ce83ec4c10bb89ddd78872a91a",
+        "TASK-PLAN-MODEL-003": "88d52fe015737f3bf5bb9aded2bf11437c1556bb2fdc396bb646e5e5e0991289",
+        "TASK-PLAN-MODEL-004": "797af252d5651bdf40d7716a06a8e479f38137a129c0727efdd6261704604ea9",
+        "TASK-PLAN-MODEL-005": "c1f9d46ebed7919b77b69a332b8f59c539bb8f4ee0059aeaf9ff501e0d4771bf",
+        "TASK-PLAN-STATE-001": "8f78e30f2322620055d2fec389c3c8ef5ba0e87bc7ef795dc7b39bca528d5b7e",
+        "TASK-PLAN-STATE-002": "aa273517651a1e70f40b90fb0ddae1dc06db6cf535889002a02c9476dd7855d9",
+        "TASK-PLAN-STATE-003": "1b4a204047e4df4120049b91673ec0ed6104240afacbd057404f042ae0116077",
+        "TASK-PLAN-STATE-004": "3620ccbb41dd3e4df519596aec1a3241e69e1983bb1043ce0a41b2c8f4d7a66c"
       },
-      "status": "complete",
+      "status": "in-progress",
       "receipt": ".sdd/plan-evidence/0c7e3e5088fb77cdfbb257ecf23c038bd40f21fd705f6cff35256322c1b96f75/f3ec2ccb1fc9a48d865549b18597bdf0698a655f98b00202732f652ba3c5d1f3.json"
     },
     {
@@ -5831,25 +5831,25 @@
         ".sdd/specs/ci-regression-fixtures.md": "2ae0796b125a369eea494cf1135639cd4e85152cf43bba29b2211571dfb62e60"
       },
       "dependencies": {
-        "TASK-PLAN-CLI-001": "1204c1d4c6123bfdcc0d3e0964526ead5f91b38c87e1de999addc9f50133cc9e",
-        "TASK-PLAN-CLI-002": "0771161295634d5c63b089ca5b9e38824756bb81a99a90f66f330ba61100e2f3",
-        "TASK-PLAN-CLI-003": "8d48eb8cef1b9bdede9ec0f3821b2d5916dcee80e40d136430f6692aa0a3ea1e",
-        "TASK-PLAN-CLI-004": "93b6ab940e3aa313aecb1d77f29f64a06d34ee1e5dba05a49e8b9116d266a14a",
-        "TASK-PLAN-CLI-008": "495bff01d4c46973ee7f41c59d0205353d99bd249f22713bcdf2b27c14d08aeb",
-        "TASK-PLAN-CLI-009": "302154cfcd7b01c8329d472fe60d9e1d64390853357e1aa4777d0d71e15cf717",
-        "TASK-PLAN-CLI-011": "92c1690243f26ea830f9006e7c6a6bda1829b6791017cceb9bc839099222694a",
-        "TASK-PLAN-CLI-012": "3d8919cfca808aba641abd27cf0d1d74de4558be61e63e3512e9f0ee01fdf8dc",
-        "TASK-PLAN-MODEL-001": "5257dfbfdf6487a48ac20ac12d0923406f0e31e23f5776b19e2e4cf619b8aba9",
-        "TASK-PLAN-MODEL-002": "05ff93effb1cc943a6d25daa41297b075365d516c2676dfe45bc2957b1b6c705",
-        "TASK-PLAN-MODEL-003": "4dc46000d3ecfbe91b3300886f3626f089272c2c4d2c843ea192f027313ba476",
-        "TASK-PLAN-MODEL-004": "4ca1fcd10ee9480a5b25797b193f499d0c7860e0776bdd2eea38df43e4eaa9a7",
-        "TASK-PLAN-MODEL-005": "1506613f36c93cb3ed5be9652e4a3b07a7a3e34c5b3e72fe11d9c270770445cc",
-        "TASK-PLAN-STATE-001": "18b7978ab7c7bc1931f6dd1688e1928ebb8d106b81299f5aa3ed6bbe644aa5fd",
-        "TASK-PLAN-STATE-002": "280d8b86c9a9464ba8a26a22fb23c5f04221bcb1e0723bd68cd8fb51df07d132",
-        "TASK-PLAN-STATE-003": "f58a7e6114bb310203459e2e6df55aa47bdad4a13ae21b9bb090ad0f7206d355",
-        "TASK-PLAN-STATE-004": "e93a4dac8d824d03b36a847c1fa7974f8e6c589f52683db3fb96dfc67141f832"
+        "TASK-PLAN-CLI-001": "4b97dc8d62db263785fbbb2a9f68b59e1bd0ebad04dc9ec59fe5b9639f6bae3d",
+        "TASK-PLAN-CLI-002": "923518f9f12f76f2abd7fa14d135c9dce1a728dae3c6e29d7b13a81cc28df6b1",
+        "TASK-PLAN-CLI-003": "2c5e7c4602a44444517f1ee4d74ac77f1dcbc61ceb0f13ea25a03bb9dece9ef1",
+        "TASK-PLAN-CLI-004": "7adff4e8c72d0a65b8cbee33bc812b4d801057eafb6a32425668d8e0b5772a0c",
+        "TASK-PLAN-CLI-008": "e9346a687d6793791a7226e475ad65091a7d7dabac616dcb8e1ddd7f55131ad1",
+        "TASK-PLAN-CLI-009": "f151823fee836bff4e61c4bf309cbdd3df1468c7170e04705ba657b8eb90baff",
+        "TASK-PLAN-CLI-011": "0263c4791201aafc701245aa24bada0f3ae32efa360664a9cc8be1744a33aa26",
+        "TASK-PLAN-CLI-012": "29befe3ba63044f9baa14b172554000c895fd1b58d2dad5225fd702a5e31c171",
+        "TASK-PLAN-MODEL-001": "4c7bbdc5f5ace8b9dadad518b082d5571b9a653680b9f42b0d713775e3f2ec42",
+        "TASK-PLAN-MODEL-002": "f6176c0ec916387df771a3e0a628cd6ab774c9ce83ec4c10bb89ddd78872a91a",
+        "TASK-PLAN-MODEL-003": "88d52fe015737f3bf5bb9aded2bf11437c1556bb2fdc396bb646e5e5e0991289",
+        "TASK-PLAN-MODEL-004": "797af252d5651bdf40d7716a06a8e479f38137a129c0727efdd6261704604ea9",
+        "TASK-PLAN-MODEL-005": "c1f9d46ebed7919b77b69a332b8f59c539bb8f4ee0059aeaf9ff501e0d4771bf",
+        "TASK-PLAN-STATE-001": "8f78e30f2322620055d2fec389c3c8ef5ba0e87bc7ef795dc7b39bca528d5b7e",
+        "TASK-PLAN-STATE-002": "aa273517651a1e70f40b90fb0ddae1dc06db6cf535889002a02c9476dd7855d9",
+        "TASK-PLAN-STATE-003": "1b4a204047e4df4120049b91673ec0ed6104240afacbd057404f042ae0116077",
+        "TASK-PLAN-STATE-004": "3620ccbb41dd3e4df519596aec1a3241e69e1983bb1043ce0a41b2c8f4d7a66c"
       },
-      "status": "complete",
+      "status": "in-progress",
       "receipt": ".sdd/plan-evidence/a58ed2a1f339580ab6f9d30c38a26bf7fe75241f750a09803b15323b61a67559/1929f58ca3e00dcc0da93942205dff4a8bf8ed9f28e387e5bd16c8281c723017.json"
     },
     {
@@ -5886,25 +5886,25 @@
         ".sdd/specs/ci-regression-fixtures.md": "2ae0796b125a369eea494cf1135639cd4e85152cf43bba29b2211571dfb62e60"
       },
       "dependencies": {
-        "TASK-PLAN-CLI-001": "1204c1d4c6123bfdcc0d3e0964526ead5f91b38c87e1de999addc9f50133cc9e",
-        "TASK-PLAN-CLI-002": "0771161295634d5c63b089ca5b9e38824756bb81a99a90f66f330ba61100e2f3",
-        "TASK-PLAN-CLI-003": "8d48eb8cef1b9bdede9ec0f3821b2d5916dcee80e40d136430f6692aa0a3ea1e",
-        "TASK-PLAN-CLI-004": "93b6ab940e3aa313aecb1d77f29f64a06d34ee1e5dba05a49e8b9116d266a14a",
-        "TASK-PLAN-CLI-008": "495bff01d4c46973ee7f41c59d0205353d99bd249f22713bcdf2b27c14d08aeb",
-        "TASK-PLAN-CLI-009": "302154cfcd7b01c8329d472fe60d9e1d64390853357e1aa4777d0d71e15cf717",
-        "TASK-PLAN-CLI-011": "92c1690243f26ea830f9006e7c6a6bda1829b6791017cceb9bc839099222694a",
-        "TASK-PLAN-CLI-012": "3d8919cfca808aba641abd27cf0d1d74de4558be61e63e3512e9f0ee01fdf8dc",
-        "TASK-PLAN-MODEL-001": "5257dfbfdf6487a48ac20ac12d0923406f0e31e23f5776b19e2e4cf619b8aba9",
-        "TASK-PLAN-MODEL-002": "05ff93effb1cc943a6d25daa41297b075365d516c2676dfe45bc2957b1b6c705",
-        "TASK-PLAN-MODEL-003": "4dc46000d3ecfbe91b3300886f3626f089272c2c4d2c843ea192f027313ba476",
-        "TASK-PLAN-MODEL-004": "4ca1fcd10ee9480a5b25797b193f499d0c7860e0776bdd2eea38df43e4eaa9a7",
-        "TASK-PLAN-MODEL-005": "1506613f36c93cb3ed5be9652e4a3b07a7a3e34c5b3e72fe11d9c270770445cc",
-        "TASK-PLAN-STATE-001": "18b7978ab7c7bc1931f6dd1688e1928ebb8d106b81299f5aa3ed6bbe644aa5fd",
-        "TASK-PLAN-STATE-002": "280d8b86c9a9464ba8a26a22fb23c5f04221bcb1e0723bd68cd8fb51df07d132",
-        "TASK-PLAN-STATE-003": "f58a7e6114bb310203459e2e6df55aa47bdad4a13ae21b9bb090ad0f7206d355",
-        "TASK-PLAN-STATE-004": "e93a4dac8d824d03b36a847c1fa7974f8e6c589f52683db3fb96dfc67141f832"
+        "TASK-PLAN-CLI-001": "4b97dc8d62db263785fbbb2a9f68b59e1bd0ebad04dc9ec59fe5b9639f6bae3d",
+        "TASK-PLAN-CLI-002": "923518f9f12f76f2abd7fa14d135c9dce1a728dae3c6e29d7b13a81cc28df6b1",
+        "TASK-PLAN-CLI-003": "2c5e7c4602a44444517f1ee4d74ac77f1dcbc61ceb0f13ea25a03bb9dece9ef1",
+        "TASK-PLAN-CLI-004": "7adff4e8c72d0a65b8cbee33bc812b4d801057eafb6a32425668d8e0b5772a0c",
+        "TASK-PLAN-CLI-008": "e9346a687d6793791a7226e475ad65091a7d7dabac616dcb8e1ddd7f55131ad1",
+        "TASK-PLAN-CLI-009": "f151823fee836bff4e61c4bf309cbdd3df1468c7170e04705ba657b8eb90baff",
+        "TASK-PLAN-CLI-011": "0263c4791201aafc701245aa24bada0f3ae32efa360664a9cc8be1744a33aa26",
+        "TASK-PLAN-CLI-012": "29befe3ba63044f9baa14b172554000c895fd1b58d2dad5225fd702a5e31c171",
+        "TASK-PLAN-MODEL-001": "4c7bbdc5f5ace8b9dadad518b082d5571b9a653680b9f42b0d713775e3f2ec42",
+        "TASK-PLAN-MODEL-002": "f6176c0ec916387df771a3e0a628cd6ab774c9ce83ec4c10bb89ddd78872a91a",
+        "TASK-PLAN-MODEL-003": "88d52fe015737f3bf5bb9aded2bf11437c1556bb2fdc396bb646e5e5e0991289",
+        "TASK-PLAN-MODEL-004": "797af252d5651bdf40d7716a06a8e479f38137a129c0727efdd6261704604ea9",
+        "TASK-PLAN-MODEL-005": "c1f9d46ebed7919b77b69a332b8f59c539bb8f4ee0059aeaf9ff501e0d4771bf",
+        "TASK-PLAN-STATE-001": "8f78e30f2322620055d2fec389c3c8ef5ba0e87bc7ef795dc7b39bca528d5b7e",
+        "TASK-PLAN-STATE-002": "aa273517651a1e70f40b90fb0ddae1dc06db6cf535889002a02c9476dd7855d9",
+        "TASK-PLAN-STATE-003": "1b4a204047e4df4120049b91673ec0ed6104240afacbd057404f042ae0116077",
+        "TASK-PLAN-STATE-004": "3620ccbb41dd3e4df519596aec1a3241e69e1983bb1043ce0a41b2c8f4d7a66c"
       },
-      "status": "complete",
+      "status": "in-progress",
       "receipt": ".sdd/plan-evidence/b1b133d08bc9b4fc0f94b19884888ba1dc2c3fe58c7d57d580d71d5223599cfd/0b4069aff7862a0c0f84243732f24bc8734be6a289666f968263676c5a8faee4.json"
     },
     {
@@ -5954,23 +5954,23 @@
         ".sdd/specs/implementation-feedback.md": "44daba87154799951133fd243de1fe0e8c14bc7a584fb9e19667cd73f2236b68"
       },
       "dependencies": {
-        "TASK-PLAN-CLI-001": "1204c1d4c6123bfdcc0d3e0964526ead5f91b38c87e1de999addc9f50133cc9e",
-        "TASK-PLAN-CLI-002": "0771161295634d5c63b089ca5b9e38824756bb81a99a90f66f330ba61100e2f3",
-        "TASK-PLAN-CLI-003": "8d48eb8cef1b9bdede9ec0f3821b2d5916dcee80e40d136430f6692aa0a3ea1e",
-        "TASK-PLAN-CLI-004": "93b6ab940e3aa313aecb1d77f29f64a06d34ee1e5dba05a49e8b9116d266a14a",
-        "TASK-PLAN-CLI-008": "495bff01d4c46973ee7f41c59d0205353d99bd249f22713bcdf2b27c14d08aeb",
-        "TASK-PLAN-CLI-009": "302154cfcd7b01c8329d472fe60d9e1d64390853357e1aa4777d0d71e15cf717",
-        "TASK-PLAN-CLI-011": "92c1690243f26ea830f9006e7c6a6bda1829b6791017cceb9bc839099222694a",
-        "TASK-PLAN-CLI-012": "3d8919cfca808aba641abd27cf0d1d74de4558be61e63e3512e9f0ee01fdf8dc",
-        "TASK-PLAN-MODEL-001": "5257dfbfdf6487a48ac20ac12d0923406f0e31e23f5776b19e2e4cf619b8aba9",
-        "TASK-PLAN-MODEL-002": "05ff93effb1cc943a6d25daa41297b075365d516c2676dfe45bc2957b1b6c705",
-        "TASK-PLAN-MODEL-003": "4dc46000d3ecfbe91b3300886f3626f089272c2c4d2c843ea192f027313ba476",
-        "TASK-PLAN-MODEL-004": "4ca1fcd10ee9480a5b25797b193f499d0c7860e0776bdd2eea38df43e4eaa9a7",
-        "TASK-PLAN-MODEL-005": "1506613f36c93cb3ed5be9652e4a3b07a7a3e34c5b3e72fe11d9c270770445cc",
-        "TASK-PLAN-STATE-001": "18b7978ab7c7bc1931f6dd1688e1928ebb8d106b81299f5aa3ed6bbe644aa5fd",
-        "TASK-PLAN-STATE-002": "280d8b86c9a9464ba8a26a22fb23c5f04221bcb1e0723bd68cd8fb51df07d132",
-        "TASK-PLAN-STATE-003": "f58a7e6114bb310203459e2e6df55aa47bdad4a13ae21b9bb090ad0f7206d355",
-        "TASK-PLAN-STATE-004": "e93a4dac8d824d03b36a847c1fa7974f8e6c589f52683db3fb96dfc67141f832"
+        "TASK-PLAN-CLI-001": "4b97dc8d62db263785fbbb2a9f68b59e1bd0ebad04dc9ec59fe5b9639f6bae3d",
+        "TASK-PLAN-CLI-002": "923518f9f12f76f2abd7fa14d135c9dce1a728dae3c6e29d7b13a81cc28df6b1",
+        "TASK-PLAN-CLI-003": "2c5e7c4602a44444517f1ee4d74ac77f1dcbc61ceb0f13ea25a03bb9dece9ef1",
+        "TASK-PLAN-CLI-004": "7adff4e8c72d0a65b8cbee33bc812b4d801057eafb6a32425668d8e0b5772a0c",
+        "TASK-PLAN-CLI-008": "e9346a687d6793791a7226e475ad65091a7d7dabac616dcb8e1ddd7f55131ad1",
+        "TASK-PLAN-CLI-009": "f151823fee836bff4e61c4bf309cbdd3df1468c7170e04705ba657b8eb90baff",
+        "TASK-PLAN-CLI-011": "0263c4791201aafc701245aa24bada0f3ae32efa360664a9cc8be1744a33aa26",
+        "TASK-PLAN-CLI-012": "29befe3ba63044f9baa14b172554000c895fd1b58d2dad5225fd702a5e31c171",
+        "TASK-PLAN-MODEL-001": "4c7bbdc5f5ace8b9dadad518b082d5571b9a653680b9f42b0d713775e3f2ec42",
+        "TASK-PLAN-MODEL-002": "f6176c0ec916387df771a3e0a628cd6ab774c9ce83ec4c10bb89ddd78872a91a",
+        "TASK-PLAN-MODEL-003": "88d52fe015737f3bf5bb9aded2bf11437c1556bb2fdc396bb646e5e5e0991289",
+        "TASK-PLAN-MODEL-004": "797af252d5651bdf40d7716a06a8e479f38137a129c0727efdd6261704604ea9",
+        "TASK-PLAN-MODEL-005": "c1f9d46ebed7919b77b69a332b8f59c539bb8f4ee0059aeaf9ff501e0d4771bf",
+        "TASK-PLAN-STATE-001": "8f78e30f2322620055d2fec389c3c8ef5ba0e87bc7ef795dc7b39bca528d5b7e",
+        "TASK-PLAN-STATE-002": "aa273517651a1e70f40b90fb0ddae1dc06db6cf535889002a02c9476dd7855d9",
+        "TASK-PLAN-STATE-003": "1b4a204047e4df4120049b91673ec0ed6104240afacbd057404f042ae0116077",
+        "TASK-PLAN-STATE-004": "3620ccbb41dd3e4df519596aec1a3241e69e1983bb1043ce0a41b2c8f4d7a66c"
       },
       "status": "complete",
       "receipt": ".sdd/plan-evidence/5ba70fab220eb8ef97e3ef53493bfa57dfbb09a0720d39c4dcb40771cba2fe1d/11fd1a322da4f67826f57fc37632ce37465d342241f6b1c6533a9f69d7252400.json"
@@ -6017,24 +6017,24 @@
         ".sdd/specs/implementation-feedback-workflow.md": "066d142587668b87317c0014d0a8a0bb0baa4880e8d50d0c730ef37e573fb7c0"
       },
       "dependencies": {
-        "TASK-FEEDBACK-CLI": "2a5ab569c088001dd1338b8b462b50cc773bace1047ef28e2f5b2e1d79a02a58",
-        "TASK-PLAN-CLI-001": "1204c1d4c6123bfdcc0d3e0964526ead5f91b38c87e1de999addc9f50133cc9e",
-        "TASK-PLAN-CLI-002": "0771161295634d5c63b089ca5b9e38824756bb81a99a90f66f330ba61100e2f3",
-        "TASK-PLAN-CLI-003": "8d48eb8cef1b9bdede9ec0f3821b2d5916dcee80e40d136430f6692aa0a3ea1e",
-        "TASK-PLAN-CLI-004": "93b6ab940e3aa313aecb1d77f29f64a06d34ee1e5dba05a49e8b9116d266a14a",
-        "TASK-PLAN-CLI-008": "495bff01d4c46973ee7f41c59d0205353d99bd249f22713bcdf2b27c14d08aeb",
-        "TASK-PLAN-CLI-009": "302154cfcd7b01c8329d472fe60d9e1d64390853357e1aa4777d0d71e15cf717",
-        "TASK-PLAN-CLI-011": "92c1690243f26ea830f9006e7c6a6bda1829b6791017cceb9bc839099222694a",
-        "TASK-PLAN-CLI-012": "3d8919cfca808aba641abd27cf0d1d74de4558be61e63e3512e9f0ee01fdf8dc",
-        "TASK-PLAN-MODEL-001": "5257dfbfdf6487a48ac20ac12d0923406f0e31e23f5776b19e2e4cf619b8aba9",
-        "TASK-PLAN-MODEL-002": "05ff93effb1cc943a6d25daa41297b075365d516c2676dfe45bc2957b1b6c705",
-        "TASK-PLAN-MODEL-003": "4dc46000d3ecfbe91b3300886f3626f089272c2c4d2c843ea192f027313ba476",
-        "TASK-PLAN-MODEL-004": "4ca1fcd10ee9480a5b25797b193f499d0c7860e0776bdd2eea38df43e4eaa9a7",
-        "TASK-PLAN-MODEL-005": "1506613f36c93cb3ed5be9652e4a3b07a7a3e34c5b3e72fe11d9c270770445cc",
-        "TASK-PLAN-STATE-001": "18b7978ab7c7bc1931f6dd1688e1928ebb8d106b81299f5aa3ed6bbe644aa5fd",
-        "TASK-PLAN-STATE-002": "280d8b86c9a9464ba8a26a22fb23c5f04221bcb1e0723bd68cd8fb51df07d132",
-        "TASK-PLAN-STATE-003": "f58a7e6114bb310203459e2e6df55aa47bdad4a13ae21b9bb090ad0f7206d355",
-        "TASK-PLAN-STATE-004": "e93a4dac8d824d03b36a847c1fa7974f8e6c589f52683db3fb96dfc67141f832"
+        "TASK-FEEDBACK-CLI": "5f9f331189fea62cfa3c2a524659ee3f53a2d9e911a8d6f477bd55ef83fb61d2",
+        "TASK-PLAN-CLI-001": "4b97dc8d62db263785fbbb2a9f68b59e1bd0ebad04dc9ec59fe5b9639f6bae3d",
+        "TASK-PLAN-CLI-002": "923518f9f12f76f2abd7fa14d135c9dce1a728dae3c6e29d7b13a81cc28df6b1",
+        "TASK-PLAN-CLI-003": "2c5e7c4602a44444517f1ee4d74ac77f1dcbc61ceb0f13ea25a03bb9dece9ef1",
+        "TASK-PLAN-CLI-004": "7adff4e8c72d0a65b8cbee33bc812b4d801057eafb6a32425668d8e0b5772a0c",
+        "TASK-PLAN-CLI-008": "e9346a687d6793791a7226e475ad65091a7d7dabac616dcb8e1ddd7f55131ad1",
+        "TASK-PLAN-CLI-009": "f151823fee836bff4e61c4bf309cbdd3df1468c7170e04705ba657b8eb90baff",
+        "TASK-PLAN-CLI-011": "0263c4791201aafc701245aa24bada0f3ae32efa360664a9cc8be1744a33aa26",
+        "TASK-PLAN-CLI-012": "29befe3ba63044f9baa14b172554000c895fd1b58d2dad5225fd702a5e31c171",
+        "TASK-PLAN-MODEL-001": "4c7bbdc5f5ace8b9dadad518b082d5571b9a653680b9f42b0d713775e3f2ec42",
+        "TASK-PLAN-MODEL-002": "f6176c0ec916387df771a3e0a628cd6ab774c9ce83ec4c10bb89ddd78872a91a",
+        "TASK-PLAN-MODEL-003": "88d52fe015737f3bf5bb9aded2bf11437c1556bb2fdc396bb646e5e5e0991289",
+        "TASK-PLAN-MODEL-004": "797af252d5651bdf40d7716a06a8e479f38137a129c0727efdd6261704604ea9",
+        "TASK-PLAN-MODEL-005": "c1f9d46ebed7919b77b69a332b8f59c539bb8f4ee0059aeaf9ff501e0d4771bf",
+        "TASK-PLAN-STATE-001": "8f78e30f2322620055d2fec389c3c8ef5ba0e87bc7ef795dc7b39bca528d5b7e",
+        "TASK-PLAN-STATE-002": "aa273517651a1e70f40b90fb0ddae1dc06db6cf535889002a02c9476dd7855d9",
+        "TASK-PLAN-STATE-003": "1b4a204047e4df4120049b91673ec0ed6104240afacbd057404f042ae0116077",
+        "TASK-PLAN-STATE-004": "3620ccbb41dd3e4df519596aec1a3241e69e1983bb1043ce0a41b2c8f4d7a66c"
       },
       "status": "complete",
       "receipt": ".sdd/plan-evidence/ec7366f08f2809ec0ad06631a07abb321c587649dfe392debc740a785d04c8dc/67a0b56f2e21700cc4e45568750d3a5d7d224422a7e309caca54774f6ff82a12.json"

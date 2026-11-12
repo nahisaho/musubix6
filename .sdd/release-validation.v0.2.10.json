@@ -2,18 +2,18 @@
   "schemaVersion": 1,
   "targetVersion": "0.2.10",
   "status": "scope-contract-not-run-evidence",
-  "revision": 2,
+  "revision": 3,
   "policy": "docs/design-sdd-hardening.md section 3.5",
   "inheritedManifest": {
     "path": ".sdd/release-validation.v0.2.0.json",
     "sha256": "e2f221e308e2fb4389f044e12c42cb2083e314b97305ae1701f65cd399c37de6"
   },
-  "revisionReason": "Prospective0.2.10 feedback successor from committed01e1f0d: preserve all24 Linux cells/budgets, all118 inherited paths/full modes,28 semantic mechanisms,14 placeholder mechanisms and every1240 inherited vendor/origin challenge; renew8 intentionally changed canonical byte digests and add2 shipped feedback files with all10 source byte/full-mode policies each. Copilot120/Claude117,1200 source challenges plus60 origin sensitivities,1288 total skill cases. Credit/streak0; genuine seven-artifact human preparation approval required before adapter cutover or admission.",
+  "revisionReason": "Prospective0.2.10 lossless-ledger successor from committedffff1a7: preserve all24 Linux cells/budgets, all120 inherited paths/full modes,28 semantic and14 placeholder mechanisms and every1260 inherited vendor/origin challenge; renew4 reviewed canonical byte digests and add the shipped ledger test with all10 source byte/full-mode policies. Copilot121/Claude118;1210 source challenges plus60 origin sensitivities,1298 total skill cases. Credit/streak0; exact seven-artifact human preparation approval required before adapter cutover or admission.",
   "historicalTestLineage": {
     "version": 1,
-    "sourceCommit": "01e1f0d98c9e32f5a1cfa682435b09b4e54d6957",
+    "sourceCommit": "ffff1a7893a41d9b8ea0b50ddc4837a663ce23a3",
     "suite": ".github/skills/lean-sdd-tdd/scripts/sdd.test.mjs",
-    "suiteSha256": "b0810139e648802f6c2e59d4f1ad435612f6a1f96903a9ff3948cf150830c86a",
+    "suiteSha256": "5bf8c282f28eded3aaa58c90a83319e4dddd957c6461d33f2a5cd7740822f644",
     "mappings": [
       {
         "from": "#r25a Rust: a const typed in the test is reported shown; a fn with no return evidence is guessed (report-only, code unchanged)",
@@ -89,7 +89,7 @@
   },
   "contentMutationContract": {
     "path": ".sdd/release-content-mutations.v0.2.10.json",
-    "sha256": "9019a5968859179375d61897fb86abef07f57aeb2dad0e9858bb879378c93f40",
+    "sha256": "fe50d0aafd3d912eb4be1fa088fefae64dc84a74bf10d3862daad30b91686d2e",
     "approvalRequired": true,
     "status": "proposed-not-approved-or-executed"
   },
@@ -292,7 +292,9 @@
       "#387 read-only specification/dependency binding preview with no task-completion credit",
       "Contextual Japanese proofreading with15 additional exact owned mutation mechanisms",
       "Mandatory implementation-to-canonical-spec feedback on fresh planning-enabled projects, explicit legacy opt-in and both-host workflow/distribution",
-      "Git-free release-test discovery without eager historical fixtures; selected execution retains genuine pinned history"
+      "Git-free release-test discovery without eager historical fixtures; selected execution retains genuine pinned history",
+      "Automatic lossless gzip TDD-ledger archival with committed immutable segments, recoverable serialized mutation and unchanged strict evidence retention",
+      "Windows directory fsync uses writable handles with actual source/both-host/standalone Node20/22/24 CI; Linux-only release qualification scope remains unchanged"
     ],
     "currentNamedCatalogue": "pending reconstruction and freeze; no historical count assumed"
   },
@@ -317,8 +319,8 @@
     "sha256": "683269310de4498ee64f33cfe2b4e30e742a33fbf616da3577770198bb6bb280"
   },
   "previousRevision": {
-    "number": 1,
-    "sha256": "fce4b43abb229843e0dd246534c10f7bf70321a3ab899b0461986105278f11bf",
-    "artifactCommit": "01e1f0d98c9e32f5a1cfa682435b09b4e54d6957"
+    "number": 2,
+    "sha256": "4d91abf448412004f8b98d51c412d49e6d0115e0359a240bddd4641c2a6284d9",
+    "artifactCommit": "ffff1a7893a41d9b8ea0b50ddc4837a663ce23a3"
   }
 }

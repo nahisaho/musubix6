@@ -1,4 +1,76 @@
-# Feedback-integrated scope2/content2 implementation review
+# Lossless-ledger scope3/content3 implementation review
+
+The exact seven-artifact preparation unit was genuinely approved by nahisaho
+and recorded through the SDK; this is not tag/publication approval.
+Current spec SHA256:
+036c643e46c0f3dc8fc050dd6890a972d22b5cfe7572b7f351644406dfc663bd.
+Materializer SHA256:
+27e5d65cfaec28ed506d17518e859b396def5daaaf812a3b90773ac49936d9a3.
+Content-helper SHA256:
+896dc849315d6cb1a23507669b2700393b091bf0e8a4622eb71e9d07e172fc0e.
+Regression-module SHA256:
+c25ec8950e0a98d58469d6f51d6656c92ac882361c28317a51134f0ffa3e831d.
+
+Independent retained reviewers8a2aff71-e3cd-4cf4-97fc-cba335bedcd3
+(inventory/unit/content policy) and5aeb8f49-50bf-4b00-bd13-13156d496303
+(history/state/regression ownership) returned pre-lock CLEAN and fresh
+postimplementation rounds1 and2 CLEAN after fresh bounded-scope inspection.
+Reviews are static, not attestations of executed tests.
+The unchanged auto CI-fixture contract also received a genuine reviewed
+SDK lock renewal for the shared regression-module delta; no approval hashes
+were hand-edited.
+
+Formal native assertion Reds precede production: GIT001346ms refuses
+`oracle requires private frozen Git history`; SKILL001279ms fails the
+prospective121-file valid-input assertion. Identical-test native Greens pass
+428ms/2233ms. The production change adds only `oracle` to the existing strict
+genuine-history path and explicitly admits content revisions1/2/3 with fixed
+118/120/121 policies. All13 history/discovery kind rows, all three valid
+catalogues1268/1288/1298 and declared invalid inputs execute in the regression.
+
+All19 shared-code warning tests subsequently pass genuine native refactors.
+Both complete affected release/host modules pass28/28, failed0, skipped0,
+92277ms. JavaScript diagnostics complete48/48, ignored0, no errors.
+These results are retained in session artifacts:
+v0210-compaction-release-native-red/green-{git,content}.log,
+v0210-compaction-release-native-refactor-TEST-*.log,
+v0210-compaction-release-affected-suites.log and
+v0210-compaction-release-diagnostics.json.
+
+Eight isolated sensitivities have actual passing baselines, an exact
+independently owned native assertion failure and byte/mode restoration with
+a passing control. Report:
+v0210-compaction-release-mutations-MTIqeM/report.json, SHA256
+51abbc51337f36a90dce2a7d4bad94bfcf4340b329577678308bebc722209d02.
+The final harness uses the existing structured native reporter/parser.
+Only the async oracle-digest assertion permits removal of one exact leading
+Node processTicksAndRejections dispatcher after the exact assertion header;
+the first external frame must still be frozen regression line349. No
+production verdict rule changes. Earlier3kESju/RbnPja attempts remain
+INCOMPLETE: conservative async/TAP stack parsing stopped them after2/3
+detected cases, respectively; neither is an eight-case pass.
+
+The corrected actual `oracle` materializer also reexecutes unchanged selected
+003 from the retained failed historical fixture using its original bound
+genuine bundle:1/1PASS, zero skips. Report:
+v0210-compaction-oracle-product-integration-q2NonZ/report.json, SHA256
+304bb28019e882a01a8f1c14856bccad41181ed39bfed5b61526d4af51634127.
+This is a product-path component check, not the current complete
+ORACLE-SELFTEST cell, a new frozen run or qualification credit.
+
+Actual preimplementation plan check remains FAIL:2 complete,
+121 revalidation-required and6 replan-required old histories. All129 current
+fingerprints are known; every authored specification/dependency binding
+matches those measured inputs. The28 measured binding replacements retain
+all genuine old history-head pointers; affected tasks are in-progress.
+That consistency observation is not fresh native task verification.
+Fresh complete current task proof, a new full gate, successor same-head CI
+and two complete unchanged frozen runs remain pending; streak0/2.
+Same-headffff1a7 Windows/Linux development CI and the authentic Actions
+publication dry-run succeeded, but apply only to that earlier source.
+No actual publication, release tag, scope weakening or old credit is claimed.
+
+# Historical feedback-integrated scope2/content2 implementation review
 
 Current canonical spec SHA256:
 19e94f81df3d02452330567062cc16484006923e51080ab1ca2c1cdd72550451.

@@ -353,8 +353,11 @@ Metadata is limited to **1 MiB** and the complete uncompressed logical ledger
 to **64 MiB** per operation, including archive expansion. Exceeding a limit or
 missing/malformed storage returns2 (unresolved); demonstrated integrity or
 baseline-retention failures return1. These limits are not permission to drop old
-history. Local archive/recovery checks currently cover Linux/Node24; actual
-Node20/22 and Windows/macOS validation remain separate required work.
+history. Local archive/recovery checks cover Linux/Node20/22/24. Windows
+Node20/22/24 CI passed source, both copied hosts and standalone controls,
+including the directory-flush regression. This is not full Windows release
+qualification; macOS remains unvalidated and frozen Linux qualification is
+still separate required work.
 
 ### Read only the specifications needed for a change (v0.1.2)
 

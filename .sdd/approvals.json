@@ -252,16 +252,16 @@
   "release-qualification": {
     "by": "nahisaho",
     "kind": "human",
-    "review": "Explicit genuine ask_user approval of exact seven shown artifact hashes plus helper8f85684dbf4372a2cf1bb9db08473463752e0235fbf4f2b9644e074ee8990289 for development evidence refresh/task revalidation/full gate only. No push, frozen qualification restart, tag or npm publication authorization. Capacity/bomb/corrupt-baseline/link-crash/real-Windows limits remain; required scope unchanged.",
-    "at": "2026-11-12T07:16:05.718Z",
+    "review": "Explicit human approval of the seven prepared artifact hashes captured in this session: scope3/content3 preparation and minimal oracle-history/catalogue implementation and validation only; no tag or publication authorization.",
+    "at": "2026-11-12T21:08:26.135Z",
     "artifacts": {
-      ".sdd/specs/release-qualification.md": "19e94f81df3d02452330567062cc16484006923e51080ab1ca2c1cdd72550451",
-      ".sdd/release-validation.v0.2.10.json": "4d91abf448412004f8b98d51c412d49e6d0115e0359a240bddd4641c2a6284d9",
-      ".sdd/release-content-mutations.v0.2.10.json": "9019a5968859179375d61897fb86abef07f57aeb2dad0e9858bb879378c93f40",
+      ".sdd/specs/release-qualification.md": "036c643e46c0f3dc8fc050dd6890a972d22b5cfe7572b7f351644406dfc663bd",
+      ".sdd/release-validation.v0.2.10.json": "2f8999a87402f312a72476f96284a4395a0fbcef157fccfeeb991ddc4ad99102",
+      ".sdd/release-content-mutations.v0.2.10.json": "fe50d0aafd3d912eb4be1fa088fefae64dc84a74bf10d3862daad30b91686d2e",
       ".sdd/specs/claude-code-support.md": "2c846e5878db59abb7ba0cc3aa9b7f49256c91a6a250931a7e0e53a7cf826560",
-      "README.md": "b6aa97eb2f0b5db7e43241fa5c1b0e6de796b1dd67943309a6e73a1fd4b0e8c8",
-      "README-ja.md": "8d2a0359773fc51c93e4b17bd18b7df14926a8aa8cf7b366956755f902aa84c0",
-      "CLANGELOG.md": "c7447bf2b65c470d42f56890516fa39123762f490b0aadb32a28649d56559ce8"
+      "README.md": "e22066a7b7b620fcff6f7bb4650fe7ef636c9532650a1532d9af50ec0b4428d8",
+      "README-ja.md": "ad304a737917f75269876f1bf58b68990db76568fb9121c8ef5195ae40b6391e",
+      "CLANGELOG.md": "53d0627295bcd9f0384f9bc1f6efcd3379e0b47997c1b40e3ba915d8aa98f7ba"
     },
     "tier": "T2",
     "requireHuman": true,
@@ -365,14 +365,13 @@
     }
   },
   "ci-regression-fixtures": {
-    "by": "ai:ledger-integration-review",
+    "by": "ai:release-oracle-regression-review",
     "kind": "ai",
-    "review": ".sdd/review-ci-regression-fixtures.md",
-    "reviewSha": "dc0396380fb477c7fb3b71620b4533ec58c12997ac30d0dcdbec66cb82ebd752",
-    "at": "2026-11-12T07:18:02.888Z",
+    "review": "Independent same-delta review CLEAN: unchanged deferred Git-free discovery/genuine selected-execution contract; only the reviewed shared regression artifact changed, with all new historical reads inside selected test bodies.",
+    "at": "2026-11-12T21:17:03.787Z",
     "artifacts": {
       ".sdd/specs/ci-regression-fixtures.md": "2ae0796b125a369eea494cf1135639cd4e85152cf43bba29b2211571dfb62e60",
-      "scripts/release-qualification.test.mjs": "f3c1d5a9c71abd201ef86dee1faeba1eaba551d3ae3e4b819857c48f49fdfe3a",
+      "scripts/release-qualification.test.mjs": "c25ec8950e0a98d58469d6f51d6656c92ac882361c28317a51134f0ffa3e831d",
       "scripts/release-host-mutations.test.mjs": "6a6798b24e1aae5bb01c8502c4edb99da0281894562c25779bf3bbb7deccd914",
       ".github/skills/lean-sdd-tdd/scripts/sdd.test.mjs": "5bf8c282f28eded3aaa58c90a83319e4dddd957c6461d33f2a5cd7740822f644",
       ".github/skills/lean-sdd-tdd/scripts/implementation-plan-cli.test.mjs": "d830cf57e9a94c52d88a88134e3d52ab906b0513135df3cc247f5d58ded3e474"

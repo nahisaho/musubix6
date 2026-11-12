@@ -31,10 +31,10 @@ separate requirements.
   zero failures/skips) and all128 task checks. Subsequent release-fixture and
   inventory changes require fresh affected-task and full-project validation;
   baseline results are not current frozen qualification.
-- The prospective scope/content revision2 retains the24 required Linux cells,
+- The prospective scope/content revision3 retains the24 required Linux cells,
   unchanged budgets, every inherited file/full mode and mutation. It covers
-  120 canonical skill files,28 semantic mechanisms,1200 source byte/mode
-  challenges and60 origin sensitivities:1288 required skill cases.
+  121 canonical skill files,28 semantic mechanisms,1210 source byte/mode
+  challenges and60 origin sensitivities:1298 required skill cases.
 - Old release contracts and failed history are retained. The new exact
   seven-artifact preparation approval, fresh native proof, two identical
   complete frozen runs and separate exact-package publication approval remain
@@ -50,8 +50,18 @@ separate requirements.
   diagnostics plus plan check, verify and bindings; invalid usage still exits2.
 - Defer historical release-test fixtures until selected execution so Git-free
   discovery works without giving missing-history execution a fallback.
+- Use writable Windows directory handles for real fsync, preserving POSIX
+  read-only handles and all I/O failure refusals. Actual Node20/22/24 CI passed
+  source, both copied hosts and standalone controls; this is development
+  validation, not full Windows release qualification.
 
 ### Added
+
+- Automatically archive complete TDD-ledger rows with lossless gzip above
+  2MiB, retaining all original events and sealed evidence. Commit the active
+  tail, manifest and archives together. Recover validated interrupted
+  mutations without stealing live, unknown or foreign-host ownership;
+  enforce the1MiB metadata and64MiB logical-history limits without deletion.
 
 - Preview specification/dependency hash bindings with `sdd plan bindings --json`
   without executing checks or writing files. Output includes effective

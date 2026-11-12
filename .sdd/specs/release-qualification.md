@@ -5,7 +5,7 @@ approval: human
 artifacts: .sdd/release-validation.v0.2.10.json, .sdd/release-content-mutations.v0.2.10.json, .sdd/specs/claude-code-support.md, README.md, README-ja.md, CLANGELOG.md
 ---
 # Reproducible Linux-only release qualification
-Goal: prepare the exact stable0.2.10 candidate from main for the unchanged24-cell Linux qualification, with zero transferred credit and no publication authorization. The current contract is the stable0.2.10 successor plus its feedback-integrated scope2/content2 amendment below; earlier preparation and evidence remain historical. Genuine seven-artifact human preparation approval, current native verification, two fresh unchanged complete runs and separate exact-package human publication approval remain required.
+Goal: prepare the exact stable0.2.10 candidate from main for the unchanged24-cell Linux qualification, with zero transferred credit and no publication authorization. The current contract is the stable0.2.10 successor plus its lossless-ledger scope3/content3 amendment below; earlier preparation and evidence remain historical. Genuine seven-artifact human preparation approval, current native verification, two fresh unchanged complete runs and separate exact-package human publication approval remain required.
 | ID | EARS requirement | Test |
 | --- | --- | --- |
 | REQ-RELQ-001 | When a Linux-only qualification plan is admitted, the validator shall require all 24 inherited non-WSL cells with unchanged budgets and an explicit excluded NATIVE-WSLC cell, bind the scope and explicit committed historical test lineage to the approved plan, and reject missing, duplicate or weakened required cases and invalid lineage. | TEST-RELQ-001, TEST-RELQ-LINEAGE-001 |
@@ -865,6 +865,64 @@ was1211/1211 with128 current tasks, not proof for these subsequent changes.
 Keep #385's non-reproduction disposition, warnings and unqualified-platform
 limits disclosed above. This amendment and CLANGELOG.md require renewed
 human preparation approval before adapter cutover; no approval is synthesized.
+
+### Lossless-ledger successor: scope3/content3 preparation
+
+The prospective committed source is
+`ffff1a7893a41d9b8ea0b50ddc4837a663ce23a3`, skill tree
+`7b8748289a38568f37f697afe0b6ba9dcd07b864`. Keep every revision2 path,
+full mode, semantic/placeholder mechanism, historical mapping, budget and
+all24 required Linux cells. Renew exactly four canonical byte references:
+the SDD guide, planning CLI, standalone SDK and its existing regression file.
+Add only the shipped `tdd-ledger.test.mjs`, with all ten source byte/nine-bit
+permission challenges. This gives121 canonical files, Copilot121/Claude118,
+1210 source challenges,60 origin sensitivities,28 semantic mechanisms and
+1298 required SKILL-MUTATION cases; all14 placeholder mechanisms remain.
+The current SKILL-REPLACEMENT-13 SDK-test oracle identity changes from
+`b0810139e648802f6c2e59d4f1ad435612f6a1f96903a9ff3948cf150830c86a`
+to `5bf8c282f28eded3aaa58c90a83319e4dddd957c6461d33f2a5cd7740822f644`;
+no historicalEvidence, mutation edit, primary assertion or diagnostic changes.
+
+The independent `v0210-compaction-inventory-reference-report.json`
+compared committed blobs, live/full archive modes, actual offline npm
+bytes/modes and source/package initialization on both hosts: all121 paths
+and all four121/118 host inventories passed. It is preparation evidence,
+not the final tgz or a qualification run. Prospective scope SHA256 is
+`2f8999a87402f312a72476f96284a4395a0fbcef157fccfeeb991ddc4ad99102`;
+content SHA256 is
+`fe50d0aafd3d912eb4be1fa088fefae64dc84a74bf10d3862daad30b91686d2e`.
+Their revision2 predecessors remain explicitly bound and retained in Git.
+Require renewed exact seven-artifact human preparation approval before
+adapter cutover/admission, independently of final publication approval.
+
+The retained frozen run-h5n6Bp passed14/24 cells, then ORACLE-SELFTEST failed
+because selected TEST-RELQ-003 executes genuine pinned `git show` fixtures
+in a Git-free materialized source. Discovery itself correctly remains
+Git-free. The already bound genuine history must also be restored for the
+`oracle` execution kind, using the same digest, private clone, exact commit
+and frozen overlay checks as `gate`/`suite`. Never fake history, suppress
+selected-fixture failures or attach Git metadata to discovery or other
+Git-free kinds. A zero-credit isolated execution using the existing genuine
+bound bundle passed the selected test1/1; this is feasibility, not Green.
+
+| REQ | PASS condition | Counterexample and expected verdict | TEST/command | Observed evidence |
+|---|---|---|---|---|
+| `REQ-RELQ-002`, `REQ-RELQ-003` | All three gate/suite/oracle execution kinds restore exact genuine bound history and frozen bytes; all ten other policy/discovery kinds stay Git-free whether history is supplied or absent | An oracle source without `.git` cannot execute its pinned historical fixture and must not pass; missing/partial history, wrong digest/commit or a contaminated frozen source rejects before successful execution; valid genuine history accepts | Extend existing TEST-RELQ-GIT-001 before implementation; enumerate the13 finite kind rows, nine missing/partial inputs for each history-using kind and existing digest/commit/overlay boundaries | Retained actual frozen14/24 failure and genuine-bundle selected003 spike1/1; native Red/Green and bounded restored sensitivities remain required |
+| `REQ-RELQ-003`, `REQ-RELQ-005` | Valid revisions1/2/3 yield1268/1288/1298 unique skill cases, respectively; revision3 preserves all1288 predecessor IDs and adds exactly the ten ledger-file/policy combinations; all14 placeholder cases remain | Unsupported revision4 or nonnumeric/missing revision,120/122 files, stale1288 counts, duplicate policies/IDs, omitted permission bit, or substituting any of the three post-legacy required paths at unchanged121 cardinality rejects; all three valid controls accept | Extend existing TEST-RELQ-SKILL-001 before implementation; retain revision2 controls from committedffff1a7; enumerate unsupported values across all three payloads and both cells, every new policy and every missing bit | Independent121-file/four-origin preparation passed; actual native Red/Green and isolated invalid/valid sensitivity checks remain required |
+| `REQ-RELQ-001`, `REQ-RELQ-004`, `REQ-RELQ-005` | Unchanged24-cell budgets/policies, current native task proof/full gate and two complete clean identical frozen runs precede separate exact-tgz publication approval | Old1225-test gate, Windows development CI, a partial run, scope/content revision2 or a broad publish request cannot transfer credit or authorize tagging | Existing native plan verification, full gate, freeze/check/run/status and annotated-tag workflow | Windows43236541000 passed all Node20/22/24 source/both-host/standalone jobs atffff1a7; current full gate and frozen streak remain unproven,0/2 |
+
+First violated stages: contract = explicit121-file revision and genuine
+seven-artifact approval; trusted inputs = exact committed bytes/full modes,
+bundle digest and commit; execution = the observed oracle omission of an
+already bound required historical input; verdict = accept all valid revisions
+and history controls while rejecting invalid evidence; evidence history =
+retain failed run-h5n6Bp and predecessors, reset0/2 with no credit; integration/
+distribution = real both-host/runtime cells and separately approved exact
+Actions-compatible tgz. All six apply; none is waived. Unsupported native
+permissions, macOS, full Windows qualification, WSL and live Claude remain
+outside qualified Linux support; #385's unidentified historical first
+failure remains disclosed. Later native/mutation/gate records belong in the
+existing feature review and authentic receipts, not an assumed PASS here.
 
 ## Risks / assumptions
 Six first-failure stages: contract — approved Linux scope and exact inherited 24-cell equality; trusted inputs — pin actual files/tools/configuration and reject absent dependencies; execution — fresh isolated work, bounded commands, real native controls; verdict — independent named catalogues, positive controls and assertion mutants; evidence history — immutable failed records, no old credit, deterministic streak reset; integration/distribution — exact tgz and both-host inventories on Node20/22/24, separate human approval.

@@ -4,13 +4,13 @@ open: 0
 
 # Ledger-compaction review
 
-## Windows amendment: reviewed implementation, native CI pending
+## Windows amendment: reviewed implementation and actual native CI
 
 The current verdict covers the specification and changed implementation.
 Both retained reviewers completed two consecutive fresh whole-assigned-scope
 post-implementation static CLEAN rounds. Neither executed tests.
-Current full-scope task verification, a new full gate, corrected Windows CI,
-frozen qualification and publication remain pending. Historical successful
+Current full-scope task verification, a new full gate, frozen qualification
+and publication remain pending. Historical successful
 evidence below applies to the earlier source freeze, not current readiness.
 
 Independent retained reviewers a5379e68-15d0-4bd7-9b87-bfb2587e01c1
@@ -29,6 +29,17 @@ The only production behavior change is directory-open access: Windows uses
 SDK SHA256:251303cb76dc669b237463df58ac2dfc1f93fccc161453007537c5ccbab37270.
 Test SHA256:b8efd9f1d86b8a86890ccf431b0fb68c1923ab6b1749a0312c504ff46d5ca804.
 Windows workflow SHA256:0e5cea8adf8c995517b64c80eba4392dcabfb2005728ac70b9280466d82a78de.
+
+Repair commitffff1a7893a41d9b8ea0b50ddc4837a663ce23a3 is pushed without
+force. Actual same-head Windows43236541000 passed all Node20/22/24 jobs:
+source controls, focused014, both copied hosts and lone standalone script.
+Same-head Linux43236540939 also completed SUCCESS. Retained session logs:
+ledger-windows-ci-ffff1a7.log SHA256
+e416a8d42d75a0ba53e42395e3a861d6421fa3b264b07cf0bdbdc9fd1cf6ed80;
+ledger-linux-ci-ffff1a7.log SHA256
+81c5044a8845bbb64c8817b74e689b7a96cf1f6adaab2c5060e5d91e5f0e76ef.
+These are development CI results, not full Windows qualification or either
+required complete frozen Linux run.
 
 Actual TEST014 executes eight valid modeled rows and140 refused error rows,
 two real plain/oversized appends and two real injected-flush refusals.
@@ -50,7 +61,7 @@ The pre-implementation full plan check is retained as FAIL:128 complete,
 only TASK-LEDGER-COMPACTION replan-required against its old history/definition.
 All129 binding fingerprints were measured with no required binding patch.
 Its old genuine history-head receipt pointer is retained and authored status
-remains in-progress until fresh verification and native CI; no historical
+remains in-progress until fresh task verification; no historical
 receipt is represented as current completion.
 
 No directory flush is skipped and no actual I/O error is ignored.

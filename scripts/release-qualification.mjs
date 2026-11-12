@@ -553,7 +553,7 @@ export function readHistory(file) {
 /** @id CODE-RELQ-GIT-001 @implements REQ-RELQ-002 REQ-RELQ-003 */
 export async function materializeSource(request) {
   ensure(!fs.existsSync(request.destination), 'cell source must be fresh');
-  if (['gate', 'suite'].includes(request.cell.kind)) {
+  if (['gate', 'suite', 'oracle'].includes(request.cell.kind)) {
     ensure(request.gitHistory?.bundle && request.gitHistory?.commit && request.gitHistory?.sha256, 'bound genuine cell Git history required');
     equal(fileSha(request.gitHistory.bundle), request.gitHistory.sha256);
     ensure(fs.lstatSync(path.join(request.sourceRoot, '.git'), { throwIfNoEntry: false }) === undefined,

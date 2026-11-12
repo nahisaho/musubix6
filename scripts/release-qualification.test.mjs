@@ -293,7 +293,7 @@ try { const result = await withTerminationSignal(signal => execute({
 });
 
 /** @id TEST-RELQ-GIT-001 @verifies REQ-RELQ-002 REQ-RELQ-003 */
-test('TEST-RELQ-GIT-001 restores bound suite history without conflating discovery or accepting invalid inputs', async t => {
+test('TEST-RELQ-GIT-001 restores bound execution history without conflating discovery or accepting invalid inputs', async t => {
   const directory = workspace(t), repository = path.join(directory, 'repository');
   const sourceRoot = path.join(directory, 'frozen'), bundle = path.join(directory, 'history.bundle');
   fs.mkdirSync(repository);
@@ -315,7 +315,7 @@ test('TEST-RELQ-GIT-001 restores bound suite history without conflating discover
   const gitHistory = { bundle, sha256: fileDigest(bundle), commit };
   const request = { sourceRoot, gitHistory, environment: process.env,
     runtime: { canonicalPath: process.env.PATH } };
-  for (const kind of ['gate', 'suite']) {
+  for (const kind of ['gate', 'suite', 'oracle']) {
     const destination = path.join(directory, kind);
     await materializeSource({ ...request, cell: { kind }, destination });
     assert.equal(fs.existsSync(path.join(destination, '.git')), true, `${kind} requires private frozen Git history`);
@@ -326,7 +326,8 @@ test('TEST-RELQ-GIT-001 restores bound suite history without conflating discover
     assert.equal(fs.readFileSync(path.join(destination, 'payload.txt'), 'utf8'), 'frozen overlay\n');
     assert.equal(fs.existsSync(path.join(destination, 'checkout-only.txt')), false, `${kind} rejects stale checkout files`);
   }
-  for (const kind of ['discovery', 'watchdog']) {
+  for (const kind of ['discovery', 'extra', 'watchdog', 'mutation', 'scope', 'process',
+    'skill-mutation', 'placeholder-mutation', 'diagnostic-mutation', 'host-mutation']) {
     for (const history of [undefined, gitHistory]) {
       const destination = path.join(directory, `${kind}-${history ? 'supplied' : 'absent'}`);
       await materializeSource({ ...request, gitHistory: history, cell: { kind }, destination });
@@ -337,7 +338,7 @@ test('TEST-RELQ-GIT-001 restores bound suite history without conflating discover
   const { sha256 } = gitHistory;
   const incomplete = [undefined, null, {}, { bundle }, { commit }, { sha256 },
     { bundle, commit }, { bundle, sha256 }, { commit, sha256 }];
-  for (const kind of ['gate', 'suite']) {
+  for (const kind of ['gate', 'suite', 'oracle']) {
     for (const [index, history] of incomplete.entries()) {
       const destination = path.join(directory, `${kind}-invalid-${index}`);
       await assert.rejects(materializeSource({ ...request, gitHistory: history, cell: { kind }, destination }),
@@ -788,7 +789,8 @@ test('TEST-RELQ-SKILL-001 preserves 1268 exact cases and owned native inventory 
   assert.deepEqual(catalogue.slice(0, 28).map(row => row.id), contentReference.skillCatalogue.map(row => row.proposedId));
   assert.deepEqual(catalogue.slice(-60).map(row => row.id), contentReference.vendorReference.originSensitivityCases.map(row => row.id));
   {
-    const successor = read(path.join(root, contentRelative));
+    const successor = JSON.parse(execFileSync('git', ['-C', root, 'show',
+      `ffff1a7893a41d9b8ea0b50ddc4837a663ce23a3:${contentRelative}`], { encoding: 'utf8' }));
     let successorCatalogue;
     assert.doesNotThrow(() => { successorCatalogue = contentCaseCatalogue(successor, 'SKILL-MUTATION'); },
       'the approved revision2 120-file catalogue must accept before case execution');
@@ -809,7 +811,7 @@ test('TEST-RELQ-SKILL-001 preserves 1268 exact cases and owned native inventory 
     assert.deepEqual(contentCaseCatalogue(successor, 'PLACEHOLDER-MUTATION').map(row => row.id),
       contentReference.placeholderCatalogue.map(row => row.proposedId),
       'all14 placeholder mechanisms remain unchanged');
-    for (const revision of [0, 3, -1, '2', null, undefined]) {
+    for (const revision of [0, 4, -1, '2', null, undefined]) {
       for (const base of [contentReference, successor]) {
         const changed = clone(base);
         changed.revision = revision;
@@ -847,6 +849,68 @@ test('TEST-RELQ-SKILL-001 preserves 1268 exact cases and owned native inventory 
       changed.vendorReference.modePolicy.splice(index, 1);
       assert.throws(() => contentCaseCatalogue(changed, 'SKILL-MUTATION'),
         `omitted permission policy ${index}: none of the nine bits is optional`);
+    }
+  }
+  {
+    const successor = read(path.join(root, contentRelative));
+    const predecessor = JSON.parse(execFileSync('git', ['-C', root, 'show',
+      `ffff1a7893a41d9b8ea0b50ddc4837a663ce23a3:${contentRelative}`], { encoding: 'utf8' }));
+    let successorCatalogue;
+    assert.doesNotThrow(() => { successorCatalogue = contentCaseCatalogue(successor, 'SKILL-MUTATION'); },
+      'the prospective revision3 121-file catalogue must accept before case execution');
+    assert.equal(successorCatalogue.length, 1298, '28 semantic plus1270 vendor/origin mechanisms');
+    const successorIds = new Set(successorCatalogue.map(row => row.id));
+    assert.equal(successorIds.size, 1298);
+    const predecessorIds = new Set(contentCaseCatalogue(predecessor, 'SKILL-MUTATION').map(row => row.id));
+    assert.ok([...predecessorIds].every(id => successorIds.has(id)), 'all1288 predecessor cases remain required');
+    const policies = ['unauthorized-byte', ...['400', '200', '100', '040', '020', '010', '004', '002', '001']
+      .map(bit => `unauthorized-mode-${bit}`)];
+    const added = '.github/skills/lean-sdd-tdd/scripts/tdd-ledger.test.mjs';
+    assert.deepEqual(successorCatalogue.filter(row => !predecessorIds.has(row.id)).map(row => row.id).sort(),
+      policies.map(policy => `vendor:${policy}:${added}`).sort(),
+      'exactly the10 new ledger-file byte/full-mode challenges are added');
+    assert.deepEqual(contentCaseCatalogue(successor, 'PLACEHOLDER-MUTATION').map(row => row.id),
+      contentReference.placeholderCatalogue.map(row => row.proposedId));
+    for (const revision of [0, 4, -1, '2', null, undefined]) {
+      const changed = clone(successor);
+      changed.revision = revision;
+      for (const cell of ['SKILL-MUTATION', 'PLACEHOLDER-MUTATION']) {
+        assert.throws(() => contentCaseCatalogue(changed, cell), /revision/,
+          `unsupported revision3 input ${JSON.stringify(revision)} must not fall back`);
+      }
+    }
+    for (const file of [
+      '.github/skills/lean-sdd-tdd/scripts/implementation-feedback.mjs',
+      '.github/skills/lean-sdd-tdd/scripts/implementation-feedback.test.mjs',
+      added,
+    ]) {
+      const missing = clone(successor);
+      missing.vendorReference.referenceFiles = missing.vendorReference.referenceFiles.filter(row => row.path !== file);
+      assert.throws(() => contentCaseCatalogue(missing, 'SKILL-MUTATION'), `${file}: missing required file`);
+      const substituted = clone(successor);
+      substituted.vendorReference.referenceFiles.find(row => row.path === file).path =
+        '.github/skills/lean-sdd-tdd/scripts/unapproved-substitution.mjs';
+      assert.throws(() => contentCaseCatalogue(substituted, 'SKILL-MUTATION'),
+        `${file}: unchanged121 cardinality cannot substitute a required path`);
+    }
+    for (const [label, change] of [
+      ['extra122nd file', value => value.vendorReference.referenceFiles.push({
+        ...value.vendorReference.referenceFiles[0], path: '.github/skills/tech-writer/unapproved.md',
+      })],
+      ['duplicate file', value => { value.vendorReference.referenceFiles[0] = clone(value.vendorReference.referenceFiles[1]); }],
+      ['stale1288 counts', value => { value.exactRequiredCaseCounts = clone(predecessor.exactRequiredCaseCounts); }],
+      ['duplicate permission policy', value => { value.vendorReference.modePolicy[1] = clone(value.vendorReference.modePolicy[0]); }],
+      ['replaced permission policy', value => { value.vendorReference.modePolicy[0].name = 'unauthorized-mode-800'; }],
+    ]) {
+      const changed = clone(successor);
+      change(changed);
+      assert.throws(() => contentCaseCatalogue(changed, 'SKILL-MUTATION'), label);
+    }
+    for (let index = 0; index < 9; index++) {
+      const changed = clone(successor);
+      changed.vendorReference.modePolicy.splice(index, 1);
+      assert.throws(() => contentCaseCatalogue(changed, 'SKILL-MUTATION'),
+        `revision3 cannot omit permission policy ${index}`);
     }
   }
   const context = contentContext(directory, 'SKILL-MUTATION');
