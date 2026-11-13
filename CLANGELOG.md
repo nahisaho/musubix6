@@ -27,6 +27,14 @@ separate requirements.
 
 ### Release preparation
 
+- Record the2026-11-13 approved Linux Node20 retirement, including internal
+  tooling; retain Windows Node20/22/24 development support and the shared npm
+  engine floor. The successor scope excludes exactly PACKAGE-20, WATCHDOG-20,
+  NO-CHANGE-20 and REGRESSION-20, retaining20 required cells and moving MUTATION
+  to Node22 with unchanged cases/budget. Implementation, current verification
+  and two fresh fixed clean runs remain pending; old failures are not passes
+  and this support decision does not authorize tagging or publication.
+
 - The feedback development baseline passed its full gate (1211 tests,
   zero failures/skips) and all128 task checks. Subsequent release-fixture and
   inventory changes require fresh affected-task and full-project validation;

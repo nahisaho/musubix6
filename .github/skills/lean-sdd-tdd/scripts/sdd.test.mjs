@@ -13410,7 +13410,8 @@ test('r35b #364 compiler regression requires a real installation and retains the
   assert.match(runner, /assert\.equal\(result\.error, undefined/);
 });
 
-test('r35b #364 CI qualifies Node 20/22/24 without publication and retains failure evidence', () => {
+/** @id TEST-CI-FIXTURE-004 @verifies REQ-CI-FIXTURE-004 */
+test('r35b #364 TEST-CI-FIXTURE-004 CI qualifies Linux Node22/24 without publication and retains failure evidence', () => {
   const root = fileURLToPath(new URL('../../../../', import.meta.url));
   const workflowPath = path.join(root, '.github/workflows/ci.yml');
   assert.ok(fs.existsSync(workflowPath), 'non-publishing matrix CI must be checked in');
@@ -13419,7 +13420,7 @@ test('r35b #364 CI qualifies Node 20/22/24 without publication and retains failu
   assert.match(ci, /permissions:\s*\n\s+contents: read/);
   assert.doesNotMatch(ci, /secrets\.|id-token:|contents: write|npm publish|(?<![\w-])environment:|pull_request_target/);
   assert.match(ci, /runs-on: ubuntu-latest/);
-  assert.match(ci, /node: \[20, 22, 24\]/);
+  assert.match(ci, /node: \[22, 24\]/);
   assert.match(ci, /fail-fast: false/);
   assert.match(ci, /node-version: \$\{\{ matrix\.node \}\}/);
   assert.match(ci, /timeout-minutes: (?:[6-9]\d|1\d\d)/);

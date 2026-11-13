@@ -1,3 +1,80 @@
+# Linux Node20 retirement: implementation and reference renewal
+
+The user explicitly retired Linux Node20, including internal tooling, and
+approved the exact20-cell successor: exclude PACKAGE/WATCHDOG/NO-CHANGE/
+REGRESSION-20, retain MUTATION on22 with unchanged cases/budget, preserve
+Windows20/22/24 and reset qualification0/2. This does not fix or pass old
+Node20 CI, and does not authorize tagging/npm publication.
+The exact seven-artifact unit was genuinely approved and SDK-recorded by
+nahisaho after the SDK required two Design introduction sentences.
+Current spec SHA256:
+a2d8641dbcc958e49167cd81696065bca447ec98aebba2aef3db2febe89fc4a9.
+Current scope SHA256:
+4cea55d6cf7c73b931574967ea7ed86b32ec88a9e34e426aa99aa33b6623562a.
+
+Two independent preimplementation reviewers checked the bounded amendment.
+Scope review returned two CLEAN rounds. Discovery review found and closed
+hook/suite/mock isolation, explicit capability admission, wrong-reason
+invalid fixtures and missing valid export coverage. The corrected test
+delta returned CLEAN. Both independent reviewers returned postimplementation
+round1 CLEAN on the complete relevant implementation delta. The unchanged
+CI-fixture/workflow delta separately completed two clean postimplementation
+rounds. Complete final-source round2 remains pending after reference renewal.
+
+The initial linux-node20-native-policy-red.log (368ms) is INVALID Red:
+the fixture passed a Buffer to the JSON-writing helper, so incorrect suite
+bytes caused refusal before the intended matrix assertion. The retained
+first Green refusal exposed that mistake. Corrected copying and an independent
+suite-byte hash assertion were tested, then the original production matrix
+admission was restored. linux-node20-native-policy-red-02.log records the
+genuine intended assertion Red316ms; unchanged-test Green02 passed989ms.
+Do not credit or remove the invalid first attempt.
+
+Discovery native Red367ms preceded working implementation, then genuine
+Green1511ms covered nine independently specified default/named/namespace/
+dynamic registrations, no executed test/hook bodies, explicit rejected forms,
+zero qualification credit, and separate genuine passing/failing execution.
+A further native assertion Red/Green covers absent/injected environments:
+missing explicit settings must reject before inheriting parent Node settings.
+Package-policy native Red341ms/Green346ms cover exact22/24 and retained
+synthetic20 invalid receipts. An additional controlled admission-guard
+omission supplied genuine Red for refusal before any provisioning, followed
+by exact restoration and Green. Actual CI matrix20/22/24 produced native
+TEST-CI-FIXTURE-004 Red; matrix22/24 passed Green1778ms after independent
+review and genuine auto-artifact lock renewal. None is hosted CI evidence.
+
+Actual Node22.23.3 and24.22.1 each disclosed all1229 independently required
+names: retained frozen1226, exactly three additions and one explicit CI rename.
+No body-execution or qualification credit is assigned to discovery.
+Three focused package/discovery/lexical regressions passed on both runtimes
+before the final environment/provisioning boundary additions; their current
+native Greens passed separately. Current JavaScript diagnostics passed.
+Ten isolated loader/hook/skip/name/suite/environment/package/CI mutations
+each had a passing baseline, an assertion detection, exact byte/mode
+restoration and passing rerun. The root tracked/helper bytes/modes and complete
+logical ledger were checked unchanged throughout the harness.
+Scope/reference/input-closure/nested-runtime sensitivities remain pending.
+The earlier129-task proof is historical for the pre-policy inputs.
+
+An isolated declaration-only prototype disclosed seven fixed names on actual
+22.23.3/24.22.1; it has no qualification credit and does not implement the
+reviewed complete isolation boundary. Japanese prose diagnostics scored94
+with six contextual advisories retained; edit invariants passed without a
+prose rewrite. Existing unrelated document advisories were not repaired.
+
+The retained canonical SDK CI regression also asserts the previous Linux
+matrix. Updating that current assertion will require a new independently
+measured canonical-content reference and renewed exact seven-artifact approval;
+the present approval must not be silently extended to changed reference bytes.
+The actual preimplementation check preserved all129 known fingerprints and
+old receipt heads, but correctly failed with118 complete, six revalidation
+and five replanning states; this is not passing task proof.
+A local reviewed canonical-source preparation commit is required to identify
+genuine committed reference bytes. It is not complete-source verification,
+integration, qualification or publication approval. Full gate, new-head CI
+and two identical20-cell runs remain pending. Old failures, receipt heads and
+archive segments are retained.
+
 # Explicit lexical-oracle selection repair review
 
 The retained scope3 frozen candidate9d45e5b/manifesteea479bc failed

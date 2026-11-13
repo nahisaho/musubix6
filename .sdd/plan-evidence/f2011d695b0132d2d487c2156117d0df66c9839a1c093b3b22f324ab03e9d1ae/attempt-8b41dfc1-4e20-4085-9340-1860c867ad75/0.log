@@ -1,0 +1,10 @@
+✔ TEST-PLAN-FLOW-002 real tarball and both hosts execute the same complete planning lifecycle (34901.311623ms)
+ℹ {"kind":"planning-package-runtime","node":"v24.22.1","tarballSha256":"f9991aba6b203570cc5d17c9e0e5d136e2d8c076ab33147b1dc7440db21b1d03"}
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 34972.892016

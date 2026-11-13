@@ -11,6 +11,15 @@ The published v0.2.7 package retains its opt-in behavior. Candidate metadata
 does not establish publication or qualification. The dated release-status
 paragraphs below are historical, not the current publication status.
 
+**Runtime support policy (2026-11-13):** Linux targets Node22/24; Node20
+is unsupported, including internal discovery tooling. Windows Node20/22/24
+development support is unchanged. The npm engine floor remains20 because
+it is shared across platforms, not a Linux support promise.
+The approved successor qualification scope has20 required Linux cells;
+its implementation and two fresh identical clean runs remain pending.
+Historical Node20 failures and24-cell results are retained, not counted
+as success under the new scope.
+
 Historical status: the source checkout targeted **0.2.7**, and npm did not
 list it when checked on **2026-11-05 at 05:50 JST**. The
 [npm publication workflow](https://github.com/nahisaho/musubix6/actions/runs/41898861716)

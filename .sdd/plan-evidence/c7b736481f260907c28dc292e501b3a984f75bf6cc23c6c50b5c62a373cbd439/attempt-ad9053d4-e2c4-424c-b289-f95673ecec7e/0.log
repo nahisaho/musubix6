@@ -1,0 +1,10 @@
+✔ #373 TEST-R36I-DIAGNOSTIC-001 zero exit cannot erase plain or SGR-decorated compiler errors (1181.777108ms)
+✔ #373 TEST-R36I-PARSE-COLOR-001 colored actual native missing-function names are parsed into valid stubs (834.808859ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 4544.015993

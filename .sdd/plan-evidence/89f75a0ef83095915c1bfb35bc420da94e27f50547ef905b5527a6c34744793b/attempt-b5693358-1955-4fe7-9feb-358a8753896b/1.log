@@ -1,0 +1,21 @@
+✔ TEST-RELQ-PLANNING-001 prepares genuine fresh-root parent/child proof before the actual full gate (7650.988453ms)
+✔ TEST-RELQ-GIT-001 restores bound execution history without conflating discovery or accepting invalid inputs (177.074907ms)
+✔ TEST-RELQ-PROCESS-001 rejects observation and cleanup errors and bounds repeated termination (2.968013ms)
+✔ TEST-RELQ-LEXICAL-001 executes exact source/package lexical controls before named mutations (12684.117131ms)
+✔ TEST-RELQ-SKILL-001 preserves 1268 exact cases and owned native inventory controls (1901.912051ms)
+✔ TEST-RELQ-PH-001 binds all 14 cases to exact native assertions and policy witnesses (1026.477575ms)
+✔ TEST-RELQ-LINEAGE-002 freezes required replacements and never excludes promoted TODOs (5220.793506ms)
+✔ TEST-RELQ-DIAGNOSTIC-001 binds generated match diagnostics to the frozen literal and owned frame (517.295441ms)
+✔ TEST-RELQ-DIAGBOUNDARY-001 keeps diagnostic mutation ownership separate from legacy message policy (332.249284ms)
+✔ TEST-RELQ-SCANNER-001 binds only the two approved scanner prefixes and rejects invalid overrides (4944.077443ms)
+✔ TEST-RELQ-QUOTED-001 accepts owned quoted setup text but rejects actual setup and foreign failures (332.720359ms)
+✔ TEST-RELQ-NOCHANGE-001 admits execution-only routing controls without weakening default planning or check errors (2551.271982ms)
+✔ TEST-RELQ-003 requires named retained outcomes and all owned host mutation controls (1141.929026ms)
+ℹ tests 13
+ℹ suites 0
+ℹ pass 13
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 38617.36308

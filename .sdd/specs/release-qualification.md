@@ -5,15 +5,20 @@ approval: human
 artifacts: .sdd/release-validation.v0.2.10.json, .sdd/release-content-mutations.v0.2.10.json, .sdd/specs/claude-code-support.md, README.md, README-ja.md, CLANGELOG.md
 ---
 # Reproducible Linux-only release qualification
-Goal: prepare the exact stable0.2.10 candidate from main for the unchanged24-cell Linux qualification, with zero transferred credit and no publication authorization. The current contract is the stable0.2.10 successor plus its lossless-ledger scope3/content3 amendment below; earlier preparation and evidence remain historical. Genuine seven-artifact human preparation approval, current native verification, two fresh unchanged complete runs and separate exact-package human publication approval remain required.
+Goal: prepare the exact stable0.2.10 candidate from main for the human-approved20-cell Linux Node22/24 qualification, with zero transferred credit and no publication authorization. The current contract includes the Linux Node20 retirement amendment below; earlier24-cell preparation and evidence remain historical. Genuine seven-artifact human preparation approval, current native verification, two fresh unchanged complete runs and separate exact-package human publication approval remain required.
 | ID | EARS requirement | Test |
 | --- | --- | --- |
-| REQ-RELQ-001 | When a Linux-only qualification plan is admitted, the validator shall require all 24 inherited non-WSL cells with unchanged budgets and an explicit excluded NATIVE-WSLC cell, bind the scope and explicit committed historical test lineage to the approved plan, and reject missing, duplicate or weakened required cases and invalid lineage. | TEST-RELQ-001, TEST-RELQ-LINEAGE-001 |
-| REQ-RELQ-002 | When a candidate is frozen, checked or prepared for its fresh required gate, the launcher shall bind source/archive/package, exact authored planning definitions, current named catalogues and approved historical replacements, helpers, dependencies, configuration and real Node 20/22/24 and native tool inputs by digest, establish genuine current native task verification and receipt adoption in that gate's own source root before the full gate, reject unavailable or changed inputs or missing replacements, and preserve old/failed history and revisions without transferring credit. | TEST-RELQ-002, TEST-RELQ-LINEAGE-001, TEST-RELQ-LINEAGE-002, TEST-RELQ-PLANNING-001 |
+| REQ-RELQ-001 | When a current Linux-only qualification plan is admitted, the validator shall require exactly the20 cells defined by the approved Linux Node20 retirement amendment, retain their original budgets and named cases, explicitly exclude NATIVE-WSLC and the four retired Node20-only cells, bind the scope and committed historical test lineage to the approved plan, and reject missing, duplicate or weakened remaining cases and invalid lineage; historical approved revisions remain unchanged provenance. | TEST-RELQ-001, TEST-RELQ-LINEAGE-001, TEST-RELQ-LINUX-001 |
+| REQ-RELQ-002 | When a current candidate is frozen, checked or prepared for its fresh required gate, the launcher shall bind source/archive/package, exact authored planning definitions, current named catalogues and approved historical replacements, helpers, dependencies, configuration and real Linux Node22/24 and native tool inputs by digest, require no Node20 executable including during registration-only discovery, establish genuine current native task verification and receipt adoption in that gate's own source root before the full gate, reject unavailable or changed inputs or missing replacements, and preserve old/failed history and revisions without transferring credit. | TEST-RELQ-002, TEST-RELQ-LINEAGE-001, TEST-RELQ-LINEAGE-002, TEST-RELQ-PLANNING-001, TEST-RELQ-DISCOVERY-001 |
 | REQ-RELQ-003 | When any required cell finishes, the validator shall require its exact named cases and valid controls, including required active replacements for resolved historical TODOs, actual command/exit and retained parseable evidence; INTEGRATED-GATE shall additionally require every frozen planning task's genuine current native proof and the actual unfiltered full gate within its unchanged shared deadline, rejecting unprepared raw-gate or preparation-only claims; missing, skipped, timed-out, unknown or setup-error outcomes shall never count as a pass. | TEST-RELQ-003, TEST-RELQ-LINEAGE-002, TEST-RELQ-PLANNING-001 |
 | REQ-RELQ-004 | When technical readiness is evaluated, the launcher shall require two consecutive complete clean runs of the identical frozen matrix and candidate in fresh isolated state, reset the streak on failure or relevant change, and never authorize tagging or publishing. | TEST-RELQ-004 |
-| REQ-RELQ-005 | When a stable 0.2.10 qualification package is prepared, it shall retain executable, reviewable helpers and self-tests in the repository, verify the exact tgz through the actual package entry point on Node 20/22/24, report exact artifact paths/hashes, exclusions and residual risks separately from human release approval, and require the publishing workflow to verify the packed tgz against the approved digest before publishing that same file. | TEST-RELQ-005, TEST-HOST-005, TEST-RELQ-PUBLISH-001 |
+| REQ-RELQ-005 | When a stable 0.2.10 qualification package is prepared, it shall retain executable, reviewable helpers and self-tests in the repository, verify the exact tgz through the actual Linux package entry point on Node22/24, preserve Windows Node20/22/24 development controls, report exact artifact paths/hashes, exclusions and residual risks separately from human release approval, and require the publishing workflow to verify the packed tgz against the approved digest before publishing that same file. | TEST-RELQ-005, TEST-HOST-005, TEST-RELQ-PUBLISH-001, TEST-RELQ-LINUX-001 |
 ## PASS conditions and counterexamples
+Current normative exception: the Linux Node20 retirement amendment below
+supersedes earlier24-cell/three-runtime assertions for revision4 only.
+Those earlier rows and observations remain historical; they are not current
+support promises or authority to discard failure evidence.
+
 | REQ | PASS condition | Concrete counterexample / expected | TEST/command | Observed evidence |
 | `REQ-RELQ-001` | Exactly the old 25 cells minus NATIVE-WSLC are required; NATIVE-WSLC is explicitly excluded, never reported as passed. | Delete PACKAGE-22, duplicate REGRESSION-24, shorten MUTATION's 3600-second budget, or silently count WSL as passed: reject; complete approved Linux plan: accept. | TEST-RELQ-001, complete finite cell-policy rows | Pending |
 | `REQ-RELQ-002` | Repeated genuine tool probes and all frozen bytes agree; the immutable candidate and plan have stable digests. | Change one byte of tgz/helper/config or omit Node22 after freeze: fail before credit; identical inputs: accept. | TEST-RELQ-002, isolated input mutations | Pending |
@@ -33,6 +38,77 @@ Goal: prepare the exact stable0.2.10 candidate from main for the unchanged24-cel
 | `REQ-RELQ-003` | All13 declared skill mechanisms,1180 source vendor challenges and60 origin sensitivities (1253 total named skill cases) have passing baseline/restored controls and exact owned assertion detections; valid names, questions, obligations and matching reviews remain accepted. | Disable duplicate detection: the fixed duplicated-particle input must assertion-fail; change one of118 reference file bytes or XOR any one permission bit: the exact inventory assertion must fail, including source-init/package/package-init representatives. Unchanged inventories and exact restoration must pass. | TEST-RELQ-SKILL-001; SKILL-MUTATION | The current independent118-file source/archive/npm/both-host inventory spike passed as recorded below. Current catalogue/native verdict controls and complete skill-cell execution await preparation approval; no qualification credit. |
 | `REQ-RELQ-003` | All 14 placeholder mechanisms are assertion-detected; source, source-init, extracted-package and package-init obey the fixed 2184 marker and 994 context rows, exit/status and JSON policy. | `todo : pending` => one placeholder, `TODO-cli` => zero, nonempty annotation => zero; findings exit 0, missing input exits 1 with empty stdout and explicit stderr. Accepting any assertion or suppressing all findings must fail the validator regression. | TEST-RELQ-PH-001; PLACEHOLDER-MUTATION | Independent existing golden policy read; replacement execution pending. |
 ## Design
+Revision4 uses the explicit Linux Node22/24 policy and frozen discovery helpers below.
+Earlier designs and failures remain historical evidence with no transferred credit.
+
+### Linux Node20 retirement, approved scope decision 2026-11-13
+
+The user explicitly ended Linux Node20 support, including internal tooling,
+and approved20 required cells with MUTATION moved to Node22. Windows
+Node20/22/24 development support is unchanged. This is a support-policy
+change, not a repair or passing rerun of the failed Node20 lexical regression.
+The failed CI run43381351028 and frozen run-yCeDHE remain retained failures.
+
+Revision4 excludes exactly PACKAGE-20, WATCHDOG-20, NO-CHANGE-20 and
+REGRESSION-20, in addition to the existing NATIVE-WSLC exclusion. MUTATION
+keeps every inherited case, diagnostic rule, owned assertion, baseline and
+restoration requirement and its3600-second budget, but uses Node22.
+Every other retained cell tuple and budget is unchanged. Historical scope
+revisions1/2/3 are not rewritten or treated as current qualification.
+
+Use the configured Node22 executable for preparation/discovery and require
+exactly Node22/24 for current Linux execution and package receipts.
+No current Linux launcher, configuration, executable PATH dependency or
+discovery helper may require Node20. Historical fixtures and version strings
+may retain20 where they do not execute or provision Linux Node20.
+Keep the cross-platform npm engine floor unchanged because Windows Node20
+remains supported; document the platform-specific policy explicitly.
+
+Registration-only discovery on Node22/24 must disclose actual dynamic
+top-level test names without running their bodies or execution hooks.
+A reviewed, frozen preload may intercept node:test registration and register
+each name as an explicit native skip, with no test callback execution.
+Support explicitly named flat test/it registrations, their only/skip/todo
+forms and before/after/beforeEach/afterEach registration. Discard execution
+hook callbacks as well as test callbacks. Do not wildcard-re-export the
+native API: suite/describe and mock invocation/property use, including
+namespace/default-function forms, must fail closed rather than execute.
+Current catalogue completeness must be measured on the entire root suite,
+not inferred from the seven-name prototype. Internal discovery requires
+the module.registerHooks capability (Node22.15+ or24), checked explicitly
+before discovery with an actionable diagnostic; this does not increase the
+separate Windows or Linux package-execution engine floor.
+Its receipts must identify discovery-only operation and zero qualification
+credit. Required execution must never load that preload, accept discovery
+skips as passes, or replace its actual unfiltered native suite with this
+catalogue. Unsupported registration forms, absent helpers, empty/duplicate
+names, executed bodies, malformed events and incomplete summaries reject.
+The preload and proxy are frozen helper inputs, not runtime fallback bytes.
+No execution command or injected Node environment may inherit the preload.
+An isolated prototype disclosed all seven independently known kotonoha
+names on real Node22.23.3 and24.22.1, with0passes/7filtered registrations;
+it is a spike only, not production implementation or release evidence.
+
+| REQ | PASS condition | counterexample | TEST/command | observed evidence |
+| --- | --- | --- | --- | --- |
+| `REQ-RELQ-001`, `REQ-RELQ-005` | Revision4 has exactly20 required cells, four explicit retired-runtime exclusions plus WSL, MUTATION on22 with3600 seconds; Linux CI22/24 and Windows CI20/22/24 | Restore REGRESSION-20, remove PACKAGE-22, omit a retired exclusion, change MUTATION cases/budget or silently remove Windows20: reject; exact approved matrix accepts | TEST-RELQ-LINUX-001; enumerate every retained/excluded tuple and runtime-policy row | Exact scope decision approved by the user; implementation/native Red/Green pending |
+| `REQ-RELQ-002`, `REQ-RELQ-003` | Configured22/24 disclose all independently specified dynamic names; bodies and execution hooks leave no sentinel; native discovery has0passes and exact filtered rows; real execution still runs and detects a failing body | Use legacy Node20 discovery, omit preload, execute a callback, drop/duplicate a name, hide a malformed event or credit a discovery skip as a required pass: reject; valid registration and normal execution controls accept | TEST-RELQ-DISCOVERY-001; actual supported-runtime discovery; isolated loader/receipt mutations | Two-runtime seven-name spike passed; product integration, complete catalogue and native regression pending |
+| `REQ-RELQ-002`, `REQ-RELQ-004` | New candidate, exact reviewed seven-artifact approval and new frozen manifest/history start at0/2; all20 required cells pass twice unchanged | Reuse the129-task development proof, Node22/24 CI,16 partial old cells, prior24-cell manifest or support decision as qualification/publication approval: reject | Native approval/freeze/check/run/status; TEST-RELQ-004 | Historical129-task proof retained; no new preparation lock, full gate, frozen run or publication authorization |
+
+First violated stages: contract = exact human-approved platform/runtime
+scope, not an implicit global engine-floor increase; trusted inputs =22/24
+and frozen registration helpers with no20 executable; execution = actual
+dynamic registration without callbacks, followed separately by genuine
+unfiltered tests and all mutation controls; verdict = exact matrix and
+receipt validation accepting valid controls and rejecting invalid rows;
+evidence history = preserve old failures and reset0/2 on all relevant
+changes; integration/distribution = both READMEs, CI, package receipts,
+new exact candidate and two fixed runs agree. No stage is inapplicable.
+Bounded isolated mutations must detect each changed mechanism and restore
+exact bytes before current checks rerun. Missing or skipped required
+execution remains blocking. Final tag/npm approval is still separate.
+
+### Historical qualification design before Linux Node20 retirement
 Use new versioned0.2.8 scope/content files without rewriting historical0.2.7,0.2.6,
 0.2.5,0.2.4 or0.2.0 contracts or failed evidence. The new files require a genuine
 seven-artifact human preparation approval; do not relock production as a unit

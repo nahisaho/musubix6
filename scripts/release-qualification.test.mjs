@@ -369,7 +369,7 @@ test('TEST-RELQ-GIT-001 restores bound execution history without conflating disc
   let registered;
   await assert.doesNotReject(async () => {
     registered = await discoverCurrentCatalogue({
-      source: sourceRoot, node20: process.execPath, output: path.join(directory, 'registration'),
+      source: sourceRoot, node: process.execPath, output: path.join(directory, 'registration'),
       environment: {}, nodeModules: modules,
     }, { execute: async invocation => {
       assert.equal(fs.existsSync(path.join(invocation.cwd, '.git')), false);
@@ -504,7 +504,7 @@ test('TEST-RELQ-CLOSURE-001 rejects unbound execution inputs and manifest policy
   request.execution = { sourceRoot: request.files.find(file => file.kind === 'source').path,
     packagePath: request.files.find(file => file.kind === 'package').path, nodeModules: modules,
     prosePython: python, gradleJars: [jar],
-    runtimes: request.tools.filter(tool => /^node/.test(tool.id)).map(tool => ({
+    runtimes: request.tools.filter(tool => ['node22', 'node24'].includes(tool.id)).map(tool => ({
       major: Number(tool.id.slice(4)), executable: tool.executable, npm,
     })) };
   await reject(freezeCandidate(request, effects), 'execution dependency closure must be frozen, not just a nominal dependency file');
@@ -576,7 +576,7 @@ test('TEST-RELQ-CLOSURE-001 rejects unbound execution inputs and manifest policy
   write(path.join(isolated, 'package.json'), { type: 'module', scripts: { test: 'node --test owned.test.mjs' } });
   const { discoverCurrentCatalogue } = await import('./release-qualification-cells.mjs');
   const registered = await discoverCurrentCatalogue({
-    source: isolated, node20: process.execPath, output: path.join(directory, 'archive-registration'),
+    source: isolated, node: process.execPath, output: path.join(directory, 'archive-registration'),
     environment: {}, nodeModules: path.join(root, 'node_modules'),
   }, {
     execute: async invocation => {
@@ -1608,6 +1608,149 @@ function readinessFixture(directory, history = []) {
     historyPath: path.join(directory, 'history.jsonl'),
   };
 }
+
+/** @id TEST-RELQ-LINUX-001 @verifies REQ-RELQ-001, REQ-RELQ-002, REQ-RELQ-005 */
+test('TEST-RELQ-LINUX-001 admits only the approved Linux22/24 successor without narrowing Windows', async t => {
+  const scope = scopeFixture(workspace(t));
+  for (const relative of Object.keys(genuineLock.artifacts)) {
+    fs.copyFileSync(path.join(root, relative), path.join(scope.root, relative));
+  }
+  const current = read(scope.planPath), reference = read(path.join(root, inheritedRelative));
+  fs.copyFileSync(path.join(root, current.historicalTestLineage.suite),
+    path.join(scope.root, current.historicalTestLineage.suite));
+  assert.equal(fileDigest(path.join(scope.root, current.historicalTestLineage.suite)),
+    current.historicalTestLineage.suiteSha256, 'fixture preserves genuine committed suite bytes');
+  relockFixture(scope);
+  const retired = ['PACKAGE-20', 'WATCHDOG-20', 'NO-CHANGE-20', 'REGRESSION-20'];
+  const expected = reference.requiredCells.filter(cell => ![...retired, 'NATIVE-WSLC'].includes(cell.id))
+    .map(cell => cell.id === 'MUTATION' ? { ...cell, runtime: '22' } : cell);
+  assert.deepEqual(current.requiredCells, expected);
+  assert.equal(current.requiredCells.length, 20);
+  const admitted = await admitPlan(scope);
+  assert.equal(admitted.status, 'PASS',
+    `the exact reviewed20-cell supported-runtime successor must admit: ${JSON.stringify(admitted.errors)}`);
+  const changes = [];
+  for (const cell of expected) {
+    changes.push([`missing ${cell.id}`, p => { p.requiredCells = p.requiredCells.filter(row => row.id !== cell.id); }]);
+    changes.push([`duplicate ${cell.id}`, p => { p.requiredCells.push(clone(cell)); }]);
+    for (const key of ['runtime', 'kind', ...(cell.mode ? ['mode'] : [])]) {
+      changes.push([`changed ${cell.id}.${key}`, p => { p.requiredCells.find(row => row.id === cell.id)[key] = 'unknown'; }]);
+    }
+    for (const delta of [-1, 1]) {
+      changes.push([`changed ${cell.id} budget ${delta}`, p => {
+        p.requiredCells.find(row => row.id === cell.id).timeoutSeconds += delta;
+      }]);
+    }
+  }
+  for (const id of [...retired, 'NATIVE-WSLC']) {
+    changes.push([`missing exclusion ${id}`, p => { p.excludedCells = p.excludedCells.filter(row => row.id !== id); }]);
+    changes.push([`passed exclusion ${id}`, p => { p.excludedCells.find(row => row.id === id).status = 'PASS'; }]);
+    changes.push([`required exclusion ${id}`, p => { p.requiredCells.push(clone(reference.requiredCells.find(row => row.id === id))); }]);
+  }
+  for (const majors of [[20, 22, 24], [22], [24], [22, 22, 24], []]) {
+    changes.push([`invalid Linux majors ${majors}`, p => { p.supportContract.linuxNodeMajors = majors; }]);
+  }
+  changes.push(
+    ['lost Windows20', p => { p.supportContract.windowsDevelopmentNodeMajors = [22, 24]; }],
+    ['retained Linux20 tooling', p => { p.supportContract.linuxNode20InternalTooling = 'discovery-only'; }],
+  );
+  for (const [label, change] of changes) {
+    const invalid = clone(current); change(invalid); write(scope.planPath, invalid); relockFixture(scope);
+    await reject(admitPlan(scope), label);
+  }
+  write(scope.planPath, current); relockFixture(scope);
+  await pass(admitPlan(scope), 'restored exact current policy must admit');
+  const linux = fs.readFileSync(path.join(root, '.github/workflows/ci.yml'), 'utf8');
+  const windows = fs.readFileSync(path.join(root, '.github/workflows/windows-runner.yml'), 'utf8');
+  assert.match(linux, /node:\s*\[22,\s*24\]/);
+  assert.match(windows, /node:\s*\[20,\s*22,\s*24\]/);
+  assert.equal(read(path.join(root, 'package.json')).engines.node, '>=20');
+});
+
+/** @id TEST-RELQ-DISCOVERY-001 @verifies REQ-RELQ-002, REQ-RELQ-003 */
+test('TEST-RELQ-DISCOVERY-001 discloses dynamic names without executing bodies or hooks on supported Node', async t => {
+  const { discoverCurrentCatalogue } = await import('./release-qualification-cells.mjs');
+  const { parseEvents, namedControl } = await import('./release-qualification-evidence.mjs');
+  const directory = workspace(t), source = path.join(directory, 'source');
+  write(path.join(source, 'package.json'), { type: 'module', scripts: { test: 'node --test owned.test.mjs' } });
+  const scripts = path.join(source, 'scripts');
+  fs.mkdirSync(scripts);
+  for (const file of ['release-host-events.mjs', 'release-qualification-discovery.mjs',
+    'release-qualification-registration.mjs']) {
+    const original = path.join(root, 'scripts', file);
+    if (fs.existsSync(original)) fs.copyFileSync(original, path.join(scripts, file));
+  }
+  const sentinel = path.join(directory, 'executed');
+  write(path.join(source, 'owned.test.mjs'),
+    `import test, {test as namedTest,it,before,after,beforeEach,afterEach} from 'node:test';\n` +
+    `import * as api from 'node:test';\n` +
+    `import fs from 'node:fs';\nconst body=()=>{fs.writeFileSync(${JSON.stringify(sentinel)},'ran');throw new Error('body executed');};\n` +
+    `before(body);after(body);beforeEach(body);afterEach(body);\n` +
+    `for(const n of [1,2]) test('dynamic '+n,body);\n` +
+    `namedTest('named registration',body);it('it registration',body);\n` +
+    `api.test('namespace test registration',body);api.it('namespace it registration',body);\n` +
+    `test.only('only registration',body);test.skip('skip registration',body);test.todo('todo registration',body);\n`);
+  const environment = { ...process.env };
+  for (const key of ['NODE_OPTIONS', 'NODE_TEST_CONTEXT', 'NODE_PATH']) delete environment[key];
+  const discovered = await discoverCurrentCatalogue({
+    source, node: process.execPath, node20: process.execPath,
+    output: path.join(directory, 'discovery'), environment,
+  });
+  assert.deepEqual(discovered.names,
+    ['dynamic 1', 'dynamic 2', 'named registration', 'it registration',
+      'namespace test registration', 'namespace it registration',
+      'only registration', 'skip registration', 'todo registration'],
+    'supported native discovery must retain every independently declared name');
+  assert.equal(fs.existsSync(sentinel), false, 'neither test bodies nor execution hooks may run');
+  assert.equal(discovered.discoveryOnly, true);
+  assert.equal(discovered.qualifyingCredit, 0);
+  const native = parseEvents(processIo.readRef(discovered.evidence.stdout));
+  assert.deepEqual(native.counts, { tests: 9, pass: 0, fail: 0, cancelled: 0, skipped: 9, todo: 0 });
+  assert.throws(() => namedControl(native, discovered.names),
+    'registration skips must not satisfy required native execution');
+  for (const invalidEnvironment of [undefined, { NODE_OPTIONS: '--import=unbound.mjs' },
+    { NODE_TEST_CONTEXT: 'child-v8' }, { NODE_PATH: '/unbound/modules' }]) {
+    let spawned = false;
+    await assert.rejects(discoverCurrentCatalogue({
+      source, node: process.execPath, output: path.join(directory, 'unsafe-environment'),
+      environment: invalidEnvironment,
+    }, { execute: async () => { spawned = true; throw new Error('unsafe native spawn attempted'); } }),
+    /registration discovery (?:requires an explicit environment|refuses injected Node execution settings)/,
+    'missing or injected environments must reject before inheriting parent execution settings');
+    assert.equal(spawned, false, 'unbound native settings must never reach process creation');
+  }
+  write(path.join(source, 'owned.test.mjs'), "import {test} from 'node:test';test('real execution',()=>{});\n");
+  const command = [process.execPath, '--test', `--test-reporter=${path.join(scripts, 'release-host-events.mjs')}`,
+    path.join(source, 'owned.test.mjs')];
+  const valid = await processIo.execute({ command, cwd: source, env: environment, timeoutMs: 20000 });
+  assert.equal(valid.exit, 0, valid.stderr);
+  assert.equal(parseEvents(valid.stdout).counts.pass, 1, 'normal execution must still run actual callbacks');
+  write(path.join(source, 'owned.test.mjs'),
+    "import {test} from 'node:test';test('real execution',()=>{throw new Error('independent failure');});\n");
+  const failed = await processIo.execute({ command, cwd: source, env: environment, timeoutMs: 20000 });
+  assert.equal(failed.exit, 1);
+  assert.equal(parseEvents(failed.stdout).counts.fail, 1, 'discovery instrumentation must not leak into execution');
+  const suiteBody = `()=>fs.writeFileSync(${JSON.stringify(sentinel)},'suite callback ran')`;
+  for (const [index, [declaration, diagnostic]] of [
+    ["import {test} from 'node:test';test('',()=>{});", /explicit registration name required/],
+    ["import {test} from 'node:test';test('duplicate',()=>{});test('duplicate',()=>{});", /duplicate.*target/],
+    [`import {describe} from 'node:test';describe('unsupported suite',${suiteBody});`, /unsupported registration.*describe/],
+    [`import * as api from 'node:test';api.describe('unsupported suite',${suiteBody});`, /unsupported registration.*describe/],
+    [`import test from 'node:test';test.describe('unsupported suite',${suiteBody});`, /unsupported registration.*describe/],
+    ["import {mock} from 'node:test';mock.fn(()=>{});", /unsupported registration.*mock/],
+    ["import test from 'node:test';test.mock.fn(()=>{});", /unsupported registration.*mock/],
+    ["import {test} from 'node:test';test('invalid options',42,()=>{});", /invalid registration options/],
+  ].entries()) {
+    write(path.join(source, 'owned.test.mjs'),
+      "import {test as validFlat} from 'node:test';import fs from 'node:fs';\n" +
+      "validFlat('valid preceding registration',()=>{});\n" + declaration + '\n');
+    await assert.rejects(discoverCurrentCatalogue({
+      source, node: process.execPath, node20: process.execPath,
+      output: path.join(directory, `invalid-${index}`), environment,
+    }), diagnostic, `unsupported or ambiguous registration ${index} must fail for its own reason`);
+    assert.equal(fs.existsSync(sentinel), false, 'unsupported suite callbacks must never execute');
+  }
+});
 
 /** @id TEST-RELQ-001 @verifies REQ-RELQ-001 */
 test('TEST-RELQ-001 admits the locked Linux plan and enumerates every cell-policy violation', async t => {
@@ -2678,7 +2821,7 @@ test('TEST-RELQ-005 binds durable helpers and exact package-entry receipts witho
     stdout: retained(directory, `package-${major}-command-${index}.stdout`, row.output),
     stderr: retained(directory, `package-${major}-command-${index}.stderr`, ''),
   }));
-  const packageReceipts = [20, 22, 24].map(major => ({
+  const packageReceipt = major => ({
     runtimeMajor: major, tgzPath: tgz, tgzSha256: fileDigest(tgz), installedVersion: '0.2.10',
     offline: true, entrypoint: 'node_modules/.bin/musubix6', host: 'both',
     command: ['npm', 'exec', '--offline', '--', 'musubix6', 'init', '--host', 'both'],
@@ -2692,7 +2835,8 @@ test('TEST-RELQ-005 binds durable helpers and exact package-entry receipts witho
       '.github/skills': [{ path: 'lean-sdd-tdd/SKILL.md', sha256: digest('same skill') }],
       '.claude/skills': [{ path: 'lean-sdd-tdd/SKILL.md', sha256: digest('same skill') }],
     },
-  }));
+  });
+  const packageReceipts = [22, 24].map(packageReceipt);
   const request = {
     targetVersion: '0.2.10', packagePath: tgz, packageSha256: fileDigest(tgz), helpers, packageReceipts,
     readiness: { status: 'PASS', technicalReady: true, streak: 2, publishingAuthorized: false },
@@ -2703,7 +2847,7 @@ test('TEST-RELQ-005 binds durable helpers and exact package-entry receipts witho
     humanReleaseApproved: false, publishingAuthorized: false,
   };
   const { validateAdapter } = await import('./release-qualification-cells.mjs');
-  const cell = { id: 'PACKAGE-20', runtime: '20', kind: 'extra', mode: 'package' };
+  const cell = { id: 'PACKAGE-22', runtime: '22', kind: 'extra', mode: 'package' };
   const catalogue = [{ packagePath: tgz, packageSha256: fileDigest(tgz) }];
   const adapterEvidence = receipt => ({
     command: ['fixture-adapter', '--cell', cell.id], exit: 0, signal: null, timedOut: false,
@@ -2728,7 +2872,8 @@ test('TEST-RELQ-005 binds durable helpers and exact package-entry receipts witho
   assert.deepEqual(read(request.outputPath).exclusions, request.exclusions);
   assert.deepEqual(read(request.outputPath).residualRisks, request.residualRisks);
   for (const [label, mutate] of [
-    ['missing Node22 package check', r => { r.packageReceipts.splice(1, 1); }],
+    ['missing Node22 package check', r => { r.packageReceipts.splice(0, 1); }],
+    ['retired Linux Node20 receipt', r => { r.packageReceipts.push(packageReceipt(20)); }],
     ['duplicate runtime', r => { r.packageReceipts.push(clone(r.packageReceipts[0])); }],
     ['stale packed CLI', r => { r.packageReceipts[0].installedVersion = '0.2.0'; }],
     ['different tgz', r => { r.packageReceipts[1].tgzSha256 = digest('other package'); }],
@@ -2756,7 +2901,7 @@ test('TEST-RELQ-005 binds durable helpers and exact package-entry receipts witho
   fs.appendFileSync(helpers[0].path, 'changed helper');
   await reject(prepareReleaseReport(request), 'durable helper bytes no longer match their receipt');
   const calls = [];
-  const runtimes = [20, 22, 24].map(major => ({ major, executable: `/fixture/node${major}/bin/node` }));
+  const runtimes = [22, 24].map(major => ({ major, executable: `/fixture/node${major}/bin/node` }));
   await pass(verifyPackageEntrypoints({
     packagePath: tgz, packageSha256: fileDigest(tgz), targetVersion: '0.2.10',
     runtimes, workRoot: path.join(directory, 'package-work'),
@@ -2766,13 +2911,26 @@ test('TEST-RELQ-005 binds durable helpers and exact package-entry receipts witho
       return packageReceipts.find(receipt => receipt.runtimeMajor === invocation.runtime.major);
     },
   }), 'package launcher runs the pinned artifact on every required runtime');
-  assert.deepEqual(calls.map(call => call.runtime.major).sort(), [20, 22, 24]);
-  assert.equal(new Set(calls.map(call => call.workRoot)).size, 3, 'private install state per runtime');
+  assert.deepEqual(calls.map(call => call.runtime.major).sort(), [22, 24]);
+  assert.equal(new Set(calls.map(call => call.workRoot)).size, 2, 'private install state per runtime');
   for (const call of calls) {
     assert.equal(call.packagePath, tgz);
     assert.equal(call.packageSha256, fileDigest(tgz));
     assert.equal(call.offline, true);
     assert.equal(call.host, 'both');
+  }
+  for (const majors of [[20, 22, 24], [22], [24], [22, 22, 24], []]) {
+    let invalidCalls = 0;
+    await reject(verifyPackageEntrypoints({
+      packagePath: tgz, packageSha256: fileDigest(tgz), targetVersion: '0.2.10',
+      runtimes: majors.map(major => ({ major, executable: `/fixture/node${major}/bin/node` })),
+      workRoot: path.join(directory, `invalid-runtime-${majors.join('-') || 'empty'}`),
+    }, { installAndInvoke: async invocation => {
+      invalidCalls++;
+      return packageReceipt(invocation.runtime.major);
+    } }),
+    `only Linux22/24 may be provisioned, not ${majors}`);
+    assert.equal(invalidCalls, 0, 'reject unsupported runtime sets before any package provisioning');
   }
 });
 

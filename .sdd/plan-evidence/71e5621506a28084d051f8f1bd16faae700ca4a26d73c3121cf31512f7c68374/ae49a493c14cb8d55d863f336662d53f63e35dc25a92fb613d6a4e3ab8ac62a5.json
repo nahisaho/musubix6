@@ -1,0 +1,121 @@
+{
+  "schemaVersion": 1,
+  "task": "TASK-R36J-003",
+  "sequence": 8,
+  "previous": "411d9859093126ae653b8b3fdf46be6c1bee28641d309842aa0a7c0640d0a3b0",
+  "definitionSha256": "8d51dc7a1699693554491e3b0e09705a0ad20dfece9c5b75686c09c0d177d78a",
+  "inputSha256": "fd028eb6bc48076e608a6c833ef3dc77c57ca1cd684fdbd3b74e34c227864a2b",
+  "status": "PASS",
+  "exit": 0,
+  "checks": [
+    {
+      "name": "regression-1",
+      "argv": [
+        "node",
+        "--test",
+        "--test-name-pattern",
+        "^(?:.*\\b(?:TEST-R36J-INVALID-001|TEST-R36J-NATIVE-001))(?![0-9A-Za-z])",
+        ".github/skills/lean-sdd-tdd/scripts/sdd.test.mjs"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/71e5621506a28084d051f8f1bd16faae700ca4a26d73c3121cf31512f7c68374/attempt-b3a7da59-7298-4c8c-9abd-0094f29d154f/0.log",
+        "sha256": "3f33c7d607eac19ac4b3b39faf6fbb53439945d4a8ff78b94dfb2b9b5518e314",
+        "bytes": 372
+      }
+    },
+    {
+      "name": "native-TEST-R36J-INVALID-001",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/tmp/musubix6-release-lexical-28d27536/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-R36J-INVALID-001",
+        "--root",
+        "/tmp/musubix6-release-lexical-28d27536"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/71e5621506a28084d051f8f1bd16faae700ca4a26d73c3121cf31512f7c68374/attempt-b3a7da59-7298-4c8c-9abd-0094f29d154f/1.log",
+        "sha256": "8be22fdb75c8fdeec3dfdb8a330d70e3fc18d341d63677afc9573548a580e346",
+        "bytes": 56
+      }
+    },
+    {
+      "name": "native-TEST-R36J-NATIVE-001",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/tmp/musubix6-release-lexical-28d27536/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-R36J-NATIVE-001",
+        "--root",
+        "/tmp/musubix6-release-lexical-28d27536"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/71e5621506a28084d051f8f1bd16faae700ca4a26d73c3121cf31512f7c68374/attempt-b3a7da59-7298-4c8c-9abd-0094f29d154f/2.log",
+        "sha256": "271ba7c9c1d80e5617013e36edbdffba30d98ea50f2d41ca79106172793f873c",
+        "bytes": 55
+      }
+    }
+  ],
+  "ledgerEvents": [
+    {
+      "test": "TEST-R36J-INVALID-001",
+      "hashes": [
+        "05014fc922ca17d9ffddb0575c0024cb593ce4dfea11c4f6bc4865ad3fb0b741",
+        "0e56af074b6207e3b8ab23db67ec022b9d4ea2f15aec48e113b7a80090c7056a",
+        "1598dfb28d0882816c5edbf8008f74e0bf21299af58f8e4c5bc2f0f3dc5593c7",
+        "1b4f40db19d99bf4520c9cd12c5a6d4fc238127aae057b3fd0baccacf005e2e0",
+        "247aa8d4239674bfc545a540dc2534ca659e569306627a6c0eecb67d7236c64c",
+        "295d6d43d8797cf4ede6ab5805f67bfb20628e8be3e400e51af742d0f11ec5b8",
+        "42f6830c2124def268417fa2fbfe04f744cc1fdf82ab0ac0c45d9c712d41d6fd",
+        "48e5e74a9b7693cf108fec0985fe2fc428618c7519106e57c68958f09b729e23",
+        "59ac76baf9b303c2dac8a819d0c50b22caf1c71a4e7861dd68d2e740ed69b0cb",
+        "6f9bfb8b413028a6b2047d1994377abd71a6c57ea086005cbd836046e281604f",
+        "78d8fcc085ccd194239249d02db2dfdbc26720d4f5eded0cd8463acf9a3122aa",
+        "7b13f025d197556033578f437a3c705ebc7415f248689ff843bfc261b246c0de",
+        "8dd2a4c8b030f2d43d00daad1ec52ffe5d975b2d0bdf1116cf41e16885581b2b",
+        "8ea3654aeb19d914727afcefff75fdb4bf7058c1e312174bb8ab60dea0772377",
+        "9c01245100450c7928ae5b2ad5c27c720233a5613b0d494226f6ed08bb7d9831",
+        "a105b70f17bd3ee39eed7504209ca7a172838290d123a48896500abcf6c7f51b",
+        "afebd904c1c42dacccbfecd1f40ca7261629c258171aa523ed2fde31f5ff6f48",
+        "b3aba2068de958e980028080fa0d47455ce5b33d10636cfed5e785aacc7dbc19",
+        "b4ed1efab351478cbfe3ac7e4ddfe7639a1ee0a9ca9a54f0752840c8c750fa20",
+        "bdc141a7fe5446e9a291c12de092c1ec3400a4b203d82559f0f06a36dd51260d"
+      ]
+    },
+    {
+      "test": "TEST-R36J-NATIVE-001",
+      "hashes": [
+        "0da9df513784e001f0eb01deb40abeebe2d8a6f1d5ae537e755e9dfac8b1ac87",
+        "14f75d39770ab0b11722ff6e0a965c15f5b09e66d8cba4310c845c6feb31f55c",
+        "34fb55a6efbb41f178a2c8bbfd8529690e476172926b253f9288e17634e9d600",
+        "35c1301ff6e197265084d043a6c05f0944894b17e9ec5831d043cabe21486945",
+        "36f3b88f6f1b47dbda1b874f04395bf6775afc688496041e4fb526e06a3047f8",
+        "4fb5a704d9b1433f78cc95eb13e8c36463bbf64171a053a4fca760ddf2a44256",
+        "7dfadc068c5a231dcb6528d04adf0357bcf5a86a20adfd1b012567e1f76ec53e",
+        "800b6d828d00e0016fe7b3a54d9fa24c814af4aa6583933c407d76bce95c215f",
+        "915b39d9e0a709acd97c2c4a863a1ac0127f9ada7c31f492c7a413772323aa39",
+        "d0e6a3c4e9463fd81881dffcc8edd398b2e5b97ea0eca29373a03dfdc019c1d7",
+        "e08b408b1ac7162561c877bce99fd4f8cbe85f3896e3e8f633cf2d57ea2901e5",
+        "e98fabac9c1a08f2e912e9cfabdae4d4573c9186353f49bd296ed04a4b15f0db"
+      ]
+    }
+  ],
+  "errors": []
+}

@@ -1,0 +1,13 @@
+✔ #374 TEST-R36J-EXIT-001 silent unsuccessful Go processes never verify generated or native-valid no-op fixtures (1039.018074ms)
+✔ #374 TEST-R36J-INVALID-001 exact independently native-invalid fixture stays invalid despite silent final101 (539.637083ms)
+✔ #374 TEST-R36J-BOUNDARY-001 real opaque terminal-only signal missing-command and output-overflow outcomes fail closed (1437.20724ms)
+✔ #374 TEST-R36J-MALFORMED-001 deterministic unavailable timeout and inconsistent success outcomes are rejected (994.276684ms)
+✔ #374 TEST-R36J-REASON-001 process reason priority dominates supplementary Go file diagnostics (783.77316ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 7230.085466

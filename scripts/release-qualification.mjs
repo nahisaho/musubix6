@@ -87,7 +87,7 @@ export function resolveHistoricalCatalogue({ root, plan, inherited, registeredNa
 
 export function executionInputPaths(execution, environment = execution.environment) {
   ensure(execution && Array.isArray(execution.runtimes), 'complete execution configuration required');
-  equal(execution.runtimes.map(row => row.major).sort(), [20, 22, 24]);
+  equal(execution.runtimes.map(row => row.major).sort(), [22, 24]);
   ensure(Array.isArray(execution.gradleJars) && execution.gradleJars.length > 0, 'Gradle dependencies required');
   const inputs = [execution.sourceRoot, execution.packagePath, execution.nodeModules, ...execution.gradleJars,
     ...(execution.dependencies || [])];
@@ -188,13 +188,25 @@ export async function admitPlan(request) {
     equal(fileSha(paths.inheritedPath), inheritedSha256);
     const inherited = json(paths.inheritedPath), plan = json(paths.planPath);
     ensure(plan.schemaVersion === 1 && plan.targetVersion === '0.2.10', 'unknown qualification plan');
-    const required = inherited.requiredCells.filter(cell => cell.id !== 'NATIVE-WSLC');
+    ensure([1, 2, 3, 4].includes(plan.revision), 'unknown qualification scope revision');
+    const retired = plan.revision === 4 ? ['PACKAGE-20', 'WATCHDOG-20', 'NO-CHANGE-20', 'REGRESSION-20'] : [];
+    const excluded = ['NATIVE-WSLC', ...retired];
+    const required = inherited.requiredCells.filter(cell => !excluded.includes(cell.id))
+      .map(cell => plan.revision === 4 && cell.id === 'MUTATION' ? { ...cell, runtime: '22' } : cell);
     equal(sortedCells(plan.requiredCells), sortedCells(required));
     assertUnique(plan.requiredCells, 'id', 'required cell');
-    ensure(plan.excludedCells.length === 1, 'one explicit WSL exclusion required');
-    equal(tuple(plan.excludedCells[0]), tuple(inherited.requiredCells.find(cell => cell.id === 'NATIVE-WSLC')));
-    ensure(plan.excludedCells[0].status === 'excluded-unvalidated' && plan.excludedCells[0].reason &&
-      plan.excludedCells[0].approvalRequired === true, 'WSL exclusion is not a pass');
+    equal(plan.excludedCells.map(cell => cell.id).sort(), [...excluded].sort());
+    for (const cell of plan.excludedCells) {
+      equal(tuple(cell), tuple(inherited.requiredCells.find(row => row.id === cell.id)));
+      equal(cell.status, cell.id === 'NATIVE-WSLC' ? 'excluded-unvalidated' : 'excluded-unsupported-runtime');
+      ensure(typeof cell.reason === 'string' && cell.reason.trim() &&
+        cell.approvalRequired === true, 'an explicit exclusion is not a pass');
+    }
+    if (plan.revision === 4) {
+      equal(plan.supportContract.linuxNodeMajors, [22, 24]);
+      equal(plan.supportContract.windowsDevelopmentNodeMajors, [20, 22, 24]);
+      equal(plan.supportContract.linuxNode20InternalTooling, 'unsupported');
+    }
     ensure(plan.requiredCleanRuns === 2 && plan.priorQualificationCredit === 0 &&
       plan.consecutiveCompleteCleanRuns === 0 && plan.requiredMissingOrSkippedIsNotPass === true,
     'two fresh complete clean runs without transferred credit required');
@@ -227,7 +239,7 @@ export async function freezeCandidate(request, effects = {}) {
       ensure(request.execution && request.cellCatalogues, 'complete executable frozen cell catalogues required');
       const discovery = await discoverCurrentCatalogue({
         source: request.files.find(file => file.kind === 'source').path,
-        node20: request.tools.find(tool => tool.id === 'node20').executable,
+        node: request.tools.find(tool => tool.id === 'node22').executable,
         output: path.join(path.dirname(request.outputPath), `freeze-discovery-${Date.now()}`),
         environment: cleanEnvironment(request.environment.variables || {}, request.environment.canonicalPath),
         nodeModules: request.execution.nodeModules,
@@ -256,7 +268,9 @@ export async function freezeCandidate(request, effects = {}) {
       const { validateCandidateTree } = await import('./release-qualification-cells.mjs');
       validateCandidateTree(source);
     }
-    const requiredTools = ['node20', 'node22', 'node24', ...inherited.nativeEnvironment.tools.map(tool => tool.command)];
+    const nodeTools = scope.plan.revision === 4 ? ['node22', 'node24'] : ['node20', 'node22', 'node24'];
+    if (scope.plan.revision === 4) ensure(!request.tools.some(tool => tool.id === 'node20'), 'Linux Node20 tooling is unsupported');
+    const requiredTools = [...nodeTools, ...inherited.nativeEnvironment.tools.map(tool => tool.command)];
     for (const id of requiredTools) ensure(request.tools.some(tool => tool.id === id), `missing tool ${id}`);
     assertUnique(request.tools, 'id', 'tool');
     const tools = [];
@@ -513,7 +527,7 @@ export async function prepareReleaseReport(request) {
 export async function verifyPackageEntrypoints(request, effects = {}) {
   return verdict(async () => {
     equal(fileSha(request.packagePath), request.packageSha256);
-    equal(request.runtimes.map(runtime => runtime.major).sort(), [20, 22, 24]);
+    equal(request.runtimes.map(runtime => runtime.major).sort(), [22, 24]);
     mkdir(request.workRoot);
     const packageReceipts = [];
     for (const runtime of request.runtimes) {
@@ -577,7 +591,7 @@ export async function materializeSource(request) {
 }
 
 function validatePackageReceipts(request) {
-  equal(request.packageReceipts.map(row => row.runtimeMajor).sort(), [20, 22, 24]);
+  equal(request.packageReceipts.map(row => row.runtimeMajor).sort(), [22, 24]);
   for (const receipt of request.packageReceipts) {
     ensure(receipt.tgzPath === request.packagePath && receipt.tgzSha256 === request.packageSha256, 'package receipt bound to wrong artifact');
     ensure(receipt.installedVersion === request.targetVersion && receipt.offline === true &&

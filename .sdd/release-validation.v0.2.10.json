@@ -2,13 +2,13 @@
   "schemaVersion": 1,
   "targetVersion": "0.2.10",
   "status": "scope-contract-not-run-evidence",
-  "revision": 3,
+  "revision": 4,
   "policy": "docs/design-sdd-hardening.md section 3.5",
   "inheritedManifest": {
     "path": ".sdd/release-validation.v0.2.0.json",
     "sha256": "e2f221e308e2fb4389f044e12c42cb2083e314b97305ae1701f65cd399c37de6"
   },
-  "revisionReason": "Prospective0.2.10 lossless-ledger successor from committedffff1a7: preserve all24 Linux cells/budgets, all120 inherited paths/full modes,28 semantic and14 placeholder mechanisms and every1260 inherited vendor/origin challenge; renew4 reviewed canonical byte digests and add the shipped ledger test with all10 source byte/full-mode policies. Copilot121/Claude118;1210 source challenges plus60 origin sensitivities,1298 total skill cases. Credit/streak0; exact seven-artifact human preparation approval required before adapter cutover or admission.",
+  "revisionReason": "User approved complete Linux Node20 retirement, including internal tooling, on2026-11-13. Exclude exactly PACKAGE-20, WATCHDOG-20, NO-CHANGE-20 and REGRESSION-20; move MUTATION to Node22 without changing cases, assertions or3600-second budget. Preserve all20 retained cells and other budgets, WSL exclusion,121 canonical files,1298 skill cases,14 placeholders and historical lineage. Windows20/22/24 development controls remain. New exact seven-artifact approval and Node22/24-only discovery/execution required; old failures retained, credit/streak0, no publication approval.",
   "historicalTestLineage": {
     "version": 1,
     "sourceCommit": "ffff1a7893a41d9b8ea0b50ddc4837a663ce23a3",
@@ -105,26 +105,6 @@
   "requiredMissingOrSkippedIsNotPass": true,
   "requiredCells": [
     {
-      "id": "PACKAGE-20",
-      "runtime": "20",
-      "kind": "extra",
-      "mode": "package",
-      "timeoutSeconds": 300
-    },
-    {
-      "id": "WATCHDOG-20",
-      "runtime": "20",
-      "kind": "watchdog",
-      "timeoutSeconds": 300
-    },
-    {
-      "id": "NO-CHANGE-20",
-      "runtime": "20",
-      "kind": "extra",
-      "mode": "no-change",
-      "timeoutSeconds": 300
-    },
-    {
       "id": "PACKAGE-22",
       "runtime": "22",
       "kind": "extra",
@@ -166,7 +146,7 @@
     },
     {
       "id": "MUTATION",
-      "runtime": "20",
+      "runtime": "22",
       "kind": "mutation",
       "timeoutSeconds": 3600
     },
@@ -234,12 +214,6 @@
       "timeoutSeconds": 3600
     },
     {
-      "id": "REGRESSION-20",
-      "runtime": "20",
-      "kind": "suite",
-      "timeoutSeconds": 12000
-    },
-    {
       "id": "REGRESSION-22",
       "runtime": "22",
       "kind": "suite",
@@ -260,6 +234,44 @@
   ],
   "excludedCells": [
     {
+      "id": "PACKAGE-20",
+      "runtime": "20",
+      "kind": "extra",
+      "mode": "package",
+      "timeoutSeconds": 300,
+      "status": "excluded-unsupported-runtime",
+      "reason": "User explicitly retired Linux Node20 support, including internal tooling, on2026-11-13",
+      "approvalRequired": true
+    },
+    {
+      "id": "WATCHDOG-20",
+      "runtime": "20",
+      "kind": "watchdog",
+      "timeoutSeconds": 300,
+      "status": "excluded-unsupported-runtime",
+      "reason": "User explicitly retired Linux Node20 support, including internal tooling, on2026-11-13",
+      "approvalRequired": true
+    },
+    {
+      "id": "NO-CHANGE-20",
+      "runtime": "20",
+      "kind": "extra",
+      "mode": "no-change",
+      "timeoutSeconds": 300,
+      "status": "excluded-unsupported-runtime",
+      "reason": "User explicitly retired Linux Node20 support, including internal tooling, on2026-11-13",
+      "approvalRequired": true
+    },
+    {
+      "id": "REGRESSION-20",
+      "runtime": "20",
+      "kind": "suite",
+      "timeoutSeconds": 12000,
+      "status": "excluded-unsupported-runtime",
+      "reason": "User explicitly retired Linux Node20 support, including internal tooling, on2026-11-13",
+      "approvalRequired": true
+    },
+    {
       "id": "NATIVE-WSLC",
       "runtime": "24",
       "kind": "extra",
@@ -273,6 +285,9 @@
   "supportContract": {
     "status": "Linux-only-scope-contract",
     "qualificationPlatform": "Linux x86_64",
+    "linuxNodeMajors": [22, 24],
+    "windowsDevelopmentNodeMajors": [20, 22, 24],
+    "linuxNode20InternalTooling": "unsupported",
     "unverifiedPlatforms": [
       "Windows",
       "WSL container execution",
@@ -310,7 +325,7 @@
       "status": "missing"
     }
   ],
-  "recovery": "Restore and verify qualification helpers or reconstruct reviewed equivalents, with a retained mapping for all 34 unavailable historical helper inputs. After human approval of the Linux-only scope, freeze the 24-required-cell matrix with exact current digests and named cases, then run it twice unchanged. No further removal or weakened oracle is authorized.",
+  "recovery": "After genuine exact-artifact preparation approval, freeze the20-required-cell Linux Node22/24 matrix with current digests and complete named cases, then run it twice unchanged. Retain the34 historical missing-input mappings and all failed runs. No further removal or weakened oracle is authorized; support-policy approval is not tag/publication approval.",
   "humanReleaseApproved": false,
   "publishingAuthorized": false,
   "previousVersion": {
@@ -319,8 +334,8 @@
     "sha256": "683269310de4498ee64f33cfe2b4e30e742a33fbf616da3577770198bb6bb280"
   },
   "previousRevision": {
-    "number": 2,
-    "sha256": "4d91abf448412004f8b98d51c412d49e6d0115e0359a240bddd4641c2a6284d9",
-    "artifactCommit": "ffff1a7893a41d9b8ea0b50ddc4837a663ce23a3"
+    "number": 3,
+    "sha256": "2f8999a87402f312a72476f96284a4395a0fbcef157fccfeeb991ddc4ad99102",
+    "artifactCommit": "c3691dea72a7ce39aae43f2d089713e0380fc2b3"
   }
 }

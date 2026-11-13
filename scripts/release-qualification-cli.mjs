@@ -109,11 +109,11 @@ export async function preflight(configuration) {
     ensure(configuration.workRoot && !inside(source, configuration.workRoot), 'external persistent work root required');
     externalOutput(source, configuration.workRoot);
     mkdir(configuration.workRoot);
-    equal(configuration.runtimes.map(runtime => runtime.major).sort(), [20, 22, 24]);
+    equal(configuration.runtimes.map(runtime => runtime.major).sort(), [22, 24]);
     ensure(configuration.runtimes.every(runtime => Object.keys(runtime).every(key =>
       ['major', 'executable', 'npm', 'canonicalPath'].includes(key))), 'unknown runtime descriptor field');
-    const node20 = configuration.runtimes.find(runtime => runtime.major === 20);
-    const env = preparationEnvironment(configuration, node20, 'probe');
+    const discoveryRuntime = configuration.runtimes.find(runtime => runtime.major === 22);
+    const env = preparationEnvironment(configuration, discoveryRuntime, 'probe');
     const tools = [];
     for (const runtime of configuration.runtimes) {
       const versionArgs = ['--version'];
@@ -135,7 +135,7 @@ export async function preflight(configuration) {
       tools.push(descriptor);
     }
     const discovery = await discoverCurrentCatalogue({
-      source, node20: node20.executable, output: path.join(configuration.workRoot, `discovery-${Date.now()}`),
+      source, node: discoveryRuntime.executable, output: path.join(configuration.workRoot, `discovery-${Date.now()}`),
       environment: env.variables,
     });
     const historical = resolveHistoricalCatalogue({ root: source, plan: admitted.plan, inherited,

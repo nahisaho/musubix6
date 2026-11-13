@@ -34,7 +34,12 @@ function testFiles(source) {
   return files;
 }
 
-export async function discoverCurrentCatalogue({ source, node20, output, environment, nodeModules }, effects = {}) {
+export async function discoverCurrentCatalogue({ source, node, output, environment, nodeModules }, effects = {}) {
+  ensure(typeof node === 'string' && path.isAbsolute(node), 'absolute supported discovery runtime required');
+  ensure(environment && typeof environment === 'object' && !Array.isArray(environment),
+    'registration discovery requires an explicit environment');
+  ensure(!environment.NODE_OPTIONS && !environment.NODE_TEST_CONTEXT && !environment.NODE_PATH,
+    'registration discovery refuses injected Node execution settings');
   externalOutput(source, output);
   mkdir(output);
   if (nodeModules) {
@@ -44,15 +49,18 @@ export async function discoverCurrentCatalogue({ source, node20, output, environ
     source = destination;
   }
   const reporter = path.join(source, 'scripts/release-host-events.mjs');
-  const command = [node20, '--test', `--test-reporter=${reporter}`, '--test-name-pattern', '(?!)',
+  const preload = path.join(source, 'scripts/release-qualification-discovery.mjs');
+  const command = [node, '--import', preload, '--test', `--test-reporter=${reporter}`,
     ...testFiles(source).map(file => path.join(source, file))];
   const result = await (effects.execute || execute)({ command, cwd: source, env: environment, timeoutMs: 120000 });
   const evidence = retainProcess(output, result);
-  ensure(result.exit === 0 && !result.error && !result.signal && !result.timedOut, 'current registration discovery failed');
+  ensure(result.exit === 0 && !result.error && !result.signal && !result.timedOut && !result.outputLimit,
+    `current registration discovery failed:\n${result.stdout}\n${result.stderr}`);
   const parsed = parseEvents(result.stdout);
   ensure(parsed.rows.every(row => row.filtered && !row.todo && !row.failed), 'discovery must execute no test body');
-  ensure(parsed.rows.every(row => !row.name.endsWith('.test.mjs')), 'runtime did not disclose registered names; use genuine Node20 discovery');
-  return { names: parsed.rows.map(row => row.name), files: testFiles(source), evidence };
+  ensure(parsed.rows.every(row => !row.name.endsWith('.test.mjs')), 'runtime did not disclose registered names');
+  return { names: parsed.rows.map(row => row.name), files: testFiles(source), evidence,
+    discoveryOnly: true, qualifyingCredit: 0 };
 }
 
 export function assertionCatalogue(source, suite, title, expectedNeedle, nodeModules) {

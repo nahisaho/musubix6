@@ -3,18 +3,21 @@ feature: ci-regression-fixtures
 tier: T2
 approval: auto
 dependsOn: implementation-plan-cli
-artifacts: scripts/release-qualification.test.mjs, scripts/release-host-mutations.test.mjs, .github/skills/lean-sdd-tdd/scripts/sdd.test.mjs, .github/skills/lean-sdd-tdd/scripts/implementation-plan-cli.test.mjs
+artifacts: scripts/release-qualification.test.mjs, scripts/release-host-mutations.test.mjs, .github/skills/lean-sdd-tdd/scripts/sdd.test.mjs, .github/skills/lean-sdd-tdd/scripts/implementation-plan-cli.test.mjs, .github/workflows/ci.yml
 ---
 # Development CI fixtures without renewed release authorization
 
-Restore the complete Node20/22/24 development suite for PR388 without changing
-production qualification policy, active human approvals or historical catalogues.
+Exercise the complete current Linux Node22/24 development suite and retain
+historical fixtures without treating them as current support promises.
+The human-approved Linux Node20 retirement in release-qualification owns
+the current support decision; Windows Node20/22/24 is unchanged.
 
 | ID | EARS requirement | Test |
 |---|---|---|
 | REQ-CI-FIXTURE-001 | When constructing the historical0.2.8 qualification unit fixture, the test harness shall use the exact approved Git snapshot703a4fed16b781a229a9ce85eeb2e83446ba8d8a for its seven-artifact lock, artifacts, inherited manifest, lineage suite and historical package metadata, independently of current development documentation; admission shall accept that unchanged fixture and reject its modified artifacts without writing production approval or qualification evidence; discovery-only registration from a Git-free candidate shall not construct fixtures or read Git history, while selected fixture tests shall still require their genuine pinned Git inputs. | TEST-CI-FIXTURE-001 |
 | REQ-CI-FIXTURE-002 | When exercising host mutation adapters against the current development checkout, the test harness shall select the stable target version from its package manifest and require every inherited host mutation to apply and the actual version/package controls to detect and restore their changes; historical version-specific parser cases shall remain fixed. | TEST-CI-FIXTURE-002 |
 | REQ-CI-FIXTURE-003 | When the retained gate-help regression runs, its expected usage shall match the approved complete global-help contract while still requiring exit0 and absence of gate execution. (test-only) | TEST-CI-FIXTURE-003 |
+| REQ-CI-FIXTURE-004 | When the retained current-development CI regression runs after the human-approved Linux Node20 retirement, it shall require the actual Linux Node22/24 matrix while retaining every runtime-identity, native-prerequisite, complete-suite, read-only permission, no-publication and failure-log assertion; the old name shall have an explicit historical lineage replacement. (test-only) | TEST-CI-FIXTURE-004 |
 
 ## PASS conditions and counterexamples
 
@@ -23,8 +26,29 @@ production qualification policy, active human approvals or historical catalogues
 | `REQ-CI-FIXTURE-001` | Historical seven-artifact fixture admits with24 required cells and no publication/old credit; historical package/lock versions remain0.2.8; changed fixture README and missing historical file reject without a live-source fallback; production bytes remain unchanged | Copy development README0.2.10 beside its old0.2.8 human hash; copy current0.2.10 package metadata beside historical0.2.8 execution contracts; use a current-only spec when its Git blob is missing | TEST-CI-FIXTURE-001; existing release qualification suite | Push CI42717700965 fails11 dependent controls per major; seven approved hashes match703a4fe; first raw regression assertion FAIL instead of PASS; follow-on focused run26/28 exposes2 stale package-metadata controls |
 | `REQ-CI-FIXTURE-002` | All28 host adapters apply to current0.2.10 inputs; actual version/package baseline and restoration pass | Use0.2.8 mutation anchors on0.2.10 package/CLI metadata: anchor failure instead of testing a mutant | TEST-CI-FIXTURE-002; TEST-RELQ-HOST-001 | Native assertion Red for missing version anchor, unchanged-test Green; all28 adapters and actual restored host controls pass on Node24 |
 | `REQ-CI-FIXTURE-003` | Retained `#258 gate --help` passes under global usage and still proves no gate ran | Require obsolete `usage: gate` although the approved dispatcher prints `usage: sdd.mjs` and the complete command list | TEST-CI-FIXTURE-003; retained exact case | Native assertion Red for retained help regression exit1, unchanged-test Green; retained named control passes |
+| `REQ-CI-FIXTURE-004` | Actual current workflow has Linux22/24, unchanged full-suite/tool/permission/log controls; separate Windows20 remains covered by TEST-RELQ-LINUX-001 | Keep the obsolete Linux20 matrix, mask it with a comment or exclusion solely to satisfy the old regex, remove a native prerequisite, or omit the renamed case from the required catalogue: reject; exact current matrix and explicit lineage accept | TEST-CI-FIXTURE-004; original-matrix native assertion Red, unchanged-test Green, bounded matrix mutation | New contract/test drafted before the actual CI change; native evidence and canonical reference renewal pending |
 
 ## Design
+Current Linux development CI follows the human-approved Node22/24 policy.
+The retained workflow regression changes only its matrix expectation and name.
+
+The original current-development matrix assertion is not a historical input:
+update it honestly rather than retaining a misleading20 matrix comment or
+declaring20 only to exclude it. Keep all other assertions unchanged.
+Bind the changed canonical SDK suite through an independently measured
+committed reference and explicit renamed-test lineage, then genuinely renew
+the seven-artifact release unit before admission. This derived fixture
+contract does not grant release scope or publication approval.
+
+First violated stages for the matrix update: contract=the human release
+support decision; trusted inputs=actual checked-in workflow and committed
+canonical suite; execution=real22/24 CI and the unchanged complete checks;
+verdict=accept the correct matrix and detect the obsolete matrix; history=
+retain old names/failures through explicit lineage and reset qualification;
+integration/distribution=both-host canonical inventory, new CI, full gate
+and exact-artifact human approval. No stage is waived.
+
+### Historical fixture design
 
 Change only development-test fixtures and their assertions. Read historical
 fixture bytes with literal `git show <pinned-commit>:<path>`; unavailable objects
@@ -37,7 +61,8 @@ The historical snapshot is a test reference, not a0.2.10 release plan. Keep its
 0.2.8 target,24 cells, budgets, lineage, catalogues and all rejection controls.
 Keep current development host-version tests separate from this reference.
 Do not rename/delete inherited test cases, skip checks, modify production
-approval hashes or narrow the CI/release matrix.
+approval hashes or narrow the CI/release matrix beyond the separately human-approved
+Linux Node20 retirement.
 
 For Git-free discovery, defer those same pinned reads until a selected test
 starts. Set the shared ready marker only after every read succeeds. Do not

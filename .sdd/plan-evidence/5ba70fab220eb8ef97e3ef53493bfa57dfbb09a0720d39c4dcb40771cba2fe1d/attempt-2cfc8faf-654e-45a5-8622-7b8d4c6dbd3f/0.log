@@ -1,0 +1,13 @@
+✔ TEST-FEEDBACK-001 activation is explicit, finite and compatible with existing projects (1983.828871ms)
+✔ TEST-FEEDBACK-002 inventory reconciles unmapped, shared, deleted and transferred sources (6243.441591ms)
+✔ TEST-FEEDBACK-003 canonical entries are mandatory, complete, immutable and replay resistant (2059.583492ms)
+✔ TEST-FEEDBACK-004 verify and gates reject missing feedback before checks but accept valid native evidence (12626.73646ms)
+✔ TEST-FEEDBACK-005 recording serializes writers, retains the chain and detects deterministic input races (112.176107ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 23104.150638

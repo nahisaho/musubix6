@@ -66,15 +66,15 @@ async function actualMutation(t, id) {
   const manifest = { catalogues: {
     mutations: historical.mutationCatalogue, diagnosticMutations: historical.diagnosticMutationCatalogue,
   } };
-  const cell = { id: 'MUTATION', runtime: '20', kind: 'mutation', timeoutSeconds: 300 };
+  const cell = { id: 'MUTATION', runtime: '22', kind: 'mutation', timeoutSeconds: 300 };
   const catalogue = cellCatalogue(manifest, cell, source).filter(row => row.id === id);
   assert.equal(catalogue.length, 1);
-  const runtime = context.configuration.runtimes.find(row => row.major === 20);
+  const runtime = context.configuration.runtimes.find(row => row.major === 22);
   const node = runtime.executable;
   const environment = { ...context.environment,
     PATH: canonicalEnvironment(context.configuration, runtime).canonicalPath };
   assert.equal(environment.PATH.split(path.delimiter)[0], path.dirname(node),
-    'Nested mutation PATH must select its declared Node20, not the outer oracle Node24.');
+    'Nested mutation PATH must select its declared Node22, not the outer oracle Node24.');
   const result = await runAdapter({ cell, source, output: root, node, catalogue,
     environment, configuration: context.configuration });
   assert.equal(result.status, 'PASS');
