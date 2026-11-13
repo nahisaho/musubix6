@@ -10,10 +10,11 @@ import { PassThrough } from 'node:stream';
 import { execFileSync, spawn } from 'node:child_process';
 import * as processIo from './release-qualification-io.mjs';
 import {
-  contentCaseCatalogue, buildContentCasePlan, runContentCase, validateContentCase,
+  contentCaseCatalogue, buildContentCasePlan, runContentCase, validateContentCase, runContentCell,
   applyContentEdit,
   assertContentInventory,
 } from './release-qualification-content-mutations.mjs';
+import * as contentMutations from './release-qualification-content-mutations.mjs';
 import { parseContentPython, validateContentNative } from './release-qualification-evidence.mjs';
 import {
   admitPlan, freezeCandidate, checkFrozenCandidate, validateCellEvidence,
@@ -761,6 +762,71 @@ test('TEST-RELQ-BASELINE-001 validates the historical approved source inventory 
       assert.match(rejected.errors.join('\n'), reason, label);
       assert.equal(fs.existsSync(workRoot), false, `${label}: no preparation output before rejection`);
     } finally { fs.writeFileSync(file, bytes); fs.chmodSync(file, mode); }
+  }
+});
+
+/** @id TEST-RELQ-LEXICAL-001 @verifies REQ-RELQ-003, REQ-RELQ-005 */
+test('TEST-RELQ-LEXICAL-001 executes exact source/package lexical controls before named mutations', async t => {
+  const previous = process.env.QUALIFY_CONTEXT;
+  t.after(() => {
+    if (previous === undefined) delete process.env.QUALIFY_CONTEXT;
+    else process.env.QUALIFY_CONTEXT = previous;
+  });
+  const names = [
+    'TEST-TW-PH-001 enumerates marker case, colon, whitespace and annotation policy',
+    'TEST-TW-PH-002 excludes only recognized code, URL and identifier contexts',
+    'TEST-TW-PH-003 installed linter preserves policy and advisory interfaces',
+  ];
+  for (const cell of ['SKILL-MUTATION', 'PLACEHOLDER-MUTATION']) {
+    const directory = workspace(t), context = contentContext(directory, cell);
+    // Python cases are planned but never entered by this bounded lexical regression.
+    context.configuration.prosePython = process.execPath;
+    const first = contentCaseCatalogue(contentReference, cell)[0];
+    const occupied = buildContentCasePlan(context, first).directory;
+    fs.mkdirSync(occupied, { recursive: true });
+    process.env.QUALIFY_CONTEXT = write(path.join(directory, 'context.json'), context);
+    await assert.rejects(runContentCell(context), {
+      message: 'fresh content case origin required',
+    }, `${cell}: valid controls must reach the deliberate first-case boundary`);
+    assert.deepEqual(fs.readdirSync(occupied), [], 'no named mutation was executed or credited');
+    const controls = read(path.join(context.output, 'selected-controls.json')), lexical = [];
+    for (const origin of ['source', 'package']) {
+      const commandPath = path.join(context.output, `lexical-${origin}`, 'command.json');
+      const native = read(commandPath);
+      const receipt = { ...native, receipt: { path: commandPath, sha256: fileDigest(commandPath) } };
+      const parent = controls.find(row => row.type === 'positive' &&
+        row.target.origin === origin && row.target.host === 'copilot');
+      const script = path.join(parent.plan.originRoot, 'scripts/kotonoha-skills.test.mjs');
+      const pattern = names.map(name => name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|');
+      const plan = {
+        family: 'Node ERR_ASSERTION', source: parent.plan.source, targetNames: names,
+        assertionSource: script, assertionLines: [139, 151, 224],
+        command: [process.execPath, '--test',
+          `--test-reporter=${path.join(context.source, 'scripts/release-host-events.mjs')}`,
+          '--test-name-pattern', `^(?:${pattern})$`, script],
+      };
+      const counts = validateContentNative({ receipt, phase: 'baseline', target: {}, plan });
+      assert.equal(counts.tests, 3);
+      assert.equal(counts.pass, 3);
+      for (const key of ['fail', 'skipped', 'todo', 'cancelled']) assert.equal(counts[key], 0);
+      lexical.push({ origin, plan, receipt });
+    }
+    const data = { controls, lexical };
+    assert.doesNotThrow(() => contentMutations.validateContentLexicalControls(context, data),
+      `${cell}: final lexical verdict must accept the same genuine native controls`);
+    for (const change of [
+      value => value.lexical.pop(),
+      value => { value.lexical[1] = clone(value.lexical[0]); },
+      value => value.lexical.reverse(),
+      value => { value.lexical[0].plan.command[value.lexical[0].plan.command.length - 1] = 'other.test.mjs'; },
+      value => { value.lexical[0].plan.command[value.lexical[0].plan.command.length - 2] = '^unrelated$'; },
+      value => { value.lexical[0].plan.source = directory; },
+      value => { value.lexical[0].plan.targetNames.pop(); },
+    ]) {
+      const invalid = clone(data);
+      change(invalid);
+      assert.throws(() => contentMutations.validateContentLexicalControls(context, invalid));
+    }
   }
 });
 

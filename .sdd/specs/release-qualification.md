@@ -924,6 +924,35 @@ outside qualified Linux support; #385's unidentified historical first
 failure remains disclosed. Later native/mutation/gate records belong in the
 existing feature review and authentic receipts, not an assumed PASS here.
 
+### Explicit lexical-oracle selection after the scope3 frozen failure
+
+Frozen manifest
+`eea479bc8ed2ee16b2e3ca6ae8c88947f8e3038b54e7af84fe62458f729776ee`,
+candidate `9d45e5be1c3eccc57664d9bbfd1c0b5f8ea957ec`, run-yCeDHE
+passed16 cells, failed SKILL-MUTATION and left7 cells unrun. The retained
+adapter stdout reports a path argument of type Array. `nodeNames` requires
+`source, file, prefixes`, but both `lexicalControls` and the final
+`validateContentRun` phase supply only source and the prefix array.
+This is an execution-stage selector defect, not evidence that
+any of the1298 named mutations passed or failed. Preserve the failed run;
+the complete-clean streak remains0/2.
+
+| REQ | PASS condition | Counterexample and expected verdict | TEST/command | Observed evidence |
+|---|---|---|---|---|
+| `REQ-RELQ-003`, `REQ-RELQ-005` | Both lexical execution and final validation explicitly select `scripts/kotonoha-skills.test.mjs` and require exactly TEST-TW-PH-001/002/003 under source and extracted-package origins, with three native passes and zero failures/skips per origin | Omitting the file argument at either call passes the prefix Array to path.join and must fail the regression; wrong oracle file, missing/duplicate/reordered origins, changed argv/source or wrong target names must reject. The unchanged actual source/package controls must pass | TEST-RELQ-LEXICAL-001; actual runContentCell integration stopped at a deliberately occupied first named-case directory only after all13 inventory controls and both lexical controls; independently inspect both native receipts and exact names, then directly exercise the unchanged lexical-verdict phase extracted for reuse by validateContentRun | Frozen run retained; actual pre-lock assertion failure after5652ms confirms the execution omission. Formal native Red/Green and separately restored execution/verdict selector mutations remain required |
+| `REQ-RELQ-001`, `REQ-RELQ-004` | Keep all24 cells,1298 skill cases,14 placeholder cases, all origin controls and original budgets; require two new complete clean runs after relevant changes | Reusing16 partial passes, treating the deliberately stopped regression as a full cell, skipping lexical controls, weakening ownership checks or starting run2 after this failed candidate must reject | Existing freeze/check/run/status and native ownership validators | No complete run or publication credit |
+
+First violated stages: contract = retain the already required lexical rows
+without narrowing policy; trusted inputs = explicit independently hashed
+oracle file and exact frozen package; execution = the missing filename
+argument observed above; verdict = exact native names/counts/ownership and
+valid controls, not arbitrary failure; evidence history = retain the failed
+candidate and partial results, reset0/2, no component-test credit transfer;
+integration/distribution = actual source/extracted-package controls followed
+by the complete matrix and separate exact-artifact publication approval.
+All six stages apply; none is waived. Renew the same exact seven-artifact
+human preparation unit before production repair or a successor freeze.
+
 ## Risks / assumptions
 Six first-failure stages: contract — approved Linux scope and exact inherited 24-cell equality; trusted inputs — pin actual files/tools/configuration and reject absent dependencies; execution — fresh isolated work, bounded commands, real native controls; verdict — independent named catalogues, positive controls and assertion mutants; evidence history — immutable failed records, no old credit, deterministic streak reset; integration/distribution — exact tgz and both-host inventories on Node20/22/24, separate human approval.
 Replacement first-failure classification: contract — missing original edits/seven path identities require this explicit approved replacement; trusted inputs — approved committed-byte references, origin-specific exact modes and real interpreter/dependency identities; execution — permission/import/timeout failures are not kills; verdict — exact native assertion/argv/receipt and valid controls, not arbitrary failure; evidence history — no historical or spike credit and reset on any relevant revision; integration/distribution — real source/init/extracted-package fixed lexical and inventory controls. All six stages apply; none is waived.

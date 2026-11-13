@@ -252,10 +252,9 @@
   "release-qualification": {
     "by": "nahisaho",
     "kind": "human",
-    "review": "Explicit human approval of the seven prepared artifact hashes captured in this session: scope3/content3 preparation and minimal oracle-history/catalogue implementation and validation only; no tag or publication authorization.",
-    "at": "2026-11-12T21:08:26.135Z",
+    "at": "2026-11-13T06:07:04.929Z",
     "artifacts": {
-      ".sdd/specs/release-qualification.md": "036c643e46c0f3dc8fc050dd6890a972d22b5cfe7572b7f351644406dfc663bd",
+      ".sdd/specs/release-qualification.md": "764490704099d646226f652185de35753b228f468050c8d770e0926dd4d24708",
       ".sdd/release-validation.v0.2.10.json": "2f8999a87402f312a72476f96284a4395a0fbcef157fccfeeb991ddc4ad99102",
       ".sdd/release-content-mutations.v0.2.10.json": "fe50d0aafd3d912eb4be1fa088fefae64dc84a74bf10d3862daad30b91686d2e",
       ".sdd/specs/claude-code-support.md": "2c846e5878db59abb7ba0cc3aa9b7f49256c91a6a250931a7e0e53a7cf826560",
@@ -269,10 +268,10 @@
       "scripts/release-host-mutations.mjs": "6921bf50d7f7df70ce2e3a3e23b0acbf67def78f0e4d358b1d7a5adcb091b618",
       "scripts/release-qualification-cells.mjs": "8f85684dbf4372a2cf1bb9db08473463752e0235fbf4f2b9644e074ee8990289",
       "scripts/release-qualification-cli.mjs": "14796bd1efbe8f9d26a7a835d06eafe40403b4054db6ef57b287e96082639ceb",
-      "scripts/release-qualification-content-mutations.mjs": "60a7549229a3a94dc889f9255450fdf7be23867f0dd31b50ed4ff54dbd3b2d8b",
+      "scripts/release-qualification-content-mutations.mjs": "896dc849315d6cb1a23507669b2700393b091bf0e8a4622eb71e9d07e172fc0e",
       "scripts/release-qualification-evidence.mjs": "1f2af8ec0e458893ae7f580fc2b5e1020c32f5c2d19aa848336e698c512837f2",
       "scripts/release-qualification-io.mjs": "56da8043e445f7f636388fb00e8cad1cfa9b5e56c6f1a2f787f270acd8184fb0",
-      "scripts/release-qualification.mjs": "c305f554ccef4d14ddad3b18455749074a0cd4c32e30ddf7dafe41c1580177bb"
+      "scripts/release-qualification.mjs": "27e5d65cfaec28ed506d17518e859b396def5daaaf812a3b90773ac49936d9a3"
     }
   },
   "rust-stub-confidence": {
@@ -365,13 +364,13 @@
     }
   },
   "ci-regression-fixtures": {
-    "by": "ai:release-oracle-regression-review",
+    "by": "ai:release-compaction-unit-review",
     "kind": "ai",
-    "review": "Independent same-delta review CLEAN: unchanged deferred Git-free discovery/genuine selected-execution contract; only the reviewed shared regression artifact changed, with all new historical reads inside selected test bodies.",
-    "at": "2026-11-12T21:17:03.787Z",
+    "review": "Independent retained reviewer confirmed only lexical regression/import additions; lazy historical discovery, CODE-CI-FIXTURE-004, native fixture commands and CI contract unchanged.",
+    "at": "2026-11-13T05:58:24.528Z",
     "artifacts": {
       ".sdd/specs/ci-regression-fixtures.md": "2ae0796b125a369eea494cf1135639cd4e85152cf43bba29b2211571dfb62e60",
-      "scripts/release-qualification.test.mjs": "c25ec8950e0a98d58469d6f51d6656c92ac882361c28317a51134f0ffa3e831d",
+      "scripts/release-qualification.test.mjs": "7df17e9a73633e8cb2cc10dfff7847782c7f3c08a03612f8df80be770550962d",
       "scripts/release-host-mutations.test.mjs": "6a6798b24e1aae5bb01c8502c4edb99da0281894562c25779bf3bbb7deccd914",
       ".github/skills/lean-sdd-tdd/scripts/sdd.test.mjs": "5bf8c282f28eded3aaa58c90a83319e4dddd957c6461d33f2a5cd7740822f644",
       ".github/skills/lean-sdd-tdd/scripts/implementation-plan-cli.test.mjs": "d830cf57e9a94c52d88a88134e3d52ab906b0513135df3cc247f5d58ded3e474"

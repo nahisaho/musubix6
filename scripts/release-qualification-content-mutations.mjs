@@ -449,7 +449,7 @@ async function runContentControls(context, definitions) {
 }
 
 async function lexicalControls(context, controls) {
-  const titles = nodeNames(context.source, ['TEST-TW-PH-001', 'TEST-TW-PH-002', 'TEST-TW-PH-003']);
+  const titles = nodeNames(context.source, nodeTest, ['TEST-TW-PH-001', 'TEST-TW-PH-002', 'TEST-TW-PH-003']);
   const result = [];
   for (const origin of ['source', 'package']) {
     const parent = controls.find(control => control.target.origin === origin && control.target.host === 'copilot');
@@ -522,16 +522,21 @@ export function validateContentRun({ cell, catalogue, evidence, data }) {
       validateContentNative({ receipt: control[phase], phase, target: expected.target, plan: expected.plan });
     }
   }
+  validateContentLexicalControls(context, data);
+  return data;
+}
+
+/** @id CODE-RELQ-LEXICAL-001 @implements REQ-RELQ-003, REQ-RELQ-005 */
+export function validateContentLexicalControls(context, data) {
   equal(data.lexical.map(control => control.origin), ['source', 'package']);
   for (const control of data.lexical) {
     const parent = data.controls.find(row => row.target.origin === control.origin && row.target.host === 'copilot');
-    const titles = nodeNames(context.source, ['TEST-TW-PH-001', 'TEST-TW-PH-002', 'TEST-TW-PH-003']);
+    const titles = nodeNames(context.source, nodeTest, ['TEST-TW-PH-001', 'TEST-TW-PH-002', 'TEST-TW-PH-003']);
     equal(control.plan.command, [context.node, '--test', `--test-reporter=${path.join(context.source, 'scripts/release-host-events.mjs')}`,
       '--test-name-pattern', `^(?:${titles.map(escape).join('|')})$`, path.join(parent.plan.originRoot, nodeTest)]);
     equal(control.plan.source, parent.plan.source); equal(control.plan.targetNames, titles);
     validateContentNative({ receipt: control.receipt, phase: 'baseline', target: {}, plan: control.plan });
   }
-  return data;
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === self && process.argv[2] === '--inventory') {

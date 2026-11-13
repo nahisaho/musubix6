@@ -1,4 +1,68 @@
-# Lossless-ledger scope3/content3 implementation review
+# Explicit lexical-oracle selection repair review
+
+The retained scope3 frozen candidate9d45e5b/manifesteea479bc failed
+run-yCeDHE at SKILL-MUTATION:16 cells passed, one failed and seven were
+unrun. Its raw adapter stdout reports a path argument of type Array.
+ORACLE-SELFTEST passed in that same actual run. The two missing-filename
+selectors are one blocking execution-stage S2 finding; no partial passes
+or component tests advance the complete-clean streak, which remains0/2.
+
+The same seven-artifact unit was genuinely renewed by nahisaho through
+the SDK. Current spec SHA256:
+764490704099d646226f652185de35753b228f468050c8d770e0926dd4d24708.
+The six other unit artifacts are unchanged. This approval authorizes
+the described repair, development verification, conditional main integration
+after a full gate and same-head CI, and successor fixed validation; it does
+not authorize a release tag or npm publication.
+Content-helper SHA256:
+59b3a4e0d082345f5bf517e81242e129ed99d9e9891cad9627743ffdd6b11f04.
+Regression-module SHA256:
+7df17e9a73633e8cb2cc10dfff7847782c7f3c08a03612f8df80be770550962d.
+
+Formal native assertion Red6085ms preceded production; its expected
+first-case-boundary assertion received the actual path-Array exception.
+Unchanged-test Green12873ms passes both cell kinds. Each runs all13
+inventory controls and actual source/package lexical controls with exactly
+three named native passes, zero failures/skips, then deliberately refuses
+an occupied first named-case directory. The extracted unchanged final
+lexical-verdict phase accepts those genuine receipts and rejects seven
+independently specified malformed-input rows. This bounded regression
+does not execute or credit all1298 skill or14 placeholder mutations.
+
+Both selectors now explicitly supply nodeTest. Full validateContentRun
+calls the extracted final lexical verifier; no matrix, case, origin,
+budget or native ownership rule was removed or weakened.
+The independent pre-lock review first found the second missing argument;
+its HIGH finding is closed in the implemented bounded repair.
+R210-LEXICAL-SELECTOR|HIGH|scripts/release-qualification-content-mutations.mjs:452|closed
+
+Two isolated selector sensitivities genuinely pass baseline, detect an
+independently owned native assertion, restore exact bytes/modes and pass
+again. Report release-lexical-mutations-8ogbPx/report.json, SHA256
+3129e766fc4700c3cba254c9957f06be533cb5a05ee4067945ce0db3efa2ab5e.
+Only the execution assert.rejects mutant normalizes one exact leading
+Node async dispatcher after its exact independent assertion header/message;
+final-verdict ownership is unmodified. Root tracked bytes/modes and the
+complete logical ledger remain unchanged throughout the isolated harness.
+Actual full affected release/host modules pass29/29, zero failures/skips,
+106619ms; JavaScript diagnostics PASS. Authentic logs:
+release-lexical-native-red.log, release-lexical-native-green.log,
+release-lexical-mutations-01.log, release-lexical-affected-suites.log and
+release-lexical-diagnostics.json.
+
+Both retained reviewers returned fresh postimplementation rounds1/2 CLEAN.
+The unchanged auto CI-fixture contract also
+received reviewed genuine SDK artifact-lock renewal.
+All17 serialized shared native warning refactors completed PASS in
+release-lexical-native-refactor-TEST-*.log. The retained actual
+preimplementation plan check is FAIL with124
+revalidation-required/five replan-required old histories; all129 fingerprints
+are known and authored spec/dependency bindings match after28 measured
+replacements. Genuine history heads were retained. Fresh current task proof,
+full gate, successor CI and two unchanged complete frozen runs remain
+required. Prior1226-test gate/CI and16 partial cells transfer no credit.
+
+# Historical lossless-ledger scope3/content3 implementation review
 
 The exact seven-artifact preparation unit was genuinely approved by nahisaho
 and recorded through the SDK; this is not tag/publication approval.
