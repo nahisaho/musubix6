@@ -4100,7 +4100,7 @@
         }
       ],
       "specs": {
-        ".sdd/specs/release-qualification.md": "a2d8641dbcc958e49167cd81696065bca447ec98aebba2aef3db2febe89fc4a9"
+        ".sdd/specs/release-qualification.md": "11e3cb14d2cc692f3241b6537790772037d25335c2bf18f6ecb81c4c0775acbd"
       },
       "dependencies": {},
       "status": "in-progress",
@@ -4239,7 +4239,7 @@
         }
       ],
       "specs": {
-        ".sdd/specs/release-qualification.md": "a2d8641dbcc958e49167cd81696065bca447ec98aebba2aef3db2febe89fc4a9"
+        ".sdd/specs/release-qualification.md": "11e3cb14d2cc692f3241b6537790772037d25335c2bf18f6ecb81c4c0775acbd"
       },
       "dependencies": {},
       "status": "in-progress",
@@ -4400,7 +4400,7 @@
         }
       ],
       "specs": {
-        ".sdd/specs/release-qualification.md": "a2d8641dbcc958e49167cd81696065bca447ec98aebba2aef3db2febe89fc4a9"
+        ".sdd/specs/release-qualification.md": "11e3cb14d2cc692f3241b6537790772037d25335c2bf18f6ecb81c4c0775acbd"
       },
       "dependencies": {},
       "status": "in-progress",
@@ -4530,7 +4530,7 @@
         }
       ],
       "specs": {
-        ".sdd/specs/release-qualification.md": "a2d8641dbcc958e49167cd81696065bca447ec98aebba2aef3db2febe89fc4a9"
+        ".sdd/specs/release-qualification.md": "11e3cb14d2cc692f3241b6537790772037d25335c2bf18f6ecb81c4c0775acbd"
       },
       "dependencies": {},
       "status": "in-progress",
@@ -4691,7 +4691,7 @@
         }
       ],
       "specs": {
-        ".sdd/specs/release-qualification.md": "a2d8641dbcc958e49167cd81696065bca447ec98aebba2aef3db2febe89fc4a9"
+        ".sdd/specs/release-qualification.md": "11e3cb14d2cc692f3241b6537790772037d25335c2bf18f6ecb81c4c0775acbd"
       },
       "dependencies": {},
       "status": "in-progress",
@@ -5785,7 +5785,7 @@
         }
       ],
       "specs": {
-        ".sdd/specs/ci-regression-fixtures.md": "2ae0796b125a369eea494cf1135639cd4e85152cf43bba29b2211571dfb62e60"
+        ".sdd/specs/ci-regression-fixtures.md": "53d5c7bd1114698c4c78876328344fa5c4684615fd52182bab357d2dee0c0991"
       },
       "dependencies": {
         "TASK-PLAN-CLI-001": "b8f68d565f667a4d8c70100eb31a013e666d2525603e2dccff47153328e3459d",
@@ -5839,7 +5839,7 @@
         }
       ],
       "specs": {
-        ".sdd/specs/ci-regression-fixtures.md": "2ae0796b125a369eea494cf1135639cd4e85152cf43bba29b2211571dfb62e60"
+        ".sdd/specs/ci-regression-fixtures.md": "53d5c7bd1114698c4c78876328344fa5c4684615fd52182bab357d2dee0c0991"
       },
       "dependencies": {
         "TASK-PLAN-CLI-001": "b8f68d565f667a4d8c70100eb31a013e666d2525603e2dccff47153328e3459d",
@@ -5898,7 +5898,7 @@
         }
       ],
       "specs": {
-        ".sdd/specs/ci-regression-fixtures.md": "2ae0796b125a369eea494cf1135639cd4e85152cf43bba29b2211571dfb62e60"
+        ".sdd/specs/ci-regression-fixtures.md": "53d5c7bd1114698c4c78876328344fa5c4684615fd52182bab357d2dee0c0991"
       },
       "dependencies": {
         "TASK-PLAN-CLI-001": "b8f68d565f667a4d8c70100eb31a013e666d2525603e2dccff47153328e3459d",
@@ -6032,7 +6032,7 @@
         ".sdd/specs/implementation-feedback-workflow.md": "066d142587668b87317c0014d0a8a0bb0baa4880e8d50d0c730ef37e573fb7c0"
       },
       "dependencies": {
-        "TASK-FEEDBACK-CLI": "2e311b00dca2af9617cd7926230a46c6fccb04ea1720a44023ce198647d208da",
+        "TASK-FEEDBACK-CLI": "16c96f4a312ba70b2f2a7905efa49815b23ae801dba038797061afb1bc7dfe67",
         "TASK-PLAN-CLI-001": "b8f68d565f667a4d8c70100eb31a013e666d2525603e2dccff47153328e3459d",
         "TASK-PLAN-CLI-002": "adb251d7106d63cdda0caaa68f853802825cb600166e291f92c3af70c2ff8e24",
         "TASK-PLAN-CLI-003": "40f04774d11157c2b95c2d2fa223b46cdbfcfdc781518531d88cc1ecc970f769",

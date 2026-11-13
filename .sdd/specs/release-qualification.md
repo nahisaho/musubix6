@@ -91,9 +91,10 @@ it is a spike only, not production implementation or release evidence.
 
 | REQ | PASS condition | counterexample | TEST/command | observed evidence |
 | --- | --- | --- | --- | --- |
-| `REQ-RELQ-001`, `REQ-RELQ-005` | Revision4 has exactly20 required cells, four explicit retired-runtime exclusions plus WSL, MUTATION on22 with3600 seconds; Linux CI22/24 and Windows CI20/22/24 | Restore REGRESSION-20, remove PACKAGE-22, omit a retired exclusion, change MUTATION cases/budget or silently remove Windows20: reject; exact approved matrix accepts | TEST-RELQ-LINUX-001; enumerate every retained/excluded tuple and runtime-policy row | Exact scope decision approved by the user; implementation/native Red/Green pending |
-| `REQ-RELQ-002`, `REQ-RELQ-003` | Configured22/24 disclose all independently specified dynamic names; bodies and execution hooks leave no sentinel; native discovery has0passes and exact filtered rows; real execution still runs and detects a failing body | Use legacy Node20 discovery, omit preload, execute a callback, drop/duplicate a name, hide a malformed event or credit a discovery skip as a required pass: reject; valid registration and normal execution controls accept | TEST-RELQ-DISCOVERY-001; actual supported-runtime discovery; isolated loader/receipt mutations | Two-runtime seven-name spike passed; product integration, complete catalogue and native regression pending |
-| `REQ-RELQ-002`, `REQ-RELQ-004` | New candidate, exact reviewed seven-artifact approval and new frozen manifest/history start at0/2; all20 required cells pass twice unchanged | Reuse the129-task development proof, Node22/24 CI,16 partial old cells, prior24-cell manifest or support decision as qualification/publication approval: reject | Native approval/freeze/check/run/status; TEST-RELQ-004 | Historical129-task proof retained; no new preparation lock, full gate, frozen run or publication authorization |
+| `REQ-RELQ-001`, `REQ-RELQ-005` | Revision4 has exactly20 required cells, four explicit retired-runtime exclusions plus WSL, MUTATION on22 with3600 seconds; Linux CI22/24 and Windows CI20/22/24 | Restore REGRESSION-20, remove PACKAGE-22, omit a retired exclusion, change MUTATION cases/budget or silently remove Windows20: reject; exact approved matrix accepts | TEST-RELQ-LINUX-001; enumerate every retained/excluded tuple and runtime-policy row | Genuine corrected native Red316ms/Green989ms preceded canonical renewal; initial368ms fixture-induced refusal is INVALID Red and retained. Current-input renewal remains required |
+| `REQ-RELQ-002`, `REQ-RELQ-003` | Configured22/24 disclose all independently specified dynamic names; bodies and execution hooks leave no sentinel; native discovery has0passes and exact filtered rows; real execution still runs and detects a failing body | Use legacy Node20 discovery, omit preload, execute a callback, drop/duplicate a name, hide a malformed event or credit a discovery skip as a required pass: reject; valid registration and normal execution controls accept | TEST-RELQ-DISCOVERY-001; actual supported-runtime discovery; isolated loader/receipt mutations | Nine-name native regression passed, including uninstrumented passing/failing bodies; actual22/24 each disclosed1229 independent retained/new names. Ten isolated loader/hook/skip/name/suite/environment/package/CI mutations detected assertions and passed exact restoration; no qualification credit |
+| `REQ-RELQ-002`, `REQ-RELQ-005` | Package receipts contain exactly22/24 and invalid runtime sets reject before any provisioning; discovery requires an explicit uninjected environment | Provision20 and reject only its later receipt, accept an extra20 receipt, omit22, duplicate22 or inherit an unspecified Node environment: reject; complete22/24 controls accept | TEST-RELQ-005; TEST-RELQ-DISCOVERY-001; isolated preprovision/receipt/environment mutations | Genuine native Red/Green and bounded restored mutations passed; actual frozen package cells remain pending |
+| `REQ-RELQ-002`, `REQ-RELQ-004` | New candidate, exact reviewed seven-artifact approval and new frozen manifest/history start at0/2; all20 required cells pass twice unchanged | Reuse the129-task development proof, Node22/24 CI,16 partial old cells, prior24-cell manifest or support decision as qualification/publication approval: reject | Native approval/freeze/check/run/status; TEST-RELQ-004 | Historical129-task proof retained; earlier genuine preparation approval does not cover this canonical renewal. Current full gate, frozen runs and publication authorization remain absent |
 
 First violated stages: contract = exact human-approved platform/runtime
 scope, not an implicit global engine-floor increase; trusted inputs =22/24
@@ -107,6 +108,66 @@ new exact candidate and two fixed runs agree. No stage is inapplicable.
 Bounded isolated mutations must detect each changed mechanism and restore
 exact bytes before current checks rerun. Missing or skipped required
 execution remains blocking. Final tag/npm approval is still separate.
+
+### Canonical renewal for the retained current CI regression
+
+The existing canonical SDK CI case must test the actual supported Linux
+matrix22/24. It retains every permission, native prerequisite, unfiltered
+suite and failure-log assertion; only its matrix expectation, explicit
+TEST-CI-FIXTURE-004 annotation and title changed. Content revision4 binds
+that new canonical suite, not a comment preserving20 or a silently excluded
+case. Historical content revisions1/2/3 remain admissible at their original
+118/120/121-file cardinalities; revision4 also requires exactly121 files.
+Unknown revision5, string revisions, missing/substituted paths, changed
+source/package full modes or any weakened case count must reject.
+
+The reviewed preparation commit
+`0a2f8ce2ca8ffca8b668534cb312b4c3a91e893b` identifies skill tree
+`64a87785985d4263ac03999c1cf5601ca233ba03` and suite SHA256
+`b5ce39bb06f52850159ddb7791c22073651f83ae2475263f2cd1466f3ed1fc25`.
+Independent report `linux-supported-reference-ER9jlm/report.json`, SHA256
+`14a110a299c2cbf512827386d17fb0ae1dcefca57b3278d95bc655deaf34cd15`,
+matches all121 Git blobs, full-mode Git archive, both actual offline
+Node22/24 npm packages and eight source/package/both-host initialization
+controls. Both development packages have SHA256
+`5bce80cd5b4aeca8bbdf88b75d678bb749000541e33e7fc0612b2fc6434d4cfc`;
+neither is a publication-approved final candidate.
+Every measured skill tree has exactly the expected file and directory
+sets, with no symlink or nonregular substitution. The first comparator's
+expected-file-only review observation is resolved: six independent extra
+file/empty-directory, missing-file, file/directory-symlink and FIFO controls
+each assertion-failed for its intended reason and accepted exact restoration.
+The earlier measurements remain retained; none supplies qualification credit.
+
+Only the SDK test byte reference and its existing owned-oracle identity
+change. Every canonical path, full mode, semantic/placeholder mechanism,
+case ID and origin policy remains:121 files,28 semantic mechanisms,
+1210 source challenges,60 origin sensitivities,1298 skill cases and14
+placeholder cases. The scope and vendor reference identify the same
+committed source/suite. A sixth explicit historical mapping replaces
+`r35b #364 CI qualifies Node 20/22/24 without publication and retains failure evidence`
+with
+`r35b #364 TEST-CI-FIXTURE-004 CI qualifies Linux Node22/24 without publication and retains failure evidence`.
+The original mandatory source name exists in the inherited1130-name
+catalogue; omission of the replacement from actual or required catalogues
+must reject. Preserve the prior content3/scope4 preparation and approvals
+in the committed snapshot/ledger. This revised scope4 is not an executed
+frozen manifest and carries no transferred credit.
+
+| REQ | PASS condition | counterexample | TEST/command | observed evidence |
+| --- | --- | --- | --- | --- |
+| `REQ-RELQ-003`, `REQ-RELQ-005` | Current content4 accepts the same exact1298 skill and14 placeholder case IDs as the committed content3 predecessor; historical revisions retain original counts | Reject content4 despite121 correct files, accept unknown5/string4, replace the ledger path at unchanged cardinality, reduce a count or omit one of nine permission bits | TEST-RELQ-SKILL-001; isolated revision-admission reversal | Independent121-file/eight-host-control inventory passed; native revised-test Red/Green and revision sensitivity await genuine renewed human approval |
+| `REQ-RELQ-001`, `REQ-RELQ-002` | Genuine new seven-artifact approval admits the unchanged20-cell policy with exact new source/suite hashes and all six mappings | Reuse the earliera2d864/4cea55/fe50d0 approval, change a bound byte, retain the old CI name without replacement or omit the required new name: reject | Native approve prepare/record; TEST-RELQ-LINUX-001; lineage controls and actual freeze | Proposed content4/scope4 renewal only; no new approval, full gate, same-head CI or qualifying run is claimed |
+
+First violated stages for this renewal: contract = explicit new human lock;
+trusted inputs = independently committed121-file/full-mode identities;
+execution = genuine revised-test assertion Red, valid controls and restored
+mutations, then the unchanged complete matrix; verdict = accept valid4 and
+reject malformed/unknown inputs; history = retain the invalid first fixture
+attempt, corrected native evidence, predecessors and0/2 streak; integration/
+distribution = real source/offline package/both-host controls, current full
+gate/CI and separate exact-final-package publication approval. No stage is
+inapplicable and the successful inventory cannot waive remaining execution.
 
 ### Historical qualification design before Linux Node20 retirement
 Use new versioned0.2.8 scope/content files without rewriting historical0.2.7,0.2.6,

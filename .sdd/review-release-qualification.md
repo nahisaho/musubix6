@@ -7,9 +7,9 @@ Windows20/22/24 and reset qualification0/2. This does not fix or pass old
 Node20 CI, and does not authorize tagging/npm publication.
 The exact seven-artifact unit was genuinely approved and SDK-recorded by
 nahisaho after the SDK required two Design introduction sentences.
-Current spec SHA256:
+Latest recorded pre-renewal spec SHA256:
 a2d8641dbcc958e49167cd81696065bca447ec98aebba2aef3db2febe89fc4a9.
-Current scope SHA256:
+Latest recorded pre-renewal scope SHA256:
 4cea55d6cf7c73b931574967ea7ed86b32ec88a9e34e426aa99aa33b6623562a.
 
 Two independent preimplementation reviewers checked the bounded amendment.
@@ -74,6 +74,60 @@ genuine committed reference bytes. It is not complete-source verification,
 integration, qualification or publication approval. Full gate, new-head CI
 and two identical20-cell runs remain pending. Old failures, receipt heads and
 archive segments are retained.
+
+The reviewed preparation source is now locally committed as
+0a2f8ce2ca8ffca8b668534cb312b4c3a91e893b; it is not pushed or integrated.
+The three changed renewal-unit artifacts were genuinely approved as exact
+spec11e3cb14/scope734aab99/content54bac2c6 and SDK-recorded by nahisaho.
+Independent exact-reference report
+linux-supported-reference-ER9jlm/report.json, SHA256
+14a110a299c2cbf512827386d17fb0ae1dcefca57b3278d95bc655deaf34cd15,
+matched121 source/archive/npm files/full modes and eight actual22/24
+source/package/both-host initializations. An independent review observation
+found that the first comparator checked expected files but not extras or
+symlink substitutions. This is corrected by complete lstat file/directory
+enumeration for every tree, plus six independently detected/restored
+extra/missing/nonregular/symlink controls. Earlier measurements are retained,
+not reused as exact-set proof. Proposed content/scope SHA256 remain
+54bac2c6ff5dd48f710644a06749d88490d5c922ac8088d197a582f57782a024
+and734aab99cde9d6a44f30449c64ac48db8c64ca5675cf2931772e2e883c98a1d7.
+Only one canonical SDK byte identity changes; every121 path, full mode,
+1298 skill case and14 placeholder case remains. The new sixth lineage map
+retains the old mandatory CI case under its Node22/24 title.
+The revised existing skill regression failed its intended owned revision4
+acceptance assertion in a raw native run before production changes;
+formal SDK Red312ms followed the genuine human lock. Its first Green exposed
+a test-oracle ordering error: literal permission-bit order did not match
+the committed predecessor policy. The expectation now takes ordering from
+that independent committed reference and separately checks the exact literal
+byte-plus-nine-bit set. Original production admission was restored, corrected
+Red02 recorded, minimal two-line revision4 support reapplied and unchanged-test
+Green02 passed2161ms. All seven isolated content4/cardinality/retained-scope
+runtime/status/platform/tooling sensitivities assertion-failed and accepted
+exact byte/mode restoration; original tracked/helper bytes and full logical
+ledger remained unchanged. Both independent final-delta reviewers returned
+round2 CLEAN, without claiming native gate or qualification readiness.
+
+The actual affected-module exploratory command passed55/60, skipped0.
+Four oracle cases require a real external frozen context and an external
+development work directory; running that qualification-only module directly
+without them caused context-null/in-source-copy setup failures. Those are not
+mutation detections or passing required oracle evidence, and that standalone
+module is not in the root unfiltered npm command.
+
+The remaining failure exposed an in-scope execution-stage S2:
+inherited MUTATION case ci-matrix still owns the old CI title and its old
+literal20/22/24-to22/24 edit. The current source has the approved new title
+and22/24 baseline, so neither the historical owner nor edit anchor resolves.
+Historical regression-name mapping alone does not repair mutation execution.
+RELQ-CI-MUTATION-LINEAGE|S2|scripts/release-qualification-cells.mjs:149|open
+The unchanged49-case inventory needs a bounded explicitly approved current
+owner/edit adjustment, rejecting reintroduced20 while preserving all case IDs,
+other edits, diagnostic/frame ownership, baselines, restorations and budgets.
+The new finding blocks readiness; no frozen run or credit is claimed.
+Current whole-plan proof, final native refreshes, full gate and same-head CI
+remain pending. The prior source inventory and17 isolated sensitivities do
+not excuse the new failure.
 
 # Explicit lexical-oracle selection repair review
 

@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "revision": 3,
+  "revision": 4,
   "targetVersion": "0.2.10",
-  "revisionReason": "Prospective0.2.10 lossless-ledger successor from committedffff1a7: preserve all24 Linux cells/budgets, all120 inherited paths/full modes,28 semantic and14 placeholder mechanisms and every1260 inherited vendor/origin challenge; renew4 reviewed canonical byte digests and add the shipped ledger test with all10 source byte/full-mode policies. Copilot121/Claude118;1210 source challenges plus60 origin sensitivities,1298 total skill cases. Credit/streak0; exact seven-artifact human preparation approval required before adapter cutover or admission.",
+  "revisionReason": "Linux Node20 retirement canonical successor: all121 paths/full modes,28 semantic mechanisms,1210 source challenges,60 origin sensitivities,1298 skill cases and14 placeholder cases unchanged. Only the current SDK CI case is renamed/annotated and expects Linux22/24; every inherited permission/native/tool/unfiltered-suite/log assertion is retained. Preparation reference only; fresh exact seven-artifact approval required, qualification0/2, no publication authorization.",
   "status": "proposed-normative-contract-not-approval-or-run-evidence",
   "originalExactSemanticsRecovered": false,
   "originalSevenVendorPathsRecovered": false,
@@ -570,7 +570,7 @@
           },
           {
             "path": ".github/skills/lean-sdd-tdd/scripts/sdd.test.mjs",
-            "sha256": "5bf8c282f28eded3aaa58c90a83319e4dddd957c6461d33f2a5cd7740822f644",
+            "sha256": "b5ce39bb06f52850159ddb7791c22073651f83ae2475263f2cd1466f3ed1fc25",
             "lines": [
               6173,
               6182
@@ -2040,29 +2040,14 @@
     "definition": "existing markerPolicyRows/contextPolicyRows expected-count pairs, not the linter output; same line numbers/snippets/JSON keys checked in source and installed outputs; no replacement by full-suite-only coverage"
   },
   "vendorReference": {
-    "sourceCommit": "ffff1a7893a41d9b8ea0b50ddc4837a663ce23a3",
-    "sourceSkillTree": "7b8748289a38568f37f697afe0b6ba9dcd07b864",
-    "origin": "Independent committed Git blobs, live/full archive modes, offline npm bytes/modes and actual source/package both-host initialization agree atffff1a7 on Node24. Preparation only; no frozen qualification or publication approval.",
+    "sourceCommit": "0a2f8ce2ca8ffca8b668534cb312b4c3a91e893b",
+    "sourceSkillTree": "64a87785985d4263ac03999c1cf5601ca233ba03",
+    "origin": "Independent committed Git blobs/full-mode archive, actual offline Node22/24 npm packages and real source/package initialization on both hosts agree; preparation only, no frozen qualification credit or publication approval.",
     "intendedLocalDeltas": [
       {
-        "path": ".github/skills/lean-sdd-tdd/SKILL.md",
-        "before": "ec039c9351c86e67db02a026b0b6ebd95d6c64622a7245613d474b7df7c1ce4f",
-        "after": "e633a97675c709be1c8f88cfa1f88ce3e7137174ef04590e22cb0ffd54354886"
-      },
-      {
-        "path": ".github/skills/lean-sdd-tdd/scripts/implementation-plan-cli.mjs",
-        "before": "33a943070180e94c3442e8bc3affbc2d879fe44671ef1500436a9f88697af3ad",
-        "after": "63cd6d3b2922b12b40c8cb9036653b2e9f303c7753d704d7823eb9847ae04727"
-      },
-      {
-        "path": ".github/skills/lean-sdd-tdd/scripts/sdd.mjs",
-        "before": "e31bba4b12dad6a11c0200009b5816d23961c76da9d5984e3775098c625ab379",
-        "after": "251303cb76dc669b237463df58ac2dfc1f93fccc161453007537c5ccbab37270"
-      },
-      {
         "path": ".github/skills/lean-sdd-tdd/scripts/sdd.test.mjs",
-        "before": "b0810139e648802f6c2e59d4f1ad435612f6a1f96903a9ff3948cf150830c86a",
-        "after": "5bf8c282f28eded3aaa58c90a83319e4dddd957c6461d33f2a5cd7740822f644"
+        "before": "5bf8c282f28eded3aaa58c90a83319e4dddd957c6461d33f2a5cd7740822f644",
+        "after": "b5ce39bb06f52850159ddb7791c22073651f83ae2475263f2cd1466f3ed1fc25"
       }
     ],
     "skillNames": [
@@ -2570,7 +2555,7 @@
       {
         "path": ".github/skills/lean-sdd-tdd/scripts/sdd.test.mjs",
         "mode": 436,
-        "sha256": "5bf8c282f28eded3aaa58c90a83319e4dddd957c6461d33f2a5cd7740822f644",
+        "sha256": "b5ce39bb06f52850159ddb7791c22073651f83ae2475263f2cd1466f3ed1fc25",
         "packageMode": 420,
         "sourceModeOctal": "0664",
         "packageModeOctal": "0644"
@@ -3758,10 +3743,10 @@
     "sha256": "07f7567b66498bb10ee1da8a9bc367db1f891982353fb2f17a45a23376c2fd01"
   },
   "previousRevision": {
-    "number": 2,
-    "sha256": "9019a5968859179375d61897fb86abef07f57aeb2dad0e9858bb879378c93f40",
-    "sourceCommit": "01e1f0d98c9e32f5a1cfa682435b09b4e54d6957",
-    "artifactCommit": "ffff1a7893a41d9b8ea0b50ddc4837a663ce23a3"
+    "number": 3,
+    "sha256": "fe50d0aafd3d912eb4be1fa088fefae64dc84a74bf10d3862daad30b91686d2e",
+    "sourceCommit": "ffff1a7893a41d9b8ea0b50ddc4837a663ce23a3",
+    "artifactCommit": "0a2f8ce2ca8ffca8b668534cb312b4c3a91e893b"
   },
   "catalogueDevelopmentReference": {
     "commit": "5917e42",

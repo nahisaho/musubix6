@@ -11,9 +11,9 @@
   "revisionReason": "User approved complete Linux Node20 retirement, including internal tooling, on2026-11-13. Exclude exactly PACKAGE-20, WATCHDOG-20, NO-CHANGE-20 and REGRESSION-20; move MUTATION to Node22 without changing cases, assertions or3600-second budget. Preserve all20 retained cells and other budgets, WSL exclusion,121 canonical files,1298 skill cases,14 placeholders and historical lineage. Windows20/22/24 development controls remain. New exact seven-artifact approval and Node22/24-only discovery/execution required; old failures retained, credit/streak0, no publication approval.",
   "historicalTestLineage": {
     "version": 1,
-    "sourceCommit": "ffff1a7893a41d9b8ea0b50ddc4837a663ce23a3",
+    "sourceCommit": "0a2f8ce2ca8ffca8b668534cb312b4c3a91e893b",
     "suite": ".github/skills/lean-sdd-tdd/scripts/sdd.test.mjs",
-    "suiteSha256": "5bf8c282f28eded3aaa58c90a83319e4dddd957c6461d33f2a5cd7740822f644",
+    "suiteSha256": "b5ce39bb06f52850159ddb7791c22073651f83ae2475263f2cd1466f3ed1fc25",
     "mappings": [
       {
         "from": "#r25a Rust: a const typed in the test is reported shown; a fn with no return evidence is guessed (report-only, code unchanged)",
@@ -55,6 +55,14 @@
           "#381 TEST-RSTUB-CONTROL-001 evidenced functions and typed constants preserve native compilation"
         ],
         "reason": "Require both unsupported and evidenced generated free functions to have report rows, with native compilation for the evidenced control."
+      },
+      {
+        "kind": "rename",
+        "from": "r35b #364 CI qualifies Node 20/22/24 without publication and retains failure evidence",
+        "to": [
+          "r35b #364 TEST-CI-FIXTURE-004 CI qualifies Linux Node22/24 without publication and retains failure evidence"
+        ],
+        "reason": "Explicitly approved retirement of Linux Node20 including internal tooling; same current workflow test retains every other native/tool/permission/unfiltered-suite/failure-log assertion and now requires exactly Linux22/24. Windows20/22/24 remains supported."
       }
     ]
   },
@@ -89,7 +97,7 @@
   },
   "contentMutationContract": {
     "path": ".sdd/release-content-mutations.v0.2.10.json",
-    "sha256": "fe50d0aafd3d912eb4be1fa088fefae64dc84a74bf10d3862daad30b91686d2e",
+    "sha256": "54bac2c6ff5dd48f710644a06749d88490d5c922ac8088d197a582f57782a024",
     "approvalRequired": true,
     "status": "proposed-not-approved-or-executed"
   },
@@ -285,8 +293,15 @@
   "supportContract": {
     "status": "Linux-only-scope-contract",
     "qualificationPlatform": "Linux x86_64",
-    "linuxNodeMajors": [22, 24],
-    "windowsDevelopmentNodeMajors": [20, 22, 24],
+    "linuxNodeMajors": [
+      22,
+      24
+    ],
+    "windowsDevelopmentNodeMajors": [
+      20,
+      22,
+      24
+    ],
     "linuxNode20InternalTooling": "unsupported",
     "unverifiedPlatforms": [
       "Windows",

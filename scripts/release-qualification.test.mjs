@@ -877,7 +877,7 @@ test('TEST-RELQ-SKILL-001 preserves 1268 exact cases and owned native inventory 
     assert.deepEqual(contentCaseCatalogue(successor, 'PLACEHOLDER-MUTATION').map(row => row.id),
       contentReference.placeholderCatalogue.map(row => row.proposedId),
       'all14 placeholder mechanisms remain unchanged');
-    for (const revision of [0, 4, -1, '2', null, undefined]) {
+    for (const revision of [0, 5, -1, '2', null, undefined]) {
       for (const base of [contentReference, successor]) {
         const changed = clone(base);
         changed.revision = revision;
@@ -918,7 +918,8 @@ test('TEST-RELQ-SKILL-001 preserves 1268 exact cases and owned native inventory 
     }
   }
   {
-    const successor = read(path.join(root, contentRelative));
+    const successor = JSON.parse(execFileSync('git', ['-C', root, 'show',
+      `0a2f8ce2ca8ffca8b668534cb312b4c3a91e893b:${contentRelative}`], { encoding: 'utf8' }));
     const predecessor = JSON.parse(execFileSync('git', ['-C', root, 'show',
       `ffff1a7893a41d9b8ea0b50ddc4837a663ce23a3:${contentRelative}`], { encoding: 'utf8' }));
     let successorCatalogue;
@@ -937,7 +938,7 @@ test('TEST-RELQ-SKILL-001 preserves 1268 exact cases and owned native inventory 
       'exactly the10 new ledger-file byte/full-mode challenges are added');
     assert.deepEqual(contentCaseCatalogue(successor, 'PLACEHOLDER-MUTATION').map(row => row.id),
       contentReference.placeholderCatalogue.map(row => row.proposedId));
-    for (const revision of [0, 4, -1, '2', null, undefined]) {
+    for (const revision of [0, 5, -1, '2', null, undefined]) {
       const changed = clone(successor);
       changed.revision = revision;
       for (const cell of ['SKILL-MUTATION', 'PLACEHOLDER-MUTATION']) {
@@ -977,6 +978,59 @@ test('TEST-RELQ-SKILL-001 preserves 1268 exact cases and owned native inventory 
       changed.vendorReference.modePolicy.splice(index, 1);
       assert.throws(() => contentCaseCatalogue(changed, 'SKILL-MUTATION'),
         `revision3 cannot omit permission policy ${index}`);
+    }
+  }
+  {
+    const current = read(path.join(root, contentRelative));
+    const feedback = JSON.parse(execFileSync('git', ['-C', root, 'show',
+      `ffff1a7893a41d9b8ea0b50ddc4837a663ce23a3:${contentRelative}`], { encoding: 'utf8' }));
+    const predecessor = JSON.parse(execFileSync('git', ['-C', root, 'show',
+      `0a2f8ce2ca8ffca8b668534cb312b4c3a91e893b:${contentRelative}`], { encoding: 'utf8' }));
+    const policies = ['unauthorized-byte', ...predecessor.vendorReference.modePolicy.map(row => row.name)];
+    assert.deepEqual(policies.slice().sort(),
+      ['unauthorized-byte', ...['400', '200', '100', '040', '020', '010', '004', '002', '001']
+        .map(bit => `unauthorized-mode-${bit}`)].sort());
+    const expected = [
+      ...predecessor.skillCatalogue.map(row => row.proposedId),
+      ...predecessor.vendorReference.referenceFiles.flatMap(row =>
+        policies.map(policy => `vendor:${policy}:${row.path}`)),
+      ...predecessor.vendorReference.originSensitivityCases.map(row => row.id),
+    ];
+    let catalogue;
+    assert.doesNotThrow(() => { catalogue = contentCaseCatalogue(current, 'SKILL-MUTATION'); },
+      'revision4 must admit every independently retained121-file case before execution');
+    assert.deepEqual(catalogue.map(row => row.id), expected,
+      'content4 must retain the exact1298 predecessor case identities and order');
+    assert.deepEqual(contentCaseCatalogue(current, 'PLACEHOLDER-MUTATION').map(row => row.id),
+      predecessor.placeholderCatalogue.map(row => row.proposedId));
+    for (const revision of [0, 5, -1, '4', null, undefined]) {
+      for (const base of [contentReference, feedback, predecessor, current]) {
+        const changed = clone(base);
+        changed.revision = revision;
+        for (const cell of ['SKILL-MUTATION', 'PLACEHOLDER-MUTATION']) {
+          assert.throws(() => contentCaseCatalogue(changed, cell), /revision/,
+            `unknown or mistyped revision ${JSON.stringify(revision)} must not infer a catalogue`);
+        }
+      }
+    }
+    const required = '.github/skills/lean-sdd-tdd/scripts/tdd-ledger.test.mjs';
+    for (const [label, change] of [
+      ['missing ledger', value => {
+        value.vendorReference.referenceFiles = value.vendorReference.referenceFiles.filter(row => row.path !== required);
+      }],
+      ['substituted ledger at unchanged cardinality', value => {
+        value.vendorReference.referenceFiles.find(row => row.path === required).path =
+          '.github/skills/lean-sdd-tdd/scripts/unapproved-ledger.test.mjs';
+      }],
+      ['weaker count', value => { value.exactRequiredCaseCounts.skillCellTotal--; }],
+      ['extra path', value => { value.vendorReference.referenceFiles.push(clone(value.vendorReference.referenceFiles[0])); }],
+      ...Array.from({ length: 9 }, (_, index) =>
+        [`missing permission bit ${index}`, value => { value.vendorReference.modePolicy.splice(index, 1); }]),
+    ]) {
+      const changed = clone(current);
+      change(changed);
+      assert.throws(() => contentCaseCatalogue(changed, 'SKILL-MUTATION'),
+        `revision4 must reject ${label} without changing predecessor policy`);
     }
   }
   const context = contentContext(directory, 'SKILL-MUTATION');

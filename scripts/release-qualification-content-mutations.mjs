@@ -17,10 +17,10 @@ const phases = ['baseline', 'mutant', 'restored'];
 /** @id CODE-RELQ-CONTENT-001 @implements REQ-RELQ-003, REQ-RELQ-005 */
 export function contentCaseCatalogue(reference, cellId) {
   if (reference.targetVersion === '0.2.10') {
-    ensure([1, 2, 3].includes(reference.revision), 'supported0.2.10 content revision required');
+    ensure([1, 2, 3, 4].includes(reference.revision), 'supported0.2.10 content revision required');
   }
   const requiredFileCount = reference.targetVersion === '0.2.10'
-    ? ({ 1: 118, 2: 120, 3: 121 })[reference.revision] : 118;
+    ? ({ 1: 118, 2: 120, 3: 121, 4: 121 })[reference.revision] : 118;
   const sourceVendorChallenges = requiredFileCount * 10, vendorChallenges = sourceVendorChallenges + 60;
   equal(reference.exactRequiredCaseCounts, {
     skillMechanisms: 28, sourceVendorChallenges, originSensitivityChallenges: 60,
