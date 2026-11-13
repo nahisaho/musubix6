@@ -1,0 +1,71 @@
+{
+  "schemaVersion": 1,
+  "task": "TASK-CI-FIXTURE-003",
+  "sequence": 6,
+  "previous": "0b4069aff7862a0c0f84243732f24bc8734be6a289666f968263676c5a8faee4",
+  "definitionSha256": "fbe2a4935a2757af41d489242d924e99ba926b479e1c26904015f47257c2d134",
+  "inputSha256": "ecb941da66a07a188d6e5a2aca7f181012f5d9bc28e68a020d017cddabcca27d",
+  "status": "PASS",
+  "exit": 0,
+  "checks": [
+    {
+      "name": "regression",
+      "argv": [
+        "node",
+        "--test",
+        "--test-name-pattern",
+        "TEST-CI-FIXTURE-003",
+        ".github/skills/lean-sdd-tdd/scripts/implementation-plan-cli.test.mjs"
+      ],
+      "timeoutMs": 120000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/b1b133d08bc9b4fc0f94b19884888ba1dc2c3fe58c7d57d580d71d5223599cfd/attempt-04b9e069-b357-46af-b016-2bcb3f188592/0.log",
+        "sha256": "d55b26e48f6127923ac49cae112cf4370df5070c244045c01d7cefe2d3526079",
+        "bytes": 220
+      }
+    },
+    {
+      "name": "native-TEST-CI-FIXTURE-003",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/tmp/musubix6-ledger-compaction-28d27536/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-CI-FIXTURE-003",
+        "--root",
+        "/tmp/musubix6-ledger-compaction-28d27536"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/b1b133d08bc9b4fc0f94b19884888ba1dc2c3fe58c7d57d580d71d5223599cfd/attempt-04b9e069-b357-46af-b016-2bcb3f188592/1.log",
+        "sha256": "f476605bb6ecb77740157911aa2453b0e8a4a69add95113388b310c75e737c6c",
+        "bytes": 60
+      }
+    }
+  ],
+  "ledgerEvents": [
+    {
+      "test": "TEST-CI-FIXTURE-003",
+      "hashes": [
+        "0c9b43be752f6ff562a44193821a187d648a45bd698e5203c033d1dad16791de",
+        "10da39fc7964a09b916dd42f160cb47cacf7f8375ed28275e830bbc5529d36ad",
+        "26f501b98f5beca3936921096e8fd7fd8b54847674266f41fe3f920e1591cedd",
+        "2ce6959071fd0fed0b945314fef8582c41e18e1701344c6778de17c705b2b716",
+        "43d1d4ff461f0b6267ae2d00cc3bc31e70c2a62826397ef180b75c00fc2e2e8c",
+        "53c19d51747c1e2be10f0b2d2a6e0e0efe38e61291324b836cc3a5ee7473616f",
+        "58143c94945f26727644193c4d0ebd4576a917fc7ddd1b31baf5e9265bb7b81b",
+        "d478004eb04e8f06722af7e8b81cb2defb17fd9ae429a1d06753c4cc236e63cd",
+        "dbc2c89bb57bb6bc5767f74b2907fe3df37c880f79fa957468479e022165833c"
+      ]
+    }
+  ],
+  "errors": []
+}
