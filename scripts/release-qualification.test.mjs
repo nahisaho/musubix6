@@ -2200,7 +2200,77 @@ test('TEST-RELQ-SCANNER-001 binds only the two approved scanner prefixes and rej
   const directory = workspace(t);
   const manifest = { catalogues: { mutations: inherited.mutationCatalogue },
     execution: { nodeModules: path.join(root, 'node_modules') } };
-  const catalogue = cellCatalogue(manifest, { kind: 'mutation' }, root);
+  const historicalMutations = clone(manifest.catalogues.mutations);
+  let catalogue;
+  assert.doesNotThrow(() => { catalogue = cellCatalogue(manifest, { kind: 'mutation' }, root); },
+    'all49 retained mutations must bind the approved current owners and matrix edit');
+  assert.deepEqual(catalogue.map(row => row.id), inherited.mutationCatalogue.mutations.map(row => row.id));
+  assert.deepEqual(manifest.catalogues.mutations, historicalMutations, 'binding must not rewrite inherited provenance');
+  const ci = catalogue.find(row => row.id === 'ci-matrix');
+  const ciName = 'r35b #364 TEST-CI-FIXTURE-004 CI qualifies Linux Node22/24 without publication and retains failure evidence';
+  assert.equal(ci.targetName, ciName, 'the retained case must execute the explicitly approved CI successor');
+  assert.equal(ci.testPattern, `^${ciName}$`);
+  assert.deepEqual(ci.edits, [{ file: '.github/workflows/ci.yml',
+    before: 'node: [22, 24]', after: 'node: [20, 22, 24]', count: 1 }],
+  'same ci-matrix case must now reject reintroduced unsupported20, never the valid22/24 baseline');
+  for (const row of catalogue.filter(row => row.id !== 'ci-matrix')) {
+    const previous = inherited.mutationCatalogue.mutations.find(old => old.id === row.id);
+    assert.equal(row.targetName, previous.name);
+    assert.deepEqual(row.edits, previous.edits, `${row.id}: no unrelated edit may change`);
+  }
+  const ciOutput = path.join(directory, 'current-ci-adapter');
+  const ciResult = await runAdapter({
+    source: root, output: ciOutput, node: process.execPath,
+    cell: { id: 'MUTATION', kind: 'mutation', runtime: process.versions.node.split('.')[0], timeoutSeconds: 30 },
+    catalogue: [ci],
+    environment: { PATH: process.env.PATH, TMPDIR: directory, NO_COLOR: '1', PYTHONDONTWRITEBYTECODE: '1' },
+  });
+  assert.equal(ciResult.cases.length, 1);
+  assert.doesNotThrow(() => validateMutationRows({
+    evidence: mutationResultEvidence(directory, ciResult), catalogue: [ci], adapterOutput: ciOutput,
+  }), 'current CI baseline and restoration pass; unsupported20 fails the exact independent owned assertion');
+  const currentScope = read(path.join(root, planRelative));
+  const policySource = path.join(directory, 'current-policy');
+  for (const suite of new Set(inherited.mutationCatalogue.mutations.map(row => row.suite))) {
+    write(path.join(policySource, suite), fs.readFileSync(path.join(root, suite), 'utf8'));
+  }
+  for (const [label, change, diagnostic] of [
+    ['missing current policy', p => { delete p.currentMutationPolicy; }, /current mutation policy/],
+    ['unknown policy version', p => { p.currentMutationPolicy.version = 2; }, /current mutation policy/],
+    ['unknown policy field', p => { p.currentMutationPolicy.extra = true; }, /current mutation policy/],
+    ['missing override', p => { p.currentMutationPolicy.editOverrides = []; }, /override/],
+    ['duplicate override', p => {
+      p.currentMutationPolicy.editOverrides.push(clone(p.currentMutationPolicy.editOverrides[0]));
+    }, /override/],
+    ['unknown override ID', p => { p.currentMutationPolicy.editOverrides[0].id = 'foreign'; }, /override/],
+    ['unknown override field', p => { p.currentMutationPolicy.editOverrides[0].extra = true; }, /override/],
+    ['unknown original edit field', p => { p.currentMutationPolicy.editOverrides[0].from.extra = true; }, /edit/],
+    ['unknown current edit field', p => { p.currentMutationPolicy.editOverrides[0].to.extra = true; }, /edit/],
+    ['missing reason', p => { p.currentMutationPolicy.editOverrides[0].reason = ''; }, /reason/],
+    ['foreign original edit', p => { p.currentMutationPolicy.editOverrides[0].from.before = 'foreign'; }, /edit/],
+    ['foreign original count', p => { p.currentMutationPolicy.editOverrides[0].from.count = 2; }, /edit/],
+    ['changed file', p => { p.currentMutationPolicy.editOverrides[0].to.file = 'foreign.yml'; }, /edit/],
+    ['changed count', p => { p.currentMutationPolicy.editOverrides[0].to.count = 2; }, /edit/],
+    ['wrong baseline', p => { p.currentMutationPolicy.editOverrides[0].to.before = 'node: [24]'; }, /edit/],
+    ['wrong mutant', p => { p.currentMutationPolicy.editOverrides[0].to.after = 'node: [24]'; }, /edit/],
+    ['missing rename', p => {
+      p.historicalTestLineage.mappings = p.historicalTestLineage.mappings.filter(row => !row.to.includes(ciName));
+    }, /rename/],
+    ['multiple rename targets', p => {
+      p.historicalTestLineage.mappings.find(row => row.to.includes(ciName)).to.push('another target');
+    }, /rename/],
+    ['wrong correspondence kind', p => {
+      p.historicalTestLineage.mappings.find(row => row.to.includes(ciName)).kind = 'todo-promoted';
+    }, /rename/],
+    ['foreign owner suite', p => { p.historicalTestLineage.suite = 'foreign.test.mjs'; }, /rename/],
+  ]) {
+    const invalid = clone(currentScope); change(invalid); write(path.join(policySource, planRelative), invalid);
+    assert.throws(() => cellCatalogue(manifest, { kind: 'mutation' }, policySource), diagnostic,
+      `${label}: invalid current owner/edit policy must fail explicitly`);
+  }
+  write(path.join(policySource, planRelative), currentScope);
+  assert.equal(cellCatalogue(manifest, { kind: 'mutation' }, policySource).length, 49,
+    'restoring the exact current policy must retain every case');
   const overrides = approvedPlan.legacyMutationDiagnosticPolicy.customMessageOverrides;
   for (const override of overrides) {
     const row = catalogue.find(row => row.name === override.id);

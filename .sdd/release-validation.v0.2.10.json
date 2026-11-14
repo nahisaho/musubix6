@@ -95,6 +95,27 @@
     ],
     "historicalCatalogue": "unchanged-provenance-not-the-current-assert-match-message-oracle"
   },
+  "currentMutationPolicy": {
+    "version": 1,
+    "editOverrides": [
+      {
+        "id": "ci-matrix",
+        "from": {
+          "file": ".github/workflows/ci.yml",
+          "before": "node: [20, 22, 24]",
+          "after": "node: [22, 24]",
+          "count": 1
+        },
+        "to": {
+          "file": ".github/workflows/ci.yml",
+          "before": "node: [22, 24]",
+          "after": "node: [20, 22, 24]",
+          "count": 1
+        },
+        "reason": "Preserve the same exact-matrix ci-matrix case under the explicitly approved Linux22/24 policy: baseline22/24 passes, reintroducing unsupported20 fails the unchanged owned CI matrix assertion, and exact22/24 restoration passes. The inherited49-case catalogue remains immutable provenance."
+      }
+    ]
+  },
   "contentMutationContract": {
     "path": ".sdd/release-content-mutations.v0.2.10.json",
     "sha256": "54bac2c6ff5dd48f710644a06749d88490d5c922ac8088d197a582f57782a024",

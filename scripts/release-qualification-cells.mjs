@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
+import { isDeepStrictEqual } from 'node:util';
 import { ensure, equal, sha, fileSha, json, mkdir, save, execute, retainProcess, readRef, waitForProcessExit, externalOutput } from './release-qualification-io.mjs';
 import { parseEvents, namedControl, processControl, ownedAssertion, assertionReason, validateNativeGate } from './release-qualification-evidence.mjs';
 import { contentCaseCatalogue, runContentCell, validateContentRun } from './release-qualification-content-mutations.mjs';
@@ -136,7 +137,8 @@ export function cellCatalogue(manifest, cell, source) {
   if (cell.kind === 'oracle') return manifest.catalogues.oracles.map(name => ({ name }));
   if (cell.kind === 'process') return ['exit0', 'exit17', 'timeout', 'output-budget', 'descendant-cleanup'].map(name => ({ name }));
   if (cell.kind === 'mutation') {
-    const policy = json(path.join(source, '.sdd/release-validation.v0.2.10.json')).legacyMutationDiagnosticPolicy;
+    const scope = json(path.join(source, '.sdd/release-validation.v0.2.10.json'));
+    const policy = scope.legacyMutationDiagnosticPolicy;
     ensure(policy?.version === 1 && Array.isArray(policy.customMessageOverrides), 'approved diagnostic policy required');
     const overrides = policy.customMessageOverrides, rows = manifest.catalogues.mutations.mutations;
     equal(overrides.map(row => row.id).sort(), ['scanner-complete-sources', 'scanner-limit-validation']);
@@ -146,14 +148,47 @@ export function cellCatalogue(manifest, cell, source) {
         /^TRACE (?:OK|FAIL): \d+ REQ, \d+ annotated entities, \d+ errors, \d+ warnings\n$/.test(override.messagePrefix),
       'unresolved or invalid approved diagnostic override');
     }
+    let currentOverride;
+    if (scope.revision === 4) {
+      const current = scope.currentMutationPolicy;
+      ensure(current?.version === 1 &&
+        isDeepStrictEqual(Object.keys(current).sort(), ['editOverrides', 'version']),
+      'approved current mutation policy required');
+      ensure(Array.isArray(current.editOverrides) && current.editOverrides.length === 1,
+        'exactly one approved current mutation override required');
+      const [edit] = current.editOverrides;
+      ensure(edit?.id === 'ci-matrix' &&
+        isDeepStrictEqual(Object.keys(edit).sort(), ['from', 'id', 'reason', 'to']),
+      'unknown current mutation override');
+      ensure(typeof edit.reason === 'string' && edit.reason.trim(), 'current mutation override reason required');
+      const originals = rows.filter(row => row.id === edit.id);
+      ensure(originals.length === 1 && Array.isArray(originals[0].edits) && originals[0].edits.length === 1 &&
+        isDeepStrictEqual(edit.from, originals[0].edits[0]) && edit.from.count === 1 &&
+        isDeepStrictEqual(originals[0].files, [edit.from.file]) &&
+        isDeepStrictEqual(edit.to, { ...edit.from, before: edit.from.after, after: edit.from.before }),
+      'current mutation edit must exactly reverse the inherited single-file edit');
+      const original = originals[0], lineage = scope.historicalTestLineage;
+      const renames = Array.isArray(lineage?.mappings) ?
+        lineage.mappings.filter(mapping => mapping?.from === original.name) : [];
+      const [rename] = renames;
+      ensure(lineage?.version === 1 && lineage.suite === original.suite && renames.length === 1 &&
+        rename.kind === 'rename' && Array.isArray(rename.to) && rename.to.length === 1 &&
+        typeof rename.to[0] === 'string' && rename.to[0].trim() && rename.to[0] !== original.name,
+      'current mutation owner requires an approved same-suite singleton rename');
+      currentOverride = { ...edit, targetName: rename.to[0] };
+    }
     return rows.map(row => {
-      const assertions = assertionCatalogue(source, row.suite, row.name, row.expectedAssertion, manifest.execution?.nodeModules);
+      const targetName = currentOverride?.id === row.id ? currentOverride.targetName : row.name;
+      const assertions = assertionCatalogue(source, row.suite, targetName, row.expectedAssertion, manifest.execution?.nodeModules);
       const override = overrides.find(override => override.id === row.id);
       if (override) assertions.assertionDiagnostics = assertions.assertionDiagnostics.map(diagnostic => {
         ensure(diagnostic.kind === 'legacy', 'custom diagnostic override requires the original assertion kind');
         return { line: diagnostic.line, kind: 'prefix', messagePrefix: override.messagePrefix };
       });
-      return { ...row, name: row.id, targetName: row.name, ...assertions };
+      return { ...row, ...(currentOverride?.id === row.id ? {
+        testPattern: '^' + targetName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$',
+        edits: [currentOverride.to],
+      } : {}), name: row.id, targetName, ...assertions };
     });
   }
   if (cell.kind === 'diagnostic-mutation') {

@@ -252,10 +252,10 @@
   "release-qualification": {
     "by": "nahisaho",
     "kind": "human",
-    "at": "2026-11-13T23:14:19.560Z",
+    "at": "2026-11-14T00:10:34.328Z",
     "artifacts": {
-      ".sdd/specs/release-qualification.md": "11e3cb14d2cc692f3241b6537790772037d25335c2bf18f6ecb81c4c0775acbd",
-      ".sdd/release-validation.v0.2.10.json": "734aab99cde9d6a44f30449c64ac48db8c64ca5675cf2931772e2e883c98a1d7",
+      ".sdd/specs/release-qualification.md": "a5499aba1f066df412a3af7b21c72f0881518f593146ce52e6229843a8dc455d",
+      ".sdd/release-validation.v0.2.10.json": "8e182e6c5ddbdaf4aff84a42a8a2df8fd016f1efe52ffb45068bb80a877df517",
       ".sdd/release-content-mutations.v0.2.10.json": "54bac2c6ff5dd48f710644a06749d88490d5c922ac8088d197a582f57782a024",
       ".sdd/specs/claude-code-support.md": "2c846e5878db59abb7ba0cc3aa9b7f49256c91a6a250931a7e0e53a7cf826560",
       "README.md": "caa9a7e0569b9e316b802832dbc505cee1f087cf0ee894dd8c501b2426b6a988",
@@ -268,7 +268,7 @@
       "scripts/release-host-mutations.mjs": "6921bf50d7f7df70ce2e3a3e23b0acbf67def78f0e4d358b1d7a5adcb091b618",
       "scripts/release-qualification-cells.mjs": "cb4d9829bdf9649568f36562d8ab50c9a6e80269ff3155f523ee97fdc23a82b3",
       "scripts/release-qualification-cli.mjs": "78797a393bacd97cc617a8a0c89d8a22e0c0fcdcd119756b1f36f46dd8ad54df",
-      "scripts/release-qualification-content-mutations.mjs": "59b3a4e0d082345f5bf517e81242e129ed99d9e9891cad9627743ffdd6b11f04",
+      "scripts/release-qualification-content-mutations.mjs": "a3bc6a6015d0d807b1aad90d8f3faccbf58435bd91cf6059b38093a467f2067e",
       "scripts/release-qualification-discovery.mjs": "1661dafbe6af92dcc1e3c0adb4c10ceb965b9e9726ab95f1e810df71fa131dc7",
       "scripts/release-qualification-evidence.mjs": "1f2af8ec0e458893ae7f580fc2b5e1020c32f5c2d19aa848336e698c512837f2",
       "scripts/release-qualification-io.mjs": "56da8043e445f7f636388fb00e8cad1cfa9b5e56c6f1a2f787f270acd8184fb0",
@@ -366,13 +366,13 @@
     }
   },
   "ci-regression-fixtures": {
-    "by": "ai:linux-node-runtime-policy-review",
+    "by": "ai:independent-reviewers",
     "kind": "ai",
-    "review": "Two clean implemented CI reviews and two independent clean Linux-retirement delta reviews; final boundary controls verified, committed reference and full qualification pending",
-    "at": "2026-11-13T22:34:57.891Z",
+    "review": "Two independent postimplementation CLEAN rounds on bounded current mutation test/source delta; actual affected modules34/34, Node22 six controls and six restored mutation sensitivities pass; no support narrowing or release credit.",
+    "at": "2026-11-14T00:56:42.853Z",
     "artifacts": {
       ".sdd/specs/ci-regression-fixtures.md": "53d5c7bd1114698c4c78876328344fa5c4684615fd52182bab357d2dee0c0991",
-      "scripts/release-qualification.test.mjs": "92bc05e0abcd1f2c81ba81afd365195c0edf96d4f4b5189bbe539f5b40ad8b8d",
+      "scripts/release-qualification.test.mjs": "ad8d3cd85826ac0c0688bae544a152bbbd08ce4cb3219a079a783a194c8a4225",
       "scripts/release-host-mutations.test.mjs": "6a6798b24e1aae5bb01c8502c4edb99da0281894562c25779bf3bbb7deccd914",
       ".github/skills/lean-sdd-tdd/scripts/sdd.test.mjs": "b5ce39bb06f52850159ddb7791c22073651f83ae2475263f2cd1466f3ed1fc25",
       ".github/skills/lean-sdd-tdd/scripts/implementation-plan-cli.test.mjs": "d830cf57e9a94c52d88a88134e3d52ab906b0513135df3cc247f5d58ded3e474",

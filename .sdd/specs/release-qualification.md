@@ -169,6 +169,50 @@ distribution = real source/offline package/both-host controls, current full
 gate/CI and separate exact-final-package publication approval. No stage is
 inapplicable and the successful inventory cannot waive remaining execution.
 
+### Current mutation ownership after the approved CI rename
+
+The affected-suite exploratory attempt passed55/60 with no skips. Four
+qualification-only oracle tests were invoked without their required frozen
+context/external work root and failed setup; none is execution proof.
+The remaining scanner regression exposed execution-stage S2
+RELQ-CI-MUTATION-LINEAGE: the inherited ci-matrix case still identifies the
+old CI title and an edit whose20/22/24 baseline no longer exists.
+Keep that failed attempt and block readiness until genuine repair evidence.
+
+Do not rewrite the inherited49-case mutation catalogue. For current scope4,
+resolve a mutation owner only through the already approved same-suite,
+single-target rename mapping. Preserve case IDs, all other target names,
+files, edits, expected assertions, diagnostic ownership, case count and budgets.
+The one explicitly declared currentMutationPolicy edit override is ci-matrix:
+its from row must exactly match the inherited single-file/single-occurrence
+edit; its to row reverses only those two matrix literals with the same file
+and count1. Thus the current22/24 baseline must pass, the reintroduced
+unsupported20/22/24 matrix must fail its exact native owned assertion, and
+restored22/24 must pass. This is the same exact-matrix mechanism, not a
+removed case or acceptance of an old-valid matrix under the new contract.
+
+Unknown/duplicate override IDs, unknown fields, absent current policy,
+foreign from rows, changed files/counts, non-reversed edits, missing rename
+correspondence or non-singleton/non-rename owners must reject explicitly.
+Historical scope1/2/3 source fixtures retain their original target/edit
+semantics; current target binding must not alter or weaken scanner-message
+overrides or derive an accepted assertion from mutant output.
+
+| REQ | PASS condition | counterexample | TEST/command | observed evidence |
+| --- | --- | --- | --- | --- |
+| `REQ-RELQ-003` | All49 retained cases bind independently owned current assertions; ci-matrix alone uses the approved new title and exact reversed old literal edit; other48 cases retain their edits and owners | Old title/anchor fails to bind; dropping ci-matrix, accepting unchanged22/24 as its mutant, allowing an unknown override or changing a count/file must reject | TEST-RELQ-SCANNER-001; actual one-case CI baseline/mutant/restored adapter; isolated rename/edit-policy sensitivities | Original whole-module scanner assertion failed on the old title. Revised test and formal Red/Green await renewed exact seven-artifact approval; production repair is not yet implemented |
+| `REQ-RELQ-001`, `REQ-RELQ-004` | New scope/spec preparation hashes are genuinely approved while content4 identity,20 cells,49 mutation IDs and all budgets remain unchanged | Reuse the earlier11e3cb/734aab lock for changed scope bytes, credit the failed module attempt or standalone oracle setup failures, or advance the0/2 streak: reject | Native approval; whole task proof/full gate; fixed qualification | Earlier approved unit is preserved in commit8e3d0762e0933ef57a6c8c490f87010f9b767f98; no new lock or qualification credit |
+
+First violated stages: contract = explicit bounded owner/edit correspondence
+and new exact human lock; trusted inputs = immutable49 inherited rows and
+approved scope mapping/override; execution = real current CI assertion
+baseline, unsupported20 mutant and exact restoration; verdict = unchanged
+owned-frame/native diagnostic rule plus valid and malformed-policy controls;
+evidence history = preserve all failures/previous approvals and reset0/2;
+integration/distribution = actual Node22 MUTATION and frozen oracle context,
+unfiltered development gate, same-head CI and separate release approval.
+No stage is inapplicable and the new S2 remains blocking until verified.
+
 ### Historical qualification design before Linux Node20 retirement
 Use new versioned0.2.8 scope/content files without rewriting historical0.2.7,0.2.6,
 0.2.5,0.2.4 or0.2.0 contracts or failed evidence. The new files require a genuine

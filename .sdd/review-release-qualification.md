@@ -120,14 +120,82 @@ inherited MUTATION case ci-matrix still owns the old CI title and its old
 literal20/22/24-to22/24 edit. The current source has the approved new title
 and22/24 baseline, so neither the historical owner nor edit anchor resolves.
 Historical regression-name mapping alone does not repair mutation execution.
-RELQ-CI-MUTATION-LINEAGE|S2|scripts/release-qualification-cells.mjs:149|open
+RELQ-CI-MUTATION-LINEAGE|S2|scripts/release-qualification-cells.mjs:149|closed
 The unchanged49-case inventory needs a bounded explicitly approved current
 owner/edit adjustment, rejecting reintroduced20 while preserving all case IDs,
 other edits, diagnostic/frame ownership, baselines, restorations and budgets.
-The new finding blocks readiness; no frozen run or credit is claimed.
+The finding blocked readiness at that point; its local closure follows.
+No frozen run or credit is claimed.
 Current whole-plan proof, final native refreshes, full gate and same-head CI
 remain pending. The prior source inventory and17 isolated sensitivities do
 not excuse the new failure.
+
+## Current mutation-lineage repair and verified local closure
+
+The user explicitly approved the newly prepared exact seven-artifact unit,
+then the SDK genuinely recorded nahisaho's approval. The changed spec SHA256
+is a5499aba1f066df412a3af7b21c72f0881518f593146ce52e6229843a8dc455d;
+the changed scope SHA256 is
+8e182e6c5ddbdaf4aff84a42a8a2df8fd016f1efe52ffb45068bb80a877df517.
+The other five hashes, content4 reference,20 cells,49 inherited mutation
+IDs, case budgets and Windows20/22/24 controls remain unchanged.
+
+Before production changes, the genuine native SCANNER Red1446ms failed its
+own all49-current-owner assertion. The preimplementation driver adopted
+five measured bindings and retained129 known fingerprints and all historical
+receipt heads. Authored bindings match; its observed check is still FAIL:
+73 complete,48 revalidation-required and8 replan-required. This is not
+completion, whole-gate or qualification evidence.
+
+Production now derives only the approved ci-matrix owner, anchored pattern
+and exact inverse edit. Strict current-policy keys/version/cardinality,
+inherited from-row/file/count correspondence, reason and same-suite singleton
+rename checks reject invalid input without rewriting inherited provenance.
+The other48 owners/edits and historical scope1/2/3 behavior remain unchanged.
+Native SCANNER Green13608ms includes all49 independent ownership bindings,
+20 explicitly malformed current policies, restored-valid acceptance and the
+real CI baseline0/unsupported20-owned-assertion1/exact-restoration0 triplet.
+
+All six isolated owner/edit/policy-key/inversion/rename-kind/provenance
+sensitivities passed baseline, detected the intended native assertion,
+restored exact bytes/modes and passed again. Report
+linux-supported-mutations-H872Ca/report.json SHA256:
+e87f1485397a7e24a067c8717374c744891e1e1cd1772259aea6c7c841254f51.
+The harness preserved root tracked/helper bytes/modes and the full logical
+ledger. Independent round2 review also checked all54 output/receipt hashes.
+Both independent reviewers returned postimplementation CLEAN in both rounds.
+
+The proper complete root release/host module command passed34/34, zero
+failures/skips,113044ms. The actual Node22 command passed all six selected
+current policy/discovery/reference/scanner/package/lexical regressions,
+zero skips,39349ms. JavaScript diagnostics04 passed. No qualification-only
+oracle module was rerun standalone without its required frozen context.
+
+The24 shared native refactors all passed. Two explicitly warned that fixture
+bodies differed from their last Green: GIT now supplies the supported node
+parameter and CLOSURE supplies only22/24. Rather than treating those warnings
+as assertion-sensitivity proof, each was separately retested against an
+isolated former constraint: GIT's node20-only parameter produced its own
+valid-registration AssertionError Red412ms, then exact restoration Green409ms;
+CLOSURE's old20/22/24 requirement produced its own valid R_HOME-control
+AssertionError Red522ms, then exact restoration Green1295ms. These are
+retrospective controlled-regression renewals, not fabricated claims of
+first-implementation chronology. No Linux20 binary was provisioned or run.
+The reviewed CI fixture auto-artifact lock was genuinely renewed and its
+three native001/003/004 controls passed1099/1931/1644ms.
+
+An intermediate Windows20 discovery-fixture concern was invalid initial
+triage, not an observed Windows failure: the unchanged windows-runner.yml
+runs native/runner and LEDGER014 source/relocated/standalone controls, not
+the Linux-only release-qualification module. The proposed unrelated test
+branch was removed completely; no required Windows case was removed or
+downgraded. Actual same-head Windows20/22/24 CI remains required.
+
+The bounded mutation-lineage defect is locally verified closed. This does
+not claim execution of the complete frozen49-case MUTATION cell, its nested
+mandatory oracle,129 current task proofs, the full gate, same-head Linux/
+Windows CI, main integration or publication readiness. Qualification remains
+0/2; the current full proof and two unchanged complete20-cell runs are pending.
 
 # Explicit lexical-oracle selection repair review
 
