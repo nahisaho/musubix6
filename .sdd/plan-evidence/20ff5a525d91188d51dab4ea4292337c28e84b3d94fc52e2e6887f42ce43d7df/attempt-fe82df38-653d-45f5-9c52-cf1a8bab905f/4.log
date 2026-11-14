@@ -1,0 +1,13 @@
+REFACTOR REJECTED TEST-LEDGER-004: test failed
+  
+      at ChildProcess.<anonymous> (file:///tmp/musubix6-release-lexical-28d27536/.github/skills/lean-sdd-tdd/scripts/tdd-ledger.test.mjs:254:54)
+      at ChildProcess.emit (node:events:526:24)
+      at maybeClose (node:internal/child_process:1172:16)
+      at ChildProcess._handle.onexit (node:internal/child_process:335:5) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 2,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

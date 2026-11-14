@@ -1,8 +1,81 @@
-spec: sha256:eec5a6d8b35d6bccfd345e57d303ba45a9dc5a4a2392ce5b7dbdf2bda79d8055
+spec: sha256:ceb19c1a6b51ef2d94a0a6b9cdeeefdc54c656513acee7d00d414ac7c47ee7fd
 verdict: pass
 open: 0
 
 # Ledger-compaction review
+
+## Current transition-release contention: verified local repair
+
+The whole129-task current proof at local484d379 stopped after47 successful
+tasks. Its complete declared ledger-module check passed, but native004 then
+failed its actual concurrent-writer assertion, exit2 instead of0. Retain
+failure receipt7c9402ea614ab1c0c77dc8001c1cf80e13ae22bfdfcb22017c95c46bdc677a94
+and all preceding receipts. A single unmodified full-output diagnostic
+passed1/1; this is FLAKY suspected, not a successful retry or repair.
+
+RELQ-LEDGER-CONCURRENT-APPEND|S2|.github/skills/lean-sdd-tdd/scripts/sdd.mjs:1365|closed
+
+The real two-process probe ledger-transition-release-0p0o28/report.json
+deterministically pauses a contender after stat while the real owner
+normally removes its own published transition. Owner0/contender2 reports
+ENOENT opening tdd-transition.lock; production was unchanged.
+The new015 regression additionally forces release after open and before
+descriptor validation, requires both real writers to append once, and
+enumerates15 accepted/refused policy rows against the actual storage class.
+These include repeated alternating transient reads, the existing25ms
+backoff and30000ms deadline, with a separate iteration cap bounding a broken
+clock/backoff. Arbitrary I/O/JSON/ownership failures must still refuse;
+retrying a transition observation is never successful acquisition.
+
+Independent reviewers f3f85f22-163e-4a79-a102-d11ab84f10ea and
+0a673492-a853-4224-a392-02eef79a1b02 returned pre-lock CLEAN. The latter
+first correctly found artificial one-iteration deadline coverage; it was
+strengthened before locking or formal Red. The SDK genuinely auto-locked
+the above spec after those reviews. Native015 Red415ms then failed its own
+before-open expected-success assertion, not a setup/barrier failure.
+At that preimplementation point production, Green, mutations and final
+reviews were pending; the actual current results follow.
+
+The task plan retains129 tasks and all old receipt heads, adds015 to its
+existing ledger owner, and corrects that task's leftover Linux20 execution
+wording to the already human-approved Linux22/24 policy. Windows20/22/24
+controls remain required. Canonical SDK bytes/reference, current whole
+proof/gate/CI and exact seven-artifact renewal must follow the repair.
+Qualification remains0/2 and no publication is authorized.
+
+The current native Green passes921ms: both actual process interleavings
+retain all original bytes and exactly two appends, and all15 policy rows
+accept/refuse as declared. The only production change is an optional internal
+snapshot-change code on the existing two strict readFile refusals, forwarded
+through LedgerError, and a narrow ENOENT/tagged-change catch when a writer
+inspects the volatile transition claim. The existing exclusive publication,
+owner parsing,25ms wait and30000ms deadline remain. Other ledger reads and
+arbitrary I/O/JSON/owner/metadata failures do not gain retries or defaults.
+
+Seven isolated retry/tag-producer/tag-consumer/I/O-refusal/acquisition/
+backoff/deadline sensitivities each passed baseline, detected the intended
+native assertion, restored exact bytes/modes and passed again. Report
+linux-supported-mutations-gelndr/report.json SHA256:
+a6f8a9a1004ba5c8c76383ba23714e083eba9e9bbff115af94ba4746319c743d.
+Root tracked/helper inputs and complete logical ledger were preserved.
+The complete ledger/runner/root-release/host command passed51/51 with zero
+skips,113341ms. Actual supported Node22 passes the new015 control1/1,
+zero skips,1345ms. JavaScript diagnostics01 passes. All19 shared native
+tests pass genuine refactors, including the original004 concurrent writers,
+008 paused reclaimers and all source/archive/flush/import/closure controls.
+Both independent reviewers returned postimplementation CLEAN in two rounds;
+the risk reviewer verified source/test and mutant-log hashes.
+
+The preimplementation binding/check driver retained129 known fingerprints
+and old receipt heads, adopted one measured binding, and observed FAIL:
+82 complete,9 replan-required,38 revalidation-required. It is not current
+whole-plan success. The bounded concurrency defect is locally verified
+closed, not a flake dismissed by rerunning. Its original failure and
+unmodified passing diagnostic remain. The changed two canonical SDK files
+still need a genuine committed-reference renewal and exact human release
+unit approval; a local source preparation commit is not readiness. Fresh
+whole129-task proof, full gate, same-head Linux22/24 and Windows20/22/24 CI,
+and two unchanged complete20-cell runs remain pending.
 
 ## Windows amendment: reviewed implementation and actual native CI
 

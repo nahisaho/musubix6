@@ -1,0 +1,91 @@
+{
+  "schemaVersion": 1,
+  "task": "TASK-GINZA-001",
+  "sequence": 10,
+  "previous": "c24397ebe228f56954ecf24723d17f5b92e55725a560b50c8fd3f441f6d5dedd",
+  "definitionSha256": "06380824864f02a36896f2f47ca6fd509c7a007f136eaa74138b21c6b68f1ca0",
+  "inputSha256": "7c8dc035a27018cf28defc7841aaa8198ae8376c7e48de839022cd231f21be02",
+  "status": "PASS",
+  "exit": 0,
+  "checks": [
+    {
+      "name": "regression-1",
+      "argv": [
+        "node",
+        "--test",
+        "--test-name-pattern",
+        "^(?:.*\\b(?:TEST-GINZA-001))(?![0-9A-Za-z])",
+        "scripts/kotonoha-skills.test.mjs"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/372abcb556a8167198c29d1199db8409722eac4e26fab74dd26b8b908c08cac7/attempt-033beef5-61e9-40ac-88bb-88c8dda8182f/0.log",
+        "sha256": "f85f06e0852098e29f9d45baf3adc0870fb475903f8fd566395ae5aba68db2a1",
+        "bytes": 218
+      }
+    },
+    {
+      "name": "native-TEST-GINZA-001",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/tmp/musubix6-release-lexical-28d27536/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-GINZA-001",
+        "--root",
+        "/tmp/musubix6-release-lexical-28d27536"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/372abcb556a8167198c29d1199db8409722eac4e26fab74dd26b8b908c08cac7/attempt-033beef5-61e9-40ac-88bb-88c8dda8182f/1.log",
+        "sha256": "241d7b184c3f37f6d701b80b5935ac7a4c76b80333e4b8801e5ac5340a10e09f",
+        "bytes": 51
+      }
+    }
+  ],
+  "ledgerEvents": [
+    {
+      "test": "TEST-GINZA-001",
+      "hashes": [
+        "03141a671f7d887ee3a34e8d914893c8a0a7480e2b678defceabfae3ed99b9f9",
+        "0cf3411f73a40e6d822e7d6a542f6c629551e3f8449c4ffdfe4a0f484a31654e",
+        "142759dcaf94042e8cc036018443d3d7ef4cc5cbeafcf1cbfe575481d7402c02",
+        "175931ede452231185aec08802beb3debcfff291b78c8567f058445fe862633b",
+        "27d7a5ce7a2a672fa38b5f576a889d830fb1af97ae855895ea5b4555956cb4d1",
+        "30198ffa17854a6eb1e523e3ba4cfba42e494bd2d16fcf85fe82e353bb532b74",
+        "3d9d3eb3ef23c42f405f09c994c8095ff54b41e819637dac6934323bfe8cf2d5",
+        "62eac436b966e6627d1fa102ff527094e954b1b33269c86acb9aeca5a0943804",
+        "63f440cfaae33ea3bbdf41efbe24a781361a6497f292dd41675a3f3fe4aa41eb",
+        "7153e0b66c8c6dc761d06ee2cc7ca1f41d1f2455000979fe0b7e441d5d1118a7",
+        "7c137982c27e74ec3a18cd97bf3a0fef492be5d7d23e300cd90c0bf2b544d321",
+        "7dada31153a984679179dc350b8ae588559e857a428dd3e40c36ef95d5c1fe09",
+        "a527d2d9893d30170196e4555054e17eb19449eb04d0067062b6d0baaa07347e",
+        "a90d82f1d141d8776c26f11219e6d2b2c0104f02ab6ed32259973a2cff58db33",
+        "b21ad8e69eba5bed0e129c25acb29c6d6aa87ab41ec607f010b7be07af4bfe8b",
+        "b2e837e7482c14133a25f341f1a54e3313fe61a5b93d31ee01fd10da45996bb8",
+        "c07707d0d01b86446c69e7e6f2ac41da9281f925f524fceab3abde987d0fa1a1",
+        "c4b1dea6513fd05c3ad1abd2a871d4ae2469652125bcaac6c3eec2d578bcaf5d",
+        "c63f28d7bf938613961b4ba8b489ca68791f4525a6c61dea49920331b5c2278b",
+        "ce3c0dcce44dfca158980be193bfbe58bf616ccbc6119735570eb0843c4cad3a",
+        "dd58aca84060c17feaf847f8fc3f9af3799cdf6b69434754d5dc8183c0dbc7ec",
+        "dfee8b2407d63d02f0b9ca4c935056773f543981bdd7c0dad057ea9454e4b596",
+        "e03608fe7b689a484385503fafae838f63703b521954fc519f031b3b6a1bcfb4",
+        "e246faf165513c5c9d56721c3e1cedfef11c7761255bfc3c0224821509974a0f",
+        "e5f9b08090c478e03be93da999119c8bd29687d0e45294053ad4d9deaa137bd3",
+        "e66c6b61ef1f0452f5e94bfa442a7e025d63f3dd951a90a245762ac756911206",
+        "f0d7eecbfd012ebefb7e162f0460bb8e6cd476216da3ec832dfd676b4c31741b",
+        "f6df32c9c443be2422ea70aed84298f0d6e46546ffc95abc75b8259441fb850e",
+        "fd0a4c803a055d482454b73101f88b7b04f079b7df5663fddec2d8106e311736"
+      ]
+    }
+  ],
+  "errors": []
+}

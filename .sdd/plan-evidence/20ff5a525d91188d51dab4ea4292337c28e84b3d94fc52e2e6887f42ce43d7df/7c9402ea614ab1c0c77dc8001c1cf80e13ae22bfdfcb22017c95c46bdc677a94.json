@@ -1,0 +1,296 @@
+{
+  "schemaVersion": 1,
+  "task": "TASK-LEDGER-COMPACTION",
+  "sequence": 4,
+  "previous": "2906cb027500071ae4ca8bc88a210e27889a017a9aada38b64e65b1816a0cc0b",
+  "definitionSha256": "22377dfbce4075fb3478479ab2f5edff057809700637ed2f89da7dffd4e447f2",
+  "inputSha256": "4ea1a38dff6cbabc444b73a4cb4c05f80dc01ba39d6636d37b132548e0267dd9",
+  "status": "FAIL",
+  "exit": 1,
+  "checks": [
+    {
+      "name": "ledger-compaction",
+      "argv": [
+        "node",
+        "--test",
+        ".github/skills/lean-sdd-tdd/scripts/tdd-ledger.test.mjs"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/20ff5a525d91188d51dab4ea4292337c28e84b3d94fc52e2e6887f42ce43d7df/attempt-fe82df38-653d-45f5-9c52-cf1a8bab905f/0.log",
+        "sha256": "29abb6956e878f707979f5e6370aa6da4f35695ff3caf77f2f3cf020359ef078",
+        "bytes": 1440
+      }
+    },
+    {
+      "name": "native-TEST-LEDGER-001",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/tmp/musubix6-release-lexical-28d27536/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-LEDGER-001",
+        "--root",
+        "/tmp/musubix6-release-lexical-28d27536"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/20ff5a525d91188d51dab4ea4292337c28e84b3d94fc52e2e6887f42ce43d7df/attempt-fe82df38-653d-45f5-9c52-cf1a8bab905f/1.log",
+        "sha256": "c0497e255f8ccb155217b41e3d69c6964245e4fce47aac178152e5b00df7e416",
+        "bytes": 51
+      }
+    },
+    {
+      "name": "native-TEST-LEDGER-002",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/tmp/musubix6-release-lexical-28d27536/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-LEDGER-002",
+        "--root",
+        "/tmp/musubix6-release-lexical-28d27536"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/20ff5a525d91188d51dab4ea4292337c28e84b3d94fc52e2e6887f42ce43d7df/attempt-fe82df38-653d-45f5-9c52-cf1a8bab905f/2.log",
+        "sha256": "5cba56d3c7b4ea1131fd4e879c20600f751cfa3158d8ede9e73e4eabcf8e795c",
+        "bytes": 52
+      }
+    },
+    {
+      "name": "native-TEST-LEDGER-003",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/tmp/musubix6-release-lexical-28d27536/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-LEDGER-003",
+        "--root",
+        "/tmp/musubix6-release-lexical-28d27536"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/20ff5a525d91188d51dab4ea4292337c28e84b3d94fc52e2e6887f42ce43d7df/attempt-fe82df38-653d-45f5-9c52-cf1a8bab905f/3.log",
+        "sha256": "0e8c577fd143107e0047cf69c1d13a14b2de7ec0f06f1cc86f250957e5d86077",
+        "bytes": 52
+      }
+    },
+    {
+      "name": "native-TEST-LEDGER-004",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/tmp/musubix6-release-lexical-28d27536/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-LEDGER-004",
+        "--root",
+        "/tmp/musubix6-release-lexical-28d27536"
+      ],
+      "timeoutMs": 600000,
+      "exit": 1,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/20ff5a525d91188d51dab4ea4292337c28e84b3d94fc52e2e6887f42ce43d7df/attempt-fe82df38-653d-45f5-9c52-cf1a8bab905f/4.log",
+        "sha256": "118fdd8b14a739011a4135f92c7aacf6c84d70e89d237cda22bb0dd0d874ddaa",
+        "bytes": 516
+      }
+    }
+  ],
+  "ledgerEvents": [
+    {
+      "test": "TEST-LEDGER-001",
+      "hashes": [
+        "50349bdd1a9a8398b5f8f7099a6d432f5bfd4d16b5ece99319dedfc148a24f6d",
+        "8c851204040cd3fc17840f90d1a935ef77bb233d12e28d33559b684f272206aa",
+        "965e3fb5e0abb5b0121ab827afa08d41c2c675e7938dcb715a5ab2f545184687",
+        "9bd0a4e392b56659ee09c2452938b1f2749c295d13b66263495eb1cc6cdf10b2",
+        "b02cf319e0f9114fc5824827cb4268808ea4221ac59bf6698c8fd1a5655275ff",
+        "b823b37c26d208a5af718fc7e133531a7e693d64dd2cfdaef97b0dd9f9d1fae5",
+        "cb7e5b3b85d9efa5e82a8ce1be385933ceffb73c4babd780dc48ad1675e246ab",
+        "ccde8687abb7fd5a00888f9b2d92676684eedbd7fa3ce95788d7098c89ffcdbd"
+      ]
+    },
+    {
+      "test": "TEST-LEDGER-002",
+      "hashes": [
+        "4a4093f3869928a1bf62219d8491c9ed372c4a623279f6897d18e9377c00d93b",
+        "72141b16f3475b8b8aae75c0d23de4ebec0fd99c5c5eb0b542c7fe7078c03e4e",
+        "c809dfd4336e9d1378577e433f610101fb5e26d6f3a935c70a9b1e145704d57c",
+        "cc64062c750426f6a53376d733419d65f9ef7c4a7f18fedc3cc2a7c0f2ce5b3a",
+        "da6079fce788c60eeac980eb43e181cfdc4939f8319fa7d56073aa1417584a6f",
+        "e2368ec495d19b1d4517dab5c70164aa1fea15a1c2621899e742a85e04615835",
+        "e5466846671b302c0af0ae78b7b1b3168aa3d643761f49029ad88e20637b83d7",
+        "f83a31bbe377aa2a75ae1604b80b86fac897ef33acfa732fd671aa5332d92487"
+      ]
+    },
+    {
+      "test": "TEST-LEDGER-003",
+      "hashes": [
+        "09ed668d5df823212e594708b3e326c9e0d87e46dd75dd51a79285d1c889f42e",
+        "0b4e0ffba130b5ada6e66d5cc8830cbed3f4fb64e6cb47022d40761101e4c7b3",
+        "14c765d2c442aaf09bd36210554cc63a4a95d3522915f1317e6223cf59638d40",
+        "283462d62a02bf95dd2043db0d04f451bdf792cd8bd4ea6a0cd3ba0804ddfe6a",
+        "509b60280f793acaf4d7936423afd178ae1f039faa1b0c82d29f197983502724",
+        "9cc82a63d9977ae4ec57c4656cbad3c6d57d194779c6ad5234c2522f4025e5d3",
+        "ad6c434ccd642b141a29993c64be8ec730118a1bdc2e9e7c6189069cd6fb1cba",
+        "b56a5c28c06c5963a898a695b4bba5ad5537ffd555f948db25dfeb0ea79889b4"
+      ]
+    },
+    {
+      "test": "TEST-LEDGER-004",
+      "hashes": [
+        "65aa44c39c0623e50acb340d3fa3cd7a27e22c4cba0fd4b8d5c335e8721b6cb0",
+        "787ff24f83772d0808088a9b618d1ee72481242b6bc72fd95d5d40fd7bd45a2a",
+        "8deb479aae30801c0056e5827c5ad646466b3875dbb1173e432e0039b2aef1c1",
+        "9538ab259889fc13eb6244d7a3a0e81ff46b35a406e09af049e2231496743b16",
+        "a43f9233a040a75389617a9f354db12f097b1ef6ff7d613fa7afbd9a28da84ca",
+        "c2f7b51ee76e7c1b710af98baa50db9c0175f0698c42b2472a0d6339c5aa69d1",
+        "efccb950e896a1b8498c74fba897caa31a40ef0b9afcb69fe9b4e2ca70e1089c"
+      ]
+    },
+    {
+      "test": "TEST-LEDGER-005",
+      "hashes": [
+        "1e99457e2873b63e4e1ce95b401bed26b2baaa16782a3343a3847f33474b7854",
+        "269884b236c995b61c654eb368bdb46d91bb6b23cd20c5a8e679c29b66fa5781",
+        "4a8d2ab7808ec54889a8bbdc775e7e075687196bb8992b2186097ed3a0923e0c",
+        "4e3d049433f30750011d941f9097e161c380646699156c6367bbc84b0c42eb33",
+        "785fd7505294e25dc63bde07d3866d08869c381719e61c14de1a4cf5c67d12ac",
+        "df918491dc156c6fff4252eb5151e46ec5cf75b490b9ebec0577110b9aa41b89",
+        "f05ca683c1526ec107b237339f5a1bd76fee007c51ac08c23f6f24bc4810ee89"
+      ]
+    },
+    {
+      "test": "TEST-LEDGER-006",
+      "hashes": [
+        "1402339e1abe769316ec52b1eb6bc6e5c0ff088bfe2060eb65dddcf85cc6b296",
+        "1e8e9a2fa16fc62bb03a6ad92c7248a90612cb0456f880be2205cd3390075d7c",
+        "50262ba56a0b2babd7eb7f8cf2283059e31639efaf819e753f7c2f306ea44a45",
+        "5631711ac6716c248a990702efa5a35af2144b19f04cb09bb865dba9dd8beb4c",
+        "ab8790b4c7c78c54fb40d8e8a3af3d23d7aaafafbdadc3691c3987799550893c",
+        "afb862eb0d1e0bea989dcf42d120021b310d2905773a6a3d00c001f6183b8365",
+        "e4c6fc68fd01d0901a8883254b524e2a799ecd3ea0247ff4a2b50590e4954d14"
+      ]
+    },
+    {
+      "test": "TEST-LEDGER-007",
+      "hashes": [
+        "1db89c3e96d2af93cd811d293aa558b3b0d9863b83440a6dc3eaf367b0533248",
+        "29b71e1fe7d92ca263ded23eb6995f0f66625b364b3a4c541032379686d0e5a9",
+        "49003ddce0b707c66156400587b40beab90099637271a315b4a1fba9a37b3cb7",
+        "b51db6467246e2150a0c7770f77b82436967aa12e60141a9114de2d033405f6d",
+        "f0de1e1bc48509027ae06b2cab49e07a6bcc8e07f8b24854c5c99a62b8fee569",
+        "f63c18a473d76fec7be86f94dd035e4df66206aab10ceecc4f1d3568480a1e92",
+        "fc5623ea3ed78fbc5c17295f3d72d95ba64239cc66cb1a42eb754953f0f9b7df"
+      ]
+    },
+    {
+      "test": "TEST-LEDGER-008",
+      "hashes": [
+        "2857950f18df5f7275e45dea1e335cece441561200f5da2e54b1be569ffb8b15",
+        "58405ad1fc5aa48094f97e411ec4301b69eb5be378400f1109c9f329684b9fa7",
+        "5953bec690ee25b20b4467e0b0334d2d1de12adf3ab4f7a1f0c351c65c47f62b",
+        "6d6d5602e7c9e571347762894e1a5da843c6feb8ad449dc083e7d9a6be2bfeb2",
+        "a03fc090c4142eb74092e5379a64efe7682f452f831ded54aba14d88fd3f26b3",
+        "b38628ba8f0083d1791f99c0944c29c0afd01f9927a1881de8b30568bbd9b42e",
+        "df7c773582066a8c22ea48062e48ac0c02d5757f79fa4b2b008b4df878c3b025",
+        "e011dc24be70a4b96442665a24eddde3e3acd9058be7237dfea5b62725150a6d"
+      ]
+    },
+    {
+      "test": "TEST-LEDGER-009",
+      "hashes": [
+        "3d5d23ae78b29c7364e2609124bc2bf4226a199f0cf9c488d1dc51cab9b6b3b9",
+        "814605d2c35057efdb3cf0e3fda101f7076080008e5b5a905d751221b54c041d",
+        "a73c34cbb50eadbd3e205c56803b87c26b202e3f44f993bcd62f5155bee85520",
+        "c5679d1c7eeba7bbe2da5d11f0649ffe8c8a79488b9450c1bad2477520267150",
+        "cb129ecef9f43b9ea3f86ba19ea7ca78fd8c4f8453d4c60d032cf1fa66c194a4",
+        "e02bc87f0db30df7a22164f3dadf826f854f4e5e932a9c4fb70687c3a52b93ab",
+        "e1c62f529a3822406528b30a35527728e06e1af3b53ee6b626438eb6d348dadb"
+      ]
+    },
+    {
+      "test": "TEST-LEDGER-010",
+      "hashes": [
+        "0f54108d52ba31cea175ee8f11d084a968f35fcb53438b9b5e870d3cf652d550",
+        "1fd015164ece4b290dfa54748bd3dba45422a2a1ac10d962dfb89de4de64c6d8",
+        "20379c7989030c3a2e6399ce7edad877841b74f37ed0fe91d4fb4f8f32e0bdc7",
+        "2498b0c356bd6f7d87a9e34b15fd8e9a14022383c15f83ce727145f0efe15acb",
+        "278a7718405901cc33228b8e81f7de4b79b4348f21e08ba27aa6113e43321359",
+        "7e07b35f1e1ab982c5301c92d33f3268a00094096cd7f0fcd708825afe2a1ed0",
+        "b9cfa095865995adfed7a7b27bb7e33337928c7020fc3f99beb7732a47ed026b"
+      ]
+    },
+    {
+      "test": "TEST-LEDGER-011",
+      "hashes": [
+        "31a54c13b82b7d8f6296e10d5f404dd794aa30fb0e90d317af7f67a1d3317fbe",
+        "6c73313c9ff73dfe1aebfaf05201152ebce00d1672c8639a25f9803066546141",
+        "98e6ff5bc7a6a96e442d023e822937111751f324334f1b5daa5d0eccd13e856d",
+        "d00ec6115ae1b7934dde62e750e5289872473ff2eaa448c9ec1b357040244735",
+        "e18985cbd03b68d5ccae1dc9940e0d4d8034a35ffd9bb8b35887102c85681c4c",
+        "fa2f125cd8ccd3c7cf18aac7e66598049de85b6355d921e127a3cbab7b67731f",
+        "fe92243d5fffbcba44d0011df9eafaaf5b1b0e3a609c13bb5bf46ddbf1cee6f5"
+      ]
+    },
+    {
+      "test": "TEST-LEDGER-012",
+      "hashes": [
+        "6ef0f22db768a65815639d58a870c49750ead0509df31886fd1e494dcf263c57",
+        "71e5e9ce7d4ede13db5fd66654c232f23ca4522b08357bfe77b5fd716841c555",
+        "747ca7fe67e485f3740be4ef712469fa2f1d61de14c671057a3eecf192677355",
+        "84d2b664847a3f1bf160189cbb335fb81ced7caa736901e1b8ddcfed78f2ceac",
+        "8d20dc16ac2d358b4b9f2deaf7b997f8672dbc3bf811e95b5b77c3706d72b672",
+        "e75ed3c3ac41aa00cf57d599a7a7ba837b02e665a7ab3602905f1841d5309710",
+        "f63ad004eac59e8927ea34fecaf9d1bf05dd2b1778514d32efcb6ce93e24bb7b"
+      ]
+    },
+    {
+      "test": "TEST-LEDGER-013",
+      "hashes": [
+        "1713ab6ea40ebbbd9eb476a9a4e5f041e1a9b82b3759fb9cf380f03a8124dbb0",
+        "434478360726bfd011608bdd98884b71e0ef5acab22f89ce02d9063411581fb4",
+        "4fbdd1ee251ebf2845a10f5fc2dd60b75861c783734ebcec6c995df0577a0dd2",
+        "6dc9500123352b9dac446291662591bfb9c09a94f04d0b0f6b7bc572bd7f4b46",
+        "7ec361b86da8f8fc9b93c5209f3ec0730150e9be9a3edb57c8cc1653d9883967",
+        "e4dce08eeb34c30a85c48fc73c98a3b29fe4c85438de048c6abebe8617639ae7",
+        "fe3fde964748c01655966883bbdb6f004ea4edb70ca8a1c58135ce54ca65892c"
+      ]
+    },
+    {
+      "test": "TEST-LEDGER-014",
+      "hashes": [
+        "0b169a88f8bba8d1460c4fb34646efe5b11b318312369891901e4ba587a5fd95",
+        "74c2ec0815cb1db331d26b429fcb56aac78cee3400539d8e0e50f8607822a617",
+        "bc53b5ea89c378257456713f88a712c5860ff1e3051e1685ea7d64a96e7c8284",
+        "fd82d437cb05e34038326100fe6651e841036f4b8052e318210887052d49cf4d"
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "id": "TASK-LEDGER-COMPACTION",
+      "exit": 1,
+      "reason": "native-TEST-LEDGER-004: native verification exited 1"
+    }
+  ]
+}

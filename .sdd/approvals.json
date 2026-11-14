@@ -406,12 +406,12 @@
     "requireHuman": false
   },
   "ledger-compaction": {
-    "by": "ai:ledger-state-and-integration-review",
+    "by": "ai:transition-independent-reviewers",
     "kind": "ai",
-    "review": "Independent retained storage/state and integration/test reviewers returned pre-lock CLEAN for spec eec5a6d8; Windows file-URL regression setup corrected before Red; actual native handle probe confirms writable Windows directory access without dropping synchronization. Development repair only; no release approval.",
-    "at": "2026-11-12T13:46:01.873Z",
+    "review": "Two independent preimplementation reviewers CLEAN on the bounded transition-release contract and TEST-LEDGER-015; artificial deadline coverage finding fixed with repeated races, actual25ms backoff, injected-clock deadline and independent iteration cap; deterministic unmodified-production contender failure retained.",
+    "at": "2026-11-14T02:04:19.025Z",
     "artifacts": {
-      ".sdd/specs/ledger-compaction.md": "eec5a6d8b35d6bccfd345e57d303ba45a9dc5a4a2392ce5b7dbdf2bda79d8055"
+      ".sdd/specs/ledger-compaction.md": "ceb19c1a6b51ef2d94a0a6b9cdeeefdc54c656513acee7d00d414ac7c47ee7fd"
     },
     "tier": "T2",
     "requireHuman": false

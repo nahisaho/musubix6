@@ -753,3 +753,156 @@ fs.fsyncSync = fd => {
     assert.doesNotMatch(result.text, /APPROVED|PASS/);
   }
 });
+
+/** @id TEST-LEDGER-015 @verifies REQ-LEDGER-003 REQ-LEDGER-004 */
+test('TEST-LEDGER-015 genuine contenders survive normal transition release without accepting invalid claims', async () => {
+  for (const phase of ['before-open', 'after-open']) {
+    const root = project(), rows = synthetic();
+    writePlain(root, rows);
+    const marker = name => path.join(root, name);
+    const release = name => fs.writeFileSync(marker(name), 'yes');
+    const writers = [];
+    async function until(predicate, label) {
+      const end = Date.now() + 20000;
+      while (!predicate()) {
+        assert.ok(Date.now() < end, `${phase}: timed out waiting for ${label}`);
+        await new Promise(resolve => setTimeout(resolve, 10));
+      }
+    }
+    function writer(actor) {
+      const hook = path.join(root, actor + '.mjs');
+      fs.writeFileSync(hook, [
+        "import fs from 'node:fs'; import path from 'node:path';",
+        `const root=${JSON.stringify(root)}, actor=${JSON.stringify(actor)}, phase=${JSON.stringify(phase)};`,
+        'const mark=name=>path.join(root,name), signal=name=>fs.writeFileSync(mark(name),"yes");',
+        'function wait(name){const end=Date.now()+15000;while(!fs.existsSync(mark(name))){if(Date.now()>=end)throw new Error("Barrier timeout: "+name);Atomics.wait(new Int32Array(new SharedArrayBuffer(4)),0,0,10);}}',
+        'let linked=false, opened=false, removed=false, pending;',
+        'const link=fs.linkSync;',
+        'fs.linkSync=function(from,to){const result=link.call(this,from,to);if(actor==="a"&&!linked&&path.basename(String(to))==="tdd-transition.lock"){linked=true;signal("a-held");wait("release-a");}return result;};',
+        'const open=fs.openSync;',
+        'fs.openSync=function(file,...args){if(actor==="b"&&!opened&&path.basename(String(file))==="tdd-transition.lock"){opened=true;',
+        'if(phase==="after-open"){pending=open.call(this,file,...args);signal("b-ready");wait("release-b");return pending;}',
+        'signal("b-ready");wait("release-b");try{return open.call(this,file,...args);}finally{signal("b-observed");}}return open.call(this,file,...args);};',
+        'const stat=fs.fstatSync;',
+        'fs.fstatSync=function(fd,...args){const result=stat.call(this,fd,...args);if(fd===pending){pending=undefined;signal("b-observed");}return result;};',
+        'const unlink=fs.unlinkSync;',
+        'fs.unlinkSync=function(file){const result=unlink.call(this,file);if(actor==="a"&&!removed&&path.basename(String(file))==="tdd-transition.lock"){removed=true;signal("a-removed");wait("release-a-removed");}return result;};',
+      ].join('\n'));
+      const child = spawn(process.execPath, ['--import', hook, script, '--root', root,
+        'approve', 'record', 'calc', '--by', 'ai:ledger-fixture', '--review', 'Independent synthetic fixture review'],
+      { env, stdio: ['ignore', 'pipe', 'pipe'], timeout: 45000 });
+      let text = '';
+      child.stdout.on('data', bytes => { text += bytes; });
+      child.stderr.on('data', bytes => { text += bytes; });
+      const done = new Promise((resolve, reject) => {
+        child.on('error', reject);
+        child.on('close', (code, signal) => resolve({ code, signal, text }));
+      });
+      const result = { child, done };
+      writers.push(result);
+      return result;
+    }
+    try {
+      const a = writer('a');
+      await until(() => fs.existsSync(marker('a-held')) || a.child.exitCode !== null, 'published claim');
+      assert.ok(fs.existsSync(marker('a-held')), `${phase}: owner must publish its real claim`);
+      const b = writer('b');
+      await until(() => fs.existsSync(marker('b-ready')) || b.child.exitCode !== null, 'contender inspection');
+      assert.ok(fs.existsSync(marker('b-ready')), `${phase}: contender must inspect the occupied claim`);
+      release('release-a');
+      await until(() => fs.existsSync(marker('a-removed')) || a.child.exitCode !== null, 'normal owner release');
+      assert.ok(fs.existsSync(marker('a-removed')), `${phase}: owner must remove only its own claim`);
+      release('release-b');
+      await until(() => fs.existsSync(marker('b-observed')) || b.child.exitCode !== null, 'raced read');
+      assert.ok(fs.existsSync(marker('b-observed')), `${phase}: execute the intended read boundary`);
+      release('release-a-removed');
+      const results = await Promise.all(writers.map(value => value.done));
+      for (const result of results) {
+        assert.equal(result.signal, null, result.text);
+        assert.equal(result.code, 0,
+          `${phase}: genuine contenders must serialize across normal transition release: ${result.text}`);
+      }
+      assert.ok(logical(root).subarray(0, encode(rows).length).equals(encode(rows)));
+      assert.equal(logical(root).toString().trimEnd().split('\n').length, 5);
+      assert.equal(command(root, ['tdd', 'check']).code, 0);
+    } finally {
+      for (const name of ['release-a', 'release-b', 'release-a-removed']) release(name);
+      for (const { child } of writers) if (child.exitCode === null && child.signalCode === null) child.kill('SIGTERM');
+      await Promise.allSettled(writers.map(value => value.done));
+    }
+  }
+  const source = fs.readFileSync(script, 'utf8');
+  const start = source.indexOf('class LedgerError extends Error');
+  const end = source.indexOf('const ledgerStorage = new LedgerStorage(SDD);');
+  assert.ok(start >= 0 && end > start);
+  const load = new Function('fs', 'path', 'os', 'randomUUID', 'isUtf8', 'Date', 'Atomics',
+    source.slice(start, end) + '\nreturn { LedgerStorage, LedgerError };');
+  const { isUtf8 } = await import('node:buffer');
+  for (const row of [
+    { name: 'uncontended', busy: false },
+    { name: 'absent claim', bytes: null },
+    { name: 'disappeared claim', error: 'ENOENT' },
+    { name: 'changed claim snapshot', changed: true },
+    { name: 'live local owner' },
+    { name: 'malformed JSON', bytes: Buffer.from('{'), diagnostic: /valid JSON/ },
+    { name: 'invalid UTF-8', bytes: Buffer.from([255]), diagnostic: /UTF-8/ },
+    { name: 'unknown owner', owner: { pid: -1 }, diagnostic: /unknown ledger lock owner/ },
+    { name: 'foreign owner', owner: { host: 'different-host.invalid' }, diagnostic: /manual investigation/ },
+    { name: 'dead local owner', dead: true, diagnostic: /manual investigation/ },
+    { name: 'permission denied', error: 'EACCES', diagnostic: /EACCES/ },
+    { name: 'I/O error', error: 'EIO', diagnostic: /EIO/ },
+    { name: 'metadata limit', limit: true, diagnostic: /read budget/ },
+    { name: 'live contention deadline', deadline: true, diagnostic: /still active after30s/ },
+    { name: 'repeated disappearing/changing claims deadline', races: true, deadline: true, diagnostic: /still active after30s/ },
+  ]) {
+    let clock = 0, links = 0, body = 0, ownerBytes;
+    const removed = [], waits = [];
+    const io = {
+      linkSync() {
+        assert.ok(++links <= 1300, `${row.name}: independent iteration limit bounds a broken deadline/backoff`);
+        if (row.busy !== false && (links === 1 || row.deadline)) {
+          throw Object.assign(new Error('occupied'), { code: 'EEXIST' });
+        }
+      },
+      unlinkSync(file) { removed.push(path.basename(file)); },
+    };
+    const { LedgerStorage, LedgerError } = load(io, path, os, crypto.randomUUID, isUtf8,
+      { now: () => clock }, { wait: (view, index, value, timeout) => {
+        assert.equal(timeout, 25, `${row.name}: preserve the bounded contention backoff`);
+        waits.push(timeout); clock += timeout;
+      } });
+    const storage = new LedgerStorage('fixture');
+    storage.write = (file, bytes) => { ownerBytes = bytes; };
+    storage.syncDirectory = () => {};
+    storage.absent = () => !!row.dead;
+    storage.readFile = () => {
+      if ((!row.deadline && links > 1) || row.busy === false) return ownerBytes;
+      if (row.races) {
+        if (links % 2) throw Object.assign(new Error('released claim'), { code: 'ENOENT' });
+        throw Object.assign(new LedgerError(2, 'changed snapshot'), { code: 'LEDGER_STORAGE_CHANGED' });
+      }
+      if (row.error) throw Object.assign(new Error(row.error), { code: row.error });
+      if (row.changed) throw Object.assign(new LedgerError(2, 'changed snapshot'), { code: 'LEDGER_STORAGE_CHANGED' });
+      if (row.limit) throw new LedgerError(2, 'transition exceeds read budget');
+      if ('bytes' in row) return row.bytes;
+      return Buffer.from(JSON.stringify({ pid: process.pid, host: os.hostname(), nonce: 'contender', ...row.owner }));
+    };
+    const invoke = () => storage.io(() => storage.withTransition(() => { body++; return 'acquired'; }));
+    if (row.diagnostic) {
+      assert.throws(invoke, error => error instanceof LedgerError && error.exit === 2
+        && row.diagnostic.test(error.message), `${row.name}: invalid contention must refuse explicitly`);
+      assert.equal(body, 0, `${row.name}: no successful fallback`);
+      assert.ok(!removed.includes('tdd-transition.lock'), `${row.name}: never delete another claim`);
+      if (row.deadline) {
+        assert.ok(links > 2, `${row.name}: exercise repeated contention, not one artificial clock jump`);
+        assert.ok(clock >= 30000 && clock <= 30025, `${row.name}: refuse at the unchanged bounded deadline`);
+      }
+    } else {
+      assert.equal(invoke(), 'acquired', `${row.name}: valid contention must reach exclusive acquisition`);
+      assert.equal(body, 1, `${row.name}: execute the mutation exactly once`);
+      assert.equal(links, row.busy === false ? 1 : 2);
+      assert.equal(waits.length, row.busy === false ? 0 : 1);
+      assert.equal(removed.filter(name => name === 'tdd-transition.lock').length, 1);
+    }
+  }
+});

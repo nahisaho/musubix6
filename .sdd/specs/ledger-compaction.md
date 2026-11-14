@@ -7,8 +7,8 @@ approval: auto
 |---|---|---|
 | REQ-LEDGER-001 | When reading a legacy or archived ledger, the CLI shall reconstruct the same ordered event bytes and preserve every event's sequence, predecessor, hash and approval/evidence identity. | TEST-LEDGER-001 |
 | REQ-LEDGER-002 | When a successful append would exceed 2097152 active UTF-8 bytes, the CLI shall automatically archive complete past events with gzip and retain at most 2097152 active bytes; a single oversized event shall be archived intact; explicit tdd compact and its read-only --dry-run shall use the same policy. | TEST-LEDGER-002 |
-| REQ-LEDGER-003 | If required storage is absent, malformed, corrupt, unsafe or inconsistent, or a foreign writer/recovery state is active, the CLI shall refuse evidence validation without substituting an empty ledger or successful default or accepting a mixed read snapshot. | TEST-LEDGER-003 TEST-LEDGER-004 |
-| REQ-LEDGER-004 | While appending, compacting or recovering, the CLI shall serialize writers without stealing a live owner's lock; interrupted rotation shall recover the exact pre- or committed post-state without event loss or duplication before another mutation. | TEST-LEDGER-004 |
+| REQ-LEDGER-003 | If required storage is absent, malformed, corrupt, unsafe or inconsistent, or a foreign writer/recovery state is active, the CLI shall refuse evidence validation without substituting an empty ledger or successful default or accepting a mixed read snapshot. | TEST-LEDGER-003 TEST-LEDGER-004 TEST-LEDGER-015 |
+| REQ-LEDGER-004 | While appending, compacting or recovering, the CLI shall serialize writers without stealing a live owner's lock; interrupted rotation shall recover the exact pre- or committed post-state without event loss or duplication before another mutation. | TEST-LEDGER-004 TEST-LEDGER-015 |
 | REQ-LEDGER-005 | When checking baseline retention, approvals, TDD, planning receipts or merging ledger branches, the CLI shall evaluate the full logical ledger from both the working tree and selected Git baseline, retain existing deletion/rewriting rejection and preserve plain-ledger behavior. | TEST-LEDGER-005 |
 | REQ-LEDGER-006 | When distributed through source, npm or either supported host, the archive-aware CLI and its required files shall support Node 20/22/24; existing projects shall require no manual conversion and help shall explain automatic archival and recovery. | TEST-LEDGER-006 |
 | REQ-LEDGER-007 | When synchronizing ledger storage, the CLI shall use access rights appropriate to the actual platform and preserve file and directory flushes; a real open, write or flush failure shall remain an explicit refusal rather than being ignored to obtain Windows compatibility. | TEST-LEDGER-014 |
@@ -70,6 +70,48 @@ Immutable segments bind compressed/uncompressed SHA-256, byte length, count and 
 State table: legacy/archived -> locked preparation -> durable recovery record -> storage switch -> committed; prepare failure preserves old state; recovery-record states refuse read-only evidence and allow validated locked recovery; unknown/corrupt states refuse. Mutating entry points recover before normal evaluation; compact --dry-run is read-only, repeat compaction is idempotent and unknown options refuse with 2. A single oversized row is archived intact, never split.
 Replace mtime-only lock stealing: owner binds local host, PID and nonce; live, malformed, foreign-host or unknown owners are never stolen; only a proven absent local owner permits recovery. Durable staging/recovery covers multi-file switches. Merge reconstructs the full stream and may create new immutable segments for its existing re-chained output; it never rewrites an existing segment. Compaction never re-chains.
 ## PASS conditions and counterexamples
+
+### Contender inspection during a normal transition release
+
+The current129-task proof stopped after47 successful tasks: the complete
+ledger module passed, but its native TEST-LEDGER-004 concurrent append
+returned2 instead of0. A single unmodified diagnostic rerun passed;
+this is FLAKY suspected, not a passing repair or qualification result.
+The retained deterministic two-process probe
+ledger-transition-release-0p0o28/report.json forces a real owner to release
+its published transition after its contender's stat and before open.
+The owner exits0 and the contender exits2 with ENOENT opening that same
+transition. No SDK production bytes were changed for this reproduction.
+
+A writer may retry only a disappearing or snapshot-changing transition
+claim while still contending for exclusive creation, within the existing
+30000ms deadline. Such an observation is not a successful owner check or
+lock acquisition. Only successful exclusive publication of its own complete
+claim permits its mutation. Ordinary ledger/owner/recovery reads retain
+their strict snapshot checks and explicit refusals. Never unlink another
+claim, retry arbitrary I/O/JSON/ownership failures, replace malformed
+evidence with empty data, increase the deadline or serialize away the
+required concurrent-writer control.
+
+| REQ | PASS condition | counterexample | TEST/command | observed evidence |
+| --- | --- | --- | --- | --- |
+| `REQ-LEDGER-003`, `REQ-LEDGER-004` | Real writers paused before and after the contender opens the published transition both append once; complete original bytes remain and the final chain has five events | Normal release yields ENOENT or a changed-open snapshot and aborts a genuine contender; treating either as acquisition, losing one append or dropping the concurrent case must reject | TEST-LEDGER-015; native Red/Green; isolated retry-bypass and snapshot-tag mutations | Deterministic before-open probe reproduces owner0/contender2; new regression and production repair pending |
+| `REQ-LEDGER-003`, `REQ-LEDGER-004` | No contention, absent claim, transient ENOENT, changed snapshot and stable live local owner reach exclusive publication and invoke the body once; invalid UTF-8/JSON/owner, foreign/dead owner, EACCES/EIO, metadata limit and contention deadline refuse without acquiring or deleting a foreign claim | Catch all failures and run the body, silently discard unknown metadata, steal a dead transition, treat a normal ledger mutation as a retry, wait without a deadline or reject every contender | TEST-LEDGER-015 finite policy table and both real barriers; unchanged003/004/008/014 controls | Exact table and real-process controls required; no missing/skipped observation is a pass |
+
+First violated stages: contract = two actual writers must serialize, not
+silently lose one; trusted inputs = immutable published claims and typed
+snapshot-change failures, never arbitrary errors; execution = deterministic
+before-open and after-open release barriers plus bounded contention;
+verdict = valid exclusive acquisition succeeds and every invalid table row
+refuses; history = retain the failed47/129 attempt, all receipts, the unmodified
+passing diagnostic and exact logical prefix; integration/distribution =
+the same standalone SDK, both hosts, renewed committed canonical reference,
+current full gate/CI and unchanged release qualification rules.
+No stage is inapplicable. The two actual interleavings and bounded fault
+table do not enumerate arbitrary scheduler/filesystem histories or prove
+hostile-host attestation. Current Linux execution remains22/24 only; old
+Linux20 measurements below are historical and Windows20 remains supported.
+
 | REQ | PASS condition | Counterexample | TEST/command | Observed evidence |
 |---|---|---|---|---|
 | `REQ-LEDGER-001` | Three synthetic approval rows reconstruct byte-for-byte; native Red/Green planning proof retains its original identities across archival. | Omit, reorder or reserialize an archived row. | TEST-LEDGER-001, TEST-LEDGER-005, TEST-LEDGER-012; tdd check | Genuine assertion Red/Green retained; current native refactors PASS; all three Linux Node majors pass exact-byte and native-proof controls. |

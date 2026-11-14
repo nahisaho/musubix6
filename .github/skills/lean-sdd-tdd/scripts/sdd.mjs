@@ -1136,9 +1136,9 @@ function approvalState(spec) {
 
 // ---------- ledger ----------
 class LedgerError extends Error {
-  constructor(exit, message) { super(`LEDGER ${exit === 1 ? 'FAIL' : 'UNRESOLVED'}: ${message}`); this.exit = exit; }
+  constructor(exit, message, code) { super(`LEDGER ${exit === 1 ? 'FAIL' : 'UNRESOLVED'}: ${message}`); this.exit = exit; if (code) this.code = code; }
 }
-const ledgerFail = (exit, message) => { throw new LedgerError(exit, message); };
+const ledgerFail = (exit, message, code) => { throw new LedgerError(exit, message, code); };
 const ledgerLimit = 67108864, ledgerMetadataLimit = 1048576, ledgerThreshold = 2097152;
 const ledgerDigest = value => typeof value === 'string' && /^[a-f0-9]{64}$/.test(value);
 const ledgerStamp = stat => stat && [stat.dev, stat.ino, stat.size, stat.mtimeNs, stat.ctimeNs].join(':');
@@ -1196,11 +1196,11 @@ class LedgerStorage {
     const fd = fs.openSync(file, fs.constants.O_RDONLY | (fs.constants.O_NOFOLLOW ?? 0));
     try {
       const opened = fs.fstatSync(fd, { bigint: true });
-      if (ledgerStamp(opened) !== ledgerStamp(before)) ledgerFail(2, `${name} changed while opening`);
+      if (ledgerStamp(opened) !== ledgerStamp(before)) ledgerFail(2, `${name} changed while opening`, 'LEDGER_STORAGE_CHANGED');
       const bytes = Buffer.alloc(Number(opened.size) + 1);
       let length = 0, count;
       while (length < bytes.length && (count = fs.readSync(fd, bytes, length, bytes.length - length, null)) > 0) length += count;
-      if (length !== Number(opened.size) || ledgerStamp(fs.fstatSync(fd, { bigint: true })) !== ledgerStamp(before)) ledgerFail(2, `${name} changed while reading`);
+      if (length !== Number(opened.size) || ledgerStamp(fs.fstatSync(fd, { bigint: true })) !== ledgerStamp(before)) ledgerFail(2, `${name} changed while reading`, 'LEDGER_STORAGE_CHANGED');
       return bytes.subarray(0, length);
     } finally { fs.closeSync(fd); }
   }
@@ -1361,7 +1361,11 @@ class LedgerStorage {
           fs.linkSync(temporary, claim); acquired = true; this.syncDirectory(); break;
         } catch (error) {
           if (error.code !== 'EEXIST') throw error;
-          const bytes = this.readFile('tdd-transition.lock', true, ledgerMetadataLimit);
+          let bytes = null;
+          try { bytes = this.readFile('tdd-transition.lock', true, ledgerMetadataLimit); }
+          catch (error) {
+            if (!['ENOENT', 'LEDGER_STORAGE_CHANGED'].includes(error.code)) throw error;
+          }
           if (bytes !== null) {
             const current = this.ownerRecord(bytes);
             if (current.host !== os.hostname() || this.absent(current)) ledgerFail(2, 'interrupted or foreign ledger transition requires manual investigation');

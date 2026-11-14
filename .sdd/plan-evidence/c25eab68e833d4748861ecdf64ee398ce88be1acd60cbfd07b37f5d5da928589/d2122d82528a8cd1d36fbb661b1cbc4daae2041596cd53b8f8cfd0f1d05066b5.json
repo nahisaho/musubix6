@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "task": "TASK-HOST-005",
+  "sequence": 11,
+  "previous": "1d1cacc6296395182e6fd5299651e7a07e79a652a56b43e60714a353f77dea45",
+  "definitionSha256": "432e2cfd24eb0ab7b290580aa93ab0e30031e765746cffa5a4145aacca0e3ca2",
+  "inputSha256": "ee10e499612c43bf9a4e3cad7d4a077a084be07becc187787283c737da90458a",
+  "status": "PASS",
+  "exit": 0,
+  "checks": [
+    {
+      "name": "regression-1",
+      "argv": [
+        "node",
+        "--test",
+        "--test-name-pattern",
+        "^(?:.*\\b(?:TEST-HOST-005))(?![0-9A-Za-z])",
+        "scripts/host-compatibility.test.mjs"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/c25eab68e833d4748861ecdf64ee398ce88be1acd60cbfd07b37f5d5da928589/attempt-8c9e67a4-f3b1-4038-85fb-36a2b59828fb/0.log",
+        "sha256": "668f03b292c9635679b80d86234351014bea0423b294be474a382837f70ddd2b",
+        "bytes": 221
+      }
+    },
+    {
+      "name": "native-TEST-HOST-005",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/tmp/musubix6-release-lexical-28d27536/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-HOST-005",
+        "--root",
+        "/tmp/musubix6-release-lexical-28d27536"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/c25eab68e833d4748861ecdf64ee398ce88be1acd60cbfd07b37f5d5da928589/attempt-8c9e67a4-f3b1-4038-85fb-36a2b59828fb/1.log",
+        "sha256": "870029fee0decbccd813e0cd2ec162e8b8812dc83c884ae8761b84a7c8dcb140",
+        "bytes": 48
+      }
+    }
+  ],
+  "ledgerEvents": [
+    {
+      "test": "TEST-HOST-005",
+      "hashes": [
+        "7816d9f5b8f8e97977c710e3a7a6c465ddb4c554f2469a3c4eda92d7d647b47b",
+        "902040bd7881eaf7e7a4958f178efcf7175abcbeca4eff4835b7638322114427",
+        "ba4fa65d2460534d2a8a0707c7e9135d427ab4b621a9349b60bbe5a4afbfec7b",
+        "cfa2917e18167ce0268bc5fc1ea3e3f607c1849328d699d1b009eb0c93a2d6e0",
+        "dfe4e9cbc8a127632db081e23b967eb233051878a5e0368327ffafea885157b7"
+      ]
+    }
+  ],
+  "errors": []
+}
