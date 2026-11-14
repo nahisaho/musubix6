@@ -11,7 +11,7 @@
   "revisionReason": "User approved complete Linux Node20 retirement, including internal tooling, on2026-11-13. Exclude exactly PACKAGE-20, WATCHDOG-20, NO-CHANGE-20 and REGRESSION-20; move MUTATION to Node22 without changing cases, assertions or3600-second budget. Preserve all20 retained cells and other budgets, WSL exclusion,121 canonical files,1298 skill cases,14 placeholders and historical lineage. Windows20/22/24 development controls remain. New exact seven-artifact approval and Node22/24-only discovery/execution required; old failures retained, credit/streak0, no publication approval.",
   "historicalTestLineage": {
     "version": 1,
-    "sourceCommit": "0a2f8ce2ca8ffca8b668534cb312b4c3a91e893b",
+    "sourceCommit": "ee688a29d80b8d64b029cb82ead52fe99d40f96e",
     "suite": ".github/skills/lean-sdd-tdd/scripts/sdd.test.mjs",
     "suiteSha256": "b5ce39bb06f52850159ddb7791c22073651f83ae2475263f2cd1466f3ed1fc25",
     "mappings": [
@@ -118,7 +118,7 @@
   },
   "contentMutationContract": {
     "path": ".sdd/release-content-mutations.v0.2.10.json",
-    "sha256": "54bac2c6ff5dd48f710644a06749d88490d5c922ac8088d197a582f57782a024",
+    "sha256": "94473ff75df7940670235ccd14f380c5875b8d118f43671d7fe250f1b948ecec",
     "approvalRequired": true,
     "status": "proposed-not-approved-or-executed"
   },

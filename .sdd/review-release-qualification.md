@@ -1,4 +1,66 @@
-# Linux Node20 retirement: implementation and reference renewal
+# Current scope4/content5 source renewal after concurrent append repair
+
+The actual user explicitly approved the prepared seven-artifact renewal;
+the SDK recorded nahisaho without manual approval edits. Current spec SHA256:
+dd05390dc2c4097498258fff99a8d7d0f2dbe2c9235b5da54e08162918299a2c.
+Scope SHA256:
+ea6734263013b4c630845c088fb1ed0914c3f96a90b11201e241aa62aacaa0dd.
+Content5 SHA256:
+94473ff75df7940670235ccd14f380c5875b8d118f43671d7fe250f1b948ecec.
+The other four unit files are unchanged. No tag/npm approval was granted.
+
+The original current129-task proof stopped after47 successful tasks at
+TEST-LEDGER-004. Retain that failure receipt and its unmodified passing
+diagnostic. A real normal-release interleaving confirmed the race, rather
+than dismissing it through a rerun. Its reviewed SDK repair and native015
+evidence are locally committed at
+ee688a29d80b8d64b029cb82ead52fe99d40f96e; see review-ledger-compaction.md.
+Only two SDK canonical byte identities change in content5. Independent
+report linux-supported-reference-LzA6Ao/report.json SHA256:
+0030fdf687a35b2fb6f508236c10732d7c743a13c4b08b6b5cb879b0fa5c4e5c.
+All121 Git/source/archive/package paths and full modes, complete lstat
+file/directory inventories and eight actual22/24 source/package/both-host
+initializations pass, with six independent malformed-inventory controls.
+Both development package digests are
+b925d194d5b9a3153bf76d3d78bc2544a2202c1792dba7056d170fe1210a64b6;
+they are not approved publication artifacts.
+
+Actual22/24 declaration-only registration each disclosed all1230
+independently required names: old1226 plus four additions including015,
+with the same one CI rename. This is zero body-execution credit.
+All121 paths,1298 skill cases,14 placeholders,49 mutations,20 cells,
+budgets and Linux22/24/Windows20/22/24 support remain unchanged.
+
+Two independent prelock reviewers returned CLEAN. Formal native SKILL
+Red373ms failed its own revision5 acceptance assertion before production.
+The regression retains genuine committed1/2/3/4 controls and derives exact
+1298 case IDs/order and byte-plus-nine-bit policies independently from
+committed predecessors. The only production delta admits5 with121 files.
+Unchanged-test Green2170ms passes. Five isolated retained4/current5
+admission/cardinality/unknown6 sensitivities pass baseline, fail by their
+owned assertions, restore exact bytes/modes and pass again. Report
+linux-supported-mutations-4trtQ7/report.json SHA256:
+24ab21ea061ecb78d3fd191dd0cf72cb4da5ac344e985a71c8df43086993df33.
+Root tracked/helper bytes/modes and complete logical history are preserved.
+
+Complete directly affected release/host modules pass36/36, no failures or
+skips,109545ms. Actual Node22 passes all six current focused controls,
+no skips,32182ms. JavaScript diagnostics pass50/50 with zero ignored files
+and no errors. All19 shared native refactors pass without changed-test
+warnings. Both independent reviewers returned fresh postimplementation
+round1 and round2 CLEAN. The unchanged derived CI contract received genuine
+SDK auto-artifact lock renewal; all four native fixture controls pass
+1091/190/1880/1637ms. This is not hosted CI evidence.
+
+The genuine preimplementation driver adopted28 measured bindings and
+retained129 known fingerprints and historical heads. Authored bindings
+match, but its observed consistency is FAIL:119 revalidation-required,
+10 replan-required. This is not completion proof. Fresh whole129-task
+verification, full gate, same-head Linux/Windows CI and two identical
+complete20-cell clean runs remain required; streak0/2. Earlier local
+passes, discovery and historical receipts transfer no readiness credit.
+
+# Historical Linux Node20 retirement: implementation and reference renewal
 
 The user explicitly retired Linux Node20, including internal tooling, and
 approved the exact20-cell successor: exclude PACKAGE/WATCHDOG/NO-CHANGE/

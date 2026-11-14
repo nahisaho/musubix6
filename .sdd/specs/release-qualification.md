@@ -213,6 +213,66 @@ integration/distribution = actual Node22 MUTATION and frozen oracle context,
 unfiltered development gate, same-head CI and separate release approval.
 No stage is inapplicable and the new S2 remains blocking until verified.
 
+### Committed source renewal after concurrent append repair (scope4/content5)
+
+The current129-task proof stopped after47 successful tasks at native
+TEST-LEDGER-004. Preserve its failure receipt and unmodified passing diagnostic;
+neither is a complete proof or a dismissed flake. A deterministic real-writer
+probe established normal transition release between contender stat/open.
+The existing ledger feature now has native015 assertion Red415ms before
+production, Green921ms, two real before/after-open interleavings,15 finite
+policy rows, seven restored sensitivities,51 affected passing tests and
+two independent clean postimplementation review rounds. These are local
+repair evidence, not current whole-project or frozen qualification success.
+
+The new committed canonical source is
+ee688a29d80b8d64b029cb82ead52fe99d40f96e, skill tree
+24da2402a5fa3bc936aa311559c180e433f6c2c2.
+Independent report linux-supported-reference-LzA6Ao/report.json, SHA256
+0030fdf687a35b2fb6f508236c10732d7c743a13c4b08b6b5cb879b0fa5c4e5c,
+matches all121 Git blobs, full-mode archive/source trees, real offline22/24
+packages and eight source/package/both-host initializations. Exact lstat
+file/directory inventories and all six malformed-inventory self-controls
+remain mandatory. Both development packages have SHA256
+b925d194d5b9a3153bf76d3d78bc2544a2202c1792dba7056d170fe1210a64b6;
+neither is an approved publication artifact.
+
+Exactly two canonical byte identities change: standalone sdd.mjs
+42a7810f31718677637e906aee4ec1890ff6e1d3d79344eaada54514097e923e
+and tdd-ledger.test.mjs
+9e779ec39f54b44d72b529934c8ddec5996fde7e9098df4cd8211fe47b8baa7a.
+Preserve all121 paths/full modes,28 semantic mechanisms,1210 source
+challenges,60 origin sensitivities,1298 skill cases,14 placeholders,
+49 inherited mutation cases,20 retained cells and every budget.
+Content5 retains committed content4 as its exact predecessor. Current
+catalogue admission must accept5 with exactly121 canonical files and retain
+historical1/2/3/4 semantics, not infer a catalogue for unknown6 or malformed
+inputs. Keep all byte and nine permission-bit controls.
+
+The current SDK assertion suite remains b5ce39bb06f52850159ddb7791c22073651f83ae2475263f2cd1466f3ed1fc25;
+all six historical mappings and the exact ci-matrix inverse-edit policy
+remain unchanged. Source registration on actual22/24 discloses all1230
+independently required names: retained1226, the earlier three additions and
+new015, with the same one explicit CI rename. This adds a required native
+case; registration executes no body and earns zero qualification credit.
+Current Linux execution is22/24 only; Windows20/22/24 remains unchanged.
+
+| REQ | PASS condition | counterexample | TEST/command | observed evidence |
+| --- | --- | --- | --- | --- |
+| `REQ-RELQ-001`, `REQ-RELQ-002`, `REQ-RELQ-005` | A genuine renewed exact seven-artifact unit binds sourceee688/content5 and the unchanged scope4 matrix, complete1230-name catalogue and both-host bytes/modes | Reuse the earliera5499a/8e182e/54bac2 lock, substitute a path/mode, drop015 or credit the failed47-task attempt: reject | Native approval/admission; independent committed/archive/npm/both-host comparator; actual22/24 registration | Exact inventory and both actual1230-name discoveries pass; current human renewal and complete execution remain pending |
+| `REQ-RELQ-003`, `REQ-RELQ-005` | Content5 admits the exact1298 independently retained IDs/order and14 placeholders; committed1/2/3/4 still admit; missing/substituted paths, weaker counts, each missing permission bit and unknown/mistyped revisions reject | Reject every new reference, infer revision6, accept120 files, reorder/omit a case or let a malformed manifest hide required checks | TEST-RELQ-SKILL-001; isolated revision5 admission/cardinality mutations | Revised regression drafted before helper support; genuine native Red/Green and bounded sensitivities await the exact human lock |
+| `REQ-RELQ-004` | Current complete task proof/gate/CI and two identical full20-cell clean runs establish technical readiness before separate exact-artifact publication approval | Treat local51 passes,19 native refreshes, discovery or old receipts as the129-task/full-gate/frozen result; skip a required unknown or publish either development package: reject | Current native task verification, full gate, same-head CI and fixed qualification | Earlier current proof failed47/129; no successor complete proof, full gate, same-head CI or clean-run credit yet |
+
+First violated stages: contract = exact renewed human unit and unchanged
+support/budgets; trusted inputs = independent committed source, exact trees
+and committed content4 predecessor; execution = actual repaired concurrent
+writers plus every required new/current case; verdict = accept valid5,
+retain old1/2/3/4 and reject malformed/unknown inputs; history = retain the
+failed47-task attempt, diagnostics, receipts and zero transferred credit;
+integration/distribution = actual source/packages/both-host identities,
+new full gate/CI, two unchanged20-cell runs and separate publication approval.
+No stage is inapplicable and the clean-run streak remains0/2.
+
 ### Historical qualification design before Linux Node20 retirement
 Use new versioned0.2.8 scope/content files without rewriting historical0.2.7,0.2.6,
 0.2.5,0.2.4 or0.2.0 contracts or failed evidence. The new files require a genuine

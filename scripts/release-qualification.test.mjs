@@ -877,7 +877,7 @@ test('TEST-RELQ-SKILL-001 preserves 1268 exact cases and owned native inventory 
     assert.deepEqual(contentCaseCatalogue(successor, 'PLACEHOLDER-MUTATION').map(row => row.id),
       contentReference.placeholderCatalogue.map(row => row.proposedId),
       'all14 placeholder mechanisms remain unchanged');
-    for (const revision of [0, 5, -1, '2', null, undefined]) {
+    for (const revision of [0, 6, -1, '2', null, undefined]) {
       for (const base of [contentReference, successor]) {
         const changed = clone(base);
         changed.revision = revision;
@@ -938,7 +938,7 @@ test('TEST-RELQ-SKILL-001 preserves 1268 exact cases and owned native inventory 
       'exactly the10 new ledger-file byte/full-mode challenges are added');
     assert.deepEqual(contentCaseCatalogue(successor, 'PLACEHOLDER-MUTATION').map(row => row.id),
       contentReference.placeholderCatalogue.map(row => row.proposedId));
-    for (const revision of [0, 5, -1, '2', null, undefined]) {
+    for (const revision of [0, 6, -1, '2', null, undefined]) {
       const changed = clone(successor);
       changed.revision = revision;
       for (const cell of ['SKILL-MUTATION', 'PLACEHOLDER-MUTATION']) {
@@ -980,8 +980,11 @@ test('TEST-RELQ-SKILL-001 preserves 1268 exact cases and owned native inventory 
         `revision3 cannot omit permission policy ${index}`);
     }
   }
-  {
-    const current = read(path.join(root, contentRelative));
+  for (const current of [
+    JSON.parse(execFileSync('git', ['-C', root, 'show',
+      `ee688a29d80b8d64b029cb82ead52fe99d40f96e:${contentRelative}`], { encoding: 'utf8' })),
+    read(path.join(root, contentRelative)),
+  ]) {
     const feedback = JSON.parse(execFileSync('git', ['-C', root, 'show',
       `ffff1a7893a41d9b8ea0b50ddc4837a663ce23a3:${contentRelative}`], { encoding: 'utf8' }));
     const predecessor = JSON.parse(execFileSync('git', ['-C', root, 'show',
@@ -998,12 +1001,12 @@ test('TEST-RELQ-SKILL-001 preserves 1268 exact cases and owned native inventory 
     ];
     let catalogue;
     assert.doesNotThrow(() => { catalogue = contentCaseCatalogue(current, 'SKILL-MUTATION'); },
-      'revision4 must admit every independently retained121-file case before execution');
+      `revision${current.revision} must admit every independently retained121-file case before execution`);
     assert.deepEqual(catalogue.map(row => row.id), expected,
-      'content4 must retain the exact1298 predecessor case identities and order');
+      `content${current.revision} must retain the exact1298 predecessor case identities and order`);
     assert.deepEqual(contentCaseCatalogue(current, 'PLACEHOLDER-MUTATION').map(row => row.id),
       predecessor.placeholderCatalogue.map(row => row.proposedId));
-    for (const revision of [0, 5, -1, '4', null, undefined]) {
+    for (const revision of [0, 6, -1, '4', '5', null, undefined]) {
       for (const base of [contentReference, feedback, predecessor, current]) {
         const changed = clone(base);
         changed.revision = revision;
@@ -1030,7 +1033,7 @@ test('TEST-RELQ-SKILL-001 preserves 1268 exact cases and owned native inventory 
       const changed = clone(current);
       change(changed);
       assert.throws(() => contentCaseCatalogue(changed, 'SKILL-MUTATION'),
-        `revision4 must reject ${label} without changing predecessor policy`);
+        `revision${current.revision} must reject ${label} without changing predecessor policy`);
     }
   }
   const context = contentContext(directory, 'SKILL-MUTATION');
