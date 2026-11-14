@@ -1,0 +1,10 @@
+✔ #374 TEST-R36J-INVALID-001 exact independently native-invalid fixture stays invalid despite silent final101 (536.07228ms)
+✔ #374 TEST-R36J-NATIVE-001 independent native Go witnesses valid throwing generation and inferred return type (1197.983265ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 4132.915502

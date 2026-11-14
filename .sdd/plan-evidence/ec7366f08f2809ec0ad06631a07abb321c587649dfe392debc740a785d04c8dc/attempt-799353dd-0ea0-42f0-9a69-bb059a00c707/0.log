@@ -1,0 +1,11 @@
+✔ TEST-FEEDBACK-FLOW-001 implementation batches repeat the canonical specification feedback loop (2.679713ms)
+✔ TEST-FEEDBACK-FLOW-002 feedback instructions retain semantic, approval and evidence boundaries (0.431895ms)
+✔ TEST-FEEDBACK-FLOW-003 actual package and both installed hosts expose identical feedback runtime and defaults (1159.29625ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1236.937238

@@ -1,0 +1,108 @@
+{
+  "schemaVersion": 1,
+  "task": "TASK-CI-FIXTURE-003",
+  "sequence": 8,
+  "previous": "87151c6a10a07c39c35f7e6a2ece5788fb4eeaf9f92bc53c00143170fde1a3f7",
+  "definitionSha256": "a432b300587887bee535fc1da63f6c52bd052d4a23f7588c7210ca2c2cad6618",
+  "inputSha256": "05a6ce0c901bebe4c75a50bc48fc546e63de8f49b1a16d7d74829df6b86c1444",
+  "status": "PASS",
+  "exit": 0,
+  "checks": [
+    {
+      "name": "regression",
+      "argv": [
+        "node",
+        "--test",
+        "--test-name-pattern",
+        "TEST-CI-FIXTURE-00[34]",
+        ".github/skills/lean-sdd-tdd/scripts/implementation-plan-cli.test.mjs",
+        ".github/skills/lean-sdd-tdd/scripts/sdd.test.mjs"
+      ],
+      "timeoutMs": 120000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/b1b133d08bc9b4fc0f94b19884888ba1dc2c3fe58c7d57d580d71d5223599cfd/attempt-18bcee86-5266-452c-afbc-f15b3792b8ca/0.log",
+        "sha256": "fc56aaa009202f6d67d24cbd618c4276ace01fa6afc21fd78bc2fdca29bd9c52",
+        "bytes": 345
+      }
+    },
+    {
+      "name": "native-TEST-CI-FIXTURE-003",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/tmp/musubix6-release-lexical-28d27536/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-CI-FIXTURE-003",
+        "--root",
+        "/tmp/musubix6-release-lexical-28d27536"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/b1b133d08bc9b4fc0f94b19884888ba1dc2c3fe58c7d57d580d71d5223599cfd/attempt-18bcee86-5266-452c-afbc-f15b3792b8ca/1.log",
+        "sha256": "77b845ac65945703e4c512c6c38e7c3ec188ba0fba9dafe3f3d019c227aeb1a8",
+        "bytes": 60
+      }
+    },
+    {
+      "name": "native-TEST-CI-FIXTURE-004",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/tmp/musubix6-release-lexical-28d27536/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-CI-FIXTURE-004",
+        "--root",
+        "/tmp/musubix6-release-lexical-28d27536"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/b1b133d08bc9b4fc0f94b19884888ba1dc2c3fe58c7d57d580d71d5223599cfd/attempt-18bcee86-5266-452c-afbc-f15b3792b8ca/2.log",
+        "sha256": "dd5b104782de3d35a5529b370aefa329b1273509614462890b09a32d7e8eb800",
+        "bytes": 60
+      }
+    }
+  ],
+  "ledgerEvents": [
+    {
+      "test": "TEST-CI-FIXTURE-003",
+      "hashes": [
+        "0c9b43be752f6ff562a44193821a187d648a45bd698e5203c033d1dad16791de",
+        "10da39fc7964a09b916dd42f160cb47cacf7f8375ed28275e830bbc5529d36ad",
+        "26f501b98f5beca3936921096e8fd7fd8b54847674266f41fe3f920e1591cedd",
+        "2ce6959071fd0fed0b945314fef8582c41e18e1701344c6778de17c705b2b716",
+        "3c37412f6e9cf32a0d9f8f4f7e66ddc90655c911abbb3890cf533aaf73b80c1c",
+        "43d1d4ff461f0b6267ae2d00cc3bc31e70c2a62826397ef180b75c00fc2e2e8c",
+        "53c19d51747c1e2be10f0b2d2a6e0e0efe38e61291324b836cc3a5ee7473616f",
+        "58143c94945f26727644193c4d0ebd4576a917fc7ddd1b31baf5e9265bb7b81b",
+        "6d9c91e02c7fbefab1315fb3cd3ac32504b9cfb8d8c1cc57d03a3485eec4800a",
+        "949b8037997900e7ba1eba0b3c53a8afaa581becf591618be89b23ecc6a3fe13",
+        "c28e85b181b27ba5d93f1d88cc03e409aa589d528f51f816b401773104156487",
+        "d478004eb04e8f06722af7e8b81cb2defb17fd9ae429a1d06753c4cc236e63cd",
+        "dbc2c89bb57bb6bc5767f74b2907fe3df37c880f79fa957468479e022165833c"
+      ]
+    },
+    {
+      "test": "TEST-CI-FIXTURE-004",
+      "hashes": [
+        "316dd9b9cd1343021afaca158365f34e36f5f9eab50f42bab2e0ebf9a3eb6805",
+        "3611bafc6956149886051e41dbed381dc4263c79271c0ef31792c2b6063e2f36",
+        "5b72ce1a23710fd8f0662e5118a741dd3617078d82b9b83fee455214ad2754d6",
+        "6c03b0b0b8573bf40fb8adf39f3be3b31212d01b0ba368e03330c3e622455b5c",
+        "9d36134b57b843afcff3c9ead1bc1047f7d3c0efda8952ba8738e738742d97cb"
+      ]
+    }
+  ],
+  "errors": []
+}

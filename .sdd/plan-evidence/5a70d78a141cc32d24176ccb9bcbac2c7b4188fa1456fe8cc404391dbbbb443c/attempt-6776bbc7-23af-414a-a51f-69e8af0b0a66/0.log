@@ -1,0 +1,9 @@
+✔ TEST-RSTUB-007 same-name method arguments and empty constraints belong to their owner (7755.360189ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 10202.413995

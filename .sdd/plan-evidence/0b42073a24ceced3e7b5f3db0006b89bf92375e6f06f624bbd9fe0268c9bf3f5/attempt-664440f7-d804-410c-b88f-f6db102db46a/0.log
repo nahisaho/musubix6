@@ -1,0 +1,17 @@
+r34 structural reads/stats: 110, 6100000 bytes shared by two checks
+r34 TypeScript 5.9.3, 6213122 bytes: Red=4049.5ms Green=5719.1ms gate=6435.4ms; lib/_tsc.js rejection=6450.5ms; lib/_tsc.js restored=6472.6ms; lib/r34-helper.cjs rejection=6419.7ms; lib/r34-helper.cjs restored=6385.8ms; package.json rejection=5767.7ms; package.json restored=6392.6ms
+r34 integrated namespace reads/stats: 110
+✔ TEST-R34-CLOSURE-001 r34f #362 structural budget avoids per-identifier PATH and file probes (1161.137373ms)
+✔ TEST-R34-CLOSURE-002 r34f #362 real installed TypeScript launcher reaches TDD and preserves provenance (56488.272167ms)
+✔ TEST-R34-CLOSURE-005 ordinary source identifiers avoid redundant command dispatch (1178.122667ms)
+✔ TEST-R34-CLOSURE-003 r34f #362 oversized definition refuses explicitly without writing evidence (362.789862ms)
+✔ TEST-R34-CLOSURE-004 r34f #362 token suffix and directory budgets refuse instead of silently truncating (1977.511152ms)
+✔ TEST-R34-INTEGRATION-003 r34 integration Python namespace probes share the compiler source-discovery budget (972.265731ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 64537.050158

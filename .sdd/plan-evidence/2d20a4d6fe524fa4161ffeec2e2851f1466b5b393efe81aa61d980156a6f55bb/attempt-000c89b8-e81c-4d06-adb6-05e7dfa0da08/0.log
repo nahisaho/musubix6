@@ -1,0 +1,16 @@
+✔ TEST-R33-PYTEST-001 r33b #356 unresolved plugin declarations fail closed (9175.455962ms)
+✔ TEST-R33-PYTEST-002 r33b #356 computed plugin refuses real pytest execution before any evidence write (233.084698ms)
+✔ TEST-R33-PYTEST-003 r33b #356 transitive literal plugins reject a computed nested declaration before evidence writes (1362.156733ms)
+✔ TEST-R34-PYTEST-001 r34d #360 semicolon computed reassignment is refused before real assertion Red or evidence append (233.229337ms)
+✔ TEST-R34-PYTEST-002 r34d #360 all statement admission rejects unresolved grammar (20162.354167ms)
+✔ TEST-R34-PYTEST-003 r34d #360 literal controls preserve real assertion Red Green and full changed gates (16774.226013ms)
+✔ TEST-R34-PYTEST-004 r34d #360 shared lexical discovery admits non-hook files and rejects later computed binding (1161.531204ms)
+✔ TEST-R34-INTEGRATION-001 r34 integration Python fixture rewrites cannot reuse same-size timestamp bytecode (102.895259ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 8
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 51609.981126

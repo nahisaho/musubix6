@@ -1,0 +1,13 @@
+✔ TEST-R34-NODE-001 r34e #361 opaque native reporters cannot establish TDD or full/changed gate coverage (3647.997894ms)
+✔ TEST-R34-NODE-002 r34e #361 annotated skip/todo children cannot borrow parents with any supported reporter (29523.60362ms)
+✔ TEST-R34-NODE-003 r34e #361 native flaky recovery requires observable passing annotated children (12330.269923ms)
+✔ TEST-R34-NODE-004 r34e #361 parser binds literal titles and rejects ambiguous, missing and malformed evidence (78.848874ms)
+✔ TEST-R34-NODE-005 r34e #361 shell and package-script native dot reports cannot bypass coverage (5950.457268ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 53925.684994

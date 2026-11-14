@@ -1,0 +1,15 @@
+✔ TEST-RELQ-PACKAGE-BINDING-001 uses the exact frozen tgz and rejects mismatched packaged origins (1804.702236ms)
+✔ TEST-RELQ-LEXICAL-001 executes exact source/package lexical controls before named mutations (12337.571386ms)
+✔ TEST-RELQ-SKILL-001 preserves 1268 exact cases and owned native inventory controls (1936.447989ms)
+✔ TEST-RELQ-PH-001 binds all 14 cases to exact native assertions and policy witnesses (1015.887125ms)
+✔ TEST-RELQ-LINUX-001 admits only the approved Linux22/24 successor without narrowing Windows (697.602042ms)
+✔ TEST-RELQ-PUBLISH-001 publishes only the exact remotely approved archive and preserves dry runs (3230.46116ms)
+✔ TEST-RELQ-005 binds durable helpers and exact package-entry receipts without release authorization (86.171555ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 7
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 21205.609937

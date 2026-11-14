@@ -1,0 +1,119 @@
+r36d #339 actual child=["v24.22.1","/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",true]
+r36d native invalid typed source exit=1
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+file:///tmp/musubix6-release-lexical-28d27536/.sdd-test-work-YWxAcH/sdd-m-ciIFCd/subject.ts:3
+export const answer: number = 1;
+const broken = ;
+               ^
+
+SyntaxError [ERR_INVALID_TYPESCRIPT_SYNTAX]: Expression expected
+    at parseTypeScript (node:internal/modules/typescript:72:36)
+    at processTypeScriptCode (node:internal/modules/typescript:146:42)
+    at stripTypeScriptModuleTypes (node:internal/modules/typescript:215:22)
+    at ModuleLoader.<anonymous> (node:internal/modules/esm/translators:680:29)
+    at #translate (node:internal/modules/esm/loader:438:20)
+    at afterLoad (node:internal/modules/esm/loader:506:29)
+    at ModuleLoader.loadAndTranslate (node:internal/modules/esm/loader:511:12)
+    at #getOrCreateModuleJobAfterResolve (node:internal/modules/esm/loader:564:36)
+    at afterResolve (node:internal/modules/esm/loader:611:52)
+    at ModuleLoader.getOrCreateModuleJob (node:internal/modules/esm/loader:617:12) {
+  code: 'ERR_INVALID_TYPESCRIPT_SYNTAX'
+}
+
+Node.js v24.22.1
+✖ a.test.mjs (84.594727ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 91.867644
+
+✖ failing tests:
+
+test at a.test.mjs:1:1
+✖ a.test.mjs (84.594727ms)
+  'test failed'
+
+r36d native valid typed source exit=0
+✔ TEST-A-001 answer (0.749808ms)
+✔ TEST-A-002 answer (0.133675ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 102.638385
+
+r36d genuine native TS strong Red/Green persisted
+r36d JS return 0; native exit=1; strong Red/Green persisted
+✖ TEST-A-001 answer (1.317472ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 59.790294
+
+✖ failing tests:
+
+test at a.test.mjs:5:1
+✖ TEST-A-001 answer (1.317472ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  0 !== 1
+  
+      at TestContext.<anonymous> (file:///tmp/musubix6-release-lexical-28d27536/.sdd-test-work-YWxAcH/sdd-m-tjj4v7/a.test.mjs:5:40)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+r36d JS throw new Error('not implemented: answer'); native exit=1; strong Red/Green persisted
+✖ TEST-A-001 answer (0.706507ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 64.130047
+
+✖ failing tests:
+
+test at a.test.mjs:5:1
+✖ TEST-A-001 answer (0.706507ms)
+  Error: not implemented: answer
+      at answer (file:///tmp/musubix6-release-lexical-28d27536/.sdd-test-work-YWxAcH/sdd-m-iEfd5w/subject.mjs:2:37)
+      at TestContext.<anonymous> (file:///tmp/musubix6-release-lexical-28d27536/.sdd-test-work-YWxAcH/sdd-m-iEfd5w/a.test.mjs:5:46)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17)
+
+✔ #339 native Node TypeScript parse failures cannot establish Red for any selected ID TEST-R36D-TS-001 (4137.377054ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 6529.531331

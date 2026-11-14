@@ -1,0 +1,10 @@
+✔ TEST-CI-FIXTURE-003 retained gate-help control agrees with the global help contract (2738.670159ms)
+✔ r35b #364 TEST-CI-FIXTURE-004 CI qualifies Linux Node22/24 without publication and retains failure evidence (7.678341ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2809.631456

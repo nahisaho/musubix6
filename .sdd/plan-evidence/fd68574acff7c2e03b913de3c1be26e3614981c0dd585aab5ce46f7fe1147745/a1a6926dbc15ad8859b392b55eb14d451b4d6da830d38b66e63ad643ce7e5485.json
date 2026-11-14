@@ -1,0 +1,77 @@
+{
+  "schemaVersion": 1,
+  "task": "TASK-WINRUN-004",
+  "sequence": 10,
+  "previous": "e3b9f4d8a4722c1725d3170f5519b54711cf30dc003b9d59ec9cef784fe8701e",
+  "definitionSha256": "42a7fbfd8bef50863188c6141772db8ecd8fe17b219f3ddddf314781552ab159",
+  "inputSha256": "c30a19846366cafc28319b31d82aabcd713871cde754628039e90e00959792ff",
+  "status": "PASS",
+  "exit": 0,
+  "checks": [
+    {
+      "name": "regression-1",
+      "argv": [
+        "node",
+        "--test",
+        "--test-name-pattern",
+        "^(?:.*\\b(?:TEST-WINRUN-004))(?![0-9A-Za-z])",
+        ".github/skills/lean-sdd-tdd/scripts/windows-runner.test.mjs"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/fd68574acff7c2e03b913de3c1be26e3614981c0dd585aab5ce46f7fe1147745/attempt-078eb26b-4bd6-42a0-a32e-9b01c98f8041/0.log",
+        "sha256": "d5f227ec1def5f1562f433356f21b97990c76db7dbfcf5a2776d73fc99d9567c",
+        "bytes": 218
+      }
+    },
+    {
+      "name": "native-TEST-WINRUN-004",
+      "argv": [
+        "/home/nahisaho/.nvm/versions/node/v24.22.1/bin/node",
+        "/tmp/musubix6-release-lexical-28d27536/.github/skills/lean-sdd-tdd/scripts/sdd.mjs",
+        "tdd",
+        "refactor",
+        "TEST-WINRUN-004",
+        "--root",
+        "/tmp/musubix6-release-lexical-28d27536"
+      ],
+      "timeoutMs": 600000,
+      "exit": 0,
+      "signal": null,
+      "timedOut": false,
+      "error": null,
+      "log": {
+        "path": ".sdd/plan-evidence/fd68574acff7c2e03b913de3c1be26e3614981c0dd585aab5ce46f7fe1147745/attempt-078eb26b-4bd6-42a0-a32e-9b01c98f8041/1.log",
+        "sha256": "3748afae741e9563ac8527a1c354bf17154721b0739e1fc6541fa6e7c5181042",
+        "bytes": 51
+      }
+    }
+  ],
+  "ledgerEvents": [
+    {
+      "test": "TEST-WINRUN-004",
+      "hashes": [
+        "055f83b5130c2db2dc95f8513c8cb02963dc5c51b947322ca9751fb451dc9a20",
+        "084ec470aa56f747121e4fd9902fae1cb76baab2d38c26a1aa149acaf9e0a2ef",
+        "13c563ff3bc7a02e5305e9389b8aabfea2100c59f2567f47399054e69b545fd2",
+        "14b5fe561f74863418a71c76eba39c739db9405b8fe76889e01990da9ebf9313",
+        "168dca4d68c15a9185590ff99ff937c75564aaaade5f89f3a46497d9831a85be",
+        "46f40d892114d3dfc3f347dec6c115d9aaa10c8112dde110bca31d0bd400f0a1",
+        "51fd2dd8a3a0cf74d7675a7a71d67cbf894d0ed8d3c88e8c4636e49126c74e17",
+        "52d020b5dbc5012012f24838baa8f8db71ad71624468cce1af4a71e439ea0303",
+        "6186a482ef4dd08938d5656359ac3175a7c722e4a91e60fb517cca15e8dcc09d",
+        "69b6b093ecda7cf3fa33e361356935a7758e9f99315a510900054a60d2cca361",
+        "920a84d66aa218f62de74ba609cd708f760c9757cbd246ae6410962bdce489a1",
+        "b48ca708b850e0222cace285562f39c5557b374fa32b3e77c46f839fbaa2f80e",
+        "ba2e6963d9f5a2fa0bf85a34e5ecc1bab1a9546dabd766208b52ee7dc312bf95",
+        "cad8236a68ddc97d8dc784e1af0841a748550125fccaed4bda4c5577157f1cc4",
+        "fe929fabb5dcc206e12572767b7efee430c39649c8e6a7b2f53c7539e79586af"
+      ]
+    }
+  ],
+  "errors": []
+}

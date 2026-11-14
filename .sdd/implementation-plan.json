@@ -256,8 +256,8 @@
         ".sdd/specs/ledger-compaction.md": "ceb19c1a6b51ef2d94a0a6b9cdeeefdc54c656513acee7d00d414ac7c47ee7fd"
       },
       "dependencies": {},
-      "status": "in-progress",
-      "receipt": ".sdd/plan-evidence/20ff5a525d91188d51dab4ea4292337c28e84b3d94fc52e2e6887f42ce43d7df/2906cb027500071ae4ca8bc88a210e27889a017a9aada38b64e65b1816a0cc0b.json"
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/20ff5a525d91188d51dab4ea4292337c28e84b3d94fc52e2e6887f42ce43d7df/2130070a62d67ceb21d9257af30b242761a220ef53dc38422ca6068bef1d63f6.json"
     },
     {
       "id": "TASK-HOST-001",
@@ -294,7 +294,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/157009ff6c2ab93372586a4c23092cef65738f5841092c02ffd98a5f7244adbe/4d6395676bdabf5fd82a898771ed88c5e8dd7490a55c453d7284b0b98a99342a.json"
+      "receipt": ".sdd/plan-evidence/157009ff6c2ab93372586a4c23092cef65738f5841092c02ffd98a5f7244adbe/a67c4381c6b53ad36bb876eb331e14e574a24c1bddc7375dec42c62bd29c3c9c.json"
     },
     {
       "id": "TASK-HOST-002",
@@ -331,7 +331,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/7d21335fe17eb043f799f2b86484e5b565531dcde66c1b90932a580247b49dcb/4ec3605d670365f6dfa91a7723fce403e6d112d695ffe7b6b70bd6fce5f0c6a1.json"
+      "receipt": ".sdd/plan-evidence/7d21335fe17eb043f799f2b86484e5b565531dcde66c1b90932a580247b49dcb/016d847e437c521df5f045be49dd2b0038c72e2860aa005e7b45d0855011e094.json"
     },
     {
       "id": "TASK-HOST-003",
@@ -368,7 +368,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/8c7cdd53ad1743b348e8341be1f23183d44565a81ec9fbf824a38b4712ce6baf/8a1d3b2c0852e37150aa696c075cb7d8c9c95b23fab80349d80a887e655a16f3.json"
+      "receipt": ".sdd/plan-evidence/8c7cdd53ad1743b348e8341be1f23183d44565a81ec9fbf824a38b4712ce6baf/9f2cc91ee36dbb3cf0081afe0322a6dd919cc3e63d08f638846fcbcf2060a240.json"
     },
     {
       "id": "TASK-HOST-004",
@@ -405,7 +405,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/791aad174ebe53b3a0b62d7e3c41dfc435f15888dfb19cedf355d379bdb56726/a69e556dd47fb27161aa3e5e7fa0d4dec8af1837cccdb2c12f9694d39eb147cc.json"
+      "receipt": ".sdd/plan-evidence/791aad174ebe53b3a0b62d7e3c41dfc435f15888dfb19cedf355d379bdb56726/3f15f89afc5f1021ec1b05e1c64eebddf8186d7550223ac19ba06cba7f5fad52.json"
     },
     {
       "id": "TASK-HOST-005",
@@ -442,7 +442,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/c25eab68e833d4748861ecdf64ee398ce88be1acd60cbfd07b37f5d5da928589/d2122d82528a8cd1d36fbb661b1cbc4daae2041596cd53b8f8cfd0f1d05066b5.json"
+      "receipt": ".sdd/plan-evidence/c25eab68e833d4748861ecdf64ee398ce88be1acd60cbfd07b37f5d5da928589/97af880451ccc0ac076fd179b0579b9302d3463fba9a2431fa04ba66aa68b4c0.json"
     },
     {
       "id": "TASK-COST-HISTORY-001",
@@ -481,7 +481,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/1517e548507a2deebb202a54350fbfecb559bf735331f257f090736fcc8681b3/c424fdf4a3b956379af298ac6c0b42b5bfdded06c4d6b46a3d0ad80634eaba9f.json"
+      "receipt": ".sdd/plan-evidence/1517e548507a2deebb202a54350fbfecb559bf735331f257f090736fcc8681b3/4270e366248a1712c57b6e5e7dcc4e34624e3838a091172f191679b79f89a143.json"
     },
     {
       "id": "TASK-COST-HISTORY-002",
@@ -520,7 +520,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/db45ca0244d8f0421a909af8a8dba45c430c6f6e5f46719b2db62f0fcde44be0/2820b7467ee08eb3e26942f1d090bce789884ba35491a747a8a4abcf0fe4b147.json"
+      "receipt": ".sdd/plan-evidence/db45ca0244d8f0421a909af8a8dba45c430c6f6e5f46719b2db62f0fcde44be0/5c4fc1d0b65609fbe444c3dd309b1781ab8a0f1c378c9bc5c20251b13a436f18.json"
     },
     {
       "id": "TASK-DIAGCLI-001",
@@ -570,7 +570,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/6a5ae2dedfc0f6ceed4275295631a967d9d33c9e05806fafd2887731bf1b5b59/e01a5150bd1d22a306739495b76888d07105cda9bbad783d8b32e9d4247729b2.json"
+      "receipt": ".sdd/plan-evidence/6a5ae2dedfc0f6ceed4275295631a967d9d33c9e05806fafd2887731bf1b5b59/48c372b1bc49637f1cdc1fd3fdf91d8690ca66f78c192f07ae3739cea8c82b1e.json"
     },
     {
       "id": "TASK-DIAGCLI-002",
@@ -607,7 +607,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/9cb95278e8837537396dfb3a61ddbd34d34898ce13ce7a632448638962f563f3/1f9bb74e1a3695e4a1784d3276a7c6d3f1e67beaf7802fe8230aaecdf41a565c.json"
+      "receipt": ".sdd/plan-evidence/9cb95278e8837537396dfb3a61ddbd34d34898ce13ce7a632448638962f563f3/e5bbbc54c292c000ddddcca1aef44da95fe0967665ffe4b6cd1d83e401c5cf56.json"
     },
     {
       "id": "TASK-DIAGCLI-003",
@@ -657,7 +657,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/f2a864d8ee75335fae758a28a5158374a22b074a824e5911463a80fc774c9a61/46c45df2fdb074ed68a45670d4653ad1efaa0b506edda2eb1258451a476c36b7.json"
+      "receipt": ".sdd/plan-evidence/f2a864d8ee75335fae758a28a5158374a22b074a824e5911463a80fc774c9a61/3e65459fcb32ff1af05291cb58ebe96a7e774d836b8763ad935cc89f207dfabc.json"
     },
     {
       "id": "TASK-DIAGCLI-004",
@@ -712,7 +712,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/08337c90e2fd128005146d7a2d947897dab20761afb5f7efa09758b59cde6f52/09c17ad390575e0627f4166f533976b7cda284c04676092f5b5c0df212805e29.json"
+      "receipt": ".sdd/plan-evidence/08337c90e2fd128005146d7a2d947897dab20761afb5f7efa09758b59cde6f52/328b407968f8874218cef2dbd2903677d99f2a543030acd9e84840d990640245.json"
     },
     {
       "id": "TASK-DIAGCLI-005",
@@ -765,7 +765,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/38df6fe7a36f4341eeea29dee3001a5d8b9b04395a5955cf61b85b361f65c523/090ab34e52772417b52ae6456684b5344017753c37e25ef0ede2874dfb154b59.json"
+      "receipt": ".sdd/plan-evidence/38df6fe7a36f4341eeea29dee3001a5d8b9b04395a5955cf61b85b361f65c523/c7526b7ef5a8c3f9f963fe554219df3fc3204b8de26e8fa018d5b9931cdf5c9a.json"
     },
     {
       "id": "TASK-DIAGESL-001",
@@ -802,7 +802,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/d52e307938fccf3eb0dd42b808c3424e1defcc1fe0e1b4761c5679f8c3f82a7e/6a7fb51bbd2df35fabcd73a5ff869940edec3a815ed8a0816623963dbf68b9af.json"
+      "receipt": ".sdd/plan-evidence/d52e307938fccf3eb0dd42b808c3424e1defcc1fe0e1b4761c5679f8c3f82a7e/023381d2f315e7eec0104e355bab029c8c971fe8a1fe1817aa6449ce9ed15c4c.json"
     },
     {
       "id": "TASK-DIAGESL-002",
@@ -839,7 +839,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/6e65259041def0b4ddcc04b2b47702002943ad5b1206c53c7f161d44fc0b7d8e/2b5ce2e906b3a51139d7effcb97fe385dbc473581e73afbb59436deae6cff251.json"
+      "receipt": ".sdd/plan-evidence/6e65259041def0b4ddcc04b2b47702002943ad5b1206c53c7f161d44fc0b7d8e/49ce4a62a1ff270f01de6af9e47a30c569e5a14cc5e96cd232021d6898d1d081.json"
     },
     {
       "id": "TASK-DIAGESL-003",
@@ -876,7 +876,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/b4d66677a4101a1615e49540f466016484cd9e61ed9b05d934ee3800e65e9982/f5d2003b0513e0a036ebfdca7991def9591d5842b0e5376b33b13d80c372c91a.json"
+      "receipt": ".sdd/plan-evidence/b4d66677a4101a1615e49540f466016484cd9e61ed9b05d934ee3800e65e9982/115f22a5fb9f701b92bfdd807ffa1662e2c679cb430228f13a22b0109d82ecd1.json"
     },
     {
       "id": "TASK-DIAGESL-004",
@@ -913,7 +913,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/3b09f84b52ad63d38a8880b611b37273222be9a470ddb7dc6e798771e3b39bf5/58844b198044d22cfcdca2f3de8db100c2b24bc4c53dfd2adc77e91fc8b2f9f5.json"
+      "receipt": ".sdd/plan-evidence/3b09f84b52ad63d38a8880b611b37273222be9a470ddb7dc6e798771e3b39bf5/1520063e871d6756f4ae3c7979438346df24e5d6ec7273191854005092ba60d9.json"
     },
     {
       "id": "TASK-DIAGJS-001",
@@ -950,7 +950,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/c857dc95e3f681181452f9e0802fe8a6a80ee7a2096c977e8fef385bfc301a04/05ff4d9a7f26c1f625938391985c02a0174e5c4229b011819fcddf6b23f72c1b.json"
+      "receipt": ".sdd/plan-evidence/c857dc95e3f681181452f9e0802fe8a6a80ee7a2096c977e8fef385bfc301a04/605d7457e35b4f51e3b8cbc5850149b7e597fdc2dc286ff4ab4cb1a01832c6e8.json"
     },
     {
       "id": "TASK-DIAGJS-002",
@@ -987,7 +987,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/c5a298190217cce97bb2e14dd20f12039278c72ff1f9b21c0f53dbcbba07a4e1/04e322cae52c0a3a13d80aed3431f4946f17a699b898881dd4f692b8a688c479.json"
+      "receipt": ".sdd/plan-evidence/c5a298190217cce97bb2e14dd20f12039278c72ff1f9b21c0f53dbcbba07a4e1/b3204c5cf531fdcd65ede6fbec65094804b03ea17596093ab8ca3119a438cef6.json"
     },
     {
       "id": "TASK-DIAGJS-003",
@@ -1024,7 +1024,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/6c43b2f651b78289d8e9c4e0135453b90da033413b60b05513de23b214a85126/35e9577d6d793e2285d1db2aa46b6344591fb6c1771d5ce7c76b99a665d7a684.json"
+      "receipt": ".sdd/plan-evidence/6c43b2f651b78289d8e9c4e0135453b90da033413b60b05513de23b214a85126/822563c8139512277db2e8f80ae8a58b57e08758589beddb2d5c6a146285e7f1.json"
     },
     {
       "id": "TASK-DIAGPY-001",
@@ -1062,7 +1062,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/e68259217ec51c28379a1924b0952c0bafcb7f8b7ebf2e99f29e8e4c9ffa1130/5dfcf076e8e0d060c36e4799c2935fde41df436b2aebf27db1f22ae9bea837f2.json"
+      "receipt": ".sdd/plan-evidence/e68259217ec51c28379a1924b0952c0bafcb7f8b7ebf2e99f29e8e4c9ffa1130/9964c33012eba3647e7bfc2ca03d748a19059617207ee591e4129f5c57fbfc83.json"
     },
     {
       "id": "TASK-DIAGPY-002",
@@ -1100,7 +1100,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/0612480671cca4cea5f1bfcad0cb6dff875106bdb2a3e22eea5cb04ea2e2aaa0/d3cc91f3cefa01a5d359036799a4dd76c624ecc75332e8462805a1b09ff4c473.json"
+      "receipt": ".sdd/plan-evidence/0612480671cca4cea5f1bfcad0cb6dff875106bdb2a3e22eea5cb04ea2e2aaa0/f8063ee57da3ab4529cadcae894d8d4b07f5d4c5c0988c8c69df51197d0a8059.json"
     },
     {
       "id": "TASK-DIAGPY-003",
@@ -1137,7 +1137,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/ae32be3ddb5ce231ac15239c00782fee193ceb57322900758d2e4228932df02e/38fdd42bc548e1bd34d36e58b8bf93ef03b3d924c1ff7b453c7274b66cd3e65e.json"
+      "receipt": ".sdd/plan-evidence/ae32be3ddb5ce231ac15239c00782fee193ceb57322900758d2e4228932df02e/7959fbf728e21048bb69d2dec902f04012b93a997721fa47310c474c96d88ed7.json"
     },
     {
       "id": "TASK-DIAGPY-004",
@@ -1175,7 +1175,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/88821559c45723df3ae4cdd9df76e482959ac916a4d9b93458eeecdbad00d9f7/1c6502af06bcde631b1bb92a2c71676401065e50d9f6558040d867c6bcc194fe.json"
+      "receipt": ".sdd/plan-evidence/88821559c45723df3ae4cdd9df76e482959ac916a4d9b93458eeecdbad00d9f7/7b62a6bd2c6151489ae028805c621f79dab94b0accb4a3e0978bb14ac6da0b98.json"
     },
     {
       "id": "TASK-DIAGPY-005",
@@ -1213,7 +1213,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/38f72a48d6307d1e983ac60da3f06bffeab35bc840ee5c5fb2dd0ab4dd15eab8/cd2fba87f975e0b18a5d5a9bb8592e2fb5b97d108ed1b25d175ae7bd2bc51501.json"
+      "receipt": ".sdd/plan-evidence/38f72a48d6307d1e983ac60da3f06bffeab35bc840ee5c5fb2dd0ab4dd15eab8/03aff149bf1b8e426963bf4f0f5ab5b66ca17334dfd09bf0c309ea2ba05cf8c8.json"
     },
     {
       "id": "TASK-DIAGRUST-001",
@@ -1250,7 +1250,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/11a3b8647a2e9fb3b71a28b06aa3f073402e7d8ef633a844378c2a1fa05ade4d/af991541596c30350d6176b240cf7bef3fae6b63d76e47997aff03c105d17ac9.json"
+      "receipt": ".sdd/plan-evidence/11a3b8647a2e9fb3b71a28b06aa3f073402e7d8ef633a844378c2a1fa05ade4d/155f4fc42f1cd8286d6f765dbcf4313084a6fceacda0b8922c1558148c9f4f75.json"
     },
     {
       "id": "TASK-DIAGRUST-002",
@@ -1287,7 +1287,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/6f776cfd11c90378e53283857112d855263408998602f6c992c2f3138ed781ac/a46a7e34fa55712cbdc73326588f05c9049c7211fccc95371c5ce3d3fbc03245.json"
+      "receipt": ".sdd/plan-evidence/6f776cfd11c90378e53283857112d855263408998602f6c992c2f3138ed781ac/81376e502d3d7a45ba914700e815d5dc005e7f33a3a24cc58d4f50e16c1c0120.json"
     },
     {
       "id": "TASK-DIAGRUST-003",
@@ -1324,7 +1324,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/c65cb42dab3a0f9319f70ae604e497f9baa442765560b84f2c78c9947b87ceb3/ffbdb7af0769d96621a4349888e713c2931582120d5746d3222f348613fa4843.json"
+      "receipt": ".sdd/plan-evidence/c65cb42dab3a0f9319f70ae604e497f9baa442765560b84f2c78c9947b87ceb3/4f91350826b2df076731c5beb131781160f7c2752fb991929af8f9e199467d0c.json"
     },
     {
       "id": "TASK-DIAGRUST-004",
@@ -1361,7 +1361,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/62f6094e87778399e752b0ca5007a9982e27a916aea5a2a363c42639cd57cc7d/a9bb3a8483a52b04cc7ea8fa5c4e6468af5066fd9f07d0cace540070cb88a9b6.json"
+      "receipt": ".sdd/plan-evidence/62f6094e87778399e752b0ca5007a9982e27a916aea5a2a363c42639cd57cc7d/0f225c3955534737945bc86512a1dc0c3903db11061e38cd431f6058e52104a9.json"
     },
     {
       "id": "TASK-DIAGRUST-005",
@@ -1398,7 +1398,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/9b0af6fa9b525fc6e4cd7a2b2afb9c95702fd3d43dd6412ed2a0f6377357f38e/318b7149c963b986c0630d8a12e568fa67bd85111c43bc0ac446d417295b157d.json"
+      "receipt": ".sdd/plan-evidence/9b0af6fa9b525fc6e4cd7a2b2afb9c95702fd3d43dd6412ed2a0f6377357f38e/025abf672bba7424561cc8190ab784bcded1f1c9eee75c357eb35cdc2ffb82ee.json"
     },
     {
       "id": "TASK-DIAGTS-001",
@@ -1435,7 +1435,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/be37842ee0156832816396f110c147dabf4236836f294d2bd016b7bd8989deb3/f534e5b81ff6f3da9ea5387f6bc44ed3bb7d9acf1b8dc20c2b5fdca60ffdacbb.json"
+      "receipt": ".sdd/plan-evidence/be37842ee0156832816396f110c147dabf4236836f294d2bd016b7bd8989deb3/cb4fff2c94a6a33cf6a500fb17ac60b13eb435fdb9f1e26eb709feabff6534e6.json"
     },
     {
       "id": "TASK-DIAGTS-002",
@@ -1472,7 +1472,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/913b8538dbfd4c3866078d59b21d2175988e9e0965c2a12c77fcdfb373c13c13/f9028843d9c1f452cd3b5329c0ee6ee0358ac9d9de95172ebafab62c138364f4.json"
+      "receipt": ".sdd/plan-evidence/913b8538dbfd4c3866078d59b21d2175988e9e0965c2a12c77fcdfb373c13c13/e5763f849aeb4ac06db7bd0459f7aa0fdcff8c45dff4ecfc7c2cd68b6bd5d192.json"
     },
     {
       "id": "TASK-DIAGTS-003",
@@ -1509,7 +1509,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/e0af8bdae43dd61e3bc5c065a0b7e30a71ea11b12cc531c4fc28693aeae55753/152bb904fdd0aa93cfce7745b040bca500ed57144214a51171b2426a9628cb7b.json"
+      "receipt": ".sdd/plan-evidence/e0af8bdae43dd61e3bc5c065a0b7e30a71ea11b12cc531c4fc28693aeae55753/2ef668db49e57e5755d2b56733c02914c5b82aea23f27d9abfc71e37d22d960f.json"
     },
     {
       "id": "TASK-DIAGTS-004",
@@ -1546,7 +1546,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/bff5fe3645cf1bf5fc6ffbc5a56ee27c5869d4ee3fa54388fcb4549d026869a2/9f15662f5060e0a0af7184b3d4afa865256c4a75b45a3a308bfe9a963c6fd5e7.json"
+      "receipt": ".sdd/plan-evidence/bff5fe3645cf1bf5fc6ffbc5a56ee27c5869d4ee3fa54388fcb4549d026869a2/d09854865e1bc06f76a6c45c1ca62d507570d973bee1290d24483d1ea9bd083e.json"
     },
     {
       "id": "TASK-DIAGFLOW-001",
@@ -1596,7 +1596,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/3f49dd2bbf987b8bc4243f47d2a0e31c69559264a7f49728901716fdbabc197b/71d294fe51de0bf1597a36e457346a8516965bcc619700b401338c064290fb6b.json"
+      "receipt": ".sdd/plan-evidence/3f49dd2bbf987b8bc4243f47d2a0e31c69559264a7f49728901716fdbabc197b/6fd3a9af53c5c75e49fb4678f97e32a0a7f74609efa218b0d929d54d2db62986.json"
     },
     {
       "id": "TASK-DIAGFLOW-002",
@@ -1645,7 +1645,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/36bb8ffe12fed23754723604ee528c1846cd1bbdbfa24d0b2d8e4ad3e5a20ac2/79c22b07df6ad16c87a94e96f84ff8e98244fa3105d5fe18720ba7010abfd9b8.json"
+      "receipt": ".sdd/plan-evidence/36bb8ffe12fed23754723604ee528c1846cd1bbdbfa24d0b2d8e4ad3e5a20ac2/8dfe66d61dd7f76d71fb93a3bc4269faafe074e00840c4974e8cd1c15da3dcf7.json"
     },
     {
       "id": "TASK-DIAGFLOW-003",
@@ -1682,7 +1682,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/e3524335f7f75454d5f006754437cf2a6c647e4729efb3daeaae46cd7758589c/3957ad1094e26c4d3cf04fbd11c408c26b90f72b36a53f9edd043a4556808e6f.json"
+      "receipt": ".sdd/plan-evidence/e3524335f7f75454d5f006754437cf2a6c647e4729efb3daeaae46cd7758589c/b0c8aa59dc578f55c06d54dd08b1f4a0ff3472d3b6df63f87af6d1b886c235e4.json"
     },
     {
       "id": "TASK-DIAGFLOW-004",
@@ -1731,7 +1731,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/c6fc13301863f3afbf5cee6dfb68817c4dd4df59f6b49cae7fa0d25008949361/3950bc7b3affbdd33c1efad26ec62a899276fc93fb65dde897c963caa6b02967.json"
+      "receipt": ".sdd/plan-evidence/c6fc13301863f3afbf5cee6dfb68817c4dd4df59f6b49cae7fa0d25008949361/e7144608735f96a2020d15626213eae17f3c350776d229b54dcf56e623c24f15.json"
     },
     {
       "id": "TASK-GATESNAPSHOT-001",
@@ -1768,7 +1768,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/aabf880d3a6060968b8cd2018cabe544e0c87d59880908e15c4bdc63768837e3/65dfbcbf80d147686ccdd5cd3e5bb588a467f673f2abec1d3221cc74d4ebe76f.json"
+      "receipt": ".sdd/plan-evidence/aabf880d3a6060968b8cd2018cabe544e0c87d59880908e15c4bdc63768837e3/88316b69650ce6d7110b10a419ec054a33728f82afbdcf53cb109d60d4be2109.json"
     },
     {
       "id": "TASK-GINZA-001",
@@ -1806,7 +1806,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/372abcb556a8167198c29d1199db8409722eac4e26fab74dd26b8b908c08cac7/68d3879ad50b40dd4368f49104a2723696f63ea65edbcaf0d90d99368f67bfb4.json"
+      "receipt": ".sdd/plan-evidence/372abcb556a8167198c29d1199db8409722eac4e26fab74dd26b8b908c08cac7/4eb239068da2ffeec92dcb9720a3c9d4e04582c9480e58ea0b135073f08ef077.json"
     },
     {
       "id": "TASK-JAPROSE-001",
@@ -1868,7 +1868,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/ea509afbde8ff438cd6b6e4dc31fa9436b424733518d711be4b61866eb346b9b/8ec3632799bcfe890f42dd8f9ead2e75a3f811186bd0d35dfae5696cba17e2ee.json"
+      "receipt": ".sdd/plan-evidence/ea509afbde8ff438cd6b6e4dc31fa9436b424733518d711be4b61866eb346b9b/f30689e7ee60525554da47c250be2eaf93f85d2552c338c4a3838eb22131186b.json"
     },
     {
       "id": "TASK-PLAN-CLI-001",
@@ -1918,7 +1918,7 @@
         "TASK-PLAN-STATE-004": "a328ab168b752da5d8221c431e09e126a046e3efa59c6cb877057e4a1e660ed7"
       },
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/256a181d4c0753c902199673f74e08bb04b435a58c31693eafee2f2bb8b6ccab/2b6868dde28c76d05b3c833a4d239cad6899e4991f29c1bfc4f09973d23bd161.json"
+      "receipt": ".sdd/plan-evidence/256a181d4c0753c902199673f74e08bb04b435a58c31693eafee2f2bb8b6ccab/7165779d87b8c3b3d17f005f96c0018ec0f0ed90159513c1709c4e8479caa2e7.json"
     },
     {
       "id": "TASK-PLAN-CLI-002",
@@ -1969,7 +1969,7 @@
         "TASK-PLAN-STATE-004": "a328ab168b752da5d8221c431e09e126a046e3efa59c6cb877057e4a1e660ed7"
       },
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/5092368831f2d83ae3331ce5c69a1c2b9c8879f1074caf820fd21c877454eddd/d38f2478f3e083eb919705614b234a1f721d356c0cca107707bb0799a43cca5f.json"
+      "receipt": ".sdd/plan-evidence/5092368831f2d83ae3331ce5c69a1c2b9c8879f1074caf820fd21c877454eddd/32e4a8f936f954059ffb32eefeccf2b0d549c17eb3b7035a5574dd9ae5159979.json"
     },
     {
       "id": "TASK-PLAN-CLI-003",
@@ -2019,7 +2019,7 @@
         "TASK-PLAN-STATE-004": "a328ab168b752da5d8221c431e09e126a046e3efa59c6cb877057e4a1e660ed7"
       },
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/0933b8144dedd499966ddd3d0249d18e3aa611afb1c1a1a6232c124eab111581/c301890517c4f93145f731f732c849a17be4b992792b2bffbca4d171d5057313.json"
+      "receipt": ".sdd/plan-evidence/0933b8144dedd499966ddd3d0249d18e3aa611afb1c1a1a6232c124eab111581/4d2298761e9f424de3aef4d2da7b10c06d2bf7821e7229baf8b4680c3c825280.json"
     },
     {
       "id": "TASK-PLAN-CLI-004",
@@ -2075,7 +2075,7 @@
         "TASK-PLAN-STATE-004": "a328ab168b752da5d8221c431e09e126a046e3efa59c6cb877057e4a1e660ed7"
       },
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/c5e2bb96aa6502ec882e91732fafe2cc2be9b16d3a6332d7c38f50f8130b33ee/c1d1951b3387b0d0d0a4960e85d79691262f4a1dab34714c805b4c961aec5b52.json"
+      "receipt": ".sdd/plan-evidence/c5e2bb96aa6502ec882e91732fafe2cc2be9b16d3a6332d7c38f50f8130b33ee/a895fe2e86c65adbde882d03ed4fb7ffc39d2eaf3fcf17b224d5778ab6c04989.json"
     },
     {
       "id": "TASK-PLAN-MODEL-001",
@@ -2112,7 +2112,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/5bb895fc635250882642e331a617c139f57cf2fa7b8b5dfc719a409e293390ba/550e4343b3c99e6efb2494c837556fa5fb4e09e1517edfecb1db4d4f6f5d8c17.json"
+      "receipt": ".sdd/plan-evidence/5bb895fc635250882642e331a617c139f57cf2fa7b8b5dfc719a409e293390ba/667d3d8895f734bc247413babf823b1c9b3a8933174d6c3151d959d8581c7c5b.json"
     },
     {
       "id": "TASK-PLAN-MODEL-002",
@@ -2153,7 +2153,7 @@
         "TASK-PLAN-MODEL-001": "ef83e3ae460b790bce5249a82c75c8e372cbf06d4eabeca0e80a2c152c01bd72"
       },
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/ca882bb902a446db78353bf3a3c192858924c61f3765809995eef533fe1a170b/67f0ad9c5afbc21615b9d0d0e0a7a53b15e15dd845e083240532f68fa3864512.json"
+      "receipt": ".sdd/plan-evidence/ca882bb902a446db78353bf3a3c192858924c61f3765809995eef533fe1a170b/0fe3b8b6f5dd5d0768da2f5cfbc146002bfa35cde2781b956cbffbb056342eed.json"
     },
     {
       "id": "TASK-PLAN-MODEL-003",
@@ -2194,7 +2194,7 @@
         "TASK-PLAN-MODEL-002": "b2c86210dbc14864dbbfe16f77e0b7d473918a3e07ad6618ca1ef73965e2c7db"
       },
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/0e883e4d2b488339dc10c021a5ba985524ce6c10473ed043cc6b0231d7c744f7/c795795f69e7808640c6afcb7e4e30602a4bdc932085b6de0333f44bff58088a.json"
+      "receipt": ".sdd/plan-evidence/0e883e4d2b488339dc10c021a5ba985524ce6c10473ed043cc6b0231d7c744f7/d7cac7e87e9648e1dac15e94618d5367ed1971ace8c55ec1be05e378cc999f9d.json"
     },
     {
       "id": "TASK-PLAN-MODEL-004",
@@ -2235,7 +2235,7 @@
         "TASK-PLAN-MODEL-001": "ef83e3ae460b790bce5249a82c75c8e372cbf06d4eabeca0e80a2c152c01bd72"
       },
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/31f8d74130aad029db67bdbee82fc5d45a1c6331d22f0161aa0bc08028609911/5b1ad7c7de4feef25772f5d66e02f7cb585f9d6dd09a967df707c442f3d84fdc.json"
+      "receipt": ".sdd/plan-evidence/31f8d74130aad029db67bdbee82fc5d45a1c6331d22f0161aa0bc08028609911/9a71dc2dd7dbb50bfdb3e17bc50ce19a6c98801134faec3e39d9a0b8063a0d92.json"
     },
     {
       "id": "TASK-PLAN-MODEL-005",
@@ -2286,7 +2286,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/3c0ada06e9af11ac5ab511164c79d40e5db7640808fc34c50351c87d265681fb/093fbd049b92620d56c8eb1ecdc3973e760bd1e9607030d8cf9858adb8a5b4be.json"
+      "receipt": ".sdd/plan-evidence/3c0ada06e9af11ac5ab511164c79d40e5db7640808fc34c50351c87d265681fb/89750c023012a5e58dfaaf4288cb9a7bfe26fcad7d4d6c900a40ab85391e51c6.json"
     },
     {
       "id": "TASK-PLAN-STATE-001",
@@ -2329,7 +2329,7 @@
         "TASK-PLAN-MODEL-005": "222d0b67ee7524aa694b8ed3684b1dfa8fdf5bc324fd2a2a63f0582ae98432fc"
       },
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/816423d456b92312c84d754641f8104d7a9d9ac0f65e1af5d09609feed7a4704/067cd56b8b44c63cbf03293ad6049d0cc4ce0345f35b49618c59ed503f1e4d61.json"
+      "receipt": ".sdd/plan-evidence/816423d456b92312c84d754641f8104d7a9d9ac0f65e1af5d09609feed7a4704/7fac7e29239e91c9503ee8672c0dd6377b983f725dde900fd1075c6e088e702e.json"
     },
     {
       "id": "TASK-PLAN-STATE-002",
@@ -2375,7 +2375,7 @@
         "TASK-PLAN-STATE-001": "83b93cf35a37b617f566a5f76f7275cf0f0d96cfca9f0db0dbe4db6f3972e380"
       },
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/583e47f19cc1f90e108abc8a186c54d2de0fc7edd7628b4a59c50e1972c1391b/f86829909ba83f66e282e5a28731d97895b7f75b92f484e31d9dbee71c613383.json"
+      "receipt": ".sdd/plan-evidence/583e47f19cc1f90e108abc8a186c54d2de0fc7edd7628b4a59c50e1972c1391b/eea3e2c1dcfd4ec8a9dd995387a816c929dcc41740636188f563408fbfb99a58.json"
     },
     {
       "id": "TASK-PLAN-STATE-003",
@@ -2421,7 +2421,7 @@
         "TASK-PLAN-STATE-001": "83b93cf35a37b617f566a5f76f7275cf0f0d96cfca9f0db0dbe4db6f3972e380"
       },
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/ddc995e0dc6ebf069112d57ae3920288e086e797fced8776168efe2ece621ab2/56516cec41a161e6156e8a59005231a5091711ba2aa11fbbec098ba40759f4df.json"
+      "receipt": ".sdd/plan-evidence/ddc995e0dc6ebf069112d57ae3920288e086e797fced8776168efe2ece621ab2/79ff7d4364dddc39eaaf9f6a449535b0bb2beff42cbe9890edd81edb6769ff64.json"
     },
     {
       "id": "TASK-PLAN-STATE-004",
@@ -2469,7 +2469,7 @@
         "TASK-PLAN-STATE-003": "504c535ff90024406683c86b1e1d1ad0beee7b9093665a7ce6877d2c739829a1"
       },
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/596cd5c6d7c56f3d70d95a4d4df5d3b5037737e72b89b2ce618875bc425e6a6c/f0376712bc077409c6887a605775056fed1e3896609b5f017a1f14d349edbd74.json"
+      "receipt": ".sdd/plan-evidence/596cd5c6d7c56f3d70d95a4d4df5d3b5037737e72b89b2ce618875bc425e6a6c/8746cd898ed95fe253b68cf8322102ec09f8deb69fc288f5d36aec63a21e1c6c.json"
     },
     {
       "id": "TASK-PLAN-FLOW-001",
@@ -2529,7 +2529,7 @@
         "TASK-PLAN-STATE-004": "a328ab168b752da5d8221c431e09e126a046e3efa59c6cb877057e4a1e660ed7"
       },
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/d7ae83bf392014eb6b622062a89ada2908e5e9eb9d34af2411e48470c4312fa2/f21e52f54a17a951ccb90f0300112d11e24f47e83dd6b3b88637dab039c94a56.json"
+      "receipt": ".sdd/plan-evidence/d7ae83bf392014eb6b622062a89ada2908e5e9eb9d34af2411e48470c4312fa2/1c60ce50a0139679e54c75c8b2de470995ca60cbce6fcca794f75982eca86b36.json"
     },
     {
       "id": "TASK-PLAN-FLOW-002",
@@ -2586,7 +2586,7 @@
         "TASK-PLAN-STATE-004": "a328ab168b752da5d8221c431e09e126a046e3efa59c6cb877057e4a1e660ed7"
       },
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/f2011d695b0132d2d487c2156117d0df66c9839a1c093b3b22f324ab03e9d1ae/79e2ed4cc06e2dc4ce3cdac556957f5579ff7c8706bb2b7590d0e6d8953b6027.json"
+      "receipt": ".sdd/plan-evidence/f2011d695b0132d2d487c2156117d0df66c9839a1c093b3b22f324ab03e9d1ae/8cc24bbc966f53b19c4050b5f2c21a58d328f58646b186d2a9ce2d588ef47776.json"
     },
     {
       "id": "TASK-PLAN-FLOW-003",
@@ -2643,7 +2643,7 @@
         "TASK-PLAN-STATE-004": "a328ab168b752da5d8221c431e09e126a046e3efa59c6cb877057e4a1e660ed7"
       },
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/f5b650634f2a6cae8fec7e885e6b5ba92b11cef6e7a5edfdfe74f985be094215/325741ca5efda7f86f67b4f7dfce76b54e23f9e28036878c2c17a387af4ea369.json"
+      "receipt": ".sdd/plan-evidence/f5b650634f2a6cae8fec7e885e6b5ba92b11cef6e7a5edfdfe74f985be094215/a3092a9d4cd6fda42060bf1b9d0f2a4ae00755abe8e812933d3fecdf3671edaa.json"
     },
     {
       "id": "TASK-KOTO-SYNC-001",
@@ -2679,7 +2679,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/6642985a45e935803fdd6759fa7672b3eb1807a8aee91a4cbe4e06cb2b581af7/c96f8a5b4bccaa4c4084110a0b6c94247693089a19c7a33eaa008cfc7680bc7e.json"
+      "receipt": ".sdd/plan-evidence/6642985a45e935803fdd6759fa7672b3eb1807a8aee91a4cbe4e06cb2b581af7/ea453b02b895fc4bc497adea66ed8348417c90bbbb4c373b96d698e65fde3f1c.json"
     },
     {
       "id": "TASK-KOTO-SYNC-002",
@@ -2715,7 +2715,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/ad533c506c49d243ef4d070a0611b4392118ee67c6db72f9615a1e39a384c4d8/e459e13c112af15ea65e48546285f2547d2d2de1e643f5b2c23e9ace0f59b838.json"
+      "receipt": ".sdd/plan-evidence/ad533c506c49d243ef4d070a0611b4392118ee67c6db72f9615a1e39a384c4d8/1ca86cb43e7e017294daadb261f1e72e415acc2f13be8dd0189c29b620193603.json"
     },
     {
       "id": "TASK-KOTO-SYNC-003",
@@ -2751,7 +2751,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/69e4afcdddac4bbc89fe4fa77187b9fc3404b05bb44d56d73d77046a9a2c912e/e43d7bea2848b7d9b8a45323b01253a336dc98aa1f3b6ecdf0b700d8b00554fa.json"
+      "receipt": ".sdd/plan-evidence/69e4afcdddac4bbc89fe4fa77187b9fc3404b05bb44d56d73d77046a9a2c912e/de0b864ba6404c4fd3126b34ab95aac648ba406e6bc5d4df0699f0a07edbd64d.json"
     },
     {
       "id": "TASK-R30C-001",
@@ -2788,7 +2788,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/3b49ac15fffb42a59de2da4cd3805f12f07f96f42487890c7f5a479e55ac3ca5/ec6560b5ecaffa958f221747c51ffee4ce8f88613fbedb1d9d294440d080e487.json"
+      "receipt": ".sdd/plan-evidence/3b49ac15fffb42a59de2da4cd3805f12f07f96f42487890c7f5a479e55ac3ca5/65fbcf33c4ba0c008308f095bc67a26d08292674d9c2a59268cb208f9011df64.json"
     },
     {
       "id": "TASK-CHECK-CLOSURE-001",
@@ -2838,7 +2838,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/171caf2d9cb6691a5bf343f8c8071741a570013b0b3eafe7652a64b3a67068a6/bf32f6db2fad432c3614920bf8218fde08fb3883be496ca6a18d75f4c6b309ed.json"
+      "receipt": ".sdd/plan-evidence/171caf2d9cb6691a5bf343f8c8071741a570013b0b3eafe7652a64b3a67068a6/764f36dc6f88459b8d30e57f976c46b35879198fa1929dc3d513822f021377ff.json"
     },
     {
       "id": "TASK-CHECK-CLOSURE-002",
@@ -2875,7 +2875,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/e242f473829f28690e64662ac48e4bf6d9ad58645a79c0de80538d9e8978ec20/d1715aa33e294b15da9fd1f115f3aa7d259430da48e531b370dee499a24b6763.json"
+      "receipt": ".sdd/plan-evidence/e242f473829f28690e64662ac48e4bf6d9ad58645a79c0de80538d9e8978ec20/8754c4991bd2c378c0accb976f9483dc3ecfd5712a4dac4fb048ae3274770f3c.json"
     },
     {
       "id": "TASK-CHECK-CLOSURE-003",
@@ -2912,7 +2912,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/afae9e6ca56f90275bc18bf9df55025ab58c8afe56427f9b02b66a9d302b4c64/ceb01a4239a9650c623a869f264057a64a9f7bdeafaac840d8e79fef2d1bc727.json"
+      "receipt": ".sdd/plan-evidence/afae9e6ca56f90275bc18bf9df55025ab58c8afe56427f9b02b66a9d302b4c64/9f38f73e7e1e0df4cb423dd48b8f79e82e3313aa74b7b92df4982d1213692b7c.json"
     },
     {
       "id": "TASK-R34-CLOSURE-001",
@@ -2954,7 +2954,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/0b42073a24ceced3e7b5f3db0006b89bf92375e6f06f624bbd9fe0268c9bf3f5/c56ae195bf5aa4dc01a01fa3915b718c7df41d49b4f8975fafed3093d5946828.json"
+      "receipt": ".sdd/plan-evidence/0b42073a24ceced3e7b5f3db0006b89bf92375e6f06f624bbd9fe0268c9bf3f5/daa04378114be7abdc67615f967e26aa2bc992b079a9f3aca3159140188e6668.json"
     },
     {
       "id": "TASK-R33-NODE-001",
@@ -2993,7 +2993,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/070b66186eb1cdb66a59345ab7f4a39cd5f52cc8ca8c99faef2f579e98a7d49a/89c4a20b18fa399cdf0f1efd40ec196fd653b74d426c233652f944bcb2f72dbc.json"
+      "receipt": ".sdd/plan-evidence/070b66186eb1cdb66a59345ab7f4a39cd5f52cc8ca8c99faef2f579e98a7d49a/0d1f64ce3e1f051ac28bdf439bff591b9ea501cacfa12db7cb7fe78bfebab8cb.json"
     },
     {
       "id": "TASK-R33-PYTEST-001",
@@ -3037,7 +3037,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/2d20a4d6fe524fa4161ffeec2e2851f1466b5b393efe81aa61d980156a6f55bb/4b20e1a0eeeeb29877740fd3af05b7af900974233f68001db4f9877bf3b11372.json"
+      "receipt": ".sdd/plan-evidence/2d20a4d6fe524fa4161ffeec2e2851f1466b5b393efe81aa61d980156a6f55bb/85c7f1163de42ad24665b24547b6618251b69d16c072ff8bd8c83b17a04e801a.json"
     },
     {
       "id": "TASK-R34-NODE-001",
@@ -3078,7 +3078,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/b918cacff3380e1a76e5967edd8a636cb4b5b599cb322a8211a12f187572e244/dd50ecd853fa3fc4bfe4e856aa2145cef2dcfcdf6d6e39f2e61e9e11748b8960.json"
+      "receipt": ".sdd/plan-evidence/b918cacff3380e1a76e5967edd8a636cb4b5b599cb322a8211a12f187572e244/642270888a3af2803e3227303dd5e67768801f20a7ec1cacd016556a2737d1eb.json"
     },
     {
       "id": "TASK-NODE-SUMMARY-001",
@@ -3115,7 +3115,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/69fda522686c070b6f200b55b8c684f22ffad476f9fe001e203d42c90af8d2f1/367c3b4f9ce855c52341991f060bf37f4623a018ad19e1c8db8b8da36908cd8b.json"
+      "receipt": ".sdd/plan-evidence/69fda522686c070b6f200b55b8c684f22ffad476f9fe001e203d42c90af8d2f1/8d6c659fa201332c9af1fe2296fea5bcc4a6cfc574ca600d75bd5b7351d07583.json"
     },
     {
       "id": "TASK-NODE-SUMMARY-002",
@@ -3151,7 +3151,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/df0a429f237e2ae776f600553dae8881c238aad6875acaaf6bc8dc86ecc05a71/a02aedd5e5b484ae4c3b4c219df71b9a43797f0667053c8d51387bdcb98c402d.json"
+      "receipt": ".sdd/plan-evidence/df0a429f237e2ae776f600553dae8881c238aad6875acaaf6bc8dc86ecc05a71/83096a834622cd35d6efcae0cc2c506c5f083af98fc1e7b07cd53cb849e1383f.json"
     },
     {
       "id": "TASK-NODE-SUMMARY-003",
@@ -3188,7 +3188,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/e0b80ea75538acc02c658c5a2df083bb18f0a87806c43f2e99d41aea679d15bd/cd93b328e7fc3d0e187ff9622274324b33b111768bc6b32ca286a6604ffa636c.json"
+      "receipt": ".sdd/plan-evidence/e0b80ea75538acc02c658c5a2df083bb18f0a87806c43f2e99d41aea679d15bd/fa8352f763a6ab5595ad68f51c3ccc0492e489ce585d5c2477a99081fa26cd52.json"
     },
     {
       "id": "TASK-NODE20-001",
@@ -3225,7 +3225,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/878be7307af77ae1c747b200a28121d116e4af346d28e1360e24d264b814d543/0aeefed8809a735597090ad33201ccffff3b9ea52d932af77b393ec55710ff74.json"
+      "receipt": ".sdd/plan-evidence/878be7307af77ae1c747b200a28121d116e4af346d28e1360e24d264b814d543/a952668ee9deb980a34e7bf796f1925b6fea3e899668ab43f4e9d0c4bb49170c.json"
     },
     {
       "id": "TASK-HOST-NPX-001",
@@ -3261,7 +3261,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/578b4f841530e02dd61dfed8b72479e9304d11114b4c07894379124e722ae39f/50d9f2bfccdef65e82d8107ed3a68de4ae58f42e52d162971a3269485bfaa0f7.json"
+      "receipt": ".sdd/plan-evidence/578b4f841530e02dd61dfed8b72479e9304d11114b4c07894379124e722ae39f/16a1e9ce0752fa09d8c7e6937a71922fe93a218803428daad36905076fd00d8f.json"
     },
     {
       "id": "TASK-R36B-LOAD-001",
@@ -3298,7 +3298,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/223fb543e153eb1dcec8063d6c7b1b2a5402f9ed672a3c0cc5de2d8a5fee2c9e/dded0c7f147b6efd52816490b7ed8fea030ac89a31a28dcd7578d372b802014c.json"
+      "receipt": ".sdd/plan-evidence/223fb543e153eb1dcec8063d6c7b1b2a5402f9ed672a3c0cc5de2d8a5fee2c9e/d79e31612f28803867232bc9cb4a10f2d1d384d28b4115b21a5389e8d32021bf.json"
     },
     {
       "id": "TASK-R36B-SYNTAX-001",
@@ -3335,7 +3335,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/bda383a33ccb65893451fa16541ba0e7c11653fb2e4c8873c8b136577e964cce/4aae7dec1b5154ba38d7e6bc5e0184464242f835975db16e2d6f8776780c6df0.json"
+      "receipt": ".sdd/plan-evidence/bda383a33ccb65893451fa16541ba0e7c11653fb2e4c8873c8b136577e964cce/153a8991e2c553f47a914172fafcc69e927cc39745392fdf582e77730057dd71.json"
     },
     {
       "id": "TASK-R36B-ASSERT-001",
@@ -3372,7 +3372,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/4136a5a34f21b9c9dab5a846070c3a6cee9e4809b54770e41f0c47f5aab002ed/23f48b688b9ecaec28b7cb9fd842b0a2b1dc69932ebd62171efea0718041ff4a.json"
+      "receipt": ".sdd/plan-evidence/4136a5a34f21b9c9dab5a846070c3a6cee9e4809b54770e41f0c47f5aab002ed/e09f0d55641a958eac10540bf00aeb55869500f79129a0bf8a6ed656d31ee986.json"
     },
     {
       "id": "TASK-R36C-CLOSURE-001",
@@ -3410,7 +3410,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/6038f34eff071aed79c00c1f8399d02151e311734572470efefc1b9e6a51ba7d/971943941f1341b76b94b9e39b194824c1416e16e296fe75eb6b6a0adf1f4a6b.json"
+      "receipt": ".sdd/plan-evidence/6038f34eff071aed79c00c1f8399d02151e311734572470efefc1b9e6a51ba7d/8af8d1963bc2f72a59d988ab9eb750e66c89ca0748c6bb48681391ca49cd1ebd.json"
     },
     {
       "id": "TASK-R36D-OWN-001",
@@ -3447,7 +3447,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/55064a7f3e11f94083726a1cfff7d1269e5c97535a75c74a117f9a5298bcab91/3f2ebdc17557a7c02cac132224edc51cd3982d6356b62280d083444e6b32f659.json"
+      "receipt": ".sdd/plan-evidence/55064a7f3e11f94083726a1cfff7d1269e5c97535a75c74a117f9a5298bcab91/654d9cda5e43bbdc7e2060032d55ffdd08365464d3cea2cf7d170f7111b82faa.json"
     },
     {
       "id": "TASK-R36D-TS-001",
@@ -3483,7 +3483,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/42844484b8d001e56650d83c9ea36673e881e3ecaf1cb744d52058f28de950c3/bd8443a76e73ff3aea8f46a8cf099a2886592cd5ea0c3ad435fb425781363c84.json"
+      "receipt": ".sdd/plan-evidence/42844484b8d001e56650d83c9ea36673e881e3ecaf1cb744d52058f28de950c3/82ef8618a047453091445062b01e0f5fc44a8ed540e165ae6458ceedb3748f3c.json"
     },
     {
       "id": "TASK-R36E-LOAD-001",
@@ -3524,7 +3524,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/a0308c14e791e653a392bfad32c5ba570f23ded2a88fc698260e24c064903935/f40c4a4ce8584277ec19ba567d28b39c67d6ceff69a3360ba0e78af0253769e5.json"
+      "receipt": ".sdd/plan-evidence/a0308c14e791e653a392bfad32c5ba570f23ded2a88fc698260e24c064903935/d354e4f5dc6b4f1c90327f345fa17f13a25e44c9ddb824530ed3969e25496aab.json"
     },
     {
       "id": "TASK-R36F-LAYOUT-001",
@@ -3560,7 +3560,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/1aaec494b3833d83473eb5fd87b103f34bc8956baaeb0cb32e50c28cd795c4ab/7d832bcc55866f2daac0112b2a23966a29e81c75582dc53b87767b87c3d31299.json"
+      "receipt": ".sdd/plan-evidence/1aaec494b3833d83473eb5fd87b103f34bc8956baaeb0cb32e50c28cd795c4ab/947f16f902c16e9a3c8f9a7611bac86ebf8201700838e6235b3807672837fe22.json"
     },
     {
       "id": "TASK-R36G-001",
@@ -3597,7 +3597,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/18b33c75f5cc1432e30a3cf80d01fbc13f44320763acdd4e72483be098731cdf/bd2d61ccb946badc7465f8017564298d90a4b3e907a492da291552f815e3ecd5.json"
+      "receipt": ".sdd/plan-evidence/18b33c75f5cc1432e30a3cf80d01fbc13f44320763acdd4e72483be098731cdf/8d8346d8cf456123663ead0ecc18c5c49304927bbad04e8021d286b239c2551f.json"
     },
     {
       "id": "TASK-R36G-002",
@@ -3634,7 +3634,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/28059b6f89c887907eb9d73098d0ea6461a3700ffe0119544f1014a5dc16f084/d89e799e7b86bb6e9efeff7f9987b0b30a80c7789fa9dd208f325dd430c938ae.json"
+      "receipt": ".sdd/plan-evidence/28059b6f89c887907eb9d73098d0ea6461a3700ffe0119544f1014a5dc16f084/9c118632d4509aea164c1b240c6eff7f047ad1b33efabe013c3f8f039f53ad4b.json"
     },
     {
       "id": "TASK-R36H-PYTEST-001",
@@ -3670,7 +3670,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/a13f8522f6b086e198c05bcf96fbe7b9a8569f715fd80d27225cabfafeedc9a1/10230f00d7ef4ec7b82860ab8dd208cb3a7954b9db2496dcecc771d3ab546e5e.json"
+      "receipt": ".sdd/plan-evidence/a13f8522f6b086e198c05bcf96fbe7b9a8569f715fd80d27225cabfafeedc9a1/b92fdc0523879c24432c85538c38a2f880e8eb258f971e73f138d92fb6715d93.json"
     },
     {
       "id": "TASK-R36H2-CWD-001",
@@ -3706,7 +3706,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/28646a9a85911175c0f729d0cbe5563b41098357e796e7e438b3085b011f4079/b38bbfa58f14549a343cf3b3b1936faba0b397c395efca5804f26c4f028f8502.json"
+      "receipt": ".sdd/plan-evidence/28646a9a85911175c0f729d0cbe5563b41098357e796e7e438b3085b011f4079/df3b071ee9261fd3107276cdeb3888b96d2a23c52684f6ef8889c7acf6538abc.json"
     },
     {
       "id": "TASK-R36I-001",
@@ -3746,7 +3746,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/c3517590322f2e2ae4fba60396d25dc90eddf745edbf122594132f9778fd9730/b9e3a37e586adc8721941e1afa0be2eed4ddfd984281823794754c020eb64a6e.json"
+      "receipt": ".sdd/plan-evidence/c3517590322f2e2ae4fba60396d25dc90eddf745edbf122594132f9778fd9730/23978b805bb61d018658b14fdbf920f2921abf00259418f2cb12fd673fd32128.json"
     },
     {
       "id": "TASK-R36I-002",
@@ -3784,7 +3784,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/c7b736481f260907c28dc292e501b3a984f75bf6cc23c6c50b5c62a373cbd439/3ed5cc4188634be52da2e3caf82dbd5dbf302d591279c2b717dc68749fc2e8a0.json"
+      "receipt": ".sdd/plan-evidence/c7b736481f260907c28dc292e501b3a984f75bf6cc23c6c50b5c62a373cbd439/240f802c6c0c48a89180d8ee21f3cf2fb3d7e1aed368894b04fa049dc5a57294.json"
     },
     {
       "id": "TASK-R36I-003",
@@ -3822,7 +3822,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/601557ca80feef7ab0fac6937a5a2f6e7788c1278858253795d632ca63bc2322/f17bde652078786579c87bed5c6828b058dab909bc8954f577c2301bfd41c26b.json"
+      "receipt": ".sdd/plan-evidence/601557ca80feef7ab0fac6937a5a2f6e7788c1278858253795d632ca63bc2322/e2d9fe59ae60c0997b691ff7d31398df4b01d37ce2220042bdcd0462200e574f.json"
     },
     {
       "id": "TASK-R36J-001",
@@ -3863,7 +3863,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/1225a2dedd2729a36cd44d913a5d0a9bb896afc999cec67777a65e0661f4420f/8900af3741af6e9aaa83bc267129a8181c614ed2680479a00feee76f116c63f6.json"
+      "receipt": ".sdd/plan-evidence/1225a2dedd2729a36cd44d913a5d0a9bb896afc999cec67777a65e0661f4420f/feb47cbc9ecdaffd813a777bcfe15a1ca4d53e47c793de5e6817e52d9fdf8c13.json"
     },
     {
       "id": "TASK-R36J-002",
@@ -3901,7 +3901,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/8a87d34223263bfb9df4509ed980a93541d6c3f2b080d03676dad69f3d50c759/b8a275750a7555d6d8444585cf6b3eda02329d0104d8472c721ac60feeeea541.json"
+      "receipt": ".sdd/plan-evidence/8a87d34223263bfb9df4509ed980a93541d6c3f2b080d03676dad69f3d50c759/1bb8601f258009f397493fef6e879efa1f4b587b878d01d02818a14d699ec555.json"
     },
     {
       "id": "TASK-R36J-003",
@@ -3938,7 +3938,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/71e5621506a28084d051f8f1bd16faae700ca4a26d73c3121cf31512f7c68374/ae49a493c14cb8d55d863f336662d53f63e35dc25a92fb613d6a4e3ab8ac62a5.json"
+      "receipt": ".sdd/plan-evidence/71e5621506a28084d051f8f1bd16faae700ca4a26d73c3121cf31512f7c68374/2def69c944fae47803badc1d399b9ccf3a3ce993d72df2c518abbe69175951f6.json"
     },
     {
       "id": "TASK-R36K-001",
@@ -3974,7 +3974,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/070b025792bae976a701a1237aea57a60633929feda24e443b6755a444701201/4529eb06308ce0156abe091555fddb28d6d751379b863404b2f4a7e1e57be1d3.json"
+      "receipt": ".sdd/plan-evidence/070b025792bae976a701a1237aea57a60633929feda24e443b6755a444701201/838eb7688f126f80cdcf9ee749ac2373d0d4c8615ccb514c3d6b837f894ef48a.json"
     },
     {
       "id": "TASK-RELQ-001",
@@ -4104,8 +4104,8 @@
         ".sdd/specs/release-qualification.md": "dd05390dc2c4097498258fff99a8d7d0f2dbe2c9235b5da54e08162918299a2c"
       },
       "dependencies": {},
-      "status": "in-progress",
-      "receipt": ".sdd/plan-evidence/73f0cbb6742cc4492aeeadca22db81f5f31db4650b1951f0febd38355f8df151/0f75dd2fc9a1a25988b532cde7978e57501e116ffc3a82161fc475176283a150.json"
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/73f0cbb6742cc4492aeeadca22db81f5f31db4650b1951f0febd38355f8df151/25b25bb6917faa6612cdc7e768a54a292a8db7e0d6fbbf8de76e36fdee5845a8.json"
     },
     {
       "id": "TASK-RELQ-002",
@@ -4243,8 +4243,8 @@
         ".sdd/specs/release-qualification.md": "dd05390dc2c4097498258fff99a8d7d0f2dbe2c9235b5da54e08162918299a2c"
       },
       "dependencies": {},
-      "status": "in-progress",
-      "receipt": ".sdd/plan-evidence/dd865d9c8b78a2d77814f6c74fb5613d75c1f641a17ccffea1a8e080c0bc0a07/a4d37eb66691da88e24ec7fca747b26aea1763e0ae6fba7643714e06c838133b.json"
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/dd865d9c8b78a2d77814f6c74fb5613d75c1f641a17ccffea1a8e080c0bc0a07/bef17dfeb18679841451b6f2b8b339a0b2808b28d6f7e9363b3f02d24c8dc6e2.json"
     },
     {
       "id": "TASK-RELQ-003",
@@ -4404,8 +4404,8 @@
         ".sdd/specs/release-qualification.md": "dd05390dc2c4097498258fff99a8d7d0f2dbe2c9235b5da54e08162918299a2c"
       },
       "dependencies": {},
-      "status": "in-progress",
-      "receipt": ".sdd/plan-evidence/89f75a0ef83095915c1bfb35bc420da94e27f50547ef905b5527a6c34744793b/ab75a29e97c3e4ec59d2e351a636f230b0e63ba6d9114657326010a63ba011d2.json"
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/89f75a0ef83095915c1bfb35bc420da94e27f50547ef905b5527a6c34744793b/6c440db76512c46e3def94b5dd1b78a27112c5743d21842475da9b93f970d8db.json"
     },
     {
       "id": "TASK-RELQ-004",
@@ -4534,8 +4534,8 @@
         ".sdd/specs/release-qualification.md": "dd05390dc2c4097498258fff99a8d7d0f2dbe2c9235b5da54e08162918299a2c"
       },
       "dependencies": {},
-      "status": "in-progress",
-      "receipt": ".sdd/plan-evidence/ea566fd8dcc45f090bbb58cbb164569368264ed6a6f464c72ed20485084892c2/cee8404333d5a7d699485bf10d3a8b64c25424ecf51fbad50e65591a185f19d2.json"
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/ea566fd8dcc45f090bbb58cbb164569368264ed6a6f464c72ed20485084892c2/6ecfb259f8c4d6bba08f01e66bd631f084a1443265c092be7d8a11c85b6cbe90.json"
     },
     {
       "id": "TASK-RELQ-005",
@@ -4695,8 +4695,8 @@
         ".sdd/specs/release-qualification.md": "dd05390dc2c4097498258fff99a8d7d0f2dbe2c9235b5da54e08162918299a2c"
       },
       "dependencies": {},
-      "status": "in-progress",
-      "receipt": ".sdd/plan-evidence/8a500e1cd57c470ca565540630853ab2031d74efe95b650b3b5670f6edf9e10d/d2cd16859a1d91022bf1bf1d1705630d146ea5208f400d216d36d00eee6634d1.json"
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/8a500e1cd57c470ca565540630853ab2031d74efe95b650b3b5670f6edf9e10d/c5e22ac2449fe673c8c0f316e328e0d8c62931304fbbff255f81f583dac64e1a.json"
     },
     {
       "id": "TASK-RUNNER-SELECTION-001",
@@ -4733,7 +4733,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/8438639458fa2753f2d2245bbc6dcc38ad9271bbe37acd914ac63974e0ce4235/18698d57101e587f082ebb0ed978da45c62b9ad7dc05111587450bea016e152f.json"
+      "receipt": ".sdd/plan-evidence/8438639458fa2753f2d2245bbc6dcc38ad9271bbe37acd914ac63974e0ce4235/2db004419ffd9e0b57de9f02828054154eefd003cb776488824427d653edf948.json"
     },
     {
       "id": "TASK-RSTUB-001",
@@ -4770,7 +4770,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/fb3855e3c8b2ac5835bfbaefee818e98ba1802271ec6da8225f638251792aa52/4fecd4e3e62623f2f9fe869b0ecde059d5ac29be8bb53e8aae5526108f525624.json"
+      "receipt": ".sdd/plan-evidence/fb3855e3c8b2ac5835bfbaefee818e98ba1802271ec6da8225f638251792aa52/9a8f2342eb8a1195576c08378a09230f41dba89383525f86aa3551c864092941.json"
     },
     {
       "id": "TASK-RSTUB-002",
@@ -4807,7 +4807,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/a4067a62c2bad203cb54f447a4a35fa79ddfb06aca05dbf76c4719fb1682721b/3a1b3a40329e402cc7d18a78e76821015c2cf9a3dd4b74d581555992ed517afd.json"
+      "receipt": ".sdd/plan-evidence/a4067a62c2bad203cb54f447a4a35fa79ddfb06aca05dbf76c4719fb1682721b/93af361f0fec94e290cea7da4ecbcb11ad49b5ea8c6b5382c13d82aa0871b335.json"
     },
     {
       "id": "TASK-RSTUB-003",
@@ -4844,7 +4844,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/e12e0232a2cebc0188037590ea7fca4f21b9509da195fc707cc355358696feef/39dc99a5f38c053289b6510798e9f8631c214f63515c4ff9e2f7af1479556a9a.json"
+      "receipt": ".sdd/plan-evidence/e12e0232a2cebc0188037590ea7fca4f21b9509da195fc707cc355358696feef/b4d2ae0489f7453ff0898b17af4f350439854462b9b2d4bc4972d9f2f0e7b87e.json"
     },
     {
       "id": "TASK-RSTUB-004",
@@ -4882,7 +4882,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/80c3aff6d249e8586ab13934ec884948c939f05bc1a42b747b26a0d75baa4d3f/2e48afa6ef70ad61ff1080f2da2d185904ca4ec456f5d9f7449f2b9d472f838a.json"
+      "receipt": ".sdd/plan-evidence/80c3aff6d249e8586ab13934ec884948c939f05bc1a42b747b26a0d75baa4d3f/208900ade725781185e434b3fb559b490ab7053a687460a7ac7aa5a4fc428200.json"
     },
     {
       "id": "TASK-RSTUB-005",
@@ -4919,7 +4919,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/df4b1001551f82e77350c2a827a3f728a18bcddf6f03d1604ee839672b117f88/b97b0b9632883760a7af5ec4e29a8189dc4b7cd5f57d4f06445eca6215591e7a.json"
+      "receipt": ".sdd/plan-evidence/df4b1001551f82e77350c2a827a3f728a18bcddf6f03d1604ee839672b117f88/d9a5bfc1852128130d5363acedec886f001913f6c85a646d64dbcd85c55438bb.json"
     },
     {
       "id": "TASK-RSTUB-006",
@@ -4956,7 +4956,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/09c7e2e369889863a66da10e05115c0a7706da4b4a3787cc866e4c432958a5f1/1afdf6f128dd5852b42c80a47b54157a6b330670a68e16be43d225e9a4a79aa4.json"
+      "receipt": ".sdd/plan-evidence/09c7e2e369889863a66da10e05115c0a7706da4b4a3787cc866e4c432958a5f1/6e82a64b7679ea825d427660bb8d36c973912cd3cc992362c21e7eb475a58563.json"
     },
     {
       "id": "TASK-RSTUB-007",
@@ -4993,7 +4993,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/5a70d78a141cc32d24176ccb9bcbac2c7b4188fa1456fe8cc404391dbbbb443c/79f3417da968072c57d2ede229a04e46ca0878fa09992721fe481471c28e2123.json"
+      "receipt": ".sdd/plan-evidence/5a70d78a141cc32d24176ccb9bcbac2c7b4188fa1456fe8cc404391dbbbb443c/fcc4406334d51409cd718225967fd6f83e1c70176b592632b6e37295bcdb95c2.json"
     },
     {
       "id": "TASK-SCAN-001",
@@ -5030,7 +5030,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/c9e974d0205fa132727131a772ccd7f61e68a78a2f317261b0aeeb2eef410158/fd69ef6d93e13129bab86a6e27e3835430a6d0d2d52efffd2c411157a44ecf6f.json"
+      "receipt": ".sdd/plan-evidence/c9e974d0205fa132727131a772ccd7f61e68a78a2f317261b0aeeb2eef410158/6cfb009e34071834d930add409c873d891eb535e04c448d1f28b5f846a857dc4.json"
     },
     {
       "id": "TASK-SCAN-002",
@@ -5067,7 +5067,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/1e44e05a86469465e639f5a40b2939367eba5a3c7e024ce88afb801beb64ce66/7b18445808529870cdadb1a12750560648cf6dcfa39ea9336e95229bff29a7dd.json"
+      "receipt": ".sdd/plan-evidence/1e44e05a86469465e639f5a40b2939367eba5a3c7e024ce88afb801beb64ce66/c2107e19fc5a06c8c4f16df9d5794aa9225742e9b3efb2fba88e9fd826fab38f.json"
     },
     {
       "id": "TASK-SCAN-003",
@@ -5104,7 +5104,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/ca9a7b34bf56f1786a5a7c59910482c33bd10f71de1bc9cc5ce40da47d9db058/5557c3d64c50b8955f8e170b89919969fd15b8c782279ee15a54182747cb91be.json"
+      "receipt": ".sdd/plan-evidence/ca9a7b34bf56f1786a5a7c59910482c33bd10f71de1bc9cc5ce40da47d9db058/b4db722d5a5477dfb5e31337d207b1c50d8954b78e854cfa1f310d849cf5bb5c.json"
     },
     {
       "id": "TASK-SPECCTX-001",
@@ -5141,7 +5141,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/57b582030db3a4c58f7e7b61bf96cc499e75687e375a40f87f404ddb0809632a/04f514626de0ed8f834375d6d341af57aaa0b132ccd870011ee80802aab0f216.json"
+      "receipt": ".sdd/plan-evidence/57b582030db3a4c58f7e7b61bf96cc499e75687e375a40f87f404ddb0809632a/502a440c8dc01ad4e0f177fb4f53dd250b00ba57b8abef86c62b3fe5156a663d.json"
     },
     {
       "id": "TASK-SPECCTX-002",
@@ -5178,7 +5178,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/eba4e41d7ae8d1125d0fde268fe51f3f3c752b4f2ec16f578b1720c5c441538b/fbd18196267e2847abab124aa8d601803a680db6191a93924a237d2a410d458a.json"
+      "receipt": ".sdd/plan-evidence/eba4e41d7ae8d1125d0fde268fe51f3f3c752b4f2ec16f578b1720c5c441538b/2edd2ffd2617e5e1848b1a2e854ba9138ac89686b4ea4845fd575aaf7fadd761.json"
     },
     {
       "id": "TASK-SPECCTX-003",
@@ -5215,7 +5215,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/98f1922416c01a27faa9cfb4e8fc53ace41df0bbaf33675b9fb1d6fd940a7487/10a8630df0b5e45b2f95a26c7457235efedb30772ed48b196f1faa85de579656.json"
+      "receipt": ".sdd/plan-evidence/98f1922416c01a27faa9cfb4e8fc53ace41df0bbaf33675b9fb1d6fd940a7487/98d3a4536c6442e1a44a58cb3c20f9d4557398fdaa0fbecfdba28ad51d089782.json"
     },
     {
       "id": "TASK-SPECCTX-004",
@@ -5252,7 +5252,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/1eba207ffa8d5a7f852af4486b5473d6b024fce9cd0be0e04acd72724c5bf062/76185396fa73ba1b79983bb95c3b1cc17da5ea9f7f2f5c2232f9bcc414404b11.json"
+      "receipt": ".sdd/plan-evidence/1eba207ffa8d5a7f852af4486b5473d6b024fce9cd0be0e04acd72724c5bf062/bce1c7f158b990349832ed89b21285a6b4ed7d43bdee2ddf37f3a3bfa6902c6b.json"
     },
     {
       "id": "TASK-SPECCTX-005",
@@ -5289,7 +5289,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/5c40669597c74260c690da058e41daf57ba092396cfe28896b4ed4c49a760fc7/8f4438b15e2c83f534e89bff8e2bc19d27aa1a5e5fe65542795c387770b4c641.json"
+      "receipt": ".sdd/plan-evidence/5c40669597c74260c690da058e41daf57ba092396cfe28896b4ed4c49a760fc7/811186a0f523a894b6d789db051ae961624ed4425daedb46c6e02524fbb9236d.json"
     },
     {
       "id": "TASK-TW-PH-001",
@@ -5326,7 +5326,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/94a9138d588f938ec75604874788014a7b80530bb7c133a0efd967c8ef5b694b/977b2a553f80e8f6934537b70ea23bde84d440fe4ad95ee6a60236f910c519b0.json"
+      "receipt": ".sdd/plan-evidence/94a9138d588f938ec75604874788014a7b80530bb7c133a0efd967c8ef5b694b/e98239c499fbea89a9d3c2b0dbc5256ae1f5ff6ea89085a80e302fc76ab2040a.json"
     },
     {
       "id": "TASK-TW-PH-002",
@@ -5363,7 +5363,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/6c8a25cc0e8befb7eac703f6bc653255538f451b9c7f455d69e427ad30641b5d/e2c60a03e5bb1947294a4c3549a8587c1fdf2724cf98317cf0a8c6958818e8d9.json"
+      "receipt": ".sdd/plan-evidence/6c8a25cc0e8befb7eac703f6bc653255538f451b9c7f455d69e427ad30641b5d/921900da035f0e758d2ceb8321fc371cd6ab6cb07b543ec2eab1cd6e72825d43.json"
     },
     {
       "id": "TASK-TW-PH-003",
@@ -5400,7 +5400,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/2abe2a073b2fe72a012dd3043568660362545cccc47407ce291faaf013ee7a25/119860cdc3301add17a8bdef1b55115086266dfa5f22dee466ab1b415fa18384.json"
+      "receipt": ".sdd/plan-evidence/2abe2a073b2fe72a012dd3043568660362545cccc47407ce291faaf013ee7a25/569024eccc66353b844610d9d939089d391326a203c6524ea85a4fd916284218.json"
     },
     {
       "id": "TASK-WINRUN-001",
@@ -5437,7 +5437,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/15991723cec14800f6eba7abfb6d1b40cdaecc61ed3dabb4712367ae97a57273/35ad453c295938ab87468effc59e9d0f0c80b2b934dffc1d306e292845ec17bf.json"
+      "receipt": ".sdd/plan-evidence/15991723cec14800f6eba7abfb6d1b40cdaecc61ed3dabb4712367ae97a57273/b64a3b238727b419873b3196b2c299fa1528bcab0d2f28816ed6d387d38f9c02.json"
     },
     {
       "id": "TASK-WINRUN-002",
@@ -5475,7 +5475,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/e9e6a4da0e67bc4de0a9f98d3b6c62a0137c8fb57469492adf549922eff0d8de/9ef07c9e5f4a59451e59afc3b14b050c7d03fca846f24fccd4ea79eb95053a77.json"
+      "receipt": ".sdd/plan-evidence/e9e6a4da0e67bc4de0a9f98d3b6c62a0137c8fb57469492adf549922eff0d8de/6f269197527f4b0d8b46c3f893b635e7c803043b2f1050bbb77bc57711be66e1.json"
     },
     {
       "id": "TASK-WINRUN-003",
@@ -5512,7 +5512,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/fa9a51694c89b1139b58de720c04308ae91eabe4ae10ed036d624b155f4c6941/2e5d18dffb7bffc4a54e6abded39e4b9401273d8f81fc97ccc8a02123534def8.json"
+      "receipt": ".sdd/plan-evidence/fa9a51694c89b1139b58de720c04308ae91eabe4ae10ed036d624b155f4c6941/bb021e808fe6ca6cc9c5e948938c68dab2d8c597409e7bd2959d26840b633385.json"
     },
     {
       "id": "TASK-WINRUN-004",
@@ -5550,7 +5550,7 @@
       },
       "dependencies": {},
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/fd68574acff7c2e03b913de3c1be26e3614981c0dd585aab5ce46f7fe1147745/e3b9f4d8a4722c1725d3170f5519b54711cf30dc003b9d59ec9cef784fe8701e.json"
+      "receipt": ".sdd/plan-evidence/fd68574acff7c2e03b913de3c1be26e3614981c0dd585aab5ce46f7fe1147745/a1a6926dbc15ad8859b392b55eb14d451b4d6da830d38b66e63ad643ce7e5485.json"
     },
     {
       "id": "TASK-PLAN-CLI-008",
@@ -5601,7 +5601,7 @@
         "TASK-PLAN-STATE-004": "a328ab168b752da5d8221c431e09e126a046e3efa59c6cb877057e4a1e660ed7"
       },
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/3f2b46cc6ea781f8cbc989cbd41e1a440958a8b6293821321d8d056df0b835f7/a05e71d271c3502a73d9dd47089fd7942e062cdbe436db041f750714a6b3cfb2.json"
+      "receipt": ".sdd/plan-evidence/3f2b46cc6ea781f8cbc989cbd41e1a440958a8b6293821321d8d056df0b835f7/e3b167b7c5177826a9d87e2ef7ac6a473a07984c111f31a6252fd3ce5d2d166c.json"
     },
     {
       "id": "TASK-PLAN-CLI-009",
@@ -5652,7 +5652,7 @@
         "TASK-PLAN-STATE-004": "a328ab168b752da5d8221c431e09e126a046e3efa59c6cb877057e4a1e660ed7"
       },
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/31ef34cce4a21effc3a4f042d0e267bf6dcc7e26fb35cb81091b0ef37865984d/f59cdb589893c7a205bc9e0a878d7193a91d935017ecbdcf75ce27d2bc9a4c80.json"
+      "receipt": ".sdd/plan-evidence/31ef34cce4a21effc3a4f042d0e267bf6dcc7e26fb35cb81091b0ef37865984d/e91f29e4eb2029676fba7e8aeb43838e1432fcc29664041ff7d26f53a9a8b41a.json"
     },
     {
       "id": "TASK-PLAN-CLI-011",
@@ -5702,7 +5702,7 @@
         "TASK-PLAN-STATE-004": "a328ab168b752da5d8221c431e09e126a046e3efa59c6cb877057e4a1e660ed7"
       },
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/872956fcac754af2302af93845287cf0a21c93b10a64fdc9ece548ea86f5fed0/8f23ca64bf27c71f5b2e44a62de3aa2a7e577c832c5dcd2dbe70178a06d817a9.json"
+      "receipt": ".sdd/plan-evidence/872956fcac754af2302af93845287cf0a21c93b10a64fdc9ece548ea86f5fed0/95ad52fefabfacbdb7b5cbbfc259c15c6fa08b3581edfc2f903c6ab36c037f8d.json"
     },
     {
       "id": "TASK-PLAN-CLI-012",
@@ -5753,7 +5753,7 @@
         "TASK-PLAN-STATE-004": "a328ab168b752da5d8221c431e09e126a046e3efa59c6cb877057e4a1e660ed7"
       },
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/f2efab58c07ae56c719c9060884f09c75875f3cdf0bfa07842f9d99b71c5c046/55e43ac4d31f8fc8385ccd3914a7107dd819cfadd3d186f6631041b7f0e6aa1a.json"
+      "receipt": ".sdd/plan-evidence/f2efab58c07ae56c719c9060884f09c75875f3cdf0bfa07842f9d99b71c5c046/f7c4fc6a5c8251f93689514b7aacfc8345c2cb693d1f13ea8cc3b953fb4bf231.json"
     },
     {
       "id": "TASK-CI-FIXTURE-001",
@@ -5807,8 +5807,8 @@
         "TASK-PLAN-STATE-003": "504c535ff90024406683c86b1e1d1ad0beee7b9093665a7ce6877d2c739829a1",
         "TASK-PLAN-STATE-004": "a328ab168b752da5d8221c431e09e126a046e3efa59c6cb877057e4a1e660ed7"
       },
-      "status": "in-progress",
-      "receipt": ".sdd/plan-evidence/0c7e3e5088fb77cdfbb257ecf23c038bd40f21fd705f6cff35256322c1b96f75/5b3aebd071412760b2dd253c79185c6f9c3c05cb3d5a8c2e769bf0a3591f8a88.json"
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/0c7e3e5088fb77cdfbb257ecf23c038bd40f21fd705f6cff35256322c1b96f75/3b64614118e6c1f7c2644b938aa4df5cd43dc0a46d173db55c7024d4b7b61cbb.json"
     },
     {
       "id": "TASK-CI-FIXTURE-002",
@@ -5861,8 +5861,8 @@
         "TASK-PLAN-STATE-003": "504c535ff90024406683c86b1e1d1ad0beee7b9093665a7ce6877d2c739829a1",
         "TASK-PLAN-STATE-004": "a328ab168b752da5d8221c431e09e126a046e3efa59c6cb877057e4a1e660ed7"
       },
-      "status": "in-progress",
-      "receipt": ".sdd/plan-evidence/a58ed2a1f339580ab6f9d30c38a26bf7fe75241f750a09803b15323b61a67559/19ca133683d7fc8db44d09158b4f720ed365cb8bf07cd224b3e6b3a3e83c0f77.json"
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/a58ed2a1f339580ab6f9d30c38a26bf7fe75241f750a09803b15323b61a67559/d28fdb9fa254720869ebb64b79fb4452669f433fc7cee0d1aa08b8923e8c31a6.json"
     },
     {
       "id": "TASK-CI-FIXTURE-003",
@@ -5920,8 +5920,8 @@
         "TASK-PLAN-STATE-003": "504c535ff90024406683c86b1e1d1ad0beee7b9093665a7ce6877d2c739829a1",
         "TASK-PLAN-STATE-004": "a328ab168b752da5d8221c431e09e126a046e3efa59c6cb877057e4a1e660ed7"
       },
-      "status": "in-progress",
-      "receipt": ".sdd/plan-evidence/b1b133d08bc9b4fc0f94b19884888ba1dc2c3fe58c7d57d580d71d5223599cfd/87151c6a10a07c39c35f7e6a2ece5788fb4eeaf9f92bc53c00143170fde1a3f7.json"
+      "status": "complete",
+      "receipt": ".sdd/plan-evidence/b1b133d08bc9b4fc0f94b19884888ba1dc2c3fe58c7d57d580d71d5223599cfd/a20ca6e40297bfab5fa5f18a5de99a20263fe0fc65a0752f7fae6b3dc5f886df.json"
     },
     {
       "id": "TASK-FEEDBACK-CLI",
@@ -5989,7 +5989,7 @@
         "TASK-PLAN-STATE-004": "a328ab168b752da5d8221c431e09e126a046e3efa59c6cb877057e4a1e660ed7"
       },
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/5ba70fab220eb8ef97e3ef53493bfa57dfbb09a0720d39c4dcb40771cba2fe1d/119fa89b4a3c6cafec476c8f23f8868d3927550edd2d7c85305ecb3054f16d3a.json"
+      "receipt": ".sdd/plan-evidence/5ba70fab220eb8ef97e3ef53493bfa57dfbb09a0720d39c4dcb40771cba2fe1d/aa425a3edae624cf9eed8130810a67c6c8c925de2aae6591a8cd050eb40e2e05.json"
     },
     {
       "id": "TASK-FEEDBACK-WORKFLOW",
@@ -6053,7 +6053,7 @@
         "TASK-PLAN-STATE-004": "a328ab168b752da5d8221c431e09e126a046e3efa59c6cb877057e4a1e660ed7"
       },
       "status": "complete",
-      "receipt": ".sdd/plan-evidence/ec7366f08f2809ec0ad06631a07abb321c587649dfe392debc740a785d04c8dc/1131f28a7d1694b4d1dd9c1a813ac3a01ec6fa4fc9182330dbf8dcdcd0196aa5.json"
+      "receipt": ".sdd/plan-evidence/ec7366f08f2809ec0ad06631a07abb321c587649dfe392debc740a785d04c8dc/f007be788ac7cf2bd752ae8f9c0cfd366a9e59fcbfb5d1d0e2eef258b3694d21.json"
     }
   ]
 }

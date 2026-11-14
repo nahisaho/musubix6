@@ -1,0 +1,9 @@
+✔ TEST-DIAGRUST-005 cleanup failure preserves compiler errors and forbids success (5665.66639ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 5743.489447

@@ -60,6 +60,40 @@ verification, full gate, same-head Linux/Windows CI and two identical
 complete20-cell clean runs remain required; streak0/2. Earlier local
 passes, discovery and historical receipts transfer no readiness credit.
 
+## Current complete task proof and full development gate
+
+All129 current native tasks succeeded, including the formerly failing
+ledger-compaction task. The first final consistency check timed out at30min;
+its process record, empty outputs and failure remain intact. With the user's
+explicit120-minute final-check allowance, the identical native consistency
+command passed in31min48s. Before and after it, the original source/modes,
+full logical history and all129 receipt/log hashes were verified unchanged.
+Report: content5-final-consistency-jXFgKj/report.json. No frozen case budget
+changed, and the earlier timeout was not relabelled as PASS.
+
+The actual complete unfiltered development gate now returns PASS at7ec05db,
+with129 complete task states and237/237 native Red/Green evidence checks.
+The configured npm command ran once:1230 tests passed, zero failures,
+cancelled, skipped or todo,1912631ms. Retained check receipt:
+.sdd/check-output/attempt-Hvfku5/receipt.json, SHA256
+5d9a9e136a4ecd164a7d245251bd565bcc460a30398f8ec563d145c95bc726c7.
+Both raw native output hashes and lengths match that receipt. Full gate
+JSON is retained as content5-full-gate-01.stdout.log.
+
+This PASS retains four implementation-since-human-approval warnings,
+15 trace warnings, three historical superseded-Red/retest notices and
+stub-detector notices. They are not discarded or described as a warning-free
+release result. The raw gate records all affected paths and TEST IDs.
+Generated cost metadata, both fresh native cost-task receipts and final
+current129-task consistency now pass. Report:
+ledger-compaction-post-gate-cost-content5-current-01/summary.json.
+The guarded implementation/spec/archive inputs and prior logical prefix
+are unchanged after regeneration; the preceding full development gate
+remains PASS for those application inputs. Current generated cost-log SHA256:
+3dd6bea372c274ea2cddc71d70d454a482b972ccf066f7efda9b5dc8ba796bb2.
+Same-head Linux/Windows CI and two identical complete20-cell clean runs
+remain pending; qualification0/2 and no tag/npm publication authorization.
+
 # Historical Linux Node20 retirement: implementation and reference renewal
 
 The user explicitly retired Linux Node20, including internal tooling, and
