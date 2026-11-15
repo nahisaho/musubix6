@@ -1,3 +1,141 @@
+# JSON-stable plan repair: approved local implementation
+
+The user explicitly answered `approve` for the displayed seven paths and
+full hashes. The SDK recorded nahisaho with spec
+30da249e066bcaf7245883ec400a4b84ffa828727dbeafe36802c370ca0385ea.
+The independent-review-derived automatic CI fixture lock was also renewed.
+The readonly binding preview measured all129 current fingerprints and
+proposed five spec-binding replacements, which were adopted unchanged.
+Actual preimplementation consistency remained FAIL:122 complete,
+two revalidation-required and five replan-required. All129 fingerprints
+matched the preview; old verification receipts were not relabelled valid.
+
+Formal native TEST-RELQ-SKILL-001 Red655ms preceded the only two production
+changes: assign each optional policy only when its value is not undefined.
+Unchanged-test native Green2921ms passed. Production helper SHA256:
+1097446b5352320bb53472ab126c29e0a7461a148994dcbb036c798a1b2c18d6.
+All28 semantic and14 placeholder rows plus the four optional-policy
+presence combinations are covered, including nested positive plans.
+Four isolated mutations (create absent property/drop supplied policy for
+each field) produced the intended assertions; baseline and all four
+byte-exact restored checks passed in `content5-json-plan-mutations-2xP9Vb`.
+
+Complete affected qualification/host modules passed31/31, zero skips.
+Actual Node22 passed all six focused controls, zero skips.
+Existing JavaScript diagnostics checked50/50 files, ignored0/errors0.
+The actual repaired full-cell validator accepted all1298 retained cases,
+13 inventory controls and both lexical controls in readonly replay.
+The original run SHA256 remained
+de77e6daa03d8fb03872a2e0f7acc5a2d35b7ab37f26771b4d81881f3a796e7a;
+both its run and cell remain FAIL. This is not new native execution or
+qualification credit.
+
+json-plan-implementation-r1|none|scripts/release-qualification-content-mutations.mjs:110-111|CLEAN round1
+json-plan-boundaries-r1|none|scripts/release-qualification.test.mjs:1040-1070|CLEAN round1
+Independent Claude Sonnet5.5 implementation reviewers examined the narrow
+diff/builder without executing tests. Both round2 reviews also returned
+clean/no significant issues; the risk reviewer explicitly limited its
+second-round read to the helper diff, while the first-round reviews and
+prelock reviews covered the regression/contract. Sync-mode reviewers
+could not receive follow-up messages, so fresh round2 reviewers were used.
+
+json-plan-implementation-r2|none|scripts/release-qualification-content-mutations.mjs:110-111|CLEAN round2
+json-plan-boundaries-r2|none|scripts/release-qualification-content-mutations.mjs:110-111|CLEAN round2; helper-diff-only limitation
+All19 shared native refactors completed successfully with actual retained
+stdout/stderr and no changed-test/refusal warnings; report:
+`content5-json-plan-shared-native/report.json`. No tests were removed,
+renamed or skipped. The guarded current-proof driver will use the actual
+native binding preview to retain unchanged current receipts, genuinely
+verify every stale task in prerequisite order, and run final consistency
+over all129 tasks under the approved120-minute final-check allowance.
+Full gate/cost/CI and two whole identical fresh frozen runs remain pending.
+Streak0/2; no publication.
+
+Current129-task proof is now PASS. The actual readonly preview retained
+122 unchanged current tasks and proposed zero further binding patches.
+All seven affected tasks were genuinely reverified in prerequisite order:
+TASK-LEDGER-COMPACTION and TASK-RELQ-001 through005, then
+TASK-CI-FIXTURE-001. Their66 command/native checks succeeded with retained
+receipt/log hashes. The unchanged native final consistency command
+completed in31m34.538s with all129 tasks complete, exit0, no timeout.
+Protected source/modes and the complete historical logical prefix stayed
+unchanged. Exact native artifacts and guards are retained externally in
+`content5-json-plan-current-proof-01/`; no frozen qualification credit.
+Next is the actual unfiltered full project gate, not a fixture or no-run
+check. Source/evidence snapshots and raw process outputs will be retained.
+
+The actual unfiltered full project gate now passed, exit0, from
+2026-11-14T23:32:21.785Z through2026-11-15T01:36:00.444Z.
+All129 planning tasks were complete and237/237 native evidence checks
+were accepted. Its real npm test attempt1 passed1230/1230, with zero
+failures, cancellations, skips or TODOs, duration1930101.929698ms.
+Native receipt `.sdd/check-output/attempt-7KMr0F/receipt.json` SHA256:
+f5a813aab808f30312bdaacb69fda57ae28868279302a4ead8bb00ad7d6953b9.
+Raw135967-byte stdout SHA256:
+233817de6e12413417c2c6bbda4b704096f8c2c7ee75af3b5cbe2faae141201e.
+The source/evidence bytes/modes and complete logical history stayed
+unchanged. Exact gate invocation, process and snapshots are retained in
+`content5-json-plan-full-gate-01/`; stdout SHA256:
+982dc8c59474d4b7e96001a7c2fe5d4f9acec06a3d712e3e9e49b156629a3b17.
+
+This is PASS, not warning-free: retain four human implementation-change
+warnings,15 trace warnings, the three historical superseded-Red/retest
+notices (TEST-R36D-OWN-001, TEST-RELQ-READINESS-001, TEST-RELQ-004),
+and two stub-detector locations (SDK sdd.mjs:2215 and sdd.test.mjs:694).
+The gate's structured weak/suspect lists remain available in raw output.
+Generated final cost metadata, two affected native cost-task proofs and
+full consistency will be renewed before committing. Current-head CI and
+two fresh frozen whole20-cell runs remain pending; streak0/2.
+No tagging or publication approval is implied.
+
+Final generated cost verification passed at2026-11-15T02:09:38.001Z.
+The generator recorded22 sessions/$1,082.32, followed by genuine successful
+TASK-COST-HISTORY-001/002 receipts and another full129-task consistency
+PASS. Application/spec/archive inputs and the prior logical prefix
+remained unchanged; no full-suite rerun is claimed after this metadata
+refresh. Cost log SHA256:
+f2c3a31c8d3797101b633ec26da1c8bf299f18605d21107f959d9b758c62933b.
+Cost history SHA256:
+59189ebebde1a763edd288d7378e166920277798c55ebefce1200da6a6960531.
+The regenerated bytes are retained for the implementation/evidence commit.
+Final cost-stage process and hashes:
+`ledger-compaction-post-gate-cost-content5-json-plan-01/summary.json`.
+
+## Preserved preparation and first frozen failure
+
+First fresh main-content5 frozen run `run-0KtD6H`, manifest
+4e0012f6cef6547b8d4270c7800ab7238e3ac9595f4343c3fa3709a081b796c0,
+retains13 PASS cells, SKILL-MUTATION FAIL and six subsequent unrun cells.
+The adapter reported1298 cases,13 inventory controls and both lexical
+controls; its persisted-plan validator rejected own-undefined optional
+policies omitted by JSON. No cell/run pass or prior credit is transferred.
+
+The new existing TEST-RELQ-SKILL-001 regression produced the intended
+optional-policy presence assertion Red,465.910ms,1 fail/0 skip, before
+production. Earlier missing-interpreter planning-fixture failure is kept
+but is not Red evidence. Read-only transport replay checked1298 native
+case receipts and both lexical controls, found39 absent undefined policy
+properties and rejected a substituted supplied diagnostic array.
+Inventory-control definitions were not revalidated; this is zero-credit
+feasibility evidence, not final validation.
+
+json-plan-contract|none|scripts/release-qualification-content-mutations.mjs:110-111|PRELOCK_CLEAN
+json-plan-risk|none|scripts/release-qualification.test.mjs:1040-1070|PRELOCK_CLEAN
+Both independent reviewers used Claude Sonnet5.5, read only the narrow
+contract/regression/build/validation context, and did not run tests.
+
+Actual seven-artifact approval preparation pins new spec
+30da249e066bcaf7245883ec400a4b84ffa828727dbeafe36802c370ca0385ea;
+the other six hashes are unchanged. Human approval remains pending.
+Production is unchanged. Formal native Red/Green, four isolated restored
+absent/present-policy sensitivities, full retained-cell replay, affected
+checks, current planning proof/full gate, same-head CI and two fresh whole
+identical20-cell runs remain required after approval.
+
+Additional main CI runs43597407471 (Linux22/24) and43597407478
+(Windows20/22/24) both completed successfully at f996c27.
+Tagging and npm publication remain unapproved.
+
 # Current scope4/content5 source renewal after concurrent append repair
 
 The actual user explicitly approved the prepared seven-artifact renewal;

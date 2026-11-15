@@ -1037,6 +1037,33 @@ test('TEST-RELQ-SKILL-001 preserves 1268 exact cases and owned native inventory 
     }
   }
   const context = contentContext(directory, 'SKILL-MUTATION');
+  const semanticTargets = [
+    ...catalogue.filter(entry => entry.kind === 'semantic'),
+    ...contentCaseCatalogue(contentReference, 'PLACEHOLDER-MUTATION'),
+  ];
+  const optionalPolicies = ['requiredDiagnosticFragments', 'requiredAssertionLines'];
+  const jsonContext = { ...context, configuration: { prosePython: process.execPath } };
+  const assertJsonPlan = (entry, label) => {
+    const generated = buildContentCasePlan(jsonContext, entry);
+    for (const key of optionalPolicies) {
+      assert.equal(Object.hasOwn(generated, key), Object.hasOwn(entry.oracle, key),
+        `${label}: optional policy presence follows the trusted oracle`);
+      if (Object.hasOwn(entry.oracle, key)) assert.deepEqual(generated[key], entry.oracle[key],
+        `${label}: supplied policy must not be dropped or substituted`);
+    }
+    assert.deepEqual(JSON.parse(JSON.stringify(generated)), generated,
+      `${label}: retained JSON must equal its regenerated plan, including positive controls`);
+  };
+  for (const entry of semanticTargets) assertJsonPlan(entry, entry.id);
+  const pythonTarget = semanticTargets.find(entry => entry.oracle.errorFamily === 'Python AssertionError');
+  assert.ok(pythonTarget, 'include the copied Python positive-control plan');
+  for (const mask of [0, 1, 2, 3]) {
+    const entry = clone(pythonTarget);
+    for (const key of optionalPolicies) delete entry.oracle[key];
+    if (mask & 1) entry.oracle.requiredDiagnosticFragments = ['independently supplied diagnostic'];
+    if (mask & 2) entry.oracle.requiredAssertionLines = [entry.oracle.expectedAssertionLines[0]];
+    assertJsonPlan(entry, `optional policy presence ${mask}`);
+  }
   const target = catalogue.find(row => row.kind === 'vendor' && row.origin === 'source' && row.policy === 'unauthorized-mode-400');
   const plan = buildContentCasePlan(context, target);
   const row = await runContentCase(context, target);

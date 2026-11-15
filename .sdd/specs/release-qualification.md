@@ -273,6 +273,40 @@ integration/distribution = actual source/packages/both-host identities,
 new full gate/CI, two unchanged20-cell runs and separate publication approval.
 No stage is inapplicable and the clean-run streak remains0/2.
 
+### JSON-stable content plans after the first content5 frozen run
+
+Frozen manifest `4e0012f6cef6547b8d4270c7800ab7238e3ac9595f4343c3fa3709a081b796c0`
+at source `f996c27c2ca60b4673c6a5e4a6ebb88f23052767` produced13 passing
+cells, then rejected SKILL-MUTATION at the retained-plan comparison. The
+adapter reported1298 cases,13 inventory controls and both lexical controls,
+but this is not a successful cell verdict. JSON omitted the absent optional
+`requiredDiagnosticFragments` and `requiredAssertionLines` properties;
+regenerated expected plans instead contained own properties valued
+`undefined`, including copied Python positive-control plans.
+
+Read-only transport spike `content5-json-plan-transport-spike-report.json`
+replayed all1298 retained case receipts and both lexical controls against
+the standard JSON projection of unchanged expected plans, finding39 absent
+policy properties and rejecting a substituted supplied diagnostic array.
+It did not revalidate inventory-control definitions, change production or
+frozen inputs, or provide full-cell/frozen-run qualification credit.
+
+| REQ | PASS condition | counterexample | TEST/command | observed evidence |
+| --- | --- | --- | --- | --- |
+| `REQ-RELQ-003`, `REQ-RELQ-005` | Generated semantic/placeholder plans and their nested positive controls are exactly JSON-stable. Each absent optional diagnostic/assertion policy stays absent; each present policy preserves its exact independently supplied array. All other path, argv, hash, native ownership, baseline/restoration and case checks remain unchanged. | Enumerate the four presence combinations of the two optional policies. Creating an own undefined property causes persisted-plan rejection; deleting a supplied array silently loses a required policy. Both must fail. Cover every declared semantic/placeholder row and copied positive plan; vendor controls remain unchanged. | Extend existing TEST-RELQ-SKILL-001 before implementation; actual assertion Red/Green; isolated restored reversals of each absent-field guard and each present-field retention; replay retained native evidence with zero qualification credit. | First run `v0210-content5-scope4-runs-02/run-0KtD6H` retains the complete failure and13 PASS cells. Six subsequent required cells are unrun. Raw selected regression fails at its intended SKILL-REPLACEMENT-01 optional-policy assertion (true versus false),465.910ms,1 fail/0 skip, in external `content5-json-plan-prelock-red-02.log`. The earlier missing-interpreter planning fixture failure is retained but is not Red evidence. Formal native Red, production repair, Green and fresh validation remain pending; streak0/2. |
+
+First-failure stages: contract = optional absence is not an invented native
+policy; trusted inputs = retain exact JSON bytes/hashes and reject changed
+supplied policies; execution = unchanged native commands and real controls;
+verdict = the first violated condition is raw-object comparison against
+persisted JSON, not a native assertion failure; evidence history = retain
+the failed run, do not repair its frozen inputs or transfer its13 passes;
+integration/distribution = reset with a fresh source/helper/manifest binding
+and two whole identical20-cell clean runs before separate exact-artifact
+publication approval. All six stages apply. No budget, case, supported
+runtime, native diagnostic rule or required check may be weakened.
+Renew the same seven-artifact human approval unit before production repair.
+
 ### Historical qualification design before Linux Node20 retirement
 Use new versioned0.2.8 scope/content files without rewriting historical0.2.7,0.2.6,
 0.2.5,0.2.4 or0.2.0 contracts or failed evidence. The new files require a genuine

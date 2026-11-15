@@ -252,9 +252,10 @@
   "release-qualification": {
     "by": "nahisaho",
     "kind": "human",
-    "at": "2026-11-14T04:12:57.664Z",
+    "review": "Explicit human approve after two independent Claude Sonnet 5.5 PRELOCK_CLEAN reviews; JSON-stable optional policies only, no scope/budget weakening or publication approval",
+    "at": "2026-11-14T21:02:28.008Z",
     "artifacts": {
-      ".sdd/specs/release-qualification.md": "dd05390dc2c4097498258fff99a8d7d0f2dbe2c9235b5da54e08162918299a2c",
+      ".sdd/specs/release-qualification.md": "30da249e066bcaf7245883ec400a4b84ffa828727dbeafe36802c370ca0385ea",
       ".sdd/release-validation.v0.2.10.json": "ea6734263013b4c630845c088fb1ed0914c3f96a90b11201e241aa62aacaa0dd",
       ".sdd/release-content-mutations.v0.2.10.json": "94473ff75df7940670235ccd14f380c5875b8d118f43671d7fe250f1b948ecec",
       ".sdd/specs/claude-code-support.md": "2c846e5878db59abb7ba0cc3aa9b7f49256c91a6a250931a7e0e53a7cf826560",
@@ -268,7 +269,7 @@
       "scripts/release-host-mutations.mjs": "6921bf50d7f7df70ce2e3a3e23b0acbf67def78f0e4d358b1d7a5adcb091b618",
       "scripts/release-qualification-cells.mjs": "0024daa58598c9707a40a6112a49632bfb1101f90e419c4c8a5c0e6e556089a8",
       "scripts/release-qualification-cli.mjs": "78797a393bacd97cc617a8a0c89d8a22e0c0fcdcd119756b1f36f46dd8ad54df",
-      "scripts/release-qualification-content-mutations.mjs": "a3bc6a6015d0d807b1aad90d8f3faccbf58435bd91cf6059b38093a467f2067e",
+      "scripts/release-qualification-content-mutations.mjs": "05041bd177de9ad8482bdd9cd36f7fef46f9f271d53ee346b6ea199dbc261765",
       "scripts/release-qualification-discovery.mjs": "1661dafbe6af92dcc1e3c0adb4c10ceb965b9e9726ab95f1e810df71fa131dc7",
       "scripts/release-qualification-evidence.mjs": "1f2af8ec0e458893ae7f580fc2b5e1020c32f5c2d19aa848336e698c512837f2",
       "scripts/release-qualification-io.mjs": "56da8043e445f7f636388fb00e8cad1cfa9b5e56c6f1a2f787f270acd8184fb0",
@@ -366,13 +367,13 @@
     }
   },
   "ci-regression-fixtures": {
-    "by": "ai:gpt-6.1-sol",
+    "by": "ai:claude-sonnet-5.5",
     "kind": "ai",
-    "review": "Two independent GPT-6.1 Sol reviewers completed prelock and two clean postimplementation rounds on the content5 root-test delta; fixture requirements, workflow and canonical SDK suite unchanged",
-    "at": "2026-11-14T04:55:47.935Z",
+    "review": "Two independent PRELOCK_CLEAN reviews of the exact existing regression diff; only JSON-plan optional-policy presence/retention checks added, pinned fixture construction and no-credit/no-publication policies unchanged",
+    "at": "2026-11-14T21:18:03.539Z",
     "artifacts": {
       ".sdd/specs/ci-regression-fixtures.md": "53d5c7bd1114698c4c78876328344fa5c4684615fd52182bab357d2dee0c0991",
-      "scripts/release-qualification.test.mjs": "a3635e38fa00fc7a2cebe744b0386de70134150220d17fdb8a5aafc0cabf1024",
+      "scripts/release-qualification.test.mjs": "ec36961ee070e9fd4fe8221807c0f502cdda2ee393b8fe6ad7e07153960ecb4a",
       "scripts/release-host-mutations.test.mjs": "6a6798b24e1aae5bb01c8502c4edb99da0281894562c25779bf3bbb7deccd914",
       ".github/skills/lean-sdd-tdd/scripts/sdd.test.mjs": "b5ce39bb06f52850159ddb7791c22073651f83ae2475263f2cd1466f3ed1fc25",
       ".github/skills/lean-sdd-tdd/scripts/implementation-plan-cli.test.mjs": "d830cf57e9a94c52d88a88134e3d52ab906b0513135df3cc247f5d58ded3e474",

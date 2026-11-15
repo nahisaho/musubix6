@@ -107,8 +107,8 @@ export function buildContentCasePlan(context, target) {
   } else {
     plan.family = target.oracle.errorFamily;
     plan.assertionLines = target.oracle.expectedAssertionLines;
-    plan.requiredDiagnosticFragments = target.oracle.requiredDiagnosticFragments;
-    plan.requiredAssertionLines = target.oracle.requiredAssertionLines;
+    if (target.oracle.requiredDiagnosticFragments !== undefined) plan.requiredDiagnosticFragments = target.oracle.requiredDiagnosticFragments;
+    if (target.oracle.requiredAssertionLines !== undefined) plan.requiredAssertionLines = target.oracle.requiredAssertionLines;
     const witnesses = Array.isArray(target.oracle.evidence) ? target.oracle.evidence : [target.oracle.evidence];
     const oracles = witnesses.filter(row => plan.family === 'Python AssertionError' ?
       row.path === nativeTest : [nodeTest, copiedRuntimeTest].includes(row.path));

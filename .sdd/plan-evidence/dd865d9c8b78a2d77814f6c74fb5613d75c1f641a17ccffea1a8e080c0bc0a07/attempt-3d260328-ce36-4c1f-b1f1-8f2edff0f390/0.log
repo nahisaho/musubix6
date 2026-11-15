@@ -1,0 +1,17 @@
+✔ TEST-RELQ-PLANNING-001 prepares genuine fresh-root parent/child proof before the actual full gate (8270.329086ms)
+✔ TEST-RELQ-GIT-001 restores bound execution history without conflating discovery or accepting invalid inputs (189.459502ms)
+✔ TEST-RELQ-CLOSURE-001 rejects unbound execution inputs and manifest policy rewrites (1022.664992ms)
+✔ TEST-RELQ-BASELINE-001 validates the historical approved source inventory before tool preparation (422.581477ms)
+✔ TEST-RELQ-LINUX-001 admits only the approved Linux22/24 successor without narrowing Windows (800.591577ms)
+✔ TEST-RELQ-DISCOVERY-001 discloses dynamic names without executing bodies or hooks on supported Node (1251.061139ms)
+✔ TEST-RELQ-LINEAGE-001 admits committed lineage and rejects every invalid mapping shape (453.441904ms)
+✔ TEST-RELQ-LINEAGE-002 freezes required replacements and never excludes promoted TODOs (6245.239441ms)
+✔ TEST-RELQ-002 freezes external current inputs and detects bounded byte, probe and catalogue drift (2574.749846ms)
+ℹ tests 9
+ℹ suites 0
+ℹ pass 9
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 21367.265616
