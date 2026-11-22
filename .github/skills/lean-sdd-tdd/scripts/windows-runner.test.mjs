@@ -32,13 +32,14 @@ function helpers(root, env, platform = 'win32') {
   const block = source.slice(source.indexOf('const RUNNER_ENV_ALLOWLIST ='), source.indexOf('function dotnetStamp('));
   const run = source.slice(source.indexOf('function run1('), source.indexOf('function pytestArgs('));
   const calls = [];
-  const api = new Function('fs', 'path', 'process', 'ROOT', 'listFiles', 'fileSha', 'sha', 'spawnSync', 'pytestArgs',
+  const tracedSpawnSync = (...args) => { calls.push(args); return spawnSync(...args); };
+  const api = new Function('fs', 'path', 'process', 'ROOT', 'listFiles', 'fileSha', 'sha', 'spawnSync', 'tracedSpawnSync', 'pytestArgs',
     `${block}\n${run}\nreturn { resolveExecutable, runnerEnv, runnerEnvRecord, run1,
       runnerSdkDefinitions: typeof runnerSdkDefinitions === 'function' ? runnerSdkDefinitions : undefined };`)(
     fs, path, { env, platform, execPath: process.execPath },
     root, () => ['node tools/node_modules/npm/bin/npm-cli.js', 'node tools/node_modules/npm/bin/npx-cli.js'],
     file => hash(fs.readFileSync(path.resolve(root, file))), hash,
-    (...args) => { calls.push(args); return spawnSync(...args); }, () => null,
+    tracedSpawnSync, tracedSpawnSync, () => null,
   );
   return { ...api, calls };
 }

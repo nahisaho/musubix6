@@ -63,6 +63,8 @@ Only explicit `planning.required:false` retains the existing workflow.
 
 ## 3. T1 loop
 0. **PASS conditions and counterexamples first**: use the host's development model (see Host defaults) to define observable success conditions and concrete violations in the existing contract (`REQ | PASS condition | counterexample | TEST/command | evidence`). Check contract, inputs, execution, verdict, history and integration risks; explain non-applicable stages. Derive expectations from the contract or an independent reference, never the implementation's output.
+   - If a fixture binds historical source to a commit or digest, materialize its positive control from that exact Git blob/archive and assert the digest; never substitute mutable working-tree bytes. Keep a stale/modified-blob negative control.
+   - Tests exercising approval or hash-chained ledger provenance must commit the fixture state to `HEAD` before recording evidence; keep unborn-repository fixtures only for explicit no-commit behavior.
 1. Failing test first, named/annotated with its REQ ID (`@verifies REQ-F-001`). Run it, confirm Red for the right assertion, not a setup/compile failure or skip. Add valid-input controls and relevant boundary/error cases.
 2. Minimal code to Green; `@implements REQ-F-001` on the code. Refactor only after Green.
 3. For each distinct changed failure mechanism, apply an isolated, bounded mutation and confirm the regression catches it; restore it and rerun affected checks. A gate fix must reject invalid evidence AND accept valid evidence. Record the command and observed result in the contract; mark unrun checks explicitly.

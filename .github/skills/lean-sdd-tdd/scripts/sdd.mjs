@@ -10,6 +10,169 @@ import { builtinModules } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+/** @id CODE-LPB-001 @implements REQ-LPB-001 */
+const perfEnabled = process.env.MUSUBIX_PERF_TRACE === '1';
+/** @id CODE-LSR-011 @implements REQ-LSR-005 */
+const perfReference = perfEnabled && process.env.MUSUBIX_PERF_REFERENCE === '1';
+const perf = { schemaVersion: 1, kind: 'musubix-perf-trace', gitSpawns: 0, ledger: {} };
+const ledgerInputs = new WeakMap();
+const ledgerEventInputs = new WeakMap();
+const ledgerVerificationResults = new WeakMap();
+const ledgerBaselineSnapshots = new Map();
+let referenceHead = null;
+let referenceHeadAttempted = false;
+let referenceHeadError = null;
+let referenceHeadMissing = false;
+let ledgerSnapshot = null;
+function ledgerSignature() {
+  try {
+    const stat = fs.statSync(LEDGER, { bigint: true });
+    return [stat.dev, stat.ino, stat.size, stat.mtimeNs, stat.ctimeNs].join(':');
+  } catch (error) {
+    if (error.code === 'ENOENT') return null;
+    throw error;
+  }
+}
+function staleLedgerSnapshot() {
+  out(`LEDGER STALE: ${rel(LEDGER)} changed during snapshot refresh; aborting`);
+  process.exit(2);
+}
+function loadLedgerSnapshot() {
+  if (perfReference) return loadLedgerSnapshotUncached();
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const before = ledgerSignature();
+    if (ledgerSnapshot?.signature === before) return ledgerSnapshot;
+    let text;
+    try { text = readLedgerBytes(LEDGER, 'utf8'); }
+    catch (error) {
+      if (error.code !== 'ENOENT') throw error;
+      const after = ledgerSignature();
+      if (before !== after) {
+        ledgerSnapshot = null;
+        if (attempt === 0) continue;
+        staleLedgerSnapshot();
+      }
+      const empty = { signature: null, text: '', lines: [], entries: [] };
+      ledgerSnapshot = empty;
+      ledgerInputs.set(empty.entries, 0);
+      return empty;
+    }
+    const after = ledgerSignature();
+    if (before !== after) {
+      ledgerSnapshot = null;
+      if (attempt === 0) continue;
+      staleLedgerSnapshot();
+    }
+    const ls = ledgerLines(text);
+    if (ls.some((l) => /^(<{7}|={7}|>{7})/.test(l))) {
+      out(`LEDGER CONFLICT: ${rel(LEDGER)} has git merge conflict markers. Run: tdd merge-ledger (keeps both branches' evidence, re-chains the ledger)`);
+      process.exit(2);
+    }
+    const entries = ls.map((l, i) => {
+      let e;
+      try { e = parseLedgerLine(l); }
+      catch { out(`LEDGER CORRUPT: ${rel(LEDGER)} line ${i + 1} is not valid JSON`); process.exit(2); }
+      if (!e || typeof e !== 'object' || Array.isArray(e)) {
+        out(`LEDGER CORRUPT: ${rel(LEDGER)} line ${i + 1} must be an event object`);
+        process.exit(2);
+      }
+      return e;
+    });
+    for (const entry of entries) Object.freeze(entry);
+    Object.freeze(entries);
+    if (perfEnabled) ledgerInputs.set(entries, Buffer.byteLength(text));
+    ledgerSnapshot = { signature: after, text, lines: ls, entries };
+    return ledgerSnapshot;
+  }
+  staleLedgerSnapshot();
+}
+/** @id CODE-LSR-012 @implements REQ-LSR-005 */
+function loadLedgerSnapshotUncached() {
+  let text;
+  try { text = readLedgerBytes(LEDGER, 'utf8'); }
+  catch (error) {
+    if (error.code !== 'ENOENT') throw error;
+    const empty = { signature: null, text: '', lines: [], entries: [] };
+    ledgerInputs.set(empty.entries, 0);
+    return empty;
+  }
+  const ls = ledgerLines(text);
+  if (ls.some(line => /^(<{7}|={7}|>{7})/.test(line))) {
+    out(`LEDGER CONFLICT: ${rel(LEDGER)} has git merge conflict markers. Run: tdd merge-ledger (keeps both branches' evidence, re-chains the ledger)`);
+    process.exit(2);
+  }
+  const entries = ls.map((line, index) => {
+    let event;
+    try { event = parseLedgerLine(line); }
+    catch { out(`LEDGER CORRUPT: ${rel(LEDGER)} line ${index + 1} is not valid JSON`); process.exit(2); }
+    if (!event || typeof event !== 'object' || Array.isArray(event)) {
+      out(`LEDGER CORRUPT: ${rel(LEDGER)} line ${index + 1} must be an event object`);
+      process.exit(2);
+    }
+    return event;
+  });
+  for (const entry of entries) Object.freeze(entry);
+  Object.freeze(entries);
+  if (perfEnabled) ledgerInputs.set(entries, Buffer.byteLength(text));
+  return { signature: null, text, lines: ls, entries };
+}
+for (const stage of ['read', 'parse', 'verify']) {
+  perf.ledger[stage] = { count: 0, bytes: 0, events: 0 };
+}
+function ledgerWork(stage, bytes) {
+  if (!perfEnabled) return;
+  const metric = perf.ledger[stage], size = typeof bytes === 'number' ? bytes : Buffer.byteLength(bytes);
+  metric.count++;
+  metric.bytes += size;
+}
+function readLedgerBytes(file, options) {
+  const bytes = fs.readFileSync(file);
+  ledgerWork('read', bytes);
+  return options ? bytes.toString(options) : bytes;
+}
+function ledgerLines(bytes) {
+  ledgerWork('parse', bytes);
+  const lines = bytes.toString().split('\n').filter(Boolean);
+  if (perfEnabled) ledgerInputs.set(lines, Buffer.byteLength(bytes));
+  return lines;
+}
+function parseLedgerLine(line, index, lines) {
+  if (perfEnabled) perf.ledger.parse.events++;
+  const event = JSON.parse(line);
+  if (perfEnabled && event && typeof event === 'object') {
+    ledgerEventInputs.set(event, { bytes: Buffer.byteLength(line) + 1, index, lines });
+  }
+  return event;
+}
+function ledgerVerificationBytes(entries) {
+  const known = ledgerInputs.get(entries);
+  if (known !== undefined) return known;
+  const lines = ledgerEventInputs.get(entries[0])?.lines;
+  let complete = lines && ledgerInputs.has(lines) && lines.length === entries.length;
+  let bytes = 0;
+  for (let index = 0; index < entries.length; index++) {
+    const input = ledgerEventInputs.get(entries[index]);
+    bytes += input?.bytes ?? 0;
+    if (input?.lines !== lines || input?.index !== index) complete = false;
+  }
+  return complete ? ledgerInputs.get(lines) : bytes;
+}
+function parseLedgerValue(line) {
+  ledgerWork('parse', line);
+  return parseLedgerLine(line);
+}
+function tracedSpawnSync(file, args, options) {
+  const git = /^(?:git)(?:\.(?:exe|cmd|bat|com))?$/i.test(String(file).split(/[/\\]/).at(-1));
+  if (perfEnabled && git) perf.gitSpawns++;
+  const result = spawnSync(file, args, perfEnabled
+    ? { ...options, env: { ...(options?.env ?? process.env), MUSUBIX_PERF_TRACE: '0' } } : options);
+  if (perfEnabled && git && args?.[0] === 'show' && args.some(arg => /:\.\/\.sdd\/tdd\.jsonl$/.test(arg))
+    && result.status === 0 && !result.error && !result.signal
+    && result.stdout != null) ledgerWork('read', result.stdout);
+  return result;
+}
+if (perfEnabled) process.on('exit', () => fs.writeSync(2, JSON.stringify(perf) + '\n'));
+
 const BOOL = new Set(['allow-setup-red', 'allow-config-weaken', 'missing-module', 'baseline', 'weak', 'changed', 'json', 'no-run', 'verbose', 'help', 'stale', 'report', 'explain']);
 function parseArgs(argv) {
   const pos = [];
@@ -118,7 +281,7 @@ for n in ast.walk(tree):
         ranges.append(dict(start=start,end=n.end_lineno,ids=ids))
 print(json.dumps(ranges))
 `;
-  const r = spawnSync('python3', ['-c', parser], { input: txt, encoding: 'utf8', timeout: 10000, maxBuffer: 8 * 1024 * 1024 });
+  const r = tracedSpawnSync('python3', ['-c', parser], { input: txt, encoding: 'utf8', timeout: 10000, maxBuffer: 8 * 1024 * 1024 });
   let ranges = null;
   try { if (r.status === 0) ranges = JSON.parse(r.stdout); } catch {}
   pythonScopes.set(txt, ranges);
@@ -791,7 +954,13 @@ function juliaTestSha(txt, id) {
 // inl: a Rust file with a #[cfg(test)] module holds code next to its tests, so only the test's region counts even before @implements exists (#80)
 // eolNorm: BOM/CRLF are not content, so converting a test file's line endings does not stale its evidence (#102); ledgers recorded with raw hashes still match
 let eolNorm = false;
-const testShaVariant = (p, id, trim, norm = false, legacy = false, cut = true, inl = true) => {
+const testShaVariantCache = new Map();
+const clearTestShaVariantCache = () => testShaVariantCache.clear();
+const testShaVariantSignature = (file) => {
+  const stat = fs.statSync(file, { bigint: true });
+  return [stat.dev, stat.ino, stat.size, stat.mtimeNs, stat.ctimeNs].join(':');
+};
+const computeTestShaVariant = (p, id, trim, norm = false, legacy = false, cut = true, inl = true) => {
   const raw = fs.readFileSync(path.join(ROOT, p), 'utf8');
   const txt0 = eolNorm ? raw.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n') : raw;
   const txt = stripCodeAnn ? txt0.replace(CODE_ANN_LINE, '') : txt0;
@@ -833,6 +1002,20 @@ const testShaVariant = (p, id, trim, norm = false, legacy = false, cut = true, i
   const pre0 = ls.slice(0, begin(starts[0])).join('\n');
   const pre = symbolMode() && /\.(?:[cm]?[jt]sx?)$/.test(p) ? symbolPreamble(pre0, region) : pre0;
   return sha((norm ? normImports(pre) : pre) + '\u0000' + region);
+};
+const testShaVariant = (p, id, trim, norm = false, legacy = false, cut = true, inl = true) => {
+  if (perfReference) return computeTestShaVariant(p, id, trim, norm, legacy, cut, inl);
+  const file = path.join(ROOT, p);
+  let signature;
+  try { signature = testShaVariantSignature(file); }
+  catch { return computeTestShaVariant(p, id, trim, norm, legacy, cut, inl); }
+  const key = JSON.stringify([file, id, trim, norm, legacy, cut, inl, eolNorm,
+    stripCodeAnn, cLegacy, symbolMode(), signature]);
+  if (testShaVariantCache.has(key)) return testShaVariantCache.get(key);
+  const value = computeTestShaVariant(p, id, trim, norm, legacy, cut, inl);
+  if (testShaVariantCache.size >= 8192) testShaVariantCache.clear();
+  testShaVariantCache.set(key, value);
+  return value;
 };
 const testOwnSha = (p, id) => { eolNorm = true; try { return testShaVariant(p, id, true, true); } finally { eolNorm = false; } };
 const testSha = (p, id) => { eolNorm = true; try { return externalOracleSha(p, testShaVariant(p, id, true, true)); } finally { eolNorm = false; } };
@@ -901,8 +1084,13 @@ function dotnetOutputFilter(files) {
   if (!pd.size) return files;
   return files.filter((f) => { for (let d = path.posix.dirname(f); ; d = path.posix.dirname(d)) { if (pd.has(d) && /^(bin|obj)\//.test(d === '.' ? f : f.slice(d.length + 1))) return false; if (d === '.' || d === '/') return true; } });
 }
+let sourceListSnapshot = null;
+/** @id CODE-LSR-006 @implements REQ-LSR-001 REQ-LSR-002 REQ-LSR-005 */
+function invalidateSourceList() { sourceListSnapshot = null; }
 function workspaceFiles(base = ROOT) {
-  const r = spawnSync('git', ['ls-files', '-co', '--exclude-standard'], { cwd: base, encoding: 'utf8', maxBuffer: 64e6 });
+  const cacheable = path.resolve(base) === ROOT;
+  if (cacheable && sourceListSnapshot && !perfReference) return [...sourceListSnapshot];
+  const r = tracedSpawnSync('git', ['ls-files', '-co', '--exclude-standard'], { cwd: base, encoding: 'utf8', maxBuffer: 64e6 });
   let files;
   // tracked files deleted from the working tree but not staged are still listed by git (#228)
   if (r.status === 0) files = r.stdout.split('\n').filter((f) => f && fs.existsSync(path.join(base, f)));
@@ -919,7 +1107,9 @@ function workspaceFiles(base = ROOT) {
     walk(base);
   }
   files = [...new Set(files)]; // an unmerged path is listed once per index stage
-  return dotnetOutputFilter(files);
+  files = dotnetOutputFilter(files);
+  if (cacheable && !perfReference) sourceListSnapshot = [...files];
+  return files;
 }
 /** @id CODE-SCAN-001 @implements REQ-SCAN-001 REQ-SCAN-002 REQ-SCAN-003 */
 function listFiles() {
@@ -1108,11 +1298,11 @@ function approvalProvenance(feature, a) {
   const events = entries.filter((e) => e.type === 'approval' && e.feature === feature);
   if (events.length) return events.some((e) => e.approvalSha === approvalSha(a));
   // Pre-event locks remain valid only while unchanged from committed history.
-  const committed = spawnSync('git', ['show', 'HEAD:./.sdd/approvals.json'], { cwd: ROOT, encoding: 'utf8' });
+  const committed = tracedSpawnSync('git', ['show', 'HEAD:./.sdd/approvals.json'], { cwd: ROOT, encoding: 'utf8' });
   if (committed.status !== 0) return false;
-  const history = spawnSync('git', ['show', 'HEAD:./.sdd/tdd.jsonl'], { cwd: ROOT, encoding: 'utf8' });
+  const history = tracedSpawnSync('git', ['show', 'HEAD:./.sdd/tdd.jsonl'], { cwd: ROOT, encoding: 'utf8' });
   if (history.status === 0) {
-    try { if (history.stdout.split('\n').filter(Boolean).some((l) => { const e = JSON.parse(l); return e.type === 'approval' && e.feature === feature; })) return false; } catch { return false; }
+    try { if (ledgerLines(history.stdout).some((l) => { const e = parseLedgerLine(l); return e.type === 'approval' && e.feature === feature; })) return false; } catch { return false; }
   }
   try { const old = JSON.parse(committed.stdout)[feature]; return !!old && approvalSha(old) === approvalSha(a); } catch { return false; }
 }
@@ -1130,16 +1320,9 @@ function approvalState(spec) {
 }
 
 // ---------- ledger ----------
+/** @id CODE-LSR-007 @implements REQ-LSR-003 REQ-LSR-005 */
 function readLedger() {
-  if (!fs.existsSync(LEDGER)) return [];
-  const ls = fs.readFileSync(LEDGER, 'utf8').split('\n').filter(Boolean);
-  if (ls.some((l) => /^(<{7}|={7}|>{7})/.test(l))) { out(`LEDGER CONFLICT: ${rel(LEDGER)} has git merge conflict markers. Run: tdd merge-ledger (keeps both branches' evidence, re-chains the ledger)`); process.exit(2); }
-  return ls.map((l, i) => {
-    let e;
-    try { e = JSON.parse(l); } catch { out(`LEDGER CORRUPT: ${rel(LEDGER)} line ${i + 1} is not valid JSON`); process.exit(2); }
-    if (!e || typeof e !== 'object' || Array.isArray(e)) { out(`LEDGER CORRUPT: ${rel(LEDGER)} line ${i + 1} must be an event object`); process.exit(2); }
-    return e;
-  });
+  return loadLedgerSnapshot().entries;
 }
 const entryHash = (e) => { const { hash, ...rest } = e; return sha(JSON.stringify(rest)); };
 function ledgerEventProblem(e) {
@@ -1168,21 +1351,41 @@ function ledgerEventProblem(e) {
   } else return 'unknown event type';
   return null;
 }
+/** @id CODE-LSR-008 @implements REQ-LSR-003 REQ-LSR-005 */
 function verifyChain(entries) {
+  if (!perfReference && ledgerVerificationResults.has(entries)) return ledgerVerificationResults.get(entries);
+  const recordResult = result => {
+    if (!perfReference) ledgerVerificationResults.set(entries, result);
+    return result;
+  };
+  if (perfEnabled) ledgerWork('verify', ledgerVerificationBytes(entries));
   let prev = '';
   let at = -Infinity;
   for (let i = 0; i < entries.length; i++) {
+    if (perfEnabled) perf.ledger.verify.events++;
     const e = entries[i];
-    if (e && typeof e === 'object' && !Array.isArray(e) && (e.prev !== prev || e.hash !== entryHash(e))) return `broken at seq ${e.seq ?? i + 1}`;
+    if (e && typeof e === 'object' && !Array.isArray(e) && (e.prev !== prev || e.hash !== entryHash(e))) {
+      const problem = `broken at seq ${e.seq ?? i + 1}`;
+      return recordResult(problem);
+    }
     const problem = ledgerEventProblem(e);
-    if (problem) return `invalid event at seq ${e?.seq ?? i + 1}: ${problem}`;
-    if (e.seq !== i + 1) return `invalid sequence at seq ${e.seq}: expected ${i + 1}`;
+    if (problem) {
+      const result = `invalid event at seq ${e?.seq ?? i + 1}: ${problem}`;
+      return recordResult(result);
+    }
+    if (e.seq !== i + 1) {
+      const result = `invalid sequence at seq ${e.seq}: expected ${i + 1}`;
+      return recordResult(result);
+    }
     const time = Date.parse(e.at);
-    if (time < at) return `invalid timestamp at seq ${e.seq}: time goes backwards`;
+    if (time < at) {
+      const result = `invalid timestamp at seq ${e.seq}: time goes backwards`;
+      return recordResult(result);
+    }
     prev = e.hash;
     at = time;
   }
-  return null;
+  return recordResult(null);
 }
 // exclusive lock so concurrent tdd runs cannot fork the hash chain (#109)
 function withLedgerLock(fn) {
@@ -1202,49 +1405,85 @@ function withLedgerLock(fn) {
 function appendLedger(e) {
   withLedgerLock(() => appendLedgerLocked(e));
 }
+/** @id CODE-LSR-010 @implements REQ-LSR-004 */
 function appendLedgerLocked(e) {
   const entries = readLedger();
   const full = { v: 1, seq: entries.length + 1, ...e, at: new Date().toISOString(), prev: entries.at(-1)?.hash ?? '' };
   full.hash = entryHash(full);
-  const problem = verifyChain([...entries, full]) ?? ledgerRegression();
+  const candidate = [...entries, full];
+  const line = perfEnabled ? JSON.stringify(full) + '\n' : null;
+  if (perfEnabled) ledgerInputs.set(candidate, (ledgerInputs.get(entries) ?? 0) + Buffer.byteLength(line));
+  const problem = verifyChain(candidate) ?? ledgerRegression();
   if (problem) { out(`LEDGER FAIL: ${problem}`); process.exit(1); }
   fs.mkdirSync(SDD, { recursive: true });
-  fs.appendFileSync(LEDGER, JSON.stringify(full) + '\n');
+  fs.appendFileSync(LEDGER, line ?? JSON.stringify(full) + '\n');
+  ledgerSnapshot = null;
 }
 // every baseline ledger entry must survive (ignoring seq/prev/hash, which merge-ledger re-chains); a removed or rewritten one is tampering (#328)
-function ledgerRegression(bref = 'HEAD') {
-  const git = (args) => spawnSync('git', args, { cwd: ROOT, encoding: 'utf8', maxBuffer: 64e6, timeout: 60000, env: { ...process.env, LC_ALL: 'C' } });
+/** @id CODE-LSR-009 @implements REQ-LSR-003 REQ-LSR-005 */
+function ledgerRegression(bref = 'HEAD', pinOnly = false) {
+  const git = (args) => tracedSpawnSync('git', args, { cwd: ROOT, encoding: 'utf8', maxBuffer: 64e6, timeout: 60000, env: { ...process.env, LC_ALL: 'C' } });
   const failed = (r) => r.error || r.signal || r.status !== 0;
+  let baselineRef = bref;
   const unreadable = (r) => `cannot read baseline ledger of ${bref}: ${r.error?.code || r.signal || r.stderr?.trim() || `git exited ${r.status}`}`;
-  const sh = git(['show', `${bref}:./.sdd/tdd.jsonl`]);
-  // A failed/truncated capture is not an absent ledger. Only a successful tree
-  // lookup, a non-repository, or a verified unborn HEAD can establish absence.
-  if (sh.error || sh.signal) return unreadable(sh);
-  if (sh.status !== 0) {
-    const tree = git(['ls-tree', '-z', bref, '--', './.sdd/tdd.jsonl']);
-    if (!failed(tree)) return tree.stdout === '' ? null : unreadable(sh);
-    if (tree.error || tree.signal) return unreadable(tree);
-    const repo = git(['rev-parse', '--is-inside-work-tree']);
-    if (!repo.error && !repo.signal && repo.status === 128 && /not a git repository/.test(repo.stderr)) return null;
-    if (failed(repo)) return unreadable(repo);
-    if (bref === 'HEAD') {
-      const branch = git(['symbolic-ref', '-q', 'HEAD']);
-      if (!failed(branch)) {
-        const ref = git(['show-ref', '--verify', '--quiet', branch.stdout.trim()]);
-        if (!ref.error && !ref.signal && ref.status === 1) return null;
-        if (ref.error || ref.signal) return unreadable(ref);
+  const eventKey = (event) => {
+    const { seq, prev, hash, ...rest } = event;
+    return JSON.stringify(rest);
+  };
+  if (perfReference && bref === 'HEAD') {
+    if (!referenceHeadAttempted) {
+      referenceHeadAttempted = true;
+      const head = git(['rev-parse', 'HEAD']);
+      if (failed(head)) referenceHead = null;
+      else referenceHead = head.stdout.trim();
+    }
+    if (referenceHead) baselineRef = referenceHead;
+    else if (referenceHeadError) return referenceHeadError;
+    else if (referenceHeadMissing) return null;
+  }
+  let baseline = perfReference ? undefined : ledgerBaselineSnapshots.get(bref);
+  if (!baseline) {
+    const sh = git(['show', `${baselineRef}:./.sdd/tdd.jsonl`]);
+    // A failed/truncated capture is not an absent ledger. Only a successful tree
+    // lookup, a non-repository, or a verified unborn HEAD can establish absence.
+    if (sh.error || sh.signal) baseline = { error: unreadable(sh) };
+    else if (sh.status === 0) baseline = { keys: ledgerLines(sh.stdout).map((line) => {
+      try { return eventKey(parseLedgerLine(line)); } catch { return line; }
+    }) };
+    else {
+      const tree = git(['ls-tree', '-z', baselineRef, '--', './.sdd/tdd.jsonl']);
+      if (!failed(tree)) baseline = tree.stdout === '' ? { missing: true } : { error: unreadable(sh) };
+      else if (tree.error || tree.signal) baseline = { error: unreadable(tree) };
+      else {
+        const repo = git(['rev-parse', '--is-inside-work-tree']);
+        if (!repo.error && !repo.signal && repo.status === 128 && /not a git repository/.test(repo.stderr)) baseline = { missing: true };
+        else if (failed(repo)) baseline = { error: unreadable(repo) };
+        else if (bref === 'HEAD') {
+          const branch = git(['symbolic-ref', '-q', 'HEAD']);
+          if (!failed(branch)) {
+            const ref = git(['show-ref', '--verify', '--quiet', branch.stdout.trim()]);
+            if (!ref.error && !ref.signal && ref.status === 1) baseline = { error: 'unresolved HEAD: current branch has no commit' };
+            else if (ref.error || ref.signal) baseline = { error: unreadable(ref) };
+          }
+          baseline ??= { error: unreadable(tree) };
+        } else baseline = { error: unreadable(tree) };
       }
     }
-    return unreadable(tree);
+    if (perfReference && bref === 'HEAD' && !referenceHead) {
+      if (baseline.error) referenceHeadError = baseline.error;
+      else if (baseline.missing) referenceHeadMissing = true;
+      else referenceHeadError = 'unresolved HEAD: cannot pin current revision';
+    }
+    if (!perfReference) ledgerBaselineSnapshots.set(bref, baseline);
   }
-  const key = (l) => { try { const { seq, prev, hash, ...r } = JSON.parse(l); return JSON.stringify(r); } catch { return l; } };
+  if (baseline.error) return baseline.error;
+  if (baseline.missing) return null;
+  if (pinOnly) return null;
   let current;
-  try { current = fs.readFileSync(LEDGER, 'utf8'); } catch (err) {
-    if (err.code !== 'ENOENT') return `cannot read current ledger ${rel(LEDGER)}: ${err.code || err.message}`;
-    current = '';
-  }
-  const cur = new Set(current.split('\n').filter(Boolean).map(key));
-  const lost = sh.stdout.split('\n').filter(Boolean).map(key).filter((k) => !cur.has(k));
+  try { current = loadLedgerSnapshot().entries; }
+  catch (error) { return `cannot read current ledger ${rel(LEDGER)}: ${error.code || error.message}`; }
+  const cur = new Set(current.map(eventKey));
+  const lost = baseline.keys.filter((key) => !cur.has(key));
   return lost.length ? `${lost.length} ledger entr${lost.length === 1 ? 'y' : 'ies'} of ${bref} removed or modified in ${rel(LEDGER)} (truncation/rewrite; only appends or tdd merge-ledger are allowed)` : null;
 }
 let REQ_SHA = null;
@@ -1383,7 +1622,7 @@ function detectConfig(base = ROOT) {
   const phpunit = has('vendor/bin/phpunit') ? 'vendor/bin/phpunit' : 'phpunit';
   let phpHistory = '--do-not-cache-result';
   if (has('composer.json') || has('phpunit.xml') || has('phpunit.xml.dist')) {
-    const version = spawnSync(phpunit, ['--version'], { cwd: base, encoding: 'utf8', timeout: 10000 });
+    const version = tracedSpawnSync(phpunit, ['--version'], { cwd: base, encoding: 'utf8', timeout: 10000 });
     const numbers = /PHPUnit\s+(\d+)\.(\d+)/i.exec(version.stdout ?? '');
     if (numbers && (+numbers[1] > 13 || (+numbers[1] === 13 && +numbers[2] >= 4))) phpHistory = '--do-not-record-test-run-history';
   }
@@ -1582,7 +1821,7 @@ function runnerEnvRecord(cmd = []) {
     inherited, removed: Object.keys(process.env).filter((key) => !allowed.has(key.toUpperCase())).sort() };
 }
 function dotnetStamp(abs) {
-  const r = spawnSync('git', ['ls-files', '-co', '--exclude-standard'], { cwd: abs, encoding: 'utf8', maxBuffer: 64e6 });
+  const r = tracedSpawnSync('git', ['ls-files', '-co', '--exclude-standard'], { cwd: abs, encoding: 'utf8', maxBuffer: 64e6 });
   if (r.status !== 0) return null;
   return dotnetOutputFilter(r.stdout.split('\n').filter((f) => f && !f.startsWith('.sdd/'))).map((f) => { try { const st = fs.statSync(path.join(abs, f)); return `${f}:${st.mtimeMs}:${st.size}`; } catch { return f; } }).join('|');
 }
@@ -1612,7 +1851,7 @@ function run1(cmd, timeoutMs, cwd = '.', maxBuffer = 64e6) {
   let launch;
   try { launch = runnerCommand(argv, path.resolve(ROOT, cwd)); }
   catch (error) { return { exit: 127, signal: null, text: `runner setup error: ${error.message}`, ms: Date.now() - t0, timedOut: false, pytestResults: null, error: error.message }; }
-  const r = spawnSync(launch.file, launch.args, { cwd: path.resolve(ROOT, cwd), env: runnerEnv(cmd, cwd),
+  const r = tracedSpawnSync(launch.file, launch.args, { cwd: path.resolve(ROOT, cwd), env: runnerEnv(cmd, cwd),
     shell: false, windowsVerbatimArguments: false, timeout: timeoutMs, maxBuffer, detached: true });
   const timedOut = r.error?.code === 'ETIMEDOUT';
   // spawnSync's timeout signals only the launcher (cargo, npm, mvn); the detached group also holds the hung test binary (#225)
@@ -1693,7 +1932,7 @@ raise SystemExit(pytest.main(sys.argv[1:], plugins=[Evidence()]))
 // Scope placeholders for changedCmd. An empty result means "cannot scope" and the caller falls back to the full check.
 function cmdOut(cmd, cwd) {
   const launch = runnerCommand(cmd, cwd);
-  const r = spawnSync(launch.file, launch.args, { cwd, env: runnerEnv(cmd, cwd), shell: false,
+  const r = tracedSpawnSync(launch.file, launch.args, { cwd, env: runnerEnv(cmd, cwd), shell: false,
     windowsVerbatimArguments: false, encoding: 'utf8', timeout: 60000, maxBuffer: 64e6 });
   return r.status === 0 ? r.stdout : null;
 }
@@ -1707,7 +1946,7 @@ function nearestDir(abs, rel, marker) {
 }
 // changed Maven modules + their dependents + every upstream module those need: `-am -amd` alone leaves a dependent's other upstream modules outside the reactor (diamond), so they cannot be resolved without `install` (#133)
 function mavenClosure(abs, base) {
-  const r = spawnSync('git', ['ls-files', '-co', '--exclude-standard', '*pom.xml'], { cwd: abs, encoding: 'utf8' });
+  const r = tracedSpawnSync('git', ['ls-files', '-co', '--exclude-standard', '*pom.xml'], { cwd: abs, encoding: 'utf8' });
   if (r.status !== 0) return null;
   const mods = [];
   for (const p of r.stdout.split('\n').filter((x) => /(^|\/)pom\.xml$/.test(x) && !/(^|\/)(target|node_modules)\//.test(x))) {
@@ -1768,7 +2007,7 @@ const SCOPE_TOKENS = {
   },
   '{changedGoPkgs}': (rel, abs) => {
     // go.mod/go.sum edits widen the scope to everything — except in a repo without commits, where every file (go.mod included) is merely untracked (#133)
-    const hasHead = spawnSync('git', ['rev-parse', '--verify', '-q', 'HEAD'], { cwd: abs }).status === 0;
+    const hasHead = tracedSpawnSync('git', ['rev-parse', '--verify', '-q', 'HEAD'], { cwd: abs }).status === 0;
     if (hasHead && rel.some((f) => /(^|\/)go\.(mod|sum|work)$/.test(f))) return [];
     const goFiles = rel.filter((f) => f.endsWith('.go'));
     if (!goFiles.length) return [];
@@ -1864,7 +2103,7 @@ const stubTodoHit = (text) => {
 const NATIVE_LOAD_ERR = /^\s*(?:Type|Range)?Error \[ERR_(?:UNKNOWN_(?:FILE_EXTENSION|MODULE_FORMAT)|UNSUPPORTED_(?:ESM_URL_SCHEME|DIR_IMPORT|RESOLVE_REQUEST|NODE_MODULES_TYPE_STRIPPING))\]:/m;
 const isLoadErr = (text, assertion = ASSERT_EXC.test(text), nativeLoad = NATIVE_LOAD_ERR.test(text)) => (LOAD_ERR.test(text) || nativeLoad) && !RUNTIME_FAIL.test(text) && !assertion && !missingDeliverable(text);
 // a repo without any commit has no baseline for `--changed` (#150)
-function hasCommit() { return spawnSync('git', ['rev-parse', '--verify', '-q', 'HEAD'], { cwd: ROOT, stdio: 'ignore' }).status === 0; }
+function hasCommit() { return tracedSpawnSync('git', ['rev-parse', '--verify', '-q', 'HEAD'], { cwd: ROOT, stdio: 'ignore' }).status === 0; }
 
 // fully-qualified names (`Ns\Cls`) of every class/interface/enum/trait the project declares (#150: namespace-aware, not by short name)
 function phpProjectFqcns() {
@@ -2283,7 +2522,7 @@ function callInfo(src, name) {
 }
 /** @id CODE-R36I-001 @implements REQ-R36I-001 REQ-R36I-002 */
 const probeOutcome = (cmd, args, cwd) => {
-  const r = spawnSync(cmd, args, { cwd, encoding: 'utf8', timeout: 120000, env: { ...process.env, LC_ALL: 'C' } });
+  const r = tracedSpawnSync(cmd, args, { cwd, encoding: 'utf8', timeout: 120000, env: { ...process.env, LC_ALL: 'C' } });
   return { text: (r.stdout ?? '') + (r.stderr ?? ''), status: r.status, signal: r.signal, error: r.error };
 };
 const probe = (cmd, args, cwd) => probeOutcome(cmd, args, cwd).text;
@@ -3113,7 +3352,7 @@ function stubJava(testPath, src, dir, add, made) {
   // names that a java.*/javax.* wildcard import (or java.lang) already provides must never be stubbed into the project (#115)
   const wild = [...src.matchAll(/^import\s+((?:java|javax)[\w.]*)\.\*\s*;/gm)].map((m) => m[1]).concat('java.lang');
   const jdkCache = new Map();
-  const isJdk = (n) => JDK.test(n) || (jdkCache.has(n) ? jdkCache.get(n) : (jdkCache.set(n, wild.some((p) => spawnSync('javap', [`${p}.${n}`], { stdio: 'ignore' }).status === 0)), jdkCache.get(n)));
+  const isJdk = (n) => JDK.test(n) || (jdkCache.has(n) ? jdkCache.get(n) : (jdkCache.set(n, wild.some((p) => tracedSpawnSync('javap', [`${p}.${n}`], { stdio: 'ignore' }).status === 0)), jdkCache.get(n)));
   const byClass = new Map();
   for (const m of src.matchAll(/(?<![\w.])([A-Z]\w*)\.([a-z]\w*)\s*\(/g)) {
     if (imported.has(m[1]) || local.has(m[1]) || known.has(m[1]) || isJdk(m[1])) continue;
@@ -3411,7 +3650,7 @@ function stubScript(lang, src, dir, add, made) {
   const juliaImports = code.split('\n').filter((l) => /^\s*(using|import)\s+[^.]/.test(l));
   const probe = { php: ['php', ['-r', 'foreach (array_slice($argv, 1) as $n) if (!function_exists($n)) echo $n, "\n";', '--', ...called]], jl: ['julia', ['--project=' + ROOT, '-e', `${juliaImports.map((l) => `try; ${l}; catch; end`).join('\n')}\nfor n in ARGS; (isdefined(Main, Symbol(n)) || isdefined(Base, Symbol(n))) || println(n); end`, ...called, ...excNames]], r: ['Rscript', ['-e', 'for (n in commandArgs(TRUE)) if (!exists(n)) cat(n, "\n", sep = "")', ...called]] }[lang];
   let unknown = [...called, ...excNames];
-  if (unknown.length) { const r = spawnSync(probe[0], probe[1], { encoding: 'utf8', timeout: 60000 }); if (r.status === 0) unknown = r.stdout.split('\n').filter(Boolean); }
+  if (unknown.length) { const r = tracedSpawnSync(probe[0], probe[1], { encoding: 'utf8', timeout: 60000 }); if (r.status === 0) unknown = r.stdout.split('\n').filter(Boolean); }
   const fn = { php: (n) => `if (!function_exists('${n}')) {\n    function ${n}(...$args) {\n        throw new \\LogicException('not implemented: ${n}');\n    }\n}\n`, jl: (n) => `${n}(args...; kwargs...) = error("not implemented: ${n}")\n`, r: (n) => `${n} <- function(...) stop("not implemented: ${n}")\n` }[lang];
   // PHP classes used as Class::method( / new Class( get a class with throwing static methods (#87)
   const phpClasses = new Map();
@@ -3449,7 +3688,7 @@ function stubScript(lang, src, dir, add, made) {
     // `use Ns\Cls;` binds the short name to a FQCN: a same-named class in another namespace is not this one (#150)
     const imported = phpImports(code);
     const names = [...phpClasses.keys()];
-    const bi = names.length ? spawnSync('php', ['-r', 'foreach (array_slice($argv, 1) as $n) if (class_exists($n, false) || interface_exists($n, false)) echo $n, "\n";', '--', ...names], { encoding: 'utf8' }) : null;
+    const bi = names.length ? tracedSpawnSync('php', ['-r', 'foreach (array_slice($argv, 1) as $n) if (class_exists($n, false) || interface_exists($n, false)) echo $n, "\n";', '--', ...names], { encoding: 'utf8' }) : null;
     const builtin = new Set(bi?.status === 0 ? bi.stdout.split('\n').filter(Boolean) : []);
     for (const c of names) if (imported.has(c) ? projFq.has(imported.get(c)) : builtin.has(c) || [...projFq].some((x) => x === c || x.endsWith('\\' + c))) phpClasses.delete(c);
     unknown = unknown.filter((n) => !phpClasses.has(n) && !new RegExp(`\\bnew\\s+${n}\\b`).test(code));
@@ -3472,7 +3711,7 @@ function stubScript(lang, src, dir, add, made) {
       }
     } catch {}
     if (fs.existsSync(path.join(ROOT, 'vendor/autoload.php'))) {
-      const r = spawnSync('php', ['-r', '$loader = require "vendor/autoload.php"; echo json_encode($loader->getPrefixesPsr4());'], { cwd: ROOT, encoding: 'utf8', timeout: 10000 });
+      const r = tracedSpawnSync('php', ['-r', '$loader = require "vendor/autoload.php"; echo json_encode($loader->getPrefixesPsr4());'], { cwd: ROOT, encoding: 'utf8', timeout: 10000 });
       try { if (r.status === 0) for (const [k, v] of Object.entries(JSON.parse(r.stdout))) if (v[0]) psr4.unshift([k, v[0]]); } catch {}
     }
     psr4.sort((a, b) => b[0].length - a[0].length);
@@ -3480,7 +3719,7 @@ function stubScript(lang, src, dir, add, made) {
       const cls = fq.split('\\').pop(), ns = fq.slice(0, -cls.length - 1);
       if (!phpClasses.has(local) || /^(PHPUnit|Mockery|Prophecy|Pest)\\/.test(ns + '\\')) continue;
       // vendor / already autoloadable classes are never stubbed (#131)
-      if (fs.existsSync(path.join(ROOT, 'vendor/autoload.php')) && spawnSync('php', ['-r', 'require "vendor/autoload.php"; exit(class_exists($argv[1]) || interface_exists($argv[1]) || trait_exists($argv[1]) ? 0 : 1);', '--', `${ns}\\${cls}`], { cwd: ROOT, stdio: 'ignore' }).status === 0) { phpClasses.delete(local); continue; }
+      if (fs.existsSync(path.join(ROOT, 'vendor/autoload.php')) && tracedSpawnSync('php', ['-r', 'require "vendor/autoload.php"; exit(class_exists($argv[1]) || interface_exists($argv[1]) || trait_exists($argv[1]) ? 0 : 1);', '--', `${ns}\\${cls}`], { cwd: ROOT, stdio: 'ignore' }).status === 0) { phpClasses.delete(local); continue; }
       if (projFq.has(`${ns}\\${cls}`)) continue;
       const hit = psr4.find(([k]) => (ns + '\\').startsWith(k));
       const rest = hit ? (ns + '\\').slice(hit[0].length).split('\\').filter(Boolean) : ns.split('\\').slice(1);
@@ -3662,7 +3901,7 @@ function stubCs(testPath, src, id, made) {
   const g = dotnetGraph(ROOT);
   const testProj = g?.ownersOf(testPath)?.[0];
   if (!g || !testProj) return made;
-  if (spawnSync('dotnet', ['--version'], { stdio: 'ignore' }).status !== 0) { (made.notes ??= []).push('dotnet SDK not found: nothing was generated or compile-checked'); return made; }
+  if (tracedSpawnSync('dotnet', ['--version'], { stdio: 'ignore' }).status !== 0) { (made.notes ??= []).push('dotnet SDK not found: nothing was generated or compile-checked'); return made; }
   const lines = src.split('\n');
   const ids = lines.map((l, i) => (/@id\s/.test(l) ? i : -1)).filter((i) => i >= 0);
   const start = ids.find((i) => new RegExp(`@id\\s+${id}\\b`).test(lines[i])) ?? -1;
@@ -3672,7 +3911,7 @@ function stubCs(testPath, src, id, made) {
   const text = start < 0 ? src : lines.filter((_, i) => inScope(i)).join('\n');
   const ENV2 = { ...process.env, DOTNET_CLI_UI_LANGUAGE: 'en', VSLANG: '1033', DOTNET_NOLOGO: '1', DOTNET_CLI_TELEMETRY_OPTOUT: '1' };
   const build = () => {
-    const r = spawnSync('dotnet', ['build', path.join(ROOT, testProj.file), '--nologo', '-v', 'q', '-clp:NoSummary'], { cwd: ROOT, encoding: 'utf8', timeout: 300000, maxBuffer: 64e6, env: ENV2 });
+    const r = tracedSpawnSync('dotnet', ['build', path.join(ROOT, testProj.file), '--nologo', '-v', 'q', '-clp:NoSummary'], { cwd: ROOT, encoding: 'utf8', timeout: 300000, maxBuffer: 64e6, env: ENV2 });
     const outp = (r.stdout ?? '') + (r.stderr ?? '') + (r.error ? String(r.error.message) : '');
     const diags = new Map();
     for (const m of outp.matchAll(/^(.+?)\((\d+),(\d+)(?:,\d+,\d+)?\):\s+error\s+([A-Z]+\d+):\s*(.*?)(?:\s+\[[^\]]+\])?\s*$/gm)) {
@@ -4086,7 +4325,7 @@ function stubFor(testPath, id) {
       const mod = m[1];
       checked[mod.startsWith('.') ? 'rel' : 'abs']++;
       // stdlib / installed packages must not be shadowed by a stub (probe with cwd removed from sys.path so project dirs do not count; user site and PYTHONPATH do)
-      if (!mod.startsWith('.') && spawnSync('python3', ['-c', 'import importlib.util,sys;sys.path=[p for p in sys.path if p not in ("",".")];sys.exit(0 if importlib.util.find_spec(sys.argv[1].split(".")[0]) else 1)', mod], { cwd: os.tmpdir() }).status === 0) continue;
+      if (!mod.startsWith('.') && tracedSpawnSync('python3', ['-c', 'import importlib.util,sys;sys.path=[p for p in sys.path if p not in ("",".")];sys.exit(0 if importlib.util.find_spec(sys.argv[1].split(".")[0]) else 1)', mod], { cwd: os.tmpdir() }).status === 0) continue;
       const proot = path.resolve(ROOT, projectFor(testPath)?.root ?? '.');
       const top = mod.replace(/^\.+/, '').split('.')[0];
       const has = (b) => fs.existsSync(path.join(b, top)) || fs.existsSync(path.join(b, top + '.py'));
@@ -4389,7 +4628,7 @@ function setupOrigin(line, testPath, id, text = '') {
   // a module-level `NAME = None` stub called by the test (`TypeError: 'NoneType' object is not callable`) is a stubbed setup call (#283)
   if (!x && /TypeError: 'NoneType' object is not callable/.test(text)) {
     const callees = [...(/^>\s+(.*)$/m.exec(text)?.[1] ?? '').matchAll(/(?<![\w$.])([A-Za-z_]\w*)\s*\(/g)].map((m) => m[1]);
-    const pyFiles = spawnSync('git', ['ls-files', '-co', '--exclude-standard', '*.py'], { cwd: ROOT, encoding: 'utf8' }).stdout.split('\n').filter((f) => f && f !== testPath);
+    const pyFiles = tracedSpawnSync('git', ['ls-files', '-co', '--exclude-standard', '*.py'], { cwd: ROOT, encoding: 'utf8' }).stdout.split('\n').filter((f) => f && f !== testPath);
     const srcs = pyFiles.slice(0, 400).map((f) => { try { return fs.readFileSync(path.join(ROOT, f), 'utf8'); } catch { return ''; } });
     x = callees.find((n) => srcs.some((c) => new RegExp(`^${n}\\s*=\\s*None\\s*$`, 'm').test(c)));
   }
@@ -4670,10 +4909,10 @@ function mergeLedger() {
   let prefixOpen = true;
   let prev = '';
   let at = -Infinity;
-  for (const l of fs.readFileSync(LEDGER, 'utf8').split('\n')) {
+  for (const l of ledgerLines(readLedgerBytes(LEDGER, 'utf8'))) {
     if (!l.trim() || /^(<{7}|={7}|>{7})/.test(l)) { if (l.trim()) prefixOpen = false; continue; }
     let e;
-    try { e = JSON.parse(l); } catch { out(`LEDGER CORRUPT: cannot parse line: ${l.slice(0, 80)}`); return 2; }
+    try { e = parseLedgerLine(l); } catch { out(`LEDGER CORRUPT: cannot parse line: ${l.slice(0, 80)}`); return 2; }
     const problem = ledgerEventProblem(e);
     if (problem) { out(`LEDGER FAIL: invalid event at seq ${e?.seq ?? es.length + kept.length + 1}: ${problem}`); return 1; }
     const { seq, prev: pv, hash, ...rest } = e;
@@ -4687,16 +4926,17 @@ function mergeLedger() {
   // An older branch event can precede the intact prefix; preserve only its chronologically safe part.
   const earliest = es.reduce((min, e) => Math.min(min, Date.parse(e.at)), Infinity);
   const moved = [];
-  while (kept.length && Date.parse(JSON.parse(kept.at(-1)).at) > earliest) {
-    const { seq, prev: pv, hash, ...rest } = JSON.parse(kept.pop());
+  while (kept.length && Date.parse(parseLedgerValue(kept.at(-1)).at) > earliest) {
+    const { seq, prev: pv, hash, ...rest } = parseLedgerValue(kept.pop());
     moved.push(rest);
   }
-  prev = kept.length ? JSON.parse(kept.at(-1)).hash : '';
+  prev = kept.length ? parseLedgerValue(kept.at(-1)).hash : '';
   const tail = [...moved.reverse(), ...es].sort((a, b) => Date.parse(a.at) - Date.parse(b.at));
   const outLines = [...kept, ...tail.map((e, i) => { const full = { v: 1, seq: kept.length + i + 1, ...e, prev }; delete full.hash; full.hash = entryHash(full); prev = full.hash; return JSON.stringify(full); })];
-  const problem = verifyChain(outLines.map((l) => JSON.parse(l)));
+  const problem = verifyChain(ledgerLines(outLines.join('\n')).map(parseLedgerLine));
   if (problem) { out(`LEDGER FAIL: ${problem}`); return 1; }
   fs.writeFileSync(LEDGER, outLines.join('\n') + '\n');
+  ledgerSnapshot = null;
   out(`ledger merged: ${outLines.length} entries (${kept.length} unchanged, ${tail.length} re-chained; review with git diff; tdd check)`);
   return 0;
 }
@@ -5084,6 +5324,7 @@ function cmdTdd() {
     const priorFiles = new Set(workspaceFiles());
     const before = new Map(workspaceFiles().map((f) => [f, (() => { try { return fs.readFileSync(path.join(ROOT, f), 'utf8'); } catch { return null; } })()]));
     const made = stubFor(t.path, group.map((e) => e.id));
+    invalidateSourceList();
     // a stub run that edits a file already annotated for a Green REQ says so (#330)
     const greens = greenReqs(ents);
     for (const f of [...new Set(made)]) {
@@ -5102,6 +5343,7 @@ function cmdTdd() {
       const first = text.indexOf('\n') + 1;
       const offset = text.startsWith('<?php') || text.startsWith('// sdd-stub') || (file.endsWith('.jl') && /^module\s/.test(text)) ? first : 0;
       fs.writeFileSync(abs, text.slice(0, offset) + annotation + text.slice(offset));
+      invalidateSourceList();
     }
     const scripted = /\.(?:[cm]?[jt]sx?|py)$/.test(t.path);
     if (made.length && made.verified === 'partial') out(`stubbed (throwing; NOT compile-checked — the project build still fails): ${made.join(', ')}`);
@@ -5600,9 +5842,9 @@ let changedSnap = null;
 function changedFiles() {
   if (changedSnap) return changedSnap;
   const set = new Set();
-  const top = spawnSync('git', ['rev-parse', '--show-toplevel'], { cwd: ROOT, encoding: 'utf8' });
+  const top = tracedSpawnSync('git', ['rev-parse', '--show-toplevel'], { cwd: ROOT, encoding: 'utf8' });
   if (top.status !== 0) return null;
-  const st = spawnSync('git', ['status', '--porcelain', '-z', '-uall'], { cwd: ROOT, encoding: 'utf8' });
+  const st = tracedSpawnSync('git', ['status', '--porcelain', '-z', '-uall'], { cwd: ROOT, encoding: 'utf8' });
   const add = (f) => {
     const p = path.relative(ROOT, path.resolve(top.stdout.trim(), f)).split(path.sep).join('/');
     if (p && p !== '..' && !p.startsWith('../') && !path.isAbsolute(p)) set.add(p);
@@ -5618,7 +5860,7 @@ function changedFiles() {
   } else return null;
   // `--baseline <ref>`: also everything committed since <ref> (#254)
   if (typeof flags.baseline === 'string') {
-    const df = spawnSync('git', ['diff', '--name-only', '-z', flags.baseline, '--'], { cwd: ROOT, encoding: 'utf8' });
+    const df = tracedSpawnSync('git', ['diff', '--name-only', '-z', flags.baseline, '--'], { cwd: ROOT, encoding: 'utf8' });
     if (df.status !== 0) return null;
     df.stdout.split('\0').filter(Boolean).forEach(add);
   }
@@ -6629,7 +6871,7 @@ const WORKSPACE_ROOT = [
   [/^([^/]+\.(csproj|sln|slnx)|Directory\.(Build|Packages)\.(props|targets)|global\.json|nuget\.config)$/i, [/\.(csproj|sln|slnx)$/]],
 ];
 function gitFiles(glob) {
-  const r = spawnSync('git', ['ls-files', '-co', '--exclude-standard', glob], { cwd: ROOT, encoding: 'utf8' });
+  const r = tracedSpawnSync('git', ['ls-files', '-co', '--exclude-standard', glob], { cwd: ROOT, encoding: 'utf8' });
   const re = new RegExp('^' + glob.replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*').replace(/\?/g, '.') + '$');
   return (r.status === 0 ? r.stdout.split('\n') : workspaceFiles().filter((f) => re.test(f))).filter((f) => f && !/(^|\/)(node_modules|vendor)\//.test(f));
 }
@@ -6742,7 +6984,7 @@ function aliasSources(aliases, set, spec, from = '') {
 const DECL = /^(export\s+)?(default\s+)?(declare\s+)?(async\s+)?(abstract\s+)?(const|let|var|function\*?|class|interface|type|enum|namespace)\s+([\w$]+)/;
 const COMMENT_OR_BLANK = /^\s*($|\/\/|\/\*|\*)/;
 function changedSymbols(file) {
-  const r = spawnSync('git', ['diff', '-U0', 'HEAD', '--', file], { cwd: ROOT, encoding: 'utf8', maxBuffer: 64e6 });
+  const r = tracedSpawnSync('git', ['diff', '-U0', 'HEAD', '--', file], { cwd: ROOT, encoding: 'utf8', maxBuffer: 64e6 });
   if (r.status !== 0 || !r.stdout.trim()) return null;
   const lines = fs.readFileSync(path.join(ROOT, file), 'utf8').split('\n');
   const starts = [];
@@ -6981,39 +7223,131 @@ function planningSession(specs, scanned) {
     const nativeChecks = task => task.tests.map(id => ({ name: `native-${id}`,
       argv: [process.execPath, nativeScript, 'tdd', 'refactor', id, '--root', ROOT],
       timeoutMs: Math.min(config.timeoutMs ?? 600000, 600000) }));
+    clearTestShaVariantCache();
+    let currentSpecsSnapshot = specs;
+    let currentScannedSnapshot = scanned;
+    let inspectionInputsStale = false;
+    let cachedInspection;
+    let cachedLedgerSignature = null;
+    let cachedInputSignature = null;
+    const inspectionInputSignature = () => [...new Set([...listFiles(), ...currentSpecsSnapshot.map(spec => spec.path)])]
+      .sort().map(file => {
+        try {
+          const stat = fs.statSync(path.join(ROOT, file), { bigint: true });
+          return [file, stat.dev, stat.ino, stat.size, stat.mtimeNs, stat.ctimeNs].join('\0');
+        } catch (error) {
+          if (error.code === 'ENOENT') return `${file}\0missing`;
+          throw error;
+        }
+      }).join('\n');
+    const refreshInspectionInputs = () => {
+      currentSpecsSnapshot = loadSpecs();
+      currentScannedSnapshot = scanEntities(listFiles());
+      inspectionInputsStale = false;
+    };
+    const invalidateInspection = () => {
+      cachedInspection = null;
+      cachedLedgerSignature = null;
+      cachedInputSignature = null;
+      inspectionInputsStale = true;
+      clearTestShaVariantCache();
+    };
+    const inspectionSnapshot = task => {
+      if (!perfReference && cachedInspection) {
+        const signature = ledgerSignature();
+        const inputSignature = inspectionInputSignature();
+        if (signature === cachedLedgerSignature && inputSignature === cachedInputSignature) return cachedInspection;
+        invalidateInspection();
+      }
+      if (!perfReference && inspectionInputsStale) refreshInspectionInputs();
+      const currentConfig = readPlanningConfiguration(ROOT, loadConfig);
+      const currentSpecs = perfReference ? loadSpecs() : currentSpecsSnapshot;
+      const { ents, dups } = perfReference ? scanEntities(listFiles()) : currentScannedSnapshot;
+      const inputSignature = perfReference ? null : inspectionInputSignature();
+      const tool = sha(['sdd.mjs', 'implementation-plan.mjs', 'implementation-plan-evidence.mjs',
+        'implementation-plan-cli.mjs', 'spec-context.mjs'].map(file => file + '\0'
+          + sha(fs.readFileSync(new URL(file, import.meta.url)))).join('\0'));
+      const trace = traceCheck(ents, dups, currentSpecs);
+      let entries = [], ledgerUnavailable = false, ledgerError = null;
+      let snapshotSignature = null;
+      try {
+        let signature = null;
+        for (let attempt = 0; attempt < 2; attempt++) {
+          const before = ledgerSignature();
+          if (before === null) {
+            const after = ledgerSignature();
+            if (before === after) { signature = after; break; }
+            if (attempt === 0) continue;
+            throw new PlanningError(2, task.id,
+              `LEDGER STALE: ${rel(LEDGER)} changed during snapshot refresh; aborting`);
+          }
+          let fd;
+          let bytes;
+          try {
+            fd = fs.openSync(LEDGER, 'r');
+            if (fs.fstatSync(fd).size > 67108864) throw new PlanningError(2, task.id, 'Native ledger exceeds read budget');
+            bytes = readLedgerBytes(fd);
+            if (bytes.length > 67108864) throw new PlanningError(2, task.id, 'Native ledger exceeds read budget');
+          } catch (error) {
+            const after = ledgerSignature();
+            if (before !== after) {
+              if (attempt === 0) continue;
+              throw new PlanningError(2, task.id,
+                `LEDGER STALE: ${rel(LEDGER)} changed during snapshot refresh; aborting`);
+            }
+            if (error.code === 'ENOENT') { signature = after; break; }
+            throw error;
+          } finally {
+            if (fd !== undefined) fs.closeSync(fd);
+          }
+          const after = ledgerSignature();
+          if (before !== after) {
+            if (attempt === 0) continue;
+            throw new PlanningError(2, task.id,
+              `LEDGER STALE: ${rel(LEDGER)} changed during snapshot refresh; aborting`);
+          }
+          const text = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+          entries = ledgerLines(text).map(parseLedgerLine);
+          if (perfEnabled) ledgerInputs.set(entries, bytes.length);
+          signature = after;
+          break;
+        }
+        snapshotSignature = signature;
+      } catch (error) {
+        if (error.code !== 'ENOENT') {
+          if (error instanceof PlanningError) {
+            ledgerUnavailable = true;
+            ledgerError = { id: error.id, exit: error.exit, reason: error.message };
+          } else if (error instanceof SyntaxError || error instanceof TypeError || error.code) {
+            ledgerUnavailable = true;
+            ledgerError = { id: task.id, exit: 2, reason: 'Native ledger is unavailable or unparseable' };
+          } else throw error;
+        }
+      }
+      const chain = ledgerUnavailable ? null : verifyChain(entries);
+      if (!ledgerUnavailable) {
+        for (const entry of entries) Object.freeze(entry);
+        Object.freeze(entries);
+      }
+      const snapshot = { currentConfig, currentSpecs, ents, tool, trace, entries, ledgerUnavailable, ledgerError, chain };
+      if (!perfReference && !ledgerUnavailable) {
+        cachedInspection = Object.freeze(snapshot);
+        cachedLedgerSignature = snapshotSignature;
+        cachedInputSignature = inputSignature;
+      }
+      return snapshot;
+    };
     const inspect = task => {
       const bindings = Object.fromEntries(task.tests.map(id => [id, null])), errors = [], events = [];
       const problem = (id, exit, reason) => errors.push({ id, exit, reason });
       try {
-        const currentConfig = readPlanningConfiguration(ROOT, loadConfig);
-        const currentSpecs = loadSpecs(), { ents, dups } = scanEntities(listFiles());
-        const tool = sha(['sdd.mjs', 'implementation-plan.mjs', 'implementation-plan-evidence.mjs',
-          'implementation-plan-cli.mjs', 'spec-context.mjs'].map(file => file + '\0'
-            + sha(fs.readFileSync(new URL(file, import.meta.url)))).join('\0'));
-        const trace = traceCheck(ents, dups, currentSpecs);
+        const { currentConfig, currentSpecs, ents, tool, trace, entries, ledgerUnavailable, ledgerError, chain } =
+          inspectionSnapshot(task);
         const ids = new Set([...task.reqs, ...task.tests]);
         for (const reason of trace.errors) if ([...reason.matchAll(/\b(?:REQ|TEST|CODE)-[A-Z0-9-]+\b/g)].some(match => ids.has(match[0]))) {
           problem(task.id, / has no test \(@verifies\)/.test(reason) ? 2 : 1, reason);
         }
-        let entries = [], ledgerUnavailable = false;
-        try {
-          const fd = fs.openSync(LEDGER, 'r');
-          try {
-            if (fs.fstatSync(fd).size > 67108864) throw new PlanningError(2, task.id, 'Native ledger exceeds read budget');
-            const bytes = fs.readFileSync(fd);
-            if (bytes.length > 67108864) throw new PlanningError(2, task.id, 'Native ledger exceeds read budget');
-            entries = new TextDecoder('utf-8', { fatal: true }).decode(bytes).split('\n').filter(Boolean).map(line => JSON.parse(line));
-          } finally { fs.closeSync(fd); }
-        } catch (error) {
-          if (error.code !== 'ENOENT') {
-            if (error instanceof PlanningError) problem(error.id, error.exit, error.message);
-            else if (error instanceof SyntaxError || error instanceof TypeError || error.code) {
-              problem(task.id, 2, 'Native ledger is unavailable or unparseable');
-            } else throw error;
-            ledgerUnavailable = true;
-          }
-        }
-        const chain = ledgerUnavailable ? null : verifyChain(entries);
+        if (ledgerError) problem(ledgerError.id, ledgerError.exit, ledgerError.reason);
         if (chain) problem(task.id, 1, `invalid native ledger: ${chain}`);
         for (const id of task.tests) {
           const entity = ents.get(id);
@@ -7066,7 +7400,14 @@ function planningSession(specs, scanned) {
       return { bindings, events, errors };
     };
     return { ...loaded, adapter: { inspect, nativeChecks, run(argv, timeoutMs) {
-      const result = run1(argv, timeoutMs, '.', 8388609);
+      invalidateInspection();
+      invalidateSourceList();
+      let result;
+      try { result = run1(argv, timeoutMs, '.', 8388609); }
+      finally {
+        invalidateInspection();
+        invalidateSourceList();
+      }
       if (argv[1] === nativeScript && argv[2] === 'tdd' && result.exit === 2 && !result.error) {
         result.error = 'Native verification is incomplete (exit 2)';
       }
@@ -7078,7 +7419,7 @@ function planningSession(specs, scanned) {
 /** @id CODE-GATESNAPSHOT-001 @implements REQ-GATESNAPSHOT-001 */
 function cmdGate() {
   const lines = [];
-  if (flags.changed && typeof flags.baseline === 'string' && spawnSync('git', ['rev-parse', '--verify', '--quiet', flags.baseline + '^{commit}'], { cwd: ROOT }).status !== 0) {
+  if (flags.changed && typeof flags.baseline === 'string' && tracedSpawnSync('git', ['rev-parse', '--verify', '--quiet', flags.baseline + '^{commit}'], { cwd: ROOT }).status !== 0) {
     out(`REFUSED: --baseline ${flags.baseline} is not a git ref; gate --changed --baseline <ref> diffs against it`);
     return 2;
   }
@@ -7213,6 +7554,7 @@ function cmdGate() {
     if (cache.key === key && outsOk) lines.push('✓ prepare: up to date (cached, inputs unchanged)');
     else {
       const r = run(pc.cmd, pc.timeoutMs ?? 1800000);
+      invalidateSourceList();
       checkInputs('prepare');
       if (r.exit === 0) { if (inputsStable) writeJson(PREPARE_CACHE, { key, at: new Date().toISOString() }); add(true, `prepare (${(r.ms / 1000).toFixed(1)}s)`); }
       else add(false, r.timedOut ? `prepare TIMEOUT after ${(r.ms / 1000).toFixed(0)}s (raise prepare.timeoutMs)` : `prepare failed (${(r.ms / 1000).toFixed(1)}s)`, r.timedOut ? [] : tail(r.text, 8).split('\n'));
@@ -7350,6 +7692,7 @@ function cmdGate() {
     let retentionFailed = false;
     const runCheck = (argv, timeoutMs) => {
       const result = run(argv, timeoutMs, c.cwd);
+      invalidateSourceList();
       try {
         const receipt = retainCheckOutput(result, c.name, captured.length + 1);
         captured.push(receipt);
@@ -7414,7 +7757,7 @@ function cmdGate() {
 
     if (!flags.changed) {
       // full gate: compare with the HEAD version of the config (untracked or unchanged = nothing to report) (#331)
-      const bs = spawnSync('git', ['show', 'HEAD:./.sdd/config.json'], { cwd: ROOT, encoding: 'utf8' });
+      const bs = tracedSpawnSync('git', ['show', 'HEAD:./.sdd/config.json'], { cwd: ROOT, encoding: 'utf8' });
       let bc = null;
       try { bc = bs.status === 0 ? JSON.parse(bs.stdout) : null; } catch { /* unparsable baseline */ }
       const weak = bc && typeof bc === 'object' ? cfgRunLoosening(bc, cfg) : [];
@@ -7426,7 +7769,7 @@ function cmdGate() {
     }
     if (!flags['no-run'] && inputsStable) {
       // Include new definitions: an added higher-precedence config can narrow the run without changing a recorded file (#333).
-      const rec = readLedger().reverse().find((e) => e.checkDefShas)?.checkDefShas;
+      const rec = readLedger().findLast((e) => e.checkDefShas)?.checkDefShas;
       if (rec) {
         const cur = checkDefShas(cfg);
         const diff = [...new Set([...Object.keys(rec), ...Object.keys(cur)])].filter((k) => cur[k] !== rec[k]).map((k) => { const [n, f] = k.split('|'); return `check ${n} (${f}${cur[k] === undefined ? ' no longer defines it' : rec[k] === undefined ? ' now defines it' : ' changed'})`; });
@@ -7461,8 +7804,8 @@ function cmdGate() {
     const list = (a) => `${a.slice(0, 6).join(', ')}${a.length > 6 ? `, … (+${a.length - 6})` : ''}`;
     // a new source file under a project that carries no @id/@implements is unspecced code (#316)
     const newSrc = [];
-    const gs = spawnSync('git', ['status', '--porcelain', '-z', '-uall'], { cwd: ROOT, encoding: 'utf8' });
-    const gt = spawnSync('git', ['rev-parse', '--show-toplevel'], { cwd: ROOT, encoding: 'utf8' }).stdout.trim();
+    const gs = tracedSpawnSync('git', ['status', '--porcelain', '-z', '-uall'], { cwd: ROOT, encoding: 'utf8' });
+    const gt = tracedSpawnSync('git', ['rev-parse', '--show-toplevel'], { cwd: ROOT, encoding: 'utf8' }).stdout.trim();
     if (gs.status === 0) for (const l of gs.stdout.split('\0')) {
       if (!/^(\?\?|A.|.A)/.test(l)) continue;
       const f = path.relative(ROOT, path.resolve(gt, l.slice(3))).split(path.sep).join('/');
@@ -7476,7 +7819,7 @@ function cmdGate() {
     }
     // a .sdd/config.json edit that loosens gate strictness vs the baseline (#326)
     const bref = typeof flags.baseline === 'string' ? flags.baseline : 'HEAD';
-    const bshow = spawnSync('git', ['show', `${bref}:./.sdd/config.json`], { cwd: ROOT, encoding: 'utf8' });
+    const bshow = tracedSpawnSync('git', ['show', `${bref}:./.sdd/config.json`], { cwd: ROOT, encoding: 'utf8' });
     if (bshow.status === 0) {
       let bc = null;
       try { bc = JSON.parse(bshow.stdout); } catch { /* unparsable baseline */ }
@@ -7500,7 +7843,7 @@ function cmdGate() {
       }
     }
     const currentDefs = checkDefClosure(cfg);
-    const tree = spawnSync('git', ['ls-tree', '-r', '-z', bref, '--', '.'], { cwd: ROOT, encoding: 'utf8' });
+    const tree = tracedSpawnSync('git', ['ls-tree', '-r', '-z', bref, '--', '.'], { cwd: ROOT, encoding: 'utf8' });
     const modes = new Map((tree.stdout ?? '').split('\0').filter(Boolean).map((s) => [s.slice(s.indexOf('\t') + 1), s.slice(0, 6)]));
     const baselineRead = (f, seen = new Set()) => {
       if (seen.has(f)) return null;
@@ -7513,7 +7856,7 @@ function cmdGate() {
         if (/(^|\/)node_modules\//.test(f)) { try { return fs.readFileSync(path.resolve(ROOT, f), 'utf8'); } catch { return null; } }
         return null;
       }
-      const r = spawnSync('git', ['show', `${bref}:./${f}`], { cwd: ROOT, encoding: 'utf8', maxBuffer: 256e6 });
+      const r = tracedSpawnSync('git', ['show', `${bref}:./${f}`], { cwd: ROOT, encoding: 'utf8', maxBuffer: 256e6 });
       if (r.status !== 0) return null;
       return modes.get(f) === '120000' ? baselineRead(rel(path.resolve(ROOT, path.dirname(f), r.stdout)), seen) : r.stdout;
     };
@@ -7526,12 +7869,12 @@ function cmdGate() {
         }
         return null;
       }
-      const r = spawnSync('git', ['show', `${bref}:./${f}`], { cwd: ROOT, maxBuffer: 256e6 });
+      const r = tracedSpawnSync('git', ['show', `${bref}:./${f}`], { cwd: ROOT, maxBuffer: 256e6 });
       if (r.status !== 0) return null;
       return modes.get(f) === '120000' ? baselineRead.raw(rel(path.resolve(ROOT, path.dirname(f), r.stdout.toString())), seen) : r.stdout;
     };
     const baselineDefs = checkDefClosure(cfg, baselineRead, [...modes.keys()]);
-    const recordedDefs = readLedger().reverse().find((e) => e.checkDefShas)?.checkDefShas ?? {};
+    const recordedDefs = readLedger().findLast((e) => e.checkDefShas)?.checkDefShas ?? {};
     const defs = [...new Set([...currentDefs.keys(), ...baselineDefs.keys(), ...Object.keys(recordedDefs)])]
       .filter((k) => {
         if (k.startsWith('environment:msvc|')) return currentDefs.get(k)?.sha !== recordedDefs[k];
@@ -8106,6 +8449,9 @@ if (planningCommand && !planningModules.length) {
     process.exit(refusal.exit);
   }
 }
+const pinsLedgerAtStart = (pos[0] === 'tdd' && ['check', 'red', 'green', 'refactor'].includes(pos[1]))
+  || (pos[0] === 'gate' && flags['no-run']);
+if (fn && pinsLedgerAtStart && !flags.help) ledgerRegression('HEAD', true);
 /** @id CODE-PLAN-CLI-006 @implements REQ-PLAN-CLI-004 */
 try { process.exitCode = await fn() ?? 0; }
 catch (error) {

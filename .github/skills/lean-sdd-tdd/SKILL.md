@@ -109,6 +109,7 @@ attestation. Scope/policy weakening still needs explicit approval.
 5. `$S tdd green TEST-F-001`. Test edited since Red → rejected: revert, or record a new Red.
 6. Optional refactor, then `$S tdd refactor TEST-F-001`.
 6a. For each distinct changed failure mechanism, apply a bounded mutation in isolation and confirm the regression detects it; restore it and rerun affected checks. A gate fix must reject invalid evidence AND accept valid evidence. Record actual Red/Green/mutation commands and outcomes in the spec. Unrun, skipped or unparseable evidence cannot justify completion; do not fabricate ledger entries.
+6b. If a change adds or optimizes a filesystem/workspace discovery cache, invalidate it after each project-controlled prepare/check/retry command and before re-discovering validation inputs. Add regressions for file additions/removals during preparation and checks, retain a clean control, and apply step 6a's bounded mutation to each invalidation; restore it and record outcomes under step 6a.
 7. `$S gate --changed` (trace + evidence for touched REQs + project checks). Fix; stop after 3 identical failures and report.
 Impact: `$S impact <REQ|TEST|CODE|file> [--json]` lists implementing files, verifying tests and cross-feature REQs reached via imports (precision per language: `references/enforced-rules.md`). Run before changing a shared REQ.
 Batch: write all tests for a feature, then red each, implement, green each, **one** gate at the end.

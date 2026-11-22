@@ -7,7 +7,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const SDD = process.env.SDD_SCRIPT_UNDER_TEST ?? path.join(path.dirname(fileURLToPath(import.meta.url)), 'sdd.mjs');
-const work = fs.mkdtempSync(path.join(process.cwd(), '.sdd-test-work-'));
+const work = fs.mkdtempSync(path.join(os.tmpdir(), '.sdd-test-work-'));
 process.env.TMPDIR = work;
 process.env.GIT_CEILING_DIRECTORIES = work;
 after(() => fs.rmSync(work, { recursive: true, force: true }));
@@ -29,8 +29,33 @@ function project() {
 }
 const { NODE_TEST_CONTEXT, ...ENV } = process.env;
 const sddRaw = (d, ...a) => { const r = spawnSync('node', [SDD, '--root', d, ...a], { encoding: 'utf8', env: ENV }); return { code: r.status, out: r.stdout + r.stderr }; };
+function commitFixtureBaseline(d) {
+  if (!fs.existsSync(path.join(d, '.git'))) return;
+  const head = spawnSync('git', ['rev-parse', '--verify', '-q', 'HEAD'], { cwd: d });
+  if (head.status === 0) return;
+  if (head.status !== 1) throw new Error(`Fixture HEAD probe failed: ${head.stderr}`);
+  const add = spawnSync('git', ['add', '-A'], { cwd: d });
+  if (add.status !== 0) throw new Error(`Fixture staging failed: ${add.stderr}`);
+  const commit = spawnSync('git', ['-c', 'core.hooksPath=/dev/null', '-c', 'user.name=sdd-test',
+    '-c', 'user.email=sdd-test@example.invalid', 'commit', '-qm', 'fixture baseline'], { cwd: d });
+  if (commit.status !== 0) throw new Error(`Fixture baseline commit failed: ${commit.stderr}`);
+}
+const fixtureBaselines = new Set();
+function ensureFixtureBaseline(d) {
+  const root = path.resolve(d);
+  if (fixtureBaselines.has(root) || !fs.existsSync(path.join(d, '.git'))) return;
+  const head = spawnSync('git', ['rev-parse', '--verify', '-q', 'HEAD'], { cwd: d });
+  if (head.status === 0) {
+    fixtureBaselines.add(root);
+    return;
+  }
+  if (head.status !== 1) throw new Error(`Fixture HEAD probe failed: ${head.stderr}`);
+  commitFixtureBaseline(d);
+  fixtureBaselines.add(root);
+}
 // human `approve record` needs a matching prepare (#99); tests that are not about that run prepare first
 const sdd = (d, ...a) => {
+  if (a[0] === 'tdd' || (a[0] === 'approve' && a[1] === 'record')) ensureFixtureBaseline(d);
   if (a[0] === 'approve' && a[1] === 'record' && !/^ai\s*:/i.test(String(a[a.indexOf('--by') + 1] ?? ''))) sddRaw(d, 'approve', 'prepare', a[2]);
   const result = sddRaw(d, ...a);
   if (a[0] === 'init' && result.code === 0) {
@@ -435,6 +460,9 @@ test('#5 --missing-module accepts a declared missing import as non-weak Red', ()
 
 test('#3 --changed uses changedCmd with placeholders and reports TIMEOUT', () => {
   const d = project();
+  impl(d, '(a, b) => a + b');
+  commitFixtureBaseline(d);
+  impl(d, '(a, b) => a - b');
   fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ planning: { required: false }, checks: [
     { name: 'slow', cmd: ['node', '-e', '0'], changedCmd: ['node', '-e', 'setTimeout(()=>{},5000)', '{changedFiles}'], changedTimeoutMs: 300 },
     { name: 'ok', cmd: ['node', '-e', 'process.exit(1)'], changedCmd: ['node', '-e', 'process.exit(0)', '{changedTests}', '{changedScopes}'] },
@@ -659,6 +687,7 @@ test('#10 gate without specs is INCOMPLETE with a hint, not FAIL', () => {
   const d = fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-'));
   spawnSync('git', ['init', '-q'], { cwd: d });
   sdd(d, 'init');
+  commitFixtureBaseline(d);
   const g = sdd(d, 'gate', '--no-run');
   assert.match(g.out, /INCOMPLETE/);
   assert.equal(g.code, 2);
@@ -1620,6 +1649,11 @@ function mini(spec, files = {}, cmd = null) {
   if (cmd) { const cp = path.join(d, '.sdd/config.json'); const c = JSON.parse(fs.readFileSync(cp, 'utf8')); c.testCmd = cmd; fs.writeFileSync(cp, JSON.stringify(c)); }
   return d;
 }
+function committedMini(spec, files = {}, cmd = null) {
+  const d = mini(spec, files, cmd);
+  commitFixtureBaseline(d);
+  return d;
+}
 const PASS = ['node', '-e', '0'];
 const FAIL = ['node', '-e', 'console.log("AssertionError: boom");process.exit(1)'];
 const setCmd = (d, cmd) => { const cp = path.join(d, '.sdd/config.json'); const c = JSON.parse(fs.readFileSync(cp, 'utf8')); c.testCmd = cmd; fs.writeFileSync(cp, JSON.stringify(c)); };
@@ -1646,6 +1680,7 @@ test('TEST-NODE-SUMMARY-001 executed Node failures are not no-test incompletenes
       testCmd: [...cmd, '--test-name-pattern', '{id}', '{file}'],
       checks: [{ name: 'test', cmd: [...cmd, 'a.test.mjs'] }],
     }));
+    commitFixtureBaseline(d);
     const red = sdd(d, 'tdd', 'red', 'TEST-A-001');
     assert.equal(red.code, 0, red.out);
     fs.writeFileSync(path.join(d, 'answer.mjs'), '/** @id CODE-A-001 @implements REQ-A-001 */\nexport const answer = () => 1;\n');
@@ -1667,7 +1702,7 @@ test('TEST-NODE-SUMMARY-001 executed Node failures are not no-test incompletenes
 });
 
 function gateOutputFixture() {
-  const d = mini('---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | answer shall be one. | TEST-A-001 |\n', {
+  const d = committedMini('---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | answer shall be one. | TEST-A-001 |\n', {
     'answer.mjs': '/** @id CODE-A-001 @implements REQ-A-001 */\nexport const answer = () => 0;\n',
     'a.test.mjs': "import { test } from 'node:test';\nimport assert from 'node:assert/strict';\nimport { answer } from './answer.mjs';\n/** @id TEST-A-001 @verifies REQ-A-001 */\ntest('TEST-A-001 answer', () => assert.equal(answer(), 1));\n",
     'check.mjs': [
@@ -2376,6 +2411,7 @@ test('#98 pytest -k: a longer test name extending this id is excluded from the s
 
 test('#99 approve record for a human spec is refused without a matching prepare; allowed after it', () => {
   const d = mini(T2SPEC, { 'a.test.mjs': jsTest() }, PASS);
+  commitFixtureBaseline(d);
   const r = sddRaw(d, 'approve', 'record', 'a', '--by', 'Alice');
   assert.equal(r.code, 1, r.out);
   assert.match(r.out, /approve prepare a/);
@@ -2484,6 +2520,7 @@ test('#106 weak Red: a setup call inside a helper is weak; `.unwrap()` act befor
     fs.writeFileSync(path.join(d, 'lib.mjs'), "export function make() { throw new Error('not implemented: make'); }\nexport function step() { throw new Error('not implemented: step'); }\n");
     sdd(d, 'init');
     setCmd(d, ['node', '-e', "const e=new Error('not implemented: '+process.env.W);e.stack='Error: '+e.message+'\\n    at x (a.test.mjs:'+process.env.L+':1)';console.log(e.stack);process.exit(1)"]);
+    commitFixtureBaseline(d);
     return d;
   };
   // helper case: stub thrown in make() (defined outside the test), the test only calls make() then asserts on other state
@@ -2523,6 +2560,7 @@ test('#108 a lone CR in the frontmatter does not downgrade approval: human', () 
 
 test('#109 concurrent ledger appends keep the hash chain intact', async () => {
   const d = mini(T1SPEC, { 'a.test.mjs': jsTest() }, FAIL);
+  commitFixtureBaseline(d);
   const S = fileURLToPath(new URL('./sdd.mjs', import.meta.url));
   const one = () => new Promise((res) => { const p = spawn(process.execPath, [S, '--root', d, 'tdd', 'red', 'TEST-A-001', '--weak'], { stdio: 'ignore' }); p.on('close', res); });
   await Promise.all(Array.from({ length: 8 }, one));
@@ -2541,6 +2579,7 @@ test('#110 weak Red: an assigned (tuple / :=) result that is asserted, or a matc
     fs.writeFileSync(path.join(d, 'a.test.mjs'), `// @id TEST-A-001 @verifies REQ-A-001\n${body}\n`);
     sdd(d, 'init');
     setCmd(d, ['node', '-e', "const e=new Error('not implemented: '+process.env.W);e.stack='Error: '+e.message+'\\n    at x (a.test.mjs:'+process.env.L+':1)';console.log(e.stack);process.exit(1)"]);
+    commitFixtureBaseline(d);
     return spawnSync('node', [SDD, '--root', d, 'tdd', 'red', 'TEST-A-001'], { encoding: 'utf8', env: { ...ENV, W: 'step', L: String(line) } }).stdout;
   };
   assert.doesNotMatch(run('recs, rej = step(t)\nassert recs == 1', 2), /Red comes from setup/);
@@ -2776,6 +2815,7 @@ test('#122 T1 record is not claimed as locked; deleted review file makes AI lock
   const d = mini('---\nfeature: a\ntier: T2\n---\n## Design\nx\ny\n\n| REQ-A-001 | one shall hold. | TEST-A-001 |\n', { 'a.test.mjs': jsTest() }, PASS);
   const tpl = sddRaw(d, 'review', 'template', 'a').out;
   fs.writeFileSync(path.join(d, '.sdd/review.md'), tpl.replace(/^[^\n]*\n(?=---)/, ''));
+  commitFixtureBaseline(d);
   const rec = sddRaw(d, 'approve', 'record', 'a', '--by', 'ai:rev', '--review', '.sdd/review.md');
   if (/^locked/m.test(rec.out)) {
     fs.rmSync(path.join(d, '.sdd/review.md'));
@@ -2851,17 +2891,21 @@ test('#156 pytest nonexecution summaries are recognized without rejecting mixed 
 
 test('#156 a scoped pytest skipped-only check falls back to the full check', () => {
   const d = mini(T1SPEC.replace('one shall hold.', 'one shall hold. (test-only)'), { 'a.test.mjs': jsTest() }, FAIL);
+  const cp = path.join(d, '.sdd/config.json');
+  const cfg = JSON.parse(fs.readFileSync(cp, 'utf8'));
+  cfg.scopePolicy = 'warn';
+  fs.writeFileSync(cp, JSON.stringify(cfg));
   assert.equal(sdd(d, 'tdd', 'red', 'TEST-A-001').code, 0);
   setCmd(d, PASS);
   assert.equal(sdd(d, 'tdd', 'green', 'TEST-A-001').code, 0);
-  const cp = path.join(d, '.sdd/config.json');
-  const cfg = JSON.parse(fs.readFileSync(cp, 'utf8'));
-  cfg.checks = [{
+  const updated = JSON.parse(fs.readFileSync(cp, 'utf8'));
+  updated.checks = [{
     name: 'test',
     cmd: ['node', '-e', 'console.log("1 passed in 0.01s")'],
     changedCmd: ['node', '-e', 'console.log("1 skipped in 0.01s")'],
   }];
-  fs.writeFileSync(cp, JSON.stringify(cfg));
+  fs.writeFileSync(cp, JSON.stringify(updated));
+  fs.writeFileSync(path.join(d, 'package.json'), '{"changed":true}');
   const r = sdd(d, 'gate', '--changed');
   assert.equal(r.code, 0, r.out);
   assert.match(r.out, /scoped run.*running the full check/);
@@ -3454,7 +3498,11 @@ test('#137 dotnet test gets --no-build only for a repeat run with an unchanged t
   const log = path.join(bin, 'calls.log');
   fs.writeFileSync(path.join(bin, 'dotnet'), `#!/bin/sh\necho "$@" >> "${log}"\nif [ "$1" = "--version" ]; then echo 10.0.0; exit 0; fi\nif [ -n "$FAKE_BUILD_ERROR" ]; then echo "T.cs(1,1): error CS0103: nope"; fi\necho "Failed!  - Failed: 1, Passed: 0, Total: 1"\necho "Assert.Equal() Failure"\nexit 1\n`, { mode: 0o755 });
   const spec = '---\nfeature: a\ntier: T1\n---\n| REQ-A-001 | one shall hold. | TEST-A-001 |\n| REQ-A-002 | two shall hold. | TEST-A-002 |\n';
-  const mk = () => mini(spec, { 'T/T.csproj': testProj(XUNIT), 'T/Tests.cs': '// @id TEST-A-001 @verifies REQ-A-001\npublic class A { }\n// @id TEST-A-002 @verifies REQ-A-002\npublic class B { }\n' }, ['dotnet', 'test', 'T', '--nologo', '--filter', 'FullyQualifiedName~{idu}']);
+  const mk = () => {
+    const d = mini(spec, { 'T/T.csproj': testProj(XUNIT), 'T/Tests.cs': '// @id TEST-A-001 @verifies REQ-A-001\npublic class A { }\n// @id TEST-A-002 @verifies REQ-A-002\npublic class B { }\n' }, ['dotnet', 'test', 'T', '--nologo', '--filter', 'FullyQualifiedName~{idu}']);
+    commitFixtureBaseline(d);
+    return d;
+  };
   const go = (d, env) => { fs.rmSync(log, { force: true }); spawnSync('node', [SDD, '--root', d, 'tdd', 'red', 'TEST-A-001', 'TEST-A-002', '--weak'], { encoding: 'utf8', env: { ...ENV, PATH: `${bin}:${process.env.PATH}`, ...env } }); return fs.readFileSync(log, 'utf8').trim().split('\n').filter((l) => /^test/.test(l)); };
   const ok = go(mk(), {});
   assert.equal(ok.length, 2, ok.join('\n'));
@@ -5224,6 +5272,7 @@ test('#164 default PHPUnit and VSTest filters are exact and preserve provider se
     fs.mkdirSync(bin);
     const runner = stack === 'php' ? 'phpunit' : 'dotnet';
     fs.writeFileSync(path.join(bin, runner), '#!/bin/sh\nprintf "%s\\n" "$@" > args.log\necho "AssertionError: target"\nexit 1\n', { mode: 0o755 });
+    commitFixtureBaseline(d);
     const r = spawnSync('node', [SDD, '--root', d, 'tdd', 'red', 'TEST-A-001'], { encoding: 'utf8', env: { ...ENV, PATH: `${bin}:${ENV.PATH}` } });
     assert.equal(r.status, 0, r.stdout + r.stderr);
     const args = fs.readFileSync(path.join(d, 'args.log'), 'utf8').split('\n');
@@ -6380,6 +6429,7 @@ test('#244 weak Red: a stub reached through nested helpers is asserted when the 
   fs.writeFileSync(path.join(d, 'lib.mjs'), "export function make() { throw new Error('not implemented: make'); }\n");
   sdd(d, 'init');
   setCmd(d, ['node', '-e', "const e=new Error('not implemented: make');e.stack='Error: '+e.message+'\\n    at x (a.test.mjs:4:1)';console.log(e.stack);process.exit(1)"]);
+  commitFixtureBaseline(d);
   const r = spawnSync('node', [SDD, '--root', d, 'tdd', 'red', 'TEST-A-001'], { encoding: 'utf8', env: ENV });
   assert.doesNotMatch(r.stdout, /setup call|\[weak\]/, r.stdout);
 });
@@ -7902,6 +7952,7 @@ function flakyProject(flaky, cmdBody) {
   spawnSync('git', ['init', '-q'], { cwd: d });
   fs.mkdirSync(path.join(d, '.sdd/specs'), { recursive: true });
   fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ planning: { required: false }, checks: [{ name: 'test', cmd: ['node', '-e', cmdBody] }], ...(flaky ? { flaky } : {}) }));
+  commitFixtureBaseline(d);
   return d;
 }
 const FLAKY_ONCE = "const f=require('fs');if(f.existsSync('m'))process.exit(0);f.writeFileSync('m','1');console.log('AssertionError: flaky');process.exit(1)";
@@ -8963,6 +9014,7 @@ const r24dRustStub = (body, uses, source = '') => {
     'src/lib.rs': source,
     'tests/h_test.rs': `use repro::{${uses}};\n\n// @id TEST-H-001\n// @verifies REQ-H-001\n#[test]\nfn test_h_001() {\n${body}\n}\n`,
   });
+  commitFixtureBaseline(d);
   const r = sdd(d, 'tdd', 'stub', 'TEST-H-001', '--report');
   const lib = fs.readFileSync(path.join(d, 'src/lib.rs'), 'utf8');
   const rows = [...r.out.matchAll(/^ {2}([\w:]+) \| (shown|inferred|guessed) \| (\S+)$/gm)].map((m) => ({ element: m[1], confidence: m[2], evidence: m[3] }));
@@ -10116,6 +10168,7 @@ test('TEST-R30C-001 r30c #334 hand-rehashed approval and review cannot bless an 
   const { createHash } = await import('node:crypto');
   const d = mini('---\nfeature: a\ntier: T2\n---\n## Design\nPure calculation.\nNo state.\n\n| REQ-A-001 | one shall hold. | TEST-A-001 |\n', { 'a.test.mjs': jsTest() }, PASS);
   fs.writeFileSync(path.join(d, '.sdd/config.json'), JSON.stringify({ planning: { required: false }, testCmd: PASS, checks: [{ name: 'ok', cmd: PASS }] }));
+  commitFixtureBaseline(d);
   const review = '.sdd/review-a.md';
   const refreshReview = () => {
     const hash = sdd(d, 'approve', 'prepare', 'a').out.match(/sha256:([0-9a-f]{64})/)[1];
@@ -10329,7 +10382,7 @@ test('r30e #336 strict gate keeps vanished Green REQs failing after bot retireme
 /** @id TEST-GATESNAPSHOT-001 @verifies REQ-GATESNAPSHOT-001 */
 test('TEST-GATESNAPSHOT-001 #337 prepare lockfile rewrites preserve workspace and transitive consumer checks', () => {
   for (const exit of [0, 1]) {
-    const d = mini(T1SPEC, {
+    const d = committedMini(T1SPEC, {
       'a.test.mjs': jsTest(),
       'lib.mjs': '// @id CODE-A-001 @implements REQ-A-001\nexport const value = 1;\n',
       'rust/Cargo.toml': '[workspace]\nmembers = ["crates/*"]\n',
@@ -10378,7 +10431,7 @@ test('#338 vanished secondary REQs in grouped Green evidence warn, fail strict g
     'a.test.mjs': testBody('TEST-A-001', 'REQ-A-001 REQ-A-002', '  assert.equal(add(2), 3);\n'),
   }, ['node', '--test', 'a.test.mjs']);
   const cp = path.join(d, '.sdd/config.json');
-  const config = { ...JSON.parse(fs.readFileSync(cp, 'utf8')), checks: [{ name: 'test', cmd: ['node', '--test', 'a.test.mjs'] }] };
+  const config = { ...JSON.parse(fs.readFileSync(cp, 'utf8')), scopePolicy: 'warn', checks: [{ name: 'test', cmd: ['node', '--test', 'a.test.mjs'] }] };
   fs.writeFileSync(cp, JSON.stringify(config));
   assert.equal(sdd(d, 'tdd', 'red', 'TEST-A-001').code, 0);
   fs.writeFileSync(path.join(d, 'add.mjs'), source('REQ-A-001 REQ-A-002', 1));
@@ -10441,6 +10494,7 @@ test('#339 native Node TypeScript parse failures cannot establish Red for any se
       '',
     ].join('\n'),
   }, ['node', '--test', '--test-reporter=spec', '--test-name-pattern={id}', '{file}']);
+  commitFixtureBaseline(d);
   const parser = spawnSync('node', ['--test', '--test-reporter=spec', 'a.test.mjs'], { cwd: d, encoding: 'utf8', env: ENV });
   assert.equal(parser.status, 1, parser.stdout + parser.stderr);
   assert.match(parser.stdout + parser.stderr, stripsTypes
@@ -10490,6 +10544,7 @@ test('#339 native Node TypeScript parse failures cannot establish Red for any se
       'subject.mjs': `// @id CODE-A-001 @implements REQ-A-001\nexport const answer = () => { ${body} };\n`,
       'a.test.mjs': "import { test } from 'node:test';\nimport assert from 'node:assert/strict';\nimport { answer } from './subject.mjs';\n/** @id TEST-A-001 @verifies REQ-A-001 */\ntest('TEST-A-001 answer', () => assert.equal(answer(), 1));\n",
     }, ['node', '--test', '--test-reporter=spec', '--test-name-pattern={id}', '{file}']);
+    commitFixtureBaseline(js);
     const native = spawnSync('node', ['--test', '--test-reporter=spec', 'a.test.mjs'], { cwd: js, encoding: 'utf8', env: ENV });
     assert.equal(native.status, 1, native.stdout + native.stderr);
     assert.match(native.stdout + native.stderr, body === 'return 0;'
@@ -10529,6 +10584,8 @@ function r31aFixture(files, checks, projects = []) {
     scan: { include: ['a.test.mjs'] },
     scopePolicy: 'warn', unscoped: ['**'], checks, projects,
    planning: { required: false } }));
+  assert.equal(spawnSync('git', ['add', '-A'], { cwd: d }).status, 0);
+  assert.equal(spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'initialize fixture HEAD'], { cwd: d }).status, 0);
   assert.equal(sdd(d, 'tdd', 'red', 'TEST-A-001').code, 0);
   setCmd(d, PASS);
   const green = sdd(d, 'tdd', 'green', 'TEST-A-001');
@@ -10913,6 +10970,26 @@ test('r31c #342 prepare cannot rewrite validated tests even when declared as out
   }
 });
 
+test('r31c #342 prepare cannot add newly annotated tests', () => {
+  for (const args of [[], ['--changed']]) {
+    const d = r31cVerifiedProject({
+      prepare: { cmd: ['node', '-e', "require('fs').writeFileSync('new.test.mjs','// @id TEST-A-002 @verifies REQ-A-001\\n');"] },
+    });
+    const r = sdd(d, 'gate', ...args);
+    assert.equal(r.code, 1, r.out);
+    assert.match(r.out, /gate inputs changed after prepare:.*new\.test\.mjs/, r.out);
+  }
+});
+
+test('r31c #342 prepare cannot delete validated tests', () => {
+  const d = r31cVerifiedProject({
+    prepare: { cmd: ['node', '-e', "require('fs').unlinkSync('a.test.mjs');"] },
+  });
+  const r = sdd(d, 'gate');
+  assert.equal(r.code, 1, r.out);
+  assert.match(r.out, /gate inputs changed after prepare:.*a\.test\.mjs/, r.out);
+});
+
 test('r31c #342 checks cannot mutate validated tests specs ledger or policy inputs', () => {
   for (const target of ['a.test.mjs', '.sdd/specs/a.md', '.sdd/tdd.jsonl', '.sdd/config.json', '.sdd/approvals.json', '.sdd/retired-reqs.json', '.sdd/trace-baseline.json']) {
     const d = r31cVerifiedProject({
@@ -10934,7 +11011,7 @@ test('r31c #342 deleted evidence inputs and newly annotated files cannot keep PA
   ]) {
     const d = r31cVerifiedProject({ checks: [{ name: 'probe', cmd: ['node', '-e', script] }] });
     const r = sdd(d, 'gate', '--changed');
-    assert.equal(r.code, 1, r.out);
+    assert.equal(r.code, 1, `${script}\n${r.out}`);
     assert.match(r.out, /gate inputs changed.*check probe/, r.out);
   }
 });
@@ -11862,6 +11939,7 @@ function r33bNodeFixture(reporter = 'spec', nested = false) {
     ...JSON.parse(fs.readFileSync(cp)), scan: { include: [`${prefix}*.mjs`] }, scopePolicy: 'warn',
     ...(nested ? { checks: [], projects: [{ root: 'packages/core', testCmd, checks: [check] }] } : { testCmd, checks: [check] }),
    planning: { required: false } }));
+  commitFixtureBaseline(d);
   const red = sdd(d, 'tdd', 'red', 'TEST-A-001');
   assert.equal(red.code, 0, red.out);
   fs.writeFileSync(path.join(d, `${prefix}answer.mjs`), '// @id CODE-A-001 @implements REQ-A-001\nexport const answer = () => 1;\n');
@@ -11967,6 +12045,7 @@ test('TEST-R33-PYTEST-002 r33b #356 computed plugin refuses real pytest executio
   }, ['python3', '-m', 'pytest', '-q', 'test_a.py', '-k', '{idu}']);
   const cp = path.join(d, '.sdd/config.json');
   fs.writeFileSync(cp, JSON.stringify({ ...JSON.parse(fs.readFileSync(cp)), scan: { include: ['test_a.py', 'src/subject.py'] }, checks: [{ name: 'test', cmd: ['python3', '-m', 'pytest', '-q'] }] , planning: { required: false } }));
+  commitFixtureBaseline(d);
   const red = sdd(d, 'tdd', 'red', 'TEST-A-001');
   assert.equal(red.code, 1, red.out);
   assert.match(red.out, /REFUSED: unresolved pytest_plugins/);
@@ -12555,6 +12634,8 @@ test('TEST-R34-PYREL-005 r34c #359 real relative-plugin oracle rejects wrong Gre
     ...JSON.parse(fs.readFileSync(cp)), scan: { include: ['test_a.py', 'src/subject.py'] },
     scopePolicy: 'strict', checks: [{ name: 'test', cmd: ['python3', '-m', 'pytest', '-q'] }],
    planning: { required: false } }));
+  assert.equal(spawnSync('git', ['add', '-A'], { cwd: d }).status, 0);
+  assert.equal(spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'initialize fixture HEAD'], { cwd: d }).status, 0);
   const red = sdd(d, 'tdd', 'red', 'TEST-A-001');
   assert.equal(red.code, 0, red.out);
   assert.match(red.out, /assert 1 == 2/);
@@ -12680,6 +12761,7 @@ function r34dPytestFixture(declaration = "pytest_plugins = ('qa_hooks',)") {
     ...JSON.parse(fs.readFileSync(cp)), scan: { include: ['test_a.py', 'src/subject.py'] },
     checks: [{ name: 'test', cmd: ['python3', '-m', 'pytest', '-q'] }],
    planning: { required: false } }));
+  commitFixtureBaseline(d);
   return d;
 }
 
@@ -12812,6 +12894,7 @@ function r34eNodeFixture(reporter = 'spec', parent = false) {
       changedCmd: ['node', '--test', ...flags, '{changedTests}'] }],
     flaky: { retries: 1, policy: 'warn' } };
   fs.writeFileSync(cp, JSON.stringify(cfg));
+  commitFixtureBaseline(d);
   const red = sdd(d, 'tdd', 'red', 'TEST-A-001');
   assert.equal(red.code, 0, red.out);
   fs.writeFileSync(path.join(d, 'answer.mjs'), '// @id CODE-A-001 @implements REQ-A-001\nexport const answer = () => 1;\n');
@@ -12996,6 +13079,7 @@ function r34fFixture() {
   cfg.scan = { include: ['a.test.mjs', 'answer.mjs'] };
   cfg.scopePolicy = 'strict';
   cfg.timeoutMs = 5000;
+  commitFixtureBaseline(d);
   return { d, cp, cfg };
 }
 function r34fRun(d, ...args) {
@@ -13154,6 +13238,8 @@ test('TEST-R34-INTEGRATION-002 r34 integration real relative-plugin restored con
     'src/subject.py': '# @id CODE-A-001 @implements REQ-A-001\ndef answer():\n    return 1\n',
   }, ['python3', '-m', 'pytest', '-q', 'test_a.py', '-k', '{idu}']);
   const subject = path.join(d, 'src/subject.py');
+  assert.equal(spawnSync('git', ['add', '-A'], { cwd: d }).status, 0);
+  assert.equal(spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'initialize fixture HEAD'], { cwd: d }).status, 0);
   fs.utimesSync(subject, 1700000000, 1700000000);
   const red = sdd(d, 'tdd', 'red', 'TEST-A-001');
   assert.equal(red.code, 0, red.out);
@@ -13536,7 +13622,9 @@ function r36aRedClassification(body, weak, disableHelpers) {
     "assert.equal(typeof [].map, 'function');",
     '',
   ].join('\n'));
-  const approved = sdd(d, 'approve', 'record', 'calc', '--by', 'tester');
+  sdd(d, 'init');
+  commitFixtureBaseline(d);
+  const approved = sdd(d, 'approve', 'record', 'calc', '--by', 'ai:tester', '--review', 'no findings');
   assert.equal(approved.code, 0, approved.out);
   const r = spawnSync(process.execPath, [
     ...(disableHelpers ? ['--require', preload] : []),
@@ -13582,7 +13670,8 @@ function r36bFixture(reporter, body, subject = '(a, b) => a + b', extra = '') {
     `test('TEST-CALC-001 target', () => { ${body} });`,
   ].join('\n'));
   setCmd(d, ['node', '--test', `--test-reporter=${reporter}`, 'add.test.mjs']);
-  sdd(d, 'approve', 'record', 'calc', '--by', 'tester');
+  commitFixtureBaseline(d);
+  sdd(d, 'approve', 'record', 'calc', '--by', 'ai:tester', '--review', 'no findings');
   return d;
 }
 
@@ -13946,6 +14035,7 @@ test('#370 TEST-R36F-LAYOUT-001 r35a fixtures stay outside distributed payload f
     'const create = fs.mkdtempSync;',
     'fs.mkdtempSync = (prefix, ...args) => {',
     '  const directory = create(prefix, ...args);',
+    "  if (path.basename(String(prefix)) === '.sdd-test-work-') console.log('R36F_WORK=' + JSON.stringify(fs.realpathSync(directory)));",
     "  if (/^r35a-(?:init|pack|admission|admission-pack)-$/.test(path.basename(String(prefix)))) {",
     "    console.log('R36F_FIXTURE=' + JSON.stringify(fs.realpathSync(directory)));",
     "    throw new Error('R36F_STOP_BEFORE_NATIVE_WORK');",
@@ -13974,6 +14064,14 @@ test('#370 TEST-R36F-LAYOUT-001 r35a fixtures stay outside distributed payload f
       const observations = [...output.matchAll(/R36F_FIXTURE=("[^\r\n]+")/g)];
       assert.equal(observations.length, 1, output);
       const directory = JSON.parse(observations[0][1]);
+      const workspaces = [...output.matchAll(/R36F_WORK=("[^\r\n]+")/g)];
+      assert.equal(workspaces.length, 1, output);
+      const workspace = JSON.parse(workspaces[0][1]);
+      for (const payload of payloads) {
+        const relative = path.relative(payload, workspace);
+        const inside = relative === '' || (!path.isAbsolute(relative) && relative !== '..' && !relative.startsWith(`..${path.sep}`));
+        assert.equal(inside, false, `${title} from ${cwd}: test workspace ${workspace} must stay outside distributed payload ${payload}`);
+      }
       for (const payload of payloads) {
         const relative = path.relative(payload, directory);
         const inside = relative === '' || (!path.isAbsolute(relative) && relative !== '..' && !relative.startsWith(`..${path.sep}`));
@@ -14323,7 +14421,9 @@ test('#373 TEST-R36I-LEGACY-001 legacy string probing remains raw with identical
   const result = { stdout: '\x1b[31mraw stdout\x1b[0m\n', stderr: 'raw stderr\n', status: null, signal: 'SIGTERM', error };
   const env = { PATH: ENV.PATH, LC_ALL: 'not-C', KEEP: 'sentinel' };
   const api = runInNewContext(`${block}\n({ probe, outcome: typeof probeOutcome === 'function' ? probeOutcome : null });`, {
-    process: { env }, spawnSync: (cmd, args, options) => { calls.push({ cmd, args, options }); return result; },
+    process: { env },
+    spawnSync: (cmd, args, options) => { calls.push({ cmd, args, options }); return result; },
+    tracedSpawnSync: (cmd, args, options) => { calls.push({ cmd, args, options }); return result; },
   });
   assert.equal(api.probe('compiler', ['--flag'], '/owned/cwd'), result.stdout + result.stderr);
   if (api.outcome) {

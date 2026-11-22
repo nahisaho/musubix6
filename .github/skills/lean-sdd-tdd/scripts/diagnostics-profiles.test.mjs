@@ -113,6 +113,7 @@ function isolatedPython({ ruff = null, version = '0.17.1', mypy = null, mypyVers
 }
 function fakeRust() {
   const fixture = rust(), tools = project(), events = path.join(project(), 'events.jsonl');
+  write(tools, 'package.json', '{"type":"commonjs"}\n');
   const metadata = { packages: [{ id: 'fixture-id', manifest_path: path.join(fixture.root, 'Cargo.toml'),
     targets: [{ src_path: path.join(fixture.root, 'src/lib.rs') }] }], workspace_members: ['fixture-id'], workspace_root: fixture.root };
   const cargo = `#!${process.execPath}\nconst fs=require("fs"); const a=process.argv.slice(2);fs.appendFileSync(${JSON.stringify(events)},JSON.stringify({a, cwd:process.cwd(),rustc:process.env.RUSTC,autoInstall:process.env.RUSTUP_AUTO_INSTALL})+"\\n");if(a[0]==="-V"){console.log("cargo "+(process.env.FIXTURE_CARGO_VERSION||"1.99.0")+" (fixture)");}else if(a[0]==="metadata"){console.log(${JSON.stringify(JSON.stringify(metadata))});}else{const t=a[a.indexOf("--target-dir")+1]; if(!t||!a.includes('--offline')||!a.includes('--locked')||!a.includes('--all-targets')||!a.includes('cache.auto-clean-frequency="never"')||!a.includes("build.build-dir="+JSON.stringify(require("path").join(t,"intermediates"))))throw Error("missing required Cargo policy");process.stdout.write(process.env.FIXTURE_CARGO_MESSAGES||"");process.stderr.write(process.env.FIXTURE_CARGO_STDERR||"");process.exitCode=Number(process.env.FIXTURE_CARGO_EXIT||0);}\n`;
@@ -389,6 +390,7 @@ test('TEST-DIAGRUST-001 installed root toolchain, lock and workspace boundaries'
   incomplete(cli(root, 'rust', [], env).providers[0], /installed|toolchain|version/i);
   const fake = fakeRust();
   incomplete(cli(fake.root, 'rust', [], { ...fake.env, FIXTURE_CARGO_VERSION: '1.98.0' }).providers[0], /version/i);
+  assert.ok(fs.existsSync(fake.events), 'scripted cargo must emit its version probe instead of failing inherited ESM loading');
   assert.equal(fs.readFileSync(fake.events, 'utf8').trim().split('\n').length, 1, 'Unsupported cargo must not execute metadata/check');
   fs.unlinkSync(path.join(root, 'rust-toolchain.toml'));
   write(root, 'Cargo.toml', fs.readFileSync(path.join(root, 'Cargo.toml'), 'utf8') + '[workspace]\nmembers=["member"]\n');
