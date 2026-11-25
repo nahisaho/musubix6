@@ -1,0 +1,164 @@
+{
+  "apiReferences": [
+    "https://learn.microsoft.com/en-us/windows/win32/debug/process-functions-for-debugging",
+    "https://learn.microsoft.com/en-us/windows/win32/debug/debugging-events",
+    "https://learn.microsoft.com/en-us/windows/win32/api/debugapi/nf-debugapi-waitfordebugevent",
+    "https://learn.microsoft.com/en-us/windows/win32/api/debugapi/nf-debugapi-continuedebugevent",
+    "https://learn.microsoft.com/en-us/windows/win32/api/handleapi/nf-handleapi-duplicatehandle",
+    "https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/ns-processthreadsapi-process_information",
+    "https://learn.microsoft.com/en-us/windows/win32/api/psapi/nf-psapi-getprocessmemoryinfo",
+    "https://learn.microsoft.com/en-us/windows/win32/api/psapi/ns-psapi-process_memory_counters_ex",
+    "https://learn.microsoft.com/en-us/windows/win32/api/winternl/nf-winternl-ntqueryinformationprocess",
+    "https://learn.microsoft.com/en-us/windows/win32/api/minwinbase/ns-minwinbase-debug_event",
+    "https://learn.microsoft.com/en-us/windows/win32/api/winnt/ns-winnt-exception_record",
+    "https://learn.microsoft.com/en-us/windows/win32/api/minwinbase/ns-minwinbase-exception_debug_info",
+    "https://learn.microsoft.com/en-us/windows-hardware/drivers/debugger/initial-breakpoint",
+    "https://learn.microsoft.com/en-in/answers/questions/639543/app-crash-clr-dll",
+    "https://learn.microsoft.com/en-us/windows/win32/api/minwinbase/ns-minwinbase-load_dll_debug_info",
+    "https://learn.microsoft.com/en-us/windows/win32/api/minwinbase/ns-minwinbase-create_process_debug_info",
+    "https://learn.microsoft.com/en-us/windows/win32/api/psapi/nf-psapi-getmappedfilenamew",
+    "https://learn.microsoft.com/en-us/windows/win32/api/memoryapi/nf-memoryapi-virtualqueryex",
+    "https://learn.microsoft.com/en-us/windows/win32/api/winnt/ns-winnt-memory_basic_information",
+    "https://learn.microsoft.com/en-us/windows/win32/api/memoryapi/nf-memoryapi-readprocessmemory",
+    "https://learn.microsoft.com/en-us/windows/win32/debug/pe-format",
+    "https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-openprocess",
+    "https://learn.microsoft.com/en-us/windows/win32/procthread/process-security-and-access-rights",
+    "https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-getprocesstimes",
+    "https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-updateprocthreadattribute",
+    "https://learn.microsoft.com/en-us/windows/win32/procthread/job-objects",
+    "https://learn.microsoft.com/en-us/windows/win32/api/jobapi2/nf-jobapi2-terminatejobobject",
+    "https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-getfinalpathnamebyhandlew",
+    "https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-removedirectoryw",
+    "https://learn.microsoft.com/en-us/windows/win32/api/libloaderapi/nf-libloaderapi-getprocaddress",
+    "https://learn.microsoft.com/en-us/windows/win32/api/wow64apiset/nf-wow64apiset-iswow64process2",
+    "https://learn.microsoft.com/en-us/cpp/build/x64-software-conventions?view=msvc-170",
+    "https://learn.microsoft.com/en-us/dotnet/api/system.io.path.getfullpath?view=netframework-4.8",
+    "https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.utility/add-type?view=powershell-7.5",
+    "https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_language_modes?view=powershell-7.5"
+  ],
+  "baseCommit": "85c1e02c29bb5d6ea3c6cbe8fd25b4f8f0bf38d6",
+  "files": [
+    {
+      "path": ".gitattributes",
+      "sha256": "705fd4d6451a31d36b3df7de96f83f30ac976c9b4a6d1e51671d8e2f33e2d0da"
+    },
+    {
+      "path": "NativeCollector.cs",
+      "sha256": "305b97820c37444c37c5501c61cb6dc5f6ec92877283094d697d311e8533eaa3"
+    },
+    {
+      "path": "run-collector.ps1",
+      "sha256": "c30731ebed3d2b89f2e62ec860c4721a87c581a7cff6caff06aaa7993a297039"
+    },
+    {
+      "path": "subject.mjs",
+      "sha256": "f62cdece0360db6093eabf5d0913c51abce06d2e597735039e2a99a432bf743c"
+    },
+    {
+      "path": "validate-evidence.mjs",
+      "sha256": "ff3cbe4fe68a61d11b835f31721dfec5a31372110f2eea40d2a04780cfc8903d"
+    },
+    {
+      "path": "validate-evidence.test.mjs",
+      "sha256": "a9bea214388ba0116edf2d87962488edee500919b962c83f34953e2a060855b0"
+    }
+  ],
+  "firstChanceRepresentation": "Verbatim native uint32 dwFirstChance, not normalized: zero is later encounter; ANY nonzero including 2/UINT32_MAX is first encounter. First actual exception per owned process is a separate required condition.",
+  "fixture": {
+    "roles": [
+      "root",
+      "quick",
+      "nested",
+      "grandchild",
+      "allocator",
+      "survivor"
+    ],
+    "scope": "Short non-lock collector experiment only; no physical-N boundary or full qualification profiles.",
+    "touchedAllocationBytes": "67108864",
+    "watchdogMs": 15000
+  },
+  "inventoryScope": "The six files above are all bundle execution inputs, including byte-preserving attributes and pure control tests. Manifest is excluded from recursive self-hashing; its trusted SHA256 must be supplied independently.",
+  "kind": "COLLECTOR-ONLY-PROTOTYPE",
+  "method": "DEBUG_PROCESS lifecycle, retained owned process duplicates, held-exit PeakWorkingSetSize, kernel exit FILETIME; conservative closed-overlap peak sum recomputed by validator. Job is containment/census only, not RSS evidence or allocation cap.",
+  "nativeStatus": "UNRUN",
+  "policy": {
+    "guardMsUnchanged": 30000,
+    "holderMsUnchanged": 120000,
+    "physicalNBytes": "134217728",
+    "probeTimeoutMs": 180000,
+    "requiredEventualTargets": [
+      "linux22",
+      "linux24",
+      "windows20",
+      "windows22",
+      "windows24"
+    ],
+    "subjectTreeRssBoundBytes": "2147483648"
+  },
+  "qualification": "NOT_RUN",
+  "runner": {
+    "commandTemplate": "powershell.exe -NoLogo -NoProfile -File \".\\run-collector.ps1\" -Manifest \".\\manifest.json\" -ManifestSha256 <TRUSTED_DETACHED_SHA256> -Scratch \"<ABSOLUTE_OWNED_NTFS_SCRATCH_OUTSIDE_CLONE>\" -SourceRepositoryRoot \"<ABSOLUTE_VERIFIED_CLONE_ROOT>\"",
+    "controls": "First accept actual native control; only then derive four invalid-evidence controls: missing grandchild, zero peak, manifest mismatch, simulated API failure. These are evidence mutations, not native fault injection.",
+    "laneOrder": [
+      24,
+      22,
+      20
+    ],
+    "laterLanesRequirePreviousNativeValidControlPass": true,
+    "requirements": "Native Windows x64, FullLanguage PowerShell/Add-Type permitted without bypass; existing dedicated local fixed NTFS scratch outside verified clone. SourceRepositoryRoot and Scratch arguments must be absolute. No WSL, UNC or junction/reparse path admission.",
+    "retention": "Private run artifacts retained, including raw native/witness/verdict data and hashes; do not publish actual PID/path/host logs.",
+    "stopOnAnyFailure": true,
+    "subjectCommandTemplate": "<VERIFIED_NODE_EXE> <HASHED_SUBJECT_MJS> root <UNIQUE_OWNED_CASE_ROOT>; CreateProcess lpCurrentDirectory explicitly equals case root"
+  },
+  "runtimes": [
+    {
+      "archiveSha256": "e612af99f626ab415ea225af6bce5c971feb448cb5cae250bb1c3fa50c5f7d9f",
+      "checksumEvidence": "Expected official immutable SHASUMS; owner runner verifies actual ZIP and extracted executable before execution.",
+      "executableSha256": "86fc4785327db5f5c7558dc6156c543b433c313e813a222e088086222ab4afa6",
+      "major": 24,
+      "shasumsBodySha256": "06d17307d84ec057dd2783863f12cb228c9273f9424b330532e4e3699f5d47c9",
+      "shasumsUrl": "https://nodejs.org/dist/v24.22.3/SHASUMS256.txt",
+      "url": "https://nodejs.org/dist/v24.22.3/node-v24.22.3-win-x64.zip",
+      "version": "v24.22.3"
+    },
+    {
+      "archiveSha256": "4a191082e9706866830379d577d2cc8a50c776fcd9436a8d061b063ed0d9a0e3",
+      "checksumEvidence": "Expected official immutable SHASUMS; owner runner verifies actual ZIP and extracted executable before execution.",
+      "executableSha256": "247e9693d316da9857e44990e5e11709f596f18112251b8026ec6eed80bdf38a",
+      "major": 22,
+      "shasumsBodySha256": "658770bd465343e4bf441d22e89e7d944244b37041695f3f2a85b53d1a84b53f",
+      "shasumsUrl": "https://nodejs.org/dist/v22.23.5/SHASUMS256.txt",
+      "url": "https://nodejs.org/dist/v22.23.5/node-v22.23.5-win-x64.zip",
+      "version": "v22.23.5"
+    },
+    {
+      "archiveSha256": "dc3700fdd57a63eedb8fd7e3c7baaa32e6a740a1b904167ff4204bc68ed8bf77",
+      "checksumEvidence": "Expected official immutable SHASUMS; owner runner verifies actual ZIP and extracted executable before execution.",
+      "executableSha256": "56c1520ee33b801e8bdb92fb321cf2e98529735b6d12bd4a2a6dec0ac0bab937",
+      "major": 20,
+      "shasumsBodySha256": "c6f74825d6ddf350ef06600c67fec6ea2f7996cf438a78c3cb2a89b29d4320ed",
+      "shasumsUrl": "https://nodejs.org/dist/v20.20.2/SHASUMS256.txt",
+      "url": "https://nodejs.org/dist/v20.20.2/node-v20.20.2-win-x64.zip",
+      "version": "v20.20.2"
+    }
+  ],
+  "schema": 1,
+  "startupPolicy": "First actual exception only, known initial thread, raw firstChance!=0, code0x80000003, current verified OWNED-process remote ntdll [base,base+SizeOfImage) with overflow refusal; resume once. Kernel mapping/PE header checked independently of nullable hFile and revalidated while exception held; no local-ASLR-base substitution or export-only restriction. Pure validator additionally requires EVENT startupMappingRevalidated===true and canonical decimal uint64 string base/size/address: positive base/size, representable nonoverflowing end, base-inclusive/end-exclusive exact BigInt arithmetic. This is recorded-evidence consistency, not host attestation.",
+  "unknowns": [
+    "Native Windows execution and genuine valid-control acceptance have NOT run.",
+    "PeakWorkingSetSize usability at held EXIT_PROCESS_DEBUG_EVENT is not established by Linux managed/pure tests.",
+    "Windows PowerShell 5.1 Add-Type/runtime behavior and policy access remain unverified; parser evidence uses PowerShell 7.6.10.",
+    "The one-time first-process-exception/initial-thread/breakpoint-code/authenticated remote-ntdll-range predicate is conservative proposed handling, not a fully documented OS authorization rule; genuine native acceptance remains unverified.",
+    "Kernel-mapped path and matched PE header/SizeOfImage provenance, NULL-hFile independence, and held-exception mapping revalidation are source-reviewed only, not native API execution, full image-byte/signature or hostile-host attestation.",
+    "Descendant QUERY_INFORMATION|VM_READ|SYNCHRONIZE acquisition on held CREATE_EVENT-owned PID is documented-call preparation, not observed native access success or a documented complete NtQueryInformationProcess access guarantee.",
+    "NtQueryInformationProcess parent field/ABI compatibility, process/thread borrowed-handle cleanup and numeric alias safeguards require native testing.",
+    "Actual job accounting, timeout/termination/drain, directory/junction admission, short-lived births and root-before-survivor closure require native testing.",
+    "Windows ZIP/executable bodies have not been downloaded and hash-verified on this Linux host; expected pins came from official immutable SHASUMS, with actual verification in the owner runner.",
+    "Host historical peak is not current incremental overhead or full overhead-tree calibration; full qualification remains blocked.",
+    "Kernel-reported working-set peaks have not been independently calibrated as a universal exact process-tree RSS upper bound; the native finite witness experiment alone cannot establish that claim.",
+    "PID-reuse/ambiguous witness association fails closed, not general PID-reuse qualification.",
+    "DEBUG_PROCESS-controlled workload plus owned job census is not unrestricted descendant completeness proof, brokered-process coverage or full-profile qualification.",
+    "Host executable/CLR/core/automation identities are not complete loaded-module, kernel or hostile-host attestation.",
+    "Formal TEST009/TEST014, plan verification, spec approval/hash lock, full project gate, frozen two-run qualification and release approval remain missing or pending."
+  ]
+}

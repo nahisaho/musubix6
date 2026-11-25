@@ -1,9 +1,9 @@
 # AI cost log (USD)
 
 - Project: `/home/nahisaho/GitHub/musubix6`
-- Updated: 2026-11-22 09:57 UTC
-- Sessions: 24
-- **Total: $1,311.87**
+- Updated: 2026-11-25 03:02 UTC
+- Sessions: 26
+- **Total: $1,439.59**
 - History: `cost-history.json` (schema 1)
 - Basis: exact live `total_nano_aiu` / 1e9 = AIU; 1 AIU = 0.01 USD.
 - Archived report totals retain their original cent precision independently of rounded rows.
@@ -15,11 +15,11 @@ Regenerate with `python3 scripts/cost-log.py`. Do not edit by hand.
 
 | Model | Calls | USD | Input tokens | Output tokens |
 |---|---:|---:|---:|---:|
-| gpt-6.1-sol | 24019 | $649.60 | 2233247027 | 21542737 |
-| claude-sonnet-5.5 | 23354 | $629.31 | 1914439547 | 20225793 |
-| gpt-6.1-terra | 1680 | $16.39 | 219458313 | 956257 |
+| gpt-6.1-sol | 26483 | $739.80 | 2544007814 | 25312864 |
+| claude-sonnet-5.5 | 23975 | $659.20 | 1974673169 | 20952257 |
+| gpt-6.1-terra | 2567 | $23.55 | 333653313 | 1360066 |
 | claude-sonnet-5 | 176 | $6.41 | 12081578 | 110350 |
-| gpt-6-luna | 3251 | $5.03 | 416367586 | 3465745 |
+| gpt-6-luna | 3500 | $5.49 | 449386603 | 3683834 |
 | claude-haiku-4.5 | 617 | $4.79 | 23147643 | 158954 |
 | gpt-5.6-terra | 26 | $0.33 | 412537 | 9674 |
 | gpt-5.6-luna | 8 | $0.01 | 47460 | 2438 |
@@ -69,7 +69,12 @@ Regenerate with `python3 scripts/cost-log.py`. Do not edit by hand.
 | 2026-11-19T10:33 | `8d1cf95c-b529-4972-9c80-2598e77f74e8` | claude-sonnet-5.5 | 45 | $1.12 | Resume Implementation Work |
 | 2026-11-19T10:33 | `8d1cf95c-b529-4972-9c80-2598e77f74e8` | gpt-6-luna | 228 | $0.37 | Resume Implementation Work |
 | 2026-11-19T10:33 | `8d1cf95c-b529-4972-9c80-2598e77f74e8` | gpt-6.1-sol | 30 | $0.72 | Resume Implementation Work |
-| 2026-11-19T20:36 | `145a5099-ae29-4d7b-821d-25332177667e` | claude-sonnet-5.5 | 501 | $10.89 | Rollback to v0.2.8 for Redevelopment |
-| 2026-11-19T20:36 | `145a5099-ae29-4d7b-821d-25332177667e` | gpt-6-luna | 2286 | $3.65 | Rollback to v0.2.8 for Redevelopment |
-| 2026-11-19T20:36 | `145a5099-ae29-4d7b-821d-25332177667e` | gpt-6.1-sol | 1080 | $32.90 | Rollback to v0.2.8 for Redevelopment |
-| 2026-11-19T20:36 | `145a5099-ae29-4d7b-821d-25332177667e` | gpt-6.1-terra | 337 | $2.44 | Rollback to v0.2.8 for Redevelopment |
+| 2026-11-19T20:36 | `145a5099-ae29-4d7b-821d-25332177667e` | claude-sonnet-5.5 | 694 | $19.44 | Rollback to v0.2.8 for Redevelopment |
+| 2026-11-19T20:36 | `145a5099-ae29-4d7b-821d-25332177667e` | gpt-6-luna | 2496 | $4.04 | Rollback to v0.2.8 for Redevelopment |
+| 2026-11-19T20:36 | `145a5099-ae29-4d7b-821d-25332177667e` | gpt-6.1-sol | 1688 | $52.86 | Rollback to v0.2.8 for Redevelopment |
+| 2026-11-19T20:36 | `145a5099-ae29-4d7b-821d-25332177667e` | gpt-6.1-terra | 646 | $5.46 | Rollback to v0.2.8 for Redevelopment |
+| 2026-11-24T12:07 | `a290ec46-2ee9-4a6c-9a5e-e74946b026fd` | gpt-6.1-sol | 15 | $0.25 | Review Tasks Before Implementation |
+| 2026-11-24T12:27 | `531d9501-cf2e-4bc5-ba2e-d38686691b8d` | claude-sonnet-5.5 | 428 | $21.35 | Run Orca Orchestration Check |
+| 2026-11-24T12:27 | `531d9501-cf2e-4bc5-ba2e-d38686691b8d` | gpt-6-luna | 39 | $0.07 | Run Orca Orchestration Check |
+| 2026-11-24T12:27 | `531d9501-cf2e-4bc5-ba2e-d38686691b8d` | gpt-6.1-sol | 1841 | $69.99 | Run Orca Orchestration Check |
+| 2026-11-24T12:27 | `531d9501-cf2e-4bc5-ba2e-d38686691b8d` | gpt-6.1-terra | 578 | $4.15 | Run Orca Orchestration Check |
